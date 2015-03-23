@@ -1,4 +1,4 @@
-package org.wikidata.rdf.tool;
+package org.wikidata.query.rdf.tool;
 
 import static org.hamcrest.Matchers.lessThan;
 

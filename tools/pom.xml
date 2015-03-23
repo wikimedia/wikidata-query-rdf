@@ -20,6 +20,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.wikidata.query.rdf</groupId>
+      <artifactId>common</artifactId>
+      <version>${project.parent.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.lexicalscope.jewelcli</groupId>
       <artifactId>jewelcli</artifactId>
       <version>0.8.9</version>
@@ -54,7 +59,16 @@
       <artifactId>logback-classic</artifactId>
       <version>1.1.2</version>
     </dependency>
-
+    <dependency>
+      <groupId>org.openrdf.sesame</groupId>
+      <artifactId>sesame-queryresultio-binary</artifactId>
+      <version>${sesame.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openrdf.sesame</groupId>
+      <artifactId>sesame-query</artifactId>
+      <version>${sesame.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -62,13 +76,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>test-jar</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>com.carrotsearch.randomizedtesting</groupId>
@@ -139,28 +146,26 @@
           <scanIntervalSeconds>10</scanIntervalSeconds>
           <stopKey>stopblazegraphrightnowplzkthx</stopKey>
           <stopPort>9898</stopPort>
+          <scanIntervalSeconds>0</scanIntervalSeconds>
+          <httpConnector>
+            <port>9999</port>
+          </httpConnector>
+          <contextHandlers>
+            <contextHandler implementation="org.eclipse.jetty.maven.plugin.JettyWebAppContext">
+              <!-- TODO a war with the blazegraph extensions -->
+              <war>${project.build.directory}/blazegraph</war>
+              <contextPath>/bigdata</contextPath>
+            </contextHandler>
+          </contextHandlers>
         </configuration>
         <executions>
           <execution>
             <id>start-blzegraph</id>
             <phase>pre-integration-test</phase>
+            <!-- This complains some because this project _isn't_ a war. But we want to start the Blazegraph war. -->
             <goals>
               <goal>start</goal>
             </goals>
-            <!-- This complains some because this project _isn't_ a war. But we want to start the Blazegraph war. -->
-            <configuration>
-              <scanIntervalSeconds>0</scanIntervalSeconds>
-              <httpConnector>
-                <port>9999</port>
-              </httpConnector>
-              <contextHandlers>
-                <contextHandler implementation="org.eclipse.jetty.maven.plugin.JettyWebAppContext">
-                  <!-- TODO a war with the blazegraph extensions -->
-                  <war>${project.build.directory}/blazegraph</war>
-                  <contextPath>/bigdata</contextPath>
-                </contextHandler>
-              </contextHandlers>
-            </configuration>
           </execution>
           <execution>
             <id>stop-blazegraph</id>
@@ -173,4 +178,36 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>runBlazegraph</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>properties-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>setup-blazegraph-properties</id>
+                <phase>generate-sources</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>run-blzegraph</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

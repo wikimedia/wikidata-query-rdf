@@ -13,6 +13,7 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>common</module>
     <module>blazegraph</module>
     <module>tools</module>
   </modules>
