@@ -1,0 +1,54 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.wikidata.query.rdf</groupId>
+    <artifactId>parent</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <artifactId>blazegraph</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Blazegraph extension to improve performance for Wikibase</name>
+  <licenses>
+    <!-- To be compatible with Blazegraph -->
+    <license>
+      <name>GNU General Public License Version 2 (GPLv2)</name>
+      <url>http://www.gnu.org/licenses/gpl-2.0.html</url>
+    </license>
+  </licenses>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.bigdata</groupId>
+      <artifactId>bigdata</artifactId>
+      <version>${blazegraph.version}</version>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.carrotsearch.randomizedtesting</groupId>
+        <artifactId>junit4-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>
