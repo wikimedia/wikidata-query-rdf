@@ -1,4 +1,4 @@
-package org.wikidata.query.rdf.tool;
+package org.wikidata.query.rdf.tool.rdf;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;

@@ -7,7 +7,7 @@ public class EntityData {
     /**
      * An EntityData instance for wikidata.org.
      */
-    public static Entity WIKIDATA = new Entity("wikidata.org");
+    public static EntityData WIKIDATA = new EntityData("wikidata.org");
 
     private final String namespace;
 
