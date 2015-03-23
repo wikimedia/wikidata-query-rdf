@@ -300,6 +300,10 @@
       <id>bigdata.releases</id>
       <url>http://www.systap.com/maven/releases</url>
     </repository>
+    <repository>
+      <id>wmf.mirrored</id>
+      <url>http://archiva.wikimedia.org/repository/mirrored</url>
+    </repository>
   </repositories>
 
   <profiles>
