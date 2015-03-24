@@ -7,12 +7,12 @@ public class EntityData {
     /**
      * An EntityData instance for wikidata.org.
      */
-    public static EntityData WIKIDATA = new EntityData("wikidata.org");
+    public static EntityData WIKIDATA = new EntityData("www.wikidata.org");
 
     private final String namespace;
 
     public EntityData(String host) {
-        this.namespace = "http://www." + host + "/wiki/Special:EntityData/";
+        this.namespace = "http://" + host + "/wiki/Special:EntityData/";
     }
 
     public String namespace() {
