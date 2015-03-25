@@ -19,7 +19,7 @@ java.util.Collections#sort(java.util.List,java.util.Comparator)
 
 java.io.StringReader#<init>(java.lang.String) @ Use FastStringReader instead
 
-@defaultMessage Only use wait / notify when really needed try to use concurrency primitives, latches or callbacks instead. 
+@defaultMessage Only use wait / notify when really needed try to use concurrency primitives, latches or callbacks instead.
 java.lang.Object#wait()
 java.lang.Object#wait(long)
 java.lang.Object#wait(long,int)

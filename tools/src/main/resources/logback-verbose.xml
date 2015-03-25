@@ -8,5 +8,5 @@
   <root level="warn">
     <appender-ref ref="STDOUT" />
   </root>
-  <logger name="org.wikidata.query.rdf" level="info" />
+  <logger name="org.wikidata.query.rdf" level="debug" />
 </configuration>

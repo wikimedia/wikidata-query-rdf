@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
+import org.openrdf.model.util.Literals;
 
 import com.google.common.base.Joiner;
 
@@ -76,13 +77,32 @@ public class UpdateBuilder {
          */
         private String str(Object o) {
             if (o instanceof String) {
-                return (String) o;
+                // Got to escape those quotes
+                return o.toString().replace("\"", "\\\"");
             }
             if (o instanceof URI) {
                 return "<" + o + ">";
             }
             if (o instanceof Literal) {
-                return o.toString();
+                Literal l = (Literal) o;
+                // This is very similar to LiteralImpl's toString but with label
+                // escaping.
+                StringBuilder sb = new StringBuilder(l.getLabel().length() * 2);
+
+                sb.append('"');
+                sb.append(l.getLabel().replace("\"", "\\\""));
+                sb.append('"');
+
+                if (Literals.isLanguageLiteral(l)) {
+                    sb.append('@');
+                    sb.append(l.getLanguage());
+                } else {
+                    sb.append("^^<");
+                    sb.append(l.getDatatype());
+                    sb.append(">");
+                }
+
+                return sb.toString();
             }
             throw new RuntimeException("I have no idea what do to with a " + o.getClass());
         }

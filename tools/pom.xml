@@ -69,6 +69,11 @@
       <artifactId>sesame-query</artifactId>
       <version>${sesame.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-core</artifactId>
+      <version>3.1.0</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -133,6 +138,12 @@
                   <name>com.bigdata.rdf.sail.webapp.ConfigParams.propertyFile</name>
                   <value>${project.basedir}/src/test/resources/blazegraph/RWStore.properties</value>
                 </property>
+                <property>
+                  <!-- 100x more than the default form size limit - our updates are reasonably large and it isn't worth breaking 
+                    them up. Hopefully. -->
+                  <name>org.eclipse.jetty.server.Request.maxFormContentSize</name>
+                  <value>20000000</value>
+                </property>
               </properties>
             </configuration>
           </execution>
@@ -173,6 +184,23 @@
             <goals>
               <goal>stop</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>jar-with-dependencies</id>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <phase>package</phase>
+            <configuration>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+            </configuration>
           </execution>
         </executions>
       </plugin>

@@ -8,7 +8,6 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +17,8 @@ import org.json.simple.JSONObject;
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.common.uri.Entity;
+import org.wikidata.query.rdf.tool.exception.ContainedException;
+import org.wikidata.query.rdf.tool.exception.RetryableException;
 
 /**
  * Tests WikibaseRepository using the beta instance of Wikidata. Note that we
@@ -30,7 +31,7 @@ public class WikibaseRepositoryIntegrationTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void recentChangesWithLotsOfChangesHasContinue() throws IOException {
+    public void recentChangesWithLotsOfChangesHasContinue() throws RetryableException {
         /*
          * This relies on there being lots of changes in the past 30 days. Which
          * is probably ok.
@@ -49,7 +50,7 @@ public class WikibaseRepositoryIntegrationTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void recentChangesWithFewChangesHasNoContinue() throws IOException {
+    public void recentChangesWithFewChangesHasNoContinue() throws RetryableException {
         /*
          * This relies on there being very few changes in the current
          * millisecond.
@@ -63,7 +64,7 @@ public class WikibaseRepositoryIntegrationTest {
 
     @Test
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public void anEditsShowsUpInRecentChanges() throws IOException {
+    public void anEditsShowsUpInRecentChanges() throws RetryableException, ContainedException {
         long now = System.currentTimeMillis();
         String label = "QueryTest" + now;
         String entityId = repo.addPage(label);

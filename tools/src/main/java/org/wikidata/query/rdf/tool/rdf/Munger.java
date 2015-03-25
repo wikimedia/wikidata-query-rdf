@@ -1,17 +1,20 @@
 package org.wikidata.query.rdf.tool.rdf;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Locale;
+import java.util.Set;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.model.vocabulary.RDF;
 import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.common.uri.EntityData;
 import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 
 /**
@@ -30,16 +33,21 @@ public class Munger {
     /**
      * Adds and removes entries from the statements collection to munge Wikibase
      * RDF exports into a more queryable form.
-     * 
+     *
      * @param statements statements to munge
      * @return a reference to statements
      */
     public Collection<Statement> munge(Collection<Statement> statements) {
+        /*
+         * Filters and adds RDF based in a single pass.
+         */
         Iterator<Statement> itr = statements.iterator();
         Value revisionId = null;
         Value lastModified = null;
         Resource entity = null;
 
+        Set<String> siteLinks = new HashSet<>();
+        Set<String> unknownSubjects = new HashSet<>();
         while (itr.hasNext()) {
             Statement s = itr.next();
             String subject = s.getSubject().stringValue();
@@ -58,26 +66,59 @@ public class Munger {
                     }
                 }
                 itr.remove();
-            } else if (subject.startsWith(entityUris.namespace())) {
+                continue;
+            }
+            if (subject.startsWith(entityUris.namespace())) {
                 entity = s.getSubject();
                 if (predicate.equals(RDF.TYPE) && s.getObject().stringValue().equals(Ontology.ITEM)) {
                     // We don't need wd:Q1 a wdo:item
                     itr.remove();
                 }
+                continue;
             }
+            /*
+             * We make an effort to detect subjects that we don't recognize so
+             * we can report them as an error. We first have to filter out
+             * sitelinks.
+             */
+            if (siteLinks.contains(subject)) {
+                continue;
+            }
+            if (predicate.equals(RDF.TYPE) && s.getObject().stringValue().equals(SchemaDotOrg.ARTICLE)) {
+                siteLinks.add(subject);
+                // Site links may have crept into unknown subjects if they
+                // appeared in a funky order.
+                unknownSubjects.remove(subject);
+                continue;
+            }
+            unknownSubjects.add(subject);
+        }
+
+        if (!unknownSubjects.isEmpty()) {
+            throw new BadSubjectException(unknownSubjects, entityDataUris, entityUris);
         }
         if (revisionId == null) {
-            throw new RuntimeException("Didn't get a revision id!");
+            throw new RuntimeException("Didn't get a revision id for " + statements);
         }
         if (lastModified == null) {
-            throw new RuntimeException("Didn't get a last modified date!");
+            throw new RuntimeException("Didn't get a last modified date for " + statements);
         }
         if (entity == null) {
-            throw new RuntimeException("Didn't get any entity information!");
+            throw new RuntimeException("Didn't get any entity information " + statements);
         }
         statements.add(new StatementImpl(entity, new URIImpl(SchemaDotOrg.VERSION), revisionId));
         statements.add(new StatementImpl(entity, new URIImpl(SchemaDotOrg.DATE_MODIFIED), lastModified));
 
         return statements;
+    }
+
+    public class BadSubjectException extends RuntimeException {
+        private static final long serialVersionUID = -4869053066714948939L;
+
+        public BadSubjectException(Set<String> badSubjects, EntityData entityDataUris, Entity entityUris) {
+            super(String.format(Locale.ROOT,
+                    "Unrecognized subjects:  %s.  Expected only sitelinks and subjects starting with %s and %s",
+                    badSubjects, entityDataUris.namespace(), entityUris.namespace()));
+        }
     }
 }

@@ -7,11 +7,14 @@ import static org.junit.Assert.assertTrue;
 import static org.wikidata.query.rdf.tool.Matchers.binds;
 import static org.wikidata.query.rdf.tool.StatementHelper.statement;
 
+import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.openrdf.model.Statement;
+import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
@@ -92,6 +95,19 @@ public class RdfRepositoryIntegrationTest {
     }
 
     @Test
+    public void newLabelWithQuotes() throws QueryEvaluationException {
+        repository.sync("Q23", ImmutableList.of(//
+                statement("Q23", RDFS.LABEL, new LiteralImpl("George \"Cherry Tree\" Washington", "en"))));
+        TupleQueryResult r = repository.query("SELECT * WHERE {?s ?p ?o}");
+        assertTrue(r.hasNext());
+        assertThat(r.next(), allOf(//
+                binds("s", "Q23"),//
+                binds("p", RDFS.LABEL),//
+                binds("o", new LiteralImpl("George \"Cherry Tree\" Washington", "en"))));
+        assertFalse(r.hasNext());
+    }
+
+    @Test
     public void newLabelLanguage() throws QueryEvaluationException {
         newLabel();
         repository.sync("Q23", ImmutableList.of(//
@@ -111,6 +127,35 @@ public class RdfRepositoryIntegrationTest {
         assertFalse(r.hasNext());
     }
 
+    @Test
+    public void hasRevisionFalseIfNotPresent() {
+        assertFalse(repository.hasRevision("Q23", 10));
+    }
+
+    @Test
+    public void hasRevisionFalseIfTooEarly() {
+        syncJustVersion("Q23", 1);
+        assertFalse(repository.hasRevision("Q23", 10));
+    }
+
+    @Test
+    public void hasRevisionTrueIfMatch() {
+        syncJustVersion("Q23", 10);
+        assertTrue(repository.hasRevision("Q23", 10));
+    }
+
+    @Test
+    public void hasRevisionTrueIfAfter() {
+        syncJustVersion("Q23", 10);
+        assertTrue(repository.hasRevision("Q23", 9));
+    }
+
+    private void syncJustVersion(String entityId, int version) {
+        Statement statement = statement(entityId, SchemaDotOrg.VERSION,
+                new IntegerLiteralImpl(new BigInteger(Integer.toString(version))));
+        repository.sync(entityId, ImmutableList.of(statement));
+    }
+
     /**
      * RdfRepository extension used for testing. We don't want to anyone to
      * accidentally use clear() so we don't put it in the repository.
@@ -127,7 +172,7 @@ public class RdfRepositoryIntegrationTest {
             UpdateBuilder b = new UpdateBuilder();
             b.where("?s", "?p", "?o");
             b.delete("?s", "?p", "?o");
-            execute("update", null, b.toString());
+            execute("update", RdfRepository.IGNORE_RESPONSE, b.toString());
         }
     }
 }

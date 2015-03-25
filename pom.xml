@@ -49,7 +49,6 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <blazegraph.version>1.5.1</blazegraph.version>
-    <!-- For the Elasticsearch plugin to work this should match the version of Lucene that Elasticsearch uses. -->
     <sesame.version>2.8.1</sesame.version>
   </properties>
 

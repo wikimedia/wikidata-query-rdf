@@ -21,7 +21,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -35,6 +35,9 @@ import org.openrdf.rio.Rio;
 import org.openrdf.rio.helpers.StatementCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.tool.exception.ContainedException;
+import org.wikidata.query.rdf.tool.exception.FatalException;
+import org.wikidata.query.rdf.tool.exception.RetryableException;
 
 import com.google.common.base.Charsets;
 
@@ -43,7 +46,8 @@ import com.google.common.base.Charsets;
  */
 public class WikibaseRepository {
     private static final Logger log = LoggerFactory.getLogger(WikibaseRepository.class);
-    private final CloseableHttpClient client = HttpClientBuilder.create().build();
+    private final CloseableHttpClient client = HttpClients.custom().setMaxConnPerRoute(100).setMaxConnTotal(100)
+            .build();
     private final Uris uris;
 
     public WikibaseRepository(String scheme, String host) {
@@ -72,29 +76,35 @@ public class WikibaseRepository {
      *            of the query
      * @param lastContinue continuation point if not null
      * @return result of query
-     * @throws IOException if there are io or parse errors
      */
-    public JSONObject fetchRecentChanges(long nextStartTime, JSONObject lastContinue) throws IOException {
+    public JSONObject fetchRecentChanges(long nextStartTime, JSONObject lastContinue) throws RetryableException {
         URI uri = uris.recentChanges(nextStartTime, lastContinue);
         log.debug("Polling for changes from {}", uri);
-        return checkApi(getJson(new HttpGet(uri)));
+        try {
+            return checkApi(getJson(new HttpGet(uri)));
+        } catch (IOException | ParseException e) {
+            throw new RetryableException("Error fetching recent changes", e);
+        }
     }
 
     /**
      * Fetch the RDF for some entity.
      */
-    public Collection<Statement> fetchRdfForEntity(String entityId) throws IOException {
+    public Collection<Statement> fetchRdfForEntity(String entityId) throws RetryableException, ContainedException {
+        // TODO handle ?flavor=dump or whatever parameters we need
         URI uri = uris.rdf(entityId);
         log.debug("Fetching rdf from {}", uri);
         RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
         StatementCollector collector = new StatementCollector();
         parser.setRDFHandler(collector);
-        try (CloseableHttpResponse response = client.execute(new HttpGet(uri))) {
-            parser.parse(new InputStreamReader(response.getEntity().getContent(), Charsets.UTF_8), uri.toString());
-        } catch (RDFParseException e) {
-            throw new IOException("RDF parsing error for " + uri, e);
-        } catch (RDFHandlerException e) {
-            throw new IOException("RDF handling error for " + uri, e);
+        try {
+            try (CloseableHttpResponse response = client.execute(new HttpGet(uri))) {
+                parser.parse(new InputStreamReader(response.getEntity().getContent(), Charsets.UTF_8), uri.toString());
+            }
+        } catch (IOException e) {
+            throw new RetryableException("Error fetching RDF for " + uri, e);
+        } catch (RDFParseException | RDFHandlerException e) {
+            throw new ContainedException("RDF parsing error for " + uri, e);
         }
         return collector.getStatements();
     }
@@ -104,10 +114,9 @@ public class WikibaseRepository {
      *
      * @param label English label of the page to find or create
      * @return the entityId
-     * @throws IOException
      */
     @SuppressWarnings("unchecked")
-    public String addPage(String label) throws IOException {
+    public String addPage(String label) throws RetryableException {
         JSONObject data = new JSONObject();
         JSONObject labels = new JSONObject();
         data.put("labels", labels);
@@ -117,11 +126,15 @@ public class WikibaseRepository {
         en.put("value", label);
         URI uri = uris.edit(null, data.toJSONString());
         log.debug("Creating entity using {}", uri);
-        JSONObject result = checkApi(getJson(postWithToken(uri)));
-        return ((JSONObject) result.get("entity")).get("id").toString();
+        try {
+            JSONObject result = checkApi(getJson(postWithToken(uri)));
+            return ((JSONObject) result.get("entity")).get("id").toString();
+        } catch (IOException | ParseException e) {
+            throw new RetryableException("Error adding page", e);
+        }
     }
 
-    private HttpPost postWithToken(URI uri) throws IOException {
+    private HttpPost postWithToken(URI uri) throws IOException, ParseException {
         HttpPost request = new HttpPost(uri);
         List<NameValuePair> entity = new ArrayList<>();
         entity.add(new BasicNameValuePair("token", csrfToken()));
@@ -129,7 +142,7 @@ public class WikibaseRepository {
         return request;
     }
 
-    private String csrfToken() throws IOException {
+    private String csrfToken() throws IOException, ParseException {
         URI uri = uris.csrfToken();
         log.debug("Fetching csrf token from {}", uri);
         return ((JSONObject) ((JSONObject) getJson(new HttpGet(uri)).get("query")).get("tokens")).get("csrftoken")
@@ -143,15 +156,12 @@ public class WikibaseRepository {
      * @return json response
      * @throws IOException if there is an error parsing the json or if one is
      *             thrown receiving the data
+     * @throws ParseException the json was malformed and couldn't be parsed
      */
-    private JSONObject getJson(HttpUriRequest request) throws IOException {
+    private JSONObject getJson(HttpUriRequest request) throws IOException, ParseException {
         try (CloseableHttpResponse response = client.execute(request)) {
-            try {
-                return (JSONObject) new JSONParser().parse(new InputStreamReader(response.getEntity().getContent(),
-                        Charsets.UTF_8));
-            } catch (ParseException e) {
-                throw new IOException("Parse error from api", e);
-            }
+            return (JSONObject) new JSONParser().parse(new InputStreamReader(response.getEntity().getContent(),
+                    Charsets.UTF_8));
         }
     }
 
@@ -161,10 +171,10 @@ public class WikibaseRepository {
      * @param response the response
      * @return the response again
      */
-    private JSONObject checkApi(JSONObject response) {
+    private JSONObject checkApi(JSONObject response) throws RetryableException {
         Object error = response.get("error");
         if (error != null) {
-            throw new RuntimeException("Error result from Mediawiki:  " + error);
+            throw new RetryableException("Error result from Mediawiki:  " + error);
         }
         return response;
     }
@@ -187,6 +197,7 @@ public class WikibaseRepository {
             builder.addParameter("list", "recentchanges");
             builder.addParameter("rcdir", "newer");
             builder.addParameter("rcprop", "title|ids|timestamp");
+            builder.addParameter("rcnamespace", "0");
             if (lastContinue == null) {
                 builder.addParameter("continue", "");
                 builder.addParameter("rcstart", outputDateFormat().format(nextStartTime));
@@ -246,7 +257,7 @@ public class WikibaseRepository {
             try {
                 return builder.build();
             } catch (URISyntaxException e) {
-                throw new RuntimeException("Unable to build url!?", e);
+                throw new FatalException("Unable to build url!?", e);
             }
         }
     }
