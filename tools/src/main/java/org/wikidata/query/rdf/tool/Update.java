@@ -7,7 +7,6 @@ import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDate
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -19,12 +18,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.common.uri.EntityData;
+import org.wikidata.query.rdf.tool.change.Change;
+import org.wikidata.query.rdf.tool.change.Change.Batch;
+import org.wikidata.query.rdf.tool.change.IdChangeSource;
+import org.wikidata.query.rdf.tool.change.RecentChangesPoller;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.Munger;
@@ -47,10 +48,13 @@ import com.lexicalscope.jewel.cli.Option;
 /**
  * Update tool.
  */
-public class Update implements Runnable {
+public class Update<B extends Change.Batch> implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(Update.class);
 
-    public interface Options {
+    /**
+     * CLI options for use with JewelCli.
+     */
+    public static interface Options {
         @Option(shortName = "w", defaultValue = "www.wikidata.org", description = "Wikidata host")
         String wikidataHost();
 
@@ -63,9 +67,13 @@ public class Update implements Runnable {
         @Option(shortName = "s", defaultToNull = true, description = "Start time in 2015-02-11T17:11:08Z or 20150211170100 format.")
         String start();
 
+        @Option(defaultToNull = true, description = "If specified must be <start>-<end>. Ids are iterated instead of recent changes. Start and end are inclusive.")
+        String ids();
+
         @Option(shortName = "u", description = "URL to post updates and queries.")
         String sparqlUrl();
 
+        // TODO need option to limit the load to certain languages or sites
         @Option(helpRequest = true)
         boolean help();
     }
@@ -109,6 +117,34 @@ public class Update implements Runnable {
         Entity entityUris = new Entity(options.wikidataHost());
         EntityData entityDataUris = new EntityData(options.wikidataHost());
         RdfRepository rdfRepository = new RdfRepository(sparqlUri, entityUris);
+        Change.Source<? extends Change.Batch> changeSource = buildChangeSource(options, rdfRepository,
+                wikibaseRepository);
+        if (changeSource == null) {
+            return;
+        }
+        ThreadFactoryBuilder threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("update %s");
+        ExecutorService executor = new ThreadPoolExecutor(10, 10, 0, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(), threadFactory.build());
+
+        new Update<>(changeSource, wikibaseRepository, rdfRepository, entityUris, entityDataUris, executor).run();
+    }
+
+    /**
+     * Build a change source.
+     *
+     * @return null if non can be built - its ok to just exit - errors have been
+     *         logged to the user
+     */
+    private static Change.Source<? extends Batch> buildChangeSource(Options options, RdfRepository rdfRepository,
+            WikibaseRepository wikibaseRepository) {
+        if (options.ids() != null) {
+            String[] ids = options.ids().split("-");
+            if (ids.length != 2) {
+                log.error("Invalid format for --ids.  Need <start>-<stop>.");
+                return null;
+            }
+            return IdChangeSource.forItems(Long.parseLong(ids[0]), Long.parseLong(ids[1]), 30);
+        }
         long startTime;
         if (options.start() != null) {
             try {
@@ -118,7 +154,7 @@ public class Update implements Runnable {
                     startTime = inputDateFormat().parse(options.start()).getTime();
                 } catch (java.text.ParseException e2) {
                     log.error("Invalid date:  {}", options.start());
-                    return;
+                    return null;
                 }
             }
         } else {
@@ -132,66 +168,75 @@ public class Update implements Runnable {
                 if (lastUpdate.getTime() < minStartTime) {
                     log.error("RDF store reports the last update time is before the minimum safe poll time.  "
                             + "You will have to reload from scratch or you might have missing data.");
-                    return;
+                    return null;
                 }
                 /*
                  * -2 seconds to because our precision is only 1 second and
                  * because it should be cheap to recheck that we have the right
                  * revision.
                  */
+                // TODO finding a time to start from the RDF store like this
+                // is dangerous because we always update using the most recent
+                // version of the document so this will cause skipping.
                 startTime = lastUpdate.getTime() - SECONDS.toMillis(2);
                 log.info("Found start time in the RDF store: {}", inputDateFormat().format(new Date(startTime)));
             }
         }
-        ThreadFactoryBuilder threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("update %s");
-        ExecutorService executor = new ThreadPoolExecutor(10, 10, 0, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(), threadFactory.build());
+        return new RecentChangesPoller(wikibaseRepository, new Date(startTime));
+    }
 
-        new Update(wikibaseRepository, rdfRepository, entityUris, entityDataUris, executor, startTime).run();
+    /**
+     * Polls updates.
+     */
+    public static interface Source {
+
     }
 
     private final Meter updateMeter = new Meter();
-    private final Meter startTimeMeter = new Meter();
+    private final Meter batchAdvanced = new Meter();
 
+    private Change.Source<B> changeSource;
     private final WikibaseRepository wikibase;
     private final RdfRepository rdfRepository;
     private final Entity entityUris;
     private final EntityData entityDataUris;
     private final ExecutorService executor;
 
-    private long nextStartTime;
-    private JSONObject nextContinue;
-    private long currentBatchStartTime;
-    private JSONObject currentBatchContinue;
-
-    public Update(WikibaseRepository wikibase, RdfRepository rdfRepository, Entity entityUris,
-            EntityData entityDataUris, ExecutorService executor, long startTime) {
+    public Update(Change.Source<B> changeSource, WikibaseRepository wikibase, RdfRepository rdfRepository,
+            Entity entityUris, EntityData entityDataUris, ExecutorService executor) {
+        this.changeSource = changeSource;
         this.wikibase = wikibase;
         this.rdfRepository = rdfRepository;
         this.entityUris = entityUris;
         this.entityDataUris = entityDataUris;
-        nextStartTime = startTime;
         this.executor = executor;
     }
 
     @Override
     public void run() {
+        B batch = null;
+        do {
+            try {
+                batch = changeSource.firstBatch();
+            } catch (RetryableException e) {
+                log.warn("Retryable error fetching first batch.  Retrying.", e);
+            }
+        } while (batch == null);
         while (true) {
             try {
                 List<Future<?>> tasks = new ArrayList<>();
-                for (Object rco : pollRecentChanges()) {
-                    final JSONObject rc = (JSONObject) rco;
+                for (final Change change : batch.changes()) {
                     tasks.add(executor.submit(new Runnable() {
                         @Override
                         public void run() {
                             while (true) {
                                 try {
-                                    handleChange(rc);
+                                    handleChange(change);
                                     return;
                                 } catch (RetryableException e) {
                                     log.warn("Retryable error syncing.  Retrying.", e);
                                 } catch (ContainedException e) {
-                                    log.warn("Contained error syncing.  Giving up on " + rc.get("title"), e);
+                                    log.warn("Contained error syncing.  Giving up on " + change.entityId(), e);
                                     return;
                                 }
                             }
@@ -201,8 +246,16 @@ public class Update implements Runnable {
                 for (Future<?> task : tasks) {
                     task.get();
                 }
+
                 // TODO wrap all retry-able exceptions in a special exception
-                successfullyCompletedBatch();
+
+                batchAdvanced.mark(batch.advanced());
+                log.info("Polled up to {} at {} updates per second and {} {} per second", batch.upTo(),
+                        meterReport(updateMeter), meterReport(batchAdvanced), batch.advancedUnits());
+                if (batch.last()) {
+                    break;
+                }
+                batch = changeSource.nextBatch(batch);
             } catch (RetryableException e) {
                 log.warn("Error occurred during poll loop. Retrying.", e);
             } catch (InterruptedException e) {
@@ -223,59 +276,20 @@ public class Update implements Runnable {
      * <li>Sync data to the triple store.
      * </ul>
      */
-    private void handleChange(JSONObject rc) throws RetryableException, ContainedException {
-        log.debug("Received revision information {}", rc);
-        String entityId = rc.get("title").toString();
-        long revision = (long) rc.get("revid");
-        long namespace = (long) rc.get("ns");
-        if (namespace != 0) {
-            // We only index the main namespace.
-            return;
-        }
+    private void handleChange(Change change) throws RetryableException, ContainedException {
+        log.debug("Received revision information {}", change);
         // TODO deletes
-        // TODO it'd be reasonably simple to fork/join here
-        if (rdfRepository.hasRevision(entityId, revision)) {
+        if (change.revision() >= 0 && rdfRepository.hasRevision(change.entityId(), change.revision())) {
             log.debug("RDF repostiroy already has this revision, skipping.");
             return;
         }
         Munger munger = new Munger(entityDataUris, entityUris);
-        rdfRepository.sync(entityId, munger.munge(wikibase.fetchRdfForEntity(entityId)));
+        rdfRepository.sync(change.entityId(), munger.munge(wikibase.fetchRdfForEntity(change.entityId())));
         updateMeter.mark();
     }
 
-    /**
-     * Poll recent changes and update lastContinue and nextStartTime so that
-     * subsequent calls to this method will get the next most recent changes.
-     */
-    private JSONArray pollRecentChanges() throws RetryableException {
-        JSONObject recentChanges = wikibase.fetchRecentChanges(nextStartTime, nextContinue);
-        currentBatchContinue = (JSONObject) recentChanges.get("continue");
-        JSONArray result = (JSONArray) ((JSONObject) recentChanges.get("query")).get("recentchanges");
-        DateFormat df = inputDateFormat();
-        for (Object rco : result) {
-            JSONObject rc = (JSONObject) rco;
-            try {
-                currentBatchStartTime = Math.max(nextStartTime, df.parse(rc.get("timestamp").toString()).getTime());
-            } catch (java.text.ParseException e) {
-                throw new RetryableException("Parse error from api", e);
-            }
-        }
-        return result;
-    }
-
-    private void successfullyCompletedBatch() {
-        startTimeMeter.mark(currentBatchStartTime - nextStartTime);
-        nextStartTime = currentBatchStartTime;
-        nextContinue = currentBatchContinue;
-        // Show the user the polled time - one seconds because we can't
-        // be sure we got the whole second
-        log.info("Polled up to {} at {} updates per second and {} seconds per second",
-                inputDateFormat().format(new Date(nextStartTime - 1000)), meterReport(updateMeter, 1),
-                meterReport(startTimeMeter, 1000));
-    }
-
-    private String meterReport(Meter meter, float divisor) {
-        return String.format(Locale.ROOT, "(%.1f, %.1f, %.1f)", meter.getOneMinuteRate() / divisor,
-                meter.getFiveMinuteRate() / divisor, meter.getFifteenMinuteRate() / divisor);
+    private String meterReport(Meter meter) {
+        return String.format(Locale.ROOT, "(%.1f, %.1f, %.1f)", meter.getOneMinuteRate(), meter.getFiveMinuteRate(),
+                meter.getFifteenMinuteRate());
     }
 }

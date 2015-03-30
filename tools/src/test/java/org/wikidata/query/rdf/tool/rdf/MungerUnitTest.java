@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.tool.rdf;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.wikidata.query.rdf.tool.StatementHelper.statement;
 
 import java.util.ArrayList;
@@ -17,6 +18,8 @@ import org.openrdf.model.impl.LiteralImpl;
 import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.common.uri.EntityData;
 import org.wikidata.query.rdf.common.uri.RDF;
+import org.wikidata.query.rdf.common.uri.RDFS;
+import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.tool.rdf.Munger.BadSubjectException;
 
@@ -74,6 +77,20 @@ public class MungerUnitTest extends RandomizedTest {
         }
         munger.munge(statements);
         assertThat(statements, both(hasItem(equalTo(articleDecl))).and(hasItem(equalTo(metaDecl))));
+    }
+
+    @Test
+    public void extraLabelsRemoved() {
+        Statement rdfsDecl = statement("Q23", RDFS.LABEL, new LiteralImpl("foo", "en"));
+        Statement skosDecl = statement("Q23", SKOS.PREF_LABEL, new LiteralImpl("foo", "en"));
+        Statement schemaDecl = statement("Q23", SchemaDotOrg.NAME, new LiteralImpl("foo", "en"));
+
+        List<Statement> statements = basicEntity("Q23");
+        statements.addAll(ImmutableList.of(rdfsDecl, skosDecl, schemaDecl));
+        munger.munge(statements);
+        assertThat(statements, hasItem(equalTo(rdfsDecl)));
+        assertThat(statements, not(hasItem(equalTo(skosDecl))));
+        assertThat(statements, not(hasItem(equalTo(schemaDecl))));
     }
 
     private List<Statement> basicEntity(String entityId) {

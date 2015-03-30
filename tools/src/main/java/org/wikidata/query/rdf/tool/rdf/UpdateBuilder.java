@@ -1,9 +1,11 @@
 package org.wikidata.query.rdf.tool.rdf;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.openrdf.model.Literal;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.util.Literals;
 
@@ -16,7 +18,7 @@ public class UpdateBuilder {
     private final StringBuilder prefixes = new StringBuilder();
     private final BasicPart delete = new BasicPart();
     private final BasicPart insert = new BasicPart();
-    private final WherePart where = new WherePart(1, false);
+    private final BasicPart where = new BasicPart();
 
     public UpdateBuilder prefix(String prefix, String expandedForm) {
         prefixes.append("PREFIX ").append(prefix).append(": <").append(expandedForm).append(">\n");
@@ -38,17 +40,21 @@ public class UpdateBuilder {
         return this;
     }
 
-    public WherePart whereOptional() {
-        return where.optional();
+    public BasicPart where() {
+        return where;
     }
 
     @Override
     public String toString() {
         StringBuilder b = new StringBuilder();
-        b.append(prefixes).append('\n');
-        b.append("DELETE {\n").append(delete).append("}\n");
-        b.append("INSERT {\n").append(insert).append("}\n");
-        b.append("WHERE {\n").append(where).append("}\n");
+        b.append(prefixes);
+        if (!delete.parts.isEmpty()) {
+            b.append("DELETE {\n").append(delete).append("}\n");
+        }
+        if (!insert.parts.isEmpty()) {
+            b.append("INSERT {\n").append(insert).append("}\n");
+        }
+        b.append("WHERE {\n").append(where).append("}");
         return b.toString();
     }
 
@@ -66,6 +72,12 @@ public class UpdateBuilder {
             return (Self) this;
         }
 
+        public NotExists notExists() {
+            NotExists ne = new NotExists(indent + 1);
+            parts.add(ne);
+            return ne;
+        }
+
         @Override
         public String toString() {
             return Joiner.on('\n').join(parts) + "\n";
@@ -75,7 +87,7 @@ public class UpdateBuilder {
          * Properly stringify a subject, predicate, or object so it fits in the
          * update query.
          */
-        private String str(Object o) {
+        protected String str(Object o) {
             if (o instanceof String) {
                 // Got to escape those quotes
                 return o.toString().replace("\"", "\\\"");
@@ -119,35 +131,41 @@ public class UpdateBuilder {
         }
     }
 
-    private static class BasicPart extends AbstractPart<BasicPart> {
+    public static class BasicPart extends AbstractPart<BasicPart> {
         private BasicPart() {
             super(1);
         }
     }
 
-    public static class WherePart extends AbstractPart<WherePart> {
-        private final boolean optional;
-
-        private WherePart(int indent, boolean optional) {
+    public static class NotExists extends AbstractPart<NotExists> {
+        private NotExists(int indent) {
             super(indent);
-            this.optional = optional;
-        }
-
-        public WherePart optional() {
-            WherePart optional = new WherePart(indent + 2, true);
-            parts.add(optional);
-            return optional;
         }
 
         @Override
         public String toString() {
-            if (optional) {
-                StringBuilder b = indent(new StringBuilder(), indent - 1).append("OPTIONAL {\n").append(
-                        super.toString());
-                indent(b, indent - 1).append("}");
-                return  b.toString();
+            StringBuilder b = indent(new StringBuilder(), indent - 1);
+            b.append("FILTER NOT EXISTS {\n");
+            b.append(super.toString());
+            indent(b, indent - 1).append("}");
+            return b.toString();
+        }
+
+        public NotExists values(Collection<Statement> statements, String... names) {
+            StringBuilder b = indent().append("VALUES (");
+            for (String name : names) {
+                b.append(name).append(" ");
             }
-            return super.toString();
+            b.append(") {\n");
+            for (Statement statement : statements) {
+                indent(b, indent + 1).append("( ");
+                b.append(str(statement.getSubject())).append(' ');
+                b.append(str(statement.getPredicate())).append(' ');
+                b.append(str(statement.getObject())).append(" )\n");
+            }
+            indent(b, indent).append("}");
+            parts.add(b);
+            return this;
         }
     }
 }

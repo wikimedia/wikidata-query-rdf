@@ -8,6 +8,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -57,27 +58,14 @@ public class WikibaseRepository {
     /**
      * Fetch recent changes starting from nextStartTime or continuing from
      * lastContinue depending on the contents of lastContinue way to use
-     * MediaWiki.
-     *
-     * <p>
-     * You can fetch the continuation information like so:
-     * <p>
-     * <code>
-     * lastContinue = (JSONObject) recentChanges.get("continue");
-     * </code>
-     * <p>
-     * and you can fetch the changes like so:
-     * <p>
-     * <code>
-     * JSONArray result = (JSONArray) ((JSONObject) recentChanges.get("query")).get("recentchanges");
-     * </code>
+     * MediaWiki. See RecentChangesPoller for how to poll these. Or just use it.
      *
      * @param nextStartTime if lastContinue is null then this is the start time
      *            of the query
      * @param lastContinue continuation point if not null
      * @return result of query
      */
-    public JSONObject fetchRecentChanges(long nextStartTime, JSONObject lastContinue) throws RetryableException {
+    public JSONObject fetchRecentChanges(Date nextStartTime, JSONObject lastContinue) throws RetryableException {
         URI uri = uris.recentChanges(nextStartTime, lastContinue);
         log.debug("Polling for changes from {}", uri);
         try {
@@ -191,19 +179,19 @@ public class WikibaseRepository {
             this.host = host;
         }
 
-        public URI recentChanges(long nextStartTime, JSONObject lastContinue) {
+        public URI recentChanges(Date startTime, JSONObject continueObject) {
             URIBuilder builder = apiBuilder();
             builder.addParameter("action", "query");
             builder.addParameter("list", "recentchanges");
             builder.addParameter("rcdir", "newer");
             builder.addParameter("rcprop", "title|ids|timestamp");
             builder.addParameter("rcnamespace", "0");
-            if (lastContinue == null) {
+            if (continueObject == null) {
                 builder.addParameter("continue", "");
-                builder.addParameter("rcstart", outputDateFormat().format(nextStartTime));
+                builder.addParameter("rcstart", outputDateFormat().format(startTime));
             } else {
-                builder.addParameter("continue", lastContinue.get("continue").toString());
-                builder.addParameter("rccontinue", lastContinue.get("rccontinue").toString());
+                builder.addParameter("continue", continueObject.get("continue").toString());
+                builder.addParameter("rccontinue", continueObject.get("rccontinue").toString());
             }
             return build(builder);
         }

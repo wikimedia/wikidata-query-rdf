@@ -10,6 +10,9 @@ import static org.wikidata.query.rdf.tool.StatementHelper.statement;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -19,6 +22,7 @@ import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 import org.wikidata.query.rdf.common.uri.Entity;
+import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 
@@ -148,6 +152,45 @@ public class RdfRepositoryIntegrationTest {
     public void hasRevisionTrueIfAfter() {
         syncJustVersion("Q23", 10);
         assertTrue(repository.hasRevision("Q23", 9));
+    }
+
+    /**
+     * Updating items with lots of sitelinks shouldn't be painfully slow.
+     */
+    @Test(timeout = 10000)
+    public void lotsOfSiteLinks() throws QueryEvaluationException {
+        List<Statement> statements = new ArrayList<>();
+        for (int i = 0; i < 800; i++) {
+            String link = String.format(Locale.ROOT, "http://%s.example.com/wiki/tbl", i);
+            statements.add(statement(link, RDF.TYPE, SchemaDotOrg.ARTICLE));
+            statements.add(statement(link, SchemaDotOrg.IN_LANGUAGE, new LiteralImpl(Integer.toString(i))));
+            statements.add(statement(link, SchemaDotOrg.ABOUT, "Q80"));
+        }
+        repository.sync("Q80", statements);
+        repository.sync("Q80", statements);
+        TupleQueryResult r = repository
+                .query("PREFIX entity: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?s) as ?sc) WHERE {?s ?p entity:Q80}");
+        assertTrue(r.hasNext());
+        assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(800))));
+        assertFalse(r.hasNext());
+    }
+
+    /**
+     * Updating items with lots of statements shouldn't be painfully slow.
+     */
+    @Test(timeout = 10000)
+    public void lotsOfStatements() throws QueryEvaluationException {
+        List<Statement> statements = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            statements.add(statement("Q80", "P" + i, new IntegerLiteralImpl(BigInteger.valueOf(i))));
+        }
+        repository.sync("Q80", statements);
+        repository.sync("Q80", statements);
+        TupleQueryResult r = repository
+                .query("PREFIX entity: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?p) as ?sc) WHERE {entity:Q80 ?p ?o}");
+        assertTrue(r.hasNext());
+        assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(1000))));
+        assertFalse(r.hasNext());
     }
 
     private void syncJustVersion(String entityId, int version) {

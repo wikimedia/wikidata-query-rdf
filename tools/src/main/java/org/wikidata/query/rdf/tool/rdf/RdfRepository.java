@@ -34,6 +34,8 @@ import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.impl.TupleQueryResultBuilder;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.query.resultio.binary.BinaryQueryResultParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 
@@ -41,6 +43,8 @@ import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 
 public class RdfRepository {
+    private static final Logger log = LoggerFactory.getLogger(RdfRepository.class);
+
     private final CloseableHttpClient client = HttpClients.custom().setMaxConnPerRoute(100).setMaxConnTotal(100)
             .build();
     private final URI uri;
@@ -59,21 +63,28 @@ public class RdfRepository {
      * @param statements all known statements about the entity
      */
     public void sync(String entityId, Collection<Statement> statements) {
-        UpdateBuilder b = new UpdateBuilder();
-        b.prefix("entity", entityUris.namespace());
-        b.prefix("schema", SchemaDotOrg.NAMESPACE);
-        // Note that if there are any non-optional where clauses then updating
-        // an empty database will never do anything
-        b.whereOptional().add("?oldSiteLink", "schema:about", "entity:" + entityId)
-                .add("?oldSiteLink", "?oldSiteLinkPred", "?oldSiteLinkObj");
-        b.delete("?oldSiteLink", "?oldSiteLinkPred", "?oldSiteLinkObj");
+        UpdateBuilder siteLinksBuilder = updateBuilder();
+        siteLinksBuilder.delete("?s", "?p", "?o");
+        siteLinksBuilder.where("?s", "schema:about", "entity:" + entityId);
+        siteLinksBuilder.where("?s", "?p", "?o");
+        siteLinksBuilder.where().notExists().values(statements, "?s", "?p", "?o");
 
-        b.whereOptional().add("entity:" + entityId, "?oldSubject", "?oldObject");
-        b.delete("entity:" + entityId, "?oldSubject", "?oldObject");
+        UpdateBuilder generalBuilder = updateBuilder();
+        generalBuilder.delete("entity:" + entityId, "?p", "?o");
+        generalBuilder.where("entity:" + entityId, "?p", "?o");
+        generalBuilder.where().notExists().values(statements, "?s", "?p", "?o");
+
+        UpdateBuilder insertBuilder = updateBuilder();
         for (Statement statement : statements) {
-            b.insert(statement.getSubject(), statement.getPredicate(), statement.getObject());
+            insertBuilder.insert(statement.getSubject(), statement.getPredicate(), statement.getObject());
         }
-        execute("update", IGNORE_RESPONSE, b.toString());
+        long start = System.currentTimeMillis();
+        StringBuilder command = new StringBuilder();
+        command.append(siteLinksBuilder).append(";\n");
+        command.append(generalBuilder).append(";\n");
+        command.append(insertBuilder).append(";\n");
+        execute("update", IGNORE_RESPONSE, command.toString());
+        log.debug("Updating {} took {} millis", entityId, System.currentTimeMillis() - start);
     }
 
     /**
@@ -167,6 +178,12 @@ public class RdfRepository {
         return CharStreams.toString(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
     }
 
+    private UpdateBuilder updateBuilder() {
+        UpdateBuilder b = new UpdateBuilder();
+        b.prefix("entity", entityUris.namespace());
+        b.prefix("schema", SchemaDotOrg.NAMESPACE);
+        return b;
+    }
     /**
      * Passed to execute to setup the accept header and parse the response. Its
      * super ultra mega important to parse the response in execute because

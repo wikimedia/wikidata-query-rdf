@@ -15,6 +15,7 @@ import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.common.uri.EntityData;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.RDF;
+import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 
 /**
@@ -72,6 +73,12 @@ public class Munger {
                 entity = s.getSubject();
                 if (predicate.equals(RDF.TYPE) && s.getObject().stringValue().equals(Ontology.ITEM)) {
                     // We don't need wd:Q1 a wdo:item
+                    itr.remove();
+                } else if (predicate.equals(SchemaDotOrg.NAME)) {
+                    // Q1 schema:name "foo" is a dupe of rdfs:label
+                    itr.remove();
+                } else if (predicate.equals(SKOS.PREF_LABEL)) {
+                    // Q1 skos:prefLabel "foo" is a dupe of rdfs:label
                     itr.remove();
                 }
                 continue;

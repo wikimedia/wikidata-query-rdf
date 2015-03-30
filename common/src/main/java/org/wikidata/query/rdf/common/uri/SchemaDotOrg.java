@@ -21,4 +21,13 @@ public class SchemaDotOrg {
      * Wikibase spits out sitelinks as <code>&lt;url&gt; rdf:type schema:article .</code>.
      */
     public static final String ARTICLE = NAMESPACE + "Article";
+    /**
+     * Wikibase dumps the label in this, skos:prefLabel and rdfs:label. We only
+     * keep rdfs:label.
+     */
+    public static final String NAME = NAMESPACE + "name";
+    /**
+     * Wikibase marks the sitelink's language with this predicate.
+     */
+    public static final String IN_LANGUAGE = NAMESPACE + "inLanguage";
 }
