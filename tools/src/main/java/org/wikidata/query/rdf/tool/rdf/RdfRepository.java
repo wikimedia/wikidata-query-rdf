@@ -63,26 +63,32 @@ public class RdfRepository {
      * @param statements all known statements about the entity
      */
     public void sync(String entityId, Collection<Statement> statements) {
+        StringBuilder command = new StringBuilder();
         UpdateBuilder siteLinksBuilder = updateBuilder();
         siteLinksBuilder.delete("?s", "?p", "?o");
         siteLinksBuilder.where("?s", "schema:about", "entity:" + entityId);
         siteLinksBuilder.where("?s", "?p", "?o");
-        siteLinksBuilder.where().notExists().values(statements, "?s", "?p", "?o");
+        if (!statements.isEmpty()) {
+            siteLinksBuilder.where().notExists().values(statements, "?s", "?p", "?o");
+        }
+        command.append(siteLinksBuilder).append(";\n");
 
         UpdateBuilder generalBuilder = updateBuilder();
         generalBuilder.delete("entity:" + entityId, "?p", "?o");
         generalBuilder.where("entity:" + entityId, "?p", "?o");
-        generalBuilder.where().notExists().values(statements, "?s", "?p", "?o");
+        if (!statements.isEmpty()) {
+            generalBuilder.where().notExists().values(statements, "?s", "?p", "?o");
+        }
+        command.append(generalBuilder).append(";\n");
 
-        UpdateBuilder insertBuilder = updateBuilder();
-        for (Statement statement : statements) {
-            insertBuilder.insert(statement.getSubject(), statement.getPredicate(), statement.getObject());
+        if (!statements.isEmpty()) {
+            UpdateBuilder insertBuilder = updateBuilder();
+            for (Statement statement : statements) {
+                insertBuilder.insert(statement.getSubject(), statement.getPredicate(), statement.getObject());
+            }
+            command.append(insertBuilder).append(";\n");
         }
         long start = System.currentTimeMillis();
-        StringBuilder command = new StringBuilder();
-        command.append(siteLinksBuilder).append(";\n");
-        command.append(generalBuilder).append(";\n");
-        command.append(insertBuilder).append(";\n");
         execute("update", IGNORE_RESPONSE, command.toString());
         log.debug("Updating {} took {} millis", entityId, System.currentTimeMillis() - start);
     }

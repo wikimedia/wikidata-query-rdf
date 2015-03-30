@@ -38,11 +38,14 @@ public class Munger {
      * @param statements statements to munge
      * @return a reference to statements
      */
-    public Collection<Statement> munge(Collection<Statement> statements) {
-        /*
-         * Filters and adds RDF based in a single pass.
-         */
+    public Collection<Statement> munge(String entityId, Collection<Statement> statements) {
+        if (statements.isEmpty()) {
+            // Empty collection is a delete.
+            return statements;
+        }
+        // Filters and adds RDF based in a single pass.
         Iterator<Statement> itr = statements.iterator();
+        String entityUri = entityUris.namespace() + entityId;
         Value revisionId = null;
         Value lastModified = null;
         Resource entity = null;
@@ -71,7 +74,14 @@ public class Munger {
             }
             if (subject.startsWith(entityUris.namespace())) {
                 entity = s.getSubject();
-                if (predicate.equals(RDF.TYPE) && s.getObject().stringValue().equals(Ontology.ITEM)) {
+                if (!subject.equals(entityUri)) {
+                    /*
+                     * Some flavors of rdf dump information about other entities
+                     * along side the main entity. We can't handle that properly
+                     * and it doesn't make a ton of sense anyway.
+                     */
+                    itr.remove();
+                } else if (predicate.equals(RDF.TYPE) && s.getObject().stringValue().equals(Ontology.ITEM)) {
                     // We don't need wd:Q1 a wdo:item
                     itr.remove();
                 } else if (predicate.equals(SchemaDotOrg.NAME)) {

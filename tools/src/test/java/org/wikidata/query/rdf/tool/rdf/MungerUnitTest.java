@@ -38,7 +38,7 @@ public class MungerUnitTest extends RandomizedTest {
     public void mungesEntityDataOntoEntity() {
         List<Statement> statements = basicEntity("Q23");
 
-        munger.munge(statements);
+        munger.munge("Q23", statements);
         // This Matcher is so hard to build......
         ImmutableList.Builder<Matcher<? super Statement>> matchers = ImmutableList.builder();
         matchers.add(equalTo(statement("Q23", SchemaDotOrg.VERSION, new LiteralImpl("a revision number I promise"))));
@@ -50,7 +50,7 @@ public class MungerUnitTest extends RandomizedTest {
     public void extraDataIsntModified() {
         List<Statement> statements = basicEntity("Q23");
         statements.add(statement("Q23", "P509", "Q6"));
-        munger.munge(statements);
+        munger.munge("Q23", statements);
         assertThat(statements, hasItem(equalTo(statement("Q23", "P509", "Q6"))));
     }
 
@@ -58,7 +58,7 @@ public class MungerUnitTest extends RandomizedTest {
     public void complainsAboutExtraSubjects() {
         List<Statement> statements = basicEntity("Q23");
         statements.add(statement("http://example.com/bogus", "Q23", "Q23"));
-        munger.munge(statements);
+        munger.munge("Q23", statements);
     }
 
     @Test
@@ -75,7 +75,7 @@ public class MungerUnitTest extends RandomizedTest {
             statements.add(metaDecl);
             statements.add(articleDecl);
         }
-        munger.munge(statements);
+        munger.munge("Q23", statements);
         assertThat(statements, both(hasItem(equalTo(articleDecl))).and(hasItem(equalTo(metaDecl))));
     }
 
@@ -87,10 +87,23 @@ public class MungerUnitTest extends RandomizedTest {
 
         List<Statement> statements = basicEntity("Q23");
         statements.addAll(ImmutableList.of(rdfsDecl, skosDecl, schemaDecl));
-        munger.munge(statements);
+        munger.munge("Q23", statements);
         assertThat(statements, hasItem(equalTo(rdfsDecl)));
         assertThat(statements, not(hasItem(equalTo(skosDecl))));
         assertThat(statements, not(hasItem(equalTo(schemaDecl))));
+    }
+
+    @Test
+    public void labelsOnOthersRemoved() {
+        Statement georgeDecl = statement("Q23", RDFS.LABEL, new LiteralImpl("george", "en"));
+        Statement marthaDecl = statement("Q191789", RDFS.LABEL, new LiteralImpl("martha", "en"));
+
+        List<Statement> statements = basicEntity("Q23");
+        statements.add(georgeDecl);
+        statements.add(marthaDecl);
+        munger.munge("Q23", statements);
+        assertThat(statements, hasItem(equalTo(georgeDecl)));
+        assertThat(statements, not(hasItem(equalTo(marthaDecl))));
     }
 
     private List<Statement> basicEntity(String entityId) {

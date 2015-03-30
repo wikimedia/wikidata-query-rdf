@@ -278,13 +278,13 @@ public class Update<B extends Change.Batch> implements Runnable {
      */
     private void handleChange(Change change) throws RetryableException, ContainedException {
         log.debug("Received revision information {}", change);
-        // TODO deletes
         if (change.revision() >= 0 && rdfRepository.hasRevision(change.entityId(), change.revision())) {
             log.debug("RDF repostiroy already has this revision, skipping.");
             return;
         }
         Munger munger = new Munger(entityDataUris, entityUris);
-        rdfRepository.sync(change.entityId(), munger.munge(wikibase.fetchRdfForEntity(change.entityId())));
+        rdfRepository.sync(change.entityId(),
+                munger.munge(change.entityId(), wikibase.fetchRdfForEntity(change.entityId())));
         updateMeter.mark();
     }
 

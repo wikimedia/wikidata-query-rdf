@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -190,6 +191,14 @@ public class RdfRepositoryIntegrationTest {
                 .query("PREFIX entity: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?p) as ?sc) WHERE {entity:Q80 ?p ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(1000))));
+        assertFalse(r.hasNext());
+    }
+
+    @Test
+    public void delete() throws QueryEvaluationException {
+        newSiteLink();
+        repository.sync("Q23", Collections.<Statement> emptyList());
+        TupleQueryResult r = repository.query("SELECT * WHERE {?s ?p ?o}");
         assertFalse(r.hasNext());
     }
 

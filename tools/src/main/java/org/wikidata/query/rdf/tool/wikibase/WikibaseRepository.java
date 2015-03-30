@@ -8,6 +8,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -87,6 +88,14 @@ public class WikibaseRepository {
         parser.setRDFHandler(collector);
         try {
             try (CloseableHttpResponse response = client.execute(new HttpGet(uri))) {
+                if (response.getStatusLine().getStatusCode() == 404) {
+                    // A delete/nonexistent page
+                    return Collections.emptyList();
+                }
+                if (response.getStatusLine().getStatusCode() >= 300) {
+                    throw new ContainedException("Unexpected status code fetching RDF for " + uri + ":  "
+                            + response.getStatusLine().getStatusCode());
+                }
                 parser.parse(new InputStreamReader(response.getEntity().getContent(), Charsets.UTF_8), uri.toString());
             }
         } catch (IOException e) {
@@ -204,6 +213,7 @@ public class WikibaseRepository {
              */
             builder.setPath(String.format(Locale.ROOT, "/wiki/Special:EntityData/%s.ttl", title));
             builder.addParameter("nocache", "");
+            builder.addParameter("flavor", "dump");
             return build(builder);
         }
 
