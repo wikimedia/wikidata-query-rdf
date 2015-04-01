@@ -9,7 +9,8 @@
   <artifactId>tools</artifactId>
   <packaging>jar</packaging>
 
-  <name>Tools to sync Wikibase to RDF stores</name>
+  <name>Wikidata Query RDF Tools</name>
+  <description>Tools to sync Wikibase to RDF stores.  Also contains overall integration tests that rely on everything else.</description>
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
@@ -100,7 +101,7 @@
         <version>2.10</version>
         <executions>
           <execution>
-            <id>unpack</id>
+            <id>unpack-blazegraph</id>
             <phase>pre-integration-test</phase>
             <goals>
               <goal>unpack</goal>
@@ -115,6 +116,28 @@
                 </artifactItem>
               </artifactItems>
               <outputDirectory>${project.build.directory}/blazegraph</outputDirectory>
+            </configuration>
+          </execution>
+          <execution>
+            <id>drop-in-blazegraph-extension</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.wikidata.query.rdf</groupId>
+                  <artifactId>common</artifactId>
+                  <version>${project.parent.version}</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.wikidata.query.rdf</groupId>
+                  <artifactId>blazegraph</artifactId>
+                  <version>${project.parent.version}</version>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.directory}/blazegraph/WEB-INF/lib</outputDirectory>
             </configuration>
           </execution>
         </executions>
@@ -171,7 +194,7 @@
         </configuration>
         <executions>
           <execution>
-            <id>start-blzegraph</id>
+            <id>start-blazegraph</id>
             <phase>pre-integration-test</phase>
             <!-- This complains some because this project _isn't_ a war. But we want to start the Blazegraph war. -->
             <goals>
@@ -226,7 +249,7 @@
             <artifactId>jetty-maven-plugin</artifactId>
             <executions>
               <execution>
-                <id>run-blzegraph</id>
+                <id>run-blazegraph</id>
                 <phase>generate-sources</phase>
                 <goals>
                   <goal>run</goal>
