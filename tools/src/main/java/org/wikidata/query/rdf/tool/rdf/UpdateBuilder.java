@@ -7,7 +7,7 @@ import java.util.List;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
-import org.openrdf.model.util.Literals;
+import org.openrdf.model.vocabulary.XMLSchema;
 
 import com.google.common.base.Joiner;
 
@@ -102,13 +102,13 @@ public class UpdateBuilder {
                 StringBuilder sb = new StringBuilder(l.getLabel().length() * 2);
 
                 sb.append('"');
-                sb.append(l.getLabel().replace("\"", "\\\""));
+                sb.append(l.getLabel().replace("\\", "\\\\").replace("\"", "\\\""));
                 sb.append('"');
 
-                if (Literals.isLanguageLiteral(l)) {
+                if (l.getLanguage() != null) {
                     sb.append('@');
                     sb.append(l.getLanguage());
-                } else {
+                } else if (!l.getDatatype().equals(XMLSchema.STRING)) {
                     sb.append("^^<");
                     sb.append(l.getDatatype());
                     sb.append(">");

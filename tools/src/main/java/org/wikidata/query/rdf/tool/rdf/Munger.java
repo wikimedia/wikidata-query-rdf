@@ -1,8 +1,10 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -18,6 +20,9 @@ import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
+
 /**
  * Munges RDF from Wikibase into a more queryable format. Note that this is
  * tightly coupled with Wikibase's export format.
@@ -25,10 +30,23 @@ import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 public class Munger {
     private final EntityData entityDataUris;
     private final Entity entityUris;
+    private final boolean removeSiteLinks;
 
     public Munger(EntityData entityDataUris, Entity entityUris) {
+        this(entityDataUris, entityUris, false);
+    }
+
+    private Munger(EntityData entityDataUris, Entity entityUris, boolean removeSiteLinks) {
         this.entityDataUris = entityDataUris;
         this.entityUris = entityUris;
+        this.removeSiteLinks = removeSiteLinks;
+    }
+
+    /**
+     * Build a Munger that removes site links.
+     */
+    public Munger removeSiteLinks() {
+        return new Munger(entityDataUris, entityUris, true);
     }
 
     /**
@@ -50,8 +68,21 @@ public class Munger {
         Value lastModified = null;
         Resource entity = null;
 
+        /*
+         * A list of statements that were removed from the original collection
+         * in error.
+         */
+        List<Statement> restoredStatements = new ArrayList<>();
+        /*
+         * Subject of all sitelinks.
+         */
         Set<String> siteLinks = new HashSet<>();
-        Set<String> unknownSubjects = new HashSet<>();
+        /*
+         * Subjects that likely showed up in statements in error. If a later
+         * statement merits the re-inclusion of the subject then its statements
+         * will be removed from this multimap and added to restoredStatement.
+         */
+        ListMultimap<String, Statement> unknownSubjects = ArrayListMultimap.create();
         while (itr.hasNext()) {
             Statement s = itr.next();
             String subject = s.getSubject().stringValue();
@@ -94,25 +125,34 @@ public class Munger {
                 continue;
             }
             /*
-             * We make an effort to detect subjects that we don't recognize so
-             * we can report them as an error. We first have to filter out
-             * sitelinks.
+             * Detecting site links is important so we can (optionally) filter
+             * them out and so that we can report everything that isn't a
+             * sitelink or proper subject as an error.
              */
             if (siteLinks.contains(subject)) {
+                if (removeSiteLinks) {
+                    itr.remove();
+                }
                 continue;
             }
             if (predicate.equals(RDF.TYPE) && s.getObject().stringValue().equals(SchemaDotOrg.ARTICLE)) {
                 siteLinks.add(subject);
                 // Site links may have crept into unknown subjects if they
                 // appeared in a funky order.
-                unknownSubjects.remove(subject);
+                if (removeSiteLinks) {
+                    itr.remove();
+                    unknownSubjects.removeAll(subject);
+                } else {
+                    restoredStatements.addAll(unknownSubjects.removeAll(subject));
+                }
                 continue;
             }
-            unknownSubjects.add(subject);
+            unknownSubjects.put(subject, s);
+            itr.remove();
         }
 
         if (!unknownSubjects.isEmpty()) {
-            throw new BadSubjectException(unknownSubjects, entityDataUris, entityUris);
+            throw new BadSubjectException(unknownSubjects.keySet(), entityDataUris, entityUris);
         }
         if (revisionId == null) {
             throw new RuntimeException("Didn't get a revision id for " + statements);
@@ -125,7 +165,7 @@ public class Munger {
         }
         statements.add(new StatementImpl(entity, new URIImpl(SchemaDotOrg.VERSION), revisionId));
         statements.add(new StatementImpl(entity, new URIImpl(SchemaDotOrg.DATE_MODIFIED), lastModified));
-
+        statements.addAll(restoredStatements);
         return statements;
     }
 

@@ -73,7 +73,11 @@ public class Update<B extends Change.Batch> implements Runnable {
         @Option(shortName = "u", description = "URL to post updates and queries.")
         String sparqlUrl();
 
-        // TODO need option to limit the load to certain languages or sites
+        // TODO need option to limit the load to certain languages or to only
+        // import a single label fallback style
+        @Option(description = "Skip site links")
+        boolean skipSiteLinks();
+
         @Option(helpRequest = true)
         boolean help();
     }
@@ -126,7 +130,12 @@ public class Update<B extends Change.Batch> implements Runnable {
         ExecutorService executor = new ThreadPoolExecutor(10, 10, 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(), threadFactory.build());
 
-        new Update<>(changeSource, wikibaseRepository, rdfRepository, entityUris, entityDataUris, executor).run();
+        Munger munger = new Munger(entityDataUris, entityUris);
+        if (options.skipSiteLinks()) {
+            munger = munger.removeSiteLinks();
+        }
+
+        new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor).run();
     }
 
     /**
@@ -198,17 +207,15 @@ public class Update<B extends Change.Batch> implements Runnable {
     private Change.Source<B> changeSource;
     private final WikibaseRepository wikibase;
     private final RdfRepository rdfRepository;
-    private final Entity entityUris;
-    private final EntityData entityDataUris;
+    private final Munger munger;
     private final ExecutorService executor;
 
     public Update(Change.Source<B> changeSource, WikibaseRepository wikibase, RdfRepository rdfRepository,
-            Entity entityUris, EntityData entityDataUris, ExecutorService executor) {
+            Munger munger, ExecutorService executor) {
         this.changeSource = changeSource;
         this.wikibase = wikibase;
         this.rdfRepository = rdfRepository;
-        this.entityUris = entityUris;
-        this.entityDataUris = entityDataUris;
+        this.munger = munger;
         this.executor = executor;
     }
 
@@ -282,7 +289,6 @@ public class Update<B extends Change.Batch> implements Runnable {
             log.debug("RDF repostiroy already has this revision, skipping.");
             return;
         }
-        Munger munger = new Munger(entityDataUris, entityUris);
         rdfRepository.sync(change.entityId(),
                 munger.munge(change.entityId(), wikibase.fetchRdfForEntity(change.entityId())));
         updateMeter.mark();

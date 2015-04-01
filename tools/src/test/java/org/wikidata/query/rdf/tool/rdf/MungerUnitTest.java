@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.wikidata.query.rdf.tool.StatementHelper.siteLink;
 import static org.wikidata.query.rdf.tool.StatementHelper.statement;
 
 import java.util.ArrayList;
@@ -51,7 +52,7 @@ public class MungerUnitTest extends RandomizedTest {
         List<Statement> statements = basicEntity("Q23");
         statements.add(statement("Q23", "P509", "Q6"));
         munger.munge("Q23", statements);
-        assertThat(statements, hasItem(equalTo(statement("Q23", "P509", "Q6"))));
+        assertThat(statements, hasItem(statement("Q23", "P509", "Q6")));
     }
 
     @Test(expected = BadSubjectException.class)
@@ -76,7 +77,7 @@ public class MungerUnitTest extends RandomizedTest {
             statements.add(articleDecl);
         }
         munger.munge("Q23", statements);
-        assertThat(statements, both(hasItem(equalTo(articleDecl))).and(hasItem(equalTo(metaDecl))));
+        assertThat(statements, both(hasItem(articleDecl)).and(hasItem(metaDecl)));
     }
 
     @Test
@@ -88,9 +89,9 @@ public class MungerUnitTest extends RandomizedTest {
         List<Statement> statements = basicEntity("Q23");
         statements.addAll(ImmutableList.of(rdfsDecl, skosDecl, schemaDecl));
         munger.munge("Q23", statements);
-        assertThat(statements, hasItem(equalTo(rdfsDecl)));
-        assertThat(statements, not(hasItem(equalTo(skosDecl))));
-        assertThat(statements, not(hasItem(equalTo(schemaDecl))));
+        assertThat(statements, hasItem(rdfsDecl));
+        assertThat(statements, not(hasItem(skosDecl)));
+        assertThat(statements, not(hasItem(schemaDecl)));
     }
 
     @Test
@@ -102,8 +103,20 @@ public class MungerUnitTest extends RandomizedTest {
         statements.add(georgeDecl);
         statements.add(marthaDecl);
         munger.munge("Q23", statements);
-        assertThat(statements, hasItem(equalTo(georgeDecl)));
-        assertThat(statements, not(hasItem(equalTo(marthaDecl))));
+        assertThat(statements, hasItem(georgeDecl));
+        assertThat(statements, not(hasItem(marthaDecl)));
+    }
+
+    @Test
+    public void skipSiteLinks() {
+        List<Statement> siteLink = siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en",
+                randomBoolean());
+        List<Statement> george = basicEntity("Q23");
+        george.addAll(siteLink);
+        munger.removeSiteLinks().munge("Q23", george);
+        for (Statement siteLinkPart : siteLink) {
+            assertThat(george, not(hasItem(siteLinkPart)));
+        }
     }
 
     private List<Statement> basicEntity(String entityId) {

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.wikidata.query.rdf.tool.Matchers.binds;
+import static org.wikidata.query.rdf.tool.StatementHelper.siteLink;
 import static org.wikidata.query.rdf.tool.StatementHelper.statement;
 
 import java.math.BigInteger;
@@ -47,13 +48,11 @@ public class RdfRepositoryIntegrationTest {
 
     @Test
     public void newSiteLink() throws QueryEvaluationException {
-        repository.sync("Q23", ImmutableList.of(//
-                statement("http://en.wikipedia.org/wiki/George_Washington", SchemaDotOrg.ABOUT, "Q23")));
-        TupleQueryResult r = repository.query("SELECT * WHERE {?s ?p ?o}");
+        repository.sync("Q23", siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en"));
+        TupleQueryResult r = repository.query("SELECT * WHERE {?s <http://schema.org/about> ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), allOf(//
                 binds("s", "http://en.wikipedia.org/wiki/George_Washington"),//
-                binds("p", SchemaDotOrg.ABOUT),//
                 binds("o", "Q23")));
         assertFalse(r.hasNext());
     }
@@ -61,13 +60,11 @@ public class RdfRepositoryIntegrationTest {
     @Test
     public void moveSiteLink() throws QueryEvaluationException {
         newSiteLink();
-        repository.sync("Q23", ImmutableList.of(//
-                statement("http://en.wikipedia.org/wiki/George_Washingmoved", SchemaDotOrg.ABOUT, "Q23")));
-        TupleQueryResult r = repository.query("SELECT * WHERE {?s ?p ?o}");
+        repository.sync("Q23", siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washingmoved", "en"));
+        TupleQueryResult r = repository.query("SELECT * WHERE {?s <http://schema.org/about> ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), allOf(//
                 binds("s", "http://en.wikipedia.org/wiki/George_Washingmoved"),//
-                binds("p", SchemaDotOrg.ABOUT),//
                 binds("o", "Q23")));
         assertFalse(r.hasNext());
     }
@@ -109,6 +106,19 @@ public class RdfRepositoryIntegrationTest {
                 binds("s", "Q23"),//
                 binds("p", RDFS.LABEL),//
                 binds("o", new LiteralImpl("George \"Cherry Tree\" Washington", "en"))));
+        assertFalse(r.hasNext());
+    }
+
+    @Test
+    public void statementWithBackslash() throws QueryEvaluationException {
+        repository.sync("Q42", ImmutableList.of(//
+                statement("Q42", "P396", new LiteralImpl("IT\\ICCU\\RAVV\\034417"))));
+        TupleQueryResult r = repository.query("SELECT * WHERE {?s ?p ?o}");
+        assertTrue(r.hasNext());
+        assertThat(r.next(), allOf(//
+                binds("s", "Q42"),//
+                binds("p", "P396"),//
+                binds("o", new LiteralImpl("IT\\ICCU\\RAVV\\034417"))));
         assertFalse(r.hasNext());
     }
 
