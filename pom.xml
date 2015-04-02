@@ -202,6 +202,9 @@
               </goals>
               <configuration>
                 <quiet>true</quiet>
+                <!-- We don't want Java 8's strict javadoc checking so we use this trick borrowed from dropwizard to turn
+                  it off -->
+                <additionalparam>${javadoc.doclint.none}</additionalparam>
               </configuration>
             </execution>
           </executions>
@@ -359,6 +362,15 @@
           </plugins>
         </pluginManagement>
       </build>
+    </profile>
+    <profile>
+      <id>java-8</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+      <properties>
+        <javadoc.doclint.none>-Xdoclint:none</javadoc.doclint.none>
+      </properties>
     </profile>
   </profiles>
 </project>
