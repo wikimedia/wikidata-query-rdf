@@ -12,7 +12,6 @@ import java.util.Set;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
-import org.openrdf.model.Value;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
 import org.wikidata.query.rdf.common.uri.Entity;
@@ -22,6 +21,7 @@ import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.tool.exception.ContainedException;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -114,180 +114,318 @@ public class Munger {
      * @param statements statements to munge
      * @return a reference to statements
      */
-    public Collection<Statement> munge(String entityId, Collection<Statement> statements) {
+    public Collection<Statement> munge(String entityId, Collection<Statement> statements) throws ContainedException {
         if (statements.isEmpty()) {
             // Empty collection is a delete.
             return statements;
         }
-        // Filters and adds RDF based in a single pass.
-        Iterator<Statement> itr = statements.iterator();
-        String entityUri = entityUris.namespace() + entityId;
-        Value revisionId = null;
-        Value lastModified = null;
-        Resource entity = null;
+        MungeOperation op = new MungeOperation(entityId, statements);
+        op.munge();
+        return op.statements;
+    }
+
+    /**
+     * Holds state during a single munge operation.
+     */
+    private class MungeOperation {
+        private final String entityUri;
+        private final Collection<Statement> statements;
 
         /*
+         * These are modified during the pass over the statements and used to
+         * modify the statements during cleanup
+         */
+        /**
          * A list of statements that were removed from the original collection
          * in error.
          */
-        List<Statement> restoredStatements = new ArrayList<>();
-        /*
+        private final List<Statement> restoredStatements = new ArrayList<>();
+        /**
          * Subject of all sitelinks.
          */
-        Set<String> siteLinks = new HashSet<>();
-        /*
+        private final Set<String> siteLinks = new HashSet<>();
+        /**
          * Subjects that likely showed up in statements in error. If a later
          * statement merits the re-inclusion of the subject then its statements
          * will be removed from this multimap and added to restoredStatement.
          */
-        ListMultimap<String, Statement> unknownSubjects = ArrayListMultimap.create();
-        Statement bestLabelForSingleLabelMode = null;
-        int bestLabelIndexForSingleLabelMode = -1;
-        Statement bestDescriptionForSingleLabelMode = null;
-        int bestDescriptionIndexForSingleLabelMode = -1;
-        while (itr.hasNext()) {
-            Statement s = itr.next();
-            String subject = s.getSubject().stringValue();
-            String predicate = s.getPredicate().stringValue();
-            // TODO these if statement is getting a bit hairy.
-            if (subject.startsWith(entityDataUris.namespace())) {
-                if (revisionId == null && predicate.equals(SchemaDotOrg.VERSION)) {
-                    revisionId = s.getObject();
-                } else if (lastModified == null && predicate.equals(SchemaDotOrg.DATE_MODIFIED)) {
-                    lastModified = s.getObject();
-                } else if (entity == null && predicate.equalsIgnoreCase(SchemaDotOrg.ABOUT)) {
-                    try {
-                        entity = (Resource) s.getObject();
-                    } catch (ClassCastException e) {
-                        throw new RuntimeException("Unexepect object with schema:about predicate.  "
-                                + "Expected data:Q<foo> schema:about entity:Q<foo>", e);
-                    }
+        private final ListMultimap<String, Statement> unknownSubjects = ArrayListMultimap.create();
+        /**
+         * Work used in single label mode to find the best label and null if not
+         * in single label mode.
+         */
+        private final SingleLabelModeWork singleLabelModeWorkForLabel;
+        /**
+         * Work used in single label mode to find the best description and null
+         * if not in single label mode.
+         */
+        private final SingleLabelModeWork singleLabelModeWorkForDescription;
+
+        // These are set by the entire munge operation
+        private Literal revisionId = null;
+        private Literal lastModified = null;
+        private Resource entity = null;
+
+        // These are setup by munge and reset for every statement
+        private Statement statement;
+        private String subject;
+        private String predicate;
+
+        public MungeOperation(String entityId, Collection<Statement> statements) {
+            this.statements = statements;
+            entityUri = entityUris.namespace() + entityId;
+            if (singleLabelModeLanguages != null) {
+                singleLabelModeWorkForLabel = new SingleLabelModeWork();
+                singleLabelModeWorkForDescription = new SingleLabelModeWork();
+            } else {
+                singleLabelModeWorkForLabel = null;
+                singleLabelModeWorkForDescription = null;
+            }
+        }
+
+        public void munge() throws ContainedException {
+            Iterator<Statement> itr = statements.iterator();
+            while (itr.hasNext()) {
+                statement = itr.next();
+                if (!statement()) {
+                    itr.remove();
                 }
-                itr.remove();
-                continue;
+            }
+
+            statement = null;
+            finishSingleLabelMode();
+            finishCommon();
+        }
+
+        /**
+         * Process a statement.
+         *
+         * @return true to keep the statement, false to remove it
+         */
+        private boolean statement() throws ContainedException {
+            subject = statement.getSubject().stringValue();
+            predicate = statement.getPredicate().stringValue();
+            if (subject.startsWith(entityDataUris.namespace())) {
+                return entityDataStatement();
             }
             if (subject.startsWith(entityUris.namespace())) {
-                entity = s.getSubject();
-                if (!subject.equals(entityUri)) {
-                    /*
-                     * Some flavors of rdf dump information about other entities
-                     * along side the main entity. We can't handle that properly
-                     * and it doesn't make a ton of sense anyway.
-                     */
-                    itr.remove();
-                    continue;
-                }
-                if (predicate.equals(RDF.TYPE) && s.getObject().stringValue().equals(Ontology.ITEM)) {
-                    // We don't need wd:Q1 a wdo:item
-                    itr.remove();
-                } else if (predicate.equals(SchemaDotOrg.NAME)) {
-                    // Q1 schema:name "foo" is a dupe of rdfs:label
-                    itr.remove();
-                } else if (predicate.equals(SKOS.PREF_LABEL)) {
-                    // Q1 skos:prefLabel "foo" is a dupe of rdfs:label
-                    itr.remove();
-                }
-                if (limitLabelLanguages != null) {
-                    if (predicate.equals(RDFS.LABEL) || predicate.equals(SchemaDotOrg.DESCRIPTION)
-                            || predicate.equals(SKOS.ALT_LABEL)) {
-                        Literal object = (Literal) s.getObject();
-                        String language = object.getLanguage();
-                        if (language == null || !limitLabelLanguages.contains(language)) {
-                            itr.remove();
-                        }
-                    }
-                }
+                return entityStatement();
+            }
+            return unknownStatement();
+        }
+
+        /**
+         * Process a statement who's subject is in the entityData prefix.
+         *
+         * @return true to keep the statement, false to remove it
+         */
+        private boolean entityDataStatement() throws ContainedException {
+            // Three specific ones are recorded for later re-application
+            switch (predicate) {
+            case SchemaDotOrg.VERSION:
+                revisionId = objectAsLiteral();
+                break;
+            case SchemaDotOrg.DATE_MODIFIED:
+                lastModified = objectAsLiteral();
+                break;
+            case SchemaDotOrg.ABOUT:
+                entity = objectAsResource();
+                break;
+            default:
+                // Noop - fall out is ok as we just remove them.
+            }
+            // All EntityDate statements are removed.
+            return false;
+        }
+
+        /**
+         * Process a statement who's subject is in the entity prefix.
+         *
+         * @return true to keep the statement, false to remove it
+         */
+        private boolean entityStatement() throws ContainedException {
+            if (!subject.equals(entityUri)) {
                 /*
-                 * In singleLabelMode we remove all labels and descriptions and
-                 * just add the best back at the end.
+                 * Some flavors of rdf dump information about other entities
+                 * along side the main entity. We can't handle that properly and
+                 * it doesn't make a ton of sense anyway.
                  */
-                if (singleLabelModeLanguages != null) {
-                    if (predicate.equals(RDFS.LABEL)) {
-                        itr.remove();
-                        Literal object = (Literal) s.getObject();
-                        String language = object.getLanguage();
-                        int index = singleLabelModeLanguages.indexOf(language);
-                        if (index > bestLabelIndexForSingleLabelMode) {
-                            bestLabelForSingleLabelMode = s;
-                            bestLabelIndexForSingleLabelMode = index;
-                        }
-                    } else if (predicate.equals(SchemaDotOrg.DESCRIPTION)) {
-                        itr.remove();
-                        Literal object = (Literal) s.getObject();
-                        String language = object.getLanguage();
-                        int index = singleLabelModeLanguages.indexOf(language);
-                        if (index > bestDescriptionIndexForSingleLabelMode) {
-                            bestDescriptionForSingleLabelMode = s;
-                            bestDescriptionIndexForSingleLabelMode = index;
-                        }
-                    }
-                }
-                continue;
+                return false;
             }
-            /*
-             * Detecting site links is important so we can (optionally) filter
-             * them out and so that we can report everything that isn't a
-             * sitelink or proper subject as an error.
-             */
+            entity = statement.getSubject();
+            switch (predicate) {
+            case RDF.TYPE:
+                /*
+                 * We don't need wd:Q1 a ontology:item because its true of
+                 * almost 100% of the entities in the triple store.
+                 */
+                return statement.getObject().stringValue().equals(Ontology.ITEM);
+            case SchemaDotOrg.NAME:
+            case SKOS.PREF_LABEL:
+                // Q1 schema:name "foo" is a dupe of rdfs:label
+                // Q1 skos:prefLabel "foo" is a dupe of rdfs:label
+                return false;
+            case RDFS.LABEL:
+                return limitLabelLanguage() && singleLabelMode(singleLabelModeWorkForLabel);
+            case SchemaDotOrg.DESCRIPTION:
+                return limitLabelLanguage() && singleLabelMode(singleLabelModeWorkForDescription);
+            case SKOS.ALT_LABEL:
+                return limitLabelLanguage();
+            default:
+                // Most statements should be kept.
+                return true;
+            }
+        }
+
+        /**
+         * Process a statement who's subject isn't in the entityData or entity
+         * prefixes.
+         *
+         * @return true to keep the statement, false to remove it
+         */
+        private boolean unknownStatement() {
             if (siteLinks.contains(subject)) {
-                if (removeSiteLinks) {
-                    itr.remove();
-                }
-                continue;
+                return !removeSiteLinks;
             }
-            if (predicate.equals(RDF.TYPE) && s.getObject().stringValue().equals(SchemaDotOrg.ARTICLE)) {
+            if (predicate.equals(RDF.TYPE) && statement.getObject().stringValue().equals(SchemaDotOrg.ARTICLE)) {
                 siteLinks.add(subject);
-                // Site links may have crept into unknown subjects if they
-                // appeared in a funky order.
+                /*
+                 * Site links may have crept into unknown subjects if they
+                 * appeared in a funky order. Restore them or clear them as
+                 * appropriate.
+                 */
                 if (removeSiteLinks) {
-                    itr.remove();
                     unknownSubjects.removeAll(subject);
+                    return false;
                 } else {
                     restoredStatements.addAll(unknownSubjects.removeAll(subject));
+                    return true;
                 }
-                continue;
             }
-            unknownSubjects.put(subject, s);
-            itr.remove();
-        }
-
-        if (!unknownSubjects.isEmpty()) {
-            throw new BadSubjectException(unknownSubjects.keySet(), entityDataUris, entityUris);
-        }
-        if (revisionId == null) {
-            throw new RuntimeException("Didn't get a revision id for " + statements);
-        }
-        if (lastModified == null) {
-            throw new RuntimeException("Didn't get a last modified date for " + statements);
-        }
-        if (entity == null) {
-            throw new RuntimeException("Didn't get any entity information " + statements);
-        }
-
-        statements.add(new StatementImpl(entity, new URIImpl(SchemaDotOrg.VERSION), revisionId));
-        statements.add(new StatementImpl(entity, new URIImpl(SchemaDotOrg.DATE_MODIFIED), lastModified));
-        if (singleLabelModeLanguages != null) {
             /*
-             * If we don't have a label or description then we use a link to the
-             * entity so there is _something_ in the label (or description)
-             * slot.
+             * Record and remove all truly unknown statements so we can either
+             * complain about them at the end of the process of restore them if
+             * they turn out to be part of a site link or something.
              */
-            if (bestLabelForSingleLabelMode == null) {
-                statements.add(new StatementImpl(entity, new URIImpl(RDFS.LABEL), entity));
-            } else {
-                statements.add(bestLabelForSingleLabelMode);
+            unknownSubjects.put(subject, statement);
+            return false;
+        }
+
+        /**
+         * Process a label type statement for the limitlLabelLanguage feature.
+         * This is a noop if the feature is disabled but if it is enabled then
+         * the label will be removed (returns false) if the label's language
+         * isn't in limitLabelLanguages.
+         *
+         * @return true to keep the statement, false to remove it
+         */
+        private boolean limitLabelLanguage() throws ContainedException {
+            if (limitLabelLanguages == null) {
+                return true;
             }
-            if (bestDescriptionForSingleLabelMode == null) {
-                statements.add(new StatementImpl(entity, new URIImpl(RDFS.LABEL), entity));
-            } else {
-                statements.add(bestDescriptionForSingleLabelMode);
+            Literal object = objectAsLiteral();
+            String language = object.getLanguage();
+            return language != null && limitLabelLanguages.contains(language);
+        }
+
+        private boolean singleLabelMode(SingleLabelModeWork work) throws ContainedException {
+            return work == null ? true : work.statement();
+        }
+
+        /**
+         * Perform all munge completion tasks that are required no matter the
+         * configuration. Its important that finishCommon be the last finish
+         * method called because it is the one that restores restoredStatments
+         * into the original statements collection.
+         */
+        private void finishCommon() throws ContainedException {
+            if (!unknownSubjects.isEmpty()) {
+                throw new BadSubjectException(unknownSubjects.keySet(), entityDataUris, entityUris);
+            }
+            if (revisionId == null) {
+                throw new ContainedException("Didn't get a revision id for " + statements);
+            }
+            if (lastModified == null) {
+                throw new ContainedException("Didn't get a last modified date for " + statements);
+            }
+            if (entity == null) {
+                throw new ContainedException("Didn't get any entity information " + statements);
+            }
+            statements.add(new StatementImpl(entity, new URIImpl(SchemaDotOrg.VERSION), revisionId));
+            statements.add(new StatementImpl(entity, new URIImpl(SchemaDotOrg.DATE_MODIFIED), lastModified));
+            statements.addAll(restoredStatements);
+        }
+
+        /**
+         * Run any cleanup tasks for single label mode if we're in that mode.
+         */
+        private void finishSingleLabelMode() {
+            if (singleLabelModeLanguages != null) {
+                statements.add(singleLabelModeWorkForLabel.collectBestStatement());
+                statements.add(singleLabelModeWorkForDescription.collectBestStatement());
             }
         }
-        statements.addAll(restoredStatements);
-        return statements;
+
+        /**
+         * Fetch the object from the current statement as a Resource.
+         *
+         * @throws ContainedException if the object isn't a Resource
+         */
+        private Resource objectAsResource() throws ContainedException {
+            try {
+                return (Resource) statement.getObject();
+            } catch (ClassCastException e) {
+                throw new ContainedException("Unexpected Resource in object position of:  " + statement);
+            }
+        }
+
+        /**
+         * Fetch the object from the current statement as a Literal.
+         *
+         * @throws ContainedException if the object isn't a Literal
+         */
+        private Literal objectAsLiteral() throws ContainedException {
+            try {
+                return (Literal) statement.getObject();
+            } catch (ClassCastException e) {
+                throw new ContainedException("Unexpected Literal in object position of:  " + statement);
+            }
+        }
+
+        private class SingleLabelModeWork {
+            private Statement bestStatement = null;
+            private int bestIndex = -1;
+
+            /**
+             * Apply the current statement to the effort to collect the best
+             * label. Single label mode is implemented by removing all labels
+             * and adding the best back at the end of the munging process.
+             */
+            public boolean statement() throws ContainedException {
+                Literal object = objectAsLiteral();
+                String language = object.getLanguage();
+                int index = singleLabelModeLanguages.indexOf(language);
+                if (index > bestIndex) {
+                    bestStatement = statement;
+                    bestIndex = index;
+                }
+                return false;
+            }
+
+            /**
+             * Collect the best statement at the end of processing the labels.
+             */
+            public Statement collectBestStatement() {
+                if (bestStatement == null) {
+                    return new StatementImpl(entity, new URIImpl(RDFS.LABEL), entity);
+                } else {
+                    return bestStatement;
+                }
+            }
+        }
     }
 
-    public class BadSubjectException extends RuntimeException {
+    public class BadSubjectException extends ContainedException {
         private static final long serialVersionUID = -4869053066714948939L;
 
         public BadSubjectException(Set<String> badSubjects, EntityData entityDataUris, Entity entityUris) {
