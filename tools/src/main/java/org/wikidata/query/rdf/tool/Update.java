@@ -73,8 +73,12 @@ public class Update<B extends Change.Batch> implements Runnable {
         @Option(shortName = "u", description = "URL to post updates and queries.")
         String sparqlUrl();
 
-        // TODO need option to limit the load to certain languages or to only
-        // import a single label fallback style
+        @Option(longName = "labelLanguage", defaultToNull = true, description = "Only import labels, aliases, and descriptions in these languages.")
+        List<String> labelLanguages();
+
+        @Option(longName = "singleLabel", defaultToNull = true, description = "Always import a single label and description using the languages specified as a fallback list.  If there aren't any matching labels or descriptions them the entity itself is used as the label or description.")
+        List<String> singleLabelLanguages();
+
         @Option(description = "Skip site links")
         boolean skipSiteLinks();
 
@@ -133,6 +137,12 @@ public class Update<B extends Change.Batch> implements Runnable {
         Munger munger = new Munger(entityDataUris, entityUris);
         if (options.skipSiteLinks()) {
             munger = munger.removeSiteLinks();
+        }
+        if (options.labelLanguages() != null) {
+            munger = munger.limitLabelLanguages(options.labelLanguages());
+        }
+        if (options.singleLabelLanguages() != null) {
+            munger = munger.singleLabelMode(options.singleLabelLanguages());
         }
 
         new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor).run();

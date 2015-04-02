@@ -30,4 +30,8 @@ public class SchemaDotOrg {
      * Wikibase marks the sitelink's language with this predicate.
      */
     public static final String IN_LANGUAGE = NAMESPACE + "inLanguage";
+    /**
+     * Wikibase adds the descriptions as schema:description.
+     */
+    public static final String DESCRIPTION = NAMESPACE + "description";
 }

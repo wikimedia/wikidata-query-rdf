@@ -108,6 +108,80 @@ public class MungerUnitTest extends RandomizedTest {
     }
 
     @Test
+    public void limitLanguagesLabel() {
+        limitLanguagesTestCase(RDFS.LABEL);
+    }
+
+    @Test
+    public void limitLanguagesDescription() {
+        limitLanguagesTestCase(SchemaDotOrg.DESCRIPTION);
+    }
+
+    @Test
+    public void limitLanguagesAlias() {
+        limitLanguagesTestCase(SKOS.ALT_LABEL);
+    }
+
+    private void limitLanguagesTestCase(String predicate) {
+        List<Statement> george = basicEntity("Q23");
+        Statement enLabel = statement("Q23", predicate, new LiteralImpl("foo", "en"));
+        Statement deLabel = statement("Q23", predicate, new LiteralImpl("foo", "de"));
+        Statement itLabel = statement("Q23", predicate, new LiteralImpl("foo", "it"));
+        Statement frLabel = statement("Q23", predicate, new LiteralImpl("foo", "fr"));
+        george.add(enLabel);
+        george.add(deLabel);
+        george.add(itLabel);
+        george.add(frLabel);
+        munger.limitLabelLanguages("en", "de").munge("Q23", george);
+        assertThat(george, not(hasItem(itLabel)));
+        assertThat(george, not(hasItem(frLabel)));
+        assertThat(george, hasItem(enLabel));
+        assertThat(george, hasItem(deLabel));
+    }
+
+    @Test
+    public void singleLabelModeLabel() {
+        singleLabelModeTestCase(RDFS.LABEL);
+    }
+
+    @Test
+    public void singleLabelModeDescription() {
+        singleLabelModeTestCase(SchemaDotOrg.DESCRIPTION);
+    }
+
+    private void singleLabelModeTestCase(String predicate) {
+        List<Statement> george = basicEntity("Q23");
+        Statement enLabel = statement("Q23", predicate, new LiteralImpl("foo", "en"));
+        Statement deLabel = statement("Q23", predicate, new LiteralImpl("foo", "de"));
+        Statement itLabel = statement("Q23", predicate, new LiteralImpl("foo", "it"));
+        Statement frLabel = statement("Q23", predicate, new LiteralImpl("foo", "fr"));
+        if (randomBoolean()) {
+            Statement sneaky = statement("Q2344", predicate, new LiteralImpl("sneaky", "en"));
+            george.add(sneaky);
+        }
+        george.add(enLabel);
+        george.add(deLabel);
+        george.add(itLabel);
+        george.add(frLabel);
+        munger.singleLabelMode("en", "de").munge("Q23", george);
+        assertThat(george, hasItem(enLabel));
+        assertThat(george, not(hasItem(itLabel)));
+        assertThat(george, not(hasItem(frLabel)));
+        assertThat(george, not(hasItem(deLabel)));
+        george = basicEntity("Q23");
+        george.add(enLabel);
+        george.add(deLabel);
+        george.add(itLabel);
+        george.add(frLabel);
+        munger.singleLabelMode("ja").munge("Q23", george);
+        assertThat(george, hasItem(statement("Q23", RDFS.LABEL, "Q23")));
+        assertThat(george, not(hasItem(enLabel)));
+        assertThat(george, not(hasItem(itLabel)));
+        assertThat(george, not(hasItem(frLabel)));
+        assertThat(george, not(hasItem(deLabel)));
+    }
+
+    @Test
     public void skipSiteLinks() {
         List<Statement> siteLink = siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en",
                 randomBoolean());

@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool.rdf;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
@@ -17,10 +19,13 @@ import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.common.uri.EntityData;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.RDF;
+import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
 
 /**
@@ -30,23 +35,76 @@ import com.google.common.collect.ListMultimap;
 public class Munger {
     private final EntityData entityDataUris;
     private final Entity entityUris;
+    /**
+     * Null if not in limit label languages mode and a set of allowed languages
+     * if in it.
+     */
+    private final Set<String> limitLabelLanguages;
+    /**
+     * Null if not in single label mode or a fallback chain of language if in
+     * it. The fallback chain is reversed so a higher index in the list means a
+     * "better" language.
+     */
+    private final List<String> singleLabelModeLanguages;
+    /**
+     * True if we should remove site links or false if we shouldn't.
+     */
     private final boolean removeSiteLinks;
 
     public Munger(EntityData entityDataUris, Entity entityUris) {
-        this(entityDataUris, entityUris, false);
+        this(entityDataUris, entityUris, null, null, false);
     }
 
-    private Munger(EntityData entityDataUris, Entity entityUris, boolean removeSiteLinks) {
+    private Munger(EntityData entityDataUris, Entity entityUris, Set<String> limitLabelLanguages,
+            List<String> singleLabelModeLanguages, boolean removeSiteLinks) {
         this.entityDataUris = entityDataUris;
         this.entityUris = entityUris;
+        this.limitLabelLanguages = limitLabelLanguages;
+        this.singleLabelModeLanguages = singleLabelModeLanguages;
         this.removeSiteLinks = removeSiteLinks;
+    }
+
+    /**
+     * Build a Munger that only imports labels in some languages.
+     */
+    public Munger limitLabelLanguages(String... languages) {
+        return limitLabelLanguages(Arrays.asList(languages));
+    }
+
+    /**
+     * Build a Munger that only imports labels in some languages.
+     */
+    public Munger limitLabelLanguages(Collection<String> languages) {
+        return new Munger(entityDataUris, entityUris, ImmutableSet.copyOf(languages), singleLabelModeLanguages,
+                removeSiteLinks);
+    }
+
+    /**
+     * Build a munger that will load only a single label per entity.
+     *
+     * @param languages a fallback chain of languages with the first one being
+     *            the most important
+     */
+    public Munger singleLabelMode(String... languages) {
+        return singleLabelMode(Arrays.asList(languages));
+    }
+
+    /**
+     * Build a munger that will load only a single label per entity.
+     *
+     * @param languages a fallback chain of languages with the first one being
+     *            the most important
+     */
+    public Munger singleLabelMode(Collection<String> languages) {
+        return new Munger(entityDataUris, entityUris, limitLabelLanguages, ImmutableList.copyOf(languages).reverse(),
+                removeSiteLinks);
     }
 
     /**
      * Build a Munger that removes site links.
      */
     public Munger removeSiteLinks() {
-        return new Munger(entityDataUris, entityUris, true);
+        return new Munger(entityDataUris, entityUris, limitLabelLanguages, singleLabelModeLanguages, true);
     }
 
     /**
@@ -83,10 +141,15 @@ public class Munger {
          * will be removed from this multimap and added to restoredStatement.
          */
         ListMultimap<String, Statement> unknownSubjects = ArrayListMultimap.create();
+        Statement bestLabelForSingleLabelMode = null;
+        int bestLabelIndexForSingleLabelMode = -1;
+        Statement bestDescriptionForSingleLabelMode = null;
+        int bestDescriptionIndexForSingleLabelMode = -1;
         while (itr.hasNext()) {
             Statement s = itr.next();
             String subject = s.getSubject().stringValue();
             String predicate = s.getPredicate().stringValue();
+            // TODO these if statement is getting a bit hairy.
             if (subject.startsWith(entityDataUris.namespace())) {
                 if (revisionId == null && predicate.equals(SchemaDotOrg.VERSION)) {
                     revisionId = s.getObject();
@@ -112,7 +175,9 @@ public class Munger {
                      * and it doesn't make a ton of sense anyway.
                      */
                     itr.remove();
-                } else if (predicate.equals(RDF.TYPE) && s.getObject().stringValue().equals(Ontology.ITEM)) {
+                    continue;
+                }
+                if (predicate.equals(RDF.TYPE) && s.getObject().stringValue().equals(Ontology.ITEM)) {
                     // We don't need wd:Q1 a wdo:item
                     itr.remove();
                 } else if (predicate.equals(SchemaDotOrg.NAME)) {
@@ -121,6 +186,41 @@ public class Munger {
                 } else if (predicate.equals(SKOS.PREF_LABEL)) {
                     // Q1 skos:prefLabel "foo" is a dupe of rdfs:label
                     itr.remove();
+                }
+                if (limitLabelLanguages != null) {
+                    if (predicate.equals(RDFS.LABEL) || predicate.equals(SchemaDotOrg.DESCRIPTION)
+                            || predicate.equals(SKOS.ALT_LABEL)) {
+                        Literal object = (Literal) s.getObject();
+                        String language = object.getLanguage();
+                        if (language == null || !limitLabelLanguages.contains(language)) {
+                            itr.remove();
+                        }
+                    }
+                }
+                /*
+                 * In singleLabelMode we remove all labels and descriptions and
+                 * just add the best back at the end.
+                 */
+                if (singleLabelModeLanguages != null) {
+                    if (predicate.equals(RDFS.LABEL)) {
+                        itr.remove();
+                        Literal object = (Literal) s.getObject();
+                        String language = object.getLanguage();
+                        int index = singleLabelModeLanguages.indexOf(language);
+                        if (index > bestLabelIndexForSingleLabelMode) {
+                            bestLabelForSingleLabelMode = s;
+                            bestLabelIndexForSingleLabelMode = index;
+                        }
+                    } else if (predicate.equals(SchemaDotOrg.DESCRIPTION)) {
+                        itr.remove();
+                        Literal object = (Literal) s.getObject();
+                        String language = object.getLanguage();
+                        int index = singleLabelModeLanguages.indexOf(language);
+                        if (index > bestDescriptionIndexForSingleLabelMode) {
+                            bestDescriptionForSingleLabelMode = s;
+                            bestDescriptionIndexForSingleLabelMode = index;
+                        }
+                    }
                 }
                 continue;
             }
@@ -163,8 +263,26 @@ public class Munger {
         if (entity == null) {
             throw new RuntimeException("Didn't get any entity information " + statements);
         }
+
         statements.add(new StatementImpl(entity, new URIImpl(SchemaDotOrg.VERSION), revisionId));
         statements.add(new StatementImpl(entity, new URIImpl(SchemaDotOrg.DATE_MODIFIED), lastModified));
+        if (singleLabelModeLanguages != null) {
+            /*
+             * If we don't have a label or description then we use a link to the
+             * entity so there is _something_ in the label (or description)
+             * slot.
+             */
+            if (bestLabelForSingleLabelMode == null) {
+                statements.add(new StatementImpl(entity, new URIImpl(RDFS.LABEL), entity));
+            } else {
+                statements.add(bestLabelForSingleLabelMode);
+            }
+            if (bestDescriptionForSingleLabelMode == null) {
+                statements.add(new StatementImpl(entity, new URIImpl(RDFS.LABEL), entity));
+            } else {
+                statements.add(bestDescriptionForSingleLabelMode);
+            }
+        }
         statements.addAll(restoredStatements);
         return statements;
     }

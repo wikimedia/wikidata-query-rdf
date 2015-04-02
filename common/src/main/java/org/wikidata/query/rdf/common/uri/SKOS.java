@@ -10,4 +10,8 @@ public class SKOS {
      * keep rdfs:label.
      */
     public static final String PREF_LABEL = NAMESPACE + "prefLabel";
+    /**
+     * Wikibase dumps the aliases in this.
+     */
+    public static final String ALT_LABEL = NAMESPACE + "altLabel";
 }
