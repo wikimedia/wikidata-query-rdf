@@ -22,6 +22,7 @@ import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.rdf.Munger.BadSubjectException;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
@@ -36,7 +37,7 @@ public class MungerUnitTest extends RandomizedTest {
     private final Munger munger = new Munger(EntityData.WIKIDATA, Entity.WIKIDATA);
 
     @Test
-    public void mungesEntityDataOntoEntity() {
+    public void mungesEntityDataOntoEntity() throws ContainedException {
         List<Statement> statements = basicEntity("Q23");
 
         munger.munge("Q23", statements);
@@ -48,7 +49,7 @@ public class MungerUnitTest extends RandomizedTest {
     }
 
     @Test
-    public void extraDataIsntModified() {
+    public void extraDataIsntModified() throws ContainedException {
         List<Statement> statements = basicEntity("Q23");
         statements.add(statement("Q23", "P509", "Q6"));
         munger.munge("Q23", statements);
@@ -56,14 +57,14 @@ public class MungerUnitTest extends RandomizedTest {
     }
 
     @Test(expected = BadSubjectException.class)
-    public void complainsAboutExtraSubjects() {
+    public void complainsAboutExtraSubjects() throws ContainedException {
         List<Statement> statements = basicEntity("Q23");
         statements.add(statement("http://example.com/bogus", "Q23", "Q23"));
         munger.munge("Q23", statements);
     }
 
     @Test
-    public void siteLinksGoThrough() {
+    public void siteLinksGoThrough() throws ContainedException {
         List<Statement> statements = basicEntity("Q23");
         String bogus = "http://example.com/bogus";
         Statement articleDecl = statement(bogus, RDF.TYPE, SchemaDotOrg.ARTICLE);
@@ -81,7 +82,7 @@ public class MungerUnitTest extends RandomizedTest {
     }
 
     @Test
-    public void extraLabelsRemoved() {
+    public void extraLabelsRemoved() throws ContainedException {
         Statement rdfsDecl = statement("Q23", RDFS.LABEL, new LiteralImpl("foo", "en"));
         Statement skosDecl = statement("Q23", SKOS.PREF_LABEL, new LiteralImpl("foo", "en"));
         Statement schemaDecl = statement("Q23", SchemaDotOrg.NAME, new LiteralImpl("foo", "en"));
@@ -95,7 +96,7 @@ public class MungerUnitTest extends RandomizedTest {
     }
 
     @Test
-    public void labelsOnOthersRemoved() {
+    public void labelsOnOthersRemoved() throws ContainedException {
         Statement georgeDecl = statement("Q23", RDFS.LABEL, new LiteralImpl("george", "en"));
         Statement marthaDecl = statement("Q191789", RDFS.LABEL, new LiteralImpl("martha", "en"));
 
@@ -107,22 +108,23 @@ public class MungerUnitTest extends RandomizedTest {
         assertThat(statements, not(hasItem(marthaDecl)));
     }
 
+    // TODO statement and value subjects
     @Test
-    public void limitLanguagesLabel() {
+    public void limitLanguagesLabel() throws ContainedException {
         limitLanguagesTestCase(RDFS.LABEL);
     }
 
     @Test
-    public void limitLanguagesDescription() {
+    public void limitLanguagesDescription() throws ContainedException {
         limitLanguagesTestCase(SchemaDotOrg.DESCRIPTION);
     }
 
     @Test
-    public void limitLanguagesAlias() {
+    public void limitLanguagesAlias() throws ContainedException {
         limitLanguagesTestCase(SKOS.ALT_LABEL);
     }
 
-    private void limitLanguagesTestCase(String predicate) {
+    private void limitLanguagesTestCase(String predicate) throws ContainedException {
         List<Statement> george = basicEntity("Q23");
         Statement enLabel = statement("Q23", predicate, new LiteralImpl("foo", "en"));
         Statement deLabel = statement("Q23", predicate, new LiteralImpl("foo", "de"));
@@ -140,16 +142,16 @@ public class MungerUnitTest extends RandomizedTest {
     }
 
     @Test
-    public void singleLabelModeLabel() {
+    public void singleLabelModeLabel() throws ContainedException {
         singleLabelModeTestCase(RDFS.LABEL);
     }
 
     @Test
-    public void singleLabelModeDescription() {
+    public void singleLabelModeDescription() throws ContainedException {
         singleLabelModeTestCase(SchemaDotOrg.DESCRIPTION);
     }
 
-    private void singleLabelModeTestCase(String predicate) {
+    private void singleLabelModeTestCase(String predicate) throws ContainedException {
         List<Statement> george = basicEntity("Q23");
         Statement enLabel = statement("Q23", predicate, new LiteralImpl("foo", "en"));
         Statement deLabel = statement("Q23", predicate, new LiteralImpl("foo", "de"));
@@ -181,8 +183,30 @@ public class MungerUnitTest extends RandomizedTest {
         assertThat(george, not(hasItem(deLabel)));
     }
 
+    /**
+     * Combined single label mode with limit label languages. The trouble with
+     * doing both is that sometimes statements are removed twice.
+     */
     @Test
-    public void skipSiteLinks() {
+    public void singleLabelAndLimitLanguage() throws ContainedException {
+        List<Statement> george = basicEntity("Q23");
+        Statement enLabel = statement("Q23", RDFS.LABEL, new LiteralImpl("foo", "en"));
+        Statement deLabel = statement("Q23", RDFS.LABEL, new LiteralImpl("foo", "de"));
+        Statement itLabel = statement("Q23", RDFS.LABEL, new LiteralImpl("foo", "it"));
+        Statement frLabel = statement("Q23", RDFS.LABEL, new LiteralImpl("foo", "fr"));
+        george.add(enLabel);
+        george.add(deLabel);
+        george.add(itLabel);
+        george.add(frLabel);
+        munger.singleLabelMode("en", "de").limitLabelLanguages("en").munge("Q23", george);
+        assertThat(george, hasItem(enLabel));
+        assertThat(george, not(hasItem(itLabel)));
+        assertThat(george, not(hasItem(frLabel)));
+        assertThat(george, not(hasItem(deLabel)));
+    }
+
+    @Test
+    public void skipSiteLinks() throws ContainedException {
         List<Statement> siteLink = siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en",
                 randomBoolean());
         List<Statement> george = basicEntity("Q23");
