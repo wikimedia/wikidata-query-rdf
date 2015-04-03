@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.tool;
 
+import java.util.List;
+
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -24,10 +26,28 @@ public class StatementHelper {
     }
 
     /**
-     * Statement constructor with a value. Use this one for string values.
+     * Statement constructor with a value. Use this one for all values.
      */
     public static Statement statement(String s, String p, Value o) {
         return new StatementImpl(uri(s), uri(p), o);
+    }
+
+    /**
+     * Statement constructor taking just URIs as strings and appending the
+     * statement to a list.
+     */
+    public static Statement statement(List<Statement> statements, String s, String p, String o) {
+        return statement(statements, s, p, uri(o));
+    }
+
+    /**
+     * Statement constructor with a value appending the statement to a list. Use
+     * this one for all values.
+     */
+    public static Statement statement(List<Statement> statements, String s, String p, Value o) {
+        Statement statement = statement(s, p, o);
+        statements.add(statement);
+        return statement;
     }
 
     /**

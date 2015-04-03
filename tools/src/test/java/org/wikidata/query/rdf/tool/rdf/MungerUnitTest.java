@@ -39,7 +39,6 @@ public class MungerUnitTest extends RandomizedTest {
     @Test
     public void mungesEntityDataOntoEntity() throws ContainedException {
         List<Statement> statements = basicEntity("Q23");
-
         munger.munge("Q23", statements);
         // This Matcher is so hard to build......
         ImmutableList.Builder<Matcher<? super Statement>> matchers = ImmutableList.builder();
@@ -51,9 +50,9 @@ public class MungerUnitTest extends RandomizedTest {
     @Test
     public void extraDataIsntModified() throws ContainedException {
         List<Statement> statements = basicEntity("Q23");
-        statements.add(statement("Q23", "P509", "Q6"));
+        Statement extra = statement(statements, "Q23", "P509", "Q6");
         munger.munge("Q23", statements);
-        assertThat(statements, hasItem(statement("Q23", "P509", "Q6")));
+        assertThat(statements, hasItem(extra));
     }
 
     @Test(expected = BadSubjectException.class)
@@ -83,32 +82,26 @@ public class MungerUnitTest extends RandomizedTest {
 
     @Test
     public void extraLabelsRemoved() throws ContainedException {
-        Statement rdfsDecl = statement("Q23", RDFS.LABEL, new LiteralImpl("foo", "en"));
-        Statement skosDecl = statement("Q23", SKOS.PREF_LABEL, new LiteralImpl("foo", "en"));
-        Statement schemaDecl = statement("Q23", SchemaDotOrg.NAME, new LiteralImpl("foo", "en"));
-
-        List<Statement> statements = basicEntity("Q23");
-        statements.addAll(ImmutableList.of(rdfsDecl, skosDecl, schemaDecl));
-        munger.munge("Q23", statements);
-        assertThat(statements, hasItem(rdfsDecl));
-        assertThat(statements, not(hasItem(skosDecl)));
-        assertThat(statements, not(hasItem(schemaDecl)));
+        List<Statement> george = basicEntity("Q23");
+        Statement rdfsDecl = statement(george, "Q23", RDFS.LABEL, new LiteralImpl("foo", "en"));
+        Statement skosDecl = statement(george, "Q23", SKOS.PREF_LABEL, new LiteralImpl("foo", "en"));
+        Statement schemaDecl = statement(george, "Q23", SchemaDotOrg.NAME, new LiteralImpl("foo", "en"));
+        munger.munge("Q23", george);
+        assertThat(george, hasItem(rdfsDecl));
+        assertThat(george, not(hasItem(skosDecl)));
+        assertThat(george, not(hasItem(schemaDecl)));
     }
 
     @Test
     public void labelsOnOthersRemoved() throws ContainedException {
-        Statement georgeDecl = statement("Q23", RDFS.LABEL, new LiteralImpl("george", "en"));
-        Statement marthaDecl = statement("Q191789", RDFS.LABEL, new LiteralImpl("martha", "en"));
-
         List<Statement> statements = basicEntity("Q23");
-        statements.add(georgeDecl);
-        statements.add(marthaDecl);
+        Statement georgeDecl = statement(statements, "Q23", RDFS.LABEL, new LiteralImpl("george", "en"));
+        Statement marthaDecl = statement(statements, "Q191789", RDFS.LABEL, new LiteralImpl("martha", "en"));
         munger.munge("Q23", statements);
         assertThat(statements, hasItem(georgeDecl));
         assertThat(statements, not(hasItem(marthaDecl)));
     }
 
-    // TODO statement and value subjects
     @Test
     public void limitLanguagesLabel() throws ContainedException {
         limitLanguagesTestCase(RDFS.LABEL);
@@ -126,14 +119,10 @@ public class MungerUnitTest extends RandomizedTest {
 
     private void limitLanguagesTestCase(String predicate) throws ContainedException {
         List<Statement> george = basicEntity("Q23");
-        Statement enLabel = statement("Q23", predicate, new LiteralImpl("foo", "en"));
-        Statement deLabel = statement("Q23", predicate, new LiteralImpl("foo", "de"));
-        Statement itLabel = statement("Q23", predicate, new LiteralImpl("foo", "it"));
-        Statement frLabel = statement("Q23", predicate, new LiteralImpl("foo", "fr"));
-        george.add(enLabel);
-        george.add(deLabel);
-        george.add(itLabel);
-        george.add(frLabel);
+        Statement enLabel = statement(george, "Q23", predicate, new LiteralImpl("foo", "en"));
+        Statement deLabel = statement(george, "Q23", predicate, new LiteralImpl("foo", "de"));
+        Statement itLabel = statement(george, "Q23", predicate, new LiteralImpl("foo", "it"));
+        Statement frLabel = statement(george, "Q23", predicate, new LiteralImpl("foo", "fr"));
         munger.limitLabelLanguages("en", "de").munge("Q23", george);
         assertThat(george, not(hasItem(itLabel)));
         assertThat(george, not(hasItem(frLabel)));
@@ -153,28 +142,21 @@ public class MungerUnitTest extends RandomizedTest {
 
     private void singleLabelModeTestCase(String predicate) throws ContainedException {
         List<Statement> george = basicEntity("Q23");
-        Statement enLabel = statement("Q23", predicate, new LiteralImpl("foo", "en"));
-        Statement deLabel = statement("Q23", predicate, new LiteralImpl("foo", "de"));
-        Statement itLabel = statement("Q23", predicate, new LiteralImpl("foo", "it"));
-        Statement frLabel = statement("Q23", predicate, new LiteralImpl("foo", "fr"));
+        Statement enLabel = statement(george, "Q23", predicate, new LiteralImpl("foo", "en"));
+        Statement deLabel = statement(george, "Q23", predicate, new LiteralImpl("foo", "de"));
+        Statement itLabel = statement(george, "Q23", predicate, new LiteralImpl("foo", "it"));
+        Statement frLabel = statement(george, "Q23", predicate, new LiteralImpl("foo", "fr"));
         if (randomBoolean()) {
             Statement sneaky = statement("Q2344", predicate, new LiteralImpl("sneaky", "en"));
             george.add(sneaky);
         }
-        george.add(enLabel);
-        george.add(deLabel);
-        george.add(itLabel);
-        george.add(frLabel);
+        List<Statement> otherGeorge = new ArrayList<>(george);
         munger.singleLabelMode("en", "de").munge("Q23", george);
         assertThat(george, hasItem(enLabel));
         assertThat(george, not(hasItem(itLabel)));
         assertThat(george, not(hasItem(frLabel)));
         assertThat(george, not(hasItem(deLabel)));
-        george = basicEntity("Q23");
-        george.add(enLabel);
-        george.add(deLabel);
-        george.add(itLabel);
-        george.add(frLabel);
+        george = otherGeorge;
         munger.singleLabelMode("ja").munge("Q23", george);
         assertThat(george, hasItem(statement("Q23", RDFS.LABEL, "Q23")));
         assertThat(george, not(hasItem(enLabel)));
@@ -190,14 +172,10 @@ public class MungerUnitTest extends RandomizedTest {
     @Test
     public void singleLabelAndLimitLanguage() throws ContainedException {
         List<Statement> george = basicEntity("Q23");
-        Statement enLabel = statement("Q23", RDFS.LABEL, new LiteralImpl("foo", "en"));
-        Statement deLabel = statement("Q23", RDFS.LABEL, new LiteralImpl("foo", "de"));
-        Statement itLabel = statement("Q23", RDFS.LABEL, new LiteralImpl("foo", "it"));
-        Statement frLabel = statement("Q23", RDFS.LABEL, new LiteralImpl("foo", "fr"));
-        george.add(enLabel);
-        george.add(deLabel);
-        george.add(itLabel);
-        george.add(frLabel);
+        Statement enLabel = statement(george, "Q23", RDFS.LABEL, new LiteralImpl("foo", "en"));
+        Statement deLabel = statement(george, "Q23", RDFS.LABEL, new LiteralImpl("foo", "de"));
+        Statement itLabel = statement(george, "Q23", RDFS.LABEL, new LiteralImpl("foo", "it"));
+        Statement frLabel = statement(george, "Q23", RDFS.LABEL, new LiteralImpl("foo", "fr"));
         munger.singleLabelMode("en", "de").limitLabelLanguages("en").munge("Q23", george);
         assertThat(george, hasItem(enLabel));
         assertThat(george, not(hasItem(itLabel)));
@@ -221,9 +199,9 @@ public class MungerUnitTest extends RandomizedTest {
         List<Statement> statements = new ArrayList<>();
         String entityData = EntityData.WIKIDATA.namespace() + entityId;
         // EntityData is all munged onto Entity
-        statements.add(statement(entityData, SchemaDotOrg.ABOUT, entityId));
-        statements.add(statement(entityData, SchemaDotOrg.VERSION, new LiteralImpl("a revision number I promise")));
-        statements.add(statement(entityData, SchemaDotOrg.DATE_MODIFIED, new LiteralImpl("a date I promise")));
+        statement(statements, entityData, SchemaDotOrg.ABOUT, entityId);
+        statement(statements, entityData, SchemaDotOrg.VERSION, new LiteralImpl("a revision number I promise"));
+        statement(statements, entityData, SchemaDotOrg.DATE_MODIFIED, new LiteralImpl("a date I promise"));
         return statements;
     }
 }
