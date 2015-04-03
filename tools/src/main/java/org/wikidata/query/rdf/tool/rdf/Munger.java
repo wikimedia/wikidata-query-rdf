@@ -17,6 +17,7 @@ import org.openrdf.model.impl.URIImpl;
 import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.common.uri.EntityData;
 import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
@@ -130,6 +131,7 @@ public class Munger {
     private class MungeOperation {
         private final String entityUri;
         private final Collection<Statement> statements;
+        private final Resource entityUriImpl;
 
         /*
          * These are modified during the pass over the statements and used to
@@ -141,9 +143,13 @@ public class Munger {
          */
         private final List<Statement> restoredStatements = new ArrayList<>();
         /**
-         * Subject of all sitelinks.
+         * Subjects of all sitelinks.
          */
         private final Set<String> siteLinks = new HashSet<>();
+        /**
+         * Valid non-site link subjects.
+         */
+        private final Set<String> extraValidSubjects = new HashSet<>();
         /**
          * Subjects that likely showed up in statements in error. If a later
          * statement merits the re-inclusion of the subject then its statements
@@ -164,7 +170,6 @@ public class Munger {
         // These are set by the entire munge operation
         private Literal revisionId = null;
         private Literal lastModified = null;
-        private Resource entity = null;
 
         // These are setup by munge and reset for every statement
         private Statement statement;
@@ -174,6 +179,7 @@ public class Munger {
         public MungeOperation(String entityId, Collection<Statement> statements) {
             this.statements = statements;
             entityUri = entityUris.namespace() + entityId;
+            entityUriImpl = new URIImpl(entityUri);
             if (singleLabelModeLanguages != null) {
                 singleLabelModeWorkForLabel = new SingleLabelModeWork();
                 singleLabelModeWorkForDescription = new SingleLabelModeWork();
@@ -208,6 +214,12 @@ public class Munger {
             if (subject.startsWith(entityDataUris.namespace())) {
                 return entityDataStatement();
             }
+            if (subject.startsWith(entityUris.statement().namespace())) {
+                return entityStatementStatement();
+            }
+            if (subject.startsWith(entityUris.reference().namespace())) {
+                return entityReferenceStatement();
+            }
             if (subject.startsWith(entityUris.namespace())) {
                 return entityStatement();
             }
@@ -227,9 +239,6 @@ public class Munger {
                 break;
             case SchemaDotOrg.DATE_MODIFIED:
                 lastModified = objectAsLiteral();
-                break;
-            case SchemaDotOrg.ABOUT:
-                entity = objectAsResource();
                 break;
             default:
                 // Noop - fall out is ok as we just remove them.
@@ -252,14 +261,13 @@ public class Munger {
                  */
                 return false;
             }
-            entity = statement.getSubject();
             switch (predicate) {
             case RDF.TYPE:
                 /*
-                 * We don't need wd:Q1 a ontology:item because its true of
-                 * almost 100% of the entities in the triple store.
+                 * We don't need wd:Q1 a ontology:Item because its super common
+                 * and not super interesting.
                  */
-                return statement.getObject().stringValue().equals(Ontology.ITEM);
+                return !statement.getObject().stringValue().equals(Ontology.ITEM);
             case SchemaDotOrg.NAME:
             case SKOS.PREF_LABEL:
                 // Q1 schema:name "foo" is a dupe of rdfs:label
@@ -272,9 +280,82 @@ public class Munger {
             case SKOS.ALT_LABEL:
                 return limitLabelLanguage();
             default:
-                // Most statements should be kept.
-                return true;
+                // Lets just fall out to save some whitespace
             }
+            String object = statement.getObject().stringValue();
+            if (predicate.startsWith(entityUris.namespace()) && object.startsWith(entityUris.statement().namespace())) {
+                registerExtraValidSubject(object);
+            }
+            // Most statements should be kept.
+            return true;
+        }
+
+        /**
+         * Process a statement who's subject is in the entity statement prefix.
+         *
+         * @return true to keep the statement, false to remove it
+         */
+        private boolean entityStatementStatement() throws ContainedException {
+            switch (predicate) {
+            case RDF.TYPE:
+                /*
+                 * We don't need s:<uuid> a ontology:Statement because its super
+                 * common and not super interesting.
+                 */
+                if (statement.getObject().stringValue().equals(Ontology.STATEMENT)) {
+                    return false;
+                }
+                break;
+            case Provenance.WAS_DERIVED_FROM:
+                String object = statement.getObject().stringValue();
+                if (object.startsWith(entityUris.reference().namespace())) {
+                    registerExtraValidSubject(object);
+                }
+                return true;
+            default:
+            }
+            if (!extraValidSubjects.contains(subject)) {
+                /*
+                 * Remove any statements about statements that we don't yet know
+                 * are actually linked to the entity. We keep a backup of them
+                 * in unknownSubjects so we can restore them if they are later
+                 * linked.
+                 */
+                unknownSubjects.put(subject, statement);
+                return false;
+            }
+            return true;
+        }
+
+        /**
+         * Process a statement who's subject is in the entity reference prefix.
+         *
+         * @return true to keep the statement, false to remove it
+         */
+        private boolean entityReferenceStatement() throws ContainedException {
+            switch (predicate) {
+            case RDF.TYPE:
+                /*
+                 * We don't need r:<uuid> a ontology:Reference because its super
+                 * common and not super interesting.
+                 */
+                if (statement.getObject().stringValue().equals(Ontology.REFERENCE)) {
+                    return false;
+                }
+                break;
+            default:
+            }
+            if (!extraValidSubjects.contains(subject)) {
+                /*
+                 * Remove any statements about references that we don't yet know
+                 * are actually linked to the entity. We keep a backup of them
+                 * in unknownSubjects so we can restore them if they are later
+                 * linked.
+                 */
+                unknownSubjects.put(subject, statement);
+                return false;
+            }
+            return true;
         }
 
         /**
@@ -348,11 +429,8 @@ public class Munger {
             if (lastModified == null) {
                 throw new ContainedException("Didn't get a last modified date for " + statements);
             }
-            if (entity == null) {
-                throw new ContainedException("Didn't get any entity information " + statements);
-            }
-            statements.add(new StatementImpl(entity, new URIImpl(SchemaDotOrg.VERSION), revisionId));
-            statements.add(new StatementImpl(entity, new URIImpl(SchemaDotOrg.DATE_MODIFIED), lastModified));
+            statements.add(new StatementImpl(entityUriImpl, new URIImpl(SchemaDotOrg.VERSION), revisionId));
+            statements.add(new StatementImpl(entityUriImpl, new URIImpl(SchemaDotOrg.DATE_MODIFIED), lastModified));
             statements.addAll(restoredStatements);
         }
 
@@ -366,17 +444,13 @@ public class Munger {
             }
         }
 
-        /**
-         * Fetch the object from the current statement as a Resource.
-         *
-         * @throws ContainedException if the object isn't a Resource
-         */
-        private Resource objectAsResource() throws ContainedException {
-            try {
-                return (Resource) statement.getObject();
-            } catch (ClassCastException e) {
-                throw new ContainedException("Unexpected Resource in object position of:  " + statement);
-            }
+        private void registerExtraValidSubject(String subject) {
+            extraValidSubjects.add(subject);
+            /*
+             * Rescue any statements that may have leaked into the unknown
+             * subjects due to things being in a funky order.
+             */
+            restoredStatements.addAll(unknownSubjects.removeAll(subject));
         }
 
         /**
@@ -417,7 +491,7 @@ public class Munger {
              */
             public Statement collectBestStatement() {
                 if (bestStatement == null) {
-                    return new StatementImpl(entity, new URIImpl(RDFS.LABEL), entity);
+                    return new StatementImpl(entityUriImpl, new URIImpl(RDFS.LABEL), entityUriImpl);
                 } else {
                     return bestStatement;
                 }

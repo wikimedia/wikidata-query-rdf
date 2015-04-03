@@ -67,6 +67,12 @@ public class UpdateBuilder {
         }
 
         @SuppressWarnings("unchecked")
+        public Self add(String s) {
+            parts.add(indent().append(s));
+            return (Self) this;
+        }
+
+        @SuppressWarnings("unchecked")
         public Self add(Object s, Object p, Object o) {
             parts.add(indent().append(str(s)).append(' ').append(str(p)).append(' ').append(str(o)).append(" ."));
             return (Self) this;

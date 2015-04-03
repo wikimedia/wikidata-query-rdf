@@ -14,10 +14,14 @@ import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.LiteralImpl;
+import org.openrdf.model.vocabulary.XMLSchema;
 import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.common.uri.EntityData;
+import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
@@ -27,14 +31,18 @@ import org.wikidata.query.rdf.tool.rdf.Munger.BadSubjectException;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.carrotsearch.randomizedtesting.annotations.Seed;
 import com.google.common.collect.ImmutableList;
 
 /**
  * Tests Munger.
  */
 @RunWith(RandomizedRunner.class)
+@Seed("23B559017FCF95D7:8D8A6D2BB13ADCAB")
 public class MungerUnitTest extends RandomizedTest {
-    private final Munger munger = new Munger(EntityData.WIKIDATA, Entity.WIKIDATA);
+    private final EntityData entityDataUris = EntityData.WIKIDATA;
+    private final Entity entityUris = Entity.WIKIDATA;
+    private final Munger munger = new Munger(entityDataUris, entityUris);
 
     @Test
     public void mungesEntityDataOntoEntity() throws ContainedException {
@@ -53,6 +61,14 @@ public class MungerUnitTest extends RandomizedTest {
         Statement extra = statement(statements, "Q23", "P509", "Q6");
         munger.munge("Q23", statements);
         assertThat(statements, hasItem(extra));
+    }
+
+    @Test
+    public void aItemIsRemoved() throws ContainedException {
+        List<Statement> statements = basicEntity("Q23");
+        Statement aItemDecl = statement(statements, "Q23", RDF.TYPE, Ontology.ITEM);
+        munger.munge("Q23", statements);
+        assertThat(statements, not(hasItem(aItemDecl)));
     }
 
     @Test(expected = BadSubjectException.class)
@@ -103,6 +119,76 @@ public class MungerUnitTest extends RandomizedTest {
     }
 
     @Test
+    public void basicExpandedStatement() throws ContainedException {
+        List<Statement> george = basicEntity("Q23");
+        String statementUri = entityUris.statement().namespace() + "Q23-ce976010-412f-637b-c687-9fd2d52dc140";
+        Statement statementTypeDecl = statement(george, statementUri, RDF.TYPE, Ontology.STATEMENT);
+        Statement valueDecl = statement(george, statementUri, entityUris.value().namespace() + "P509", "Q356405");
+        Statement rankDecl = statement(george, statementUri, Ontology.RANK, Ontology.NORMAL_RANK);
+        Statement statementDecl = statement("Q23", "P509", statementUri);
+        if (randomBoolean()) {
+            george.add(0, statementDecl);
+        } else {
+            george.add(statementDecl);
+        }
+        munger.munge("Q23", george);
+        assertThat(george, hasItem(statementDecl));
+        assertThat(george, not(hasItem(statementTypeDecl)));
+        assertThat(george, hasItem(valueDecl));
+        assertThat(george, hasItem(rankDecl));
+        // TODO can we rewrite the valueDecl into something without the repeated
+        // property?
+    }
+
+    @Test
+    public void expandedStatementWithReference() throws ContainedException {
+        List<Statement> george = basicEntity("Q23");
+        String statementUri = entityUris.statement().namespace() + "Q23-9D3713FF-7BCC-489F-9386-C7322C0AC284";
+        String referenceUri = entityUris.reference().namespace() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
+        Statement statementDecl = statement(george, "Q23", "P19", statementUri);
+        Statement statementTypeDecl = statement(george, statementUri, RDF.TYPE, Ontology.STATEMENT);
+        Statement valueDecl = statement(george, statementUri, entityUris.value().namespace() + "P19", "Q494413");
+        Statement rankDecl = statement(george, statementUri, Ontology.RANK, Ontology.NORMAL_RANK);
+        Statement referenceTypeDecl = statement(george, referenceUri, RDF.TYPE, Ontology.REFERENCE);
+        Statement referenceValueDecl = statement(george, referenceUri, entityUris.value().namespace() + "P854",
+                "http://www.anb.org/articles/02/02-00332.html");
+        Statement referenceDecl = statement(statementUri, Provenance.WAS_DERIVED_FROM, referenceUri);
+        if (randomBoolean()) {
+            george.add(0, referenceDecl);
+        } else {
+            george.add(referenceDecl);
+        }
+        munger.munge("Q23", george);
+        assertThat(george, hasItem(statementDecl));
+        assertThat(george, not(hasItem(statementTypeDecl)));
+        assertThat(george, hasItem(valueDecl));
+        assertThat(george, hasItem(rankDecl));
+        assertThat(george, hasItem(referenceDecl));
+        assertThat(george, not(hasItem(referenceTypeDecl)));
+        assertThat(george, hasItem(referenceValueDecl));
+    }
+
+    @Test
+    public void expandedStatementWithQualifier() throws ContainedException {
+        List<Statement> george = basicEntity("Q23");
+        String statementUri = entityUris.statement().namespace() + "q23-8A2F4718-6159-4E58-A8F9-6F24F5EFEC42";
+        Statement statementDecl = statement(george, "Q23", "P26", statementUri);
+        Statement statementTypeDecl = statement(george, statementUri, RDF.TYPE, Ontology.STATEMENT);
+        Statement valueDecl = statement(george, statementUri, entityUris.value().namespace() + "P26", "Q191789");
+        Statement rankDecl = statement(george, statementUri, Ontology.RANK, Ontology.NORMAL_RANK);
+        Statement qualifierDecl = statement(george, statementUri, entityUris.qualifier().namespace() + "P580",
+                new LiteralImpl("1759-01-06T00:00:00Z", XMLSchema.DATETIME));
+        munger.munge("Q23", george);
+        assertThat(george, hasItem(statementDecl));
+        assertThat(george, not(hasItem(statementTypeDecl)));
+        assertThat(george, hasItem(valueDecl));
+        assertThat(george, hasItem(rankDecl));
+        assertThat(george, hasItem(qualifierDecl));
+    }
+
+    // TODO expanded values
+
+    @Test
     public void limitLanguagesLabel() throws ContainedException {
         limitLanguagesTestCase(RDFS.LABEL);
     }
@@ -146,6 +232,19 @@ public class MungerUnitTest extends RandomizedTest {
         Statement deLabel = statement(george, "Q23", predicate, new LiteralImpl("foo", "de"));
         Statement itLabel = statement(george, "Q23", predicate, new LiteralImpl("foo", "it"));
         Statement frLabel = statement(george, "Q23", predicate, new LiteralImpl("foo", "fr"));
+        /*
+         * Extra garbage entityData information shouldn't break the single label
+         * mode.
+         */
+        if (randomBoolean()) {
+            george.addAll(basicEntity("Q44"));
+        }
+        if (randomBoolean()) {
+            george.addAll(0, basicEntity("Q78"));
+        }
+        /*
+         * Neither should labels for other entities.
+         */
         if (randomBoolean()) {
             Statement sneaky = statement("Q2344", predicate, new LiteralImpl("sneaky", "en"));
             george.add(sneaky);
@@ -196,12 +295,16 @@ public class MungerUnitTest extends RandomizedTest {
     }
 
     private List<Statement> basicEntity(String entityId) {
+        return basicEntity(entityId, new LiteralImpl("a revision number I promise"));
+    }
+
+    private List<Statement> basicEntity(String entityId, Literal version) {
         List<Statement> statements = new ArrayList<>();
-        String entityData = EntityData.WIKIDATA.namespace() + entityId;
+        String entityDataUri = EntityData.WIKIDATA.namespace() + entityId;
         // EntityData is all munged onto Entity
-        statement(statements, entityData, SchemaDotOrg.ABOUT, entityId);
-        statement(statements, entityData, SchemaDotOrg.VERSION, new LiteralImpl("a revision number I promise"));
-        statement(statements, entityData, SchemaDotOrg.DATE_MODIFIED, new LiteralImpl("a date I promise"));
+        statement(statements, entityDataUri, SchemaDotOrg.ABOUT, entityId);
+        statement(statements, entityDataUri, SchemaDotOrg.VERSION, version);
+        statement(statements, entityDataUri, SchemaDotOrg.DATE_MODIFIED, new LiteralImpl("a date I promise"));
         return statements;
     }
 }

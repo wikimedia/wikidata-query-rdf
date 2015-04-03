@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -9,6 +10,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
@@ -37,6 +40,7 @@ import org.openrdf.query.resultio.binary.BinaryQueryResultParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Entity;
+import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 
 import com.google.common.base.Charsets;
@@ -57,13 +61,19 @@ public class RdfRepository {
 
     /**
      * Synchronizes the RDF repository's representation of an entity to be
-     * exactly the provided statements.
+     * exactly the provided statements. You can think of the RDF managed for an
+     * entity as a tree rooted at the entity. The managed tree ends where the
+     * next entity's managed tree starts. For example Q23 from wikidata includes
+     * all statements about George Washington but not those about Martha
+     * (Q191789) even though she is linked by the spouse attribute. On the other
+     * hand the qualifiers on statements about George are included in George
      *
      * @param entityId id of the entity to sync
      * @param statements all known statements about the entity
      */
     public void sync(String entityId, Collection<Statement> statements) {
-        StringBuilder command = new StringBuilder();
+        // TODO this is becoming a mess too
+        String entity = "entity:" + entityId;
         UpdateBuilder siteLinksBuilder = updateBuilder();
         siteLinksBuilder.delete("?s", "?p", "?o");
         siteLinksBuilder.where("?s", "schema:about", "entity:" + entityId);
@@ -71,14 +81,50 @@ public class RdfRepository {
         if (!statements.isEmpty()) {
             siteLinksBuilder.where().notExists().values(statements, "?s", "?p", "?o");
         }
-        command.append(siteLinksBuilder).append(";\n");
+
+        UpdateBuilder referencesBuilder = updateBuilder();
+        referencesBuilder.prefix("prov", Provenance.NAMESPACE);
+        referencesBuilder.delete("?s", "?p", "?o");
+        referencesBuilder.where(entity, "?statementPred", "?statement");
+        referencesBuilder.where().add(startsWith("?statement", entityUris.statement().namespace()));
+        referencesBuilder.where("?statement", "prov:wasDerivedFrom", "?s");
+        referencesBuilder.where("?s", "?p", "?o");
+        // We can't clear references that are still used elsewhere
+        referencesBuilder.where().notExists()//
+                .add("?otherStatement", "prov:wasDerivedFrom", "?s")//
+                .add("?otherEntity", "?otherStatementPred", "?otherStatement")//
+                .add("FILTER ( " + entity + " != ?otherEntity ) .");
+        if (!statements.isEmpty()) {
+            referencesBuilder.where().notExists().values(statements, "?s", "?p", "?o");
+        }
+
+        UpdateBuilder expandedStatementsBuilder = updateBuilder();
+        expandedStatementsBuilder.delete("?s", "?p", "?o");
+        expandedStatementsBuilder.where(entity, "?statementPred", "?s");
+        expandedStatementsBuilder.where().add(startsWith("?s", entityUris.statement().namespace()));
+        expandedStatementsBuilder.where("?s", "?p", "?o");
+        if (!statements.isEmpty()) {
+            expandedStatementsBuilder.where().notExists().values(statements, "?s", "?p", "?o");
+        }
 
         UpdateBuilder generalBuilder = updateBuilder();
-        generalBuilder.delete("entity:" + entityId, "?p", "?o");
-        generalBuilder.where("entity:" + entityId, "?p", "?o");
+        generalBuilder.delete(entity, "?p", "?o");
+        generalBuilder.where(entity, "?p", "?o");
         if (!statements.isEmpty()) {
+            // TODO should this be statements, entity, ?p, ?o ?
             generalBuilder.where().notExists().values(statements, "?s", "?p", "?o");
         }
+
+        /*
+         * The order in which these are executed is important: if you think of
+         * the triples that must be managed by this action as a tree then you
+         * must start with the leaves first or when you clear out the trunk the
+         * leaves will be orphaned.
+         */
+        StringBuilder command = new StringBuilder();
+        command.append(siteLinksBuilder).append(";\n");
+        command.append(referencesBuilder).append(";\n");
+        command.append(expandedStatementsBuilder).append(";\n");
         command.append(generalBuilder).append(";\n");
 
         if (!statements.isEmpty()) {
@@ -89,7 +135,7 @@ public class RdfRepository {
             command.append(insertBuilder).append(";\n");
         }
         long start = System.currentTimeMillis();
-        execute("update", IGNORE_RESPONSE, command.toString());
+        execute("update", LOG_RESPONSE, command.toString());
         log.debug("Updating {} took {} millis", entityId, System.currentTimeMillis() - start);
     }
 
@@ -190,6 +236,16 @@ public class RdfRepository {
         b.prefix("schema", SchemaDotOrg.NAMESPACE);
         return b;
     }
+
+    private String startsWith(String name, String prefix) {
+        StringBuilder filter = new StringBuilder();
+        filter.append("FILTER( STRSTARTS(STR(");
+        filter.append(name).append("), \"");
+        filter.append(prefix);
+        filter.append("\") ) .");
+        return filter.toString();
+    }
+
     /**
      * Passed to execute to setup the accept header and parse the response. Its
      * super ultra mega important to parse the response in execute because
@@ -206,11 +262,19 @@ public class RdfRepository {
         public T parse(HttpEntity entity) throws IOException;
     }
 
-    protected static ResponseHandler<Void> IGNORE_RESPONSE = new IgnoreResponse();
+    protected static ResponseHandler<Void> LOG_RESPONSE = new LogUpdateResponse();
     protected static ResponseHandler<TupleQueryResult> TUPLE_QUERY_RESPONSE = new TupleQueryResponse();
     protected static ResponseHandler<Boolean> ASK_QUERY_RESPONSE = new AskQueryResponse();
 
-    protected static class IgnoreResponse implements ResponseHandler<Void> {
+    /**
+     * Attempts to log update response information but very likely only works
+     * for Blazegraph.
+     */
+    protected static class LogUpdateResponse implements ResponseHandler<Void> {
+        private static final Pattern ELAPSED_LINE = Pattern.compile("><p>totalElapsed=[^ ]+ elapsed=([^<]+)</p");
+        private static final Pattern COMMIT_LINE = Pattern
+                .compile("><hr><p>COMMIT: totalElapsed=[^ ]+ commitTime=[^ ]+ mutationCount=([^<]+)</p");
+
         @Override
         public String acceptHeader() {
             return null;
@@ -218,6 +282,19 @@ public class RdfRepository {
 
         @Override
         public Void parse(HttpEntity entity) throws IOException {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), Charsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    Matcher m = ELAPSED_LINE.matcher(line);
+                    if (m.matches()) {
+                        log.debug("elapsed = {}", m.group(1));
+                    }
+                    m = COMMIT_LINE.matcher(line);
+                    if (m.matches()) {
+                        log.debug("mutation count = {}", m.group(1));
+                    }
+                }
+            }
             return null;
         }
     }

@@ -93,4 +93,6 @@ public class WikibaseRepositoryIntegrationTest {
         }
         assertTrue("Didn't find entity information in rdf", found);
     }
+
+    // TODO we should verify the RDF dump format against a stored file
 }

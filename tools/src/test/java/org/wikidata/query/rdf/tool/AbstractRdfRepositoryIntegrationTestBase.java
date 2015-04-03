@@ -18,12 +18,13 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
  */
 @RunWith(RandomizedRunner.class)
 public abstract class AbstractRdfRepositoryIntegrationTestBase extends RandomizedTest {
+    protected final Entity entityUris = Entity.WIKIDATA;
     protected final RdfRepositoryForTesting rdfRepository;
 
     public AbstractRdfRepositoryIntegrationTestBase() {
         try {
             rdfRepository = new RdfRepositoryForTesting(new URI("http://localhost:9999/bigdata/namespace/kb/sparql"),
-                    Entity.WIKIDATA);
+                    entityUris);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -50,7 +51,7 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
             UpdateBuilder b = new UpdateBuilder();
             b.where("?s", "?p", "?o");
             b.delete("?s", "?p", "?o");
-            execute("update", RdfRepository.IGNORE_RESPONSE, b.toString());
+            execute("update", RdfRepository.LOG_RESPONSE, b.toString());
         }
     }
 }

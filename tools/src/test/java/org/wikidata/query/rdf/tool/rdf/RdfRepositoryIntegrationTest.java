@@ -17,6 +17,8 @@ import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
+import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
@@ -105,6 +107,30 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
     }
 
     @Test
+    public void statementToEntityDoesntRemoveEntity() throws QueryEvaluationException {
+        Statement link = statement("Q23", "P26", "Q191789");
+        Statement onGeorge = statement("Q23", "P20", "Q494413");
+        Statement onMartha = statement("Q191789", "P20", "Q731635");
+        rdfRepository.sync("Q23", ImmutableList.of(link, onGeorge));
+        rdfRepository.sync("Q191789", ImmutableList.of(onMartha));
+        assertTrue(rdfRepository.ask(entityUris.prefixes(new StringBuilder())
+                .append("ASK {entity:Q23 entity:P20 entity:Q494413 }").toString()));
+        assertTrue(rdfRepository.ask(entityUris.prefixes(new StringBuilder())
+                .append("ASK {entity:Q23 entity:P26 entity:Q191789 }").toString()));
+        assertTrue(rdfRepository.ask(entityUris.prefixes(new StringBuilder())
+                .append("ASK {entity:Q191789 entity:P20 entity:Q731635 }").toString()));
+
+        rdfRepository.sync("Q23", ImmutableList.of(onGeorge));
+        assertTrue(rdfRepository.ask(entityUris.prefixes(new StringBuilder())
+                .append("ASK {entity:Q23 entity:P20 entity:Q494413 }").toString()));
+        assertFalse(rdfRepository.ask(entityUris.prefixes(new StringBuilder())
+                .append("ASK {entity:Q23 entity:P26 entity:Q191789 }").toString()));
+        assertTrue(rdfRepository.ask(entityUris.prefixes(new StringBuilder())
+                .append("ASK {entity:Q191789 entity:P20 entity:Q731635 }").toString()));
+    }
+
+
+    @Test
     public void newLabelLanguage() throws QueryEvaluationException {
         newLabel();
         rdfRepository.sync("Q23", ImmutableList.of(//
@@ -122,6 +148,192 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
                 binds("p", RDFS.LABEL),//
                 binds("o", new LiteralImpl("George Washington", "en"))));
         assertFalse(r.hasNext());
+    }
+
+    @Test
+    public void basicExpandedStatement() throws QueryEvaluationException {
+        List<Statement> george = expandedStatement("ce976010-412f-637b-c687-9fd2d52dc140", "Q23", "P509", "Q356405",
+                Ontology.NORMAL_RANK);
+        rdfRepository.sync("Q23", george);
+        StringBuilder query = Ontology.prefix(entityUris.prefixes(new StringBuilder()));
+        query.append("SELECT * WHERE { entity:Q23 entity:P509 [ v:P509 ?cause; ontology:rank ontology:NormalRank ] }");
+        TupleQueryResult r = rdfRepository.query(query.toString());
+        assertTrue(r.hasNext());
+        assertThat(r.next(), binds("cause", "Q356405"));
+        assertFalse(r.hasNext());
+    }
+
+    @Test
+    public void changedExpandedStatementValue() throws QueryEvaluationException {
+        basicExpandedStatement();
+        List<Statement> george = expandedStatement("ce976010-412f-637b-c687-9fd2d52dc140", "Q23", "P509", "Q3736439",
+                Ontology.NORMAL_RANK);
+        // Poor George Washington's cause of death is now duck
+        rdfRepository.sync("Q23", george);
+        StringBuilder query = Ontology.prefix(entityUris.prefixes(new StringBuilder()));
+        query.append("SELECT * WHERE { entity:Q23 entity:P509 [ v:P509 ?cause; ontology:rank ontology:NormalRank ] }");
+        TupleQueryResult r = rdfRepository.query(query.toString());
+        assertTrue(r.hasNext());
+        assertThat(r.next(), binds("cause", "Q3736439"));
+        assertFalse(r.hasNext());
+    }
+
+    @Test
+    public void changedExpandedStatementRank() throws QueryEvaluationException {
+        basicExpandedStatement();
+        List<Statement> george = expandedStatement("ce976010-412f-637b-c687-9fd2d52dc140", "Q23", "P509", "Q356405",
+                Ontology.DEPRECATED_RANK);
+        rdfRepository.sync("Q23", george);
+        StringBuilder query = Ontology.prefix(entityUris.prefixes(new StringBuilder()));
+        query.append("SELECT * WHERE { entity:Q23 entity:P509 [ v:P509 ?cause; ontology:rank ontology:DeprecatedRank ] }");
+        TupleQueryResult r = rdfRepository.query(query.toString());
+        assertTrue(r.hasNext());
+        assertThat(r.next(), binds("cause", "Q356405"));
+        assertFalse(r.hasNext());
+    }
+
+    @Test
+    public void referencesOnExpandedStatements() throws QueryEvaluationException {
+        String referenceUri = entityUris.reference().namespace() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
+        List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
+                Ontology.NORMAL_RANK, referenceUri);
+        statement(george, referenceUri, entityUris.value().namespace() + "P854",
+                "http://www.anb.org/articles/02/02-00332.html");
+        rdfRepository.sync("Q23", george);
+        StringBuilder query = Provenance.prefix(Ontology.prefix(entityUris.prefixes(new StringBuilder())));
+        query.append("SELECT * WHERE { entity:Q23 entity:P19 [ v:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
+        TupleQueryResult r = rdfRepository.query(query.toString());
+        assertTrue(r.hasNext());
+        assertThat(r.next(), allOf(//
+                binds("placeOfBirth", "Q494413"),//
+                binds("provP", entityUris.value().namespace() + "P854"),//
+                binds("provO", "http://www.anb.org/articles/02/02-00332.html")));
+        assertFalse(r.hasNext());
+    }
+
+    @Test
+    public void referencesOnExpandedStatementsChangeValue() throws QueryEvaluationException {
+        referencesOnExpandedStatements();
+        String referenceUri = entityUris.reference().namespace() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
+        List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
+                Ontology.NORMAL_RANK, referenceUri);
+        statement(george, referenceUri, entityUris.value().namespace() + "P854", "http://example.com");
+        rdfRepository.sync("Q23", george);
+        StringBuilder query = Provenance.prefix(Ontology.prefix(entityUris.prefixes(new StringBuilder())));
+        query.append("SELECT * WHERE { entity:Q23 entity:P19 [ v:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
+        TupleQueryResult r = rdfRepository.query(query.toString());
+        assertTrue(r.hasNext());
+        assertThat(r.next(), allOf(//
+                binds("placeOfBirth", "Q494413"),//
+                binds("provP", entityUris.value().namespace() + "P854"),//
+                binds("provO", "http://example.com")));
+        assertFalse(r.hasNext());
+    }
+
+    @Test
+    public void referencesOnExpandedStatementsChangePredicate() throws QueryEvaluationException {
+        referencesOnExpandedStatements();
+        String referenceUri = entityUris.reference().namespace() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
+        List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
+                Ontology.NORMAL_RANK, referenceUri);
+        statement(george, referenceUri, entityUris.value().namespace() + "P143",
+                "http://www.anb.org/articles/02/02-00332.html");
+        rdfRepository.sync("Q23", george);
+        StringBuilder query = Provenance.prefix(Ontology.prefix(entityUris.prefixes(new StringBuilder())));
+        query.append("SELECT * WHERE { entity:Q23 entity:P19 [ v:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
+        TupleQueryResult r = rdfRepository.query(query.toString());
+        assertTrue(r.hasNext());
+        assertThat(r.next(), allOf(//
+                binds("placeOfBirth", "Q494413"),//
+                binds("provP", entityUris.value().namespace() + "P143"),//
+                binds("provO", "http://www.anb.org/articles/02/02-00332.html")));
+        assertFalse(r.hasNext());
+    }
+
+    @Test
+    public void sharedReference() throws QueryEvaluationException {
+        // Load a shared reference
+        String referenceUri = entityUris.reference().namespace() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
+        List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
+                Ontology.NORMAL_RANK, referenceUri);
+        Statement refDecl = statement(george, referenceUri, entityUris.value().namespace() + "P854",
+                "http://www.anb.org/articles/02/02-00332.html");
+        rdfRepository.sync("Q23", george);
+        List<Statement> dummy = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q1234134", "P19", "Q494413",
+                Ontology.NORMAL_RANK, referenceUri);
+        dummy.add(refDecl);
+        rdfRepository.sync("Q1234134", dummy);
+
+        // Now query and make sure you can find it
+        StringBuilder query = Provenance.prefix(Ontology.prefix(entityUris.prefixes(new StringBuilder())));
+        query.append("SELECT * WHERE { entity:Q23 entity:P19 [ v:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
+        TupleQueryResult r = rdfRepository.query(query.toString());
+        assertTrue(r.hasNext());
+        assertThat(r.next(), allOf(//
+                binds("placeOfBirth", "Q494413"),//
+                binds("provP", entityUris.value().namespace() + "P854"),//
+                binds("provO", "http://www.anb.org/articles/02/02-00332.html")));
+        assertFalse(r.hasNext());
+
+        // Now remove the reference from just one place
+        dummy = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q1234134", "P19", "Q494413",
+                Ontology.NORMAL_RANK);
+        rdfRepository.sync("Q1234134", dummy);
+
+        // Now query and find the reference still there because its shared!
+        query = Provenance.prefix(Ontology.prefix(entityUris.prefixes(new StringBuilder())));
+        query.append("SELECT * WHERE { entity:Q23 entity:P19 [ v:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
+        r = rdfRepository.query(query.toString());
+        assertTrue(r.hasNext());
+        assertThat(r.next(), allOf(//
+                binds("placeOfBirth", "Q494413"),//
+                binds("provP", entityUris.value().namespace() + "P854"),//
+                binds("provO", "http://www.anb.org/articles/02/02-00332.html")));
+        assertFalse(r.hasNext());
+
+        // Query one more way just to be sure it works 10000%
+        query = Ontology.prefix(entityUris.prefixes(new StringBuilder()));
+        query.append("SELECT * WHERE { ?s ?p ?o . FILTER( STRSTARTS(STR(?s), \"")
+                .append(entityUris.reference().namespace()).append("\") ) . }");
+        r = rdfRepository.query(query.toString());
+        assertTrue(r.hasNext());
+        assertThat(r.next(), allOf(//
+                binds("p", entityUris.value().namespace() + "P854"),//
+                binds("o", "http://www.anb.org/articles/02/02-00332.html")));
+        assertFalse(r.hasNext());
+
+        // Now remove it from its last place
+        george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
+                Ontology.NORMAL_RANK);
+        rdfRepository.sync("Q23", george);
+
+        /*
+         * Now query and find the reference now gone because it isn't used
+         * anywhere.
+         */
+        query = Ontology.prefix(entityUris.prefixes(new StringBuilder()));
+        query.append("SELECT * WHERE { ?s ?p ?o . FILTER( STRSTARTS(STR(?s), \"")
+                .append(entityUris.reference().namespace()).append("\") ) . }");
+        r = rdfRepository.query(query.toString());
+        assertFalse(r.hasNext());
+    }
+
+    private List<Statement> expandedStatement(String statementId, String subject, String predicate, String value,
+            String rank, String referenceUri) {
+        List<Statement> statements = expandedStatement(statementId, subject, predicate, value, rank);
+        String statementUri = statements.get(1).getSubject().stringValue();
+        statement(statements, statementUri, Provenance.WAS_DERIVED_FROM, referenceUri);
+        return statements;
+    }
+
+    private List<Statement> expandedStatement(String statementId, String subject, String predicate, String value,
+            String rank) {
+        List<Statement> statements = new ArrayList<>();
+        String statementUri = entityUris.statement().namespace() + subject + "-" + statementId;
+        statement(statements, subject, predicate, statementUri);
+        statement(statements, statementUri, entityUris.value().namespace() + predicate, value);
+        statement(statements, statementUri, Ontology.RANK, rank);
+        return statements;
     }
 
     @Test
