@@ -1,55 +1,37 @@
 package org.wikidata.query.rdf.tool.rdf;
 
 import static org.hamcrest.Matchers.allOf;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.wikidata.query.rdf.tool.Matchers.binds;
 import static org.wikidata.query.rdf.tool.StatementHelper.siteLink;
 import static org.wikidata.query.rdf.tool.StatementHelper.statement;
 
 import java.math.BigInteger;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
-import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.tool.AbstractRdfRepositoryIntegrationTestBase;
 
 import com.google.common.collect.ImmutableList;
 
 /**
  * Tests RdfRepository against a live RDF repository.
  */
-public class RdfRepositoryIntegrationTest {
-    private final RdfRepositoryForTesting repository;
-
-    public RdfRepositoryIntegrationTest() throws URISyntaxException {
-        repository = new RdfRepositoryForTesting(new URI("http://localhost:9999/bigdata/namespace/kb/sparql"),
-                Entity.WIKIDATA);
-    }
-
-    @Before
-    public void clear() {
-        repository.clear();
-    }
-
+public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrationTestBase {
     @Test
     public void newSiteLink() throws QueryEvaluationException {
-        repository.sync("Q23", siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en"));
-        TupleQueryResult r = repository.query("SELECT * WHERE {?s <http://schema.org/about> ?o}");
+        rdfRepository.sync("Q23", siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en"));
+        TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s <http://schema.org/about> ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), allOf(//
                 binds("s", "http://en.wikipedia.org/wiki/George_Washington"),//
@@ -60,8 +42,8 @@ public class RdfRepositoryIntegrationTest {
     @Test
     public void moveSiteLink() throws QueryEvaluationException {
         newSiteLink();
-        repository.sync("Q23", siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washingmoved", "en"));
-        TupleQueryResult r = repository.query("SELECT * WHERE {?s <http://schema.org/about> ?o}");
+        rdfRepository.sync("Q23", siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washingmoved", "en"));
+        TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s <http://schema.org/about> ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), allOf(//
                 binds("s", "http://en.wikipedia.org/wiki/George_Washingmoved"),//
@@ -71,9 +53,9 @@ public class RdfRepositoryIntegrationTest {
 
     @Test
     public void newLabel() throws QueryEvaluationException {
-        repository.sync("Q23", ImmutableList.of(//
+        rdfRepository.sync("Q23", ImmutableList.of(//
                 statement("Q23", RDFS.LABEL, new LiteralImpl("George Washington", "en"))));
-        TupleQueryResult r = repository.query("SELECT * WHERE {?s ?p ?o}");
+        TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), allOf(//
                 binds("s", "Q23"),//
@@ -85,9 +67,9 @@ public class RdfRepositoryIntegrationTest {
     @Test
     public void changedLabel() throws QueryEvaluationException {
         newLabel();
-        repository.sync("Q23", ImmutableList.of(//
+        rdfRepository.sync("Q23", ImmutableList.of(//
                 statement("Q23", RDFS.LABEL, new LiteralImpl("George Washingmoved", "en"))));
-        TupleQueryResult r = repository.query("SELECT * WHERE {?s ?p ?o}");
+        TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), allOf(//
                 binds("s", "Q23"),//
@@ -98,9 +80,9 @@ public class RdfRepositoryIntegrationTest {
 
     @Test
     public void newLabelWithQuotes() throws QueryEvaluationException {
-        repository.sync("Q23", ImmutableList.of(//
+        rdfRepository.sync("Q23", ImmutableList.of(//
                 statement("Q23", RDFS.LABEL, new LiteralImpl("George \"Cherry Tree\" Washington", "en"))));
-        TupleQueryResult r = repository.query("SELECT * WHERE {?s ?p ?o}");
+        TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), allOf(//
                 binds("s", "Q23"),//
@@ -111,9 +93,9 @@ public class RdfRepositoryIntegrationTest {
 
     @Test
     public void statementWithBackslash() throws QueryEvaluationException {
-        repository.sync("Q42", ImmutableList.of(//
+        rdfRepository.sync("Q42", ImmutableList.of(//
                 statement("Q42", "P396", new LiteralImpl("IT\\ICCU\\RAVV\\034417"))));
-        TupleQueryResult r = repository.query("SELECT * WHERE {?s ?p ?o}");
+        TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), allOf(//
                 binds("s", "Q42"),//
@@ -125,10 +107,10 @@ public class RdfRepositoryIntegrationTest {
     @Test
     public void newLabelLanguage() throws QueryEvaluationException {
         newLabel();
-        repository.sync("Q23", ImmutableList.of(//
+        rdfRepository.sync("Q23", ImmutableList.of(//
                 statement("Q23", RDFS.LABEL, new LiteralImpl("George Washington", "en")),//
                 statement("Q23", RDFS.LABEL, new LiteralImpl("George Washington", "de"))));
-        TupleQueryResult r = repository.query("SELECT * WHERE {?s ?p ?o} ORDER BY ?o");
+        TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o} ORDER BY ?o");
         assertTrue(r.hasNext());
         assertThat(r.next(), allOf(//
                 binds("s", "Q23"),//
@@ -144,25 +126,25 @@ public class RdfRepositoryIntegrationTest {
 
     @Test
     public void hasRevisionFalseIfNotPresent() {
-        assertFalse(repository.hasRevision("Q23", 10));
+        assertFalse(rdfRepository.hasRevision("Q23", 10));
     }
 
     @Test
     public void hasRevisionFalseIfTooEarly() {
         syncJustVersion("Q23", 1);
-        assertFalse(repository.hasRevision("Q23", 10));
+        assertFalse(rdfRepository.hasRevision("Q23", 10));
     }
 
     @Test
     public void hasRevisionTrueIfMatch() {
         syncJustVersion("Q23", 10);
-        assertTrue(repository.hasRevision("Q23", 10));
+        assertTrue(rdfRepository.hasRevision("Q23", 10));
     }
 
     @Test
     public void hasRevisionTrueIfAfter() {
         syncJustVersion("Q23", 10);
-        assertTrue(repository.hasRevision("Q23", 9));
+        assertTrue(rdfRepository.hasRevision("Q23", 9));
     }
 
     /**
@@ -177,9 +159,9 @@ public class RdfRepositoryIntegrationTest {
             statements.add(statement(link, SchemaDotOrg.IN_LANGUAGE, new LiteralImpl(Integer.toString(i))));
             statements.add(statement(link, SchemaDotOrg.ABOUT, "Q80"));
         }
-        repository.sync("Q80", statements);
-        repository.sync("Q80", statements);
-        TupleQueryResult r = repository
+        rdfRepository.sync("Q80", statements);
+        rdfRepository.sync("Q80", statements);
+        TupleQueryResult r = rdfRepository
                 .query("PREFIX entity: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?s) as ?sc) WHERE {?s ?p entity:Q80}");
         assertTrue(r.hasNext());
         assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(800))));
@@ -195,9 +177,9 @@ public class RdfRepositoryIntegrationTest {
         for (int i = 0; i < 1000; i++) {
             statements.add(statement("Q80", "P" + i, new IntegerLiteralImpl(BigInteger.valueOf(i))));
         }
-        repository.sync("Q80", statements);
-        repository.sync("Q80", statements);
-        TupleQueryResult r = repository
+        rdfRepository.sync("Q80", statements);
+        rdfRepository.sync("Q80", statements);
+        TupleQueryResult r = rdfRepository
                 .query("PREFIX entity: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?p) as ?sc) WHERE {entity:Q80 ?p ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(1000))));
@@ -207,34 +189,14 @@ public class RdfRepositoryIntegrationTest {
     @Test
     public void delete() throws QueryEvaluationException {
         newSiteLink();
-        repository.sync("Q23", Collections.<Statement> emptyList());
-        TupleQueryResult r = repository.query("SELECT * WHERE {?s ?p ?o}");
+        rdfRepository.sync("Q23", Collections.<Statement> emptyList());
+        TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         assertFalse(r.hasNext());
     }
 
     private void syncJustVersion(String entityId, int version) {
         Statement statement = statement(entityId, SchemaDotOrg.VERSION,
                 new IntegerLiteralImpl(new BigInteger(Integer.toString(version))));
-        repository.sync(entityId, ImmutableList.of(statement));
-    }
-
-    /**
-     * RdfRepository extension used for testing. We don't want to anyone to
-     * accidentally use clear() so we don't put it in the repository.
-     */
-    public static class RdfRepositoryForTesting extends RdfRepository {
-        public RdfRepositoryForTesting(URI uri, Entity entityUris) {
-            super(uri, entityUris);
-        }
-
-        /**
-         * Clear's the whole repository.
-         */
-        public void clear() {
-            UpdateBuilder b = new UpdateBuilder();
-            b.where("?s", "?p", "?o");
-            b.delete("?s", "?p", "?o");
-            execute("update", RdfRepository.IGNORE_RESPONSE, b.toString());
-        }
+        rdfRepository.sync(entityId, ImmutableList.of(statement));
     }
 }

@@ -204,13 +204,6 @@ public class Update<B extends Change.Batch> implements Runnable {
         return new RecentChangesPoller(wikibaseRepository, new Date(startTime));
     }
 
-    /**
-     * Polls updates.
-     */
-    public static interface Source {
-
-    }
-
     private final Meter updateMeter = new Meter();
     private final Meter batchAdvanced = new Meter();
 

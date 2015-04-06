@@ -18,6 +18,15 @@
     </license>
   </licenses>
 
+  <dependencies>
+    <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>2.7</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
   <build>
     <finalName>wikidata-query-common-${project.version}</finalName>  
     <plugins>
