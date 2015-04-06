@@ -26,7 +26,7 @@ import org.wikidata.query.rdf.tool.exception.RetryableException;
  * can't delete or perform revision deletes so we can't test that part.
  */
 public class WikibaseRepositoryIntegrationTest {
-    private static final String HOST = "wikidata.beta.wmflabs.org";
+    private static final String HOST = "test.wikidata.org";
     private final WikibaseRepository repo = new WikibaseRepository("http", HOST);
     private final Entity entityUris = new Entity(HOST);
 
