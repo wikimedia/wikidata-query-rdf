@@ -19,6 +19,7 @@
   </licenses>
 
   <build>
+    <finalName>wikidata-query-common-${project.version}</finalName>  
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
