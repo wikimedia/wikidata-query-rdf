@@ -1,6 +1,5 @@
 package org.wikidata.query.rdf.tool;
 
-import static com.google.common.io.Resources.getResource;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDateFormat;
@@ -8,6 +7,7 @@ import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDate
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -18,10 +18,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.openrdf.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Entity;
-import org.wikidata.query.rdf.common.uri.EntityData;
+import org.wikidata.query.rdf.tool.CliUtils.BasicOptions;
+import org.wikidata.query.rdf.tool.CliUtils.MungerOptions;
+import org.wikidata.query.rdf.tool.CliUtils.WikibaseOptions;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.Change.Batch;
 import org.wikidata.query.rdf.tool.change.IdChangeSource;
@@ -32,17 +35,8 @@ import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
-import ch.qos.logback.core.joran.spi.JoranException;
-import ch.qos.logback.core.util.StatusPrinter;
-
 import com.codahale.metrics.Meter;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.lexicalscope.jewel.cli.ArgumentValidationException;
-import com.lexicalscope.jewel.cli.Cli;
-import com.lexicalscope.jewel.cli.CliFactory;
-import com.lexicalscope.jewel.cli.HelpRequestedException;
 import com.lexicalscope.jewel.cli.Option;
 
 /**
@@ -54,15 +48,9 @@ public class Update<B extends Change.Batch> implements Runnable {
     /**
      * CLI options for use with JewelCli.
      */
-    public static interface Options {
-        @Option(shortName = "w", defaultValue = "www.wikidata.org", description = "Wikidata host")
-        String wikidataHost();
-
-        @Option(defaultValue = "https", description = "Wikidata url schema")
-        String wikidataSchema();
-
-        @Option(shortName = "v")
-        boolean verbose();
+    public static interface Options extends BasicOptions, MungerOptions, WikibaseOptions {
+        @Option(defaultValue = "https", description = "Wikidata url scheme")
+        String wikibaseScheme();
 
         @Option(shortName = "s", defaultToNull = true, description = "Start time in 2015-02-11T17:11:08Z or 20150211170100 format.")
         String start();
@@ -73,51 +61,13 @@ public class Update<B extends Change.Batch> implements Runnable {
         @Option(shortName = "u", description = "URL to post updates and queries.")
         String sparqlUrl();
 
-        @Option(longName = "labelLanguage", defaultToNull = true, description = "Only import labels, aliases, and descriptions in these languages.")
-        List<String> labelLanguages();
-
-        @Option(longName = "singleLabel", defaultToNull = true, description = "Always import a single label and description using the languages specified as a fallback list.  If there aren't any matching labels or descriptions them the entity itself is used as the label or description.")
-        List<String> singleLabelLanguages();
-
-        @Option(description = "Skip site links")
-        boolean skipSiteLinks();
-
-        @Option(helpRequest = true)
-        boolean help();
-
         @Option(shortName = "d", defaultValue = "10", description = "Poll delay when no updates found")
         int pollDelay();
     }
 
     public static void main(String args[]) {
-        Options options;
-        Cli<Options> cli = CliFactory.createCli(Options.class);
-
-        try {
-            options = cli.parseArguments(args);
-        } catch (HelpRequestedException e) {
-            log.info(cli.getHelpMessage());
-            return;
-        } catch (ArgumentValidationException e) {
-            log.error("Invalid argument", e);
-            log.error(cli.getHelpMessage());
-            return;
-        }
-        if (options.verbose()) {
-            log.info("Verbose mode activated");
-            // Assumes logback which is pretty safe in main.
-            LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-            try {
-                JoranConfigurator configurator = new JoranConfigurator();
-                configurator.setContext(context);
-                context.reset();
-                configurator.doConfigure(getResource("logback-verbose.xml"));
-            } catch (JoranException je) {
-                // StatusPrinter will handle this
-            }
-            StatusPrinter.printInCaseOfErrorsOrWarnings(context);
-        }
-        WikibaseRepository wikibaseRepository = new WikibaseRepository(options.wikidataSchema(), options.wikidataHost());
+        Options options = CliUtils.handleOptions(Options.class, args);
+        WikibaseRepository wikibaseRepository = new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost());
         URI sparqlUri;
         try {
             sparqlUri = new URI(options.sparqlUrl());
@@ -125,8 +75,7 @@ public class Update<B extends Change.Batch> implements Runnable {
             log.error("Invalid url:  " + options.sparqlUrl() + " caused by " + e.getMessage());
             return;
         }
-        Entity entityUris = new Entity(options.wikidataHost());
-        EntityData entityDataUris = new EntityData(options.wikidataHost());
+        Entity entityUris = new Entity(options.wikibaseHost());
         RdfRepository rdfRepository = new RdfRepository(sparqlUri, entityUris);
         Change.Source<? extends Change.Batch> changeSource = buildChangeSource(options, rdfRepository,
                 wikibaseRepository);
@@ -137,16 +86,7 @@ public class Update<B extends Change.Batch> implements Runnable {
         ExecutorService executor = new ThreadPoolExecutor(10, 10, 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(), threadFactory.build());
 
-        Munger munger = new Munger(entityDataUris, entityUris);
-        if (options.skipSiteLinks()) {
-            munger = munger.removeSiteLinks();
-        }
-        if (options.labelLanguages() != null) {
-            munger = munger.limitLabelLanguages(options.labelLanguages());
-        }
-        if (options.singleLabelLanguages() != null) {
-            munger = munger.singleLabelMode(options.singleLabelLanguages());
-        }
+        Munger munger = CliUtils.mungerFromOptions(options);
 
         new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor).
           setPollDelay(options.pollDelay()).
@@ -312,8 +252,9 @@ public class Update<B extends Change.Batch> implements Runnable {
             log.debug("RDF repository already has this revision, skipping.");
             return;
         }
-        rdfRepository.sync(change.entityId(),
-                munger.munge(change.entityId(), wikibase.fetchRdfForEntity(change.entityId())));
+        Collection<Statement> statements = wikibase.fetchRdfForEntity(change.entityId());
+        munger.munge(change.entityId(), statements);
+        rdfRepository.sync(change.entityId(), statements);
         updateMeter.mark();
     }
 

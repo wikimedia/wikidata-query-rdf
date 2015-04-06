@@ -279,6 +279,8 @@ public class RdfRepository {
         private static final Pattern ELAPSED_LINE = Pattern.compile("><p>totalElapsed=[^ ]+ elapsed=([^<]+)</p");
         private static final Pattern COMMIT_LINE = Pattern
                 .compile("><hr><p>COMMIT: totalElapsed=[^ ]+ commitTime=[^ ]+ mutationCount=([^<]+)</p");
+        private static final Pattern BULK_UPDATE_LINE = Pattern
+                .compile("<\\?xml version=\"1.0\"\\?><data modified=\"(\\d+)\" milliseconds=\"(\\d+)\"/>");
 
         @Override
         public String acceptHeader() {
@@ -294,11 +296,19 @@ public class RdfRepository {
                     Matcher m = ELAPSED_LINE.matcher(line);
                     if (m.matches()) {
                         log.trace("elapsed = {}", m.group(1));
+                        continue;
                     }
                     m = COMMIT_LINE.matcher(line);
                     if (m.matches()) {
-                        log.trace("mutation count = {}", m.group(1));
+                        log.debug("mutation count = {}", m.group(1));
                         mutationCount = Integer.valueOf(m.group(1));
+                        continue;
+                    }
+                    m = BULK_UPDATE_LINE.matcher(line);
+                    if (m.matches()) {
+                        log.debug("bulk updated {} items in {} millis", m.group(1), m.group(2));
+                        mutationCount = Integer.valueOf(m.group(1));
+                        continue;
                     }
                 }
             }

@@ -215,14 +215,12 @@
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
-        <version>1.5</version>
+        <version>1.7</version>
         <configuration>
           <targetVersion>1.7</targetVersion>
           <failOnMissingClasses>false</failOnMissingClasses> <!-- this is a bug in forbidden APIs since 1.5 looks also at annotations -->
           <!-- disallow undocumented classes like sun.misc.Unsafe: -->
           <internalRuntimeForbidden>true</internalRuntimeForbidden>
-          <!-- if the used Java version is too new, don't fail, just do nothing: -->
-          <failOnUnsupportedJava>false</failOnUnsupportedJava>
           <bundledSignatures>
             <!-- This will automatically choose the right signatures based on 'maven.compiler.target': -->
             <bundledSignature>jdk-unsafe</bundledSignature>
@@ -243,6 +241,10 @@
                 <signaturesFile>../src/build/forbidden/all.txt</signaturesFile>
                 <signaturesFile>../src/build/forbidden/core.txt</signaturesFile>
               </signaturesFiles>
+              <excludes>
+                <!-- Some portions of the project need access to System.out and things so we contain them in inner classes of this form. -->
+                <exclude>**/*$ForbiddenOk.class</exclude>
+              </excludes>
             </configuration>
           </execution>
           <execution>

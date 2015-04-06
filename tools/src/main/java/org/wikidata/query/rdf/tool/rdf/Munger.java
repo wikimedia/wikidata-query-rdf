@@ -113,16 +113,15 @@ public class Munger {
      * RDF exports into a more queryable form.
      *
      * @param statements statements to munge
-     * @return a reference to statements
      */
-    public Collection<Statement> munge(String entityId, Collection<Statement> statements) throws ContainedException {
+    public void munge(String entityId, Collection<Statement> statements) throws ContainedException {
         if (statements.isEmpty()) {
             // Empty collection is a delete.
-            return statements;
+            return;
         }
         MungeOperation op = new MungeOperation(entityId, statements);
         op.munge();
-        return op.statements;
+        return;
     }
 
     /**

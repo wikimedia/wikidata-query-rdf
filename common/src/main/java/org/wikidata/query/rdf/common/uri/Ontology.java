@@ -27,6 +27,11 @@ public class Ontology {
     public static final String VALUE = NAMESPACE + "Value";
 
     /**
+     * Wikibase exports dump information with this subject.
+     */
+    public static final Object DUMP = NAMESPACE + "Dump";
+
+    /**
      * Predicate for marking Wikibase's Rank.
      *
      * @see <a href="http://www.wikidata.org/wiki/Help:Ranking">The

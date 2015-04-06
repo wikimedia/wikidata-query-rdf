@@ -7,4 +7,11 @@ package org.wikidata.query.rdf.common.uri;
 public class RDFS {
     public static final String NAMESPACE = "http://www.w3.org/2000/01/rdf-schema#";
     public static final String LABEL = NAMESPACE + "label";
+
+    /**
+     * Add the rdfs: prefix to the query.
+     */
+    public static StringBuilder prefixes(StringBuilder query) {
+        return query.append("PREFIX rdfs: <").append(NAMESPACE).append(">\n");
+    }
 }

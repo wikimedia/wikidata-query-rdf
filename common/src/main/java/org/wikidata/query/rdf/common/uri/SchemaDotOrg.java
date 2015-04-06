@@ -34,4 +34,11 @@ public class SchemaDotOrg {
      * Wikibase adds the descriptions as schema:description.
      */
     public static final String DESCRIPTION = NAMESPACE + "description";
+
+    /**
+     * Adds the schema: prefix to the query.
+     */
+    public static StringBuilder prefix(StringBuilder query) {
+        return query.append("PREFIX schema: <").append(NAMESPACE).append(">\n");
+    }
 }

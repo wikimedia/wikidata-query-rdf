@@ -6,6 +6,7 @@ import java.net.URISyntaxException;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.wikidata.query.rdf.common.uri.Entity;
+import org.wikidata.query.rdf.common.uri.EntityData;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
@@ -17,10 +18,20 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
  */
 @RunWith(RandomizedRunner.class)
 public abstract class AbstractRdfRepositoryIntegrationTestBase extends RandomizedTest {
-    protected final Entity entityUris = Entity.WIKIDATA;
+    protected final EntityData entityDataUris;
+    protected final Entity entityUris;
     protected final RdfRepositoryForTesting rdfRepository;
 
+    /**
+     * Build the test against prod wikidata.
+     */
     public AbstractRdfRepositoryIntegrationTestBase() {
+        this(EntityData.WIKIDATA, Entity.WIKIDATA);
+    }
+
+    public AbstractRdfRepositoryIntegrationTestBase(EntityData entityDataUris, Entity entityUris) {
+        this.entityDataUris = entityDataUris;
+        this.entityUris = entityUris;
         try {
             rdfRepository = new RdfRepositoryForTesting(new URI("http://localhost:9999/bigdata/namespace/kb/sparql"),
                     entityUris);
@@ -48,6 +59,14 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
          */
         public void clear() {
             execute("update", RdfRepository.UPDATE_COUNT_RESPONSE, "CLEAR DEFAULT");
+        }
+
+        /**
+         * Loads a uri into this rdf repository. Uses Blazegraph's update with
+         * uri's feature.
+         */
+        public int loadUrl(String uri) {
+            return execute("uri", RdfRepository.UPDATE_COUNT_RESPONSE, uri);
         }
     }
 }
