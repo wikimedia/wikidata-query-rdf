@@ -26,6 +26,7 @@ public class AbstractUpdateIntegrationTestBase extends AbstractRdfRepositoryInte
         ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>());
         Update<?> update = new Update<>(source, wikibaseRepository, rdfRepository, munger, executorService);
+        update.setPollDelay(0);
         update.run();
         executorService.shutdown();
     }

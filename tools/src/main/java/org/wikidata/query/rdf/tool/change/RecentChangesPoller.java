@@ -33,26 +33,35 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
     @Override
     public Batch firstBatch() throws RetryableException {
-        return batch(firstStartTime, null);
+        return batch(firstStartTime, null, null);
     }
 
     @Override
     public Batch nextBatch(Batch lastBatch) throws RetryableException {
-        return batch(lastBatch.nextStartTime, lastBatch.nextContinue);
+        return batch(lastBatch.nextStartTime, lastBatch.nextContinue, lastBatch.lastSeenId);
     }
 
     public class Batch extends Change.Batch.AbstractDefaultImplementation {
         private final Date nextStartTime;
         private final JSONObject nextContinue;
+        /**
+         * The ID of the last change we've seen. Poller would ignore it next time.
+         */
+        private final String lastSeenId;
 
         /**
          * A batch that will next continue using the continue parameter.
          */
         private Batch(ImmutableList<Change> changes, long advanced, String upTo, Date nextStartTime,
-                JSONObject nextContinue) {
+                JSONObject nextContinue, String lastSeen) {
             super(changes, advanced, upTo);
             this.nextContinue = nextContinue;
             this.nextStartTime = nextStartTime;
+            if(!changes.isEmpty()) {
+              this.lastSeenId = changes.get(changes.size()-1).toString();
+            } else {
+              this.lastSeenId = lastSeen;
+            }
         }
 
         @Override
@@ -66,7 +75,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      *
      * @throws RetryableException on parse failure
      */
-    private Batch batch(Date lastNextStartTime, JSONObject lastNextContinue) throws RetryableException {
+    private Batch batch(Date lastNextStartTime, JSONObject lastNextContinue, String lastSeen) throws RetryableException {
         try {
             JSONObject recentChanges = wikibase.fetchRecentChanges(lastNextStartTime, lastNextContinue);
             ImmutableList.Builder<Change> changes = ImmutableList.builder();
@@ -81,14 +90,17 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                     continue;
                 }
                 Date timestamp = df.parse(rc.get("timestamp").toString());
-                changes.add(new Change(rc.get("title").toString(), (long) rc.get("revid"), timestamp));
+                Change change = new Change(rc.get("title").toString(), (long) rc.get("revid"), timestamp);
+                if(lastSeen == null || !lastSeen.equals(change.toString())) {
+                    changes.add(change);
+                }
                 nextStartTime = Math.max(nextStartTime, timestamp.getTime());
             }
             // Show the user the polled time - one seconds because we can't
             // be sure we got the whole second
             String upTo = inputDateFormat().format(new Date(nextStartTime - 1000));
             long advanced = nextStartTime - lastNextStartTime.getTime();
-            return new Batch(changes.build(), advanced, upTo, new Date(nextStartTime), nextContinue);
+            return new Batch(changes.build(), advanced, upTo, new Date(nextStartTime), nextContinue, lastSeen);
         } catch (java.text.ParseException e) {
             throw new RetryableException("Parse error from api", e);
         }

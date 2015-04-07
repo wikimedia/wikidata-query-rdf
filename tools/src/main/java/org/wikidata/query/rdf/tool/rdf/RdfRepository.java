@@ -75,6 +75,7 @@ public class RdfRepository {
      */
     public int sync(String entityId, Collection<Statement> statements) {
         // TODO this is becoming a mess too
+        log.debug("Updating data for {}", entityId);
         String entity = "entity:" + entityId;
         UpdateBuilder siteLinksBuilder = updateBuilder();
         siteLinksBuilder.delete("?s", "?p", "?o");

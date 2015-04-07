@@ -84,6 +84,9 @@ public class Update<B extends Change.Batch> implements Runnable {
 
         @Option(helpRequest = true)
         boolean help();
+
+        @Option(shortName = "d", defaultValue = "10", description = "Poll delay when no updates found")
+        int pollDelay();
     }
 
     public static void main(String args[]) {
@@ -145,7 +148,9 @@ public class Update<B extends Change.Batch> implements Runnable {
             munger = munger.singleLabelMode(options.singleLabelLanguages());
         }
 
-        new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor).run();
+        new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor).
+          setPollDelay(options.pollDelay()).
+          run();
     }
 
     /**
@@ -213,6 +218,8 @@ public class Update<B extends Change.Batch> implements Runnable {
     private final Munger munger;
     private final ExecutorService executor;
 
+    private int pollDelay = 10;
+
     public Update(Change.Source<B> changeSource, WikibaseRepository wikibase, RdfRepository rdfRepository,
             Munger munger, ExecutorService executor) {
         this.changeSource = changeSource;
@@ -220,6 +227,11 @@ public class Update<B extends Change.Batch> implements Runnable {
         this.rdfRepository = rdfRepository;
         this.munger = munger;
         this.executor = executor;
+    }
+
+    public Update<B> setPollDelay(int delay) {
+        pollDelay = delay;
+        return this;
     }
 
     @Override
@@ -258,14 +270,22 @@ public class Update<B extends Change.Batch> implements Runnable {
                 }
 
                 // TODO wrap all retry-able exceptions in a special exception
-
-                batchAdvanced.mark(batch.advanced());
-                log.info("Polled up to {} at {} updates per second and {} {} per second", batch.upTo(),
-                        meterReport(updateMeter), meterReport(batchAdvanced), batch.advancedUnits());
-                if (batch.last()) {
-                    break;
-                }
-                batch = changeSource.nextBatch(batch);
+                do {
+                  batchAdvanced.mark(batch.advanced());
+                  log.info("Polled up to {} at {} updates per second and {} {} per second", batch.upTo(),
+                          meterReport(updateMeter), meterReport(batchAdvanced), batch.advancedUnits());
+                  if (batch.last()) {
+                      return;
+                  }
+                  batch = changeSource.nextBatch(batch);
+                  if(batch.changes().isEmpty()) {
+                      log.debug("Sleeping for {} secs", pollDelay);
+                      Thread.sleep(pollDelay*1000);
+                  } else {
+                      log.debug("{} changes in batch", batch.changes().size());
+                      break;
+                  }
+                } while(true);
             } catch (RetryableException e) {
                 log.warn("Error occurred during poll loop. Retrying.", e);
             } catch (InterruptedException e) {
@@ -289,7 +309,7 @@ public class Update<B extends Change.Batch> implements Runnable {
     private void handleChange(Change change) throws RetryableException, ContainedException {
         log.debug("Received revision information {}", change);
         if (change.revision() >= 0 && rdfRepository.hasRevision(change.entityId(), change.revision())) {
-            log.debug("RDF repostiroy already has this revision, skipping.");
+            log.debug("RDF repository already has this revision, skipping.");
             return;
         }
         rdfRepository.sync(change.entityId(),
