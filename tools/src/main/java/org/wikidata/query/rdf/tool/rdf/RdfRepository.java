@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.tool.exception.ContainedException;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
@@ -216,7 +217,7 @@ public class RdfRepository {
         try {
             try (CloseableHttpResponse response = client.execute(post)) {
                 if (response.getStatusLine().getStatusCode() != 200) {
-                    throw new RuntimeException("Non-200 response from triple store:  " + response + " body=\n"
+                    throw new ContainedException("Non-200 response from triple store:  " + response + " body=\n"
                             + responseBodyAsString(response));
                 }
                 return responseHandler.parse(response.getEntity());
