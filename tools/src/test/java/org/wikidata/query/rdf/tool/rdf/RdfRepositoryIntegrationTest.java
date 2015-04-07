@@ -129,7 +129,6 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
                 .append("ASK {entity:Q191789 entity:P20 entity:Q731635 }").toString()));
     }
 
-
     @Test
     public void newLabelLanguage() throws QueryEvaluationException {
         newLabel();
@@ -362,39 +361,51 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
     /**
      * Updating items with lots of sitelinks shouldn't be painfully slow.
      */
-    @Test(timeout = 10000)
-    public void lotsOfSiteLinks() throws QueryEvaluationException {
+    @Test
+    public void repeatedSiteLinksArentModified() throws QueryEvaluationException {
+        /*
+         * Note that this used to verify that noop updates for site links was
+         * fast and now it just verifies that they don't cause any reported
+         * modifications. Its not as strong an assertion but its less dependent
+         * on external conditions.
+         */
         List<Statement> statements = new ArrayList<>();
-        for (int i = 0; i < 800; i++) {
+        for (int i = 0; i < 10; i++) {
             String link = String.format(Locale.ROOT, "http://%s.example.com/wiki/tbl", i);
             statements.add(statement(link, RDF.TYPE, SchemaDotOrg.ARTICLE));
             statements.add(statement(link, SchemaDotOrg.IN_LANGUAGE, new LiteralImpl(Integer.toString(i))));
             statements.add(statement(link, SchemaDotOrg.ABOUT, "Q80"));
         }
         rdfRepository.sync("Q80", statements);
-        rdfRepository.sync("Q80", statements);
+        assertEquals(0, rdfRepository.sync("Q80", statements));
         TupleQueryResult r = rdfRepository
                 .query("PREFIX entity: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?s) as ?sc) WHERE {?s ?p entity:Q80}");
         assertTrue(r.hasNext());
-        assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(800))));
+        assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(10))));
         assertFalse(r.hasNext());
     }
 
     /**
      * Updating items with lots of statements shouldn't be painfully slow.
      */
-    @Test(timeout = 10000)
-    public void lotsOfStatements() throws QueryEvaluationException {
+    @Test
+    public void repeatedStatementsArentModified() throws QueryEvaluationException {
+        /*
+         * Note that this used to verify that noop updates for statements was
+         * fast and now it just verifies that they don't cause any reported
+         * modifications. Its not as strong an assertion but its less dependent
+         * on external conditions.
+         */
         List<Statement> statements = new ArrayList<>();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10; i++) {
             statements.add(statement("Q80", "P" + i, new IntegerLiteralImpl(BigInteger.valueOf(i))));
         }
         rdfRepository.sync("Q80", statements);
-        rdfRepository.sync("Q80", statements);
+        assertEquals(0, rdfRepository.sync("Q80", statements));
         TupleQueryResult r = rdfRepository
                 .query("PREFIX entity: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?p) as ?sc) WHERE {entity:Q80 ?p ?o}");
         assertTrue(r.hasNext());
-        assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(1000))));
+        assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(10))));
         assertFalse(r.hasNext());
     }
 

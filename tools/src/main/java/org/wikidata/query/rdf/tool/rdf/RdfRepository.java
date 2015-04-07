@@ -71,8 +71,9 @@ public class RdfRepository {
      *
      * @param entityId id of the entity to sync
      * @param statements all known statements about the entity
+     * @return the number of statements modified
      */
-    public void sync(String entityId, Collection<Statement> statements) {
+    public int sync(String entityId, Collection<Statement> statements) {
         // TODO this is becoming a mess too
         String entity = "entity:" + entityId;
         UpdateBuilder siteLinksBuilder = updateBuilder();
@@ -136,8 +137,10 @@ public class RdfRepository {
             command.append(insertBuilder).append(";\n");
         }
         long start = System.currentTimeMillis();
-        execute("update", LOG_RESPONSE, command.toString());
-        log.debug("Updating {} took {} millis", entityId, System.currentTimeMillis() - start);
+        int modified = execute("update", UPDATE_COUNT_RESPONSE, command.toString());
+        log.debug("Updating {} took {} millis and modified {} statements", entityId,
+                System.currentTimeMillis() - start, modified);
+        return modified;
     }
 
     /**
@@ -263,7 +266,7 @@ public class RdfRepository {
         public T parse(HttpEntity entity) throws IOException;
     }
 
-    protected static ResponseHandler<Void> LOG_RESPONSE = new LogUpdateResponse();
+    protected static ResponseHandler<Integer> UPDATE_COUNT_RESPONSE = new UpdateCountResponse();
     protected static ResponseHandler<TupleQueryResult> TUPLE_QUERY_RESPONSE = new TupleQueryResponse();
     protected static ResponseHandler<Boolean> ASK_QUERY_RESPONSE = new AskQueryResponse();
 
@@ -271,7 +274,7 @@ public class RdfRepository {
      * Attempts to log update response information but very likely only works
      * for Blazegraph.
      */
-    protected static class LogUpdateResponse implements ResponseHandler<Void> {
+    protected static class UpdateCountResponse implements ResponseHandler<Integer> {
         private static final Pattern ELAPSED_LINE = Pattern.compile("><p>totalElapsed=[^ ]+ elapsed=([^<]+)</p");
         private static final Pattern COMMIT_LINE = Pattern
                 .compile("><hr><p>COMMIT: totalElapsed=[^ ]+ commitTime=[^ ]+ mutationCount=([^<]+)</p");
@@ -282,21 +285,26 @@ public class RdfRepository {
         }
 
         @Override
-        public Void parse(HttpEntity entity) throws IOException {
+        public Integer parse(HttpEntity entity) throws IOException {
+            Integer mutationCount = null;
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), Charsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     Matcher m = ELAPSED_LINE.matcher(line);
                     if (m.matches()) {
-                        log.debug("elapsed = {}", m.group(1));
+                        log.trace("elapsed = {}", m.group(1));
                     }
                     m = COMMIT_LINE.matcher(line);
                     if (m.matches()) {
-                        log.debug("mutation count = {}", m.group(1));
+                        log.trace("mutation count = {}", m.group(1));
+                        mutationCount = Integer.valueOf(m.group(1));
                     }
                 }
             }
-            return null;
+            if (mutationCount == null) {
+                throw new IOException("Couldn't find the mutation count!");
+            }
+            return mutationCount;
         }
     }
 

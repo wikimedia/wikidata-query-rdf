@@ -51,7 +51,7 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
             UpdateBuilder b = new UpdateBuilder();
             b.where("?s", "?p", "?o");
             b.delete("?s", "?p", "?o");
-            execute("update", RdfRepository.LOG_RESPONSE, b.toString());
+            execute("update", RdfRepository.UPDATE_COUNT_RESPONSE, b.toString());
         }
     }
 }
