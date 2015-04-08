@@ -39,9 +39,9 @@ import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.query.resultio.binary.BinaryQueryResultParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 
 import com.google.common.base.Charsets;
@@ -53,11 +53,11 @@ public class RdfRepository {
     private final CloseableHttpClient client = HttpClients.custom().setMaxConnPerRoute(100).setMaxConnTotal(100)
             .build();
     private final URI uri;
-    private final Entity entityUris;
+    private final WikibaseUris uris;
 
-    public RdfRepository(URI uri, Entity entityUris) {
+    public RdfRepository(URI uri, WikibaseUris uris) {
         this.uri = uri;
-        this.entityUris = entityUris;
+        this.uris = uris;
     }
 
     /**
@@ -78,6 +78,7 @@ public class RdfRepository {
         log.debug("Updating data for {}", entityId);
         String entity = "entity:" + entityId;
         UpdateBuilder siteLinksBuilder = updateBuilder();
+        siteLinksBuilder.prefix("schema", SchemaDotOrg.NAMESPACE);
         siteLinksBuilder.delete("?s", "?p", "?o");
         siteLinksBuilder.where("?s", "schema:about", "entity:" + entityId);
         siteLinksBuilder.where("?s", "?p", "?o");
@@ -89,7 +90,7 @@ public class RdfRepository {
         referencesBuilder.prefix("prov", Provenance.NAMESPACE);
         referencesBuilder.delete("?s", "?p", "?o");
         referencesBuilder.where(entity, "?statementPred", "?statement");
-        referencesBuilder.where().add(startsWith("?statement", entityUris.statement().namespace()));
+        referencesBuilder.where().add(startsWith("?statement", uris.statement()));
         referencesBuilder.where("?statement", "prov:wasDerivedFrom", "?s");
         referencesBuilder.where("?s", "?p", "?o");
         // We can't clear references that are still used elsewhere
@@ -104,7 +105,7 @@ public class RdfRepository {
         UpdateBuilder expandedStatementsBuilder = updateBuilder();
         expandedStatementsBuilder.delete("?s", "?p", "?o");
         expandedStatementsBuilder.where(entity, "?statementPred", "?s");
-        expandedStatementsBuilder.where().add(startsWith("?s", entityUris.statement().namespace()));
+        expandedStatementsBuilder.where().add(startsWith("?s", uris.statement()));
         expandedStatementsBuilder.where("?s", "?p", "?o");
         if (!statements.isEmpty()) {
             expandedStatementsBuilder.where().notExists().values(statements, "?s", "?p", "?o");
@@ -151,7 +152,7 @@ public class RdfRepository {
         // TODO building queries with strings sucks because escaping....
         StringBuilder prefixes = new StringBuilder();
         prefixes.append("PREFIX schema: <").append(SchemaDotOrg.NAMESPACE).append(">\n");
-        prefixes.append("PREFIX entity: <").append(entityUris.namespace()).append(">\n");
+        prefixes.append("PREFIX entity: <").append(uris.entity()).append(">\n");
         return ask(String.format(Locale.ROOT, "%sASK {\n  entity:%s schema:version ?v .\n  FILTER (?v >= %s)\n}",
                 prefixes, entityId, revision));
     }
@@ -237,8 +238,7 @@ public class RdfRepository {
 
     private UpdateBuilder updateBuilder() {
         UpdateBuilder b = new UpdateBuilder();
-        b.prefix("entity", entityUris.namespace());
-        b.prefix("schema", SchemaDotOrg.NAMESPACE);
+        b.prefix("entity", uris.entity());
         return b;
     }
 

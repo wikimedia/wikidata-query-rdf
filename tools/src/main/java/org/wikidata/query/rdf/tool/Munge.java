@@ -21,10 +21,9 @@ import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.Rio;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.Entity;
-import org.wikidata.query.rdf.common.uri.EntityData;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.CliUtils.BasicOptions;
 import org.wikidata.query.rdf.tool.CliUtils.MungerOptions;
 import org.wikidata.query.rdf.tool.CliUtils.WikibaseOptions;
@@ -57,13 +56,12 @@ public class Munge implements Runnable {
 
     public static void main(String[] args) {
         Options options = CliUtils.handleOptions(Options.class, args);
-        EntityData entityDataUris = new EntityData(options.wikibaseHost());
-        Entity entityUris = new Entity(options.wikibaseHost());
+        WikibaseUris uris = new WikibaseUris(options.wikibaseHost());
         Munger munger = CliUtils.mungerFromOptions(options);
 
         if (options.to().startsWith("port:")) {
             int port = Integer.parseInt(options.to().substring("port:".length()));
-            Httpd http = new Httpd(port, entityDataUris, entityUris, munger, options.from());
+            Httpd http = new Httpd(port, uris, munger, options.from());
             try {
                 log.info("Starting embedded http server for munged rdf on port {}.", port);
                 http.start();
@@ -98,22 +96,20 @@ public class Munge implements Runnable {
             return;
         }
         try {
-            Munge munge = new Munge(entityDataUris, entityUris, munger, from, to);
+            Munge munge = new Munge(uris, munger, from, to);
             munge.run();
         } catch (RuntimeException e) {
             log.error("Fatal error munging RDF", e);
         }
     }
 
-    private final EntityData entityDataUris;
-    private final Entity entityUris;
+    private final WikibaseUris uris;
     private final Munger munger;
     private final Reader from;
     private final Writer to;
 
-    public Munge(EntityData entityDataUris, Entity entityUris, Munger munger, Reader from, Writer to) {
-        this.entityDataUris = entityDataUris;
-        this.entityUris = entityUris;
+    public Munge(WikibaseUris uris, Munger munger, Reader from, Writer to) {
+        this.uris = uris;
         this.munger = munger;
         this.from = from;
         this.to = to;
@@ -124,11 +120,11 @@ public class Munge implements Runnable {
         try {
             RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
             RDFWriter writer = Rio.createWriter(RDFFormat.TURTLE, to);
-            RDFHandler handler = new EntityMungingRdfHandler(entityDataUris, munger, writer);
+            RDFHandler handler = new EntityMungingRdfHandler(uris, munger, writer);
             handler = new Normalizer(handler);
             parser.setRDFHandler(handler);
             try {
-                parser.parse(from, entityUris.namespace());
+                parser.parse(from, uris.entity());
             } catch (RDFParseException | RDFHandlerException | IOException e) {
                 throw new RuntimeException(e);
             }
@@ -160,15 +156,15 @@ public class Munge implements Runnable {
      * This is how the files are built so that is OK.
      */
     private static class EntityMungingRdfHandler implements RDFHandler {
-        private final EntityData entityDataUris;
+        private final WikibaseUris uris;
         private final Munger munger;
         private final RDFHandler next;
         private final List<Statement> statements = new ArrayList<>();
         private boolean haveNonEntityDataStatements;
         private String entityId;
 
-        public EntityMungingRdfHandler(EntityData entityDataUris, Munger munger, RDFHandler next) {
-            this.entityDataUris = entityDataUris;
+        public EntityMungingRdfHandler(WikibaseUris uris, Munger munger, RDFHandler next) {
+            this.uris = uris;
             this.munger = munger;
             this.next = next;
         }
@@ -194,7 +190,7 @@ public class Munge implements Runnable {
         @Override
         public void handleStatement(Statement statement) throws RDFHandlerException {
             String subject = statement.getSubject().stringValue();
-            if (subject.startsWith(entityDataUris.namespace())) {
+            if (subject.startsWith(uris.entityData())) {
                 if (haveNonEntityDataStatements) {
                     munge();
                 }
@@ -243,15 +239,13 @@ public class Munge implements Runnable {
      * this removes the need to create a temporary file.
      */
     public static class Httpd extends NanoHTTPD {
-        private final EntityData entityDataUris;
-        private final Entity entityUris;
+        private final WikibaseUris uris;
         private final Munger munger;
         private final String source;
 
-        public Httpd(int port, EntityData entityDataUris, Entity entityUris, Munger munger, String source) {
+        public Httpd(int port, WikibaseUris uris, Munger munger, String source) {
             super(port);
-            this.entityDataUris = entityDataUris;
-            this.entityUris = entityUris;
+            this.uris = uris;
             this.munger = munger;
             this.source = source;
         }
@@ -262,7 +256,7 @@ public class Munge implements Runnable {
                 PipedInputStream sentToResponse = new PipedInputStream();
                 Reader from = new InputStreamReader(CliUtils.inputStream(source), Charsets.UTF_8);
                 final Writer to = new OutputStreamWriter(new PipedOutputStream(sentToResponse), Charsets.UTF_8);
-                final Munge munge = new Munge(entityDataUris, entityUris, munger, from, to);
+                final Munge munge = new Munge(uris, munger, from, to);
                 Thread thread = new Thread(munge);
                 thread.setUncaughtExceptionHandler(CliUtils.loggingUncaughtExceptionHandler("Error serving rdf", log));
                 thread.start();

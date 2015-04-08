@@ -18,31 +18,27 @@ import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
-import org.wikidata.query.rdf.common.uri.Entity;
-import org.wikidata.query.rdf.common.uri.EntityData;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.rdf.Munger.BadSubjectException;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
-import com.carrotsearch.randomizedtesting.annotations.Seed;
 import com.google.common.collect.ImmutableList;
 
 /**
  * Tests Munger.
  */
 @RunWith(RandomizedRunner.class)
-@Seed("23B559017FCF95D7:8D8A6D2BB13ADCAB")
 public class MungerUnitTest extends RandomizedTest {
-    private final EntityData entityDataUris = EntityData.WIKIDATA;
-    private final Entity entityUris = Entity.WIKIDATA;
-    private final Munger munger = new Munger(entityDataUris, entityUris);
+    private final WikibaseUris uris = WikibaseUris.WIKIDATA;
+    private final Munger munger = new Munger(uris);
 
     @Test
     public void mungesEntityDataOntoEntity() throws ContainedException {
@@ -121,9 +117,9 @@ public class MungerUnitTest extends RandomizedTest {
     @Test
     public void basicExpandedStatement() throws ContainedException {
         List<Statement> george = basicEntity("Q23");
-        String statementUri = entityUris.statement().namespace() + "Q23-ce976010-412f-637b-c687-9fd2d52dc140";
+        String statementUri = uris.statement() + "Q23-ce976010-412f-637b-c687-9fd2d52dc140";
         Statement statementTypeDecl = statement(george, statementUri, RDF.TYPE, Ontology.STATEMENT);
-        Statement valueDecl = statement(george, statementUri, entityUris.value().namespace() + "P509", "Q356405");
+        Statement valueDecl = statement(george, statementUri, uris.value() + "P509", "Q356405");
         Statement rankDecl = statement(george, statementUri, Ontology.RANK, Ontology.NORMAL_RANK);
         Statement statementDecl = statement("Q23", "P509", statementUri);
         if (randomBoolean()) {
@@ -143,14 +139,14 @@ public class MungerUnitTest extends RandomizedTest {
     @Test
     public void expandedStatementWithReference() throws ContainedException {
         List<Statement> george = basicEntity("Q23");
-        String statementUri = entityUris.statement().namespace() + "Q23-9D3713FF-7BCC-489F-9386-C7322C0AC284";
-        String referenceUri = entityUris.reference().namespace() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
+        String statementUri = uris.statement() + "Q23-9D3713FF-7BCC-489F-9386-C7322C0AC284";
+        String referenceUri = uris.reference() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
         Statement statementDecl = statement(george, "Q23", "P19", statementUri);
         Statement statementTypeDecl = statement(george, statementUri, RDF.TYPE, Ontology.STATEMENT);
-        Statement valueDecl = statement(george, statementUri, entityUris.value().namespace() + "P19", "Q494413");
+        Statement valueDecl = statement(george, statementUri, uris.value() + "P19", "Q494413");
         Statement rankDecl = statement(george, statementUri, Ontology.RANK, Ontology.NORMAL_RANK);
         Statement referenceTypeDecl = statement(george, referenceUri, RDF.TYPE, Ontology.REFERENCE);
-        Statement referenceValueDecl = statement(george, referenceUri, entityUris.value().namespace() + "P854",
+        Statement referenceValueDecl = statement(george, referenceUri, uris.value() + "P854",
                 "http://www.anb.org/articles/02/02-00332.html");
         Statement referenceDecl = statement(statementUri, Provenance.WAS_DERIVED_FROM, referenceUri);
         if (randomBoolean()) {
@@ -171,12 +167,12 @@ public class MungerUnitTest extends RandomizedTest {
     @Test
     public void expandedStatementWithQualifier() throws ContainedException {
         List<Statement> george = basicEntity("Q23");
-        String statementUri = entityUris.statement().namespace() + "q23-8A2F4718-6159-4E58-A8F9-6F24F5EFEC42";
+        String statementUri = uris.statement() + "q23-8A2F4718-6159-4E58-A8F9-6F24F5EFEC42";
         Statement statementDecl = statement(george, "Q23", "P26", statementUri);
         Statement statementTypeDecl = statement(george, statementUri, RDF.TYPE, Ontology.STATEMENT);
-        Statement valueDecl = statement(george, statementUri, entityUris.value().namespace() + "P26", "Q191789");
+        Statement valueDecl = statement(george, statementUri, uris.value() + "P26", "Q191789");
         Statement rankDecl = statement(george, statementUri, Ontology.RANK, Ontology.NORMAL_RANK);
-        Statement qualifierDecl = statement(george, statementUri, entityUris.qualifier().namespace() + "P580",
+        Statement qualifierDecl = statement(george, statementUri, uris.qualifier() + "P580",
                 new LiteralImpl("1759-01-06T00:00:00Z", XMLSchema.DATETIME));
         munger.munge("Q23", george);
         assertThat(george, hasItem(statementDecl));
@@ -300,7 +296,7 @@ public class MungerUnitTest extends RandomizedTest {
 
     private List<Statement> basicEntity(String entityId, Literal version) {
         List<Statement> statements = new ArrayList<>();
-        String entityDataUri = EntityData.WIKIDATA.namespace() + entityId;
+        String entityDataUri = uris.entityData() + entityId;
         // EntityData is all munged onto Entity
         statement(statements, entityDataUri, SchemaDotOrg.ABOUT, entityId);
         statement(statements, entityDataUri, SchemaDotOrg.VERSION, version);

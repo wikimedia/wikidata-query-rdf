@@ -14,14 +14,13 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
-import org.wikidata.query.rdf.common.uri.Entity;
-import org.wikidata.query.rdf.common.uri.EntityData;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -34,8 +33,7 @@ import com.google.common.collect.ListMultimap;
  * tightly coupled with Wikibase's export format.
  */
 public class Munger {
-    private final EntityData entityDataUris;
-    private final Entity entityUris;
+    private final WikibaseUris uris;
     /**
      * Null if not in limit label languages mode and a set of allowed languages
      * if in it.
@@ -52,14 +50,13 @@ public class Munger {
      */
     private final boolean removeSiteLinks;
 
-    public Munger(EntityData entityDataUris, Entity entityUris) {
-        this(entityDataUris, entityUris, null, null, false);
+    public Munger(WikibaseUris uris) {
+        this(uris, null, null, false);
     }
 
-    private Munger(EntityData entityDataUris, Entity entityUris, Set<String> limitLabelLanguages,
+    private Munger(WikibaseUris uris, Set<String> limitLabelLanguages,
             List<String> singleLabelModeLanguages, boolean removeSiteLinks) {
-        this.entityDataUris = entityDataUris;
-        this.entityUris = entityUris;
+        this.uris = uris;
         this.limitLabelLanguages = limitLabelLanguages;
         this.singleLabelModeLanguages = singleLabelModeLanguages;
         this.removeSiteLinks = removeSiteLinks;
@@ -76,7 +73,7 @@ public class Munger {
      * Build a Munger that only imports labels in some languages.
      */
     public Munger limitLabelLanguages(Collection<String> languages) {
-        return new Munger(entityDataUris, entityUris, ImmutableSet.copyOf(languages), singleLabelModeLanguages,
+        return new Munger(uris, ImmutableSet.copyOf(languages), singleLabelModeLanguages,
                 removeSiteLinks);
     }
 
@@ -97,7 +94,7 @@ public class Munger {
      *            the most important
      */
     public Munger singleLabelMode(Collection<String> languages) {
-        return new Munger(entityDataUris, entityUris, limitLabelLanguages, ImmutableList.copyOf(languages).reverse(),
+        return new Munger(uris, limitLabelLanguages, ImmutableList.copyOf(languages).reverse(),
                 removeSiteLinks);
     }
 
@@ -105,7 +102,7 @@ public class Munger {
      * Build a Munger that removes site links.
      */
     public Munger removeSiteLinks() {
-        return new Munger(entityDataUris, entityUris, limitLabelLanguages, singleLabelModeLanguages, true);
+        return new Munger(uris, limitLabelLanguages, singleLabelModeLanguages, true);
     }
 
     /**
@@ -177,7 +174,7 @@ public class Munger {
 
         public MungeOperation(String entityId, Collection<Statement> statements) {
             this.statements = statements;
-            entityUri = entityUris.namespace() + entityId;
+            entityUri = uris.entity() + entityId;
             entityUriImpl = new URIImpl(entityUri);
             if (singleLabelModeLanguages != null) {
                 singleLabelModeWorkForLabel = new SingleLabelModeWork();
@@ -210,16 +207,16 @@ public class Munger {
         private boolean statement() throws ContainedException {
             subject = statement.getSubject().stringValue();
             predicate = statement.getPredicate().stringValue();
-            if (subject.startsWith(entityDataUris.namespace())) {
+            if (subject.startsWith(uris.entityData())) {
                 return entityDataStatement();
             }
-            if (subject.startsWith(entityUris.statement().namespace())) {
+            if (subject.startsWith(uris.statement())) {
                 return entityStatementStatement();
             }
-            if (subject.startsWith(entityUris.reference().namespace())) {
+            if (subject.startsWith(uris.reference())) {
                 return entityReferenceStatement();
             }
-            if (subject.startsWith(entityUris.namespace())) {
+            if (subject.startsWith(uris.entity())) {
                 return entityStatement();
             }
             return unknownStatement();
@@ -282,7 +279,7 @@ public class Munger {
                 // Lets just fall out to save some whitespace
             }
             String object = statement.getObject().stringValue();
-            if (predicate.startsWith(entityUris.namespace()) && object.startsWith(entityUris.statement().namespace())) {
+            if (predicate.startsWith(uris.entity()) && object.startsWith(uris.statement())) {
                 registerExtraValidSubject(object);
             }
             // Most statements should be kept.
@@ -307,7 +304,7 @@ public class Munger {
                 break;
             case Provenance.WAS_DERIVED_FROM:
                 String object = statement.getObject().stringValue();
-                if (object.startsWith(entityUris.reference().namespace())) {
+                if (object.startsWith(uris.reference())) {
                     registerExtraValidSubject(object);
                 }
                 return true;
@@ -420,7 +417,7 @@ public class Munger {
          */
         private void finishCommon() throws ContainedException {
             if (!unknownSubjects.isEmpty()) {
-                throw new BadSubjectException(unknownSubjects.keySet(), entityDataUris, entityUris);
+                throw new BadSubjectException(unknownSubjects.keySet(), uris);
             }
             if (revisionId == null) {
                 throw new ContainedException("Didn't get a revision id for " + statements);
@@ -501,10 +498,10 @@ public class Munger {
     public class BadSubjectException extends ContainedException {
         private static final long serialVersionUID = -4869053066714948939L;
 
-        public BadSubjectException(Set<String> badSubjects, EntityData entityDataUris, Entity entityUris) {
+        public BadSubjectException(Set<String> badSubjects, WikibaseUris uris) {
             super(String.format(Locale.ROOT,
                     "Unrecognized subjects:  %s.  Expected only sitelinks and subjects starting with %s and %s",
-                    badSubjects, entityDataUris.namespace(), entityUris.namespace()));
+                    badSubjects, uris.entityData(), uris.entity()));
         }
     }
 }

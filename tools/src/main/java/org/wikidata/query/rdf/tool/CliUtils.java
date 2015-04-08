@@ -22,8 +22,7 @@ import java.util.zip.GZIPOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.Entity;
-import org.wikidata.query.rdf.common.uri.EntityData;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 
 import ch.qos.logback.classic.LoggerContext;
@@ -107,7 +106,7 @@ public class CliUtils {
      * Build a munger from a MungerOptions instance.
      */
     public static Munger mungerFromOptions(MungerOptions options) {
-        Munger munger = new Munger(new EntityData(options.wikibaseHost()), new Entity(options.wikibaseHost()));
+        Munger munger = new Munger(new WikibaseUris(options.wikibaseHost()));
         if (options.skipSiteLinks()) {
             munger = munger.removeSiteLinks();
         }

@@ -17,7 +17,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.junit.Test;
 import org.openrdf.model.Statement;
-import org.wikidata.query.rdf.common.uri.Entity;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
@@ -28,7 +28,7 @@ import org.wikidata.query.rdf.tool.exception.RetryableException;
 public class WikibaseRepositoryIntegrationTest {
     private static final String HOST = "test.wikidata.org";
     private final WikibaseRepository repo = new WikibaseRepository("http", HOST);
-    private final Entity entityUris = new Entity(HOST);
+    private final WikibaseUris uris = new WikibaseUris(HOST);
 
     @Test
     @SuppressWarnings("unchecked")
@@ -100,7 +100,7 @@ public class WikibaseRepositoryIntegrationTest {
         Collection<Statement> statements = repo.fetchRdfForEntity(entityId);
         found = false;
         for (Statement statement : statements) {
-            if (statement.getSubject().stringValue().equals(entityUris.namespace() + entityId)) {
+            if (statement.getSubject().stringValue().equals(uris.entity() + entityId)) {
                 found = true;
                 break;
             }

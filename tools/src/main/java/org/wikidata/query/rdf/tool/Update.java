@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 import org.openrdf.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.tool.CliUtils.BasicOptions;
 import org.wikidata.query.rdf.tool.CliUtils.MungerOptions;
 import org.wikidata.query.rdf.tool.CliUtils.WikibaseOptions;
@@ -29,6 +28,7 @@ import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.Change.Batch;
 import org.wikidata.query.rdf.tool.change.IdChangeSource;
 import org.wikidata.query.rdf.tool.change.RecentChangesPoller;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.Munger;
@@ -75,8 +75,8 @@ public class Update<B extends Change.Batch> implements Runnable {
             log.error("Invalid url:  " + options.sparqlUrl() + " caused by " + e.getMessage());
             return;
         }
-        Entity entityUris = new Entity(options.wikibaseHost());
-        RdfRepository rdfRepository = new RdfRepository(sparqlUri, entityUris);
+        WikibaseUris uris = new WikibaseUris(options.wikibaseHost());
+        RdfRepository rdfRepository = new RdfRepository(sparqlUri, uris);
         Change.Source<? extends Change.Batch> changeSource = buildChangeSource(options, rdfRepository,
                 wikibaseRepository);
         if (changeSource == null) {
@@ -87,7 +87,6 @@ public class Update<B extends Change.Batch> implements Runnable {
                 new LinkedBlockingQueue<Runnable>(), threadFactory.build());
 
         Munger munger = CliUtils.mungerFromOptions(options);
-
         new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor).
           setPollDelay(options.pollDelay()).
           run();

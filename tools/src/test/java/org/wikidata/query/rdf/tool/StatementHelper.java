@@ -8,9 +8,9 @@ import org.openrdf.model.Value;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
-import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
 
 import com.google.common.collect.ImmutableList;
 
@@ -92,7 +92,7 @@ public class StatementHelper {
      */
     public static URI uri(String r) {
         if (r.startsWith("Q") || r.startsWith("P")) {
-            return new URIImpl(Entity.WIKIDATA.namespace() + r);
+            return new URIImpl(WikibaseUris.WIKIDATA.entity() + r);
         }
         return new URIImpl(r);
     }
