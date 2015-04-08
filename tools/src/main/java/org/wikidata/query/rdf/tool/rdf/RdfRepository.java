@@ -67,7 +67,7 @@ public class RdfRepository {
      * next entity's managed tree starts. For example Q23 from wikidata includes
      * all statements about George Washington but not those about Martha
      * (Q191789) even though she is linked by the spouse attribute. On the other
-     * hand the qualifiers on statements about George are included in George
+     * hand the qualifiers on statements about George are included in George.
      *
      * @param entityId id of the entity to sync
      * @param statements all known statements about the entity
@@ -86,6 +86,24 @@ public class RdfRepository {
             siteLinksBuilder.where().notExists().values(statements, "?s", "?p", "?o");
         }
 
+        UpdateBuilder valuesOnReferencesBuilder = updateBuilder();
+        valuesOnReferencesBuilder.prefix("prov", Provenance.NAMESPACE);
+        valuesOnReferencesBuilder.delete("?s", "?p", "?o");
+        valuesOnReferencesBuilder.where(entity, "?statementPred", "?statement");
+        valuesOnReferencesBuilder.where().add(startsWith("?statement", uris.statement()));
+        valuesOnReferencesBuilder.where("?statement", "prov:wasDerivedFrom", "?ref");
+        valuesOnReferencesBuilder.where("?ref", "?expandedValuePred", "?s");
+        valuesOnReferencesBuilder.where().add(startsWith("?expandedValuePred", uris.value()));
+        valuesOnReferencesBuilder.where("?s", "?p", "?o");
+        // We can't clear references that are still used elsewhere
+        valuesOnReferencesBuilder.where().notExists()//
+                .add("?otherStatement", "prov:wasDerivedFrom", "?ref")//
+                .add("?otherEntity", "?otherStatementPred", "?otherStatement")//
+                .add("FILTER ( " + entity + " != ?otherEntity ) .");
+        if (!statements.isEmpty()) {
+            valuesOnReferencesBuilder.where().notExists().values(statements, "?s", "?p", "?o");
+        }
+
         UpdateBuilder referencesBuilder = updateBuilder();
         referencesBuilder.prefix("prov", Provenance.NAMESPACE);
         referencesBuilder.delete("?s", "?p", "?o");
@@ -100,6 +118,17 @@ public class RdfRepository {
                 .add("FILTER ( " + entity + " != ?otherEntity ) .");
         if (!statements.isEmpty()) {
             referencesBuilder.where().notExists().values(statements, "?s", "?p", "?o");
+        }
+
+        UpdateBuilder valuesOnExpandedStatementsBuilder = updateBuilder();
+        valuesOnExpandedStatementsBuilder.delete("?s", "?p", "?o");
+        valuesOnExpandedStatementsBuilder.where(entity, "?statementPred", "?statement");
+        valuesOnExpandedStatementsBuilder.where().add(startsWith("?statement", uris.statement()));
+        valuesOnExpandedStatementsBuilder.where("?statement", "?expandedValuePred", "?s");
+        valuesOnExpandedStatementsBuilder.where().add(startsWith("?expandedValuePred", uris.value()));
+        valuesOnExpandedStatementsBuilder.where("?s", "?p", "?o");
+        if (!statements.isEmpty()) {
+            valuesOnExpandedStatementsBuilder.where().notExists().values(statements, "?s", "?p", "?o");
         }
 
         UpdateBuilder expandedStatementsBuilder = updateBuilder();
@@ -127,7 +156,9 @@ public class RdfRepository {
          */
         StringBuilder command = new StringBuilder();
         command.append(siteLinksBuilder).append(";\n");
+        command.append(valuesOnReferencesBuilder).append(";\n");
         command.append(referencesBuilder).append(";\n");
+        command.append(valuesOnExpandedStatementsBuilder).append(";\n");
         command.append(expandedStatementsBuilder).append(";\n");
         command.append(generalBuilder).append(";\n");
 

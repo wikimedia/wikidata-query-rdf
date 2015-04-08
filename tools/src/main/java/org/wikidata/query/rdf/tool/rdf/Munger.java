@@ -207,19 +207,32 @@ public class Munger {
         private boolean statement() throws ContainedException {
             subject = statement.getSubject().stringValue();
             predicate = statement.getPredicate().stringValue();
-            if (subject.startsWith(uris.entityData())) {
+            if (inNamespace(subject, uris.entityData())) {
                 return entityDataStatement();
             }
-            if (subject.startsWith(uris.statement())) {
+            if (inNamespace(subject, uris.statement())) {
                 return entityStatementStatement();
             }
-            if (subject.startsWith(uris.reference())) {
+            if (inNamespace(subject, uris.reference())) {
                 return entityReferenceStatement();
             }
-            if (subject.startsWith(uris.entity())) {
+            if (inNamespace(subject, uris.value())) {
+                return entityValueStatement();
+            }
+            if (inNamespace(subject, uris.entity())) {
                 return entityStatement();
             }
             return unknownStatement();
+        }
+
+        /**
+         * Is a uri in just this namespace? The trouble is that some namespaces
+         * are suffixes of one another. For now / isn't a valid character after
+         * a namespace so we can use its absence to determine that we're just in
+         * the provided namespace and not a suffix namespace.
+         */
+        private boolean inNamespace(String uri, String namespace) {
+            return uri.startsWith(namespace) && uri.indexOf('/', namespace.length()) < 0;
         }
 
         /**
@@ -279,7 +292,7 @@ public class Munger {
                 // Lets just fall out to save some whitespace
             }
             String object = statement.getObject().stringValue();
-            if (predicate.startsWith(uris.entity()) && object.startsWith(uris.statement())) {
+            if (inNamespace(predicate, uris.entity()) && inNamespace(object, uris.statement())) {
                 registerExtraValidSubject(object);
             }
             // Most statements should be kept.
@@ -304,7 +317,7 @@ public class Munger {
                 break;
             case Provenance.WAS_DERIVED_FROM:
                 String object = statement.getObject().stringValue();
-                if (object.startsWith(uris.reference())) {
+                if (inNamespace(object, uris.reference())) {
                     registerExtraValidSubject(object);
                 }
                 return true;
@@ -319,6 +332,10 @@ public class Munger {
                  */
                 unknownSubjects.put(subject, statement);
                 return false;
+            }
+            String object = statement.getObject().stringValue();
+            if (inNamespace(object, uris.value())) {
+                registerExtraValidSubject(object);
             }
             return true;
         }
@@ -351,6 +368,41 @@ public class Munger {
                 unknownSubjects.put(subject, statement);
                 return false;
             }
+            String object = statement.getObject().stringValue();
+            if (inNamespace(predicate, uris.value()) && inNamespace(object, uris.value())) {
+                registerExtraValidSubject(object);
+            }
+            return true;
+        }
+
+        /**
+         * Process a statement who's subject is in the entity value prefix.
+         *
+         * @return true to keep the statement, false to remove it
+         */
+        private boolean entityValueStatement() throws ContainedException {
+            switch (predicate) {
+            case RDF.TYPE:
+                /*
+                 * We don't need v:<uuid> a ontology:Value because its super
+                 * common and not super interesting.
+                 */
+                if (statement.getObject().stringValue().equals(Ontology.VALUE)) {
+                    return false;
+                }
+                break;
+            default:
+            }
+            if (!extraValidSubjects.contains(subject)) {
+                /*
+                 * Remove any statements about values that we don't yet know are
+                 * actually linked to the entity. We keep a backup of them in
+                 * unknownSubjects so we can restore them if they are later
+                 * linked.
+                 */
+                unknownSubjects.put(subject, statement);
+                return false;
+            }
             return true;
         }
 
@@ -363,6 +415,9 @@ public class Munger {
         private boolean unknownStatement() {
             if (siteLinks.contains(subject)) {
                 return !removeSiteLinks;
+            }
+            if (extraValidSubjects.contains(subject)) {
+                return true;
             }
             if (predicate.equals(RDF.TYPE) && statement.getObject().stringValue().equals(SchemaDotOrg.ARTICLE)) {
                 siteLinks.add(subject);

@@ -28,7 +28,7 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
         Munge.Httpd http = new Munge.Httpd(10999, uris, new Munger(uris).singleLabelMode("en"), source);
         http.start();
         try {
-            assertEquals(907, rdfRepository.loadUrl("http://localhost:10999"));
+            assertEquals(1002, rdfRepository.loadUrl("http://localhost:10999"));
         } finally {
             http.stop();
         }

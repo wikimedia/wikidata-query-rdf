@@ -192,6 +192,99 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
     }
 
     @Test
+    public void expandedStatementWithExpandedValue() throws QueryEvaluationException {
+        String statementUri = uris.statement() + "someotheruuid";
+        String valueUri = uris.value() + "someuuid";
+        List<Statement> george = new ArrayList<>();
+        statement(george, "Q23", "P509", statementUri);
+        statement(george, statementUri, uris.value() + "P509-value", valueUri);
+        statement(george, valueUri, Ontology.Time.VALUE, new LiteralImpl("cat"));
+        statement(george, valueUri, Ontology.Time.CALENDAR_MODEL, new LiteralImpl("animals"));
+        rdfRepository.sync("Q23", george);
+        assertTrue(rdfRepository
+.ask(Ontology.prefix(uris.prefixes(new StringBuilder()))
+                .append("ASK { entity:Q23 entity:P509 [ v:P509-value [ ontology:timeTime \"cat\" ] ] }")
+                        .toString()));
+        assertTrue(rdfRepository.ask(Ontology.prefix(uris.prefixes(new StringBuilder()))
+                .append("ASK { entity:Q23 entity:P509 [ v:P509-value [ ontology:timeCalendarModel \"animals\" ] ] }")
+                .toString()));
+    }
+
+    @Test
+    public void expandedStatementWithExpandedValueChanged() throws QueryEvaluationException {
+        expandedStatementWithExpandedValue();
+        String statementUri = uris.statement() + "someotheruuid";
+        String valueUri = uris.value() + "someuuid";
+        List<Statement> george = new ArrayList<>();
+        statement(george, "Q23", "P509", statementUri);
+        statement(george, statementUri, uris.value() + "P509-value", valueUri);
+        statement(george, valueUri, Ontology.Time.VALUE, new LiteralImpl("dog"));
+        statement(george, valueUri, Ontology.Time.CALENDAR_MODEL, new LiteralImpl("animals"));
+        rdfRepository.sync("Q23", george);
+        assertTrue(rdfRepository.ask(Ontology.prefix(uris.prefixes(new StringBuilder()))
+                .append("ASK { entity:Q23 entity:P509 [ v:P509-value [ ontology:timeTime \"dog\" ] ] }").toString()));
+        assertTrue(rdfRepository.ask(Ontology.prefix(uris.prefixes(new StringBuilder()))
+                .append("ASK { entity:Q23 entity:P509 [ v:P509-value [ ontology:timeCalendarModel \"animals\" ] ] }")
+                .toString()));
+        assertFalse(rdfRepository.ask(Ontology.prefix(uris.prefixes(new StringBuilder()))
+                .append("ASK { entity:Q23 entity:P509 [ v:P509-value [ ontology:timeTime \"cat\" ] ] }").toString()));
+    }
+
+    @Test
+    public void referenceWithExpandedValue() throws QueryEvaluationException {
+        String statementUri = uris.statement() + "someotheruuid";
+        String referenceUri = uris.reference() + "yetanotheruri";
+        String valueUri = uris.value() + "someuuid";
+        List<Statement> george = new ArrayList<>();
+        statement(george, "Q23", "P509", statementUri);
+        statement(george, statementUri, Provenance.WAS_DERIVED_FROM, referenceUri);
+        statement(george, referenceUri, uris.value() + "P509-value", valueUri);
+        statement(george, valueUri, Ontology.Time.VALUE, new LiteralImpl("cat"));
+        statement(george, valueUri, Ontology.Time.CALENDAR_MODEL, new LiteralImpl("animals"));
+        rdfRepository.sync("Q23", george);
+        assertTrue(rdfRepository
+                .ask(Provenance
+                        .prefix(Ontology.prefix(uris.prefixes(new StringBuilder())))
+                        .append("ASK { entity:Q23 entity:P509 [ prov:wasDerivedFrom [ v:P509-value [ ontology:timeTime \"cat\" ] ] ] }")
+                        .toString()));
+        assertTrue(rdfRepository
+                .ask(Provenance
+                        .prefix(Ontology.prefix(uris.prefixes(new StringBuilder())))
+                        .append("ASK { entity:Q23 entity:P509 [ prov:wasDerivedFrom [ v:P509-value [ ontology:timeCalendarModel \"animals\" ] ] ] }")
+                .toString()));
+    }
+
+    @Test
+    public void referenceWithExpandedValueChanged() throws QueryEvaluationException {
+        referenceWithExpandedValue();
+        String statementUri = uris.statement() + "someotheruuid";
+        String referenceUri = uris.reference() + "yetanotheruri";
+        String valueUri = uris.value() + "someuuid";
+        List<Statement> george = new ArrayList<>();
+        statement(george, "Q23", "P509", statementUri);
+        statement(george, statementUri, Provenance.WAS_DERIVED_FROM, referenceUri);
+        statement(george, referenceUri, uris.value() + "P509-value", valueUri);
+        statement(george, valueUri, Ontology.Time.VALUE, new LiteralImpl("dog"));
+        statement(george, valueUri, Ontology.Time.CALENDAR_MODEL, new LiteralImpl("animals"));
+        rdfRepository.sync("Q23", george);
+        assertTrue(rdfRepository
+                .ask(Provenance
+                        .prefix(Ontology.prefix(uris.prefixes(new StringBuilder())))
+                        .append("ASK { entity:Q23 entity:P509 [ prov:wasDerivedFrom [ v:P509-value [ ontology:timeTime \"dog\" ] ] ] }")
+                        .toString()));
+        assertTrue(rdfRepository
+                .ask(Provenance
+                        .prefix(Ontology.prefix(uris.prefixes(new StringBuilder())))
+                        .append("ASK { entity:Q23 entity:P509 [ prov:wasDerivedFrom [ v:P509-value [ ontology:timeCalendarModel \"animals\" ] ] ] }")
+                        .toString()));
+        assertFalse(rdfRepository
+                .ask(Provenance
+                        .prefix(Ontology.prefix(uris.prefixes(new StringBuilder())))
+                        .append("ASK { entity:Q23 entity:P509 [ prov:wasDerivedFrom [ v:P509-value [ ontology:timeTime \"cat\" ] ] ] }")
+                .toString()));
+    }
+
+    @Test
     public void referencesOnExpandedStatements() throws QueryEvaluationException {
         String referenceUri = uris.reference() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
         List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",

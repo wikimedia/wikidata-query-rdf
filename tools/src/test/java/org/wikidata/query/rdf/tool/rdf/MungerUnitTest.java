@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.not;
 import static org.wikidata.query.rdf.tool.StatementHelper.siteLink;
 import static org.wikidata.query.rdf.tool.StatementHelper.statement;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
+import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.wikidata.query.rdf.common.uri.Ontology;
@@ -182,8 +184,124 @@ public class MungerUnitTest extends RandomizedTest {
         assertThat(george, hasItem(qualifierDecl));
     }
 
-    // TODO expanded values
+    @Test
+    public void basicExpandedValue() {
+        List<Statement> universe = basicEntity("Q1");
+        String statementUri = uris.statement() + "q1-someuuid";
+        String valueUri = uris.value() + "someotheruuid";
+        Statement statementDecl = statement(universe, "Q1", "P580", statementUri);
+        Statement statementTypeDecl = statement(universe, statementUri, RDF.TYPE, Ontology.STATEMENT);
+        Statement valueDecl = statement(universe, statementUri, uris.value() + "P580",
+                new LiteralImpl("-13798000000-01-01T00:00:00Z", XMLSchema.DATETIME));
+        Statement expandedValueDecl = statement(universe, statementUri, uris.value() + "P580"
+                + "-value", valueUri);
+        Statement expandedValueTypeDecl = statement(universe, valueUri, RDF.TYPE, Ontology.VALUE);
+        /*
+         * Currently wikibase exports the deep time values as strings, not
+         * dateTime.
+         */
+        Statement expandedValueValueDecl = statement(universe, valueUri, Ontology.Time.VALUE,
+                "-13798000000-01-01T00:00:00Z");
+        Statement expandedValuePrecisionDecl = statement(universe, valueUri, Ontology.Time.PRECISION,
+                new IntegerLiteralImpl(BigInteger.valueOf(3)));
+        Statement expandedValueTimezoneDecl = statement(universe, valueUri, Ontology.Time.TIMEZONE,
+                new IntegerLiteralImpl(BigInteger.valueOf(0)));
+        Statement expandedValueCalendarModelDecl = statement(universe, valueUri, Ontology.Time.CALENDAR_MODEL,
+                "Q1985727");
+        munger.munge("Q1", universe);
+        assertThat(universe, hasItem(statementDecl));
+        assertThat(universe, not(hasItem(statementTypeDecl)));
+        assertThat(universe, hasItem(valueDecl));
+        assertThat(universe, hasItem(expandedValueDecl));
+        assertThat(universe, not(hasItem(expandedValueTypeDecl)));
+        assertThat(universe, hasItem(expandedValueDecl));
+        assertThat(universe, hasItem(expandedValueValueDecl));
+        assertThat(universe, hasItem(expandedValuePrecisionDecl));
+        assertThat(universe, hasItem(expandedValueTimezoneDecl));
+        assertThat(universe, hasItem(expandedValueCalendarModelDecl));
+    }
 
+    @Test
+    public void expandedValueOnQualifier() {
+        List<Statement> universe = basicEntity("Q1");
+        String statementUri = uris.statement() + "q1-someuuid";
+        String valueUri = uris.value() + "someotheruuid";
+        Statement statementDecl = statement(universe, "Q1", "P580", statementUri);
+        Statement statementTypeDecl = statement(universe, statementUri, RDF.TYPE, Ontology.STATEMENT);
+        Statement valueDecl = statement(universe, statementUri, uris.qualifier() + "P580",
+                new LiteralImpl("-13798000000-01-01T00:00:00Z", XMLSchema.DATETIME));
+        Statement expandedValueDecl = statement(universe, statementUri, uris.value() + "P580"
+                + "-value", valueUri);
+        Statement expandedValueTypeDecl = statement(universe, valueUri, RDF.TYPE, Ontology.VALUE);
+        /*
+         * Currently wikibase exports the deep time values as strings, not
+         * dateTime.
+         */
+        Statement expandedValueValueDecl = statement(universe, valueUri, Ontology.Time.VALUE,
+                "-13798000000-01-01T00:00:00Z");
+        Statement expandedValuePrecisionDecl = statement(universe, valueUri, Ontology.Time.PRECISION,
+                new IntegerLiteralImpl(BigInteger.valueOf(3)));
+        Statement expandedValueTimezoneDecl = statement(universe, valueUri, Ontology.Time.TIMEZONE,
+                new IntegerLiteralImpl(BigInteger.valueOf(0)));
+        Statement expandedValueCalendarModelDecl = statement(universe, valueUri, Ontology.Time.CALENDAR_MODEL,
+                "Q1985727");
+        munger.munge("Q1", universe);
+        assertThat(universe, hasItem(statementDecl));
+        assertThat(universe, not(hasItem(statementTypeDecl)));
+        assertThat(universe, hasItem(valueDecl));
+        assertThat(universe, hasItem(expandedValueDecl));
+        assertThat(universe, not(hasItem(expandedValueTypeDecl)));
+        assertThat(universe, hasItem(expandedValueDecl));
+        assertThat(universe, hasItem(expandedValueValueDecl));
+        assertThat(universe, hasItem(expandedValuePrecisionDecl));
+        assertThat(universe, hasItem(expandedValueTimezoneDecl));
+        assertThat(universe, hasItem(expandedValueCalendarModelDecl));
+    }
+
+    @Test
+    public void basicExpandedValueOnReference() {
+        List<Statement> universe = basicEntity("Q1");
+        String statementUri = uris.statement() + "q1-someuuid";
+        String valueUri = uris.value() + "someotheruuid";
+        String referenceUri = uris.reference() + "yetanotheruuid";
+        Statement statementDecl = statement(universe, "Q1", "P580", statementUri);
+        Statement statementTypeDecl = statement(universe, statementUri, RDF.TYPE, Ontology.STATEMENT);
+        Statement valueDecl = statement(universe, statementUri, uris.value() + "P580",
+                new LiteralImpl("-13798000000-01-01T00:00:00Z", XMLSchema.DATETIME));
+        Statement referenceDecl = statement(universe, statementUri, Provenance.WAS_DERIVED_FROM, referenceUri);
+        Statement referenceTypeDecl = statement(universe, referenceUri, RDF.TYPE, Ontology.REFERENCE);
+        Statement expandedValueDecl = statement(universe, referenceUri, uris.value() + "P580"
+                + "-value", valueUri);
+        Statement expandedValueTypeDecl = statement(universe, valueUri, RDF.TYPE, Ontology.VALUE);
+        /*
+         * Currently wikibase exports the deep time values as strings, not
+         * dateTime.
+         */
+        Statement expandedValueValueDecl = statement(universe, valueUri, Ontology.Time.VALUE,
+                "-13798000000-01-01T00:00:00Z");
+        Statement expandedValuePrecisionDecl = statement(universe, valueUri, Ontology.Time.PRECISION,
+                new IntegerLiteralImpl(BigInteger.valueOf(3)));
+        Statement expandedValueTimezoneDecl = statement(universe, valueUri, Ontology.Time.TIMEZONE,
+                new IntegerLiteralImpl(BigInteger.valueOf(0)));
+        Statement expandedValueCalendarModelDecl = statement(universe, valueUri, Ontology.Time.CALENDAR_MODEL,
+                "Q1985727");
+        munger.munge("Q1", universe);
+        assertThat(universe, hasItem(statementDecl));
+        assertThat(universe, not(hasItem(statementTypeDecl)));
+        assertThat(universe, hasItem(valueDecl));
+        assertThat(universe, hasItem(referenceDecl));
+        assertThat(universe, not(hasItem(referenceTypeDecl)));
+        assertThat(universe, hasItem(expandedValueDecl));
+        assertThat(universe, not(hasItem(expandedValueTypeDecl)));
+        assertThat(universe, hasItem(expandedValueDecl));
+        assertThat(universe, hasItem(expandedValueValueDecl));
+        assertThat(universe, hasItem(expandedValuePrecisionDecl));
+        assertThat(universe, hasItem(expandedValueTimezoneDecl));
+        assertThat(universe, hasItem(expandedValueCalendarModelDecl));
+    }
+    // TODO somevalue and novalue
+
+    // TODO badges
     @Test
     public void limitLanguagesLabel() throws ContainedException {
         limitLanguagesTestCase(RDFS.LABEL);
