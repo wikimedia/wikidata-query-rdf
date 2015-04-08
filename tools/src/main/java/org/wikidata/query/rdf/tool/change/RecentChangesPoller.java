@@ -84,7 +84,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                 changes.add(new Change(rc.get("title").toString(), (long) rc.get("revid"), timestamp));
                 nextStartTime = Math.max(nextStartTime, timestamp.getTime());
             }
-            // Show the user the polled time - one seconds because we can't
+            // Show the user the polled time - one second because we can't
             // be sure we got the whole second
             String upTo = inputDateFormat().format(new Date(nextStartTime - 1000));
             long advanced = nextStartTime - lastNextStartTime.getTime();

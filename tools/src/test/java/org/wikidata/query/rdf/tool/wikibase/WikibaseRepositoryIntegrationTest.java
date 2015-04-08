@@ -65,17 +65,31 @@ public class WikibaseRepositoryIntegrationTest {
     }
 
     @Test
+    public void aItemEditShowsUpInRecentChanges() throws RetryableException, ContainedException {
+        editShowsUpInRecentChangesTestCase("QueryTestItem", "item");
+    }
+
+    @Test
+    public void aPropertyEditShowsUpInRecentChanges() throws RetryableException, ContainedException {
+        editShowsUpInRecentChangesTestCase("QueryTestProperty", "property");
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public void anEditsShowsUpInRecentChanges() throws RetryableException, ContainedException {
+    private void editShowsUpInRecentChangesTestCase(String label, String type) throws RetryableException,
+            ContainedException {
         long now = System.currentTimeMillis();
-        String label = "QueryTest" + now;
-        String entityId = repo.addPage(label);
+        String entityId = repo.firstEntityIdForLabelStartingWith(label, "en", type);
+        repo.setLabel(entityId, type, label + now, "en");
         JSONObject result = repo.fetchRecentChanges(new Date(now), null);
         JSONArray changes = (JSONArray) ((JSONObject) result.get("query")).get("recentchanges");
         boolean found = false;
+        String title = entityId;
+        if (type.equals("property")) {
+            title = "Property:" + title;
+        }
         for (Object changeObject : changes) {
             JSONObject change = (JSONObject) changeObject;
-            if (change.get("title").equals(entityId)) {
+            if (change.get("title").equals(title)) {
                 found = true;
                 Map<String, Object> c = change;
                 assertThat(c, hasEntry(equalTo("revid"), isA((Class) Long.class)));

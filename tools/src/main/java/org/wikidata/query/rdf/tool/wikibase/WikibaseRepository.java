@@ -25,6 +25,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -107,22 +108,50 @@ public class WikibaseRepository {
     }
 
     /**
-     * Creates a page with label in English. Used for testing.
+     * Get the first id with the provided label in the provided language.
+     */
+    public String firstEntityIdForLabelStartingWith(String label, String language, String type)
+            throws RetryableException {
+        URI uri = uris.searchForLabel(label, language, type);
+        log.debug("Searching for entity using {}", uri);
+        try {
+            JSONObject result = checkApi(getJson(new HttpGet(uri)));
+            JSONArray resultList = (JSONArray) result.get("search");
+            if (resultList.isEmpty()) {
+                return null;
+            }
+            result = (JSONObject) resultList.get(0);
+            return result.get("id").toString();
+        } catch (IOException | ParseException e) {
+            throw new RetryableException("Error searching for page", e);
+        }
+    }
+
+    /**
+     * Edits or creates a page by setting a label. Used for testing.
      *
-     * @param label English label of the page to find or create
+     * @param entityId id of the entity - if null then the entity will be
+     *            created new
+     * @param type type of entity to create or edit
+     * @param label label of the page to create
+     * @param language language of the label to add
      * @return the entityId
      */
     @SuppressWarnings("unchecked")
-    public String addPage(String label) throws RetryableException {
+    public String setLabel(String entityId, String type, String label, String language) throws RetryableException {
         JSONObject data = new JSONObject();
         JSONObject labels = new JSONObject();
         data.put("labels", labels);
-        JSONObject en = new JSONObject();
-        labels.put("en", en);
-        en.put("language", "en");
-        en.put("value", label);
-        URI uri = uris.edit(null, data.toJSONString());
-        log.debug("Creating entity using {}", uri);
+        JSONObject labelObject = new JSONObject();
+        labels.put("en", labelObject);
+        labelObject.put("language", language);
+        labelObject.put("value", label + System.currentTimeMillis());
+        if (type.equals("property")) {
+            // A data type is required for properties so lets just pick one
+            data.put("datatype", "string");
+        }
+        URI uri = uris.edit(entityId, type, data.toJSONString());
+        log.debug("Editing entity using {}", uri);
         try {
             JSONObject result = checkApi(getJson(postWithToken(uri)));
             return ((JSONObject) result.get("entity")).get("id").toString();
@@ -194,7 +223,7 @@ public class WikibaseRepository {
             builder.addParameter("list", "recentchanges");
             builder.addParameter("rcdir", "newer");
             builder.addParameter("rcprop", "title|ids|timestamp");
-            builder.addParameter("rcnamespace", "0");
+            builder.addParameter("rcnamespace", "0|120");
             if (continueObject == null) {
                 builder.addParameter("continue", "");
                 builder.addParameter("rcstart", outputDateFormat().format(startTime));
@@ -225,13 +254,22 @@ public class WikibaseRepository {
             return build(builder);
         }
 
-        public URI edit(String entityId, String data) {
+        public URI searchForLabel(String label, String language, String type) {
+            URIBuilder builder = apiBuilder();
+            builder.addParameter("action", "wbsearchentities");
+            builder.addParameter("search", label);
+            builder.addParameter("language", language);
+            builder.addParameter("type", type);
+            return build(builder);
+        }
+
+        public URI edit(String entityId, String newType, String data) {
             URIBuilder builder = apiBuilder();
             builder.addParameter("action", "wbeditentity");
             if (entityId != null) {
                 builder.addParameter("id", entityId);
             } else {
-                builder.addParameter("new", "item");
+                builder.addParameter("new", newType);
             }
             builder.addParameter("data", data);
             return build(builder);
