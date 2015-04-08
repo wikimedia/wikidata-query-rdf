@@ -7,7 +7,6 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.wikidata.query.rdf.common.uri.Entity;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
-import org.wikidata.query.rdf.tool.rdf.UpdateBuilder;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
@@ -48,10 +47,7 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
          * Clear's the whole repository.
          */
         public void clear() {
-            UpdateBuilder b = new UpdateBuilder();
-            b.where("?s", "?p", "?o");
-            b.delete("?s", "?p", "?o");
-            execute("update", RdfRepository.UPDATE_COUNT_RESPONSE, b.toString());
+            execute("update", RdfRepository.UPDATE_COUNT_RESPONSE, "CLEAR DEFAULT");
         }
     }
 }
