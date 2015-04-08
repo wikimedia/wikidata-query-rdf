@@ -21,19 +21,22 @@ public class Ontology {
      * and we fitler that out.
      */
     public static final String REFERENCE = NAMESPACE + "Reference";
+    /**
+     * Wikibase exports values with an assertion that their RDF.TYPE is this.
+     */
+    public static final String VALUE = NAMESPACE + "Value";
 
     /**
      * Predicate for marking Wikibase's Rank.
      *
-     * @see http://www.wikidata.org/wiki/Help:Ranking
+     * @see <a href="http://www.wikidata.org/wiki/Help:Ranking">The
+     *      documentation for ranking</a>
      */
     public static final String RANK = NAMESPACE + "rank";
     public static final String BEST_RANK = NAMESPACE + "BestRank";
     public static final String PREFERRED_RANK = NAMESPACE + "PreferredRank";
     public static final String NORMAL_RANK = NAMESPACE + "NormalRank";
     public static final String DEPRECATED_RANK = NAMESPACE + "DeprecatedRank";
-
-    public static final String VALUE = NAMESPACE + "Value";
 
     public static StringBuilder prefix(StringBuilder query) {
         return query.append("PREFIX ontology: <").append(NAMESPACE).append(">\n");
