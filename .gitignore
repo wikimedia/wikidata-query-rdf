@@ -1,9 +1,10 @@
-.classpath
-.project
-.settings/
-.metadata/
-target/
+bin/
 data/
-*.iml
+.metadata/
+.settings/
+target/
+.classpath
 .idea
+*.iml
+.project
 **/rules.log
