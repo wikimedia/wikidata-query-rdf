@@ -1,15 +1,21 @@
 package org.wikidata.query.rdf.tool;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -18,7 +24,6 @@ import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.RDFParser;
-import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.Rio;
 import org.openrdf.rio.turtle.TurtleParser;
 import org.slf4j.Logger;
@@ -31,8 +36,10 @@ import org.wikidata.query.rdf.tool.CliUtils.MungerOptions;
 import org.wikidata.query.rdf.tool.CliUtils.WikibaseOptions;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.rdf.Munger;
-import org.wikidata.query.rdf.tool.rdf.Normalizer;
+import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
+import org.wikidata.query.rdf.tool.rdf.PrefixRecordingRdfHandler;
 
+import com.codahale.metrics.Meter;
 import com.google.common.base.Charsets;
 import com.lexicalscope.jewel.cli.Option;
 
@@ -48,12 +55,19 @@ public class Munge implements Runnable {
      * CLI options for use with JewelCli.
      */
     public static interface Options extends BasicOptions, MungerOptions, WikibaseOptions {
-        @Option(shortName = "f", defaultValue = "-", description = "Source file (or uri) to munge.  Default is - aka stdin.")
+        @Option(shortName = "f", defaultValue = "-", description = "Source file (or uri) to munge. Default is - aka stdin.")
         String from();
 
         @Option(shortName = "t", defaultValue = "-", description = "Destination of munge. Use port:<port_number> to start an "
-                + "http server on that port. Default is - aka stdout.")
+                + "http server on that port. Default is - aka stdout. If the file's parent directories don't exist then they "
+                + "will be created ala mkdir -p.")
         String to();
+
+        @Option(defaultValue = "0", description = "Chunk size in entities. If specified then the \"to\" option must be a java "
+                + "format string containing a single format identifier which is replaced with the chunk number port:<port_numer>. "
+                + "%08d.ttl is a pretty good choice for format string. If \"to\" is in port form then every http request will "
+                + "get the next chunk. Must be greater than 0 and less than " + Integer.MAX_VALUE + ".")
+        int chunkSize();
     }
 
     public static void main(String[] args) {
@@ -61,34 +75,11 @@ public class Munge implements Runnable {
         WikibaseUris uris = new WikibaseUris(options.wikibaseHost());
         Munger munger = CliUtils.mungerFromOptions(options);
 
+        int port = 0;
         if (options.to().startsWith("port:")) {
-            int port = Integer.parseInt(options.to().substring("port:".length()));
-            Httpd http = new Httpd(port, uris, munger, options.from());
-            try {
-                log.info("Starting embedded http server for munged rdf on port {}.", port);
-                http.start();
-                // Just wait until ctrl-c
-                while (true) {
-                    try {
-                        Thread.sleep(100000000L);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                }
-            } catch (IOException e) {
-                log.error("Error starting embedded http server", e);
-                return;
-            }
+            port = Integer.parseInt(options.to().substring("port:".length()));
         }
 
-        Writer to;
-        try {
-            to = new BufferedWriter(new OutputStreamWriter(CliUtils.outputStream(options.to()), Charsets.UTF_8));
-        } catch (IOException e) {
-            log.error("Error finding output", e);
-            System.exit(1);
-            return;
-        }
         Reader from;
         try {
             from = CliUtils.reader(options.from());
@@ -97,20 +88,71 @@ public class Munge implements Runnable {
             System.exit(1);
             return;
         }
+
+        OutputPicker<Writer> to;
+        Httpd httpd = null;
+        try {
+            if (options.chunkSize() > 0) {
+                if (port > 0) {
+                    // We have two slots just in case
+                    BlockingQueue<InputStream> queue = new ArrayBlockingQueue<>(2);
+                    httpd = new Httpd(port, queue);
+                    to = new ChunkedPipedWriterOutputPicker(queue, options.chunkSize());
+                } else {
+                    to = new ChunkedFileWriterOutputPicker(options.to(), options.chunkSize());
+                }
+            } else {
+                if (port > 0) {
+                    PipedInputStream toHttp = new PipedInputStream();
+                    Writer writer = new OutputStreamWriter(new PipedOutputStream(toHttp), Charsets.UTF_8);
+                    BlockingQueue<InputStream> queue = new ArrayBlockingQueue<>(1);
+                    queue.put(toHttp);
+                    httpd = new Httpd(port, queue);
+                    to = new AlwaysOutputPicker<>(writer);
+                } else {
+                    to = new AlwaysOutputPicker<>(CliUtils.writer(options.to()));
+                }
+            }
+            if (httpd != null) {
+                log.info("Starting embedded http sever on port {}", port);
+                log.info("This process will exit when the whole dump has been served");
+                httpd.start();
+            }
+        } catch (IOException e) {
+            log.error("Error finding output", e);
+            System.exit(1);
+            return;
+        } catch (InterruptedException e) {
+            log.error("Interrupted while waiting on httpd", e);
+            System.exit(1);
+            return;
+        }
         try {
             Munge munge = new Munge(uris, munger, from, to);
             munge.run();
         } catch (RuntimeException e) {
             log.error("Fatal error munging RDF", e);
+            System.exit(1);
+        }
+        if (httpd != null) {
+            log.info("Finished munging and waiting for the http server to finish sending them");
+            while (httpd.busy.get()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    log.info("Interrupted while waiting for http server to finish sending", e);
+                    System.exit(1);
+                }
+            }
         }
     }
 
     private final WikibaseUris uris;
     private final Munger munger;
     private final Reader from;
-    private final Writer to;
+    private final OutputPicker<Writer> to;
 
-    public Munge(WikibaseUris uris, Munger munger, Reader from, Writer to) {
+    public Munge(WikibaseUris uris, Munger munger, Reader from, OutputPicker<Writer> to) {
         this.uris = uris;
         this.munger = munger;
         this.from = from;
@@ -123,10 +165,9 @@ public class Munge implements Runnable {
             // TODO this is a temporary hack
             // RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
             RDFParser parser = new ForbiddenOk.HackedTurtleParser();
-            RDFWriter writer = Rio.createWriter(RDFFormat.TURTLE, to);
-            RDFHandler handler = new EntityMungingRdfHandler(uris, munger, writer);
-            handler = new Normalizer(handler);
-            parser.setRDFHandler(handler);
+            OutputPicker<RDFHandler> writer = new WriterToRDFWriterChunkPicker(to);
+            EntityMungingRdfHandler handler = new EntityMungingRdfHandler(uris, munger, writer);
+            parser.setRDFHandler(new NormalizingRdfHandler(handler));
             try {
                 parser.parse(from, uris.entity());
             } catch (RDFParseException | RDFHandlerException | IOException e) {
@@ -139,7 +180,7 @@ public class Munge implements Runnable {
                 log.error("Error closing input", e);
             }
             try {
-                to.close();
+                to.output().close();
             } catch (IOException e) {
                 log.error("Error closing output", e);
             }
@@ -162,12 +203,13 @@ public class Munge implements Runnable {
     private static class EntityMungingRdfHandler implements RDFHandler {
         private final WikibaseUris uris;
         private final Munger munger;
-        private final RDFHandler next;
+        private final OutputPicker<RDFHandler> next;
         private final List<Statement> statements = new ArrayList<>();
+        private final Meter entitiesMeter = new Meter();
         private boolean haveNonEntityDataStatements;
         private String entityId;
 
-        public EntityMungingRdfHandler(WikibaseUris uris, Munger munger, RDFHandler next) {
+        public EntityMungingRdfHandler(WikibaseUris uris, Munger munger, OutputPicker<RDFHandler> next) {
             this.uris = uris;
             this.munger = munger;
             this.next = next;
@@ -176,19 +218,19 @@ public class Munge implements Runnable {
         @Override
         public void startRDF() throws RDFHandlerException {
             haveNonEntityDataStatements = false;
-            next.startRDF();
+            next.output().startRDF();
         }
 
         @Override
         public void handleNamespace(String prefix, String uri) throws RDFHandlerException {
             // Namespaces go through to the next handler.
-            next.handleNamespace(prefix, uri);
+            next.output().handleNamespace(prefix, uri);
         }
 
         @Override
         public void handleComment(String comment) throws RDFHandlerException {
             // Comments go right through to the next handler.
-            next.handleComment(comment);
+            next.output().handleComment(comment);
         }
 
         @Override
@@ -209,7 +251,7 @@ public class Munge implements Runnable {
                 /*
                  * Just pipe dump statements strait through.
                  */
-                next.handleStatement(statement);
+                next.output().handleStatement(statement);
                 return;
             }
             haveNonEntityDataStatements = true;
@@ -219,7 +261,7 @@ public class Munge implements Runnable {
         @Override
         public void endRDF() throws RDFHandlerException {
             munge();
-            next.endRDF();
+            next.output().endRDF();
         }
 
         private void munge() throws RDFHandlerException {
@@ -227,8 +269,16 @@ public class Munge implements Runnable {
                 log.debug("Munging {}", entityId);
                 munger.munge(entityId, statements);
                 for (Statement statement : statements) {
-                    next.handleStatement(statement);
+                    next.output().handleStatement(statement);
                 }
+                entitiesMeter.mark();
+                if (entitiesMeter.getCount() % 10000 == 0) {
+                    log.info("Processed {} entities at ({}, {}, {})", entitiesMeter.getCount(),
+                            (long) entitiesMeter.getOneMinuteRate(), (long) entitiesMeter.getFiveMinuteRate(),
+                            (long) entitiesMeter.getFifteenMinuteRate());
+                }
+                next.entitiesMunged((int) entitiesMeter.getCount());
+
             } catch (ContainedException e) {
                 log.warn("Error munging {}", entityId, e);
             }
@@ -238,38 +288,200 @@ public class Munge implements Runnable {
     }
 
     /**
-     * Very simple HTTP server that only knows how to spit out the result of the
-     * munge. Useful because tools like Blazegraph can import from any URI so
-     * this removes the need to create a temporary file.
+     * Very simple HTTP server that only knows how to spit out results from a
+     * queue.
      */
     public static class Httpd extends NanoHTTPD {
-        private final WikibaseUris uris;
-        private final Munger munger;
-        private final String source;
+        /**
+         * Flag that the server is still busy. We try to make sure to set this
+         * to false if we're not busy so the process can exit.
+         */
+        private final AtomicBoolean busy = new AtomicBoolean(false);
+        private final BlockingQueue<InputStream> results;
 
-        public Httpd(int port, WikibaseUris uris, Munger munger, String source) {
+        public Httpd(int port, BlockingQueue<InputStream> results) {
             super(port);
-            this.uris = uris;
-            this.munger = munger;
-            this.source = source;
+            this.results = results;
         }
 
         @Override
         public Response serve(IHTTPSession session) {
             try {
-                PipedInputStream sentToResponse = new PipedInputStream();
-                Reader from = new InputStreamReader(CliUtils.inputStream(source), Charsets.UTF_8);
-                final Writer to = new OutputStreamWriter(new PipedOutputStream(sentToResponse), Charsets.UTF_8);
-                final Munge munge = new Munge(uris, munger, from, to);
-                Thread thread = new Thread(munge);
-                thread.setUncaughtExceptionHandler(CliUtils.loggingUncaughtExceptionHandler("Error serving rdf", log));
-                thread.start();
-                Response response = new Response(Response.Status.OK, " application/x-turtle", sentToResponse);
+                busy.set(true);
+                Response response = new Response(Response.Status.OK, " application/x-turtle", results.take()) {
+                    @Override
+                    protected void send(OutputStream outputStream) {
+                        super.send(outputStream);
+                        busy.set(false);
+                    }
+                };
                 response.setChunkedTransfer(true);
                 return response;
-            } catch (IOException e) {
-                log.error("Error serving rdf", e);
+            } catch (InterruptedException e) {
+                log.error("Interrupted while waiting for a result", e);
+                Thread.currentThread().interrupt();
+                busy.set(false);
                 return new Response(Response.Status.INTERNAL_ERROR, "text/plain", "internal server error");
+            }
+        }
+    }
+
+    /**
+     * Picks the right RDFHandler for writing.
+     */
+    public interface OutputPicker<T> {
+        /**
+         * Get the handler to write to.
+         */
+        T output();
+
+        /**
+         * Update the number of entities already handled.
+         */
+        void entitiesMunged(int entitiesMunged);
+    }
+
+    /**
+     * An output picker that always returns one output.
+     */
+    public static class AlwaysOutputPicker<T> implements OutputPicker<T> {
+        private final T next;
+
+        public AlwaysOutputPicker(T next) {
+            this.next = next;
+        }
+
+        @Override
+        public T output() {
+            return next;
+        }
+
+        @Override
+        public void entitiesMunged(int entitiesMunged) {
+            // Intentionally do nothing
+        }
+    }
+
+    /**
+     * Output picker that starts new chunks after processing so many entities.
+     */
+    private static abstract class ChunkedWriterOutputPicker implements OutputPicker<Writer> {
+        private final int chunkSize;
+        private Writer writer;
+        private int lastChunk = 1;
+
+        public ChunkedWriterOutputPicker(int chunkSize) {
+            this.chunkSize = chunkSize;
+        }
+
+        @Override
+        public Writer output() {
+            if (writer == null) {
+                writer = buildWriter(lastChunk);
+            }
+            return writer;
+        }
+
+        @Override
+        public void entitiesMunged(int entitiesMunged) {
+            int currentChunk = entitiesMunged / chunkSize + 1;
+            if (lastChunk != currentChunk) {
+                lastChunk = currentChunk;
+                writer = buildWriter(lastChunk);
+            }
+        }
+
+        protected abstract Writer buildWriter(long chunk);
+    }
+
+    public static class ChunkedFileWriterOutputPicker extends ChunkedWriterOutputPicker {
+        private final String pattern;
+
+        public ChunkedFileWriterOutputPicker(String pattern, int chunkSize) {
+            super(chunkSize);
+            this.pattern = pattern;
+        }
+
+        @Override
+        protected Writer buildWriter(long chunk) {
+            String file = String.format(Locale.ROOT, pattern, chunk);
+            log.info("Switching to {}", file);
+            try {
+                return CliUtils.writer(file);
+            } catch (IOException e) {
+                throw new RuntimeException("Error switching chunks", e);
+            }
+        }
+    }
+
+    public static class ChunkedPipedWriterOutputPicker extends ChunkedWriterOutputPicker {
+        private final BlockingQueue<InputStream> queue;
+
+        public ChunkedPipedWriterOutputPicker(BlockingQueue<InputStream> queue, int chunkSize) {
+            super(chunkSize);
+            this.queue = queue;
+        }
+
+        @Override
+        protected Writer buildWriter(long chunk) {
+            PipedInputStream toQueue = new PipedInputStream();
+            try {
+                queue.put(toQueue);
+                return new OutputStreamWriter(new PipedOutputStream(toQueue), Charsets.UTF_8);
+            } catch (InterruptedException | IOException e) {
+                throw new RuntimeException("Error switching chunks", e);
+            }
+        }
+    }
+
+    private static class WriterToRDFWriterChunkPicker implements OutputPicker<RDFHandler> {
+        private final Map<String, String> prefixes = new LinkedHashMap<String, String>();
+        private final OutputPicker<Writer> next;
+        private Writer lastWriter;
+        private RDFHandler handler;
+
+        public WriterToRDFWriterChunkPicker(OutputPicker<Writer> next) {
+            this.next = next;
+            lastWriter = next.output();
+            try {
+                setHandlerFromLastWriter();
+            } catch (RDFHandlerException e) {
+                throw new RuntimeException("Error setting up first rdf writer", e);
+            }
+        }
+
+        @Override
+        public RDFHandler output() {
+            Writer nextWriter = next.output();
+            if (nextWriter == lastWriter) {
+                return handler;
+            }
+            try {
+                /*
+                 * When we hit a new chunk we have to terminate rdf and start it
+                 * on the next chunk.
+                 */
+                handler.endRDF();
+                lastWriter.close();
+                lastWriter = nextWriter;
+                setHandlerFromLastWriter();
+                handler.startRDF();
+            } catch (RDFHandlerException | IOException e) {
+                throw new RuntimeException("Error switching chunks", e);
+            }
+            return handler;
+        }
+
+        @Override
+        public void entitiesMunged(int entitiesMunged) {
+            next.entitiesMunged(entitiesMunged);
+        }
+
+        private void setHandlerFromLastWriter() throws RDFHandlerException {
+            handler = Rio.createWriter(RDFFormat.TURTLE, lastWriter);
+            handler = new PrefixRecordingRdfHandler(handler, prefixes);
+            for (Map.Entry<String, String> prefix : prefixes.entrySet()) {
+                handler.handleNamespace(prefix.getKey(), prefix.getValue());
             }
         }
     }

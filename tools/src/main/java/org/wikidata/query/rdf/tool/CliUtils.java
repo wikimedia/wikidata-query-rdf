@@ -4,6 +4,7 @@ import static com.google.common.io.Resources.getResource;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -31,6 +32,7 @@ import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
 
 import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 import com.lexicalscope.jewel.cli.ArgumentValidationException;
 import com.lexicalscope.jewel.cli.Cli;
 import com.lexicalscope.jewel.cli.CliFactory;
@@ -61,6 +63,7 @@ public class CliUtils {
         @Option(longName = "labelLanguage", defaultToNull = true, description = "Only import labels, aliases, and descriptions in these languages.")
         List<String> labelLanguages();
 
+        // TODO this really shouldn't import the Qid for label
         @Option(longName = "singleLabel", defaultToNull = true, description = "Always import a single label and description using the languages specified as a fallback list.  If there aren't any matching labels or descriptions them the entity itself is used as the label or description.")
         List<String> singleLabelLanguages();
 
@@ -154,13 +157,15 @@ public class CliUtils {
     }
 
     /**
-     * Get an output stream for a uri. If the uri looks like a gzip file then
-     * zips it on the fly.
+     * Get an output stream for a file. If the file is - then returns stdin
+     * instead. If the file looks like a gzip file then zips it on the fly. Also
+     * creates the file file's parent directories if they don't already exist.
      */
     public static OutputStream outputStream(String out) throws IOException {
         if (out.equals("-")) {
             return ForbiddenOk.systemDotOut();
         }
+        Files.createParentDirs(new File(out));
         OutputStream stream = new BufferedOutputStream(new FileOutputStream(out));
         if (out.endsWith(".gz")) {
             stream = new GZIPOutputStream(stream);
