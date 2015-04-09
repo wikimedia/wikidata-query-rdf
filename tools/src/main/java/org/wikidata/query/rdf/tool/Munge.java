@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openrdf.model.Statement;
+import org.openrdf.model.URI;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
@@ -19,6 +20,7 @@ import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.Rio;
+import org.openrdf.rio.turtle.TurtleParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Ontology;
@@ -118,7 +120,9 @@ public class Munge implements Runnable {
     @Override
     public void run() {
         try {
-            RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
+            // TODO this is a temporary hack
+            // RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
+            RDFParser parser = new ForbiddenOk.HackedTurtleParser();
             RDFWriter writer = Rio.createWriter(RDFFormat.TURTLE, to);
             RDFHandler handler = new EntityMungingRdfHandler(uris, munger, writer);
             handler = new Normalizer(handler);
@@ -266,6 +270,50 @@ public class Munge implements Runnable {
             } catch (IOException e) {
                 log.error("Error serving rdf", e);
                 return new Response(Response.Status.INTERNAL_ERROR, "text/plain", "internal server error");
+            }
+        }
+    }
+
+    /**
+     * We need access to getMessage from exceptions. This is brittle but
+     * (hopefully) temporary.
+     */
+    private static class ForbiddenOk {
+        private static class HackedTurtleParser extends TurtleParser {
+            @Override
+            protected URI parseURI() throws IOException, RDFParseException {
+                try {
+                    return super.parseURI();
+                } catch (RDFParseException e) {
+                    if (e.getMessage().startsWith("IRI includes string escapes: ")
+                            || e.getMessage().startsWith("IRI included an unencoded space: '32'")) {
+                        log.warn("Attempting to recover from", e);
+                        // Unless we hit a \> then consume until we get to a >
+                        if (!e.getMessage().startsWith("IRI includes string escapes: '\\62'")) {
+                            while (readCodePoint() != '>') {
+                            }
+                        }
+                        return super.resolveURI("http://example.com/error");
+                    }
+                    throw e;
+                }
+            }
+
+            @Override
+            protected void parseStatement() throws IOException, RDFParseException, RDFHandlerException {
+                try {
+                    super.parseStatement();
+                } catch (RDFParseException e) {
+                    if (e.getMessage().startsWith("Namespace prefix 'Warning' used but not defined")) {
+                        log.warn("Attempting to recover from", e);
+                        /*
+                         * Just dump the rest of the line. Hopefully that'll be
+                         * enough to recover.
+                         */
+                        while (readCodePoint() != '\n') {
+                        }
+                    }
+                }
             }
         }
     }
