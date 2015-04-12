@@ -13,6 +13,7 @@ public class WikibaseUris {
     private final String root;
     private final String entityData;
     private final String entity;
+    private final String truthy;
     private final String statement;
     private final String value;
     private final String reference;
@@ -22,6 +23,7 @@ public class WikibaseUris {
         root = "http://" + host;
         entityData = root + "/wiki/Special:EntityData/";
         entity = root + "/entity/";
+        truthy = entity + "assert/";
         statement = entity + "statement/";
         value = entity + "value/";
         reference = entity + "reference/";
@@ -34,6 +36,7 @@ public class WikibaseUris {
     public StringBuilder prefixes(StringBuilder query) {
         query.append("PREFIX data: <").append(entityData).append(">\n");
         query.append("PREFIX entity: <").append(entity).append(">\n");
+        query.append("PREFIX t: <").append(truthy).append(">\n");
         query.append("PREFIX s: <").append(statement).append(">\n");
         query.append("PREFIX v: <").append(value).append(">\n");
         query.append("PREFIX ref: <").append(reference).append(">\n");
@@ -60,6 +63,13 @@ public class WikibaseUris {
      */
     public String entity() {
         return entity;
+    }
+
+    /**
+     * Prefix wikibase uses for statements.
+     */
+    public String truthy() {
+        return truthy;
     }
 
     /**

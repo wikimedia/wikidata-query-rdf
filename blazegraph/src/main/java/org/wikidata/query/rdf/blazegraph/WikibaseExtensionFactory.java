@@ -3,6 +3,8 @@ package org.wikidata.query.rdf.blazegraph;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.wikidata.query.rdf.blazegraph.inline.literal.WikibaseDateExtension;
+
 import com.bigdata.rdf.internal.DefaultExtensionFactory;
 import com.bigdata.rdf.internal.IDatatypeURIResolver;
 import com.bigdata.rdf.internal.IExtension;
