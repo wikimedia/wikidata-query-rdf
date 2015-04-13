@@ -93,7 +93,7 @@ public class RdfRepository {
         valuesOnReferencesBuilder.where().add(startsWith("?statement", uris.statement()));
         valuesOnReferencesBuilder.where("?statement", "prov:wasDerivedFrom", "?ref");
         valuesOnReferencesBuilder.where("?ref", "?expandedValuePred", "?s");
-        valuesOnReferencesBuilder.where().add(startsWith("?expandedValuePred", uris.value()));
+        valuesOnReferencesBuilder.where().add(startsWith("?s", uris.value()));
         valuesOnReferencesBuilder.where("?s", "?p", "?o");
         // We can't clear references that are still used elsewhere
         valuesOnReferencesBuilder.where().notExists()//
@@ -125,7 +125,7 @@ public class RdfRepository {
         valuesOnExpandedStatementsBuilder.where(entity, "?statementPred", "?statement");
         valuesOnExpandedStatementsBuilder.where().add(startsWith("?statement", uris.statement()));
         valuesOnExpandedStatementsBuilder.where("?statement", "?expandedValuePred", "?s");
-        valuesOnExpandedStatementsBuilder.where().add(startsWith("?expandedValuePred", uris.value()));
+        valuesOnExpandedStatementsBuilder.where().add(startsWith("?s", uris.value()));
         valuesOnExpandedStatementsBuilder.where("?s", "?p", "?o");
         if (!statements.isEmpty()) {
             valuesOnExpandedStatementsBuilder.where().notExists().values(statements, "?s", "?p", "?o");

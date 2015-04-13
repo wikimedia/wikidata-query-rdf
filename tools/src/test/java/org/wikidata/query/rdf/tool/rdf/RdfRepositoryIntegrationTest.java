@@ -201,10 +201,8 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         statement(george, valueUri, Ontology.Time.VALUE, new LiteralImpl("cat"));
         statement(george, valueUri, Ontology.Time.CALENDAR_MODEL, new LiteralImpl("animals"));
         rdfRepository.sync("Q23", george);
-        assertTrue(rdfRepository
-.ask(Ontology.prefix(uris.prefixes(new StringBuilder()))
-                .append("ASK { entity:Q23 entity:P509 [ v:P509-value [ ontology:timeTime \"cat\" ] ] }")
-                        .toString()));
+        assertTrue(rdfRepository.ask(Ontology.prefix(uris.prefixes(new StringBuilder()))
+                .append("ASK { entity:Q23 entity:P509 [ v:P509-value [ ontology:timeTime \"cat\" ] ] }").toString()));
         assertTrue(rdfRepository.ask(Ontology.prefix(uris.prefixes(new StringBuilder()))
                 .append("ASK { entity:Q23 entity:P509 [ v:P509-value [ ontology:timeCalendarModel \"animals\" ] ] }")
                 .toString()));
@@ -239,9 +237,13 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         statement(george, "Q23", "P509", statementUri);
         statement(george, statementUri, Provenance.WAS_DERIVED_FROM, referenceUri);
         statement(george, referenceUri, uris.value() + "P509-value", valueUri);
+        statement(george, referenceUri, uris.value() + "P143", "Q328");
         statement(george, valueUri, Ontology.Time.VALUE, new LiteralImpl("cat"));
         statement(george, valueUri, Ontology.Time.CALENDAR_MODEL, new LiteralImpl("animals"));
         rdfRepository.sync("Q23", george);
+        List<Statement> enwiki = new ArrayList<>();
+        statement(enwiki, "Q328", "P509", "Q328");
+        rdfRepository.sync("Q328", enwiki);
         assertTrue(rdfRepository
                 .ask(Provenance
                         .prefix(Ontology.prefix(uris.prefixes(new StringBuilder())))
@@ -251,7 +253,14 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
                 .ask(Provenance
                         .prefix(Ontology.prefix(uris.prefixes(new StringBuilder())))
                         .append("ASK { entity:Q23 entity:P509 [ prov:wasDerivedFrom [ v:P509-value [ ontology:timeCalendarModel \"animals\" ] ] ] }")
-                .toString()));
+                        .toString()));
+        assertTrue(rdfRepository
+                .ask(Provenance
+                        .prefix(Ontology.prefix(uris.prefixes(new StringBuilder())))
+                        .append("ASK { entity:Q23 entity:P509 [ prov:wasDerivedFrom [ v:P143 [ entity:P509 entity:Q328 ] ] ] }")
+                        .toString()));
+        assertTrue(rdfRepository.ask(Provenance.prefix(uris.prefixes(new StringBuilder()))
+                .append("ASK { entity:Q328 entity:P509 entity:Q328 }").toString()));
     }
 
     @Test
@@ -281,7 +290,15 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
                 .ask(Provenance
                         .prefix(Ontology.prefix(uris.prefixes(new StringBuilder())))
                         .append("ASK { entity:Q23 entity:P509 [ prov:wasDerivedFrom [ v:P509-value [ ontology:timeTime \"cat\" ] ] ] }")
-                .toString()));
+                        .toString()));
+        // We've unlinked enwiki
+        assertFalse(rdfRepository
+                .ask(Provenance
+                        .prefix(Ontology.prefix(uris.prefixes(new StringBuilder())))
+                        .append("ASK { entity:Q23 entity:P509 [ prov:wasDerivedFrom [ v:P143 [ entity:P509 entity:Q328 ] ] ] }")
+                        .toString()));
+        assertTrue(rdfRepository.ask(Provenance.prefix(uris.prefixes(new StringBuilder()))
+                .append("ASK { entity:Q328 entity:P509 entity:Q328 }").toString()));
     }
 
     @Test
@@ -289,8 +306,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         String referenceUri = uris.reference() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
         List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
                 Ontology.NORMAL_RANK, referenceUri);
-        statement(george, referenceUri, uris.value() + "P854",
-                "http://www.anb.org/articles/02/02-00332.html");
+        statement(george, referenceUri, uris.value() + "P854", "http://www.anb.org/articles/02/02-00332.html");
         rdfRepository.sync("Q23", george);
         StringBuilder query = Provenance.prefix(Ontology.prefix(uris.prefixes(new StringBuilder())));
         query.append("SELECT * WHERE { entity:Q23 entity:P19 [ v:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
@@ -328,8 +344,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         String referenceUri = uris.reference() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
         List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
                 Ontology.NORMAL_RANK, referenceUri);
-        statement(george, referenceUri, uris.value() + "P143",
-                "http://www.anb.org/articles/02/02-00332.html");
+        statement(george, referenceUri, uris.value() + "P143", "http://www.anb.org/articles/02/02-00332.html");
         rdfRepository.sync("Q23", george);
         StringBuilder query = Provenance.prefix(Ontology.prefix(uris.prefixes(new StringBuilder())));
         query.append("SELECT * WHERE { entity:Q23 entity:P19 [ v:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
@@ -385,8 +400,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
 
         // Query one more way just to be sure it works 10000%
         query = Ontology.prefix(uris.prefixes(new StringBuilder()));
-        query.append("SELECT * WHERE { ?s ?p ?o . FILTER( STRSTARTS(STR(?s), \"")
-.append(uris.reference())
+        query.append("SELECT * WHERE { ?s ?p ?o . FILTER( STRSTARTS(STR(?s), \"").append(uris.reference())
                 .append("\") ) . }");
         r = rdfRepository.query(query.toString());
         assertTrue(r.hasNext());
@@ -405,8 +419,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
          * anywhere.
          */
         query = Ontology.prefix(uris.prefixes(new StringBuilder()));
-        query.append("SELECT * WHERE { ?s ?p ?o . FILTER( STRSTARTS(STR(?s), \"")
-.append(uris.reference())
+        query.append("SELECT * WHERE { ?s ?p ?o . FILTER( STRSTARTS(STR(?s), \"").append(uris.reference())
                 .append("\") ) . }");
         r = rdfRepository.query(query.toString());
         assertFalse(r.hasNext());
