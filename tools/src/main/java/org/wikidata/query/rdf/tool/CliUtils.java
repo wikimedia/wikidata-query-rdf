@@ -63,8 +63,9 @@ public class CliUtils {
         @Option(longName = "labelLanguage", defaultToNull = true, description = "Only import labels, aliases, and descriptions in these languages.")
         List<String> labelLanguages();
 
-        // TODO this really shouldn't import the Qid for label
-        @Option(longName = "singleLabel", defaultToNull = true, description = "Always import a single label and description using the languages specified as a fallback list.  If there aren't any matching labels or descriptions them the entity itself is used as the label or description.")
+        @Option(longName = "singleLabel", defaultToNull = true, description = "Only import a single label and description using the languages "
+                + "specified as a fallback list. If there isn't a label in any of the specified languages then no label is imported.  Ditto for "
+                + "description.")
         List<String> singleLabelLanguages();
 
         @Option(description = "Skip site links")

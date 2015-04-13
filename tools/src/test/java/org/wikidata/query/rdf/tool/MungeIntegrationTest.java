@@ -58,7 +58,7 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
         Future<?> f = executor.submit(new Munge(uris, munger, from, to));
         httpd.start();
         try {
-            assertEquals(941, rdfRepository.loadUrl("http://localhost:10999"));
+            assertEquals(939, rdfRepository.loadUrl("http://localhost:10999"));
         } finally {
             try {
                 f.get();

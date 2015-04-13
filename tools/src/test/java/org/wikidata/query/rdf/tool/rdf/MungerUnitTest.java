@@ -371,11 +371,10 @@ public class MungerUnitTest extends RandomizedTest {
         assertThat(george, not(hasItem(deLabel)));
         george = otherGeorge;
         munger.singleLabelMode("ja").munge("Q23", george);
-        assertThat(george, hasItem(statement("Q23", RDFS.LABEL, "Q23")));
-        assertThat(george, not(hasItem(enLabel)));
-        assertThat(george, not(hasItem(itLabel)));
-        assertThat(george, not(hasItem(frLabel)));
-        assertThat(george, not(hasItem(deLabel)));
+        // There aren't any labels if none are in the languages
+        for (Statement statement : george) {
+            assertThat(statement.getPredicate().stringValue(), not(equalTo(RDFS.LABEL)));
+        }
     }
 
     /**

@@ -78,7 +78,9 @@ public class Munger {
     }
 
     /**
-     * Build a munger that will load only a single label per entity.
+     * Build a munger that will load only a single label per entity. Note that
+     * if there isn't a label in one of the languages then there will be no
+     * label for the entity.
      *
      * @param languages a fallback chain of languages with the first one being
      *            the most important
@@ -490,8 +492,8 @@ public class Munger {
          */
         private void finishSingleLabelMode() {
             if (singleLabelModeLanguages != null) {
-                statements.add(singleLabelModeWorkForLabel.collectBestStatement());
-                statements.add(singleLabelModeWorkForDescription.collectBestStatement());
+                singleLabelModeWorkForLabel.addBestStatement(statements);
+                singleLabelModeWorkForDescription.addBestStatement(statements);
             }
         }
 
@@ -538,13 +540,12 @@ public class Munger {
             }
 
             /**
-             * Collect the best statement at the end of processing the labels.
+             * Add the best label or description to the statements if there is
+             * one.
              */
-            public Statement collectBestStatement() {
-                if (bestStatement == null) {
-                    return new StatementImpl(entityUriImpl, new URIImpl(RDFS.LABEL), entityUriImpl);
-                } else {
-                    return bestStatement;
+            public void addBestStatement(Collection<Statement> statements) {
+                if (bestStatement != null) {
+                    statements.add(bestStatement);
                 }
             }
         }
