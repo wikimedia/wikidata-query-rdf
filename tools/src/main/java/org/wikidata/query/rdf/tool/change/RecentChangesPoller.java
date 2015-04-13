@@ -52,21 +52,26 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         /**
          * A batch that will next continue using the continue parameter.
          */
-        private Batch(ImmutableList<Change> changes, long advanced, String upTo, Date nextStartTime,
+        private Batch(ImmutableList<Change> changes, long advanced, String leftOff, Date nextStartTime,
                 JSONObject nextContinue, String lastSeen) {
-            super(changes, advanced, upTo);
+            super(changes, advanced, leftOff);
             this.nextContinue = nextContinue;
             this.nextStartTime = nextStartTime;
             if(!changes.isEmpty()) {
-              this.lastSeenId = changes.get(changes.size()-1).toString();
+              lastSeenId = changes.get(changes.size()-1).toString();
             } else {
-              this.lastSeenId = lastSeen;
+              lastSeenId = lastSeen;
             }
         }
 
         @Override
         public String advancedUnits() {
             return "milliseconds";
+        }
+
+        @Override
+        public Date leftOffDate() {
+            return nextStartTime;
         }
     }
 

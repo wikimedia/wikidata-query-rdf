@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool.change;
 
 import static java.lang.Math.min;
 
+import java.util.Date;
 import java.util.Locale;
 
 import org.wikidata.query.rdf.tool.exception.RetryableException;
@@ -55,6 +56,11 @@ public class IdChangeSource implements Change.Source<IdChangeSource.Batch> {
         @Override
         public boolean last() {
             return nextStart > stop;
+        }
+
+        @Override
+        public Date leftOffDate() {
+            return null;
         }
     }
 

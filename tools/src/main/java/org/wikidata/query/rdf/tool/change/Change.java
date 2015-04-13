@@ -111,7 +111,14 @@ public class Change {
          * Human readable version of where this batch ends. Used for logging. It
          * should be obvious how to continue from here if possible.
          */
-        String upTo();
+        String leftOffHuman();
+
+        /**
+         * Null or the latest date in the batch. If this is returned then the
+         * updater process will attempt to mark the last update date in the rdf
+         * store so it can pick up where it left off.
+         */
+        Date leftOffDate();
 
         /**
          * Was this the last batch?
@@ -124,12 +131,12 @@ public class Change {
         public static abstract class AbstractDefaultImplementation implements Batch {
             private final ImmutableList<Change> changes;
             private final long advanced;
-            private final Object upTo;
+            protected final Object leftOff;
 
-            public AbstractDefaultImplementation(ImmutableList<Change> changes, long advanced, Object upTo) {
+            public AbstractDefaultImplementation(ImmutableList<Change> changes, long advanced, Object leftOff) {
                 this.changes = checkNotNull(changes);
                 this.advanced = advanced;
-                this.upTo = upTo;
+                this.leftOff = leftOff;
             }
 
             @Override
@@ -143,8 +150,8 @@ public class Change {
             }
 
             @Override
-            public String upTo() {
-                return upTo.toString();
+            public String leftOffHuman() {
+                return leftOff.toString();
             }
 
             @Override

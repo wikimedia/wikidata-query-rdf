@@ -22,7 +22,7 @@ public class IdChangeSourceUnitTest {
         IdChangeSource.Batch batch = changeSource.firstBatch();
         assertEquals(6, batch.advanced());
         assertTrue(batch.last());
-        assertEquals("5", batch.upTo());
+        assertEquals("5", batch.leftOffHuman());
     }
 
     @Test
