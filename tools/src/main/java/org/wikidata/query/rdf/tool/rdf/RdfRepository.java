@@ -1,9 +1,12 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import static com.google.common.io.Resources.getResource;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -43,9 +46,11 @@ import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
+import org.wikidata.query.rdf.tool.exception.FatalException;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
+import com.google.common.io.Resources;
 
 public class RdfRepository {
     private static final Logger log = LoggerFactory.getLogger(RdfRepository.class);
@@ -54,10 +59,17 @@ public class RdfRepository {
             .build();
     private final URI uri;
     private final WikibaseUris uris;
+    private final String syncBody;
 
     public RdfRepository(URI uri, WikibaseUris uris) {
         this.uri = uri;
         this.uris = uris;
+        URL syncBodyUrl = getResource(RdfRepository.class, "RdfRepository.sync.sparql");
+        try {
+            syncBody = Resources.toString(syncBodyUrl, Charsets.UTF_8);
+        } catch (IOException e) {
+            throw new FatalException("Can't load " + syncBodyUrl);
+        }
     }
 
     /**
@@ -76,101 +88,17 @@ public class RdfRepository {
     public int sync(String entityId, Collection<Statement> statements) {
         // TODO this is becoming a mess too
         log.debug("Updating data for {}", entityId);
-        String entity = "entity:" + entityId;
-        UpdateBuilder siteLinksBuilder = updateBuilder();
-        siteLinksBuilder.prefix("schema", SchemaDotOrg.NAMESPACE);
-        siteLinksBuilder.delete("?s", "?p", "?o");
-        siteLinksBuilder.where("?s", "schema:about", "entity:" + entityId);
-        siteLinksBuilder.where("?s", "?p", "?o");
-        if (!statements.isEmpty()) {
-            siteLinksBuilder.where().notExists().values(statements, "?s", "?p", "?o");
-        }
+        UpdateBuilder b = new UpdateBuilder(syncBody);
+        b.bindUri("entity:id", uris.entity() + entityId);
+        b.bindUri("schema:about", SchemaDotOrg.ABOUT);
+        b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
+        b.bind("uris.value", uris.value());
+        b.bind("uris.statement", uris.statement());
+        b.bindStatements("insertStatements", statements);
+        b.bindValues("valueStatements", statements);
 
-        UpdateBuilder valuesOnReferencesBuilder = updateBuilder();
-        valuesOnReferencesBuilder.prefix("prov", Provenance.NAMESPACE);
-        valuesOnReferencesBuilder.delete("?s", "?p", "?o");
-        valuesOnReferencesBuilder.where(entity, "?statementPred", "?statement");
-        valuesOnReferencesBuilder.where().add(startsWith("?statement", uris.statement()));
-        valuesOnReferencesBuilder.where("?statement", "prov:wasDerivedFrom", "?ref");
-        valuesOnReferencesBuilder.where("?ref", "?expandedValuePred", "?s");
-        valuesOnReferencesBuilder.where().add(startsWith("?s", uris.value()));
-        valuesOnReferencesBuilder.where("?s", "?p", "?o");
-        // We can't clear references that are still used elsewhere
-        valuesOnReferencesBuilder.where().notExists()//
-                .add("?otherStatement", "prov:wasDerivedFrom", "?ref")//
-                .add("?otherEntity", "?otherStatementPred", "?otherStatement")//
-                .add("FILTER ( " + entity + " != ?otherEntity ) .");
-        if (!statements.isEmpty()) {
-            valuesOnReferencesBuilder.where().notExists().values(statements, "?s", "?p", "?o");
-        }
-
-        UpdateBuilder referencesBuilder = updateBuilder();
-        referencesBuilder.prefix("prov", Provenance.NAMESPACE);
-        referencesBuilder.delete("?s", "?p", "?o");
-        referencesBuilder.where(entity, "?statementPred", "?statement");
-        referencesBuilder.where().add(startsWith("?statement", uris.statement()));
-        referencesBuilder.where("?statement", "prov:wasDerivedFrom", "?s");
-        referencesBuilder.where("?s", "?p", "?o");
-        // We can't clear references that are still used elsewhere
-        referencesBuilder.where().notExists()//
-                .add("?otherStatement", "prov:wasDerivedFrom", "?s")//
-                .add("?otherEntity", "?otherStatementPred", "?otherStatement")//
-                .add("FILTER ( " + entity + " != ?otherEntity ) .");
-        if (!statements.isEmpty()) {
-            referencesBuilder.where().notExists().values(statements, "?s", "?p", "?o");
-        }
-
-        UpdateBuilder valuesOnExpandedStatementsBuilder = updateBuilder();
-        valuesOnExpandedStatementsBuilder.delete("?s", "?p", "?o");
-        valuesOnExpandedStatementsBuilder.where(entity, "?statementPred", "?statement");
-        valuesOnExpandedStatementsBuilder.where().add(startsWith("?statement", uris.statement()));
-        valuesOnExpandedStatementsBuilder.where("?statement", "?expandedValuePred", "?s");
-        valuesOnExpandedStatementsBuilder.where().add(startsWith("?s", uris.value()));
-        valuesOnExpandedStatementsBuilder.where("?s", "?p", "?o");
-        if (!statements.isEmpty()) {
-            valuesOnExpandedStatementsBuilder.where().notExists().values(statements, "?s", "?p", "?o");
-        }
-
-        UpdateBuilder expandedStatementsBuilder = updateBuilder();
-        expandedStatementsBuilder.delete("?s", "?p", "?o");
-        expandedStatementsBuilder.where(entity, "?statementPred", "?s");
-        expandedStatementsBuilder.where().add(startsWith("?s", uris.statement()));
-        expandedStatementsBuilder.where("?s", "?p", "?o");
-        if (!statements.isEmpty()) {
-            expandedStatementsBuilder.where().notExists().values(statements, "?s", "?p", "?o");
-        }
-
-        UpdateBuilder generalBuilder = updateBuilder();
-        generalBuilder.delete(entity, "?p", "?o");
-        generalBuilder.where(entity, "?p", "?o");
-        if (!statements.isEmpty()) {
-            // TODO should this be statements, entity, ?p, ?o ?
-            generalBuilder.where().notExists().values(statements, "?s", "?p", "?o");
-        }
-
-        /*
-         * The order in which these are executed is important: if you think of
-         * the triples that must be managed by this action as a tree then you
-         * must start with the leaves first or when you clear out the trunk the
-         * leaves will be orphaned.
-         */
-        StringBuilder command = new StringBuilder();
-        command.append(siteLinksBuilder).append(";\n");
-        command.append(valuesOnReferencesBuilder).append(";\n");
-        command.append(referencesBuilder).append(";\n");
-        command.append(valuesOnExpandedStatementsBuilder).append(";\n");
-        command.append(expandedStatementsBuilder).append(";\n");
-        command.append(generalBuilder).append(";\n");
-
-        if (!statements.isEmpty()) {
-            UpdateBuilder insertBuilder = updateBuilder();
-            for (Statement statement : statements) {
-                insertBuilder.insert(statement.getSubject(), statement.getPredicate(), statement.getObject());
-            }
-            command.append(insertBuilder).append(";\n");
-        }
         long start = System.currentTimeMillis();
-        int modified = execute("update", UPDATE_COUNT_RESPONSE, command.toString());
+        int modified = execute("update", UPDATE_COUNT_RESPONSE, b.toString());
         log.debug("Updating {} took {} millis and modified {} statements", entityId,
                 System.currentTimeMillis() - start, modified);
         return modified;
@@ -265,21 +193,6 @@ public class RdfRepository {
 
     private String responseBodyAsString(CloseableHttpResponse response) throws IOException {
         return CharStreams.toString(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
-    }
-
-    private UpdateBuilder updateBuilder() {
-        UpdateBuilder b = new UpdateBuilder();
-        b.prefix("entity", uris.entity());
-        return b;
-    }
-
-    private String startsWith(String name, String prefix) {
-        StringBuilder filter = new StringBuilder();
-        filter.append("FILTER( STRSTARTS(STR(");
-        filter.append(name).append("), \"");
-        filter.append(prefix);
-        filter.append("\") ) .");
-        return filter.toString();
     }
 
     /**

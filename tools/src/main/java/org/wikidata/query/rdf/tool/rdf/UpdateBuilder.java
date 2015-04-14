@@ -1,177 +1,92 @@
 package org.wikidata.query.rdf.tool.rdf;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.vocabulary.XMLSchema;
 
-import com.google.common.base.Joiner;
-
 /**
  * Quick and dirty update builder.
  */
 public class UpdateBuilder {
-    private final StringBuilder prefixes = new StringBuilder();
-    private final BasicPart delete = new BasicPart();
-    private final BasicPart insert = new BasicPart();
-    private final BasicPart where = new BasicPart();
+    private String template;
 
-    public UpdateBuilder prefix(String prefix, String expandedForm) {
-        prefixes.append("PREFIX ").append(prefix).append(": <").append(expandedForm).append(">\n");
+    public UpdateBuilder(String template) {
+        this.template = template;
+    }
+
+    public UpdateBuilder bind(String from, String to) {
+        template = template.replace('%' + from + '%', to);
         return this;
     }
 
-    public UpdateBuilder delete(Object s, Object p, Object o) {
-        delete.add(s, p, o);
+    public UpdateBuilder bindUri(String from, String to) {
+        bind(from, '<' + to + '>');
         return this;
     }
 
-    public UpdateBuilder insert(Object s, Object p, Object o) {
-        insert.add(s, p, o);
+    public UpdateBuilder bindStatements(String from, Collection<Statement> statements) {
+        StringBuilder b = new StringBuilder(statements.size() * 30);
+        for (Statement s : statements) {
+            b.append(str(s.getSubject())).append(' ');
+            b.append(str(s.getPredicate())).append(' ');
+            b.append(str(s.getObject())).append(" .\n");
+        }
+        bind(from, b.toString().trim());
         return this;
     }
 
-    public UpdateBuilder where(Object s, Object p, Object o) {
-        where.add(s, p, o);
+    public UpdateBuilder bindValues(String from, Collection<Statement> statements) {
+        StringBuilder b = new StringBuilder(statements.size() * 30);
+        for (Statement s : statements) {
+            b.append("( ").append(str(s.getSubject())).append(' ');
+            b.append(str(s.getPredicate())).append(' ');
+            b.append(str(s.getObject())).append(" )\n");
+        }
+        bind(from, b.toString().trim());
         return this;
-    }
-
-    public BasicPart where() {
-        return where;
     }
 
     @Override
     public String toString() {
-        StringBuilder b = new StringBuilder();
-        b.append(prefixes);
-        if (!delete.parts.isEmpty()) {
-            b.append("DELETE {\n").append(delete).append("}\n");
-        }
-        if (!insert.parts.isEmpty()) {
-            b.append("INSERT {\n").append(insert).append("}\n");
-        }
-        b.append("WHERE {\n").append(where).append("}");
-        return b.toString();
+        return template;
     }
 
-    private static class AbstractPart<Self extends AbstractPart<Self>> {
-        protected final List<Object> parts = new ArrayList<>();
-        protected final int indent;
-
-        private AbstractPart(int indent) {
-            this.indent = indent;
+    /**
+     * Properly stringify a subject, predicate, or object so it fits in the
+     * update query.
+     */
+    private String str(Object o) {
+        if (o instanceof String) {
+            // Got to escape those quotes
+            return o.toString().replace("\"", "\\\"");
         }
-
-        @SuppressWarnings("unchecked")
-        public Self add(String s) {
-            parts.add(indent().append(s));
-            return (Self) this;
+        if (o instanceof URI) {
+            return '<' + o.toString() + '>';
         }
+        if (o instanceof Literal) {
+            Literal l = (Literal) o;
+            // This is very similar to LiteralImpl's toString but with label
+            // escaping.
+            StringBuilder sb = new StringBuilder(l.getLabel().length() * 2);
 
-        @SuppressWarnings("unchecked")
-        public Self add(Object s, Object p, Object o) {
-            parts.add(indent().append(str(s)).append(' ').append(str(p)).append(' ').append(str(o)).append(" ."));
-            return (Self) this;
-        }
+            sb.append('"');
+            sb.append(l.getLabel().replace("\\", "\\\\").replace("\"", "\\\""));
+            sb.append('"');
 
-        public NotExists notExists() {
-            NotExists ne = new NotExists(indent + 1);
-            parts.add(ne);
-            return ne;
-        }
-
-        @Override
-        public String toString() {
-            return Joiner.on('\n').join(parts) + "\n";
-        }
-
-        /**
-         * Properly stringify a subject, predicate, or object so it fits in the
-         * update query.
-         */
-        protected String str(Object o) {
-            if (o instanceof String) {
-                // Got to escape those quotes
-                return o.toString().replace("\"", "\\\"");
+            if (l.getLanguage() != null) {
+                sb.append('@');
+                sb.append(l.getLanguage());
+            } else if (!l.getDatatype().equals(XMLSchema.STRING)) {
+                sb.append("^^<");
+                sb.append(l.getDatatype());
+                sb.append(">");
             }
-            if (o instanceof URI) {
-                return "<" + o + ">";
-            }
-            if (o instanceof Literal) {
-                Literal l = (Literal) o;
-                // This is very similar to LiteralImpl's toString but with label
-                // escaping.
-                StringBuilder sb = new StringBuilder(l.getLabel().length() * 2);
 
-                sb.append('"');
-                sb.append(l.getLabel().replace("\\", "\\\\").replace("\"", "\\\""));
-                sb.append('"');
-
-                if (l.getLanguage() != null) {
-                    sb.append('@');
-                    sb.append(l.getLanguage());
-                } else if (!l.getDatatype().equals(XMLSchema.STRING)) {
-                    sb.append("^^<");
-                    sb.append(l.getDatatype());
-                    sb.append(">");
-                }
-
-                return sb.toString();
-            }
-            throw new RuntimeException("I have no idea what do to with a " + o.getClass());
+            return sb.toString();
         }
-
-        protected StringBuilder indent() {
-            return indent(new StringBuilder(), indent);
-        }
-
-        protected StringBuilder indent(StringBuilder b, int indentation) {
-            for (int i = 0; i < indentation; i++) {
-                b.append("  ");
-            }
-            return b;
-        }
-    }
-
-    public static class BasicPart extends AbstractPart<BasicPart> {
-        private BasicPart() {
-            super(1);
-        }
-    }
-
-    public static class NotExists extends AbstractPart<NotExists> {
-        private NotExists(int indent) {
-            super(indent);
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder b = indent(new StringBuilder(), indent - 1);
-            b.append("FILTER NOT EXISTS {\n");
-            b.append(super.toString());
-            indent(b, indent - 1).append("}");
-            return b.toString();
-        }
-
-        public NotExists values(Collection<Statement> statements, String... names) {
-            StringBuilder b = indent().append("VALUES (");
-            for (String name : names) {
-                b.append(name).append(" ");
-            }
-            b.append(") {\n");
-            for (Statement statement : statements) {
-                indent(b, indent + 1).append("( ");
-                b.append(str(statement.getSubject())).append(' ');
-                b.append(str(statement.getPredicate())).append(' ');
-                b.append(str(statement.getObject())).append(" )\n");
-            }
-            indent(b, indent).append("}");
-            parts.add(b);
-            return this;
-        }
+        throw new RuntimeException("I have no idea what do to with a " + o.getClass());
     }
 }

@@ -1,0 +1,112 @@
+# Clear out of date site links
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+  ?s %schema:about% %entity:id% .
+  ?s ?p ?o .
+  # This construct is constantly reused throughout the updates.  Its job is to not delete statements
+  # that are still in use.
+  FILTER NOT EXISTS {
+    VALUES ( ?s ?p ?o ) {
+      %valueStatements%
+    }
+  }
+};
+# Clear statements on expanded values in referenes that are no longer used
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+  %entity:id% ?statementPred ?statement .
+  FILTER( STRSTARTS(STR(?statement), "%uris.statement%") ) .
+  ?statement %prov:wasDerivedFrom% ?ref .
+  # Since references are shared we can only clear the values on them when they are no longer used
+  # anywhere else.
+  FILTER NOT EXISTS {
+    ?otherStatement %prov:wasDerivedFrom% ?ref .
+    ?otherEntity ?otherStatementPred ?otherStatement .
+    FILTER ( %entity:id% != ?otherEntity ) .
+  }
+  ?ref ?expandedValuePred ?s .
+  # Without this filter we'd try to delete stuff from entities.  For example that pattern above matches
+  #   ref:_ v:P143 entity:Q328
+  # so we'd try to clear everything from Q328 (enwiki).  So we filter where ?s is in the value prefix.
+  FILTER( STRSTARTS(STR(?s), "%uris.value%") ) .
+  ?s ?p ?o .
+  FILTER NOT EXISTS {
+    VALUES ( ?s ?p ?o ) {
+      %valueStatements%
+    }
+  }
+};
+# Clear statements about references that are no longer used
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+  %entity:id% ?statementPred ?statement .
+  FILTER( STRSTARTS(STR(?statement), "%uris.statement%") ) .
+  ?statement %prov:wasDerivedFrom% ?s .
+  # Since references are shared we can only clear the values on them when they are no longer used
+  # anywhere else.
+  FILTER NOT EXISTS {
+    ?otherStatement %prov:wasDerivedFrom% ?s .
+    ?otherEntity ?otherStatementPred ?otherStatement .
+    FILTER ( %entity:id% != ?otherEntity ) .
+  }
+  ?s ?p ?o .
+  FILTER NOT EXISTS {
+    VALUES ( ?s ?p ?o ) {
+      %valueStatements%
+    }
+  }
+};
+# Clear out of date expanded values on statements about the entity
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+  %entity:id% ?statementPred ?statement .
+  FILTER( STRSTARTS(STR(?statement), "%uris.statement%") ) .
+  ?statement ?expandedValuePred ?s .
+  # Without this filter we'd clear all kinds of things.  Only try and clear value nodes.
+  FILTER( STRSTARTS(STR(?s), "%uris.value%") ) .
+  ?s ?p ?o .
+  FILTER NOT EXISTS {
+    VALUES ( ?s ?p ?o ) {
+      %valueStatements%
+    }
+  }
+};
+# Clear out of date statements about statements 
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+  %entity:id% ?statementPred ?s .
+  FILTER( STRSTARTS(STR(?s), "%uris.statement%") ) .
+  ?s ?p ?o .
+  FILTER NOT EXISTS {
+    VALUES ( ?s ?p ?o ) {
+      %valueStatements%
+    }
+  }
+};
+# Clear out of date statements about the entity
+DELETE {
+  %entity:id% ?p ?o .
+}
+WHERE {
+  %entity:id% ?p ?o .
+  FILTER NOT EXISTS {
+    VALUES ( ?s ?p ?o ) {
+      %valueStatements%
+    }
+  }
+};
+INSERT {
+  %insertStatements%
+}
+WHERE {};
+

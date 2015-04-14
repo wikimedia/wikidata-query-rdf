@@ -425,6 +425,34 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         assertFalse(r.hasNext());
     }
 
+    /**
+     * Tests that if a reference is used multiple times on the same entity it
+     * isn't cleared if its removed from the entity just once. That'd be wrong
+     * because its still on the entity.
+     */
+    @Test
+    public void sharedReferenceOnSameEntity() {
+        String referenceUri = uris.reference() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
+        List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
+                Ontology.NORMAL_RANK, referenceUri);
+        statement(george, referenceUri, uris.value() + "P854", "http://www.anb.org/articles/02/02-00332.html");
+        List<Statement> georgeWithoutSecondReference = new ArrayList<>(george);
+        String otherStatementUri = uris.statement() + "ASDFasdf";
+        statement(george, "Q23", uris.value() + "P129", otherStatementUri);
+        statement(george, otherStatementUri, uris.value() + "P129", new LiteralImpl("cat"));
+        statement(george, otherStatementUri, Provenance.WAS_DERIVED_FROM, referenceUri);
+        rdfRepository.sync("Q23", george);
+        assertTrue(rdfRepository.ask(uris.prefixes(new StringBuilder())
+                .append("ASK {ref:e36b7373814a0b74caa84a5fc2b1e3297060ab0f v:P854 ?o }").toString()));
+
+        rdfRepository.sync("Q23", georgeWithoutSecondReference);
+        assertTrue(rdfRepository.ask(uris.prefixes(new StringBuilder())
+                .append("ASK {ref:e36b7373814a0b74caa84a5fc2b1e3297060ab0f v:P854 ?o }").toString()));
+
+    }
+
+    // TODO values on shared references change when they change
+
     private List<Statement> expandedStatement(String statementId, String subject, String predicate, String value,
             String rank, String referenceUri) {
         List<Statement> statements = expandedStatement(statementId, subject, predicate, value, rank);
