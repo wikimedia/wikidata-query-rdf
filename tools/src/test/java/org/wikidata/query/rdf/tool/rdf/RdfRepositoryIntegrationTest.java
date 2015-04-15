@@ -7,11 +7,15 @@ import static org.wikidata.query.rdf.tool.StatementHelper.statement;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.IntegerLiteralImpl;
@@ -31,6 +35,13 @@ import com.google.common.collect.ImmutableList;
  * Tests RdfRepository against a live RDF repository.
  */
 public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrationTestBase {
+    private Set<String> cleanupList = new HashSet<String>();
+
+    @Before
+    public void cleanList() {
+        cleanupList = new HashSet<String>();
+    }
+
     @Test
     public void newSiteLink() throws QueryEvaluationException {
         rdfRepository.sync("Q23", siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en"));
@@ -196,6 +207,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
     public void expandedStatementWithExpandedValue() throws QueryEvaluationException {
         String statementUri = uris.statement() + "someotheruuid";
         String valueUri = uris.value() + "someuuid";
+        cleanupList.add(valueUri);
         List<Statement> george = new ArrayList<>();
         statement(george, "Q23", "P509", statementUri);
         statement(george, statementUri, uris.value() + "P509-value", valueUri);
@@ -213,13 +225,18 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
     public void expandedStatementWithExpandedValueChanged() throws QueryEvaluationException {
         expandedStatementWithExpandedValue();
         String statementUri = uris.statement() + "someotheruuid";
-        String valueUri = uris.value() + "someuuid";
+        String valueUri = uris.value() + "newuuid";
+        cleanupList.add(valueUri);
         List<Statement> george = new ArrayList<>();
         statement(george, "Q23", "P509", statementUri);
         statement(george, statementUri, uris.value() + "P509-value", valueUri);
         statement(george, valueUri, Ontology.Time.VALUE, new LiteralImpl("dog"));
         statement(george, valueUri, Ontology.Time.CALENDAR_MODEL, new LiteralImpl("animals"));
         rdfRepository.sync("Q23", george);
+        Collection<String> cleanupList = new ArrayList<String>();
+        cleanupList.add(valueUri);
+        cleanupList.add(uris.value() + "someuuid");
+        rdfRepository.cleanUnused(cleanupList);
         assertTrue(rdfRepository.ask(Ontology.prefix(uris.prefixes(new StringBuilder()))
                 .append("ASK { entity:Q23 entity:P509 [ v:P509-value [ ontology:timeTime \"dog\" ] ] }").toString()));
         assertTrue(rdfRepository.ask(Ontology.prefix(uris.prefixes(new StringBuilder()))
@@ -234,6 +251,8 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         String statementUri = uris.statement() + "someotheruuid";
         String referenceUri = uris.reference() + "yetanotheruri";
         String valueUri = uris.value() + "someuuid";
+        cleanupList.add(valueUri);
+        cleanupList.add(referenceUri);
         List<Statement> george = new ArrayList<>();
         statement(george, "Q23", "P509", statementUri);
         statement(george, statementUri, Provenance.WAS_DERIVED_FROM, referenceUri);
@@ -268,8 +287,10 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
     public void referenceWithExpandedValueChanged() throws QueryEvaluationException {
         referenceWithExpandedValue();
         String statementUri = uris.statement() + "someotheruuid";
-        String referenceUri = uris.reference() + "yetanotheruri";
-        String valueUri = uris.value() + "someuuid";
+        String referenceUri = uris.reference() + "andanotheruri";
+        String valueUri = uris.value() + "someuuid2";
+        cleanupList.add(valueUri);
+        cleanupList.add(referenceUri);
         List<Statement> george = new ArrayList<>();
         statement(george, "Q23", "P509", statementUri);
         statement(george, statementUri, Provenance.WAS_DERIVED_FROM, referenceUri);
@@ -277,6 +298,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         statement(george, valueUri, Ontology.Time.VALUE, new LiteralImpl("dog"));
         statement(george, valueUri, Ontology.Time.CALENDAR_MODEL, new LiteralImpl("animals"));
         rdfRepository.sync("Q23", george);
+        rdfRepository.cleanUnused(cleanupList);
         assertTrue(rdfRepository
                 .ask(Provenance
                         .prefix(Ontology.prefix(uris.prefixes(new StringBuilder())))
@@ -308,7 +330,9 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
                 Ontology.NORMAL_RANK, referenceUri);
         statement(george, referenceUri, uris.value() + "P854", "http://www.anb.org/articles/02/02-00332.html");
+        cleanupList.add(referenceUri);
         rdfRepository.sync("Q23", george);
+        rdfRepository.cleanUnused(cleanupList);
         StringBuilder query = Provenance.prefix(Ontology.prefix(uris.prefixes(new StringBuilder())));
         query.append("SELECT * WHERE { entity:Q23 entity:P19 [ v:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
         TupleQueryResult r = rdfRepository.query(query.toString());
@@ -323,11 +347,13 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
     @Test
     public void referencesOnExpandedStatementsChangeValue() throws QueryEvaluationException {
         referencesOnExpandedStatements();
-        String referenceUri = uris.reference() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
+        String referenceUri = uris.reference() + "new-e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
         List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
                 Ontology.NORMAL_RANK, referenceUri);
+        cleanupList.add(referenceUri);
         statement(george, referenceUri, uris.value() + "P854", "http://example.com");
         rdfRepository.sync("Q23", george);
+        rdfRepository.cleanUnused(cleanupList);
         StringBuilder query = Provenance.prefix(Ontology.prefix(uris.prefixes(new StringBuilder())));
         query.append("SELECT * WHERE { entity:Q23 entity:P19 [ v:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
         TupleQueryResult r = rdfRepository.query(query.toString());
@@ -342,11 +368,13 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
     @Test
     public void referencesOnExpandedStatementsChangePredicate() throws QueryEvaluationException {
         referencesOnExpandedStatements();
-        String referenceUri = uris.reference() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
+        String referenceUri = uris.reference() + "new-e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
         List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
                 Ontology.NORMAL_RANK, referenceUri);
+        cleanupList.add(referenceUri);
         statement(george, referenceUri, uris.value() + "P143", "http://www.anb.org/articles/02/02-00332.html");
         rdfRepository.sync("Q23", george);
+        rdfRepository.cleanUnused(cleanupList);
         StringBuilder query = Provenance.prefix(Ontology.prefix(uris.prefixes(new StringBuilder())));
         query.append("SELECT * WHERE { entity:Q23 entity:P19 [ v:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
         TupleQueryResult r = rdfRepository.query(query.toString());
@@ -364,6 +392,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         String referenceUri = uris.reference() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
         List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
                 Ontology.NORMAL_RANK, referenceUri);
+        cleanupList.add(referenceUri);
         Statement refDecl = statement(george, referenceUri, uris.value() + "P854",
                 "http://www.anb.org/articles/02/02-00332.html");
         rdfRepository.sync("Q23", george);
@@ -371,6 +400,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
                 Ontology.NORMAL_RANK, referenceUri);
         dummy.add(refDecl);
         rdfRepository.sync("Q1234134", dummy);
+        rdfRepository.cleanUnused(cleanupList);
 
         // Now query and make sure you can find it
         StringBuilder query = Provenance.prefix(Ontology.prefix(uris.prefixes(new StringBuilder())));
@@ -414,6 +444,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
                 Ontology.NORMAL_RANK);
         rdfRepository.sync("Q23", george);
+        rdfRepository.cleanUnused(cleanupList);
 
         /*
          * Now query and find the reference now gone because it isn't used
@@ -436,6 +467,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         String referenceUri = uris.reference() + "e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
         List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
                 Ontology.NORMAL_RANK, referenceUri);
+        cleanupList.add(referenceUri);
         statement(george, referenceUri, uris.value() + "P854", "http://www.anb.org/articles/02/02-00332.html");
         List<Statement> georgeWithoutSecondReference = new ArrayList<>(george);
         String otherStatementUri = uris.statement() + "ASDFasdf";

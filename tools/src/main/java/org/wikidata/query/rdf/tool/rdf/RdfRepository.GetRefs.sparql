@@ -1,0 +1,6 @@
+SELECT DISTINCT ?s
+WHERE {
+  %entity:id% ?statementPred ?statement .
+  FILTER( STRSTARTS(STR(?statement), "%uris.statement%") ) .
+  ?statement %prov:wasDerivedFrom% ?s .
+}

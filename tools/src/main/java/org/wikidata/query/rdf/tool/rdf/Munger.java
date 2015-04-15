@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.tool.rdf;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -112,16 +113,34 @@ public class Munger {
      * RDF exports into a more queryable form.
      *
      * @param statements statements to munge
+     * @param existingValues Existing value statements
+     * @param existingRefs Existing reference statements
      */
-    public void munge(String entityId, Collection<Statement> statements) throws ContainedException {
+    public void munge(String entityId, Collection<Statement> statements,
+          Collection<String> existingValues, Collection<String> existingRefs) throws ContainedException {
         if (statements.isEmpty()) {
             // Empty collection is a delete.
             return;
         }
-        MungeOperation op = new MungeOperation(entityId, statements);
+        MungeOperation op = new MungeOperation(entityId, statements, existingValues, existingRefs);
         op.munge();
+        // remove all values that we have seen as they are used by statements
+        existingValues.removeAll(op.extraValidSubjects);
+        existingRefs.removeAll(op.extraValidSubjects);
         return;
     }
+
+    /**
+     * Adds and removes entries from the statements collection to munge Wikibase
+     * RDF exports into a more queryable form.
+     *
+     * @param statements statements to munge
+     */
+    @SuppressWarnings("unchecked")
+    public void munge(String entityId, Collection<Statement> statements) {
+        munge(entityId, statements, Collections.EMPTY_SET, Collections.EMPTY_SET);
+    }
+
 
     /**
      * Holds state during a single munge operation.
@@ -174,7 +193,10 @@ public class Munger {
         private String subject;
         private String predicate;
 
-        public MungeOperation(String entityId, Collection<Statement> statements) {
+        private final Collection<String> existingValues;
+        private final Collection<String> existingRefs;
+
+        public MungeOperation(String entityId, Collection<Statement> statements, Collection<String> existingValues, Collection<String> existingRefs) {
             this.statements = statements;
             entityUri = uris.entity() + entityId;
             entityUriImpl = new URIImpl(entityUri);
@@ -185,6 +207,8 @@ public class Munger {
                 singleLabelModeWorkForLabel = null;
                 singleLabelModeWorkForDescription = null;
             }
+            this.existingValues = existingValues;
+            this.existingRefs = existingRefs;
         }
 
         public void munge() throws ContainedException {
@@ -348,17 +372,23 @@ public class Munger {
          * @return true to keep the statement, false to remove it
          */
         private boolean entityReferenceStatement() throws ContainedException {
+            if(existingRefs.contains(subject)) {
+              /* We already have this ref, so no need to import it again
+               * Since refs are IDed by content, we know it is the same
+               */
+              return false;
+            }
             switch (predicate) {
-            case RDF.TYPE:
-                /*
-                 * We don't need r:<uuid> a ontology:Reference because its super
-                 * common and not super interesting.
-                 */
-                if (statement.getObject().stringValue().equals(Ontology.REFERENCE)) {
-                    return false;
-                }
-                break;
-            default:
+                case RDF.TYPE:
+                    /*
+                     * We don't need r:<uuid> a ontology:Reference because its super
+                     * common and not super interesting.
+                     */
+                    if (statement.getObject().stringValue().equals(Ontology.REFERENCE)) {
+                        return false;
+                    }
+                    break;
+                default:
             }
             if (!extraValidSubjects.contains(subject)) {
                 /*
@@ -383,6 +413,12 @@ public class Munger {
          * @return true to keep the statement, false to remove it
          */
         private boolean entityValueStatement() throws ContainedException {
+            if(existingValues.contains(subject)) {
+              /* We already have this value, so no need to import it again
+               * Since values are IDed by content, we know it is the same
+               */
+              return false;
+            }
             switch (predicate) {
             case RDF.TYPE:
                 /*

@@ -65,6 +65,16 @@ public class UpdateBuilder {
         return this;
     }
 
+    public UpdateBuilder bindUris(String from, Collection<String> uris) {
+      StringBuilder b = new StringBuilder(uris.size() * 80);
+
+      for (String s : uris) {
+          b.append('<').append(s).append("> ");
+      }
+      bind(from, b.toString().trim());
+      return this;
+  }
+
     @Override
     public String toString() {
         return template;

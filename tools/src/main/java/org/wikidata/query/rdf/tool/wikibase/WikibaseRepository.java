@@ -244,7 +244,7 @@ public class WikibaseRepository {
              * not all Wikibase instances have the rewrite rule set up.
              */
             builder.setPath(String.format(Locale.ROOT, "/wiki/Special:EntityData/%s.ttl", title));
-            builder.addParameter("nocache", "");
+            builder.addParameter("nocache", "1");
             builder.addParameter("flavor", "dump");
             return build(builder);
         }

@@ -11,8 +11,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -65,14 +67,21 @@ public class RdfRepository {
             .build();
     private final URI uri;
     private final WikibaseUris uris;
+    // SPARQL queries
     private final String syncBody;
     private final String updateLeftOffTimeBody;
+    private final String getValues;
+    private final String getRefs;
+    private final String cleanUnused;
 
     public RdfRepository(URI uri, WikibaseUris uris) {
         this.uri = uri;
         this.uris = uris;
         syncBody = loadBody("sync");
         updateLeftOffTimeBody = loadBody("updateLeftOffTime");
+        getValues = loadBody("GetValues");
+        getRefs = loadBody("GetRefs");
+        cleanUnused = loadBody("CleanUnused");
     }
 
     /**
@@ -90,6 +99,75 @@ public class RdfRepository {
         } catch (IOException e) {
             throw new FatalException("Can't load " + url);
         }
+    }
+
+    /**
+     * Collect results of the query into string set.
+     * @param result Result object
+     * @param binding Binding name to collect
+     * @return Collection of strings resulting from the query.
+     */
+    private Set<String> resultToSet(TupleQueryResult result, String binding) {
+        HashSet<String> values = new HashSet<String>();
+        try {
+            while(result.hasNext()) {
+                Binding value = result.next().getBinding(binding);
+                if (value == null) {
+                    continue;
+                }
+                values.add(value.getValue().stringValue());
+            }
+        } catch(QueryEvaluationException e) {
+            throw new FatalException("Can't load results: " + e, e);
+        }
+        return values;
+    }
+
+    /**
+     * Get list of value subjects connected to entity.
+     * The connection is either via statement or via reference or via qualifier.
+     * @param entityId
+     * @return Set of value subjects
+     */
+    public Set<String> getValues(String entityId) {
+        UpdateBuilder b = new UpdateBuilder(getValues);
+        b.bindUri("entity:id", uris.entity() + entityId);
+        b.bind("uris.value", uris.value());
+        b.bind("uris.statement", uris.statement());
+        b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
+
+        return resultToSet(query(b.toString()), "s");
+    }
+
+    /**
+     * Get list of reference subjects connected to entity.
+     * @param entityId
+     * @return Set of references
+     */
+    public Set<String> getRefs(String entityId) {
+        UpdateBuilder b = new UpdateBuilder(getRefs);
+        b.bindUri("entity:id", uris.entity() + entityId);
+        b.bind("uris.statement", uris.statement());
+        b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
+
+        return resultToSet(query(b.toString()), "s");
+    }
+
+    /**
+     * Clean subjects if they are not used anymore.
+     * The candidate values do not have to be actually unused - the cleanup query
+     * will figure out which are unused and delete only those.
+     * @param valueList List of potential candidates for cleanup.
+     */
+    public void cleanUnused(Collection<String> valueList) {
+        if(valueList.isEmpty()) {
+            return;
+        }
+        long start = System.currentTimeMillis();
+        UpdateBuilder b = new UpdateBuilder(cleanUnused);
+        b.bindUris("values", valueList);
+        int modified = execute("update", UPDATE_COUNT_RESPONSE, b.toString());
+        log.debug("Cleanup {} millis and modified {} statements", System.currentTimeMillis() - start, modified);
     }
 
     /**

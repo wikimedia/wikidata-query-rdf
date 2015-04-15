@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -266,8 +267,14 @@ public class Update<B extends Change.Batch> implements Runnable {
             return;
         }
         Collection<Statement> statements = wikibase.fetchRdfForEntity(change.entityId());
-        munger.munge(change.entityId(), statements);
+        Set<String> values = rdfRepository.getValues(change.entityId());
+        Set<String> refs = rdfRepository.getRefs(change.entityId());
+        munger.munge(change.entityId(), statements, values, refs);
         rdfRepository.sync(change.entityId(), statements);
+        List<String> cleanupList = new ArrayList<>();
+        cleanupList.addAll(values);
+        cleanupList.addAll(refs);
+        rdfRepository.cleanUnused(cleanupList);
         updateMeter.mark();
     }
 
