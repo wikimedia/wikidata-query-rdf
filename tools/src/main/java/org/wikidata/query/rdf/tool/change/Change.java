@@ -18,7 +18,11 @@ public class Change {
     private final Date timestamp;
 
     public Change(String entityId, long revision, Date timestamp) {
-        this.entityId = entityId;
+        if(entityId.startsWith("Property:")) {
+            this.entityId = entityId.substring("Property:".length());
+        } else {
+            this.entityId = entityId;
+        }
         this.revision = revision;
         this.timestamp = timestamp;
     }

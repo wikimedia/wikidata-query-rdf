@@ -85,8 +85,9 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             DateFormat df = inputDateFormat();
             for (Object rco : result) {
                 JSONObject rc = (JSONObject) rco;
-                if ((long) rc.get("ns") != 0) {
-                    log.debug("Skipping change in non-0 namespace:  {}", rc);
+                // FIXME: this check should probably be gone
+                if ((long) rc.get("ns") != 0 && (long) rc.get("ns") != 120) {
+                    log.debug("Skipping change in irrelevant namespace:  {}", rc);
                     continue;
                 }
                 Date timestamp = df.parse(rc.get("timestamp").toString());
