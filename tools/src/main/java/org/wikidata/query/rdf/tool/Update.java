@@ -63,6 +63,9 @@ public class Update<B extends Change.Batch> implements Runnable {
 
         @Option(shortName = "d", defaultValue = "10", description = "Poll delay when no updates found")
         int pollDelay();
+
+        @Option(shortName = "t", defaultValue = "10", description = "Thread count")
+        int threadCount();
     }
 
     public static void main(String args[]) {
@@ -82,8 +85,9 @@ public class Update<B extends Change.Batch> implements Runnable {
         if (changeSource == null) {
             return;
         }
+        int threads = options.threadCount();
         ThreadFactoryBuilder threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("update %s");
-        ExecutorService executor = new ThreadPoolExecutor(10, 10, 0, TimeUnit.SECONDS,
+        ExecutorService executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(), threadFactory.build());
 
         Munger munger = CliUtils.mungerFromOptions(options);
