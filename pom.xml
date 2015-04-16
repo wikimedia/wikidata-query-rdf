@@ -16,6 +16,7 @@
     <module>common</module>
     <module>blazegraph</module>
     <module>tools</module>
+    <module>dist</module>
   </modules>
 
   <licenses>
