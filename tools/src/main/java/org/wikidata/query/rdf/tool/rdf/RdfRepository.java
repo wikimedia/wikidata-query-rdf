@@ -13,9 +13,12 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.apache.http.Consts;
@@ -42,6 +45,7 @@ import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.query.resultio.binary.BinaryQueryResultParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
@@ -55,20 +59,36 @@ import com.google.common.io.Resources;
 public class RdfRepository {
     private static final Logger log = LoggerFactory.getLogger(RdfRepository.class);
 
+    private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+
     private final CloseableHttpClient client = HttpClients.custom().setMaxConnPerRoute(100).setMaxConnTotal(100)
             .build();
     private final URI uri;
     private final WikibaseUris uris;
     private final String syncBody;
+    private final String updateLeftOffTimeBody;
 
     public RdfRepository(URI uri, WikibaseUris uris) {
         this.uri = uri;
         this.uris = uris;
-        URL syncBodyUrl = getResource(RdfRepository.class, "RdfRepository.sync.sparql");
+        syncBody = loadBody("sync");
+        updateLeftOffTimeBody = loadBody("updateLeftOffTime");
+    }
+
+    /**
+     * Loads some sparql.
+     *
+     * @param name name of the sparql file to load - the actual file loaded is
+     *            RdfRepository.%name%.sparql.
+     * @return contents of the sparql file
+     * @throws FatalException if there is an error loading the file
+     */
+    private static final String loadBody(String name) {
+        URL url = getResource(RdfRepository.class, "RdfRepository." + name + ".sparql");
         try {
-            syncBody = Resources.toString(syncBodyUrl, Charsets.UTF_8);
+            return Resources.toString(url, Charsets.UTF_8);
         } catch (IOException e) {
-            throw new FatalException("Can't load " + syncBodyUrl);
+            throw new FatalException("Can't load " + url);
         }
     }
 
@@ -117,31 +137,44 @@ public class RdfRepository {
     }
 
     /**
-     * Fetch the last wikidata update time.
+     * Fetch where we left off updating the repository.
      *
-     * @return the date or null if there are no update times
+     * @return the date or null if we have nowhere to start from
      */
-    public Date fetchLastUpdate() {
-        // TODO this is very likely inefficient
-        TupleQueryResult result = query("PREFIX schema: <http://schema.org/>\nSELECT (MAX(?lastUpdate) as ?maxLastUpdate)\nWHERE { ?s schema:dateModified ?lastUpdate . }");
-        try {
-            if (!result.hasNext()) {
-                return null;
-            }
-            Binding maxLastUpdate = result.next().getBinding("maxLastUpdate");
-            if (maxLastUpdate == null) {
-                return null;
-            }
-            XMLGregorianCalendar xmlCalendar = ((Literal) maxLastUpdate.getValue()).calendarValue();
-            /*
-             * We convert rather blindly to a GregorianCalendar because we're
-             * reasonably sure all the right data is present.
-             */
-            GregorianCalendar calendar = xmlCalendar.toGregorianCalendar();
-            return calendar.getTime();
-        } catch (QueryEvaluationException e) {
-            throw new RuntimeException("Error evaluating query", e);
+    public Date fetchLeftOffTime() {
+        log.info("Checking for left off time from the updater");
+        StringBuilder b = SchemaDotOrg.prefix(new StringBuilder());
+        b.append("SELECT * WHERE { <").append(uris.root()).append("> schema:dateModified ?date }");
+        Date leftOffTime = dateFromQuery(b.toString());
+        if (leftOffTime != null) {
+            log.info("Found left off time from the updater");
+            return leftOffTime;
         }
+        log.info("Checking for left off time from the dump");
+        b = Ontology.prefix(SchemaDotOrg.prefix(new StringBuilder()));
+        b.append("SELECT * WHERE { ontology:Dump schema:dateModified ?date }");
+        return dateFromQuery(b.toString());
+    }
+
+    /**
+     * Update where we left off so when fetchLeftOffTime is next called it
+     * returns leftOffTime so we can continue from there after the updater is
+     * restarted.
+     */
+    public void updateLeftOffTime(Date leftOffTime) {
+        log.debug("Setting last updated time to {}", leftOffTime);
+        UpdateBuilder b = new UpdateBuilder(updateLeftOffTimeBody);
+        b.bindUri("root", uris.root());
+        b.bindUri("dateModified", SchemaDotOrg.DATE_MODIFIED);
+        GregorianCalendar c = new GregorianCalendar(UTC, Locale.ROOT);
+        c.setTime(leftOffTime);
+        try {
+            b.bindValue("date", DatatypeFactory.newInstance().newXMLGregorianCalendar(c));
+        } catch (DatatypeConfigurationException e) {
+            throw new FatalException("Holy cow datatype configuration exception on default "
+                    + "datatype factory.  Seems like something really really strange.", e);
+        }
+        execute("update", UPDATE_COUNT_RESPONSE, b.toString());
     }
 
     /**
@@ -193,6 +226,32 @@ public class RdfRepository {
 
     private String responseBodyAsString(CloseableHttpResponse response) throws IOException {
         return CharStreams.toString(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+    }
+
+    /**
+     * Run a query that returns just a date in the "date" binding and return its
+     * result.
+     */
+    private Date dateFromQuery(String query) {
+        TupleQueryResult result = query(query);
+        try {
+            if (!result.hasNext()) {
+                return null;
+            }
+            Binding maxLastUpdate = result.next().getBinding("date");
+            if (maxLastUpdate == null) {
+                return null;
+            }
+            XMLGregorianCalendar xmlCalendar = ((Literal) maxLastUpdate.getValue()).calendarValue();
+            /*
+             * We convert rather blindly to a GregorianCalendar because we're
+             * reasonably sure all the right data is present.
+             */
+            GregorianCalendar calendar = xmlCalendar.toGregorianCalendar();
+            return calendar.getTime();
+        } catch (QueryEvaluationException e) {
+            throw new FatalException("Error evaluating query", e);
+        }
     }
 
     /**

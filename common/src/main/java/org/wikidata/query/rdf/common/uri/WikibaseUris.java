@@ -10,6 +10,7 @@ public class WikibaseUris {
     public static WikibaseUris WIKIDATA = new WikibaseUris("www.wikidata.org");
     public static WikibaseUris TEST_WIKIDATA = new WikibaseUris("test.wikidata.org");
 
+    private final String root;
     private final String entityData;
     private final String entity;
     private final String statement;
@@ -18,7 +19,7 @@ public class WikibaseUris {
     private final String qualifier;
 
     public WikibaseUris(String host) {
-        String root = "http://" + host;
+        root = "http://" + host;
         entityData = root + "/wiki/Special:EntityData/";
         entity = root + "/entity/";
         statement = entity + "statement/";
@@ -38,6 +39,13 @@ public class WikibaseUris {
         query.append("PREFIX ref: <").append(reference).append(">\n");
         query.append("PREFIX q: <").append(qualifier).append(">\n");
         return query;
+    }
+
+    /**
+     * The root of the wikibase uris - http://www.wikidata.org for Wikidata.
+     */
+    public String root() {
+        return root;
     }
 
     /**

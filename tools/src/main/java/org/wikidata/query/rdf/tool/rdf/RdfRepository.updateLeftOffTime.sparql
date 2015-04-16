@@ -1,0 +1,9 @@
+DELETE {
+  %root% %dateModified% ?o .
+}
+WHERE {
+  %root% %dateModified% ?o .
+};
+INSERT DATA {
+  %root% %dateModified% %date% .
+}

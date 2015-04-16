@@ -30,7 +30,7 @@ public class Ontology {
     /**
      * Wikibase exports dump information with this subject.
      */
-    public static final Object DUMP = NAMESPACE + "Dump";
+    public static final String DUMP = NAMESPACE + "Dump";
 
     /**
      * Predicate for marking Wikibase's Rank.

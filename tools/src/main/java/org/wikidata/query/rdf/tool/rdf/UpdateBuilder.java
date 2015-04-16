@@ -2,6 +2,8 @@ package org.wikidata.query.rdf.tool.rdf;
 
 import java.util.Collection;
 
+import javax.xml.datatype.XMLGregorianCalendar;
+
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -17,11 +19,25 @@ public class UpdateBuilder {
         this.template = template;
     }
 
+    /**
+     * Bind a string to a name.
+     */
     public UpdateBuilder bind(String from, String to) {
         template = template.replace('%' + from + '%', to);
         return this;
     }
 
+    /**
+     * Bind a value to a name.
+     */
+    public UpdateBuilder bindValue(String from, Object to) {
+        template = template.replace('%' + from + '%', str(to));
+        return this;
+    }
+
+    /**
+     * Bind a URI to a name.
+     */
     public UpdateBuilder bindUri(String from, String to) {
         bind(from, '<' + to + '>');
         return this;
@@ -65,6 +81,14 @@ public class UpdateBuilder {
         }
         if (o instanceof URI) {
             return '<' + o.toString() + '>';
+        }
+        if (o instanceof XMLGregorianCalendar) {
+            XMLGregorianCalendar c = (XMLGregorianCalendar) o;
+            StringBuilder sb = new StringBuilder();
+            sb.append('"');
+            sb.append(c.toXMLFormat());
+            sb.append("\"^^<xsd:dateTime>");
+            return sb.toString();
         }
         if (o instanceof Literal) {
             Literal l = (Literal) o;

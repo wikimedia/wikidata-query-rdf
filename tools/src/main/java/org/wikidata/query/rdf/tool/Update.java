@@ -128,14 +128,14 @@ public class Update<B extends Change.Batch> implements Runnable {
                 }
             }
         } else {
-            log.info("Checking last update time");
-            Date lastUpdate = rdfRepository.fetchLastUpdate();
+            log.info("Checking where we left off");
+            Date leftOff = rdfRepository.fetchLeftOffTime();
             long minStartTime = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30);
-            if (lastUpdate == null) {
+            if (leftOff == null) {
                 startTime = minStartTime;
                 log.info("Defaulting start time to 30 days ago:  {}", inputDateFormat().format(new Date(startTime)));
             } else {
-                if (lastUpdate.getTime() < minStartTime) {
+                if (leftOff.getTime() < minStartTime) {
                     log.error("RDF store reports the last update time is before the minimum safe poll time.  "
                             + "You will have to reload from scratch or you might have missing data.");
                     return null;
@@ -145,11 +145,8 @@ public class Update<B extends Change.Batch> implements Runnable {
                  * because it should be cheap to recheck that we have the right
                  * revision.
                  */
-                // TODO finding a time to start from the RDF store like this
-                // is dangerous because we always update using the most recent
-                // version of the document so this will cause skipping.
-                startTime = lastUpdate.getTime() - SECONDS.toMillis(2);
-                log.info("Found start time in the RDF store: {}", inputDateFormat().format(new Date(startTime)));
+                startTime = leftOff.getTime();
+                log.info("Found start time in the RDF store: {}", inputDateFormat().format(leftOff));
             }
         }
         return new RecentChangesPoller(wikibaseRepository, new Date(startTime), options.batchSize());
@@ -215,10 +212,20 @@ public class Update<B extends Change.Batch> implements Runnable {
                     task.get();
                 }
 
+                Date leftOffDate = batch.leftOffDate();
+                if (leftOffDate != null) {
+                    /*
+                     * Back one second because the resolution on our poll isn't
+                     * super good and because its not big deal to recheck if we
+                     * have some updates.
+                     */
+                    leftOffDate = new Date(batch.leftOffDate().getTime() - SECONDS.toMillis(1));
+                    rdfRepository.updateLeftOffTime(leftOffDate);
+                }
                 // TODO wrap all retry-able exceptions in a special exception
                 do {
-                  batchAdvanced.mark(batch.advanced());
-                  log.info("Polled up to {} at {} updates per second and {} {} per second", batch.upTo(),
+                    batchAdvanced.mark(batch.advanced());
+                    log.info("Polled up to {} at {} updates per second and {} {} per second", batch.leftOffHuman(),
                           meterReport(updateMeter), meterReport(batchAdvanced), batch.advancedUnits());
                   if (batch.last()) {
                       return;

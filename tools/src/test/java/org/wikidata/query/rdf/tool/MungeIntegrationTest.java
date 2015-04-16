@@ -11,6 +11,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.text.ParseException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -30,6 +31,7 @@ import org.wikidata.query.rdf.tool.Munge.AlwaysOutputPicker;
 import org.wikidata.query.rdf.tool.Munge.Httpd;
 import org.wikidata.query.rdf.tool.Munge.OutputPicker;
 import org.wikidata.query.rdf.tool.rdf.Munger;
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 /**
  * Tests the munger that loads dumps.
@@ -45,7 +47,7 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
      * Loads a truncated version of a test dump from test wikidata.
      */
     @Test
-    public void loadTest() throws IOException, InterruptedException, ExecutionException {
+    public void loadTest() throws IOException, InterruptedException, ExecutionException, ParseException {
         Reader from = new InputStreamReader(getResource(MungeIntegrationTest.class, "test.ttl").openStream(), UTF_8);
         PipedInputStream toHttp = new PipedInputStream();
         Writer writer = new OutputStreamWriter(new PipedOutputStream(toHttp), UTF_8);
@@ -73,5 +75,8 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
                 .append("ASK { entity:Q10 rdfs:label \"Wikidata\"@en }").toString()));
         assertTrue(rdfRepository.ask(SchemaDotOrg.prefix(Ontology.prefix(new StringBuilder()))
                 .append("ASK { ontology:Dump schema:dateModified \"2015-04-02T10:54:56Z\"^^xsd:dateTime }").toString()));
+
+        assertEquals(WikibaseRepository.inputDateFormat().parse("2015-04-02T10:54:56Z"),
+                rdfRepository.fetchLeftOffTime());
     }
 }

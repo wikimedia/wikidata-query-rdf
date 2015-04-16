@@ -8,6 +8,7 @@ import static org.wikidata.query.rdf.tool.StatementHelper.statement;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -551,6 +552,18 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         rdfRepository.sync("Q23", Collections.<Statement> emptyList());
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         assertFalse(r.hasNext());
+    }
+
+    @Test
+    public void fetchLeftOffTimeEmpty() {
+        assertNull(rdfRepository.fetchLeftOffTime());
+    }
+
+    @Test
+    public void updateLeftOffTimeFetch() {
+        Date d = new Date();
+        rdfRepository.updateLeftOffTime(d);
+        assertEquals(d, rdfRepository.fetchLeftOffTime());
     }
 
     private void syncJustVersion(String entityId, int version) {
