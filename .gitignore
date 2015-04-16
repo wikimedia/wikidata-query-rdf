@@ -7,3 +7,4 @@ data/
 *.iml
 .idea
 **/rules.log
+.execution-hints-*.log
