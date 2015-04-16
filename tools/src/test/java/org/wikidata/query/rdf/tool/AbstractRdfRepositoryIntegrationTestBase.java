@@ -50,7 +50,7 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
          * Clear's the whole repository.
          */
         public void clear() {
-            execute("update", RdfRepository.UPDATE_COUNT_RESPONSE, "CLEAR DEFAULT");
+            execute("update", RdfRepository.UPDATE_COUNT_RESPONSE, "CLEAR ALL");
         }
 
         /**
