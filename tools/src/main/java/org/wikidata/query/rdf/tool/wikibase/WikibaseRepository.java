@@ -65,10 +65,12 @@ public class WikibaseRepository {
      * @param nextStartTime if lastContinue is null then this is the start time
      *            of the query
      * @param lastContinue continuation point if not null
+     * @param batchSize the number of recent changes to fetch
      * @return result of query
      */
-    public JSONObject fetchRecentChanges(Date nextStartTime, JSONObject lastContinue) throws RetryableException {
-        URI uri = uris.recentChanges(nextStartTime, lastContinue);
+    public JSONObject fetchRecentChanges(Date nextStartTime, JSONObject lastContinue, int batchSize)
+            throws RetryableException {
+        URI uri = uris.recentChanges(nextStartTime, lastContinue, batchSize);
         log.debug("Polling for changes from {}", uri);
         try {
             return checkApi(getJson(new HttpGet(uri)));
@@ -217,13 +219,14 @@ public class WikibaseRepository {
             this.host = host;
         }
 
-        public URI recentChanges(Date startTime, JSONObject continueObject) {
+        public URI recentChanges(Date startTime, JSONObject continueObject, int batchSize) {
             URIBuilder builder = apiBuilder();
             builder.addParameter("action", "query");
             builder.addParameter("list", "recentchanges");
             builder.addParameter("rcdir", "newer");
             builder.addParameter("rcprop", "title|ids|timestamp");
             builder.addParameter("rcnamespace", "0|120");
+            builder.addParameter("rclimit", Integer.toString(batchSize));
             if (continueObject == null) {
                 builder.addParameter("continue", "");
                 builder.addParameter("rcstart", outputDateFormat().format(startTime));

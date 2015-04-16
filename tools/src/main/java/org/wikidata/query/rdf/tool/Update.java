@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import org.openrdf.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.CliUtils.BasicOptions;
 import org.wikidata.query.rdf.tool.CliUtils.MungerOptions;
 import org.wikidata.query.rdf.tool.CliUtils.WikibaseOptions;
@@ -28,7 +29,6 @@ import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.Change.Batch;
 import org.wikidata.query.rdf.tool.change.IdChangeSource;
 import org.wikidata.query.rdf.tool.change.RecentChangesPoller;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.Munger;
@@ -66,6 +66,9 @@ public class Update<B extends Change.Batch> implements Runnable {
 
         @Option(shortName = "t", defaultValue = "10", description = "Thread count")
         int threadCount();
+
+        @Option(shortName = "b", defaultValue = "10", description = "Number of recent changes fetched at a time.")
+        int batchSize();
     }
 
     public static void main(String args[]) {
@@ -149,7 +152,7 @@ public class Update<B extends Change.Batch> implements Runnable {
                 log.info("Found start time in the RDF store: {}", inputDateFormat().format(new Date(startTime)));
             }
         }
-        return new RecentChangesPoller(wikibaseRepository, new Date(startTime));
+        return new RecentChangesPoller(wikibaseRepository, new Date(startTime), options.batchSize());
     }
 
     private final Meter updateMeter = new Meter();

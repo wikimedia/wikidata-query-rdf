@@ -1,15 +1,17 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
+import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -21,11 +23,13 @@ import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
+import com.carrotsearch.randomizedtesting.RandomizedTest;
+
 /**
  * Tests WikibaseRepository using the beta instance of Wikidata. Note that we
  * can't delete or perform revision deletes so we can't test that part.
  */
-public class WikibaseRepositoryIntegrationTest {
+public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     private static final String HOST = "test.wikidata.org";
     private final WikibaseRepository repo = new WikibaseRepository("http", HOST);
     private final WikibaseUris uris = new WikibaseUris(HOST);
@@ -37,15 +41,25 @@ public class WikibaseRepositoryIntegrationTest {
          * This relies on there being lots of changes in the past 30 days. Which
          * is probably ok.
          */
+        int batchSize = randomIntBetween(3, 30);
         JSONObject changes = repo.fetchRecentChanges(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30)),
-                null);
+                null, batchSize);
         Map<String, Object> c = changes;
         assertThat(c, hasKey("continue"));
         assertThat((Map<String, Object>) changes.get("continue"), hasKey("rccontinue"));
-        assertThat((Map<String, Object>) c.get("continue"), hasKey("continue"));
         assertThat(c, hasKey("query"));
-        assertThat((Map<String, Object>) c.get("query"), hasKey("recentchanges"));
-        changes = repo.fetchRecentChanges(null /* ignored */, (JSONObject) changes.get("continue"));
+        Map<String, Object> query = (Map<String, Object>) c.get("query");
+        assertThat(query, hasKey("recentchanges"));
+        List<Object> recentChanges = (JSONArray) ((Map<String, Object>) c.get("query")).get("recentchanges");
+        assertThat(recentChanges, hasSize(batchSize));
+        for (Object rco : recentChanges) {
+            Map<String, Object> rc = (Map<String, Object>) rco;
+            assertThat(rc, hasEntry(equalTo("ns"), either(equalTo((Object) 0L)).or(equalTo((Object) 120L))));
+            assertThat(rc, hasEntry(equalTo("title"), instanceOf(String.class)));
+            assertThat(rc, hasEntry(equalTo("timestamp"), instanceOf(String.class)));
+            assertThat(rc, hasEntry(equalTo("revid"), instanceOf(Long.class)));
+        }
+        changes = repo.fetchRecentChanges(null /* ignored */, (JSONObject) changes.get("continue"), batchSize);
         assertThat(c, hasKey("query"));
         assertThat((Map<String, Object>) c.get("query"), hasKey("recentchanges"));
     }
@@ -57,7 +71,7 @@ public class WikibaseRepositoryIntegrationTest {
          * This relies on there being very few changes in the current
          * millisecond.
          */
-        JSONObject changes = repo.fetchRecentChanges(new Date(System.currentTimeMillis()), null);
+        JSONObject changes = repo.fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
         Map<String, Object> c = changes;
         assertThat(c, not(hasKey("continue")));
         assertThat(c, hasKey("query"));
@@ -80,7 +94,7 @@ public class WikibaseRepositoryIntegrationTest {
         long now = System.currentTimeMillis();
         String entityId = repo.firstEntityIdForLabelStartingWith(label, "en", type);
         repo.setLabel(entityId, type, label + now, "en");
-        JSONObject result = repo.fetchRecentChanges(new Date(now), null);
+        JSONObject result = repo.fetchRecentChanges(new Date(now), null, 10);
         JSONArray changes = (JSONArray) ((JSONObject) result.get("query")).get("recentchanges");
         boolean found = false;
         String title = entityId;

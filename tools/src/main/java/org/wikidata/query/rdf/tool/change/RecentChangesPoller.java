@@ -4,6 +4,8 @@ import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateF
 
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -25,10 +27,12 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
     private final WikibaseRepository wikibase;
     private final Date firstStartTime;
+    private final int batchSize;
 
-    public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime) {
+    public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime, int batchSize) {
         this.wikibase = wikibase;
         this.firstStartTime = firstStartTime;
+        this.batchSize = batchSize;
     }
 
     @Override
@@ -58,9 +62,9 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             this.nextContinue = nextContinue;
             this.nextStartTime = nextStartTime;
             if(!changes.isEmpty()) {
-              this.lastSeenId = changes.get(changes.size()-1).toString();
+              lastSeenId = changes.get(changes.size()-1).toString();
             } else {
-              this.lastSeenId = lastSeen;
+              lastSeenId = lastSeen;
             }
         }
 
@@ -77,31 +81,40 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      */
     private Batch batch(Date lastNextStartTime, JSONObject lastNextContinue, String lastSeen) throws RetryableException {
         try {
-            JSONObject recentChanges = wikibase.fetchRecentChanges(lastNextStartTime, lastNextContinue);
-            ImmutableList.Builder<Change> changes = ImmutableList.builder();
+            JSONObject recentChanges = wikibase.fetchRecentChanges(lastNextStartTime, lastNextContinue, batchSize);
+            Map<String, Change> changesByTitle = new HashMap<>();
             JSONObject nextContinue = (JSONObject) recentChanges.get("continue");
             long nextStartTime = 0;
             JSONArray result = (JSONArray) ((JSONObject) recentChanges.get("query")).get("recentchanges");
             DateFormat df = inputDateFormat();
             for (Object rco : result) {
                 JSONObject rc = (JSONObject) rco;
-                // FIXME: this check should probably be gone
-                if ((long) rc.get("ns") != 0 && (long) rc.get("ns") != 120) {
+                long namespace = (long) rc.get("ns");
+                if (namespace != 0 && namespace != 120) {
                     log.debug("Skipping change in irrelevant namespace:  {}", rc);
                     continue;
                 }
                 Date timestamp = df.parse(rc.get("timestamp").toString());
                 Change change = new Change(rc.get("title").toString(), (long) rc.get("revid"), timestamp);
                 if(lastSeen == null || !lastSeen.equals(change.toString())) {
-                    changes.add(change);
+                    /*
+                     * Remove duplicate changes by title keeping the latest
+                     * revision.
+                     */
+                    Change dupe = changesByTitle.put(change.entityId(), change);
+                    if (dupe != null && dupe.revision() > change.revision()) {
+                        changesByTitle.put(change.entityId(), dupe);
+                    }
                 }
                 nextStartTime = Math.max(nextStartTime, timestamp.getTime());
             }
+
             // Show the user the polled time - one second because we can't
             // be sure we got the whole second
             String upTo = inputDateFormat().format(new Date(nextStartTime - 1000));
             long advanced = nextStartTime - lastNextStartTime.getTime();
-            return new Batch(changes.build(), advanced, upTo, new Date(nextStartTime), nextContinue, lastSeen);
+            return new Batch(ImmutableList.copyOf(changesByTitle.values()), advanced, upTo, new Date(nextStartTime),
+                    nextContinue, lastSeen);
         } catch (java.text.ParseException e) {
             throw new RetryableException("Parse error from api", e);
         }
