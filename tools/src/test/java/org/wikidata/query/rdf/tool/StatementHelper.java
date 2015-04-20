@@ -1,10 +1,15 @@
 package org.wikidata.query.rdf.tool;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
+import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
@@ -17,37 +22,37 @@ import com.google.common.collect.ImmutableList;
 /**
  * Constructs statements for testing.
  */
+/**
+ * @author james
+ *
+ */
 public class StatementHelper {
     /**
-     * Statement constructor taking just URIs as strings.
+     * Statement build helper.
      */
-    public static Statement statement(String s, String p, String o) {
-        return statement(s, p, uri(o));
+    public static Statement statement(String s, String p, Object o) {
+        Value oValue;
+        if (o instanceof String) {
+            oValue = uri(o.toString());
+        } else if (o instanceof Value) {
+            oValue = (Value) o;
+        } else if (o instanceof Integer) {
+            oValue = new IntegerLiteralImpl(BigInteger.valueOf((int) o));
+        } else if (o instanceof Long) {
+            oValue = new IntegerLiteralImpl(BigInteger.valueOf((long) o));
+        } else {
+            throw new IllegalArgumentException("Illegal object:  " + o);
+        }
+        return new StatementImpl(uri(s), uri(p), oValue);
     }
 
     /**
-     * Statement constructor with a value. Use this one for all values.
+     * Statement build helper.
      */
-    public static Statement statement(String s, String p, Value o) {
-        return new StatementImpl(uri(s), uri(p), o);
-    }
-
-    /**
-     * Statement constructor taking just URIs as strings and appending the
-     * statement to a list.
-     */
-    public static Statement statement(List<Statement> statements, String s, String p, String o) {
-        return statement(statements, s, p, uri(o));
-    }
-
-    /**
-     * Statement constructor with a value appending the statement to a list. Use
-     * this one for all values.
-     */
-    public static Statement statement(List<Statement> statements, String s, String p, Value o) {
-        Statement statement = statement(s, p, o);
-        statements.add(statement);
-        return statement;
+    public static Statement statement(List<Statement> statements, String s, String p, Object o) {
+        Statement st = statement(s, p, o);
+        statements.add(st);
+        return st;
     }
 
     /**
@@ -96,4 +101,27 @@ public class StatementHelper {
         }
         return new URIImpl(r);
     }
+    
+    /**
+     * Construct statements about a basic entity
+     */
+    public static List<Statement> basicEntity(WikibaseUris uris, String id) {
+        Literal version = new LiteralImpl("a revision number I promise");
+        List<Statement> statements = new ArrayList<>();
+        String entityDataUri = uris.entityData() + id;
+        // EntityData is all munged onto Entity
+        statement(statements, entityDataUri, SchemaDotOrg.ABOUT, id);
+        statement(statements, entityDataUri, SchemaDotOrg.VERSION, version);
+        statement(statements, entityDataUri, SchemaDotOrg.DATE_MODIFIED,
+                new LiteralImpl("a date I promise"));
+        return statements;
+    }
+
+    /**
+     * Convert a collection of statements into an array of statements
+     */
+    public static Statement[] toArray(Collection<Statement> xs) {
+        return xs.toArray(new Statement[xs.size()]);
+    }
+
 }
