@@ -1,0 +1,51 @@
+Creating a backport against Blazegraph 1.5.1 is reasonably simple:
+1. Checkout Blazegraph 1.5.1
+
+2. Apply all the patches we've backported. So far that is:
+http://trac.bigdata.com/ticket/1179
+
+3. Get the builds you need:
+mkdir ~/scratch
+ant jar
+mv ant-build/bigdata-1.5.1-wmf-1.jar ~/scratch/
+ant war
+mv ant-build/bigdata.war ~/scratch/bigdata-1.5.1-wmf-1.war
+ant sourceJar
+mv ant-build/bigdata-1.5.1-wmf-1-sources.jar ~/scratch/
+ant executable-jar
+mv ant-build/bigdata-1.5.1-wmf-1-bundled.jar ~/scratch/
+cp pom.xml ~/scratch/
+
+4. Replace this line in ~/scratch/pom.xml
+   <version>1.5.0-SNAPSHOT</version>
+with this line:
+   <version>1.5.1-wmf-1</version>
+
+5. Login to archiva.wikimedia.org. Sometimes the login script takes a long,
+long time. Just wait for it to finish or reload archiva.wikimedia.org in
+another window. Eventually it'll let you in. We don't know why this happens.
+
+6. Click Upload Artifact
+
+7. Click choose file and specify everything in you scratch directory
+
+8. Set the war's packaging to war, the bundled's classifier to bundle, the
+sources' classifier to sources, and click the pomFile tick box on the pom file.
+
+9. Start the uploads and then fill in the top of the page:
+Repository Id: Wikimedia Mirrored Repository
+Group ID: com.bigdata
+Artifact ID: bigdata
+Version: 1.5.1-wmf-1 <--- or -wmf-2, -wmf-3, etc.
+Packaging: jar
+
+10. Once the upload is done you can click save file.
+
+11. You can see the files here:
+https://archiva.wikimedia.org/repository/mirrored/com/bigdata/bigdata/1.5.1-wmf-1/
+Just replace the -wmf-1 with whatever your version number is.
+
+12. Update the blazegraph.version property in the pom in the root directory of
+the project.
+
+13. mvn clean install
