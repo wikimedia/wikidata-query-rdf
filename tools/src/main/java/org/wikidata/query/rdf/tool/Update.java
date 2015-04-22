@@ -56,7 +56,8 @@ public class Update<B extends Change.Batch> implements Runnable {
         @Option(shortName = "s", defaultToNull = true, description = "Start time in 2015-02-11T17:11:08Z or 20150211170100 format.")
         String start();
 
-        @Option(defaultToNull = true, description = "If specified must be <start>-<end>. Ids are iterated instead of recent changes. Start and end are inclusive.")
+        @Option(defaultToNull = true, description = "If specified must be <id> or <start>-<end>. Ids are iterated instead of recent "
+                + "changes. Start and end are inclusive.")
         String ids();
 
         @Option(shortName = "u", description = "URL to post updates and queries.")
@@ -95,9 +96,8 @@ public class Update<B extends Change.Batch> implements Runnable {
                 new LinkedBlockingQueue<Runnable>(), threadFactory.build());
 
         Munger munger = CliUtils.mungerFromOptions(options);
-        new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor).
-          setPollDelay(options.pollDelay()).
-          run();
+        new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor).setPollDelay(
+                options.pollDelay()).run();
     }
 
     /**
@@ -110,11 +110,22 @@ public class Update<B extends Change.Batch> implements Runnable {
             WikibaseRepository wikibaseRepository) {
         if (options.ids() != null) {
             String[] ids = options.ids().split("-");
-            if (ids.length != 2) {
+            long start;
+            long end;
+            switch (ids.length) {
+            case 1:
+                start = Long.parseLong(ids[0]);
+                end = start;
+                break;
+            case 2:
+                start = Long.parseLong(ids[0]);
+                end = Long.parseLong(ids[1]);
+                break;
+            default:
                 log.error("Invalid format for --ids.  Need <start>-<stop>.");
                 return null;
             }
-            return IdChangeSource.forItems(Long.parseLong(ids[0]), Long.parseLong(ids[1]), 30);
+            return IdChangeSource.forItems(start, end, options.batchSize());
         }
         long startTime;
         if (options.start() != null) {
@@ -227,19 +238,19 @@ public class Update<B extends Change.Batch> implements Runnable {
                 do {
                     batchAdvanced.mark(batch.advanced());
                     log.info("Polled up to {} at {} updates per second and {} {} per second", batch.leftOffHuman(),
-                          meterReport(updateMeter), meterReport(batchAdvanced), batch.advancedUnits());
-                  if (batch.last()) {
-                      return;
-                  }
-                  batch = changeSource.nextBatch(batch);
-                  if(batch.changes().isEmpty()) {
-                      log.debug("Sleeping for {} secs", pollDelay);
-                      Thread.sleep(pollDelay*1000);
-                  } else {
-                      log.debug("{} changes in batch", batch.changes().size());
-                      break;
-                  }
-                } while(true);
+                            meterReport(updateMeter), meterReport(batchAdvanced), batch.advancedUnits());
+                    if (batch.last()) {
+                        return;
+                    }
+                    batch = changeSource.nextBatch(batch);
+                    if (batch.changes().isEmpty()) {
+                        log.debug("Sleeping for {} secs", pollDelay);
+                        Thread.sleep(pollDelay * 1000);
+                    } else {
+                        log.debug("{} changes in batch", batch.changes().size());
+                        break;
+                    }
+                } while (true);
             } catch (RetryableException e) {
                 log.warn("Error occurred during poll loop. Retrying.", e);
             } catch (InterruptedException e) {
