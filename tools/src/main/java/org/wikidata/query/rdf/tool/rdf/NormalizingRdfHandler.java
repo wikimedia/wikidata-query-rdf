@@ -23,6 +23,9 @@ public class NormalizingRdfHandler extends DelegatingRdfHandler {
         if (uri.contains("ontology-0.0.1")) {
             uri = uri.replace("ontology-0.0.1", "ontology");
         }
+        if (uri.contains("ontology-beta")) {
+            uri = uri.replace("ontology-beta", "ontology");
+        }
         super.handleNamespace(prefix, uri);
     }
 
@@ -41,8 +44,18 @@ public class NormalizingRdfHandler extends DelegatingRdfHandler {
         if (predicate.stringValue().contains("ontology-0.0.1")) {
             predicate = new URIImpl(predicate.stringValue().replace("ontology-0.0.1", "ontology"));
         }
-        if (object.stringValue().contains("ontology-0.0.1")) {
+        if (predicate.stringValue().contains("ontology-beta")) {
+            predicate = new URIImpl(predicate.stringValue().replace("ontology-beta", "ontology"));
+        }
+        if (object instanceof URI && object.stringValue().contains("ontology-0.0.1")) {
             object = new URIImpl(object.stringValue().replace("ontology-0.0.1", "ontology"));
+        }
+        if (object instanceof URI && object.stringValue().contains("ontology-beta")) {
+            object = new URIImpl(object.stringValue().replace("ontology-beta", "ontology"));
+        }
+        // Temporary bugfix for dump URLs having \n in them
+        if (object instanceof URI && object.stringValue().contains("\n")) {
+        	object = new URIImpl(object.stringValue().replace("\n", ""));
         }
         if (subject != statement.getSubject() || predicate != statement.getPredicate()
                 || object != statement.getObject()) {
