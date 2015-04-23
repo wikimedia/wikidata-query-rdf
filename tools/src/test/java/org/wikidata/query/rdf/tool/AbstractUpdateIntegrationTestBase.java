@@ -15,8 +15,15 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
  * Superclass for tests that need to run a full update.
  */
 public class AbstractUpdateIntegrationTestBase extends AbstractRdfRepositoryIntegrationTestBase {
-    private WikibaseRepository wikibaseRepository = new WikibaseRepository("https", "www.wikidata.org");
+    /**
+     * Wikibase test against.
+     */
+    private final WikibaseRepository wikibaseRepository = new WikibaseRepository("https", "www.wikidata.org");
+    /**
+     * Munger to test against.
+     */
     private final Munger munger = new Munger(WikibaseUris.WIKIDATA).removeSiteLinks();
+
     /**
      * Update all ids from from to to.
      */
@@ -24,8 +31,7 @@ public class AbstractUpdateIntegrationTestBase extends AbstractRdfRepositoryInte
         Change.Source<?> source = IdChangeSource.forItems(from, to, 30);
         ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>());
-        Update<?> update = new Update<>(source, wikibaseRepository, rdfRepository, munger, executorService);
-        update.setPollDelay(0);
+        Update<?> update = new Update<>(source, wikibaseRepository, rdfRepository(), munger, executorService, 0);
         update.run();
         executorService.shutdown();
     }

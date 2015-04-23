@@ -13,8 +13,10 @@ import com.bigdata.rdf.model.BigdataLiteral;
  * represent as negative numbers.
  */
 public class ValuePropertiesInlineUriHandler extends InlineURIHandler {
+    /**
+     * Suffix that value properties can have.
+     */
     private static final String SUFFIX = "-value";
-    private static final int SUFFIX_LENGTH = SUFFIX.length();
 
     public ValuePropertiesInlineUriHandler(String namespace) {
         super(namespace);
@@ -26,7 +28,7 @@ public class ValuePropertiesInlineUriHandler extends InlineURIHandler {
         BigInteger value;
         try {
             if (localName.endsWith("-value")) {
-                localName = localName.substring(0, localName.length() - SUFFIX_LENGTH);
+                localName = localName.substring(0, localName.length() - SUFFIX.length());
                 value = new BigInteger(localName, 10).negate();
             } else {
                 value = new BigInteger(localName, 10);

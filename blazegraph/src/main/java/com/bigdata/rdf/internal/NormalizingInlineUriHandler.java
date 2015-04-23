@@ -15,9 +15,23 @@ import com.bigdata.rdf.vocab.Vocabulary;
  * prefixes into one.
  */
 public class NormalizingInlineUriHandler extends InlineURIHandler {
+    /**
+     * The wrapped handler to which everything is delegated once normalized.
+     */
     private final InlineURIHandler next;
+    /**
+     * Prefixes that should be recognized as valid prefixes for this uri but are
+     * not its canonical form.
+     */
     private final List<String> normalizedPrefixes;
 
+    /**
+     * Build the handler.
+     *
+     * @param next the handler to which to send all normalized localNames
+     * @param normalizedPrefixes prefixes that should be recognized as valid
+     *            prefixes for this uri but are not its canonical form.
+     */
     public NormalizingInlineUriHandler(InlineURIHandler next, String... normalizedPrefixes) {
         this(next, Arrays.asList(normalizedPrefixes));
     }
@@ -35,7 +49,7 @@ public class NormalizingInlineUriHandler extends InlineURIHandler {
     }
 
     @Override
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     protected URIExtensionIV createInlineIV(URI uri) {
         if (namespaceIV == null) {
             // Can't do anything without a namespace.

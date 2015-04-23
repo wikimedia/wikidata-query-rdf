@@ -13,6 +13,9 @@ import com.bigdata.rdf.internal.impl.extensions.DateTimeExtension;
 import com.bigdata.rdf.model.BigdataLiteral;
 import com.bigdata.rdf.model.BigdataValue;
 
+/**
+ * Setup inline value extensions to Blazegraph for Wikidata.
+ */
 public class WikibaseExtensionFactory extends DefaultExtensionFactory {
     @Override
     @SuppressWarnings("rawtypes")

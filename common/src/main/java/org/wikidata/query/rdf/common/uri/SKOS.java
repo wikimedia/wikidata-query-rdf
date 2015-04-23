@@ -3,7 +3,10 @@ package org.wikidata.query.rdf.common.uri;
 /**
  * Used for labels mostly.
  */
-public class SKOS {
+public final class SKOS {
+    /**
+     * Common prefix for all skos predicates.
+     */
     public static final String NAMESPACE = "http://www.w3.org/2004/02/skos/core#";
     /**
      * Wikibase dumps the label in this, schema:name and rdfs:label. We only
@@ -14,4 +17,11 @@ public class SKOS {
      * Wikibase dumps the aliases in this.
      */
     public static final String ALT_LABEL = NAMESPACE + "altLabel";
+
+    /**
+     * Utility class uncallable constructor.
+     */
+    private SKOS() {
+        // Utility class.
+    }
 }

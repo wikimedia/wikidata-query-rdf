@@ -9,6 +9,9 @@ import org.openrdf.rio.RDFHandlerException;
  * RDFHandler that delegates while recording prefixes.
  */
 public class PrefixRecordingRdfHandler extends DelegatingRdfHandler {
+    /**
+     * Map to which to collect prefixes.
+     */
     private final Map<String, String> prefixes;
 
     public PrefixRecordingRdfHandler(RDFHandler next, Map<String, String> prefixes) {

@@ -34,33 +34,42 @@ public class NormalizingRdfHandler extends DelegatingRdfHandler {
         Resource subject = statement.getSubject();
         URI predicate = statement.getPredicate();
         Value object = statement.getObject();
-        /*
-         * Some dumps contained a versioned ontology but those are getting
-         * unversioned soon.
-         */
-        if (subject.stringValue().contains("ontology-0.0.1")) {
-            subject = new URIImpl(subject.stringValue().replace("ontology-0.0.1", "ontology"));
+
+        if (subject instanceof URI) {
+            subject = fixUri((URI) subject);
         }
-        if (predicate.stringValue().contains("ontology-0.0.1")) {
-            predicate = new URIImpl(predicate.stringValue().replace("ontology-0.0.1", "ontology"));
+        predicate = fixUri(predicate);
+        if (object instanceof URI) {
+            object = fixUri((URI) object);
         }
-        if (predicate.stringValue().contains("ontology-beta")) {
-            predicate = new URIImpl(predicate.stringValue().replace("ontology-beta", "ontology"));
-        }
-        if (object instanceof URI && object.stringValue().contains("ontology-0.0.1")) {
-            object = new URIImpl(object.stringValue().replace("ontology-0.0.1", "ontology"));
-        }
-        if (object instanceof URI && object.stringValue().contains("ontology-beta")) {
-            object = new URIImpl(object.stringValue().replace("ontology-beta", "ontology"));
-        }
-        // Temporary bugfix for dump URLs having \n in them
-        if (object instanceof URI && object.stringValue().contains("\n")) {
-        	object = new URIImpl(object.stringValue().replace("\n", ""));
-        }
+
+        // No need to build a new statement if the old one matches.
         if (subject != statement.getSubject() || predicate != statement.getPredicate()
                 || object != statement.getObject()) {
             statement = new StatementImpl(subject, predicate, object);
         }
         super.handleStatement(statement);
+    }
+
+    /**
+     * Fixes a uri if it contains something unacceptable otherwise just returns
+     * the same uri.
+     */
+    private URI fixUri(URI r) {
+        /*
+         * Some dumps contained a versioned ontology but those are getting
+         * unversioned soon.
+         */
+        if (r.stringValue().contains("ontology-0.0.1")) {
+            r = new URIImpl(r.stringValue().replace("ontology-0.0.1", "ontology"));
+        }
+        if (r.stringValue().contains("ontology-beta")) {
+            r = new URIImpl(r.stringValue().replace("ontology-beta", "ontology"));
+        }
+        // Temporary bugfix for dump URLs having \n in them
+        if (r.stringValue().contains("\n")) {
+            r = new URIImpl(r.stringValue().replace("\n", ""));
+        }
+        return r;
     }
 }

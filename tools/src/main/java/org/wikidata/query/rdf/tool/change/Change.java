@@ -13,12 +13,21 @@ import com.google.common.collect.ImmutableList;
  * A change in an entity in Wikibase.
  */
 public class Change {
+    /**
+     * Entity that changed.
+     */
     private final String entityId;
+    /**
+     * Revision that the change changed to.
+     */
     private final long revision;
+    /**
+     * Timestamp of the change.
+     */
     private final Date timestamp;
 
     public Change(String entityId, long revision, Date timestamp) {
-        if(entityId.startsWith("Property:")) {
+        if (entityId.startsWith("Property:")) {
             this.entityId = entityId.substring("Property:".length());
         } else {
             this.entityId = entityId;
@@ -75,11 +84,15 @@ public class Change {
     public interface Source<B extends Change.Batch> {
         /**
          * Fetch the first batch.
+         *
+         * @throws RetryableException is the fetch fails in a retryable way
          */
         B firstBatch() throws RetryableException;
 
         /**
          * Fetches the next batch after lastBatch.
+         *
+         * @throws RetryableException is the fetch fails in a retryable way
          */
         B nextBatch(B lastBatch) throws RetryableException;
     }
@@ -128,10 +141,19 @@ public class Change {
         /**
          * Simple default implementation of Batch.
          */
-        public static abstract class AbstractDefaultImplementation implements Batch {
+        public abstract static class AbstractDefaultImplementation implements Batch {
+            /**
+             * Changes in this batch.
+             */
             private final ImmutableList<Change> changes;
+            /**
+             * How far did this batch advance?
+             */
             private final long advanced;
-            protected final Object leftOff;
+            /**
+             * Where did this batch leave off?
+             */
+            private final Object leftOff;
 
             public AbstractDefaultImplementation(ImmutableList<Change> changes, long advanced, Object leftOff) {
                 this.changes = checkNotNull(changes);

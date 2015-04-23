@@ -212,6 +212,36 @@
             </execution>
           </executions>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>2.13</version>
+          <executions>
+            <execution>
+              <id>validate</id>
+              <phase>test</phase>
+              <configuration>
+                <configLocation>${project.parent.basedir}/src/build/checkstyle/checkstyle.xml</configLocation>
+                <propertyExpansion>checkstyle.suppressions=${project.parent.basedir}/src/build/checkstyle/suppressions.xml</propertyExpansion>
+                <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                <encoding>UTF-8</encoding>
+                <consoleOutput>true</consoleOutput>
+                <failsOnError>true</failsOnError>
+                <linkXRef>false</linkXRef>
+              </configuration>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>6.2</version>
+            </dependency>
+          </dependencies>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -240,9 +270,8 @@
             </goals>
             <configuration>
               <signaturesFiles>
-                <!-- In parent project -->
-                <signaturesFile>../src/build/forbidden/all.txt</signaturesFile>
-                <signaturesFile>../src/build/forbidden/core.txt</signaturesFile>
+                <signaturesFile>${project.parent.basedir}/src/build/forbidden/all.txt</signaturesFile>
+                <signaturesFile>${project.parent.basedir}/src/build/forbidden/core.txt</signaturesFile>
               </signaturesFiles>
               <excludes>
                 <!-- Some portions of the project need access to System.out and things so we contain them in inner classes 
@@ -259,9 +288,8 @@
             </goals>
             <configuration>
               <signaturesFiles>
-                <!-- In parent project -->
-                <signaturesFile>../src/build/forbidden/all.txt</signaturesFile>
-                <signaturesFile>../src/build/forbidden/test.txt</signaturesFile>
+                <signaturesFile>${project.parent.basedir}/src/build/forbidden/all.txt</signaturesFile>
+                <signaturesFile>${project.parent.basedir}/src/build/forbidden/test.txt</signaturesFile>
               </signaturesFiles>
             </configuration>
           </execution>
@@ -377,6 +405,38 @@
       <properties>
         <javadoc.doclint.none>-Xdoclint:none</javadoc.doclint.none>
       </properties>
+    </profile>
+    <profile>
+      <id>noVerify</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <version>2.13</version>
+            <executions>
+              <execution>
+                <id>validate</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>de.thetaphi</groupId>
+            <artifactId>forbiddenapis</artifactId>
+            <executions>
+              <execution>
+                <id>check-forbidden-apis</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>check-forbidden-test-apis</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>

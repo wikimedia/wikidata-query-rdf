@@ -27,12 +27,21 @@ import com.bigdata.util.InnerCause;
 
 /**
  * Abstract base class for implementing IExtension for multiple dataTypes.
+ *
+ * @param <V> Blazegraph value to expand. These are usually treated a bit
+ *            roughly by Blazegraph - lots of rawtypes
  */
 public abstract class AbstractMultiTypeExtension<V extends BigdataValue> implements IExtension<V> {
     private static final Logger log = Logger.getLogger(WikibaseDateExtension.class);
 
+    /**
+     * IV to type map as resolved against resolver provided on construction.
+     */
     @SuppressWarnings("rawtypes")
     private final Map<IV, BigdataURI> dataTypes;
+    /**
+     * Set of data type uris resolved on construction.
+     */
     private final Set<BigdataURI> dataTypesSet;
 
     public AbstractMultiTypeExtension(IDatatypeURIResolver resolver, List<URI> supportedDataTypes) {
@@ -52,7 +61,7 @@ public abstract class AbstractMultiTypeExtension<V extends BigdataValue> impleme
     }
 
     @Override
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked", "checkstyle:illegalcatch"})
     public LiteralExtensionIV createIV(Value value) {
         if (!(value instanceof Literal)) {
             throw new IllegalArgumentException("Expected a literal but got " + value);
@@ -72,12 +81,16 @@ public abstract class AbstractMultiTypeExtension<V extends BigdataValue> impleme
     }
 
     @Override
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked", "checkstyle:illegalcatch"})
     public V asValue(LiteralExtensionIV iv, BigdataValueFactory vf) {
         BigdataURI dt = resolveDataType(iv);
         try {
             return (V) safeAsValue(iv, vf, dt);
         } catch (RuntimeException ex) {
+            /*
+             * Catching this runtime exception is a Blazegraph idiom that we're
+             * just continuing to use.
+             */
             if (InnerCause.isInnerCause(ex, InterruptedException.class)) {
                 throw ex;
             }
@@ -85,12 +98,23 @@ public abstract class AbstractMultiTypeExtension<V extends BigdataValue> impleme
         }
     }
 
+    /**
+     * Create the delegate iv for the literal.
+     */
     @SuppressWarnings("rawtypes")
     protected abstract AbstractLiteralIV createDelegateIV(Literal literal, BigdataURI dt);
 
+    /**
+     * Convert the iv into the value. Its ok to throw exceptions here and the
+     * caller will catch them an make them ok with Blazegraph, thus "safe".
+     */
     @SuppressWarnings("rawtypes")
     protected abstract BigdataLiteral safeAsValue(LiteralExtensionIV iv, BigdataValueFactory vf, BigdataURI dt);
 
+    /**
+     * Convert the literal into a uri as resolved by the resolve this extension
+     * received on construction.
+     */
     @SuppressWarnings("rawtypes")
     protected BigdataURI resolveDataType(LiteralExtensionIV literal) {
         BigdataURI dt = dataTypes.get(literal.getExtensionIV());
@@ -100,6 +124,9 @@ public abstract class AbstractMultiTypeExtension<V extends BigdataValue> impleme
         return dt;
     }
 
+    /**
+     * Resolve the data type uri from the literal's type.
+     */
     protected BigdataURI resolveDataType(Literal literal) {
         URI dt = literal.getDatatype();
         if (dt == null) {

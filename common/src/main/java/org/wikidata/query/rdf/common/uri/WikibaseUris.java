@@ -5,20 +5,57 @@ package org.wikidata.query.rdf.common.uri;
  */
 public class WikibaseUris {
     /**
-     * An Entity instance for wikidata.org.
+     * A WikibaseUris instance for wikidata.org.
      */
-    public static WikibaseUris WIKIDATA = new WikibaseUris("www.wikidata.org");
-    public static WikibaseUris TEST_WIKIDATA = new WikibaseUris("test.wikidata.org");
+    public static final WikibaseUris WIKIDATA = new WikibaseUris("www.wikidata.org");
+    /**
+     * A WikibaseUris instance for test.wikidata.org.
+     */
+    public static final WikibaseUris TEST_WIKIDATA = new WikibaseUris("test.wikidata.org");
 
+    /**
+     * The root of the wikibase uris - http://www.wikidata.org for Wikidata.
+     */
     private final String root;
+    /**
+     * Uri prefix wikibase uses to describe exports. The Munge process removes
+     * uris with this prefix.
+     */
     private final String entityData;
+    /**
+     * Uri prefix wikibase uses for entities. The canonical place for the entity
+     * itself.
+     */
     private final String entity;
+    /**
+     * Uri prefix wikibase uses for truthy claims.
+     */
     private final String truthy;
+    /**
+     * Uri prefix wikibase uses for statements. They are usually of the form
+     * statement:%entityId%-%a uuid%.
+     */
     private final String statement;
+    /**
+     * Uri prefix wikibase uses for values. They are usually of the form
+     * value:%a 160 bit hash of the contents%.
+     */
     private final String value;
+    /**
+     * Uris prefix wikibase uses for references. They are usually of the form
+     * reference:%a 160 bit hash of the contents%.
+     */
     private final String reference;
+    /**
+     * Uri prefix wikibase uses for qualifiers. They are of the form
+     * qualifier:%entity id of the property%(-value)?.
+     */
     private final String qualifier;
 
+    /**
+     * Build for a specific wikibase host. See the WIKIDATA constant for how you
+     * can use this.
+     */
     public WikibaseUris(String host) {
         root = "http://" + host;
         entityData = root + "/wiki/Special:EntityData/";
@@ -52,21 +89,24 @@ public class WikibaseUris {
     }
 
     /**
-     * Prefix wikibase uses for dump information about entities.
+     * Uri prefix wikibase uses to describe exports. The Munge process removes
+     * uris with this prefix.
      */
     public String entityData() {
         return entityData;
     }
 
     /**
-     * Prefix wikibase uses for entities.
+     * Uri prefix wikibase uses for entities. The canonical place for the entity
+     * itself.
      */
     public String entity() {
         return entity;
     }
 
     /**
-     * Prefix wikibase uses for statements.
+     * Uri prefix wikibase uses for statements. They are usually of the form
+     * statement:%entityId%-%a uuid%.
      */
     public String truthy() {
         return truthy;
@@ -80,21 +120,24 @@ public class WikibaseUris {
     }
 
     /**
-     * Prefix wikibase uses for values in statements.
+     * Uri prefix wikibase uses for values. They are usually of the form
+     * value:%a 160 bit hash of the contents%.
      */
     public String value() {
         return value;
     }
 
     /**
-     * Prefix wikibase uses for references.
+     * Uris prefix wikibase uses for references. They are usually of the form
+     * reference:%a 160 bit hash of the contents%.
      */
     public String reference() {
         return reference;
     }
 
     /**
-     * Prefix wikibase uses for the predicates on qualifiers.
+     * Uri prefix wikibase uses for qualifiers. They are of the form
+     * qualifier:%entity id of the property%(-value)?.
      */
     public String qualifier() {
         return qualifier;

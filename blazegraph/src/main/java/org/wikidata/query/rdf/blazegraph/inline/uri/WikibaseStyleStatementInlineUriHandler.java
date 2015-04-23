@@ -83,6 +83,10 @@ public class WikibaseStyleStatementInlineUriHandler extends InlineURIHandler {
         }
     }
 
+    /**
+     * Build the delegate holding the uri from the localname with the prefix
+     * already resolved into signum.
+     */
     @SuppressWarnings("rawtypes")
     private static AbstractLiteralIV inlineIvFrom(int signum, String localName) {
         int firstDash = localName.indexOf('-');
@@ -99,6 +103,9 @@ public class WikibaseStyleStatementInlineUriHandler extends InlineURIHandler {
         }
     }
 
+    /**
+     * Convert a long into an unsigned BigInteger holding it.
+     */
     private static BigInteger unsigned(long l) {
         BigInteger i = BigInteger.valueOf(l & 0x7fffffffffffffffL);
         if (l < 0) {

@@ -16,8 +16,14 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
  */
 @RunWith(RandomizedRunner.class)
 public abstract class AbstractRdfRepositoryIntegrationTestBase extends RandomizedTest {
-    protected final WikibaseUris uris;
-    protected final RdfRepositoryForTesting rdfRepository;
+    /**
+     * Wikibase uris to test with.
+     */
+    private final WikibaseUris uris;
+    /**
+     * Repository to test with.
+     */
+    private final RdfRepositoryForTesting rdfRepository;
 
     /**
      * Build the test against prod wikidata.
@@ -32,6 +38,23 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
             uris);
     }
 
+    /**
+     * Uris to test with.
+     */
+    public WikibaseUris uris() {
+        return uris;
+    }
+
+    /**
+     * Repository to test against.
+     */
+    public RdfRepositoryForTesting rdfRepository() {
+        return rdfRepository;
+    }
+
+    /**
+     * Clear the repository so one test doesn't interfere with another.
+     */
     @Before
     public void clear() {
         rdfRepository.clear();

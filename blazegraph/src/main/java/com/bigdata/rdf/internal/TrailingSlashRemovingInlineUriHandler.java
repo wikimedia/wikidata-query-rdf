@@ -8,6 +8,9 @@ import com.bigdata.rdf.vocab.Vocabulary;
  * slashes from the localName before giving it to the wrapped handler.
  */
 public class TrailingSlashRemovingInlineUriHandler extends InlineURIHandler {
+    /**
+     * The handler to which to which to delegate the normalized localNames.
+     */
     private final InlineURIHandler next;
 
     public TrailingSlashRemovingInlineUriHandler(InlineURIHandler next) {

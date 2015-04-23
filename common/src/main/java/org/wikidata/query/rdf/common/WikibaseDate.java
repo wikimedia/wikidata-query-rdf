@@ -16,6 +16,9 @@ import java.util.regex.Pattern;
  * but its what joda time does so it where we're starting.
  */
 public class WikibaseDate {
+    /**
+     * Pattern used to recognize dates sent from wikibase.
+     */
     private static final Pattern FORMAT_PATTERN = Pattern
             .compile("(?<year>[+-]?0+)-(?<month>0?0)-(?<day>0?0)(?:T(?<hour>0?0):(?<minute>0?0)(?::(?<second>0?0))?)?Z?"
                     .replace("0", "\\d"));
@@ -46,6 +49,9 @@ public class WikibaseDate {
         return new WikibaseDate(year, month, day, hour, minute, second);
     }
 
+    /**
+     * Parse a group to an int or return 0 if the group wasn't matched.
+     */
     private static int parseOr0(Matcher m, String group) {
         String matched = m.group(group);
         if (matched == null) {
@@ -55,7 +61,7 @@ public class WikibaseDate {
     }
 
     /**
-     * Build a WikibaseDAte from seconds since epoch.
+     * Build a WikibaseDate from seconds since epoch.
      */
     public static WikibaseDate fromSecondsSinceEpoch(long secondsSinceEpoch) {
         long year = yearFromSecondsSinceEpoch(secondsSinceEpoch);
@@ -75,18 +81,51 @@ public class WikibaseDate {
         return new WikibaseDate(year, month, day, hour, minute, second);
     }
 
+    /**
+     * Number of days from 0 to 1970. Used to find the first day of the year.
+     */
     private static final int DAYS_0000_TO_1970 = 719527;
+    /**
+     * Seconds in a minute. Used when converting to and from seconds since
+     * epoch.
+     */
     private static final int SECONDS_PER_MINUTE = (int) MINUTES.toSeconds(1);
+    /**
+     * Seconds in an hour. Used when converting to and from seconds since epoch.
+     */
     private static final int SECONDS_PER_HOUR = (int) HOURS.toSeconds(1);
+    /**
+     * Seconds in a day. Used when converting to and from seconds since epoch.
+     */
     private static final int SECONDS_PER_DAY = (int) DAYS.toSeconds(1);
+    /**
+     * Average number of seconds in a year. Used to guess at the correct year
+     * when converting from seconds since epoch.
+     */
     private static final long AVERAGE_SECONDS_PER_YEAR = (SECONDS_PER_DAY * 365 * 3 + SECONDS_PER_DAY * 366) / 4;
+    /**
+     * Pretty good guess at the number of seconds between the start of year 0
+     * and epoch. Used to guess at the correct year when converting from seconds
+     * since epoch.
+     */
     private static final long SECONDS_AT_EPOCH = 1970 * AVERAGE_SECONDS_PER_YEAR;
     /**
      * Days per month in non-leap-years.
      */
-    static final int[] DAYS_PER_MONTH = new int[] { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    static final int[] DAYS_PER_MONTH = new int[] {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    /**
+     * Seconds per month in a year.
+     */
     private static final long[] SECONDS_PER_MONTH = new long[12];
+    /**
+     * Cumulative seconds per month in a non-leap year. Used to convert from
+     * seconds since epoch.
+     */
     private static final long[] SECONDS_PER_MONTH_CUMULATIVE = new long[12];
+    /**
+     * Cumulative seconds per month in a leap year. Used to convert from seconds
+     * since epoch.
+     */
     private static final long[] SECONDS_PER_MONTH_CUMULATIVE_LEAP_YEAR;
     static {
         long total = 0;
@@ -102,14 +141,34 @@ public class WikibaseDate {
         }
     }
 
-    // TODO it'll be faster to keep it in seconds since epoch form
+    /**
+     * Year since epoch.
+     */
     private final long year;
+    /**
+     * Month of the year.
+     */
     private final int month;
+    /**
+     * Day of the month.
+     */
     private final int day;
+    /**
+     * Hour of the day.
+     */
     private final int hour;
+    /**
+     * Minute of the hour.
+     */
     private final int minute;
+    /**
+     * Second of the minute.
+     */
     private final int second;
 
+    /**
+     * Build using explicit date parts.
+     */
     public WikibaseDate(long year, int month, int day, int hour, int minute, int second) {
         this.year = year;
         this.month = month;
@@ -121,27 +180,22 @@ public class WikibaseDate {
 
     /**
      * Wikidata contains some odd dates like -13798000000-00-00T00:00:00Z and
-     * February 30th. We simply guess what they mean here.
+     * February 30th. We simply guess what they mean here. Note that we really
+     * can't be sure what was really ment so these just amount to a best effort.
      *
-     * @return his if the date is fine, a new date if we modified it
+     * @return this if the date is fine, a new date if we modified it
      */
     public WikibaseDate cleanWeirdStuff() {
         long newYear = year;
         int newMonth = month;
         int newDay = day;
-        int newHour = hour;
-        int newMinute = minute;
-        int newSecond = second;
         if (month == 0) {
             newMonth = 1;
         }
         if (day == 0) {
             newDay = 1;
         } else {
-            int maxDaysInMonth = DAYS_PER_MONTH[newMonth - 1];
-            if (isLeapYear(newYear) && newMonth == 2) {
-                maxDaysInMonth++;
-            }
+            int maxDaysInMonth = daysInMonth(newYear, newMonth);
             if (newDay > maxDaysInMonth) {
                 newMonth++;
                 newDay = newDay - maxDaysInMonth + 1;
@@ -151,13 +205,15 @@ public class WikibaseDate {
                 }
             }
         }
-        if (newYear == year && newMonth == month && newDay == day && newHour == hour && newMinute == minute
-                && newSecond == second) {
+        if (newYear == year && newMonth == month && newDay == day) {
             return this;
         }
-        return new WikibaseDate(newYear, newMonth, newDay, newHour, newMinute, newSecond);
+        return new WikibaseDate(newYear, newMonth, newDay, hour, minute, second);
     }
 
+    /**
+     * Convert this date into a number of seconds since epoch.
+     */
     public long secondsSinceEpoch() {
         long seconds = calculateFirstDayOfYear(year) * SECONDS_PER_DAY;
         seconds += SECONDS_PER_MONTH_CUMULATIVE[month - 1];
@@ -240,6 +296,7 @@ public class WikibaseDate {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -306,14 +363,23 @@ public class WikibaseDate {
             }
         };
 
+        /**
+         * Format the date in this particular style.
+         */
         public abstract String format(WikibaseDate date);
     }
 
+    /**
+     * Is the provided year a leap year?
+     */
     static boolean isLeapYear(long year) {
         // Borrowed from joda-time's GregorianChronology
         return ((year & 3) == 0) && ((year % 100) != 0 || (year % 400) == 0);
     }
 
+    /**
+     * Find the first day of the year.
+     */
     static long calculateFirstDayOfYear(long year) {
         /*
          * This is a clever hack for getting the number of leap years that works
@@ -332,6 +398,9 @@ public class WikibaseDate {
         return year * 365L + leapYears - DAYS_0000_TO_1970;
     }
 
+    /**
+     * Find the year from the number of seconds since epoch.
+     */
     static long yearFromSecondsSinceEpoch(long secondsSinceEpoch) {
         /*
          * Similar to Joda-Time's way of getting year from date - estimate and
@@ -343,9 +412,14 @@ public class WikibaseDate {
             i2 = i2 - unitSeconds + 1;
         }
         long year = i2 / unitSeconds;
+        /*
+         * Here is where we diverge from Joda-Time because our estimates can be
+         * off by more than one. Rather than doing something smart we just walk
+         * year by year until we get one that fits. So far this looks to be fast
+         * enough.
+         */
         while (true) {
-            // Rerunning calculateFirstDayOfYear isn't going to be efficient
-            // here.
+            // TODO Rerunning calculateFirstDayOfYear looks inefficient
             long yearStart = calculateFirstDayOfYear(year) * SECONDS_PER_DAY;
             long diff = secondsSinceEpoch - yearStart;
             if (diff < 0) {
@@ -366,10 +440,24 @@ public class WikibaseDate {
         }
     }
 
+    /**
+     * Get the number of seconds per month cumulative in a particular year.
+     */
     static long[] secondsPerMonthCumulative(long year) {
         if (isLeapYear(year)) {
             return SECONDS_PER_MONTH_CUMULATIVE_LEAP_YEAR;
         }
         return SECONDS_PER_MONTH_CUMULATIVE;
+    }
+
+    /**
+     * The number of days in a month.
+     */
+    private static int daysInMonth(long year, int month) {
+        int d = DAYS_PER_MONTH[month - 1];
+        if (month == 2 && isLeapYear(year)) {
+            d++;
+        }
+        return d;
     }
 }

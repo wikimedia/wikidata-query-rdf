@@ -4,7 +4,7 @@ package org.wikidata.query.rdf.common.uri;
  * URIs that aren't really part of the wikibase model but are common values in
  * Wikidata.
  */
-public class CommonValues {
+public final class CommonValues {
     /**
      * Virtual International Authority Files.
      */
@@ -15,4 +15,8 @@ public class CommonValues {
      * better.
      */
     public static final String VIAF_HTTP = "http://viaf.org/viaf/";
+
+    private CommonValues() {
+        // Utility uncallable constructor
+    }
 }

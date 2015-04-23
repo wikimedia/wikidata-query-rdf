@@ -25,8 +25,17 @@ import com.google.common.collect.ImmutableList;
 public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Batch> {
     private static final Logger log = LoggerFactory.getLogger(RecentChangesPoller.class);
 
+    /**
+     * Wikibase repository to poll.
+     */
     private final WikibaseRepository wikibase;
+    /**
+     * The first start time to poll.
+     */
     private final Date firstStartTime;
+    /**
+     * Size of the batches to poll against wikibase.
+     */
     private final int batchSize;
 
     public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime, int batchSize) {
@@ -42,14 +51,25 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
     @Override
     public Batch nextBatch(Batch lastBatch) throws RetryableException {
-        return batch(lastBatch.nextStartTime, lastBatch.nextContinue, lastBatch.lastSeenId);
+        return batch(lastBatch.leftOffDate, lastBatch.nextContinue, lastBatch.lastSeenId);
     }
 
-    public class Batch extends Change.Batch.AbstractDefaultImplementation {
-        private final Date nextStartTime;
+    /**
+     * Batch implementation for this poller.
+     */
+    public final class Batch extends Change.Batch.AbstractDefaultImplementation {
+        /**
+         * The date where we last left off.
+         */
+        private final Date leftOffDate;
+        /**
+         * The continue object that must be sent to wikibase to continue where
+         * we left off.
+         */
         private final JSONObject nextContinue;
         /**
-         * The ID of the last change we've seen. Poller would ignore it next time.
+         * The ID of the last change we've seen. Poller would ignore it next
+         * time.
          */
         private final String lastSeenId;
 
@@ -60,11 +80,11 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                 JSONObject nextContinue, String lastSeen) {
             super(changes, advanced, leftOff);
             this.nextContinue = nextContinue;
-            this.nextStartTime = nextStartTime;
-            if(!changes.isEmpty()) {
-              lastSeenId = changes.get(changes.size()-1).toString();
+            leftOffDate = nextStartTime;
+            if (!changes.isEmpty()) {
+                lastSeenId = changes.get(changes.size() - 1).toString();
             } else {
-              lastSeenId = lastSeen;
+                lastSeenId = lastSeen;
             }
         }
 
@@ -75,7 +95,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
         @Override
         public Date leftOffDate() {
-            return nextStartTime;
+            return leftOffDate;
         }
     }
 
@@ -101,7 +121,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                 }
                 Date timestamp = df.parse(rc.get("timestamp").toString());
                 Change change = new Change(rc.get("title").toString(), (long) rc.get("revid"), timestamp);
-                if(lastSeen == null || !lastSeen.equals(change.toString())) {
+                if (lastSeen == null || !lastSeen.equals(change.toString())) {
                     /*
                      * Remove duplicate changes by title keeping the latest
                      * revision.

@@ -48,10 +48,19 @@ import com.google.common.base.Charsets;
 /**
  * Wraps Wikibase api.
  */
+// TODO fan out complexity
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class WikibaseRepository {
     private static final Logger log = LoggerFactory.getLogger(WikibaseRepository.class);
+
+    /**
+     * HTTP client for wikibase.
+     */
     private final CloseableHttpClient client = HttpClients.custom().setMaxConnPerRoute(100).setMaxConnTotal(100)
             .build();
+    /**
+     * Builds uris to get stuff from wikibase.
+     */
     private final Uris uris;
 
     public WikibaseRepository(String scheme, String host) {
@@ -68,6 +77,8 @@ public class WikibaseRepository {
      * @param lastContinue continuation point if not null
      * @param batchSize the number of recent changes to fetch
      * @return result of query
+     * @throws RetryableException thrown if there is an error communicating with
+     *             wikibase
      */
     public JSONObject fetchRecentChanges(Date nextStartTime, JSONObject lastContinue, int batchSize)
             throws RetryableException {
@@ -82,8 +93,11 @@ public class WikibaseRepository {
 
     /**
      * Fetch the RDF for some entity.
+     *
+     * @throws RetryableException thrown if there is an error communicating with
+     *             wikibase
      */
-    public Collection<Statement> fetchRdfForEntity(String entityId) throws RetryableException, ContainedException {
+    public Collection<Statement> fetchRdfForEntity(String entityId) throws RetryableException {
         // TODO handle ?flavor=dump or whatever parameters we need
         URI uri = uris.rdf(entityId);
         log.debug("Fetching rdf from {}", uri);
@@ -112,6 +126,9 @@ public class WikibaseRepository {
 
     /**
      * Get the first id with the provided label in the provided language.
+     *
+     * @throws RetryableException thrown if there is an error communicating with
+     *             wikibase
      */
     public String firstEntityIdForLabelStartingWith(String label, String language, String type)
             throws RetryableException {
@@ -139,6 +156,8 @@ public class WikibaseRepository {
      * @param label label of the page to create
      * @param language language of the label to add
      * @return the entityId
+     * @throws RetryableException thrown if there is an error communicating with
+     *             wikibase
      */
     @SuppressWarnings("unchecked")
     public String setLabel(String entityId, String type, String label, String language) throws RetryableException {
@@ -163,6 +182,12 @@ public class WikibaseRepository {
         }
     }
 
+    /**
+     * Post with a csrf token.
+     *
+     * @throws IOException if its thrown while communicating with wikibase
+     * @throws ParseException if wikibase's response can't be parsed
+     */
     private HttpPost postWithToken(URI uri) throws IOException, ParseException {
         HttpPost request = new HttpPost(uri);
         List<NameValuePair> entity = new ArrayList<>();
@@ -171,6 +196,12 @@ public class WikibaseRepository {
         return request;
     }
 
+    /**
+     * Fetch a csrf token.
+     *
+     * @throws IOException if its thrown while communicating with wikibase
+     * @throws ParseException if wikibase's response can't be parsed
+     */
     private String csrfToken() throws IOException, ParseException {
         URI uri = uris.csrfToken();
         log.debug("Fetching csrf token from {}", uri);
@@ -199,6 +230,8 @@ public class WikibaseRepository {
      *
      * @param response the response
      * @return the response again
+     * @throws RetryableException thrown if there is an error communicating with
+     *             wikibase
      */
     private JSONObject checkApi(JSONObject response) throws RetryableException {
         Object error = response.get("error");
@@ -209,10 +242,16 @@ public class WikibaseRepository {
     }
 
     /**
-     * URIs used for accessing Wikibase.
+     * URIs used for accessing wikibase.
      */
     private class Uris {
+        /**
+         * Uri scheme for wikibase.
+         */
         private final String scheme;
+        /**
+         * Host for wikibase.
+         */
         private final String host;
 
         public Uris(String scheme, String host) {
@@ -220,6 +259,15 @@ public class WikibaseRepository {
             this.host = host;
         }
 
+        /**
+         * Uri to get the recent changes.
+         *
+         * @param startTime the first date to poll from - usually if
+         *            continueObject isn't null this is ignored by wikibase
+         * @param continueObject continue object sent from wikibase with the
+         *            last batch
+         * @param batchSize maximum number of results we want back from wikibase
+         */
         public URI recentChanges(Date startTime, JSONObject continueObject, int batchSize) {
             URIBuilder builder = apiBuilder();
             builder.addParameter("action", "query");
@@ -238,18 +286,25 @@ public class WikibaseRepository {
             return build(builder);
         }
 
-        public URI rdf(String title) {
+        /**
+         * Uri to get the rdf for an entity.
+         */
+        public URI rdf(String entityId) {
             URIBuilder builder = builder();
             /*
              * Note that we could use /entity/%s.ttl for production Wikidata but
-             * not all Wikibase instances have the rewrite rule set up.
+             * not all Wikibase instances have the rewrite rule set up. I'm
+             * looking at you test.
              */
-            builder.setPath(String.format(Locale.ROOT, "/wiki/Special:EntityData/%s.ttl", title));
+            builder.setPath(String.format(Locale.ROOT, "/wiki/Special:EntityData/%s.ttl", entityId));
             builder.addParameter("nocache", "1");
             builder.addParameter("flavor", "dump");
             return build(builder);
         }
 
+        /**
+         * Uri to fetch a csrf token.
+         */
         public URI csrfToken() {
             URIBuilder builder = apiBuilder();
             builder.setParameter("action", "query");
@@ -258,6 +313,13 @@ public class WikibaseRepository {
             return build(builder);
         }
 
+        /**
+         * Uri to search for a label in a language.
+         *
+         * @param label the label to search
+         * @param language the language to search
+         * @param type the type of the entity
+         */
         public URI searchForLabel(String label, String language, String type) {
             URIBuilder builder = apiBuilder();
             builder.addParameter("action", "wbsearchentities");
@@ -267,6 +329,14 @@ public class WikibaseRepository {
             return build(builder);
         }
 
+        /**
+         * Uri to which you can post to edit an entity.
+         *
+         * @param entityId the id to edit
+         * @param newType the type of the entity to create. Ignored if entityId
+         *            is not null.
+         * @param data data to add to the entity
+         */
         public URI edit(String entityId, String newType, String data) {
             URIBuilder builder = apiBuilder();
             builder.addParameter("action", "wbeditentity");
@@ -279,6 +349,9 @@ public class WikibaseRepository {
             return build(builder);
         }
 
+        /**
+         * Build a URIBuilder for wikibase apis.
+         */
         private URIBuilder apiBuilder() {
             URIBuilder builder = builder();
             builder.setPath("/w/api.php");
@@ -286,6 +359,9 @@ public class WikibaseRepository {
             return builder;
         }
 
+        /**
+         * Build a URIBuilder for wikibase requests.
+         */
         private URIBuilder builder() {
             URIBuilder builder = new URIBuilder();
             builder.setHost(host);
@@ -293,6 +369,10 @@ public class WikibaseRepository {
             return builder;
         }
 
+        /**
+         * Build a URI from an URI builder, throwing a FatalException if it
+         * fails.
+         */
         private URI build(URIBuilder builder) {
             try {
                 return builder.build();
@@ -302,14 +382,25 @@ public class WikibaseRepository {
         }
     }
 
+    /**
+     * Create a new DateFormat object that parses from and formats to the date
+     * in the format that wikibase wants as input.
+     */
     public static DateFormat outputDateFormat() {
         return utc(new SimpleDateFormat("yyyyMMddHHmmss", Locale.ROOT));
     }
 
+    /**
+     * Create a new DateFormat object that parses from and formats to the date
+     * in the format that wikibase returns.
+     */
     public static DateFormat inputDateFormat() {
         return utc(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT));
     }
 
+    /**
+     * Convert a DateFormat to always output in utc.
+     */
     private static DateFormat utc(DateFormat df) {
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         return df;

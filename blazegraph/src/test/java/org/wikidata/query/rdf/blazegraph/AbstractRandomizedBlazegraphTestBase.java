@@ -27,14 +27,37 @@ import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 
 /**
  * Randomized test that can create a triple store.
+ *
+ * <p>
+ * We have to take a number of actions to make RandomizedRunner compatible with
+ * Blazegraph:
+ * <ul>
+ * <li>Wwitch the ThreadLeakScope to SUITE because there are threads that
+ * survive across tests
+ * <li>Create a temporary store that is shared for all test methods that holds
+ * multiple triple stores
+ * <li>Create a triple store per test method
+ * </ul>
  */
 @RunWith(RandomizedRunner.class)
 @ThreadLeakScope(SUITE)
 public class AbstractRandomizedBlazegraphTestBase extends RandomizedTest {
-    private WikibaseUris uris = WikibaseUris.WIKIDATA;
+    /**
+     * Holds all the triples stores. Initialized once per test class.
+     */
     private static TemporaryStore temporaryStore;
+    /**
+     * Which uris this test uses.
+     */
+    private WikibaseUris uris = WikibaseUris.WIKIDATA;
+    /**
+     * Triple store for the current test method. Lazily initialized.
+     */
     private ITripleStore store;
 
+    /**
+     * The uris this test uses.
+     */
     protected WikibaseUris uris() {
         return uris;
     }
@@ -112,6 +135,9 @@ public class AbstractRandomizedBlazegraphTestBase extends RandomizedTest {
         return temporaryStore;
     }
 
+    /**
+     * Close the triple store used by the test that just finished.
+     */
     @After
     public void closeStore() {
         if (store == null) {
@@ -121,6 +147,9 @@ public class AbstractRandomizedBlazegraphTestBase extends RandomizedTest {
         store = null;
     }
 
+    /**
+     * Close the temporary store used by this test.
+     */
     @AfterClass
     public static void closeTemporaryStore() {
         if (temporaryStore == null) {

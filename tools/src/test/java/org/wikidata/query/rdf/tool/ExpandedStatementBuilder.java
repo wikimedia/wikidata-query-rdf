@@ -28,14 +28,39 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
  * important that it faithfully reflects what we expect of the munger.
  */
 public class ExpandedStatementBuilder {
+    /**
+     * Extra parts of the statement like qualifiers and references.
+     */
     private final List<ExtraInfo> extraInfo = new ArrayList<>();
+    /**
+     * Random used to power and random decisions. Passed around so randomized
+     * testing can always seed properly.
+     */
     private final Random random;
+    /**
+     * Uris for the wikibase instance.
+     */
     private final WikibaseUris uris;
+    /**
+     * Entity id that is the subject of the statement.
+     */
     private final String entity;
+    /**
+     * Property id that is the predicate in the statement. Its also used in the
+     * expanded portion.
+     */
     private final String property;
+    /**
+     * The value of the statement. Its also used in the expanded version.
+     */
     private final Object value;
 
-    private boolean includeBasicEntity = true;
+    /**
+     * Should the results include the basic entity information for the subject
+     * so its valid? Should be set to false if combining the results of multiple
+     * builders and generally should be left true otherwise.
+     */
+    private boolean includeBasicEntityForSubject = true;
     /**
      * Version set if includeBasicEntity is true.
      */
@@ -44,12 +69,22 @@ public class ExpandedStatementBuilder {
      * Date modified set if includeBasicEntity is true.
      */
     private Value dateModified;
+    /**
+     * Information about the expanded value node.
+     */
     private ExpandedValueInfo expandedValue;
-
+    /**
+     * Uri for the statement. Generated if not set.
+     */
     private String statementUri;
+    /**
+     * Rank of the statement.
+     */
     private String rank = Ontology.NORMAL_RANK;
-    private boolean bestRank = false;
-
+    /**
+     * Is the statement also best rank? Defaults to false.
+     */
+    private boolean bestRank;
     /**
      * Null until its built and then can't be changed.
      */
@@ -59,11 +94,26 @@ public class ExpandedStatementBuilder {
      * These are built as part of the build step and used later when
      * transforming from wikibase style to munged style.
      */
+    /**
+     * Part of the wikibase dump that is removed by the munger.
+     */
     private Statement entityDataAboutDecl;
+    /**
+     * Part of the wikibase dump that is removed by the munger.
+     */
     private Statement entityDataVersionDecl;
+    /**
+     * Part of the wikibase dump that is removed by the munger.
+     */
     private Statement entityDataDateModifiedDecl;
+    /**
+     * Part of the wikibase dump that is removed by the munger.
+     */
     private Statement statementTypeDecl;
 
+    /**
+     * Setup required configuration. Everything else can be configured.
+     */
     public ExpandedStatementBuilder(Random random, WikibaseUris uris, String entity, String property, Object value) {
         this.random = random;
         this.uris = uris;
@@ -99,6 +149,7 @@ public class ExpandedStatementBuilder {
      * Add a reference to this statement.
      */
     public ExpandedStatementBuilder reference(String property, Object value) {
+        checkCanChange();
         extraInfo.add(new ReferenceInfo(property, value));
         return this;
     }
@@ -107,6 +158,7 @@ public class ExpandedStatementBuilder {
      * Add a qualifier to this statement.
      */
     public ExpandedStatementBuilder qualifier(String property, Object value) {
+        checkCanChange();
         extraInfo.add(new QualifierInfo(property, value));
         return this;
     }
@@ -115,6 +167,7 @@ public class ExpandedStatementBuilder {
      * Add an expanded value statement to this statement.
      */
     public ExpandedStatementBuilder expandedValue(String property, Object value) {
+        checkCanChange();
         if (expandedValue == null) {
             expandedValue = new ExpandedValueInfo(this.property, null);
             extraInfo.add(expandedValue);
@@ -144,7 +197,7 @@ public class ExpandedStatementBuilder {
      */
     public List<Statement> mungedStyle() {
         List<Statement> st = built();
-        if (includeBasicEntity) {
+        if (includeBasicEntityForSubject) {
             st.remove(entityDataAboutDecl);
             st.remove(entityDataVersionDecl);
             st.remove(entityDataDateModifiedDecl);
@@ -158,6 +211,10 @@ public class ExpandedStatementBuilder {
         return st;
     }
 
+    /**
+     * Build a list of matchers that matches what the statements should look
+     * like after they've been munged.
+     */
     public List<Matcher<? super Statement>> mungedStyleMatchers() {
         List<Matcher<? super Statement>> matchers = new ArrayList<>();
         for (Statement s : mungedStyle()) {
@@ -166,16 +223,27 @@ public class ExpandedStatementBuilder {
         return matchers;
     }
 
+    /**
+     * Build a matcher that matches what the statements should look like after
+     * they've been munged.
+     */
     public Matcher<Iterable<? extends Statement>> mungedStyleMatcher() {
         return containsInAnyOrder(mungedStyleMatchers());
     }
 
+    /**
+     * Can this builder change?
+     */
     private void checkCanChange() {
         if (statements != null) {
             throw new IllegalStateException("Result already built");
         }
     }
 
+    /**
+     * Get a mutable copy of the list of triples for this expanded statement,
+     * building the triple list if its not already been built.
+     */
     private List<Statement> built() {
         if (statements == null) {
             build();
@@ -183,15 +251,21 @@ public class ExpandedStatementBuilder {
         return new ArrayList<>(statements);
     }
 
+    /**
+     * Build the statements for this expanded statement.
+     */
     private void build() {
         statements = new ArrayList<>();
         buildBasicEntityIfNeeded();
         buildStatement();
-        buildReferenceIfNeeded();
+        buildExtraInfo();
     }
 
+    /**
+     * Build the basic entity for the subject if includeBasicEntityForSubject.
+     */
     private void buildBasicEntityIfNeeded() {
-        if (!includeBasicEntity) {
+        if (!includeBasicEntityForSubject) {
             return;
         }
         if (version == null) {
@@ -206,6 +280,9 @@ public class ExpandedStatementBuilder {
         entityDataDateModifiedDecl = statement(statements, entityDataUri, SchemaDotOrg.DATE_MODIFIED, dateModified);
     }
 
+    /**
+     * Build triples for the expanded statement.
+     */
     private void buildStatement() {
         if (statementUri == null) {
             statementUri = uris.statement() + entity + "-" + randomId();
@@ -220,23 +297,52 @@ public class ExpandedStatementBuilder {
         }
     }
 
-    private void buildReferenceIfNeeded() {
+    /**
+     * Build the extra triples on the statement like references and qualifiers.
+     */
+    private void buildExtraInfo() {
         for (ExtraInfo e : extraInfo) {
             e.build();
         }
     }
 
+    /**
+     * Randomly make a statement or reference identifier.
+     */
     private String randomId() {
         return RandomizedTest.randomAsciiOfLength(10);
     }
 
+    /**
+     * Extra bits of the expanded statement.
+     */
     private abstract class ExtraInfo {
-        protected final String property;
-        protected final Object value;
+        /**
+         * The property for this extra info.
+         */
+        private final String property;
+        /**
+         * The value of this extra info.
+         */
+        private final Object value;
 
         public ExtraInfo(String property, Object value) {
             this.property = property;
             this.value = value;
+        }
+
+        /**
+         * The property for this extra info.
+         */
+        public String property() {
+            return property;
+        }
+
+        /**
+         * The value of this expanded info.
+         */
+        public Object value() {
+            return value;
         }
 
         /**
@@ -250,12 +356,28 @@ public class ExpandedStatementBuilder {
         public abstract void munge(List<Statement> statements);
     }
 
+    /**
+     * Useful base for building references and qualifiers.
+     */
     private abstract class AbstractComplexExtraInfo extends ExtraInfo {
-        protected String uri;
+        /**
+         * Uri for the expanded part.
+         */
+        private String uri;
+        /**
+         * Type declaration for the expanded part.
+         */
         private Statement typeDecl;
 
         public AbstractComplexExtraInfo(String property, Object value) {
             super(property, value);
+        }
+
+        /**
+         * Uri for the expanded part.
+         */
+        public String uri() {
+            return uri;
         }
 
         @Override
@@ -272,13 +394,26 @@ public class ExpandedStatementBuilder {
             statements.remove(typeDecl);
         }
 
+        /**
+         * In what namespace is the value?
+         */
         protected abstract String namespace();
 
+        /**
+         * What is the predicate for triple?
+         */
         protected abstract String declarationPredicate();
 
+        /**
+         * What is the type of the resulting expanded entity (reference,
+         * qualifier, etc)?
+         */
         protected abstract String type();
     }
 
+    /**
+     * Builds a reference.
+     */
     private class ReferenceInfo extends AbstractComplexExtraInfo {
         public ReferenceInfo(String property, Object value) {
             super(property, value);
@@ -287,7 +422,7 @@ public class ExpandedStatementBuilder {
         @Override
         public void build() {
             super.build();
-            statement(statements, uri, uris.value() + property, value);
+            statement(statements, uri(), uris.value() + property(), value());
         }
 
         @Override
@@ -306,6 +441,9 @@ public class ExpandedStatementBuilder {
         }
     }
 
+    /**
+     * Build qualifiers.
+     */
     private class QualifierInfo extends ExtraInfo {
         public QualifierInfo(String property, Object value) {
             super(property, value);
@@ -313,7 +451,7 @@ public class ExpandedStatementBuilder {
 
         @Override
         public void build() {
-            statement(statements, statementUri, uris.qualifier() + property, value);
+            statement(statements, statementUri, uris.qualifier() + property(), value());
         }
 
         @Override
@@ -322,7 +460,13 @@ public class ExpandedStatementBuilder {
         }
     }
 
+    /**
+     * Builds expanded values on the statement. Can contain lots of triples.
+     */
     private class ExpandedValueInfo extends AbstractComplexExtraInfo {
+        /**
+         * Triples to build for the expanded value.
+         */
         private List<ExpandedValueInfoEntry> entries = new ArrayList<>();
 
         public ExpandedValueInfo(String property, Object value) {
@@ -333,7 +477,7 @@ public class ExpandedStatementBuilder {
         public void build() {
             super.build();
             for (ExpandedValueInfoEntry e : entries) {
-                statement(statements, uri, e.predicate, e.object);
+                statement(statements, uri(), e.predicate, e.object);
             }
         }
 
@@ -344,7 +488,7 @@ public class ExpandedStatementBuilder {
 
         @Override
         protected String declarationPredicate() {
-            return uris.value() + property + "-value";
+            return uris.value() + property() + "-value";
         }
 
         @Override
@@ -353,8 +497,18 @@ public class ExpandedStatementBuilder {
         }
     }
 
+    /**
+     * Part of the expanded value. An example is the declaration that a geo
+     * coordinant is in a certain globe or a time has a certain precision.
+     */
     private static class ExpandedValueInfoEntry {
+        /**
+         * Predicate of the triple.
+         */
         private final String predicate;
+        /**
+         * Object of the triple.
+         */
         private final Object object;
 
         public ExpandedValueInfoEntry(String predicate, Object object) {

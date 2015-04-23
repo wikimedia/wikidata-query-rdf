@@ -3,7 +3,10 @@ package org.wikidata.query.rdf.common.uri;
 /**
  * Marks the kinds of things (items or properties).
  */
-public class Ontology {
+public final class Ontology {
+    /**
+     * Common prefix of all ontology parts.
+     */
     public static final String NAMESPACE = "http://www.wikidata.org/ontology#";
 
     /**
@@ -45,9 +48,24 @@ public class Ontology {
      *      documentation for ranking</a>
      */
     public static final String RANK = NAMESPACE + "rank";
+    /**
+     * Statements with the best rank. These are the ones you usually want to
+     * find.
+     */
     public static final String BEST_RANK = NAMESPACE + "BestRank";
+    /**
+     * Rank that overrides all normal rank statements.
+     */
     public static final String PREFERRED_RANK = NAMESPACE + "PreferredRank";
+    /**
+     * Rank that is best if there are no preferred rank statements.
+     */
     public static final String NORMAL_RANK = NAMESPACE + "NormalRank";
+    /**
+     * Rank that isn't even considered best when there are no better statement.
+     * Its so bad you need to explicitly ask for things of this rank to get
+     * them.
+     */
     public static final String DEPRECATED_RANK = NAMESPACE + "DeprecatedRank";
 
     /**
@@ -60,7 +78,13 @@ public class Ontology {
      */
     public static final String SOME_VALUE = NAMESPACE + "Somevalue";
 
-    public static class Time {
+    /**
+     * Predicates used to describe a time.
+     */
+    public static final class Time {
+        /**
+         * Common prefix of all time predicates.
+         */
         private static final String PREFIX = NAMESPACE + "time";
         /**
          * The actual value of the time. We will always load this value exactly
@@ -86,28 +110,86 @@ public class Ontology {
          * Calendar model in which the date was defined.
          */
         public static final String CALENDAR_MODEL = PREFIX + "CalendarModel";
+
         // TODO normalize simple values in different calendar models into
         // Gregorian where possible
+        private Time() {
+            // Utility class.
+        }
     }
 
-    public static class Geo {
+    /**
+     * Predicates used to describe a geographic point.
+     */
+    public static final class Geo {
+        /**
+         * Common prefix of all geo predicates.
+         */
         private static final String PREFIX = NAMESPACE + "geo";
 
+        /**
+         * The latitude part of the point.
+         */
         public static final String LATITUDE = PREFIX + "Latitude";
+        /**
+         * The longitude part of the point.
+         */
         public static final String LONGITUDE = PREFIX + "Longitude";
+        /**
+         * The precision of the point.
+         */
         public static final String PRECISION = PREFIX + "Precision";
+        /**
+         * The globe that the point is on.
+         */
         public static final String GLOBE = PREFIX + "Globe";
+
+        // TODO a better description for precision
+
+        private Geo() {
+            // Utility class.
+        }
     }
 
-    public static class Quantity {
+    /**
+     * Predicates used to describe a quantity.
+     */
+    public static final class Quantity {
+        /**
+         * Common prefix of all quantity predicates.
+         */
         private static final String PREFIX = NAMESPACE + "quantity";
 
+        /**
+         * The number part of the quantity.
+         */
         public static final String AMOUNT = PREFIX + "Amount";
+        /**
+         * The upper bound of the number part of the quantity.
+         */
         public static final String UPPER_BOUND = PREFIX + "UpperBound";
+        /**
+         * The lower bound of the number part of the quantity.
+         */
         public static final String LOWER_BOUND = PREFIX + "LowerBound";
+        /**
+         * The unit of the quantity.
+         */
         public static final String UNIT = PREFIX + "Unit";
+
+        private Quantity() {
+            // Utility class.
+        }
     }
+
+    /**
+     * Add prefix to a query.
+     */
     public static StringBuilder prefix(StringBuilder query) {
         return query.append("PREFIX ontology: <").append(NAMESPACE).append(">\n");
+    }
+
+    private Ontology() {
+        // Utility class.
     }
 }

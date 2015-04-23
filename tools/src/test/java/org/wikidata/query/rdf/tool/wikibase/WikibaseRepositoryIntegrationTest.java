@@ -128,15 +128,16 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         String entityId = repo.firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
         repo.setLabel(entityId, "item", "QueryTestItem" + now, "en");
         Collection<Statement> statements = repo.fetchRdfForEntity(entityId);
-        boolean foundBad = false, foundGood = false;
+        boolean foundBad = false;
+        boolean foundGood = false;
         for (Statement statement : statements) {
-            if(statement.getObject().stringValue().contains("http://www.wikidata.org/ontology-beta#")) {
+            if (statement.getObject().stringValue().contains("http://www.wikidata.org/ontology-beta#")) {
                 foundBad = true;
             }
-            if(statement.getObject().stringValue().contains("http://www.wikidata.org/ontology-0.0.1#")) {
+            if (statement.getObject().stringValue().contains("http://www.wikidata.org/ontology-0.0.1#")) {
                 foundBad = true;
             }
-            if(statement.getObject().stringValue().contains("http://www.wikidata.org/ontology#")) {
+            if (statement.getObject().stringValue().contains("http://www.wikidata.org/ontology#")) {
                 foundGood = true;
             }
         }

@@ -10,7 +10,10 @@ import org.openrdf.model.URI;
 import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
 
-public class Matchers {
+/**
+ * Useful matchers for RDF.
+ */
+public final class Matchers {
     /**
      * Check a binding to a uri.
      */
@@ -18,12 +21,26 @@ public class Matchers {
         return new BindsMatcher<URI>(name, equalTo(uri(value)));
     }
 
+    /**
+     * Check a binding to a value.
+     */
     public static <V> Matcher<BindingSet> binds(String name, V value) {
         return new BindsMatcher<V>(name, equalTo(value));
     }
 
-    public static class BindsMatcher<V> extends TypeSafeMatcher<BindingSet> {
+    /**
+     * Checks bindings.
+     *
+     * @param <V> type of the binding result
+     */
+    private static class BindsMatcher<V> extends TypeSafeMatcher<BindingSet> {
+        /**
+         * Name of the binding to check.
+         */
         private final String name;
+        /**
+         * Delegate matcher for the bound value.
+         */
         private final Matcher<V> valueMatcher;
 
         public BindsMatcher(String name, Matcher<V> valueMatcher) {
@@ -33,7 +50,8 @@ public class Matchers {
 
         @Override
         public void describeTo(Description description) {
-            description.appendText("contains a binding from").appendValue(name).appendText("to").appendDescriptionOf(valueMatcher);
+            description.appendText("contains a binding from").appendValue(name).appendText("to")
+                    .appendDescriptionOf(valueMatcher);
         }
 
         @Override
@@ -54,5 +72,9 @@ public class Matchers {
             }
             return valueMatcher.matches(binding.getValue());
         }
+    }
+
+    private Matchers() {
+        // Utility constructor
     }
 }

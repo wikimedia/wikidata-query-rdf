@@ -37,7 +37,7 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdateIntegrat
         }
         query.append("\"^^xsd:dateTime)\n");
         query.append("}");
-        TupleQueryResult results = rdfRepository.query(query.toString());
+        TupleQueryResult results = rdfRepository().query(query.toString());
         assertTrue(results.hasNext());
         BindingSet result = results.next();
         assertThat(result, binds("s", "Q1"));
@@ -48,8 +48,8 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdateIntegrat
     public void date() throws QueryEvaluationException {
         List<Statement> statements = new ArrayList<>();
         statements.add(statement("Q23", "P569", new LiteralImpl("1732-02-22", XMLSchema.DATE)));
-        rdfRepository.sync("Q23", statements);
-        TupleQueryResult results = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
+        rdfRepository().sync("Q23", statements);
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {?s ?p ?o}");
         BindingSet result = results.next();
         assertThat(result, binds("s", "Q23"));
         assertThat(result, binds("p", "P569"));

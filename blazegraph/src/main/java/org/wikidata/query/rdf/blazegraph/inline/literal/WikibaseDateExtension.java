@@ -11,7 +11,6 @@ import org.wikidata.query.rdf.common.WikibaseDate;
 import org.wikidata.query.rdf.common.WikibaseDate.ToStringFormat;
 
 import com.bigdata.rdf.internal.IDatatypeURIResolver;
-import com.bigdata.rdf.internal.IExtension;
 import com.bigdata.rdf.internal.impl.literal.AbstractLiteralIV;
 import com.bigdata.rdf.internal.impl.literal.LiteralExtensionIV;
 import com.bigdata.rdf.internal.impl.literal.XSDNumericIV;
@@ -21,16 +20,22 @@ import com.bigdata.rdf.model.BigdataValue;
 import com.bigdata.rdf.model.BigdataValueFactory;
 
 /**
- * This implementation of {@link IExtension} implements inlining for literals
- * that represent xsd:dateTime literals. Unlike
+ * This implementation of {@link com.bigdata.rdf.internal.IExtension} implements
+ * inlining for literals that represent xsd:dateTime literals. Unlike
  * {@link com.bigdata.rdf.internal.impl.extensions.DateTimeExtension} on which
  * this is based, it stores the literals as time in <strong>seconds</strong>
  * since the epoch. The seconds are encoded as an inline long. Also unlike
  * DateTimeExtension it only supports UTC as the default time zone because UTC
  * is king. This is needed because Wikidata contains dates that who's
  * <strong>milliseconds</strong> since epoch don't fit into a long.
+ *
+ * @param <V> Blazegraph value to expand. These are usually treated a bit
+ *            roughly by Blazegraph - lots of rawtypes
  */
 public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMultiTypeExtension<V> {
+    /**
+     * List of data types this extension can inline.
+     */
     private static final List<URI> SUPPORTED_DATA_TYPES = Collections.unmodifiableList(Arrays.asList(
             XMLSchema.DATETIME, XMLSchema.DATE));
 

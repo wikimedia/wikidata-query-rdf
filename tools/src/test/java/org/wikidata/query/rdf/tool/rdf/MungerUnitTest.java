@@ -5,10 +5,11 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.wikidata.query.rdf.tool.StatementHelper.siteLink;
 import static org.wikidata.query.rdf.tool.StatementHelper.statement;
-import static org.wikidata.query.rdf.tool.StatementHelper.toArray;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -36,10 +37,8 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
  */
 @RunWith(RandomizedRunner.class)
 public class MungerUnitTest extends RandomizedTest {
-
-    static final WikibaseUris uris = WikibaseUris.WIKIDATA;
-    static final Munger munger = new Munger(uris);
-    static final String bogus = "http://example.com/bogus";
+    private final WikibaseUris uris = WikibaseUris.WIKIDATA;
+    private final String bogus = "http://example.com/bogus";
 
     @Test
     public void mungesEntityDataOntoEntity() {
@@ -126,11 +125,13 @@ public class MungerUnitTest extends RandomizedTest {
     @Test
     public void expandedStatementWithQualifier() {
         String statementUri = uris.statement() + "q23-8A2F4718-6159-4E58-A8F9-6F24F5EFEC42";
-        entity("Q23") //
+        entity("Q23")
+                //
                 .retain(statement("Q23", "P26", statementUri), //
                         statement(statementUri, uris.value() + "P26", "Q191789"), //
                         statement(statementUri, Ontology.RANK, Ontology.NORMAL_RANK), //
-                        statement(statementUri, uris.qualifier() + "P580", new LiteralImpl("1759-01-06T00:00:00Z", XMLSchema.DATETIME))) //
+                        statement(statementUri, uris.qualifier() + "P580", new LiteralImpl("1759-01-06T00:00:00Z",
+                                XMLSchema.DATETIME))) //
                 .remove(statement(statementUri, RDF.TYPE, Ontology.STATEMENT)) //
                 .test();
     }
@@ -139,9 +140,11 @@ public class MungerUnitTest extends RandomizedTest {
     public void basicExpandedValue() {
         String statementUri = uris.statement() + "q1-someuuid";
         String valueUri = uris.value() + "someotheruuid";
-        entity("Q1") //
+        entity("Q1")
+                //
                 .retain(statement("Q1", "P580", statementUri), //
-                        statement(statementUri, uris.value() + "P580", new LiteralImpl("-13798000000-01-01T00:00:00Z", XMLSchema.DATETIME)), //
+                        statement(statementUri, uris.value() + "P580", new LiteralImpl("-13798000000-01-01T00:00:00Z",
+                                XMLSchema.DATETIME)), //
                         statement(statementUri, uris.value() + "P580" + "-value", valueUri), //
                         // Currently wikibase exports the deep time values as
                         // strings, not dateTime.
@@ -159,9 +162,11 @@ public class MungerUnitTest extends RandomizedTest {
     public void expandedValueOnQualifier() {
         String statementUri = uris.statement() + "q1-someuuid";
         String valueUri = uris.value() + "someotheruuid";
-        entity("Q1") //
+        entity("Q1")
+                //
                 .retain(statement("Q1", "P580", statementUri), //
-                        statement(statementUri, uris.qualifier() + "P580", new LiteralImpl("-13798000000-01-01T00:00:00Z", XMLSchema.DATETIME)), //
+                        statement(statementUri, uris.qualifier() + "P580", new LiteralImpl(
+                                "-13798000000-01-01T00:00:00Z", XMLSchema.DATETIME)), //
                         statement(statementUri, uris.value() + "P580" + "-value", valueUri), //
                         // Currently wikibase exports the deep time values as
                         // strings, not dateTime.
@@ -179,9 +184,11 @@ public class MungerUnitTest extends RandomizedTest {
         String statementUri = uris.statement() + "q1-someuuid";
         String valueUri = uris.value() + "someotheruuid";
         String referenceUri = uris.reference() + "yetanotheruuid";
-        entity("Q1") //
+        entity("Q1")
+                //
                 .retain(statement("Q1", "P580", statementUri), //
-                        statement(statementUri, uris.value() + "P580", new LiteralImpl("-13798000000-01-01T00:00:00Z", XMLSchema.DATETIME)), //
+                        statement(statementUri, uris.value() + "P580", new LiteralImpl("-13798000000-01-01T00:00:00Z",
+                                XMLSchema.DATETIME)), //
                         statement(statementUri, Provenance.WAS_DERIVED_FROM, referenceUri), //
                         statement(referenceUri, uris.value() + "P580" + "-value", valueUri), //
                         // Currently wikibase exports the deep time values as
@@ -236,21 +243,21 @@ public class MungerUnitTest extends RandomizedTest {
 
     private void singleLabelModeTestCases(String predicate) {
         List<Statement> toRemove = new ArrayList<Statement>();
-        Collections.addAll(toRemove,//
+        Collections.addAll(toRemove, //
                 statement("Q23", predicate, new LiteralImpl("foo", "de")), //
                 statement("Q23", predicate, new LiteralImpl("foo", "it")), //
                 statement("Q23", predicate, new LiteralImpl("foo", "fr")));
         // Extra garbage entityData information shouldn't break the single label
         // mode.
-        Collections.addAll(toRemove, statements(entity("Q44")));
-        Collections.addAll(toRemove, statements(entity("Q78")));
+        toRemove.addAll(entity("Q44").statements);
+        toRemove.addAll(entity("Q78").statements);
         // Neither should labels for other entities.
         Collections.addAll(toRemove, statement("Q2344", predicate, new LiteralImpl("sneaky", "en")));
-        singleLabelModeTestCase1(predicate, toArray(toRemove));
-        singleLabelModeTestCase2(predicate, toArray(toRemove));
+        singleLabelModeTestCase1(predicate, toRemove);
+        singleLabelModeTestCase2(predicate, toRemove);
     }
 
-    private void singleLabelModeTestCase1(String predicate, Statement[] toRemove) {
+    private void singleLabelModeTestCase1(String predicate, List<Statement> toRemove) {
         entity("Q23") //
                 .retain(statement("Q23", predicate, new LiteralImpl("foo", "en"))) //
                 .remove(toRemove) //
@@ -258,7 +265,7 @@ public class MungerUnitTest extends RandomizedTest {
                 .test();
     }
 
-    private void singleLabelModeTestCase2(String predicate, Statement[] toRemove) {
+    private void singleLabelModeTestCase2(String predicate, List<Statement> toRemove) {
         List<Statement> statements = entity("Q23") //
                 .remove(statement("Q23", predicate, new LiteralImpl("foo", "en"))) //
                 .remove(toRemove) //
@@ -289,73 +296,87 @@ public class MungerUnitTest extends RandomizedTest {
     @Test
     public void skipSiteLinks() {
         entity("Q23") //
-                .remove(toArray(siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en", randomBoolean()))) //
+                .remove(siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en", randomBoolean())) //
                 .removeSiteLinks() //
                 .test();
     }
 
-    static Statement[] statements(Mungekin x) {
-        return toArray(x.statements);
+    private Mungekin entity(String id) {
+        return new Mungekin(uris, id);
     }
 
-    Mungekin entity(String id) {
-        return new Mungekin(MungerUnitTest.uris, id);
-    }
-
-    class Mungekin {
-
+    private final class Mungekin {
+        /**
+         * Entity id.
+         */
         private final String id;
+        /**
+         * Statements to munge.
+         */
         private final List<Statement> statements;
+        /**
+         * Statements we expect the munger to retain.
+         */
         private final List<Statement> toRetain = new ArrayList<Statement>();
+        /**
+         * Statements we expect the munger to remove.
+         */
         private final List<Statement> toRemove = new ArrayList<Statement>();
 
-        // Keep our very own Munger instance so we don't conflict with external
-        // references.
+        /**
+         * Our very own Munger instance so we don't conflict with external
+         * references.
+         */
         private Munger munger;
 
-        Mungekin(WikibaseUris uris, String id) {
+        private Mungekin(WikibaseUris uris, String id) {
             this.id = id;
             munger = new Munger(uris);
             statements = StatementHelper.basicEntity(uris, id);
         }
 
-        private Mungekin addTo(List<Statement> list, Statement... xs) {
-            for (Statement x : xs) {
-                list.add(x);
-            }
+        private Mungekin retain(Statement... xs) {
+            return retain(Arrays.asList(xs));
+        }
+
+        private Mungekin retain(Collection<Statement> xs) {
+            statements.addAll(xs);
+            toRetain.addAll(xs);
             return this;
         }
 
-        Mungekin retain(Statement... xs) {
-            return addTo(statements, xs).addTo(toRetain, xs);
+        private Mungekin remove(Statement... xs) {
+            return remove(Arrays.asList(xs));
         }
 
-        Mungekin remove(Statement... xs) {
-            return addTo(statements, xs).addTo(toRemove, xs);
-        }
-
-        Mungekin singleLabelMode(String... xs) {
-            munger = munger.singleLabelMode(xs);
+        private Mungekin remove(Collection<Statement> xs) {
+            statements.addAll(xs);
+            toRemove.addAll(xs);
             return this;
         }
 
-        Mungekin limitLabelLanguages(String... xs) {
-            munger = munger.limitLabelLanguages(xs);
+        private Mungekin singleLabelMode(String... languages) {
+            munger = munger.singleLabelMode(languages);
             return this;
         }
 
-        Mungekin removeSiteLinks() {
+        private Mungekin limitLabelLanguages(String... languages) {
+            munger = munger.limitLabelLanguages(languages);
+            return this;
+        }
+
+        private Mungekin removeSiteLinks() {
             munger = munger.removeSiteLinks();
             return this;
         }
 
-        List<Statement> test() {
+        private List<Statement> test() {
             Collections.shuffle(statements);
             testWithoutShuffle();
             return statements;
         }
 
-        void testWithoutShuffle() {
+        private void testWithoutShuffle() {
             munger.munge(id, statements);
             for (Statement x : toRetain) {
                 assertThat(statements, hasItem(x));
@@ -364,7 +385,5 @@ public class MungerUnitTest extends RandomizedTest {
                 assertThat(statements, not(hasItem(x)));
             }
         }
-
     }
-
 }

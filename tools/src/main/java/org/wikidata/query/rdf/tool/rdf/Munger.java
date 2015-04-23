@@ -35,9 +35,14 @@ import com.google.common.collect.ListMultimap;
  * Munges RDF from Wikibase into a more queryable format. Note that this is
  * tightly coupled with Wikibase's export format.
  */
+// TODO fan out complexity
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class Munger {
     private static final Logger log = LoggerFactory.getLogger(Munger.class);
 
+    /**
+     * Wikibase uris we're working with.
+     */
     private final WikibaseUris uris;
     /**
      * Null if not in limit label languages mode and a set of allowed languages
@@ -59,8 +64,8 @@ public class Munger {
         this(uris, null, null, false);
     }
 
-    private Munger(WikibaseUris uris, Set<String> limitLabelLanguages,
-            List<String> singleLabelModeLanguages, boolean removeSiteLinks) {
+    private Munger(WikibaseUris uris, Set<String> limitLabelLanguages, List<String> singleLabelModeLanguages,
+            boolean removeSiteLinks) {
         this.uris = uris;
         this.limitLabelLanguages = limitLabelLanguages;
         this.singleLabelModeLanguages = singleLabelModeLanguages;
@@ -78,8 +83,7 @@ public class Munger {
      * Build a Munger that only imports labels in some languages.
      */
     public Munger limitLabelLanguages(Collection<String> languages) {
-        return new Munger(uris, ImmutableSet.copyOf(languages), singleLabelModeLanguages,
-                removeSiteLinks);
+        return new Munger(uris, ImmutableSet.copyOf(languages), singleLabelModeLanguages, removeSiteLinks);
     }
 
     /**
@@ -101,8 +105,7 @@ public class Munger {
      *            the most important
      */
     public Munger singleLabelMode(Collection<String> languages) {
-        return new Munger(uris, limitLabelLanguages, ImmutableList.copyOf(languages).reverse(),
-                removeSiteLinks);
+        return new Munger(uris, limitLabelLanguages, ImmutableList.copyOf(languages).reverse(), removeSiteLinks);
     }
 
     /**
@@ -120,8 +123,8 @@ public class Munger {
      * @param existingValues Existing value statements
      * @param existingRefs Existing reference statements
      */
-    public void munge(String entityId, Collection<Statement> statements,
-          Collection<String> existingValues, Collection<String> existingRefs) throws ContainedException {
+    public void munge(String entityId, Collection<Statement> statements, Collection<String> existingValues,
+            Collection<String> existingRefs) {
         if (statements.isEmpty()) {
             // Empty collection is a delete.
             return;
@@ -145,13 +148,21 @@ public class Munger {
         munge(entityId, statements, Collections.EMPTY_SET, Collections.EMPTY_SET);
     }
 
-
     /**
      * Holds state during a single munge operation.
      */
     private class MungeOperation {
+        /**
+         * The uri of the entity we're processing.
+         */
         private final String entityUri;
+        /**
+         * The statements that we're processing.
+         */
         private final Collection<Statement> statements;
+        /**
+         * The entity uri that we're working with.
+         */
         private final Resource entityUriImpl;
 
         /*
@@ -188,19 +199,42 @@ public class Munger {
          */
         private final SingleLabelModeWork singleLabelModeWorkForDescription;
 
-        // These are set by the entire munge operation
-        private Literal revisionId = null;
-        private Literal lastModified = null;
-
-        // These are setup by munge and reset for every statement
-        private Statement statement;
-        private String subject;
-        private String predicate;
-
+        /**
+         * Existing values that we'll just remove from the provided statements.
+         */
         private final Collection<String> existingValues;
+        /**
+         * Existing references which we'll just remove from the provided
+         * statements.
+         */
         private final Collection<String> existingRefs;
 
-        public MungeOperation(String entityId, Collection<Statement> statements, Collection<String> existingValues, Collection<String> existingRefs) {
+        // These are set by the entire munge operation
+        /**
+         * Revision id that we find while scanning the statements.
+         */
+        private Literal revisionId;
+        /**
+         * Last modified date that we find while scanning the statements.
+         */
+        private Literal lastModified;
+
+        // These are setup by munge and reset for every statement
+        /**
+         * The current statement being processed.
+         */
+        private Statement statement;
+        /**
+         * The subject of the statement being processed.
+         */
+        private String subject;
+        /**
+         * The predicate of the statement being processed.
+         */
+        private String predicate;
+
+        public MungeOperation(String entityId, Collection<Statement> statements, Collection<String> existingValues,
+                Collection<String> existingRefs) {
             this.statements = statements;
             entityUri = uris.entity() + entityId;
             entityUriImpl = new URIImpl(entityUri);
@@ -215,7 +249,10 @@ public class Munger {
             this.existingRefs = existingRefs;
         }
 
-        public void munge() throws ContainedException {
+        /**
+         * Munge the statements.
+         */
+        public void munge() {
             Iterator<Statement> itr = statements.iterator();
             while (itr.hasNext()) {
                 statement = itr.next();
@@ -234,7 +271,7 @@ public class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean statement() throws ContainedException {
+        private boolean statement() {
             subject = statement.getSubject().stringValue();
             predicate = statement.getPredicate().stringValue();
             if (inNamespace(subject, uris.entityData())) {
@@ -270,7 +307,7 @@ public class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean entityDataStatement() throws ContainedException {
+        private boolean entityDataStatement() {
             // Three specific ones are recorded for later re-application
             switch (predicate) {
             case SchemaDotOrg.VERSION:
@@ -291,7 +328,7 @@ public class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean entityStatement() throws ContainedException {
+        private boolean entityStatement() {
             if (!subject.equals(entityUri)) {
                 /*
                  * Some flavors of rdf dump information about other entities
@@ -319,8 +356,15 @@ public class Munger {
             case SKOS.ALT_LABEL:
                 return limitLabelLanguage();
             default:
-                // Lets just fall out to save some whitespace
+                return entityStatementWithUnrecognizedPredicate();
             }
+        }
+
+        /**
+         * Process a statement about an entity who's predicate isn't explicitly
+         * recognized.
+         */
+        private boolean entityStatementWithUnrecognizedPredicate() {
             String object = statement.getObject().stringValue();
             if (inNamespace(predicate, uris.entity()) && inNamespace(object, uris.statement())) {
                 registerExtraValidSubject(object);
@@ -334,7 +378,7 @@ public class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean entityStatementStatement() throws ContainedException {
+        private boolean entityStatementStatement() {
             switch (predicate) {
             case RDF.TYPE:
                 /*
@@ -375,24 +419,25 @@ public class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean entityReferenceStatement() throws ContainedException {
-            if(existingRefs.contains(subject)) {
-              /* We already have this ref, so no need to import it again
-               * Since refs are IDed by content, we know it is the same
-               */
-              return false;
+        private boolean entityReferenceStatement() {
+            if (existingRefs.contains(subject)) {
+                /*
+                 * We already have this ref, so no need to import it again aince
+                 * refs are IDed by content, we know it is the same
+                 */
+                return false;
             }
             switch (predicate) {
-                case RDF.TYPE:
-                    /*
-                     * We don't need r:<uuid> a ontology:Reference because its super
-                     * common and not super interesting.
-                     */
-                    if (statement.getObject().stringValue().equals(Ontology.REFERENCE)) {
-                        return false;
-                    }
-                    break;
-                default:
+            case RDF.TYPE:
+                /*
+                 * We don't need r:<uuid> a ontology:Reference because its super
+                 * common and not super interesting.
+                 */
+                if (statement.getObject().stringValue().equals(Ontology.REFERENCE)) {
+                    return false;
+                }
+                break;
+            default:
             }
             if (!extraValidSubjects.contains(subject)) {
                 /*
@@ -416,12 +461,13 @@ public class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean entityValueStatement() throws ContainedException {
-            if(existingValues.contains(subject)) {
-              /* We already have this value, so no need to import it again
-               * Since values are IDed by content, we know it is the same
-               */
-              return false;
+        private boolean entityValueStatement() {
+            if (existingValues.contains(subject)) {
+                /*
+                 * We already have this value, so no need to import it again
+                 * Since values are IDed by content, we know it is the same
+                 */
+                return false;
             }
             switch (predicate) {
             case RDF.TYPE:
@@ -493,7 +539,7 @@ public class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean limitLabelLanguage() throws ContainedException {
+        private boolean limitLabelLanguage() {
             if (limitLabelLanguages == null) {
                 return true;
             }
@@ -502,7 +548,11 @@ public class Munger {
             return language != null && limitLabelLanguages.contains(language);
         }
 
-        private boolean singleLabelMode(SingleLabelModeWork work) throws ContainedException {
+        /**
+         * Handle a label or statement in single label mode or just keep the
+         * label if we're not in single label mode.
+         */
+        private boolean singleLabelMode(SingleLabelModeWork work) {
             return work == null ? true : work.statement();
         }
 
@@ -512,14 +562,18 @@ public class Munger {
          * method called because it is the one that restores restoredStatments
          * into the original statements collection.
          */
-        private void finishCommon() throws ContainedException {
+        private void finishCommon() {
             if (!unknownSubjects.isEmpty()) {
-                // If we have any valid statements, we ignore the garbage
-                // Otherwise, something wrong is going on and we reject the update
-                if(statements.isEmpty() && restoredStatements.isEmpty()) {
+                /*
+                 * If we have any valid statements, we ignore the garbage.
+                 * Otherwise, something wrong is going on and we reject the
+                 * update.
+                 */
+                if (statements.isEmpty() && restoredStatements.isEmpty()) {
                     throw new BadSubjectException(unknownSubjects.keySet(), uris);
                 } else {
-                    log.debug("Unrecognized subjects: {}.  Expected only sitelinks and subjects starting with {} and {}",
+                    log.debug(
+                            "Unrecognized subjects: {}.  Expected only sitelinks and subjects starting with {} and {}",
                             unknownSubjects.keySet(), uris.entityData(), uris.entity());
                 }
             }
@@ -544,6 +598,10 @@ public class Munger {
             }
         }
 
+        /**
+         * Register an extra valid subject. These subjects are ok if we hit
+         * them.
+         */
         private void registerExtraValidSubject(String subject) {
             extraValidSubjects.add(subject);
             /*
@@ -555,10 +613,8 @@ public class Munger {
 
         /**
          * Fetch the object from the current statement as a Literal.
-         *
-         * @throws ContainedException if the object isn't a Literal
          */
-        private Literal objectAsLiteral() throws ContainedException {
+        private Literal objectAsLiteral() {
             try {
                 return (Literal) statement.getObject();
             } catch (ClassCastException e) {
@@ -566,8 +622,19 @@ public class Munger {
             }
         }
 
+        /**
+         * Work for making sure we remove everything but the best label or
+         * description.
+         */
         private class SingleLabelModeWork {
-            private Statement bestStatement = null;
+            /**
+             * The best statement we've seen for the label/description.
+             */
+            private Statement bestStatement;
+            /**
+             * The index into the fallback list for the best statement that
+             * we've seen.
+             */
             private int bestIndex = -1;
 
             /**
@@ -575,7 +642,7 @@ public class Munger {
              * label. Single label mode is implemented by removing all labels
              * and adding the best back at the end of the munging process.
              */
-            public boolean statement() throws ContainedException {
+            public boolean statement() {
                 Literal object = objectAsLiteral();
                 String language = object.getLanguage();
                 int index = singleLabelModeLanguages.indexOf(language);
@@ -598,6 +665,9 @@ public class Munger {
         }
     }
 
+    /**
+     * Thrown when the munged triples contain a subject we don't recognize.
+     */
     public class BadSubjectException extends ContainedException {
         private static final long serialVersionUID = -4869053066714948939L;
 

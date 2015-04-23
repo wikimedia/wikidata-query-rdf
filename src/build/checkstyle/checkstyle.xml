@@ -1,0 +1,146 @@
+<?xml version="1.0"?>
+<!-- Copyright (C) 2014 Wikimedia Foundation Licensed under the Apache License, Version 2.0 (the "License"); you may not 
+  use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
+  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS 
+  IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language 
+  governing permissions and limitations under the License. -->
+<!DOCTYPE module PUBLIC
+    "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
+    "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
+
+<module name="Checker">
+  <module name="SuppressWarningsFilter" />
+  <module name="SuppressionFilter">
+    <!-- Suppresses some checks for tests. -->
+    <property name="file" value="${checkstyle.suppressions}" />
+  </module>
+  <module name="TreeWalker">
+    <module name="SuppressWarningsHolder" />
+    <!-- Javadoc -->
+    <module name="JavadocType" />
+    <module name="JavadocMethod">
+      <property name="allowUndeclaredRTE" value="true" /> <!-- You aren't supposed to declare these anyway... -->
+      <property name="allowMissingReturnTag" value="true" /> <!-- Sometimes its just overkill -->
+      <property name="allowMissingParamTags" value="true" /> <!-- Sometimes its just overkill -->
+      <property name="tokens" value="METHOD_DEF" /> <!-- Constructors don't always need Javadoc -->
+    </module>
+    <module name="JavadocStyle" />
+    <module name="JavadocVariable">
+      <property name="ignoreNamePattern" value="log|serialVersionUID" /> <!-- These are obvious. -->
+    </module>
+
+
+    <!-- Formatting -->
+    <module name="Indentation">
+      <property name="basicOffset" value="4" />
+      <property name="caseIndent" value="0" />
+    </module>
+    <module name="LineLength">
+      <property name="max" value="160" />
+    </module>
+    <module name="MethodParamPad" />
+    <module name="NoWhitespaceAfter" />
+    <module name="NoWhitespaceBefore" />
+    <module name="ParenPad" />
+    <module name="TypecastParenPad">
+      <property name="option" value="nospace" />
+    </module>
+    <module name="WhitespaceAfter">
+      <property name="tokens" value="COMMA, SEMI" /> <!-- not typecasts -->
+    </module>
+    <module name="WhitespaceAround">
+      <property name="allowEmptyConstructors" value="true" />
+      <property name="allowEmptyMethods" value="true" />
+      <property name="allowEmptyTypes" value="true" />
+      <property name="allowEmptyLoops" value="true" />
+    </module>
+    <module name="ModifierOrder" />
+    <module name="RedundantModifier" />
+    <module name="EmptyBlock">
+      <!-- Put a comment in it if you need one explaining why -->
+      <property name="option" value="text" />
+    </module>
+    <module name="LeftCurly">
+      <property name="maxLineLength" value="120" />
+    </module>
+    <module name="RightCurly" />
+    <module name="AvoidNestedBlocks">
+      <property name="allowInSwitchCase" value="true" />
+    </module>
+    <module name="EmptyStatement" />
+    <module name="UpperEll" /> <!-- Lowercase l is hard to read -->
+    <module name="ArrayTypeStyle" />
+
+
+    <!-- Naming conventions -->
+    <module name="PackageName">
+      <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$" />
+    </module>
+    <module name="TypeName" />
+    <module name="ConstantName">
+      <!-- Allow "log". There might be other non-constant static finals but they should be rare enough we can just list them 
+        here when they come up. -->
+      <property name="format" value="^([A-Z][A-Z0-9]*(_[A-Z0-9]+)*|log)$" />
+    </module>
+    <module name="MemberName" />
+    <module name="LocalFinalVariableName" />
+    <module name="LocalVariableName" />
+    <module name="ParameterName" />
+    <module name="StaticVariableName" />
+    <module name="UnnecessaryParentheses" />
+    <module name="PackageDeclaration" />
+
+
+    <!-- Import -->
+    <module name="AvoidStarImport" />
+    <module name="IllegalImport" />
+    <module name="RedundantImport" />
+    <module name="UnusedImports" />
+
+
+    <!-- Common coding problems/opinionates stuff -->
+    <module name="CovariantEquals" />
+    <module name="EqualsHashCode" />
+    <module name="InnerAssignment" /> <!-- Too suprising -->
+    <module name="MissingSwitchDefault" /> <!-- Just comment that its a noop if its a noop -->
+    <module name="ModifiedControlVariable" />
+    <module name="SimplifyBooleanExpression" />
+    <module name="SimplifyBooleanReturn" />
+    <module name="StringLiteralEquality" />
+    <module name="SuperClone" />
+    <module name="SuperFinalize" />
+    <module name="IllegalCatch" />
+    <module name="IllegalThrows" />
+    <module name="ExplicitInitialization" /> <!-- May as well let Java do what its going to do -->
+    <module name="DefaultComesLast" />
+    <module name="FallThrough" />
+    <module name="MultipleVariableDeclarations" />
+    <module name="VisibilityModifier" /> <!-- May as well follow standard Java style here -->
+    <module name="FinalClass" />
+    <module name="HideUtilityClassConstructor" />
+    <!-- This one usually offers good to interesting suggestions but its too much work to implement now. <module name="DesignForExtension"/> -->
+    <module name="MutableException" />
+    <module name="UncommentedMain">
+      <property name="excludedClasses" value="org\.wikidata\.query\.rdf\.tool\..*" />
+    </module>
+
+
+    <!-- Really opinionated. Probably wrong. -->
+    <module name="ClassFanOutComplexity" />
+    <module name="CyclomaticComplexity" />
+    <module name="NPathComplexity" />
+
+    <!-- These are explicitly ok -->
+    <!-- <module name="ParameterAssignment"/> Usually used when munging parameters. Fine. -->
+    <!-- <module name="TrailingComment"/> -->
+    <!-- <module name="HiddenField"/> It turns out that we do this all the time in setters and constructors. -->
+    <!-- <module name="ImportOrder"> Its just not worth trying to get imports to line up. -->
+  </module>
+
+  <!-- More formatting stuff that can't be in TreeWalker -->
+  <module name="NewlineAtEndOfFile" />
+  <module name="RegexpSingleline">
+    <property name="format" value="\s+$" />
+    <property name="message" value="Line has trailing spaces." />
+  </module>
+</module>

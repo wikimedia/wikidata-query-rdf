@@ -13,17 +13,20 @@ import org.openrdf.model.vocabulary.XMLSchema;
  * Quick and dirty update builder.
  */
 public class UpdateBuilder {
-    private String template;
+    /**
+     * The actual update text.
+     */
+    private String update;
 
     public UpdateBuilder(String template) {
-        this.template = template;
+        update = template;
     }
 
     /**
      * Bind a string to a name.
      */
     public UpdateBuilder bind(String from, String to) {
-        template = template.replace('%' + from + '%', to);
+        update = update.replace('%' + from + '%', to);
         return this;
     }
 
@@ -31,7 +34,7 @@ public class UpdateBuilder {
      * Bind a value to a name.
      */
     public UpdateBuilder bindValue(String from, Object to) {
-        template = template.replace('%' + from + '%', str(to));
+        update = update.replace('%' + from + '%', str(to));
         return this;
     }
 
@@ -43,6 +46,9 @@ public class UpdateBuilder {
         return this;
     }
 
+    /**
+     * Bind some statements to a string.
+     */
     public UpdateBuilder bindStatements(String from, Collection<Statement> statements) {
         StringBuilder b = new StringBuilder(statements.size() * 30);
         for (Statement s : statements) {
@@ -54,6 +60,9 @@ public class UpdateBuilder {
         return this;
     }
 
+    /**
+     * Bind some values to a string.
+     */
     public UpdateBuilder bindValues(String from, Collection<Statement> statements) {
         StringBuilder b = new StringBuilder(statements.size() * 30);
         for (Statement s : statements) {
@@ -65,19 +74,22 @@ public class UpdateBuilder {
         return this;
     }
 
+    /**
+     * Bind some uris to a string.
+     */
     public UpdateBuilder bindUris(String from, Collection<String> uris) {
-      StringBuilder b = new StringBuilder(uris.size() * 80);
+        StringBuilder b = new StringBuilder(uris.size() * 80);
 
-      for (String s : uris) {
-          b.append('<').append(s).append("> ");
-      }
-      bind(from, b.toString().trim());
-      return this;
-  }
+        for (String s : uris) {
+            b.append('<').append(s).append("> ");
+        }
+        bind(from, b.toString().trim());
+        return this;
+    }
 
     @Override
     public String toString() {
-        return template;
+        return update;
     }
 
     /**

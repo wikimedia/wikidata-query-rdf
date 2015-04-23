@@ -58,21 +58,52 @@ import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Resources;
 
+/**
+ * Wrapper for communicating with the RDF repository.
+ */
+// TODO fan out complexity
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class RdfRepository {
     private static final Logger log = LoggerFactory.getLogger(RdfRepository.class);
-
+    /**
+     * UTC timezone.
+     */
     private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
-
+    /**
+     * Http connection pool for the rdf repository.
+     */
     private final CloseableHttpClient client = HttpClients.custom().setMaxConnPerRoute(100).setMaxConnTotal(100)
             .build();
+    /**
+     * URI for the wikibase rdf repository.
+     */
     private final URI uri;
+    /**
+     * Uris for wikibase.
+     */
     private final WikibaseUris uris;
+
     // SPARQL queries
+    /**
+     * Sparql for a portion of the update.
+     */
     private final String syncBody;
-    private final String updateLeftOffTimeBody;
+    /**
+     * Sparql for a portion of the update.
+     */
     private final String getValues;
+    /**
+     * Sparql for a portion of the update.
+     */
     private final String getRefs;
+    /**
+     * Sparql for a portion of the update.
+     */
     private final String cleanUnused;
+    /**
+     * Sparql to sync the left off time.
+     */
+    private final String updateLeftOffTimeBody;
 
     public RdfRepository(URI uri, WikibaseUris uris) {
         this.uri = uri;
@@ -92,7 +123,7 @@ public class RdfRepository {
      * @return contents of the sparql file
      * @throws FatalException if there is an error loading the file
      */
-    private static final String loadBody(String name) {
+    private static String loadBody(String name) {
         URL url = getResource(RdfRepository.class, "RdfRepository." + name + ".sparql");
         try {
             return Resources.toString(url, Charsets.UTF_8);
@@ -103,6 +134,7 @@ public class RdfRepository {
 
     /**
      * Collect results of the query into string set.
+     *
      * @param result Result object
      * @param binding Binding name to collect
      * @return Collection of strings resulting from the query.
@@ -110,22 +142,23 @@ public class RdfRepository {
     private Set<String> resultToSet(TupleQueryResult result, String binding) {
         HashSet<String> values = new HashSet<String>();
         try {
-            while(result.hasNext()) {
+            while (result.hasNext()) {
                 Binding value = result.next().getBinding(binding);
                 if (value == null) {
                     continue;
                 }
                 values.add(value.getValue().stringValue());
             }
-        } catch(QueryEvaluationException e) {
+        } catch (QueryEvaluationException e) {
             throw new FatalException("Can't load results: " + e, e);
         }
         return values;
     }
 
     /**
-     * Get list of value subjects connected to entity.
-     * The connection is either via statement or via reference or via qualifier.
+     * Get list of value subjects connected to entity. The connection is either
+     * via statement or via reference or via qualifier.
+     *
      * @param entityId
      * @return Set of value subjects
      */
@@ -141,6 +174,7 @@ public class RdfRepository {
 
     /**
      * Get list of reference subjects connected to entity.
+     *
      * @param entityId
      * @return Set of references
      */
@@ -154,13 +188,14 @@ public class RdfRepository {
     }
 
     /**
-     * Clean subjects if they are not used anymore.
-     * The candidate values do not have to be actually unused - the cleanup query
-     * will figure out which are unused and delete only those.
+     * Clean subjects if they are not used anymore. The candidate values do not
+     * have to be actually unused - the cleanup query will figure out which are
+     * unused and delete only those.
+     *
      * @param valueList List of potential candidates for cleanup.
      */
     public void cleanUnused(Collection<String> valueList) {
-        if(valueList.isEmpty()) {
+        if (valueList.isEmpty()) {
             return;
         }
         long start = System.currentTimeMillis();
@@ -302,6 +337,11 @@ public class RdfRepository {
         }
     }
 
+    /**
+     * Fetch the body of the response as a string.
+     *
+     * @throws IOException if there is an error reading the response
+     */
     private String responseBodyAsString(CloseableHttpResponse response) throws IOException {
         return CharStreams.toString(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
     }
@@ -343,23 +383,49 @@ public class RdfRepository {
      * @param <T> the type of response parsed
      */
     private interface ResponseHandler<T> {
-        public String acceptHeader();
+        /**
+         * The contents of the accept header sent to the rdf repository.
+         */
+        String acceptHeader();
 
-        public T parse(HttpEntity entity) throws IOException;
+        /**
+         * Parse the response.
+         *
+         * @throws IOException if there is an error reading the response
+         */
+        T parse(HttpEntity entity) throws IOException;
     }
 
-    protected static ResponseHandler<Integer> UPDATE_COUNT_RESPONSE = new UpdateCountResponse();
-    protected static ResponseHandler<TupleQueryResult> TUPLE_QUERY_RESPONSE = new TupleQueryResponse();
-    protected static ResponseHandler<Boolean> ASK_QUERY_RESPONSE = new AskQueryResponse();
+    /**
+     * Count and log the number of updates.
+     */
+    protected static final ResponseHandler<Integer> UPDATE_COUNT_RESPONSE = new UpdateCountResponse();
+    /**
+     * Parse the response from a regular query into a TupleQueryResult.
+     */
+    protected static final ResponseHandler<TupleQueryResult> TUPLE_QUERY_RESPONSE = new TupleQueryResponse();
+    /**
+     * Parse the response from an ask query into a boolean.
+     */
+    protected static final ResponseHandler<Boolean> ASK_QUERY_RESPONSE = new AskQueryResponse();
 
     /**
      * Attempts to log update response information but very likely only works
      * for Blazegraph.
      */
     protected static class UpdateCountResponse implements ResponseHandler<Integer> {
+        /**
+         * The pattern for the response for an update.
+         */
         private static final Pattern ELAPSED_LINE = Pattern.compile("><p>totalElapsed=[^ ]+ elapsed=([^<]+)</p");
+        /**
+         * The pattern for the response for a commit.
+         */
         private static final Pattern COMMIT_LINE = Pattern
                 .compile("><hr><p>COMMIT: totalElapsed=[^ ]+ commitTime=[^ ]+ mutationCount=([^<]+)</p");
+        /**
+         * The pattern for the response from a bulk update.
+         */
         private static final Pattern BULK_UPDATE_LINE = Pattern
                 .compile("<\\?xml version=\"1.0\"\\?><data modified=\"(\\d+)\" milliseconds=\"(\\d+)\"/>");
 
@@ -400,6 +466,9 @@ public class RdfRepository {
         }
     }
 
+    /**
+     * Parses responses to regular queries into TupleQueryResults.
+     */
     private static class TupleQueryResponse implements ResponseHandler<TupleQueryResult> {
         @Override
         public String acceptHeader() {
@@ -420,6 +489,9 @@ public class RdfRepository {
         }
     }
 
+    /**
+     * Parses responses to ask queries into booleans.
+     */
     private static class AskQueryResponse implements ResponseHandler<Boolean> {
         @Override
         public String acceptHeader() {

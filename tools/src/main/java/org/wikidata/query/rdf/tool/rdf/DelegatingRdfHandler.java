@@ -9,6 +9,9 @@ import org.openrdf.rio.RDFHandlerException;
  * implement mostly pass-through handlers.
  */
 public class DelegatingRdfHandler implements RDFHandler {
+    /**
+     * Handler to which to delegate all actions.
+     */
     private final RDFHandler next;
 
     public DelegatingRdfHandler(RDFHandler next) {

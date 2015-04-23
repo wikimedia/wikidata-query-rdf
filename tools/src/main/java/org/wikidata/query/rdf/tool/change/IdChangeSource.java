@@ -14,13 +14,28 @@ import com.google.common.collect.ImmutableList;
  * load known ids.
  */
 public class IdChangeSource implements Change.Source<IdChangeSource.Batch> {
+    /**
+     * Build and IdChangeSource for items as opposed to properties.
+     */
     public static IdChangeSource forItems(long start, long stop, long batchSize) {
         return new IdChangeSource("Q%s", start, stop, batchSize);
     }
 
+    /**
+     * Format of the entity id.
+     */
     private final String format;
+    /**
+     * First id to return.
+     */
     private final long start;
+    /**
+     * Last id to return.
+     */
     private final long stop;
+    /**
+     * Batch size to split up ids.
+     */
     private final long batchSize;
 
     public IdChangeSource(String format, long start, long stop, long batchSize) {
@@ -40,10 +55,16 @@ public class IdChangeSource implements Change.Source<IdChangeSource.Batch> {
         return batch(lastBatch.nextStart);
     }
 
-    public class Batch extends Change.Batch.AbstractDefaultImplementation {
+    /**
+     * Batch implementation for this change source.
+     */
+    public final class Batch extends Change.Batch.AbstractDefaultImplementation {
+        /**
+         * Next id to start polling.
+         */
         private final long nextStart;
 
-        public Batch(ImmutableList<Change> changes, long advanced, long nextStart) {
+        private Batch(ImmutableList<Change> changes, long advanced, long nextStart) {
             super(changes, advanced, nextStart - 1);
             this.nextStart = nextStart;
         }
@@ -64,6 +85,9 @@ public class IdChangeSource implements Change.Source<IdChangeSource.Batch> {
         }
     }
 
+    /**
+     * Build a batch starting at batchStart.
+     */
     private Batch batch(long batchStart) {
         long batchStop = min(batchStart + batchSize, stop + 1);
         ImmutableList.Builder<Change> changes = ImmutableList.builder();

@@ -14,6 +14,9 @@ import com.bigdata.rdf.vocab.DefaultBigdataVocabulary;
  * default constructor or Blazegraph blows up on them.
  */
 public class WikibaseVocabulary {
+    /**
+     * First version!
+     */
     public static class V001 extends DefaultBigdataVocabulary {
         public V001() {
         }

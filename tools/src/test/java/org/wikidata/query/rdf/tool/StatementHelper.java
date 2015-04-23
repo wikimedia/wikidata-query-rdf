@@ -2,7 +2,6 @@ package org.wikidata.query.rdf.tool;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.openrdf.model.Literal;
@@ -22,11 +21,7 @@ import com.google.common.collect.ImmutableList;
 /**
  * Constructs statements for testing.
  */
-/**
- * @author james
- *
- */
-public class StatementHelper {
+public final class StatementHelper {
     /**
      * Statement build helper.
      */
@@ -81,14 +76,14 @@ public class StatementHelper {
     public static ImmutableList<Statement> siteLink(String entityId, String link, String language, boolean outOfOrder) {
         if (outOfOrder) {
             return ImmutableList.of(//
-                    statement(link, SchemaDotOrg.IN_LANGUAGE, new LiteralImpl(language)),//
-                    statement(link, SchemaDotOrg.ABOUT, entityId),//
+                    statement(link, SchemaDotOrg.IN_LANGUAGE, new LiteralImpl(language)), //
+                    statement(link, SchemaDotOrg.ABOUT, entityId), //
                     statement(link, RDF.TYPE, SchemaDotOrg.ARTICLE));
 
         }
         return ImmutableList.of(//
-                statement(link, RDF.TYPE, SchemaDotOrg.ARTICLE),//
-                statement(link, SchemaDotOrg.ABOUT, entityId),//
+                statement(link, RDF.TYPE, SchemaDotOrg.ARTICLE), //
+                statement(link, SchemaDotOrg.ABOUT, entityId), //
                 statement(link, SchemaDotOrg.IN_LANGUAGE, new LiteralImpl(language)));
     }
 
@@ -101,9 +96,9 @@ public class StatementHelper {
         }
         return new URIImpl(r);
     }
-    
+
     /**
-     * Construct statements about a basic entity
+     * Construct statements about a basic entity.
      */
     public static List<Statement> basicEntity(WikibaseUris uris, String id) {
         Literal version = new LiteralImpl("a revision number I promise");
@@ -112,16 +107,11 @@ public class StatementHelper {
         // EntityData is all munged onto Entity
         statement(statements, entityDataUri, SchemaDotOrg.ABOUT, id);
         statement(statements, entityDataUri, SchemaDotOrg.VERSION, version);
-        statement(statements, entityDataUri, SchemaDotOrg.DATE_MODIFIED,
-                new LiteralImpl("a date I promise"));
+        statement(statements, entityDataUri, SchemaDotOrg.DATE_MODIFIED, new LiteralImpl("a date I promise"));
         return statements;
     }
 
-    /**
-     * Convert a collection of statements into an array of statements
-     */
-    public static Statement[] toArray(Collection<Statement> xs) {
-        return xs.toArray(new Statement[xs.size()]);
+    private StatementHelper() {
+        // Uncallable entity constructor
     }
-
 }

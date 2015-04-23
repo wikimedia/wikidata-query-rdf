@@ -79,8 +79,8 @@ public class WikibaseInlineUriFactoryUnitTest extends AbstractRandomizedBlazegra
          */
         String fullName = namespace + localName;
         return allOf(//
-                instanceOf((Class<? extends IV>) URIExtensionIV.class),//
-                hasProperty("namespace", equalTo(namespace)),//
+                instanceOf((Class<? extends IV>) URIExtensionIV.class), //
+                hasProperty("namespace", equalTo(namespace)), //
                 hasValue(fullName));
     }
 

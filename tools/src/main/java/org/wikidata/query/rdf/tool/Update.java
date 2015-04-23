@@ -1,6 +1,8 @@
 package org.wikidata.query.rdf.tool;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.wikidata.query.rdf.tool.OptionsUtils.handleOptions;
+import static org.wikidata.query.rdf.tool.OptionsUtils.mungerFromOptions;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDateFormat;
 
@@ -23,9 +25,9 @@ import org.openrdf.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.tool.CliUtils.BasicOptions;
-import org.wikidata.query.rdf.tool.CliUtils.MungerOptions;
-import org.wikidata.query.rdf.tool.CliUtils.WikibaseOptions;
+import org.wikidata.query.rdf.tool.OptionsUtils.BasicOptions;
+import org.wikidata.query.rdf.tool.OptionsUtils.MungerOptions;
+import org.wikidata.query.rdf.tool.OptionsUtils.WikibaseOptions;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.Change.Batch;
 import org.wikidata.query.rdf.tool.change.IdChangeSource;
@@ -42,14 +44,19 @@ import com.lexicalscope.jewel.cli.Option;
 
 /**
  * Update tool.
+ *
+ * @param <B> type of update batch
  */
+// TODO fan out complexity
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class Update<B extends Change.Batch> implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(Update.class);
 
     /**
      * CLI options for use with JewelCli.
      */
-    public static interface Options extends BasicOptions, MungerOptions, WikibaseOptions {
+    @SuppressWarnings("checkstyle:javadocmethod")
+    public interface Options extends BasicOptions, MungerOptions, WikibaseOptions {
         @Option(defaultValue = "https", description = "Wikidata url scheme")
         String wikibaseScheme();
 
@@ -73,8 +80,11 @@ public class Update<B extends Change.Batch> implements Runnable {
         int batchSize();
     }
 
-    public static void main(String args[]) {
-        Options options = CliUtils.handleOptions(Options.class, args);
+    /**
+     * Run updates configured from the command line.
+     */
+    public static void main(String[] args) {
+        Options options = handleOptions(Options.class, args);
         WikibaseRepository wikibaseRepository = new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost());
         URI sparqlUri;
         try {
@@ -95,9 +105,8 @@ public class Update<B extends Change.Batch> implements Runnable {
         ExecutorService executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(), threadFactory.build());
 
-        Munger munger = CliUtils.mungerFromOptions(options);
-        new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor).setPollDelay(
-                options.pollDelay()).run();
+        Munger munger = mungerFromOptions(options);
+        new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor, options.pollDelay()).run();
     }
 
     /**
@@ -164,29 +173,51 @@ public class Update<B extends Change.Batch> implements Runnable {
         return new RecentChangesPoller(wikibaseRepository, new Date(startTime), options.batchSize());
     }
 
+    /**
+     * Meter for the raw number of updates synced.
+     */
     private final Meter updateMeter = new Meter();
+    /**
+     * Meter measuring in a batch specific unit. For the RecentChangesPoller its
+     * milliseconds, for the IdChangeSource its ids.
+     */
     private final Meter batchAdvanced = new Meter();
 
-    private Change.Source<B> changeSource;
+    /**
+     * Source of change batches.
+     */
+    private final Change.Source<B> changeSource;
+    /**
+     * Wikibase to read rdf from.
+     */
     private final WikibaseRepository wikibase;
+    /**
+     * Repository to which to sync rdf.
+     */
     private final RdfRepository rdfRepository;
+    /**
+     * Munger to munge rdf from wikibase before adding it to the rdf store.
+     */
     private final Munger munger;
+    /**
+     * The executor to use for updates.
+     */
     private final ExecutorService executor;
-
-    private int pollDelay = 10;
+    /**
+     * Seconds to wait after we hit an empty batch. Empty batches signify that
+     * there aren't any changes left now but the change stream isn't over. In
+     * particular this will happen if the RecentChangesPoller finds no changes.
+     */
+    private final int pollDelay;
 
     public Update(Change.Source<B> changeSource, WikibaseRepository wikibase, RdfRepository rdfRepository,
-            Munger munger, ExecutorService executor) {
+            Munger munger, ExecutorService executor, int pollDelay) {
         this.changeSource = changeSource;
         this.wikibase = wikibase;
         this.rdfRepository = rdfRepository;
         this.munger = munger;
         this.executor = executor;
-    }
-
-    public Update<B> setPollDelay(int delay) {
-        pollDelay = delay;
-        return this;
+        this.pollDelay = pollDelay;
     }
 
     @Override
@@ -201,29 +232,7 @@ public class Update<B extends Change.Batch> implements Runnable {
         } while (batch == null);
         while (true) {
             try {
-                List<Future<?>> tasks = new ArrayList<>();
-                for (final Change change : batch.changes()) {
-                    tasks.add(executor.submit(new Runnable() {
-                        @Override
-                        public void run() {
-                            while (true) {
-                                try {
-                                    handleChange(change);
-                                    return;
-                                } catch (RetryableException e) {
-                                    log.warn("Retryable error syncing.  Retrying.", e);
-                                } catch (ContainedException e) {
-                                    log.warn("Contained error syncing.  Giving up on " + change.entityId(), e);
-                                    return;
-                                }
-                            }
-                        }
-                    }));
-                }
-                for (Future<?> task : tasks) {
-                    task.get();
-                }
-
+                handleChanges(batch);
                 Date leftOffDate = batch.leftOffDate();
                 if (leftOffDate != null) {
                     /*
@@ -235,30 +244,76 @@ public class Update<B extends Change.Batch> implements Runnable {
                     rdfRepository.updateLeftOffTime(leftOffDate);
                 }
                 // TODO wrap all retry-able exceptions in a special exception
-                do {
-                    batchAdvanced.mark(batch.advanced());
-                    log.info("Polled up to {} at {} updates per second and {} {} per second", batch.leftOffHuman(),
-                            meterReport(updateMeter), meterReport(batchAdvanced), batch.advancedUnits());
-                    if (batch.last()) {
-                        return;
-                    }
-                    batch = changeSource.nextBatch(batch);
-                    if (batch.changes().isEmpty()) {
-                        log.debug("Sleeping for {} secs", pollDelay);
-                        Thread.sleep(pollDelay * 1000);
-                    } else {
-                        log.debug("{} changes in batch", batch.changes().size());
-                        break;
-                    }
-                } while (true);
-            } catch (RetryableException e) {
-                log.warn("Error occurred during poll loop. Retrying.", e);
+                batchAdvanced.mark(batch.advanced());
+                log.info("Polled up to {} at {} updates per second and {} {} per second", batch.leftOffHuman(),
+                        meterReport(updateMeter), meterReport(batchAdvanced), batch.advancedUnits());
+                if (batch.last()) {
+                    return;
+                }
+                batch = nextBatch(batch);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (ExecutionException e) {
                 log.error("Syncing encountered a fatal exception", e);
                 break;
             }
+        }
+    }
+
+    /**
+     * Handle the changes in a batch.
+     *
+     * @throws InterruptedException if the process is interrupted while waiting
+     *             on changes to sync
+     * @throws ExecutionException if there is an error syncing any of the
+     *             changes
+     */
+    private void handleChanges(Change.Batch batch) throws InterruptedException, ExecutionException {
+        List<Future<?>> tasks = new ArrayList<>();
+        for (final Change change : batch.changes()) {
+            tasks.add(executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    while (true) {
+                        try {
+                            handleChange(change);
+                            return;
+                        } catch (RetryableException e) {
+                            log.warn("Retryable error syncing.  Retrying.", e);
+                        } catch (ContainedException e) {
+                            log.warn("Contained error syncing.  Giving up on " + change.entityId(), e);
+                            return;
+                        }
+                    }
+                }
+            }));
+        }
+        for (Future<?> task : tasks) {
+            task.get();
+        }
+    }
+
+    /**
+     * Fetch the next batch.
+     *
+     * @throws InterruptedException if the process was interrupted while waiting
+     *             during the pollDelay or waiting on something else
+     */
+    private B nextBatch(B batch) throws InterruptedException {
+        while (true) {
+            try {
+                batch = changeSource.nextBatch(batch);
+            } catch (RetryableException e) {
+                log.warn("Retryable error fetching next batch.  Retrying.", e);
+                continue;
+            }
+            if (batch.changes().isEmpty()) {
+                log.debug("Sleeping for {} secs", pollDelay);
+                Thread.sleep(pollDelay * 1000);
+                continue;
+            }
+            log.debug("{} changes in batch", batch.changes().size());
+            return batch;
         }
     }
 
@@ -270,8 +325,11 @@ public class Update<B extends Change.Batch> implements Runnable {
      * <li>Add revision information to the statements if it isn't there already.
      * <li>Sync data to the triple store.
      * </ul>
+     *
+     * @throws RetryableException if there is a retryable error updating the rdf
+     *             store
      */
-    private void handleChange(Change change) throws RetryableException, ContainedException {
+    private void handleChange(Change change) throws RetryableException {
         log.debug("Received revision information {}", change);
         if (change.revision() >= 0 && rdfRepository.hasRevision(change.entityId(), change.revision())) {
             log.debug("RDF repository already has this revision, skipping.");
@@ -289,6 +347,9 @@ public class Update<B extends Change.Batch> implements Runnable {
         updateMeter.mark();
     }
 
+    /**
+     * Turn a Meter into a load average style report.
+     */
     private String meterReport(Meter meter) {
         return String.format(Locale.ROOT, "(%.1f, %.1f, %.1f)", meter.getOneMinuteRate(), meter.getFiveMinuteRate(),
                 meter.getFifteenMinuteRate());

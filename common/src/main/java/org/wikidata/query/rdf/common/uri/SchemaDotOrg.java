@@ -3,7 +3,10 @@ package org.wikidata.query.rdf.common.uri;
 /**
  * Used to specify links and things.
  */
-public class SchemaDotOrg {
+public final class SchemaDotOrg {
+    /**
+     * Common prefix for all schema.org uris.
+     */
     public static final String NAMESPACE = "http://schema.org/";
     /**
      * Wikibase uses the MediaWiki revision as the version.
@@ -40,5 +43,12 @@ public class SchemaDotOrg {
      */
     public static StringBuilder prefix(StringBuilder query) {
         return query.append("PREFIX schema: <").append(NAMESPACE).append(">\n");
+    }
+
+    /**
+     * Utility class uncallable constructor.
+     */
+    private SchemaDotOrg() {
+        // Utility class.
     }
 }
