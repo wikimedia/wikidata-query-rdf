@@ -15,6 +15,8 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
@@ -34,6 +36,8 @@ import com.google.common.collect.ListMultimap;
  * tightly coupled with Wikibase's export format.
  */
 public class Munger {
+    private static final Logger log = LoggerFactory.getLogger(Munger.class);
+
     private final WikibaseUris uris;
     /**
      * Null if not in limit label languages mode and a set of allowed languages
@@ -510,7 +514,14 @@ public class Munger {
          */
         private void finishCommon() throws ContainedException {
             if (!unknownSubjects.isEmpty()) {
-                throw new BadSubjectException(unknownSubjects.keySet(), uris);
+                // If we have any valid statements, we ignore the garbage
+                // Otherwise, something wrong is going on and we reject the update
+                if(statements.isEmpty() && restoredStatements.isEmpty()) {
+                    throw new BadSubjectException(unknownSubjects.keySet(), uris);
+                } else {
+                    log.debug("Unrecognized subjects: {}.  Expected only sitelinks and subjects starting with {} and {}",
+                            unknownSubjects.keySet(), uris.entityData(), uris.entity());
+                }
             }
             if (revisionId == null) {
                 throw new ContainedException("Didn't get a revision id for " + statements);
