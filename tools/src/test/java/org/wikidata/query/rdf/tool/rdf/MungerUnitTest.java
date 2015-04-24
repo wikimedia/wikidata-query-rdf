@@ -3,8 +3,8 @@ package org.wikidata.query.rdf.tool.rdf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
-import static org.wikidata.query.rdf.tool.StatementHelper.siteLink;
-import static org.wikidata.query.rdf.tool.StatementHelper.statement;
+import static org.wikidata.query.rdf.test.StatementHelper.siteLink;
+import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
-import org.wikidata.query.rdf.tool.StatementHelper;
+import org.wikidata.query.rdf.test.StatementHelper;
 import org.wikidata.query.rdf.tool.rdf.Munger.BadSubjectException;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;

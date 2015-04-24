@@ -33,8 +33,9 @@ java.lang.Math#abs(long)
 @defaultMessage Please do not try to stop the world
 java.lang.System#gc()
 
-@defaultMessage Use Long.compare instead we are on Java7
-com.google.common.primitives.Longs#compare(long,long)
+# Disabled for a bit because it causes compilation to fail on things that don't depend on guava
+#@defaultMessage Use Long.compare instead we are on Java7
+#com.google.common.primitives.Longs#compare(long,long)
 
 @defaultMessage Use Channels.* methods to write to channels. Do not write directly.
 java.nio.channels.WritableByteChannel#write(java.nio.ByteBuffer)
@@ -45,3 +46,7 @@ java.nio.channels.ReadableByteChannel#read(java.nio.ByteBuffer)
 java.nio.channels.ScatteringByteChannel#read(java.nio.ByteBuffer[])
 java.nio.channels.ScatteringByteChannel#read(java.nio.ByteBuffer[], int, int)
 java.nio.channels.FileChannel#read(java.nio.ByteBuffer, long)
+
+@defaultMessage These throw out the stack trace so are almost always wrong
+java.lang.Throwable#getMessage()
+java.lang.Throwable#toString()

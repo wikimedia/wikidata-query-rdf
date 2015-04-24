@@ -3,8 +3,8 @@ package org.wikidata.query.rdf.tool;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
-import static org.wikidata.query.rdf.tool.Matchers.subjectPredicateObjectMatchers;
-import static org.wikidata.query.rdf.tool.StatementHelper.randomStatementsAbout;
+import static org.wikidata.query.rdf.test.Matchers.subjectPredicateObjectMatchers;
+import static org.wikidata.query.rdf.test.StatementHelper.randomStatementsAbout;
 import static org.wikidata.query.rdf.tool.TupleQueryResultHelper.toIterable;
 
 import java.util.ArrayList;

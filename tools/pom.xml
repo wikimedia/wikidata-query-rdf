@@ -21,9 +21,12 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.wikidata.query.rdf</groupId>
       <artifactId>common</artifactId>
-      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>com.lexicalscope.jewelcli</groupId>
@@ -68,7 +71,6 @@
     <dependency>
       <groupId>org.openrdf.sesame</groupId>
       <artifactId>sesame-query</artifactId>
-      <version>${sesame.version}</version>
     </dependency>
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
@@ -82,9 +84,15 @@
       <version>2.1.1</version>
     </dependency>
     <dependency>
-    	<groupId>org.apache.commons</groupId>
-    	<artifactId>commons-lang3</artifactId>
-    	<version>3.4</version>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.wikidata.query.rdf</groupId>
+      <artifactId>testTools</artifactId>
+      <version>${project.parent.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -182,6 +190,10 @@
                     them up. Hopefully. -->
                   <name>org.eclipse.jetty.server.Request.maxFormContentSize</name>
                   <value>20000000</value>
+                </property>
+                <property>
+                  <name>ASTOptimizerClass</name>
+                  <value>org.wikidata.query.rdf.blazegraph.WikibaseOptimizers</value>
                 </property>
               </properties>
             </configuration>

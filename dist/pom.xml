@@ -29,7 +29,6 @@
     <dependency>
       <groupId>org.wikidata.query.rdf</groupId>
       <artifactId>common</artifactId>
-      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>org.wikidata.query.rdf</groupId>

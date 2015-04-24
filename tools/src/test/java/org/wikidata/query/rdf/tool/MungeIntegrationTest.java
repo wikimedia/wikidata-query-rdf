@@ -75,7 +75,7 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
             }
         }
         assertTrue(rdfRepository().ask(
-                RDFS.prefixes(uris().prefixes(new StringBuilder()))
+                RDFS.prefix(uris().prefixes(new StringBuilder()))
                         .append("ASK { wd:Q10 rdfs:label \"Wikidata\"@en }").toString()));
         assertTrue(rdfRepository().ask(
                 SchemaDotOrg.prefix(Ontology.prefix(new StringBuilder()))

@@ -19,6 +19,13 @@ public final class SKOS {
     public static final String ALT_LABEL = NAMESPACE + "altLabel";
 
     /**
+     * Adds the skos: prefix to the query.
+     */
+    public static StringBuilder prefix(StringBuilder query) {
+        return query.append("PREFIX skos: <").append(NAMESPACE).append(">\n");
+    }
+
+    /**
      * Utility class uncallable constructor.
      */
     private SKOS() {

@@ -18,7 +18,7 @@ public final class RDFS {
     /**
      * Add the rdfs: prefix to the query.
      */
-    public static StringBuilder prefixes(StringBuilder query) {
+    public static StringBuilder prefix(StringBuilder query) {
         return query.append("PREFIX rdfs: <").append(NAMESPACE).append(">\n");
     }
 

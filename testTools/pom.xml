@@ -6,45 +6,55 @@
     <artifactId>parent</artifactId>
     <version>0.0.3-SNAPSHOT</version>
   </parent>
-  <artifactId>blazegraph</artifactId>
+  <artifactId>testTools</artifactId>
   <packaging>jar</packaging>
 
-  <name>Blazegraph extension to improve performance for Wikibase</name>
+  <name>Wikidata Query RDF Testing Tools</name>
+  <description>Tools for testing the rest of the project.</description>
   <licenses>
-    <!-- To be compatible with Blazegraph -->
     <license>
-      <name>GNU General Public License Version 2 (GPLv2)</name>
-      <url>http://www.gnu.org/licenses/gpl-2.0.html</url>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
     </license>
   </licenses>
 
   <dependencies>
     <dependency>
-      <groupId>com.bigdata</groupId>
-      <artifactId>bigdata</artifactId>
-      <scope>provided</scope>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
     <dependency>
       <groupId>org.wikidata.query.rdf</groupId>
       <artifactId>common</artifactId>
     </dependency>
     <dependency>
-      <!-- Blazegraph needs http client to run services. -->
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-client</artifactId>
-      <version>9.2.10.v20150310</version>
-      <scope>test</scope>
+      <groupId>org.openrdf.sesame</groupId>
+      <artifactId>sesame-query</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.wikidata.query.rdf</groupId>
-      <artifactId>testTools</artifactId>
-      <version>${project.parent.version}</version>
-      <scope>test</scope>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-all</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.carrotsearch.randomizedtesting</groupId>
+      <artifactId>randomizedtesting-runner</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 
   <build>
-    <finalName>wikidata-query-blazegraph-${project.version}</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

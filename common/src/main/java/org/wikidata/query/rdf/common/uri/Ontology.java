@@ -72,6 +72,11 @@ public final class Ontology {
      * them.
      */
     public static final String DEPRECATED_RANK = NAMESPACE + "DeprecatedRank";
+    /**
+     * Prefix for the label service. Not used in that data - just for SPARQL
+     * queries.
+     */
+    public static final String LABEL = NAMESPACE + "label";
 
     /**
      * Predicates used to describe a time.

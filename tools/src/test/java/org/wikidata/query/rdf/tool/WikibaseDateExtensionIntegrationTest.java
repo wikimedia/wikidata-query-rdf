@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.tool;
 
-import static org.wikidata.query.rdf.tool.Matchers.binds;
-import static org.wikidata.query.rdf.tool.StatementHelper.statement;
+import static org.wikidata.query.rdf.test.Matchers.binds;
+import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 import java.util.ArrayList;
 import java.util.List;

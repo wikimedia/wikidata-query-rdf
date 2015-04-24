@@ -1,4 +1,4 @@
-package org.wikidata.query.rdf.tool;
+package org.wikidata.query.rdf.test;
 
 import static com.carrotsearch.randomizedtesting.RandomizedTest.randomInt;
 import static com.carrotsearch.randomizedtesting.RandomizedTest.randomIntBetween;

@@ -1,7 +1,5 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDateFormat;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;

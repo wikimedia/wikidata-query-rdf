@@ -1,8 +1,8 @@
 package org.wikidata.query.rdf.tool;
 
 import static org.hamcrest.Matchers.hasItems;
-import static org.wikidata.query.rdf.tool.Matchers.subjectPredicateObjectMatchers;
-import static org.wikidata.query.rdf.tool.StatementHelper.randomStatementsAbout;
+import static org.wikidata.query.rdf.test.Matchers.subjectPredicateObjectMatchers;
+import static org.wikidata.query.rdf.test.StatementHelper.randomStatementsAbout;
 import static org.wikidata.query.rdf.tool.TupleQueryResultHelper.toIterable;
 
 import java.util.ArrayList;
@@ -67,8 +67,8 @@ public class IOBlastingIntegrationTest extends AbstractUpdateIntegrationTestBase
         private final Matcher<BindingSet>[] matchers;
 
         IOBlasterResults(Iterable<BindingSet> first, Matcher<BindingSet>[] second) {
-            this.results = first;
-            this.matchers = second;
+            results = first;
+            matchers = second;
         }
 
         Iterable<BindingSet> results() {
@@ -90,7 +90,7 @@ public class IOBlastingIntegrationTest extends AbstractUpdateIntegrationTestBase
         private final RdfRepositoryForTesting rdfRepository;
 
         IOBlaster(String namespace) {
-            this.rdfRepository = new RdfRepositoryForTesting(namespace);
+            rdfRepository = new RdfRepositoryForTesting(namespace);
         }
 
         /**

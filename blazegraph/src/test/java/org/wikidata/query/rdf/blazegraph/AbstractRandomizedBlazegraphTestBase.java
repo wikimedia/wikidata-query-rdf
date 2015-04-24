@@ -1,62 +1,36 @@
 package org.wikidata.query.rdf.blazegraph;
 
-import static com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope.Scope.SUITE;
-
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.math.BigInteger;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.runner.RunWith;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.query.MalformedQueryException;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.TupleQueryResult;
+import org.openrdf.query.algebra.evaluation.QueryBindingSet;
+import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
-import com.bigdata.cache.SynchronizedHardReferenceQueueWithTimeout;
-import com.bigdata.journal.TemporaryStore;
 import com.bigdata.rdf.model.BigdataStatement;
-import com.bigdata.rdf.store.ITripleStore;
-import com.bigdata.rdf.store.TempTripleStore;
-import com.carrotsearch.randomizedtesting.RandomizedRunner;
-import com.carrotsearch.randomizedtesting.RandomizedTest;
-import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
+import com.bigdata.rdf.sail.sparql.Bigdata2ASTSPARQLParser;
+import com.bigdata.rdf.sparql.ast.ASTContainer;
+import com.bigdata.rdf.sparql.ast.eval.ASTEvalHelper;
 
 /**
- * Randomized test that can create a triple store.
- *
- * <p>
- * We have to take a number of actions to make RandomizedRunner compatible with
- * Blazegraph:
- * <ul>
- * <li>Wwitch the ThreadLeakScope to SUITE because there are threads that
- * survive across tests
- * <li>Create a temporary store that is shared for all test methods that holds
- * multiple triple stores
- * <li>Create a triple store per test method
- * </ul>
+ * Base class for tests that need to interact with a temporary triple store. All
+ * the triple store creation logic lives in the parent class. This class just
+ * has convenient utilities to help with things like adding data and running
+ * queries.
  */
-@RunWith(RandomizedRunner.class)
-@ThreadLeakScope(SUITE)
-public class AbstractRandomizedBlazegraphTestBase extends RandomizedTest {
-    /**
-     * Holds all the triples stores. Initialized once per test class.
-     */
-    private static TemporaryStore temporaryStore;
+public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlazegraphStorageTestCase {
     /**
      * Which uris this test uses.
      */
     private WikibaseUris uris = WikibaseUris.WIKIDATA;
-    /**
-     * Triple store for the current test method. Lazily initialized.
-     */
-    private ITripleStore store;
 
     /**
      * The uris this test uses.
@@ -66,19 +40,23 @@ public class AbstractRandomizedBlazegraphTestBase extends RandomizedTest {
     }
 
     /**
-     * Get a triple store. Lazily initialized once per test method.
+     * Run a query.
      */
-    protected ITripleStore store() {
-        if (store != null) {
-            return store;
+    protected TupleQueryResult query(String query) {
+        try {
+            ASTContainer astContainer = new Bigdata2ASTSPARQLParser(store()).parseQuery2(query, null);
+
+            return ASTEvalHelper.evaluateTupleQuery(store(), astContainer, new QueryBindingSet());
+        } catch (MalformedQueryException | QueryEvaluationException e) {
+            throw new RuntimeException(e);
         }
-        Properties properties = new Properties();
-        properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.vocabularyClass",
-                WikibaseVocabulary.V001.class.getName());
-        properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.inlineURIFactory",
-                WikibaseInlineUriFactory.class.getName());
-        store = new TempTripleStore(temporaryStore(), properties, null);
-        return store;
+    }
+
+    /**
+     * Add a triple to the store.
+     */
+    protected void add(Object s, Object p, Object o) {
+        store().addStatement((Resource) convert(s), (URI) convert(p), convert(o), null);
     }
 
     /**
@@ -105,12 +83,13 @@ public class AbstractRandomizedBlazegraphTestBase extends RandomizedTest {
         }
         if (o instanceof String) {
             String s = (String) o;
+            s = s.replaceFirst("^ontology:", Ontology.NAMESPACE);
             s = s.replaceFirst("^wdata:", uris.entityData());
             s = s.replaceFirst("^wd:", uris.entity());
             s = s.replaceFirst("^wds:", uris.statement());
             s = s.replaceFirst("^wdv:", uris.value());
             s = s.replaceFirst("^wdref:", uris.reference());
-            for (PropertyType p: PropertyType.values()) {
+            for (PropertyType p : PropertyType.values()) {
                 s = s.replaceFirst("^" + p.prefix() + ":", uris.property(p));
             }
             return new URIImpl(s);
@@ -121,49 +100,12 @@ public class AbstractRandomizedBlazegraphTestBase extends RandomizedTest {
         throw new RuntimeException("No idea how to convert " + o + " to a value.  Its a " + o.getClass() + ".");
     }
 
-    /**
-     * Get a TemporaryStore. Lazily initialized once per test class.
+    /*
+     * Initialize the Wikibase services including shutting off remote SERVICE
+     * calls and turning on label service calls.
      */
-    private static TemporaryStore temporaryStore() {
-        if (temporaryStore != null) {
-            return temporaryStore;
-        }
-        /*
-         * Initializing the temporary store replaces RandomizedRunner's
-         * painstakingly applied UncaughtExceptionHandler. That is bad so we
-         * replace it.
-         */
-        UncaughtExceptionHandler uncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
-        temporaryStore = new TemporaryStore();
-        Thread.setDefaultUncaughtExceptionHandler(uncaughtExceptionHandler);
-        return temporaryStore;
-    }
-
-    /**
-     * Close the triple store used by the test that just finished.
-     */
-    @After
-    public void closeStore() {
-        if (store == null) {
-            return;
-        }
-        store.close();
-        store = null;
-    }
-
-    /**
-     * Close the temporary store used by this test.
-     * @throws InterruptedException if the executor service fails to await termination
-     */
-    @AfterClass
-    public static void closeTemporaryStore() throws InterruptedException {
-        if (temporaryStore == null) {
-            return;
-        }
-        ExecutorService executorService = temporaryStore.getExecutorService();
-        temporaryStore.close();
-        SynchronizedHardReferenceQueueWithTimeout.stopStaleReferenceCleaner();
-        executorService.awaitTermination(20, TimeUnit.SECONDS);
-        temporaryStore = null;
+    static {
+        WikibaseContextListener.initializeServices();
+        System.setProperty("ASTOptimizerClass", WikibaseOptimizers.class.getName());
     }
 }

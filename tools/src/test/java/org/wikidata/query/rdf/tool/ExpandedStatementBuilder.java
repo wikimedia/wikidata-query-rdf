@@ -2,7 +2,7 @@ package org.wikidata.query.rdf.tool;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
-import static org.wikidata.query.rdf.tool.StatementHelper.statement;
+import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 import java.util.ArrayList;
 import java.util.Collections;

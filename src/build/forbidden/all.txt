@@ -3,7 +3,3 @@
 @defaultMessage Convert to URI
 java.net.URL#getPath()
 java.net.URL#getFile()
-
-@defaultMessage These throw out the stack trace so are almost always wrong
-java.lang.Throwable#getMessage()
-java.lang.Throwable#toString()

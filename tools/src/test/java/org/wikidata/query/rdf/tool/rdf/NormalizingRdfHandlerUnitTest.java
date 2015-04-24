@@ -10,7 +10,7 @@ import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.RDF;
 
 import static org.junit.Assert.assertEquals;
-import static org.wikidata.query.rdf.tool.StatementHelper.statement;
+import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 public class NormalizingRdfHandlerUnitTest {
 

@@ -1,9 +1,9 @@
 package org.wikidata.query.rdf.tool.rdf;
 
 import static org.hamcrest.Matchers.allOf;
-import static org.wikidata.query.rdf.tool.Matchers.binds;
-import static org.wikidata.query.rdf.tool.StatementHelper.siteLink;
-import static org.wikidata.query.rdf.tool.StatementHelper.statement;
+import static org.wikidata.query.rdf.test.Matchers.binds;
+import static org.wikidata.query.rdf.test.StatementHelper.siteLink;
+import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
