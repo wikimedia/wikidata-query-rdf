@@ -23,7 +23,7 @@
     <dependency>
       <groupId>com.bigdata</groupId>
       <artifactId>bigdata</artifactId>
-      <version>1.5.1</version>
+      <version>${blazegraph.version}</version>
       <type>war</type>
     </dependency>
     <dependency>

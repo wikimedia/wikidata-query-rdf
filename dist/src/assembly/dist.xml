@@ -18,10 +18,15 @@
     </fileSet>
 
     <fileSet>
+      <outputDirectory>blazegraph/WEB-INF</outputDirectory>
+      <directory>${project.basedir}/src/config</directory>
+    </fileSet>
+
+    <fileSet>
       <outputDirectory>lib</outputDirectory>
       <directory>${project.basedir}/../tools/target</directory>
       <includes>
-        <include>wikidata-query-tools-0.0.1-SNAPSHOT-jar-with-dependencies.jar</include>
+        <include>wikidata-query-tools-${project.version}-jar-with-dependencies.jar</include>
       </includes>
     </fileSet>
 
