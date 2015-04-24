@@ -122,5 +122,26 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         assertTrue("Didn't find entity information in rdf", found);
     }
 
+    @Test
+    public void fetchIsNormalized() throws RetryableException, ContainedException {
+        long now = System.currentTimeMillis();
+        String entityId = repo.firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
+        repo.setLabel(entityId, "item", "QueryTestItem" + now, "en");
+        Collection<Statement> statements = repo.fetchRdfForEntity(entityId);
+        boolean foundBad = false, foundGood = false;
+        for (Statement statement : statements) {
+            if(statement.getObject().stringValue().contains("http://www.wikidata.org/ontology-beta#")) {
+                foundBad = true;
+            }
+            if(statement.getObject().stringValue().contains("http://www.wikidata.org/ontology-0.0.1#")) {
+                foundBad = true;
+            }
+            if(statement.getObject().stringValue().contains("http://www.wikidata.org/ontology#")) {
+                foundGood = true;
+            }
+        }
+        assertTrue("Did not find correct ontology statements", foundGood);
+        assertFalse("Found incorrect ontology statements", foundBad);
+    }
     // TODO we should verify the RDF dump format against a stored file
 }
