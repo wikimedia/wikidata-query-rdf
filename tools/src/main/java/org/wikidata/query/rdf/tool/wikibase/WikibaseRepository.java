@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
+import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
 
 import com.google.common.base.Charsets;
 
@@ -88,7 +89,7 @@ public class WikibaseRepository {
         log.debug("Fetching rdf from {}", uri);
         RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
         StatementCollector collector = new StatementCollector();
-        parser.setRDFHandler(collector);
+        parser.setRDFHandler(new NormalizingRdfHandler(collector));
         try {
             try (CloseableHttpResponse response = client.execute(new HttpGet(uri))) {
                 if (response.getStatusLine().getStatusCode() == 404) {
