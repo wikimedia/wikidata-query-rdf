@@ -8,3 +8,4 @@ target/
 *.iml
 .project
 **/rules.log
+.execution-hints-*.log
