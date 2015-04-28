@@ -105,6 +105,13 @@ public class RdfRepository {
      */
     private final String updateLeftOffTimeBody;
 
+    /**
+     * Allow subclass access to the HTTP client.
+     */
+    protected CloseableHttpClient client() {
+        return client;
+    }
+
     public RdfRepository(URI uri, WikibaseUris uris) {
         this.uri = uri;
         this.uris = uris;
@@ -342,7 +349,7 @@ public class RdfRepository {
      *
      * @throws IOException if there is an error reading the response
      */
-    private String responseBodyAsString(CloseableHttpResponse response) throws IOException {
+    protected String responseBodyAsString(CloseableHttpResponse response) throws IOException {
         return CharStreams.toString(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
     }
 
