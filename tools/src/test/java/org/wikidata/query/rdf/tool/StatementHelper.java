@@ -1,8 +1,13 @@
 package org.wikidata.query.rdf.tool;
 
+import static com.carrotsearch.randomizedtesting.RandomizedTest.randomInt;
+import static com.carrotsearch.randomizedtesting.RandomizedTest.randomIntBetween;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Formatter;
 import java.util.List;
+import java.util.Locale;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
@@ -12,6 +17,7 @@ import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.vocabulary.XMLSchema;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
@@ -108,6 +114,37 @@ public final class StatementHelper {
         statement(statements, entityDataUri, SchemaDotOrg.ABOUT, id);
         statement(statements, entityDataUri, SchemaDotOrg.VERSION, version);
         statement(statements, entityDataUri, SchemaDotOrg.DATE_MODIFIED, new LiteralImpl("a date I promise"));
+        return statements;
+    }
+
+    /**
+     * Construct a random date literal.
+     */
+    public static LiteralImpl randomDate() {
+        StringBuilder sb = new StringBuilder();
+        Formatter formatter = new Formatter(sb, Locale.US);
+        formatter.format("%04d-%02d-%02d", randomIntBetween(1, 9999), randomIntBetween(1, 12), randomIntBetween(1, 28));
+        formatter.close();
+        return new LiteralImpl(sb.toString(), XMLSchema.DATE);
+    }
+
+    /**
+     * Construct up to ten random statements about the given subject.
+     */
+    public static List<Statement> randomStatementsAbout(String s) {
+        return randomStatementsAbout(s, 10);
+    }
+
+    /**
+     * Construct a bunch of random statements about the given subject.
+     */
+    public static List<Statement> randomStatementsAbout(String s, int max) {
+        List<Statement> statements = new ArrayList<>();
+        for (int i = 0; i < randomIntBetween(1, max); i++) {
+            String p = "P" + randomInt();
+            LiteralImpl o = randomDate();
+            statements.add(statement(s, p, o));
+        }
         return statements;
     }
 
