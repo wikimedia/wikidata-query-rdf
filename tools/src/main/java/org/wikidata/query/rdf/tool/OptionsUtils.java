@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool;
 
 import static com.google.common.io.Resources.getResource;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
 
+import com.google.common.base.Splitter;
 import com.lexicalscope.jewel.cli.ArgumentValidationException;
 import com.lexicalscope.jewel.cli.Cli;
 import com.lexicalscope.jewel.cli.CliFactory;
@@ -92,6 +94,23 @@ public final class OptionsUtils {
     }
 
     /**
+     * If list contains any options joined by commas, split them to separate options.
+     * @param options Original options list
+     * @return Split options list
+     */
+    private static List<String> splitByComma(List<String> options) {
+        List<String> newOptions = new LinkedList<String>();
+        for (String option: options) {
+            if (option.contains(",")) {
+                newOptions.addAll(Splitter.on(",").splitToList(option));
+            } else {
+                newOptions.add(option);
+            }
+        }
+        return newOptions;
+    }
+
+    /**
      * Build a munger from a MungerOptions instance.
      */
     public static Munger mungerFromOptions(MungerOptions options) {
@@ -100,10 +119,10 @@ public final class OptionsUtils {
             munger = munger.removeSiteLinks();
         }
         if (options.labelLanguages() != null) {
-            munger = munger.limitLabelLanguages(options.labelLanguages());
+            munger = munger.limitLabelLanguages(splitByComma(options.labelLanguages()));
         }
         if (options.singleLabelLanguages() != null) {
-            munger = munger.singleLabelMode(options.singleLabelLanguages());
+            munger = munger.singleLabelMode(splitByComma(options.singleLabelLanguages()));
         }
         return munger;
     }
