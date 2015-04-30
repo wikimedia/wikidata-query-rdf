@@ -1,11 +1,16 @@
 package org.wikidata.query.rdf.tool;
 
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.wikidata.query.rdf.tool.StatementHelper.uri;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
@@ -72,6 +77,23 @@ public final class Matchers {
             }
             return valueMatcher.matches(binding.getValue());
         }
+    }
+
+    /**
+     * Construct subject, predicate, and object matchers for a bunch of
+     * statements.
+     */
+    @SuppressWarnings("unchecked")
+    public static Matcher<BindingSet>[] subjectPredicateObjectMatchers(Iterable<Statement> statements) {
+        List<Matcher<? super BindingSet>> matchers = new ArrayList<>();
+        for (Statement statement : statements) {
+            matchers.add(allOf(//
+                    binds("s", statement.getSubject()), //
+                    binds("p", statement.getPredicate()), //
+                    binds("o", statement.getObject()) //
+            ));
+        }
+        return (Matcher<BindingSet>[]) matchers.toArray(new Matcher<?>[matchers.size()]);
     }
 
     private Matchers() {
