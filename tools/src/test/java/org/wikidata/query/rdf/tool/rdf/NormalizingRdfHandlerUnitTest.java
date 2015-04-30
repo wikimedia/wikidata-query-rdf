@@ -54,6 +54,15 @@ public class NormalizingRdfHandlerUnitTest {
         handler.handleNamespace("test", "http://www.wikidata.org/ontology-beta#Test");
     }
 
+    @Test
+    public void testHandleBadChars() throws RDFHandlerException {
+        StatementChecker checkStatement = new StatementChecker();
+        NormalizingRdfHandler handler = new NormalizingRdfHandler(checkStatement);
+        Statement s = statement("Q1", RDF.TYPE, "http://viaf.org/processed\\BNC|a10474614\n");
+        checkStatement.expect(null, null, "http://viaf.org/processed%5CBNC%7Ca10474614");
+        handler.handleStatement(s);
+    }
+
     private final class StatementChecker implements RDFHandler {
         private String expectSubject;
         private String expectPredicate;
