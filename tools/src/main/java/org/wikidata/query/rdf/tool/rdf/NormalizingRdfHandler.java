@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import org.apache.commons.lang3.StringUtils;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -66,9 +67,10 @@ public class NormalizingRdfHandler extends DelegatingRdfHandler {
         if (r.stringValue().contains("ontology-beta")) {
             r = new URIImpl(r.stringValue().replace("ontology-beta", "ontology"));
         }
-        // Temporary bugfix for dump URLs having \n in them
-        if (r.stringValue().contains("\n")) {
-            r = new URIImpl(r.stringValue().replace("\n", ""));
+        // Temporary bugfix for dump URLs having bad characters in them
+        String fixed = StringUtils.replaceEach(r.stringValue(), new String[]{"\n", "|", "\\"}, new String[]{"", "%7C", "%5C"});
+        if (!fixed.equals(r.stringValue())) {
+            r = new URIImpl(fixed);
         }
         return r;
     }
