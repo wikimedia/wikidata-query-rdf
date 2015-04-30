@@ -318,7 +318,7 @@ public class RdfRepository {
         if (responseHandler.acceptHeader() != null) {
             post.setHeader(new BasicHeader("Accept", responseHandler.acceptHeader()));
         }
-
+        log.debug("Running SPARQL: {}", sparql);
         // TODO we might want to look into Blazegraph's incremental update
         // reporting.....
         List<NameValuePair> entity = new ArrayList<>();
