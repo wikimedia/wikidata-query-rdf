@@ -59,7 +59,7 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
         Future<?> f = executor.submit(new Munge(uris(), munger, from, to));
         httpd.start();
         try {
-            assertEquals(939, rdfRepository().loadUrl("http://localhost:10999"));
+            assertEquals(938, rdfRepository().loadUrl("http://localhost:10999"));
         } finally {
             try {
                 /*
@@ -76,7 +76,7 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
         }
         assertTrue(rdfRepository().ask(
                 RDFS.prefixes(uris().prefixes(new StringBuilder()))
-                        .append("ASK { entity:Q10 rdfs:label \"Wikidata\"@en }").toString()));
+                        .append("ASK { wd:Q10 rdfs:label \"Wikidata\"@en }").toString()));
         assertTrue(rdfRepository().ask(
                 SchemaDotOrg.prefix(Ontology.prefix(new StringBuilder()))
                         .append("ASK { ontology:Dump schema:dateModified \"2015-04-02T10:54:56Z\"^^xsd:dateTime }")

@@ -69,16 +69,6 @@ public final class Ontology {
     public static final String DEPRECATED_RANK = NAMESPACE + "DeprecatedRank";
 
     /**
-     * Represents that a property is known to have no value.
-     */
-    public static final String NO_VALUE = NAMESPACE + "Novalue";
-    /**
-     * Represents that a property is known to have some value but we don't know
-     * what it is.
-     */
-    public static final String SOME_VALUE = NAMESPACE + "Somevalue";
-
-    /**
      * Predicates used to describe a time.
      */
     public static final class Time {
@@ -91,7 +81,7 @@ public final class Ontology {
          * as wikibase exports it - never normalize it for precision, timezone,
          * or calendar model.
          */
-        public static final String VALUE = PREFIX + "Time";
+        public static final String VALUE = PREFIX + "Value";
         /**
          * The precision of the time. Wikibase exports integers with specific
          * meanings: 0 - billion years, 1 - hundred million years, ..., 6 -

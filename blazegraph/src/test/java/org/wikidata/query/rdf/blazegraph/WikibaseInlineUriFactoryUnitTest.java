@@ -11,6 +11,7 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.Test;
 import org.wikidata.query.rdf.common.uri.CommonValues;
+import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.internal.impl.TermId;
@@ -22,42 +23,42 @@ import com.bigdata.rdf.model.BigdataValue;
 public class WikibaseInlineUriFactoryUnitTest extends AbstractRandomizedBlazegraphTestBase {
     @Test
     public void entityAndTruthyAreInlined() {
-        BigdataStatement statement = roundTrip("entity:Q23", "truthy:P509", "entity:Q356405");
+        BigdataStatement statement = roundTrip("wd:Q23", "wdt:P509", "wd:Q356405");
         assertThat(statement.getSubject().getIV(), uriIv(uris().entity() + "Q", "23"));
-        assertThat(statement.getPredicate().getIV(), uriIv(uris().truthy() + "P", "509"));
+        assertThat(statement.getPredicate().getIV(), uriIv(uris().property(PropertyType.DIRECT) + "P", "509"));
         assertThat(statement.getObject().getIV(), uriIv(uris().entity() + "Q", "356405"));
     }
 
     @Test
     public void valueIsInlined() {
-        BigdataStatement statement = roundTrip("s:Q23-01EDEEEE-F0DF-4A07-980F-5E76866B74D7", "v:P1711", 100686);
+        BigdataStatement statement = roundTrip("wds:Q23-01EDEEEE-F0DF-4A07-980F-5E76866B74D7", "p:P1711", 100686);
         assertThat(statement.getSubject().getIV(), instanceOf(TermId.class));
-        assertThat(statement.getPredicate().getIV(), uriIv(uris().value() + "P", "1711"));
+        assertThat(statement.getPredicate().getIV(), uriIv(uris().property(PropertyType.CLAIM) + "P", "1711"));
         assertThat(statement.getObject().getIV(), instanceOf(XSDIntegerIV.class));
     }
 
     @Test
     public void expandedValuesAreInlined() {
-        BigdataStatement statement = roundTrip("s:Q23-01EDEEEE-F0DF-4A07-980F-5E76866B74D7", "v:P580-value",
-                "v:91212dc3fcc8b65607d27f92b36e5761");
+        BigdataStatement statement = roundTrip("wds:Q23-01EDEEEE-F0DF-4A07-980F-5E76866B74D7", "psv:P580",
+                "wdv:a10564107110b2d5739b8fe235cddf73");
         assertThat(statement.getSubject().getIV(), instanceOf(TermId.class));
-        assertThat(statement.getPredicate().getIV(), uriIv(uris().value() + "P", "580-value"));
-        assertThat(statement.getObject().getIV(), uriIv(uris().value(), "91212dc3fcc8b65607d27f92b36e5761"));
+        assertThat(statement.getPredicate().getIV(), uriIv(uris().property(PropertyType.STATEMENT_VALUE) + "P", "580"));
+        assertThat(statement.getObject().getIV(), uriIv(uris().value(), "a10564107110b2d5739b8fe235cddf73"));
     }
 
     @Test
     public void qualifiersAreInlined() {
-        BigdataStatement statement = roundTrip("s:Q23-01EDEEEE-F0DF-4A07-980F-5E76866B74D7", "q:P1711", 100686);
+        BigdataStatement statement = roundTrip("wds:Q23-01EDEEEE-F0DF-4A07-980F-5E76866B74D7", "pq:P1711", 100686);
         assertThat(statement.getSubject().getIV(), instanceOf(TermId.class));
-        assertThat(statement.getPredicate().getIV(), uriIv(uris().qualifier() + "P", "1711"));
+        assertThat(statement.getPredicate().getIV(), uriIv(uris().property(PropertyType.QUALIFIER) + "P", "1711"));
         assertThat(statement.getObject().getIV(), instanceOf(XSDIntegerIV.class));
     }
 
     @Test
     public void qualifierValuesAreInlined() {
-        BigdataStatement statement = roundTrip("s:Q23-01EDEEEE-F0DF-4A07-980F-5E76866B74D7", "q:P1711-value", 100686);
+        BigdataStatement statement = roundTrip("wds:Q23-01EDEEEE-F0DF-4A07-980F-5E76866B74D7", "pqv:P1711", 100686);
         assertThat(statement.getSubject().getIV(), instanceOf(TermId.class));
-        assertThat(statement.getPredicate().getIV(), uriIv(uris().qualifier() + "P", "1711-value"));
+        assertThat(statement.getPredicate().getIV(), uriIv(uris().property(PropertyType.QUALIFIER_VALUE) + "P", "1711"));
         assertThat(statement.getObject().getIV(), instanceOf(XSDIntegerIV.class));
     }
 

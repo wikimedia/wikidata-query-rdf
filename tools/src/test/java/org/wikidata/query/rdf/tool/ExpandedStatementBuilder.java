@@ -18,6 +18,7 @@ import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 
@@ -451,7 +452,7 @@ public class ExpandedStatementBuilder {
 
         @Override
         public void build() {
-            statement(statements, statementUri, uris.qualifier() + property(), value());
+            statement(statements, statementUri, uris.property(PropertyType.QUALIFIER) + property(), value());
         }
 
         @Override

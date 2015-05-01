@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -24,6 +25,7 @@ import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -289,6 +291,13 @@ public class Munger {
             if (inNamespace(subject, uris.entity())) {
                 return entityStatement();
             }
+            /*
+             *  Allow bnodes, they are not linked to specific entitty
+             *  but used to declare classes
+             */
+            if (statement.getSubject() instanceof BNode) {
+                return true;
+            }
             return unknownStatement();
         }
 
@@ -366,7 +375,7 @@ public class Munger {
          */
         private boolean entityStatementWithUnrecognizedPredicate() {
             String object = statement.getObject().stringValue();
-            if (inNamespace(predicate, uris.entity()) && inNamespace(object, uris.statement())) {
+            if (inNamespace(predicate, uris.property(PropertyType.CLAIM)) && inNamespace(object, uris.statement())) {
                 registerExtraValidSubject(object);
             }
             // Most statements should be kept.
@@ -450,7 +459,7 @@ public class Munger {
                 return false;
             }
             String object = statement.getObject().stringValue();
-            if (inNamespace(predicate, uris.value()) && inNamespace(object, uris.value())) {
+            if (inNamespace(predicate, uris.property(PropertyType.REFERENCE_VALUE)) && inNamespace(object, uris.value())) {
                 registerExtraValidSubject(object);
             }
             return true;
@@ -501,12 +510,18 @@ public class Munger {
          * @return true to keep the statement, false to remove it
          */
         private boolean unknownStatement() {
+            // This is wdno:P123 a owlClass, owl:complementOf _:blah - allow it
+            if (subject.startsWith(uris.property(PropertyType.NOVALUE))) {
+                return true;
+            }
+
             if (siteLinks.contains(subject)) {
                 return !removeSiteLinks;
             }
             if (extraValidSubjects.contains(subject)) {
                 return true;
             }
+
             if (predicate.equals(RDF.TYPE) && statement.getObject().stringValue().equals(SchemaDotOrg.ARTICLE)) {
                 siteLinks.add(subject);
                 /*

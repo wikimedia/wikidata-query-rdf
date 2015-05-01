@@ -1,14 +1,22 @@
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix wikibase: <http://www.wikidata.org/ontology-0.0.1#> .
-@prefix wdt: <http://test.wikidata.org/entity/assert/> .
-@prefix v: <http://test.wikidata.org/entity/value/> .
-@prefix q: <http://test.wikidata.org/entity/qualifier/> .
-@prefix s: <http://test.wikidata.org/entity/statement/> .
-@prefix ref: <http://test.wikidata.org/entity/reference/> .
-@prefix data: <http://test.wikidata.org/wiki/Special:EntityData/> .
-@prefix entity: <http://test.wikidata.org/entity/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://www.wikidata.org/ontology-beta#> .
+@prefix wdata: <http://test.wikidata.org/wiki/Special:EntityData/> .
+@prefix wd: <http://test.wikidata.org/entity/> .
+@prefix wds: <http://test.wikidata.org/entity/statement/> .
+@prefix wdref: <http://test.wikidata.org/reference/> .
+@prefix wdv: <http://test.wikidata.org/value/> .
+@prefix wdt: <http://test.wikidata.org/prop/direct/> .
+@prefix p: <http://test.wikidata.org/prop/> .
+@prefix ps: <http://test.wikidata.org/prop/statement/> .
+@prefix psv: <http://test.wikidata.org/prop/statement/value/> .
+@prefix pq: <http://test.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://test.wikidata.org/prop/qualifier/value/> .
+@prefix pr: <http://test.wikidata.org/prop/reference/> .
+@prefix prv: <http://test.wikidata.org/prop/reference/value/> .
+@prefix wdno: <http://test.wikidata.org/prop/novalue/> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix schema: <http://schema.org/> .
 @prefix cc: <http://creativecommons.org/ns#> .
@@ -20,12 +28,12 @@ wikibase:Dump a schema:Dataset ;
 	schema:softwareVersion "0.0.1" ;
 	schema:dateModified "2015-04-02T10:54:56Z"^^xsd:dateTime .
 
-data:Q9 schema:version "7177"^^xsd:integer ;
+wdata:Q9 schema:version "7177"^^xsd:integer ;
 	schema:dateModified "2014-07-27T12:15:09Z"^^xsd:dateTime ;
 	a schema:Dataset ;
-	schema:about entity:Q9 .
+	schema:about wd:Q9 .
 
-entity:Q9 a wikibase:Item ;
+wd:Q9 a wikibase:Item ;
 	rdfs:label "History of cartography"@en ;
 	skos:prefLabel "History of cartography"@en ;
 	schema:name "History of cartography"@en ;
@@ -42,26 +50,26 @@ entity:Q9 a wikibase:Item ;
 	skos:altLabel "Test"@en .
 
 <http://en.wikipedia.org/wiki/History%20of%20cartography> a schema:Article ;
-	schema:about entity:Q9 ;
+	schema:about wd:Q9 ;
 	schema:inLanguage "en" .
 
-data:P9 schema:version "183"^^xsd:integer ;
+wdata:P9 schema:version "183"^^xsd:integer ;
 	schema:dateModified "2013-06-08T16:02:44Z"^^xsd:dateTime ;
 	a schema:Dataset ;
-	schema:about entity:P9 .
+	schema:about wd:P9 .
 
-entity:P9 a wikibase:Property ;
+wd:P9 a wikibase:Property ;
 	wikibase:propertyType "wikibase-item" ;
 	rdfs:label "imported from"@en ;
 	skos:prefLabel "imported from"@en ;
 	schema:name "imported from"@en .
 
-data:Q10 schema:version "7397"^^xsd:integer ;
+wdata:Q10 schema:version "7397"^^xsd:integer ;
 	schema:dateModified "2014-08-10T00:09:48Z"^^xsd:dateTime ;
 	a schema:Dataset ;
-	schema:about entity:Q10 .
+	schema:about wd:Q10 .
 
-entity:Q10 a wikibase:Item ;
+wd:Q10 a wikibase:Item ;
 	rdfs:label "Wikidata"@en ;
 	skos:prefLabel "Wikidata"@en ;
 	schema:name "Wikidata"@en ;
@@ -258,259 +266,259 @@ entity:Q10 a wikibase:Item ;
 		"freie Wissensdatenbank"@de,
 		"自由的知识库"@zh-hans ;
 	wdt:P33 <http://test.wikidata.org> ;
-	entity:P33 s:Q10-623409b4-4857-528e-dc7a-dbadd8a8ff43 .
+	p:P33 wds:Q10-623409b4-4857-528e-dc7a-dbadd8a8ff43 .
 
 <http://da.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "da" .
 
 <http://de.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "de" .
 
 <http://en.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "en" .
 
 <http://eo.wikipedia.org/wiki/Vikidatumoj> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "eo" .
 
 <http://es.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "es" .
 
 <http://fi.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "fi" .
 
 <http://fr.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "fr" .
 
 <http://it.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "it" .
 
 <http://nl.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "nl" .
 
 <http://no.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "no" .
 
 <http://pt.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "pt" .
 
 <http://ru.wikipedia.org/wiki/%D0%92%D0%B8%D0%BA%D0%B8%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D0%B5> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "ru" .
 
 <http://simple.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "simple" .
 
 <http://zh.wikipedia.org/wiki/%E7%BB%B4%E5%9F%BA%E6%95%B0%E6%8D%AE> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "zh" .
 
 <http://af.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "af" .
 
 <http://ar.wikipedia.org/wiki/%D9%88%D9%8A%D9%83%D9%8A%20%D8%A8%D9%8A%D8%A7%D9%86%D8%A7%D8%AA> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "ar" .
 
 <http://arz.wikipedia.org/wiki/%D9%88%D9%8A%D9%83%D9%89%20%D8%AF%D8%A7%D8%AA%D8%A7> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "arz" .
 
 <http://az.wikipedia.org/wiki/Vikiveril%C9%99nl%C9%99r> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "az" .
 
 <http://be.wikipedia.org/wiki/%D0%92%D1%96%D0%BA%D1%96%D0%B4%D0%B0%D0%B4%D0%B7%D0%B5%D0%BD%D1%8B%D1%8F> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "be" .
 
 <http://bg.wikipedia.org/wiki/%D0%A3%D0%B8%D0%BA%D0%B8%D0%B4%D0%B0%D0%BD%D0%BD%D0%B8> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "bg" .
 
 <http://bn.wikipedia.org/wiki/%E0%A6%89%E0%A6%87%E0%A6%95%E0%A6%BF%E0%A6%89%E0%A6%AA%E0%A6%BE%E0%A6%A4%E0%A7%8D%E0%A6%A4> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "bn" .
 
 <http://bs.wikipedia.org/wiki/Wikipodaci> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "bs" .
 
 <http://ca.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "ca" .
 
 <http://cdo.wikipedia.org/wiki/%E7%B6%AD%E5%9F%BA%E6%95%B8%E6%93%9A> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "cdo" .
 
 <http://cs.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "cs" .
 
 <http://cy.wikipedia.org/wiki/Wiciddata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "cy" .
 
 <http://et.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "et" .
 
 <http://eu.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "eu" .
 
 <http://fa.wikipedia.org/wiki/%D9%88%DB%8C%DA%A9%DB%8C%E2%80%8C%D8%AF%D8%A7%D8%AF%D9%87> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "fa" .
 
 <http://gl.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "gl" .
 
 <http://he.wikipedia.org/wiki/%D7%95%D7%99%D7%A7%D7%99%D7%A0%D7%AA%D7%95%D7%A0%D7%99%D7%9D> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "he" .
 
 <http://hy.wikipedia.org/wiki/%D5%8E%D5%AB%D6%84%D5%AB%D5%B7%D5%BF%D5%A5%D5%B4%D5%A1%D6%80%D5%A1%D5%B6> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "hy" .
 
 <http://id.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "id" .
 
 <http://ilo.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "ilo" .
 
 <http://is.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "is" .
 
 <http://ja.wikipedia.org/wiki/%E3%82%A6%E3%82%A3%E3%82%AD%E3%83%87%E3%83%BC%E3%82%BF> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "ja" .
 
 <http://ka.wikipedia.org/wiki/%E1%83%95%E1%83%98%E1%83%99%E1%83%98%E1%83%9B%E1%83%9D%E1%83%9C%E1%83%90%E1%83%AA%E1%83%94%E1%83%9B%E1%83%94%E1%83%91%E1%83%98> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "ka" .
 
 <http://ko.wikipedia.org/wiki/%EC%9C%84%ED%82%A4%EB%8D%B0%EC%9D%B4%ED%84%B0> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "ko" .
 
 <http://lv.wikipedia.org/wiki/Vikidati> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "lv" .
 
 <http://mk.wikipedia.org/wiki/%D0%92%D0%B8%D0%BA%D0%B8%D0%BF%D0%BE%D0%B4%D0%B0%D1%82%D0%BE%D1%86%D0%B8> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "mk" .
 
 <http://ml.wikipedia.org/wiki/%E0%B4%B5%E0%B4%BF%E0%B4%95%E0%B5%8D%E0%B4%95%E0%B4%BF%E0%B4%A1%E0%B4%BE%E0%B4%B1%E0%B5%8D%E0%B4%B1> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "ml" .
 
 <http://ms.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "ms" .
 
 <http://oc.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "oc" .
 
 <http://pam.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "pam" .
 
 <http://pl.wikipedia.org/wiki/Wikidane> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "pl" .
 
 <http://sco.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "sco" .
 
 <http://sh.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "sh" .
 
 <http://sk.wikipedia.org/wiki/Wiki%C3%BAdaje> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "sk" .
 
 <http://sl.wikipedia.org/wiki/Wikipodatki> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "sl" .
 
 <http://sr.wikipedia.org/wiki/%D0%92%D0%B8%D0%BA%D0%B8%D0%BF%D0%BE%D0%B4%D0%B0%D1%86%D0%B8> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "sr" .
 
 <http://th.wikipedia.org/wiki/%E0%B8%A7%E0%B8%B4%E0%B8%81%E0%B8%B4%E0%B8%AA%E0%B8%99%E0%B9%80%E0%B8%97%E0%B8%A8> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "th" .
 
 <http://tr.wikipedia.org/wiki/Vikiveri> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "tr" .
 
 <http://tt.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "tt" .
 
 <http://uk.wikipedia.org/wiki/%D0%92%D1%96%D0%BA%D1%96%D0%B4%D0%B0%D0%BD%D1%96> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "uk" .
 
 <http://ur.wikipedia.org/wiki/%D9%88%DB%8C%DA%A9%DB%8C%20%DA%88%DB%8C%D9%B9%D8%A7> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "ur" .
 
 <http://vec.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "vec" .
 
 <http://vi.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "vi" .
 
 <http://war.wikipedia.org/wiki/Wikidata> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "war" .
 
 <http://zh-yue.wikipedia.org/wiki/%E7%B6%AD%E5%9F%BA%E6%95%B8%E6%93%9A> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "zh-yue" .
 
 <http://test.wikidata.org/wiki/Q10> a schema:Article ;
-	schema:about entity:Q10 ;
+	schema:about wd:Q10 ;
 	schema:inLanguage "en" .
 
-s:Q10-623409b4-4857-528e-dc7a-dbadd8a8ff43 a wikibase:Statement ;
-	v:P33 <http://test.wikidata.org> ;
+wds:Q10-623409b4-4857-528e-dc7a-dbadd8a8ff43 a wikibase:Statement ;
+	ps:P33 <http://test.wikidata.org> ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-data:Q11 schema:version "7191"^^xsd:integer ;
+wdata:Q11 schema:version "7191"^^xsd:integer ;
 	schema:dateModified "2014-07-27T13:04:35Z"^^xsd:dateTime ;
 	a schema:Dataset ;
-	schema:about entity:Q11 .
+	schema:about wd:Q11 .
 
-entity:Q11 a wikibase:Item ;
+wd:Q11 a wikibase:Item ;
 	rdfs:label "Wikipedia"@en ;
 	skos:prefLabel "Wikipedia"@en ;
 	schema:name "Wikipedia"@en ;
@@ -523,63 +531,63 @@ entity:Q11 a wikibase:Item ;
 	schema:description "free online encyclopedia that anyone can edit"@en ;
 	wdt:P21 <http://www.wikipedia.org> ;
 	wdt:P125 "Point(33 22)"^^geo:wktLiteral ;
-	wdt:P81 entity:Q272 ;
-	entity:P21 s:q11-5cdf3ae5-40fe-d462-0ae1-5563f3f1e297 ;
-	entity:P125 s:Q11-F87123DD-EE14-4012-A6A4-9A11422CC065 ;
-	entity:P81 s:Q11-67466A3E-AFD1-4883-9791-814D76A71DF8 .
+	wdt:P81 wd:Q272 ;
+	p:P21 wds:Q11-5cdf3ae5-40fe-d462-0ae1-5563f3f1e297 ;
+	p:P125 wds:Q11-F87123DD-EE14-4012-A6A4-9A11422CC065 ;
+	p:P81 wds:Q11-67466A3E-AFD1-4883-9791-814D76A71DF8 .
 
 <http://en.wikipedia.org/wiki/Wikipedia> a schema:Article ;
-	schema:about entity:Q11 ;
+	schema:about wd:Q11 ;
 	schema:inLanguage "en" .
 
 <http://zh.wikipedia.org/wiki/%E7%BB%B4%E5%9F%BA%E7%99%BE%E7%A7%91> a schema:Article ;
-	schema:about entity:Q11 ;
+	schema:about wd:Q11 ;
 	schema:inLanguage "zh" .
 
 <http://fr.wikipedia.org/wiki/Wikip%C3%A9dia> a schema:Article ;
-	schema:about entity:Q11 ;
+	schema:about wd:Q11 ;
 	schema:inLanguage "fr" .
 
 <http://de.wikipedia.org/wiki/Wikipedia> a schema:Article ;
-	schema:about entity:Q11 ;
+	schema:about wd:Q11 ;
 	schema:inLanguage "de" .
 
 <http://es.wikipedia.org/wiki/Wikipedia> a schema:Article ;
-	schema:about entity:Q11 ;
+	schema:about wd:Q11 ;
 	schema:inLanguage "es" .
 
 <http://it.wikipedia.org/wiki/Wikipedia> a schema:Article ;
-	schema:about entity:Q11 ;
+	schema:about wd:Q11 ;
 	schema:inLanguage "it" .
 
-s:q11-5cdf3ae5-40fe-d462-0ae1-5563f3f1e297 a wikibase:Statement ;
-	v:P21 <http://www.wikipedia.org> ;
+wds:Q11-5cdf3ae5-40fe-d462-0ae1-5563f3f1e297 a wikibase:Statement ;
+	ps:P21 <http://www.wikipedia.org> ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q11-F87123DD-EE14-4012-A6A4-9A11422CC065 a wikibase:Statement ;
-	v:P125 "Point(33 22)"^^geo:wktLiteral ;
-	v:P125-value v:bf2ab36fb64c0174477c2455da198d2c ;
+wds:Q11-F87123DD-EE14-4012-A6A4-9A11422CC065 a wikibase:Statement ;
+	ps:P125 "Point(33 22)"^^geo:wktLiteral ;
+	psv:P125 wdv:bf2ab36fb64c0174477c2455da198d2c ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q11-67466A3E-AFD1-4883-9791-814D76A71DF8 a wikibase:Statement ;
-	v:P81 entity:Q272 ;
+wds:Q11-67466A3E-AFD1-4883-9791-814D76A71DF8 a wikibase:Statement ;
+	ps:P81 wd:Q272 ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-v:bf2ab36fb64c0174477c2455da198d2c a wikibase:Value ;
+wdv:bf2ab36fb64c0174477c2455da198d2c a wikibase:Value ;
 	wikibase:geoLatitude "33"^^xsd:decimal ;
 	wikibase:geoLongitude "22"^^xsd:decimal ;
 	wikibase:geoPrecision "1"^^xsd:decimal ;
 	wikibase:geoGlobe <http://www.wikidata.org/entity/Q2> .
 
-data:P12 schema:version "9385"^^xsd:integer ;
+wdata:P12 schema:version "9385"^^xsd:integer ;
 	schema:dateModified "2014-12-19T14:17:34Z"^^xsd:dateTime ;
 	a schema:Dataset ;
-	schema:about entity:P12 .
+	schema:about wd:P12 .
 
-entity:P12 a wikibase:Property ;
+wd:P12 a wikibase:Property ;
 	wikibase:propertyType "wikibase-item" ;
 	rdfs:label "shares border with"@en ;
 	skos:prefLabel "shares border with"@en ;
@@ -590,32 +598,32 @@ entity:P12 a wikibase:Property ;
 	schema:description "shares border with"@en ;
 	wdt:P93 <https://test.wikidata.org/wiki/Property:P12> ;
 	wdt:P268 "2013-01-01T00:00:00Z"^^xsd:dateTime ;
-	entity:P93 s:P12-c8272682-4bfc-6eb0-7028-fb4ac7e8e82b ;
-	entity:P268 s:P12-ee37a6b9-4681-8a86-7302-dae2cd631f4a .
+	p:P93 wds:P12-c8272682-4bfc-6eb0-7028-fb4ac7e8e82b ;
+	p:P268 wds:P12-ee37a6b9-4681-8a86-7302-dae2cd631f4a .
 
-s:P12-c8272682-4bfc-6eb0-7028-fb4ac7e8e82b a wikibase:Statement ;
-	v:P93 <https://test.wikidata.org/wiki/Property:P12> ;
+wds:P12-c8272682-4bfc-6eb0-7028-fb4ac7e8e82b a wikibase:Statement ;
+	ps:P93 <https://test.wikidata.org/wiki/Property:P12> ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:P12-ee37a6b9-4681-8a86-7302-dae2cd631f4a a wikibase:Statement ;
-	v:P268 "2013-01-01T00:00:00Z"^^xsd:dateTime ;
-	v:P268-value v:5ecc8d72111da6fbcc582342d3205365 ;
+wds:P12-ee37a6b9-4681-8a86-7302-dae2cd631f4a a wikibase:Statement ;
+	ps:P268 "2013-01-01T00:00:00Z"^^xsd:dateTime ;
+	psv:P268 wdv:5ecc8d72111da6fbcc582342d3205365 ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-v:5ecc8d72111da6fbcc582342d3205365 a wikibase:Value ;
+wdv:5ecc8d72111da6fbcc582342d3205365 a wikibase:Value ;
 	wikibase:timeTime "+00000002013-00-00T00:00:00Z" ;
 	wikibase:timePrecision "9"^^xsd:integer ;
 	wikibase:timeTimezone "0"^^xsd:integer ;
 	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
 
-data:Q14 schema:version "7194"^^xsd:integer ;
+wdata:Q14 schema:version "7194"^^xsd:integer ;
 	schema:dateModified "2014-07-27T13:06:07Z"^^xsd:dateTime ;
 	a schema:Dataset ;
-	schema:about entity:Q14 .
+	schema:about wd:Q14 .
 
-entity:Q14 a wikibase:Item ;
+wd:Q14 a wikibase:Item ;
 	rdfs:label "San Diego"@en ;
 	skos:prefLabel "San Diego"@en ;
 	schema:name "San Diego"@en ;
@@ -660,267 +668,266 @@ entity:Q14 a wikibase:Item ;
 		"+1234"^^xsd:decimal,
 		"+12345"^^xsd:decimal,
 		"+12.345"^^xsd:decimal,
-		wikibase:Novalue,
 		"+1234"^^xsd:decimal ;
 	wdt:P10 "Point(32.715 -117.1625)"^^geo:wktLiteral ;
 	wdt:P69 "+1"^^xsd:decimal ;
-	wdt:P71 wikibase:Somevalue ;
-	entity:P63 s:Q14-7ca7fe20-4822-63db-200f-055ce04f0e57,
-		s:Q14-568030e7-4a90-7b4e-48c5-3a58d80ebc32,
-		s:Q14-ffcba827-478f-a4e1-bdb1-39f8ac7be416,
-		s:Q14-43fe1754-4952-ceef-d3ca-7e0abe8c62d1,
-		s:Q14-9907765f-4002-95b8-a228-21115ffcf9db,
-		s:Q14-2588f04c-4a41-0b68-0615-1b9c02193d2b,
-		s:Q14-3b260ea8-471d-b6eb-5782-2f7093139e46,
-		s:Q14-af5e714a-4473-e05a-c0a5-37ec5e2a6d63,
-		s:Q14-0dd75a97-476c-ee9c-adf1-570723c8a3f8 ;
-	entity:P10 s:q14-4ffeaaec-4bbe-ff8b-db39-66d9cb22101c ;
-	entity:P69 s:Q14-042C4302-5A9E-495E-A7C3-8157EC28C02E,
-		s:Q14-8AD1E314-05F9-40DD-A5A7-E21B51070C94,
-		s:Q14-0FF6C05D-3DED-43F1-80A0-3BDBDA4A95E4,
-		s:Q14-8cc9ce3f-4465-5e5f-6cce-4fc7313967d2,
-		s:Q14-ADA0CCC1-10DD-4B4C-BAC8-C4405DA61EF1,
-		s:Q14-3CA6FD5A-3289-4055-88D2-F1AC6E13E798,
-		s:Q14-7aadc03b-44b0-4f65-6198-bee60d7a93de ;
-	entity:P71 s:Q14-b4082c40-49c9-1b6c-1973-c7da7b999956 .
+	wdt:P71 _:genid1 ;
+	p:P63 wds:Q14-7ca7fe20-4822-63db-200f-055ce04f0e57,
+		wds:Q14-568030e7-4a90-7b4e-48c5-3a58d80ebc32,
+		wds:Q14-ffcba827-478f-a4e1-bdb1-39f8ac7be416,
+		wds:Q14-43fe1754-4952-ceef-d3ca-7e0abe8c62d1,
+		wds:Q14-9907765f-4002-95b8-a228-21115ffcf9db,
+		wds:Q14-2588f04c-4a41-0b68-0615-1b9c02193d2b,
+		wds:Q14-3b260ea8-471d-b6eb-5782-2f7093139e46,
+		wds:Q14-af5e714a-4473-e05a-c0a5-37ec5e2a6d63,
+		wds:Q14-0dd75a97-476c-ee9c-adf1-570723c8a3f8 ;
+	p:P10 wds:Q14-4ffeaaec-4bbe-ff8b-db39-66d9cb22101c ;
+	p:P69 wds:Q14-042C4302-5A9E-495E-A7C3-8157EC28C02E,
+		wds:Q14-8AD1E314-05F9-40DD-A5A7-E21B51070C94,
+		wds:Q14-0FF6C05D-3DED-43F1-80A0-3BDBDA4A95E4,
+		wds:Q14-8cc9ce3f-4465-5e5f-6cce-4fc7313967d2,
+		wds:Q14-ADA0CCC1-10DD-4B4C-BAC8-C4405DA61EF1,
+		wds:Q14-3CA6FD5A-3289-4055-88D2-F1AC6E13E798,
+		wds:Q14-7aadc03b-44b0-4f65-6198-bee60d7a93de ;
+	p:P71 wds:Q14-b4082c40-49c9-1b6c-1973-c7da7b999956 .
 
 <http://en.wikipedia.org/wiki/San%20Diego> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "en" .
 
 <http://en.wikivoyage.org/wiki/San%20Diego> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "en" .
 
 <http://nl.wikivoyage.org/wiki/San%20Diego> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "nl" .
 
 <http://it.wikivoyage.org/wiki/San%20Diego%20%28California%29> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "it" .
 
 <http://de.wikivoyage.org/wiki/San%20Diego> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "de" .
 
 <http://fr.wikivoyage.org/wiki/San%20Diego> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "fr" .
 
 <http://pl.wikivoyage.org/wiki/San%20Diego> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "pl" .
 
 <http://pt.wikivoyage.org/wiki/San%20Diego> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "pt" .
 
 <http://ro.wikivoyage.org/wiki/San%20Diego> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "ro" .
 
 <http://sv.wikivoyage.org/wiki/San%20Diego> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "sv" .
 
 <http://es.wikipedia.org/wiki/San%20Diego%20%28California%29> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "es" .
 
 <http://commons.wikimedia.org/wiki/San%20Diego%2C%20California> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "en" .
 
 <http://en.wikisource.org/wiki/San%20Diego%20Land%20Town%20Company%20v.%20Jasper> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "en" .
 
 <http://zh.wikipedia.org/wiki/%E8%81%96%E5%9C%B0%E7%89%99%E5%93%A5> a schema:Article ;
-	schema:about entity:Q14 ;
+	schema:about wd:Q14 ;
 	schema:inLanguage "zh" .
 
-s:Q14-7ca7fe20-4822-63db-200f-055ce04f0e57 a wikibase:Statement ;
-	v:P63 "-150000"^^xsd:decimal ;
-	v:P63-value v:7c981c800a4464b63c818720d579254b ;
+wds:Q14-7ca7fe20-4822-63db-200f-055ce04f0e57 a wikibase:Statement ;
+	ps:P63 "-150000"^^xsd:decimal ;
+	psv:P63 wdv:7c981c800a4464b63c818720d579254b ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q14-568030e7-4a90-7b4e-48c5-3a58d80ebc32 a wikibase:Statement ;
-	v:P63 "+1234"^^xsd:decimal ;
-	v:P63-value v:d64d9775421c3d2bc179588b46837a29 ;
+wds:Q14-568030e7-4a90-7b4e-48c5-3a58d80ebc32 a wikibase:Statement ;
+	ps:P63 "+1234"^^xsd:decimal ;
+	psv:P63 wdv:d64d9775421c3d2bc179588b46837a29 ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q14-ffcba827-478f-a4e1-bdb1-39f8ac7be416 a wikibase:Statement ;
-	v:P63 "+12345"^^xsd:decimal ;
-	v:P63-value v:5cf7b5f3be01a3e6111a79d18ba7be7c ;
+wds:Q14-ffcba827-478f-a4e1-bdb1-39f8ac7be416 a wikibase:Statement ;
+	ps:P63 "+12345"^^xsd:decimal ;
+	psv:P63 wdv:5cf7b5f3be01a3e6111a79d18ba7be7c ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q14-43fe1754-4952-ceef-d3ca-7e0abe8c62d1 a wikibase:Statement ;
-	v:P63 "+12.345"^^xsd:decimal ;
-	v:P63-value v:fb6ee2d7a0fbec85c01e0625ac8ca124 ;
+wds:Q14-43fe1754-4952-ceef-d3ca-7e0abe8c62d1 a wikibase:Statement ;
+	ps:P63 "+12.345"^^xsd:decimal ;
+	psv:P63 wdv:fb6ee2d7a0fbec85c01e0625ac8ca124 ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q14-9907765f-4002-95b8-a228-21115ffcf9db a wikibase:Statement ;
-	v:P63 "+12.3450"^^xsd:decimal ;
-	v:P63-value v:12fb348573db2d8a13ecfb23d8639803 ;
+wds:Q14-9907765f-4002-95b8-a228-21115ffcf9db a wikibase:Statement ;
+	ps:P63 "+12.3450"^^xsd:decimal ;
+	psv:P63 wdv:12fb348573db2d8a13ecfb23d8639803 ;
 	wikibase:rank wikibase:DeprecatedRank .
 
-s:Q14-2588f04c-4a41-0b68-0615-1b9c02193d2b a wikibase:Statement ;
-	v:P63 wikibase:Novalue ;
+wds:Q14-2588f04c-4a41-0b68-0615-1b9c02193d2b a wikibase:Statement ;
+	ps:P63 wikibase:Novalue ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q14-3b260ea8-471d-b6eb-5782-2f7093139e46 a wikibase:Statement ;
-	v:P63 "+0.00"^^xsd:decimal ;
-	v:P63-value v:d95264dae8710b3f8e1584688ea3f0a8 ;
+wds:Q14-3b260ea8-471d-b6eb-5782-2f7093139e46 a wikibase:Statement ;
+	ps:P63 "+0.00"^^xsd:decimal ;
+	psv:P63 wdv:d95264dae8710b3f8e1584688ea3f0a8 ;
 	wikibase:rank wikibase:DeprecatedRank .
 
-s:Q14-af5e714a-4473-e05a-c0a5-37ec5e2a6d63 a wikibase:Statement ;
-	v:P63 "+126.5"^^xsd:decimal ;
-	v:P63-value v:394f940eb6b136333bff2e050fede187 ;
+wds:Q14-af5e714a-4473-e05a-c0a5-37ec5e2a6d63 a wikibase:Statement ;
+	ps:P63 "+126.5"^^xsd:decimal ;
+	psv:P63 wdv:394f940eb6b136333bff2e050fede187 ;
 	wikibase:rank wikibase:DeprecatedRank .
 
-s:Q14-0dd75a97-476c-ee9c-adf1-570723c8a3f8 a wikibase:Statement ;
-	v:P63 "+1234"^^xsd:decimal ;
-	v:P63-value v:d64d9775421c3d2bc179588b46837a29 ;
+wds:Q14-0dd75a97-476c-ee9c-adf1-570723c8a3f8 a wikibase:Statement ;
+	ps:P63 "+1234"^^xsd:decimal ;
+	psv:P63 wdv:d64d9775421c3d2bc179588b46837a29 ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:q14-4ffeaaec-4bbe-ff8b-db39-66d9cb22101c a wikibase:Statement ;
-	v:P10 "Point(32.715 -117.1625)"^^geo:wktLiteral ;
-	v:P10-value v:dd1a4cb705e33cd129676923939b1747 ;
+wds:Q14-4ffeaaec-4bbe-ff8b-db39-66d9cb22101c a wikibase:Statement ;
+	ps:P10 "Point(32.715 -117.1625)"^^geo:wktLiteral ;
+	psv:P10 wdv:dd1a4cb705e33cd129676923939b1747 ;
 	wikibase:rank wikibase:PreferredRank,
 		wikibase:BestRank .
 
-s:Q14-042C4302-5A9E-495E-A7C3-8157EC28C02E a wikibase:Statement ;
-	v:P69 "+1"^^xsd:decimal ;
-	v:P69-value v:75c28912294a055e365a4038f039eee7 ;
+wds:Q14-042C4302-5A9E-495E-A7C3-8157EC28C02E a wikibase:Statement ;
+	ps:P69 "+1"^^xsd:decimal ;
+	psv:P69 wdv:75c28912294a055e365a4038f039eee7 ;
 	wikibase:rank wikibase:PreferredRank,
 		wikibase:BestRank .
 
-s:Q14-8AD1E314-05F9-40DD-A5A7-E21B51070C94 a wikibase:Statement ;
-	v:P69 "+0"^^xsd:decimal ;
-	v:P69-value v:1bd4c72ac43b1924aab9b38fef5e4305 ;
+wds:Q14-8AD1E314-05F9-40DD-A5A7-E21B51070C94 a wikibase:Statement ;
+	ps:P69 "+0"^^xsd:decimal ;
+	psv:P69 wdv:1bd4c72ac43b1924aab9b38fef5e4305 ;
 	wikibase:rank wikibase:NormalRank .
 
-s:Q14-0FF6C05D-3DED-43F1-80A0-3BDBDA4A95E4 a wikibase:Statement ;
-	v:P69 "+0"^^xsd:decimal ;
-	v:P69-value v:1bd4c72ac43b1924aab9b38fef5e4305 ;
+wds:Q14-0FF6C05D-3DED-43F1-80A0-3BDBDA4A95E4 a wikibase:Statement ;
+	ps:P69 "+0"^^xsd:decimal ;
+	psv:P69 wdv:1bd4c72ac43b1924aab9b38fef5e4305 ;
 	wikibase:rank wikibase:NormalRank .
 
-s:Q14-8cc9ce3f-4465-5e5f-6cce-4fc7313967d2 a wikibase:Statement ;
-	v:P69 "+989"^^xsd:decimal ;
-	v:P69-value v:80b77f8ea48a3a749c557e2f223e1db2 ;
+wds:Q14-8cc9ce3f-4465-5e5f-6cce-4fc7313967d2 a wikibase:Statement ;
+	ps:P69 "+989"^^xsd:decimal ;
+	psv:P69 wdv:80b77f8ea48a3a749c557e2f223e1db2 ;
 	wikibase:rank wikibase:NormalRank .
 
-s:Q14-ADA0CCC1-10DD-4B4C-BAC8-C4405DA61EF1 a wikibase:Statement ;
-	v:P69 "+989"^^xsd:decimal ;
-	v:P69-value v:80b77f8ea48a3a749c557e2f223e1db2 ;
+wds:Q14-ADA0CCC1-10DD-4B4C-BAC8-C4405DA61EF1 a wikibase:Statement ;
+	ps:P69 "+989"^^xsd:decimal ;
+	psv:P69 wdv:80b77f8ea48a3a749c557e2f223e1db2 ;
 	wikibase:rank wikibase:NormalRank .
 
-s:Q14-3CA6FD5A-3289-4055-88D2-F1AC6E13E798 a wikibase:Statement ;
-	v:P69 "+84"^^xsd:decimal ;
-	v:P69-value v:3867f29c0d46f8b3f92d68d93e9bf27e ;
+wds:Q14-3CA6FD5A-3289-4055-88D2-F1AC6E13E798 a wikibase:Statement ;
+	ps:P69 "+84"^^xsd:decimal ;
+	psv:P69 wdv:3867f29c0d46f8b3f92d68d93e9bf27e ;
 	wikibase:rank wikibase:NormalRank .
 
-s:Q14-7aadc03b-44b0-4f65-6198-bee60d7a93de a wikibase:Statement ;
-	v:P69 "+222.2"^^xsd:decimal ;
-	v:P69-value v:3de5f41db1f4f32f932baec49a81e9ef ;
+wds:Q14-7aadc03b-44b0-4f65-6198-bee60d7a93de a wikibase:Statement ;
+	ps:P69 "+222.2"^^xsd:decimal ;
+	psv:P69 wdv:3de5f41db1f4f32f932baec49a81e9ef ;
 	wikibase:rank wikibase:NormalRank .
 
-s:Q14-b4082c40-49c9-1b6c-1973-c7da7b999956 a wikibase:Statement ;
-	v:P71 wikibase:Somevalue ;
+wds:Q14-b4082c40-49c9-1b6c-1973-c7da7b999956 a wikibase:Statement ;
+	ps:P71 _:genid2 ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-v:7c981c800a4464b63c818720d579254b a wikibase:Value ;
+wdv:7c981c800a4464b63c818720d579254b a wikibase:Value ;
 	wikibase:quantityAmount "-150000"^^xsd:decimal ;
 	wikibase:quantityUpperBound "-149999"^^xsd:decimal ;
 	wikibase:quantityLowerBound "-150001"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:d64d9775421c3d2bc179588b46837a29 a wikibase:Value ;
+wdv:d64d9775421c3d2bc179588b46837a29 a wikibase:Value ;
 	wikibase:quantityAmount "+1234"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+1235"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+1233"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:5cf7b5f3be01a3e6111a79d18ba7be7c a wikibase:Value ;
+wdv:5cf7b5f3be01a3e6111a79d18ba7be7c a wikibase:Value ;
 	wikibase:quantityAmount "+12345"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+12346"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+12344"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:fb6ee2d7a0fbec85c01e0625ac8ca124 a wikibase:Value ;
+wdv:fb6ee2d7a0fbec85c01e0625ac8ca124 a wikibase:Value ;
 	wikibase:quantityAmount "+12.345"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+12.346"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+12.344"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:12fb348573db2d8a13ecfb23d8639803 a wikibase:Value ;
+wdv:12fb348573db2d8a13ecfb23d8639803 a wikibase:Value ;
 	wikibase:quantityAmount "+12.3450"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+12.3451"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+12.3449"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:d95264dae8710b3f8e1584688ea3f0a8 a wikibase:Value ;
+wdv:d95264dae8710b3f8e1584688ea3f0a8 a wikibase:Value ;
 	wikibase:quantityAmount "+0.00"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+0.01"^^xsd:decimal ;
 	wikibase:quantityLowerBound "-0.01"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:394f940eb6b136333bff2e050fede187 a wikibase:Value ;
+wdv:394f940eb6b136333bff2e050fede187 a wikibase:Value ;
 	wikibase:quantityAmount "+126.5"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+126.6"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+126.4"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:dd1a4cb705e33cd129676923939b1747 a wikibase:Value ;
+wdv:dd1a4cb705e33cd129676923939b1747 a wikibase:Value ;
 	wikibase:geoLatitude "32.715"^^xsd:decimal ;
 	wikibase:geoLongitude "-117.1625"^^xsd:decimal ;
 	wikibase:geoPrecision "0.00027777777777778"^^xsd:decimal ;
 	wikibase:geoGlobe <http://www.wikidata.org/entity/Q2> .
 
-v:75c28912294a055e365a4038f039eee7 a wikibase:Value ;
+wdv:75c28912294a055e365a4038f039eee7 a wikibase:Value ;
 	wikibase:quantityAmount "+1"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+2"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+0"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:1bd4c72ac43b1924aab9b38fef5e4305 a wikibase:Value ;
+wdv:1bd4c72ac43b1924aab9b38fef5e4305 a wikibase:Value ;
 	wikibase:quantityAmount "+0"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+0"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+0"^^xsd:decimal ;
 	wikibase:quantityUnit "+0" .
 
-v:80b77f8ea48a3a749c557e2f223e1db2 a wikibase:Value ;
+wdv:80b77f8ea48a3a749c557e2f223e1db2 a wikibase:Value ;
 	wikibase:quantityAmount "+989"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+990"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+988"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:3867f29c0d46f8b3f92d68d93e9bf27e a wikibase:Value ;
+wdv:3867f29c0d46f8b3f92d68d93e9bf27e a wikibase:Value ;
 	wikibase:quantityAmount "+84"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+85"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+83"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:3de5f41db1f4f32f932baec49a81e9ef a wikibase:Value ;
+wdv:3de5f41db1f4f32f932baec49a81e9ef a wikibase:Value ;
 	wikibase:quantityAmount "+222.2"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+222.3"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+222.1"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-data:Q15 schema:version "7380"^^xsd:integer ;
+wdata:Q15 schema:version "7380"^^xsd:integer ;
 	schema:dateModified "2014-08-10T00:02:27Z"^^xsd:dateTime ;
 	a schema:Dataset ;
-	schema:about entity:Q15 .
+	schema:about wd:Q15 .
 
-entity:Q15 a wikibase:Item ;
+wd:Q15 a wikibase:Item ;
 	rdfs:label "A"@en ;
 	skos:prefLabel "A"@en ;
 	schema:name "A"@en ;
@@ -1319,661 +1326,661 @@ entity:Q15 a wikibase:Item ;
 		"+98.2"^^xsd:decimal ;
 	wdt:P72 "2-235-53099-0",
 		"0-441-37388-7" ;
-	entity:P61 s:Q15-4EAA058C-CD28-4D94-A6F1-9E85301F4CD6 ;
-	entity:P63 s:Q15-48c9384c-4f69-b061-e28a-acbc7e9f5162,
-		s:Q15-9c840f65-4ed6-71b3-b813-03834c9a2ce1,
-		s:Q15-bb087c95-4f8f-d83d-702a-2e06d14c916c,
-		s:Q15-eb7bb813-4004-a9a8-4988-a66fb1608e16 ;
-	entity:P72 s:Q15-fbb17f28-452c-9dfc-35af-89d5c869f863,
-		s:Q15-276653CE-F775-4BA0-84BD-A8B9E6BB89A7 .
+	p:P61 wds:Q15-4EAA058C-CD28-4D94-A6F1-9E85301F4CD6 ;
+	p:P63 wds:Q15-48c9384c-4f69-b061-e28a-acbc7e9f5162,
+		wds:Q15-9c840f65-4ed6-71b3-b813-03834c9a2ce1,
+		wds:Q15-bb087c95-4f8f-d83d-702a-2e06d14c916c,
+		wds:Q15-eb7bb813-4004-a9a8-4988-a66fb1608e16 ;
+	p:P72 wds:Q15-fbb17f28-452c-9dfc-35af-89d5c869f863,
+		wds:Q15-276653CE-F775-4BA0-84BD-A8B9E6BB89A7 .
 
 <http://en.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "en" .
 
 <http://zh.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "zh" .
 
 <http://ace.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ace" .
 
 <http://af.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "af" .
 
 <http://als.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "als" .
 
 <http://am.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "am" .
 
 <http://an.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "an" .
 
 <http://ar.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ar" .
 
 <http://arc.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "arc" .
 
 <http://ast.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ast" .
 
 <http://az.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "az" .
 
 <http://ba.wikipedia.org/wiki/A%20%28%D0%BB%D0%B0%D1%82%D0%B8%D0%BD%20%D1%85%D3%99%D1%80%D0%B5%D1%84%D0%B5%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ba" .
 
 <http://bar.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "bar" .
 
 <http://bat-smg.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "bat-smg" .
 
 <http://be.wikipedia.org/wiki/A%2C%20%D0%BB%D1%96%D1%82%D0%B0%D1%80%D0%B0> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "be" .
 
 <http://be-x-old.wikipedia.org/wiki/A%20%28%D0%BB%D1%96%D1%82%D0%B0%D1%80%D0%B0%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "be-x-old" .
 
 <http://bg.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "bg" .
 
 <http://br.wikipedia.org/wiki/A%20%28lizherenn%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "br" .
 
 <http://bs.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "bs" .
 
 <http://ca.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ca" .
 
 <http://ckb.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ckb" .
 
 <http://co.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "co" .
 
 <http://crh.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "crh" .
 
 <http://cs.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "cs" .
 
 <http://csb.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "csb" .
 
 <http://cy.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "cy" .
 
 <http://da.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "da" .
 
 <http://de.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "de" .
 
 <http://diq.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "diq" .
 
 <http://dv.wikipedia.org/wiki/%DE%87%DE%AD> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "dv" .
 
 <http://el.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "el" .
 
 <http://eml.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "eml" .
 
 <http://eo.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "eo" .
 
 <http://es.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "es" .
 
 <http://et.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "et" .
 
 <http://eu.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "eu" .
 
 <http://fa.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "fa" .
 
 <http://fi.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "fi" .
 
 <http://fo.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "fo" .
 
 <http://fr.wikipedia.org/wiki/A%20%28lettre%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "fr" .
 
 <http://fur.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "fur" .
 
 <http://fy.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "fy" .
 
 <http://ga.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ga" .
 
 <http://gan.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "gan" .
 
 <http://gd.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "gd" .
 
 <http://gl.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "gl" .
 
 <http://gn.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "gn" .
 
 <http://gv.wikipedia.org/wiki/Aittyn> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "gv" .
 
 <http://he.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "he" .
 
 <http://hr.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "hr" .
 
 <http://ht.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ht" .
 
 <http://hu.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "hu" .
 
 <http://hy.wikipedia.org/wiki/A%20%28%D5%AC%D5%A1%D5%BF%D5%AB%D5%B6%D5%A1%D5%AF%D5%A1%D5%B6%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "hy" .
 
 <http://ia.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ia" .
 
 <http://id.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "id" .
 
 <http://ilo.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ilo" .
 
 <http://io.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "io" .
 
 <http://is.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "is" .
 
 <http://it.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "it" .
 
 <http://ja.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ja" .
 
 <http://jv.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "jv" .
 
 <http://ka.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ka" .
 
 <http://ko.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ko" .
 
 <http://ku.wikipedia.org/wiki/A%20%28t%C3%AEp%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ku" .
 
 <http://kw.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "kw" .
 
 <http://la.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "la" .
 
 <http://lb.wikipedia.org/wiki/A%20%28Buschtaf%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "lb" .
 
 <http://lmo.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "lmo" .
 
 <http://lt.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "lt" .
 
 <http://lv.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "lv" .
 
 <http://map-bms.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "map-bms" .
 
 <http://mg.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "mg" .
 
 <http://mhr.wikipedia.org/wiki/A%20%28%D0%BB%D0%B0%D1%82%D0%B8%D0%BD%20%D1%82%D0%B8%D1%88%D1%82%D0%B5%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "mhr" .
 
 <http://mk.wikipedia.org/wiki/A%20%28%D0%BB%D0%B0%D1%82%D0%B8%D0%BD%D0%B8%D1%86%D0%B0%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "mk" .
 
 <http://ml.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ml" .
 
 <http://mr.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "mr" .
 
 <http://ms.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ms" .
 
 <http://my.wikipedia.org/wiki/%E1%80%A1%E1%80%B1%20%28%E1%80%A1%E1%80%80%E1%80%B9%E1%80%81%E1%80%9B%E1%80%AC%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "my" .
 
 <http://nah.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "nah" .
 
 <http://nap.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "nap" .
 
 <http://nl.wikipedia.org/wiki/A%20%28letter%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "nl" .
 
 <http://nn.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "nn" .
 
 <http://no.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "no" .
 
 <http://nrm.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "nrm" .
 
 <http://oc.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "oc" .
 
 <http://pa.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "pa" .
 
 <http://pag.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "pag" .
 
 <http://pl.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "pl" .
 
 <http://pt.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "pt" .
 
 <http://qu.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "qu" .
 
 <http://ro.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ro" .
 
 <http://ru.wikipedia.org/wiki/A%20%28%D0%BB%D0%B0%D1%82%D0%B8%D0%BD%D0%B8%D1%86%D0%B0%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "ru" .
 
 <http://sc.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "sc" .
 
 <http://scn.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "scn" .
 
 <http://sco.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "sco" .
 
 <http://se.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "se" .
 
 <http://sh.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "sh" .
 
 <http://simple.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "simple" .
 
 <http://sk.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "sk" .
 
 <http://sl.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "sl" .
 
 <http://sr.wikipedia.org/wiki/A%20%28%D1%81%D0%BB%D0%BE%D0%B2%D0%BE%20%D0%BB%D0%B0%D1%82%D0%B8%D0%BD%D0%B8%D1%86%D0%B5%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "sr" .
 
 <http://srn.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "srn" .
 
 <http://stq.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "stq" .
 
 <http://su.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "su" .
 
 <http://sv.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "sv" .
 
 <http://sw.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "sw" .
 
 <http://szl.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "szl" .
 
 <http://te.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "te" .
 
 <http://th.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "th" .
 
 <http://tk.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "tk" .
 
 <http://tl.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "tl" .
 
 <http://tr.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "tr" .
 
 <http://tt.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "tt" .
 
 <http://tum.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "tum" .
 
 <http://uk.wikipedia.org/wiki/A%20%28%D0%BB%D0%B0%D1%82%D0%B8%D0%BD%D0%B8%D1%86%D1%8F%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "uk" .
 
 <http://uz.wikipedia.org/wiki/A%20%28lotin%29> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "uz" .
 
 <http://vec.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "vec" .
 
 <http://vep.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "vep" .
 
 <http://vi.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "vi" .
 
 <http://vo.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "vo" .
 
 <http://war.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "war" .
 
 <http://xal.wikipedia.org/wiki/A%20%D2%AF%D0%B7%D0%B3> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "xal" .
 
 <http://yi.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "yi" .
 
 <http://yo.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "yo" .
 
 <http://zh-min-nan.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "zh-min-nan" .
 
 <http://zh-yue.wikipedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "zh-yue" .
 
 <http://en.wikisource.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "en" .
 
 <http://commons.wikimedia.org/wiki/A> a schema:Article ;
-	schema:about entity:Q15 ;
+	schema:about wd:Q15 ;
 	schema:inLanguage "en" .
 
-s:Q15-4EAA058C-CD28-4D94-A6F1-9E85301F4CD6 a wikibase:Statement ;
-	v:P61 "978-2-253-93358-8" ;
+wds:Q15-4EAA058C-CD28-4D94-A6F1-9E85301F4CD6 a wikibase:Statement ;
+	ps:P61 "978-2-253-93358-8" ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q15-48c9384c-4f69-b061-e28a-acbc7e9f5162 a wikibase:Statement ;
-	v:P63 "+1212"^^xsd:decimal ;
-	v:P63-value v:6216f6cc07a04f88ab05387a3e7aac30 ;
+wds:Q15-48c9384c-4f69-b061-e28a-acbc7e9f5162 a wikibase:Statement ;
+	ps:P63 "+1212"^^xsd:decimal ;
+	psv:P63 wdv:6216f6cc07a04f88ab05387a3e7aac30 ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q15-9c840f65-4ed6-71b3-b813-03834c9a2ce1 a wikibase:Statement ;
-	v:P63 "+800000"^^xsd:decimal ;
-	v:P63-value v:fe067bc3a4680e114b9c41a8bffdf208 ;
+wds:Q15-9c840f65-4ed6-71b3-b813-03834c9a2ce1 a wikibase:Statement ;
+	ps:P63 "+800000"^^xsd:decimal ;
+	psv:P63 wdv:fe067bc3a4680e114b9c41a8bffdf208 ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q15-bb087c95-4f8f-d83d-702a-2e06d14c916c a wikibase:Statement ;
-	v:P63 "-45"^^xsd:decimal ;
-	v:P63-value v:d4a64aafba6a4ac39db06a3951926ea5 ;
+wds:Q15-bb087c95-4f8f-d83d-702a-2e06d14c916c a wikibase:Statement ;
+	ps:P63 "-45"^^xsd:decimal ;
+	psv:P63 wdv:d4a64aafba6a4ac39db06a3951926ea5 ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q15-eb7bb813-4004-a9a8-4988-a66fb1608e16 a wikibase:Statement ;
-	v:P63 "+98.2"^^xsd:decimal ;
-	v:P63-value v:87ec7deee25511032644133f42a3da42 ;
+wds:Q15-eb7bb813-4004-a9a8-4988-a66fb1608e16 a wikibase:Statement ;
+	ps:P63 "+98.2"^^xsd:decimal ;
+	psv:P63 wdv:87ec7deee25511032644133f42a3da42 ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q15-fbb17f28-452c-9dfc-35af-89d5c869f863 a wikibase:Statement ;
-	v:P72 "2-235-53099-0" ;
+wds:Q15-fbb17f28-452c-9dfc-35af-89d5c869f863 a wikibase:Statement ;
+	ps:P72 "2-235-53099-0" ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:Q15-276653CE-F775-4BA0-84BD-A8B9E6BB89A7 a wikibase:Statement ;
-	v:P72 "0-441-37388-7" ;
+wds:Q15-276653CE-F775-4BA0-84BD-A8B9E6BB89A7 a wikibase:Statement ;
+	ps:P72 "0-441-37388-7" ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank ;
-	prov:wasDerivedFrom ref:c62188e0951659b86554bf79929ae821981c1f45,
-		ref:b390ecc110fb3279258a2905b0708772cdb9187f .
+	prov:wasDerivedFrom wdref:c62188e0951659b86554bf79929ae821981c1f45,
+		wdref:b390ecc110fb3279258a2905b0708772cdb9187f .
 
-ref:c62188e0951659b86554bf79929ae821981c1f45 a wikibase:Reference ;
-	v:P9 entity:Q12 .
+wdref:c62188e0951659b86554bf79929ae821981c1f45 a wikibase:Reference ;
+	pr:P9 wd:Q12 .
 
-ref:b390ecc110fb3279258a2905b0708772cdb9187f a wikibase:Reference ;
-	v:P9 entity:Q9 ;
-	v:P40 "bbbb" .
+wdref:b390ecc110fb3279258a2905b0708772cdb9187f a wikibase:Reference ;
+	pr:P9 wd:Q9 ;
+	pr:P40 "bbbb" .
 
-v:6216f6cc07a04f88ab05387a3e7aac30 a wikibase:Value ;
+wdv:6216f6cc07a04f88ab05387a3e7aac30 a wikibase:Value ;
 	wikibase:quantityAmount "+1212"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+1213"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+1211"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:fe067bc3a4680e114b9c41a8bffdf208 a wikibase:Value ;
+wdv:fe067bc3a4680e114b9c41a8bffdf208 a wikibase:Value ;
 	wikibase:quantityAmount "+800000"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+800001"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+799999"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:d4a64aafba6a4ac39db06a3951926ea5 a wikibase:Value ;
+wdv:d4a64aafba6a4ac39db06a3951926ea5 a wikibase:Value ;
 	wikibase:quantityAmount "-45"^^xsd:decimal ;
 	wikibase:quantityUpperBound "-44"^^xsd:decimal ;
 	wikibase:quantityLowerBound "-46"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-v:87ec7deee25511032644133f42a3da42 a wikibase:Value ;
+wdv:87ec7deee25511032644133f42a3da42 a wikibase:Value ;
 	wikibase:quantityAmount "+98.2"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+98.3"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+98.1"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-data:P15 schema:version "986"^^xsd:integer ;
+wdata:P15 schema:version "986"^^xsd:integer ;
 	schema:dateModified "2013-08-07T08:05:22Z"^^xsd:dateTime ;
 	a schema:Dataset ;
-	schema:about entity:P15 .
+	schema:about wd:P15 .
 
-entity:P15 a wikibase:Property ;
+wd:P15 a wikibase:Property ;
 	wikibase:propertyType "wikibase-item" ;
 	rdfs:label "ok"@en ;
 	skos:prefLabel "ok"@en ;
 	schema:name "ok"@en ;
 	schema:description "fof"@en .
 
-data:P16 schema:version "989"^^xsd:integer ;
+wdata:P16 schema:version "989"^^xsd:integer ;
 	schema:dateModified "2013-08-08T08:58:17Z"^^xsd:dateTime ;
 	a schema:Dataset ;
-	schema:about entity:P16 .
+	schema:about wd:P16 .
 
-entity:P16 a wikibase:Property ;
+wd:P16 a wikibase:Property ;
 	wikibase:propertyType "wikibase-item" ;
 	rdfs:label "hasprop"@en ;
 	skos:prefLabel "hasprop"@en ;
 	schema:name "hasprop"@en ;
 	schema:description "has it"@en .
 
-data:Q19 schema:version "7205"^^xsd:integer ;
+wdata:Q19 schema:version "7205"^^xsd:integer ;
 	schema:dateModified "2014-07-27T13:16:26Z"^^xsd:dateTime ;
 	a schema:Dataset ;
-	schema:about entity:Q19 .
+	schema:about wd:Q19 .
 
-entity:Q19 a wikibase:Item ;
+wd:Q19 a wikibase:Item ;
 	rdfs:label "somesoftware"@en ;
 	skos:prefLabel "somesoftware"@en ;
 	schema:name "somesoftware"@en ;
 	schema:description "this is some software with some version"@en ;
 	wdt:P11 "1.0.0",
 		"1.1.2" ;
-	entity:P11 s:q19-f724408e-4837-ebb0-5300-690d69efccf2,
-		s:q19-29696855-4344-6cf6-b131-471bd0e1bc63 .
+	p:P11 wds:Q19-f724408e-4837-ebb0-5300-690d69efccf2,
+		wds:Q19-29696855-4344-6cf6-b131-471bd0e1bc63 .
 
-s:q19-f724408e-4837-ebb0-5300-690d69efccf2 a wikibase:Statement ;
-	v:P11 "1.0.0" ;
+wds:Q19-f724408e-4837-ebb0-5300-690d69efccf2 a wikibase:Statement ;
+	ps:P11 "1.0.0" ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-s:q19-29696855-4344-6cf6-b131-471bd0e1bc63 a wikibase:Statement ;
-	v:P11 "1.1.2" ;
+wds:Q19-29696855-4344-6cf6-b131-471bd0e1bc63 a wikibase:Statement ;
+	ps:P11 "1.1.2" ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-data:P19 schema:version "9200"^^xsd:integer ;
+wdata:P19 schema:version "9200"^^xsd:integer ;
 	schema:dateModified "2014-11-30T13:10:42Z"^^xsd:dateTime ;
 	a schema:Dataset ;
-	schema:about entity:P19 .
+	schema:about wd:P19 .
 
-entity:P19 a wikibase:Property ;
+wd:P19 a wikibase:Property ;
 	wikibase:propertyType "url" ;
 	rdfs:label "official site"@en ;
 	skos:prefLabel "official site"@en ;
 	schema:name "official site"@en ;
-	wdt:P192 entity:Q21 ;
-	entity:P192 s:P19-e1907a91-4e6d-abe1-c79d-5d69bb7176dc .
+	wdt:P192 wd:Q21 ;
+	p:P192 wds:P19-e1907a91-4e6d-abe1-c79d-5d69bb7176dc .
 
-s:P19-e1907a91-4e6d-abe1-c79d-5d69bb7176dc a wikibase:Statement ;
-	v:P192 entity:Q21 ;
+wds:P19-e1907a91-4e6d-abe1-c79d-5d69bb7176dc a wikibase:Statement ;
+	ps:P192 wd:Q21 ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .

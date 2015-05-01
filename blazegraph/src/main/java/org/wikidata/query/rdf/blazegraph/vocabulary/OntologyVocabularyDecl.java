@@ -4,10 +4,8 @@ import static org.wikidata.query.rdf.common.uri.Ontology.BEST_RANK;
 import static org.wikidata.query.rdf.common.uri.Ontology.DEPRECATED_RANK;
 import static org.wikidata.query.rdf.common.uri.Ontology.NAMESPACE;
 import static org.wikidata.query.rdf.common.uri.Ontology.NORMAL_RANK;
-import static org.wikidata.query.rdf.common.uri.Ontology.NO_VALUE;
 import static org.wikidata.query.rdf.common.uri.Ontology.PREFERRED_RANK;
 import static org.wikidata.query.rdf.common.uri.Ontology.RANK;
-import static org.wikidata.query.rdf.common.uri.Ontology.SOME_VALUE;
 
 import org.wikidata.query.rdf.common.uri.Ontology.Geo;
 import org.wikidata.query.rdf.common.uri.Ontology.Quantity;
@@ -22,7 +20,7 @@ import com.bigdata.rdf.vocab.BaseVocabularyDecl;
  */
 public class OntologyVocabularyDecl extends BaseVocabularyDecl {
     public OntologyVocabularyDecl() {
-        super(NAMESPACE, RANK, BEST_RANK, PREFERRED_RANK, NORMAL_RANK, DEPRECATED_RANK, NO_VALUE, SOME_VALUE,
+        super(NAMESPACE, RANK, BEST_RANK, PREFERRED_RANK, NORMAL_RANK, DEPRECATED_RANK,
                 Time.VALUE, Time.PRECISION, Time.TIMEZONE, Time.CALENDAR_MODEL, Geo.LATITUDE, Geo.LONGITUDE,
                 Geo.PRECISION, Geo.GLOBE, Quantity.AMOUNT, Quantity.UPPER_BOUND, Quantity.LOWER_BOUND, Quantity.UNIT);
     }

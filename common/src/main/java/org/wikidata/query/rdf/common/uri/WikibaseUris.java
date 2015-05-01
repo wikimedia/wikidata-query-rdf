@@ -14,6 +14,78 @@ public class WikibaseUris {
     public static final WikibaseUris TEST_WIKIDATA = new WikibaseUris("test.wikidata.org");
 
     /**
+     * Property types used in the ontology.
+     */
+    public enum PropertyType {
+        /**
+         * Truthy predicate.
+         */
+        DIRECT			("wdt", "direct/"),
+        /**
+         * Statement->Value (wdv:).
+         */
+        STATEMENT_VALUE	("psv", "statement/value/"),
+        /**
+         * Statement-> Simple Value.
+         */
+        STATEMENT		("ps", 	"statement/"),
+        /**
+         * Statement->Qualifier Value (wdv:).
+         */
+        QUALIFIER_VALUE	("pqv",	"qualifier/value/"),
+        /**
+         * Statement-> Simple Qualifier Value.
+         */
+        QUALIFIER		("pq", 	"qualifier/"),
+        /**
+         * Reference->Value (wdv:).
+         */
+        REFERENCE_VALUE	("prv",	"reference/value/"),
+        /**
+         * Reference->Simple Value.
+         */
+        REFERENCE		("pr",	"reference/"),
+        /**
+         * Novalue class for P123.
+         */
+        NOVALUE			("wdno", "novalue/"),
+        /**
+         * Entity->Statement.
+         */
+        CLAIM			("p",	"");
+
+        /**
+         * Short prefix for the type.
+         */
+        private final String prefix;
+        /**
+         * Url suffix after /prop/ for the type.
+         */
+        private final String suffix;
+
+        PropertyType(String p, String s) {
+            this.prefix = p;
+            this.suffix = s;
+        }
+        /**
+         * Get prefix.
+         * @return prefix
+         */
+        public String prefix() {
+            return prefix;
+        }
+        /**
+         * Get suffix.
+         * Protected since outside classes should not use it, they should go through
+         * WikibaseUris.property().
+         * @return suffix
+         */
+        protected String suffix() {
+            return suffix;
+        }
+    };
+
+    /**
      * The root of the wikibase uris - http://www.wikidata.org for Wikidata.
      */
     private final String root;
@@ -27,10 +99,6 @@ public class WikibaseUris {
      * itself.
      */
     private final String entity;
-    /**
-     * Uri prefix wikibase uses for truthy claims.
-     */
-    private final String truthy;
     /**
      * Uri prefix wikibase uses for statements. They are usually of the form
      * statement:%entityId%-%a uuid%.
@@ -47,10 +115,10 @@ public class WikibaseUris {
      */
     private final String reference;
     /**
-     * Uri prefix wikibase uses for qualifiers. They are of the form
-     * qualifier:%entity id of the property%(-value)?.
+     * Uri property prefix, used for properties.
+     * @see PropertyType
      */
-    private final String qualifier;
+    private final String prop;
 
     /**
      * Build for a specific wikibase host. See the WIKIDATA constant for how you
@@ -60,24 +128,24 @@ public class WikibaseUris {
         root = "http://" + host;
         entityData = root + "/wiki/Special:EntityData/";
         entity = root + "/entity/";
-        truthy = entity + "assert/";
         statement = entity + "statement/";
-        value = entity + "value/";
-        reference = entity + "reference/";
-        qualifier = entity + "qualifier/";
+        value = root + "/value/";
+        reference = root + "/reference/";
+        prop = root + "/prop/";
     }
 
     /**
      * Add the prefixes for all related uris.
      */
     public StringBuilder prefixes(StringBuilder query) {
-        query.append("PREFIX data: <").append(entityData).append(">\n");
-        query.append("PREFIX entity: <").append(entity).append(">\n");
-        query.append("PREFIX t: <").append(truthy).append(">\n");
-        query.append("PREFIX s: <").append(statement).append(">\n");
-        query.append("PREFIX v: <").append(value).append(">\n");
-        query.append("PREFIX ref: <").append(reference).append(">\n");
-        query.append("PREFIX q: <").append(qualifier).append(">\n");
+        query.append("PREFIX wdata: <").append(entityData).append(">\n");
+        query.append("PREFIX wd: <").append(entity).append(">\n");
+        query.append("PREFIX wds: <").append(statement).append(">\n");
+        query.append("PREFIX wdv: <").append(value).append(">\n");
+        query.append("PREFIX wdref: <").append(reference).append(">\n");
+        for (PropertyType p: PropertyType.values()) {
+            query.append("PREFIX ").append(p.prefix()).append(": <").append(prop).append(p.suffix()).append(">\n");
+        }
         return query;
     }
 
@@ -105,14 +173,6 @@ public class WikibaseUris {
     }
 
     /**
-     * Uri prefix wikibase uses for statements. They are usually of the form
-     * statement:%entityId%-%a uuid%.
-     */
-    public String truthy() {
-        return truthy;
-    }
-
-    /**
      * Prefix wikibase uses for statements.
      */
     public String statement() {
@@ -121,7 +181,7 @@ public class WikibaseUris {
 
     /**
      * Uri prefix wikibase uses for values. They are usually of the form
-     * value:%a 160 bit hash of the contents%.
+     * value:%a 128 bit hash of the contents%.
      */
     public String value() {
         return value;
@@ -139,7 +199,7 @@ public class WikibaseUris {
      * Uri prefix wikibase uses for qualifiers. They are of the form
      * qualifier:%entity id of the property%(-value)?.
      */
-    public String qualifier() {
-        return qualifier;
+    public String property(PropertyType p) {
+        return prop + p.suffix();
     }
 }

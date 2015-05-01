@@ -28,7 +28,7 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdateIntegrat
     public void bigBang() throws QueryEvaluationException {
         update(1, 1);
         StringBuilder query = new StringBuilder();
-        query.append("PREFIX assert: <http://www.wikidata.org/entity/assert/>\n");
+        query.append("PREFIX assert: <http://www.wikidata.org/prop/direct/>\n");
         query.append("SELECT * WHERE {\n");
         query.append("?s assert:P580 ?startTime .\n");
         query.append("FILTER (?startTime < \"-04540000000-01-01");

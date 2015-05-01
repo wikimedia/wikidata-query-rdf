@@ -26,6 +26,7 @@ import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 import org.wikidata.query.rdf.tool.StatementHelper;
 import org.wikidata.query.rdf.tool.rdf.Munger.BadSubjectException;
 
@@ -130,7 +131,7 @@ public class MungerUnitTest extends RandomizedTest {
                 .retain(statement("Q23", "P26", statementUri), //
                         statement(statementUri, uris.value() + "P26", "Q191789"), //
                         statement(statementUri, Ontology.RANK, Ontology.NORMAL_RANK), //
-                        statement(statementUri, uris.qualifier() + "P580", new LiteralImpl("1759-01-06T00:00:00Z",
+                        statement(statementUri, uris.property(PropertyType.QUALIFIER) + "P580", new LiteralImpl("1759-01-06T00:00:00Z",
                                 XMLSchema.DATETIME))) //
                 .remove(statement(statementUri, RDF.TYPE, Ontology.STATEMENT)) //
                 .test();
@@ -165,7 +166,7 @@ public class MungerUnitTest extends RandomizedTest {
         entity("Q1")
                 //
                 .retain(statement("Q1", "P580", statementUri), //
-                        statement(statementUri, uris.qualifier() + "P580", new LiteralImpl(
+                        statement(statementUri, uris.property(PropertyType.QUALIFIER) + "P580", new LiteralImpl(
                                 "-13798000000-01-01T00:00:00Z", XMLSchema.DATETIME)), //
                         statement(statementUri, uris.value() + "P580" + "-value", valueUri), //
                         // Currently wikibase exports the deep time values as
@@ -187,10 +188,10 @@ public class MungerUnitTest extends RandomizedTest {
         entity("Q1")
                 //
                 .retain(statement("Q1", "P580", statementUri), //
-                        statement(statementUri, uris.value() + "P580", new LiteralImpl("-13798000000-01-01T00:00:00Z",
+                        statement(statementUri, uris.property(PropertyType.STATEMENT) + "P580", new LiteralImpl("-13798000000-01-01T00:00:00Z",
                                 XMLSchema.DATETIME)), //
                         statement(statementUri, Provenance.WAS_DERIVED_FROM, referenceUri), //
-                        statement(referenceUri, uris.value() + "P580" + "-value", valueUri), //
+                        statement(referenceUri, uris.property(PropertyType.REFERENCE_VALUE) + "P580", valueUri), //
                         // Currently wikibase exports the deep time values as
                         // strings, not dateTime.
                         statement(valueUri, Ontology.Time.VALUE, "-13798000000-01-01T00:00:00Z"), //
