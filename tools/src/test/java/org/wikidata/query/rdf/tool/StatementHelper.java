@@ -129,18 +129,11 @@ public final class StatementHelper {
     }
 
     /**
-     * Construct up to ten random statements about the given subject.
-     */
-    public static List<Statement> randomStatementsAbout(String s) {
-        return randomStatementsAbout(s, 10);
-    }
-
-    /**
      * Construct a bunch of random statements about the given subject.
      */
-    public static List<Statement> randomStatementsAbout(String s, int max) {
+    public static List<Statement> randomStatementsAbout(String s, int count) {
         List<Statement> statements = new ArrayList<>();
-        for (int i = 0; i < randomIntBetween(1, max); i++) {
+        for (int i = 0; i < count; i++) {
             String p = "P" + randomInt();
             LiteralImpl o = randomDate();
             statements.add(statement(s, p, o));
