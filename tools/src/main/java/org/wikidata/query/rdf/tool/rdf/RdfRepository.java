@@ -106,6 +106,16 @@ public class RdfRepository {
     private final String updateLeftOffTimeBody;
 
     /**
+     * How many times we retry a failed HTTP call.
+     */
+    private int maxRetries = 5;
+    /**
+     * How long to delay after failing first HTTP call, in milliseconds.
+     * Next retries would be slower by 2x, 3x, 4x etc. until maxRetries is exhausted.
+     */
+    private int delay = 1000;
+
+    /**
      * Allow subclass access to the HTTP client.
      */
     protected CloseableHttpClient client() {
@@ -120,6 +130,42 @@ public class RdfRepository {
         getValues = loadBody("GetValues");
         getRefs = loadBody("GetRefs");
         cleanUnused = loadBody("CleanUnused");
+    }
+
+    /**
+     * Get max retries count.
+     * @return How many times we retry a failed HTTP call.
+     */
+    public int getMaxRetries() {
+        return maxRetries;
+    }
+
+    /**
+     * Set how many times we retry a failed HTTP call.
+     * @return this
+     */
+    public RdfRepository setMaxRetries(int maxRetries) {
+        this.maxRetries = maxRetries;
+        return this;
+    }
+
+    /**
+     * Get retry delay.
+     * @return How long to delay after failing first HTTP call, in milliseconds.
+     */
+    public int getDelay() {
+        return delay;
+    }
+
+    /**
+     * Set retry delay.
+     * Specifies how long to delay after failing first HTTP call, in milliseconds.
+     * Next retries would be slower by 2x, 3x, 4x etc. until maxRetries is exhausted.
+     * @return
+     */
+    public RdfRepository setDelay(int delay) {
+        this.delay = delay;
+        return this;
     }
 
     /**
@@ -331,17 +377,34 @@ public class RdfRepository {
         List<NameValuePair> entity = new ArrayList<>();
         entity.add(new BasicNameValuePair(type, sparql));
         post.setEntity(new UrlEncodedFormEntity(entity, Consts.UTF_8));
-        try {
-            try (CloseableHttpResponse response = client.execute(post)) {
-                if (response.getStatusLine().getStatusCode() != 200) {
-                    throw new ContainedException("Non-200 response from triple store:  " + response + " body=\n"
-                            + responseBodyAsString(response));
+        int retries = 0;
+        while (true) {
+            try {
+                try (CloseableHttpResponse response = client.execute(post)) {
+                    if (response.getStatusLine().getStatusCode() != 200) {
+                        throw new ContainedException("Non-200 response from triple store:  " + response + " body=\n"
+                                + responseBodyAsString(response));
+                    }
+                    return responseHandler.parse(response.getEntity());
                 }
-                return responseHandler.parse(response.getEntity());
+            } catch (IOException e) {
+                if (retries < maxRetries) {
+                    // Increasing delay, with random 10% variation so threads won't all get restarts
+                    // at the same time.
+                    int retryIn = (int)Math.ceil(delay * (retries + 1) * (1 + Math.random() * 0.1));
+                    log.info("HTTP request failed: {}, retrying in {} ms", e, retryIn);
+                    retries++;
+                    try {
+                        Thread.sleep(retryIn);
+                    } catch (InterruptedException e1) {
+                        throw new FatalException("Interrupted", e);
+                    }
+                    continue;
+                }
+                throw new FatalException("Error updating triple store", e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Error updating triple store", e);
         }
+
     }
 
     /**

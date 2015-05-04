@@ -68,7 +68,7 @@ public class NormalizingRdfHandler extends DelegatingRdfHandler {
             r = new URIImpl(r.stringValue().replace("ontology-beta", "ontology"));
         }
         // Temporary bugfix for dump URLs having bad characters in them
-        String fixed = StringUtils.replaceEach(r.stringValue(), new String[]{"\n", "|", "\\"}, new String[]{"", "%7C", "%5C"});
+        String fixed = StringUtils.replaceEach(r.stringValue(), new String[]{"\n", "|", "\\", "{", "}"}, new String[]{"", "%7C", "%5C", "%7B", "%7D"});
         if (!fixed.equals(r.stringValue())) {
             r = new URIImpl(fixed);
         }
