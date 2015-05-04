@@ -220,3 +220,70 @@ LIMIT 10
 | 137971         | Cádiz         | Teófila Martínez            |
 | 102301         | Liberec       | Martina Rosenbergová        |
 | 101319         | Ancona        | Valeria Mancinelli          |
+
+## Who discovered the most asteroids?
+
+```sparql
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX entity: <http://www.wikidata.org/entity/>
+PREFIX t: <http://www.wikidata.org/entity/assert/>
+
+SELECT ?discoverer ?name (COUNT(?asteroid) AS ?count)
+WHERE {
+  ?asteroid t:P31 entity:Q3863 .
+  ?asteroid t:P61 ?discoverer .
+  OPTIONAL {
+    ?discoverer rdfs:label ?name
+    FILTER (lang(?name) = "en")
+  }
+}
+GROUP BY ?discoverer ?name
+ORDER BY DESC(?count)
+LIMIT 10
+```
+
+| discoverer                                | name                                        | count |
+| ----------------------------------------- | ------------------------------------------- | ----- |
+| <http://www.wikidata.org/entity/Q213563>  | Spacewatch                                  | 1625  |
+| <http://www.wikidata.org/entity/Q312255>  | Tom Gehrels                                 | 1159  |
+| <http://www.wikidata.org/entity/Q231642>  | Ingrid van Houten-Groeneveld                | 1153  |
+| <http://www.wikidata.org/entity/Q312755>  | Eric Walter Elst                            | 1048  |
+| <http://www.wikidata.org/entity/Q1165635> | Lowell Observatory Near-Earth-Object Search | 912   |
+| <http://www.wikidata.org/entity/Q1140499> | Near-Earth Asteroid Tracking                | 742   |
+| <http://www.wikidata.org/entity/Q446449>  | Schelte J. Bus                              | 566   |
+| <http://www.wikidata.org/entity/Q507053>  | Hiroshi Kaneda                              | 354   |
+| <http://www.wikidata.org/entity/Q737057>  | Seiji Ueda                                  | 354   |
+| <http://www.wikidata.org/entity/Q58962>   | Eleanor F. Helin                            | 300   |
+
+## Who discovered the most planets?
+
+```sparql
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX entity: <http://www.wikidata.org/entity/>
+PREFIX t: <http://www.wikidata.org/entity/assert/>
+
+SELECT ?discoverer ?name (COUNT(?planet) as ?count)
+WHERE {
+  ?ppart t:P279* entity:Q634 .
+  ?planet t:P31 ?ppart .
+  ?planet t:P61 ?discoverer .
+  OPTIONAL {
+    ?discoverer rdfs:label ?name
+    FILTER (lang(?name) = "en")
+  }
+}
+GROUP BY ?discoverer ?name
+ORDER BY DESC(?count)
+LIMIT 10
+```
+
+| discoverer                               | name                   | count  |
+| ---------------------------------------- | ---------------------- | ------ |
+| <http://www.wikidata.org/entity/Q104154> | Urbain Le Verrier      | 2      |
+| <http://www.wikidata.org/entity/Q20015>  | John Couch Adams       | 2      |
+| <http://www.wikidata.org/entity/Q76431>  | Johann Gottfried Galle | 2      |
+| <http://www.wikidata.org/entity/Q14277>  | William Herschel       | 2      |
+| <http://www.wikidata.org/entity/Q47272>  | Kepler                 | 2      |
+| <http://www.wikidata.org/entity/Q124013> | Didier Queloz          | 1      |
+| <http://www.wikidata.org/entity/Q123975> | Michel Mayor           | 1      |
+| <http://www.wikidata.org/entity/Q190232> | Clyde Tombaugh         | 1      |
