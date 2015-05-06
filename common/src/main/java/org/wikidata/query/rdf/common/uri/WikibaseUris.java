@@ -20,39 +20,39 @@ public class WikibaseUris {
         /**
          * Truthy predicate.
          */
-        DIRECT			("wdt", "direct/"),
+        DIRECT          ("wdt", "direct/"),
         /**
          * Statement->Value (wdv:).
          */
-        STATEMENT_VALUE	("psv", "statement/value/"),
+        STATEMENT_VALUE ("psv", "statement/value/"),
         /**
          * Statement-> Simple Value.
          */
-        STATEMENT		("ps", 	"statement/"),
+        STATEMENT       ("ps",  "statement/"),
         /**
          * Statement->Qualifier Value (wdv:).
          */
-        QUALIFIER_VALUE	("pqv",	"qualifier/value/"),
+        QUALIFIER_VALUE ("pqv", "qualifier/value/"),
         /**
          * Statement-> Simple Qualifier Value.
          */
-        QUALIFIER		("pq", 	"qualifier/"),
+        QUALIFIER       ("pq",  "qualifier/"),
         /**
          * Reference->Value (wdv:).
          */
-        REFERENCE_VALUE	("prv",	"reference/value/"),
+        REFERENCE_VALUE ("prv", "reference/value/"),
         /**
          * Reference->Simple Value.
          */
-        REFERENCE		("pr",	"reference/"),
+        REFERENCE       ("pr",  "reference/"),
         /**
          * Novalue class for P123.
          */
-        NOVALUE			("wdno", "novalue/"),
+        NOVALUE         ("wdno", "novalue/"),
         /**
          * Entity->Statement.
          */
-        CLAIM			("p",	"");
+        CLAIM           ("p",    "");
 
         /**
          * Short prefix for the type.
