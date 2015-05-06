@@ -276,6 +276,10 @@ public class Munger {
         private boolean statement() {
             subject = statement.getSubject().stringValue();
             predicate = statement.getPredicate().stringValue();
+            if (subject.equals(Ontology.DUMP)) {
+                // temporary patch for T98405
+                return false;
+            }
             if (inNamespace(subject, uris.entityData())) {
                 return entityDataStatement();
             }
