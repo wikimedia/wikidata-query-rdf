@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -132,6 +133,9 @@ public class UpdateBuilder {
             }
 
             return sb.toString();
+        }
+        if (o instanceof BNode) {
+            return "_:" + ((BNode) o).getID();
         }
         throw new RuntimeException("I have no idea what do to with a " + o.getClass());
     }
