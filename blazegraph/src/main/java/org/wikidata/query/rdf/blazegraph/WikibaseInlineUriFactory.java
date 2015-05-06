@@ -1,9 +1,9 @@
 package org.wikidata.query.rdf.blazegraph;
 
 import org.wikidata.query.rdf.blazegraph.inline.uri.UndecoratedUuidInlineUriHandler;
-import org.wikidata.query.rdf.blazegraph.inline.uri.ValuePropertiesInlineUriHandler;
 import org.wikidata.query.rdf.common.uri.CommonValues;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 import com.bigdata.rdf.internal.InlineURIFactory;
 import com.bigdata.rdf.internal.InlineUnsignedIntegerURIHandler;
@@ -34,17 +34,13 @@ public class WikibaseInlineUriFactory extends InlineURIFactory {
         /*
          * Order matters here because some of these are prefixes of each other.
          */
-        addHandler(new ValuePropertiesInlineUriHandler(uris.qualifier() + "P"));
-        addHandler(new InlineUnsignedIntegerURIHandler(uris.qualifier() + "Q"));
-        addHandler(new ValuePropertiesInlineUriHandler(uris.value() + "P"));
-        addHandler(new InlineUnsignedIntegerURIHandler(uris.value() + "Q"));
-        addHandler(new UndecoratedUuidInlineUriHandler(uris.value()));
+        for (PropertyType p: PropertyType.values()) {
+            addHandler(new InlineUnsignedIntegerURIHandler(uris.property(p) + "P"));
+        }
         /*
          * We don't use WikibaseStyleStatementInlineUriHandler because it makes
          * things worse!
          */
-        addHandler(new InlineUnsignedIntegerURIHandler(uris.truthy() + "P"));
-        addHandler(new InlineUnsignedIntegerURIHandler(uris.truthy() + "Q"));
         addHandler(new InlineUnsignedIntegerURIHandler(uris.entity() + "P"));
         addHandler(new InlineUnsignedIntegerURIHandler(uris.entity() + "Q"));
 
@@ -64,5 +60,7 @@ public class WikibaseInlineUriFactory extends InlineURIFactory {
          * similarly 160 bit wide. 160 bits is too big to fit into a uuid so we
          * can't inline that without bloating either.
          */
+        addHandler(new UndecoratedUuidInlineUriHandler(uris.value()));
+        // addHandler(new UndecoratedUuidInlineUriHandler(uris.reference()));
     }
 }

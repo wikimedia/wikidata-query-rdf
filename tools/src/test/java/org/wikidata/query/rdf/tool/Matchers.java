@@ -14,6 +14,8 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 /**
  * Useful matchers for RDF.
@@ -23,6 +25,9 @@ public final class Matchers {
      * Check a binding to a uri.
      */
     public static Matcher<BindingSet> binds(String name, String value) {
+        if (value.startsWith("P")) {
+            value = WikibaseUris.WIKIDATA.property(PropertyType.CLAIM) + value;
+        }
         return new BindsMatcher<URI>(name, equalTo(uri(value)));
     }
 

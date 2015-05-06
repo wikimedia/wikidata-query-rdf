@@ -15,6 +15,7 @@ import org.openrdf.model.Value;
 import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.URIImpl;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 import com.bigdata.cache.SynchronizedHardReferenceQueueWithTimeout;
 import com.bigdata.journal.TemporaryStore;
@@ -102,13 +103,14 @@ public class AbstractRandomizedBlazegraphTestBase extends RandomizedTest {
         }
         if (o instanceof String) {
             String s = (String) o;
-            s = s.replaceFirst("^data:", uris.entityData());
-            s = s.replaceFirst("^entity:", uris.entity());
-            s = s.replaceFirst("^truthy:", uris.truthy());
-            s = s.replaceFirst("^s:", uris.statement());
-            s = s.replaceFirst("^v:", uris.value());
-            s = s.replaceFirst("^ref:", uris.reference());
-            s = s.replaceFirst("^q:", uris.qualifier());
+            s = s.replaceFirst("^wdata:", uris.entityData());
+            s = s.replaceFirst("^wd:", uris.entity());
+            s = s.replaceFirst("^wds:", uris.statement());
+            s = s.replaceFirst("^wdv:", uris.value());
+            s = s.replaceFirst("^wdref:", uris.reference());
+            for (PropertyType p: PropertyType.values()) {
+                s = s.replaceFirst("^" + p.prefix() + ":", uris.property(p));
+            }
             return new URIImpl(s);
         }
         if (o instanceof Integer) {

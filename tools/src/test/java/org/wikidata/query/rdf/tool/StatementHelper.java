@@ -21,6 +21,7 @@ import org.openrdf.model.vocabulary.XMLSchema;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 import com.google.common.collect.ImmutableList;
 
@@ -43,6 +44,9 @@ public final class StatementHelper {
             oValue = new IntegerLiteralImpl(BigInteger.valueOf((long) o));
         } else {
             throw new IllegalArgumentException("Illegal object:  " + o);
+        }
+        if (p instanceof String && p.startsWith("P")) {
+            p = WikibaseUris.WIKIDATA.property(PropertyType.CLAIM) + p;
         }
         return new StatementImpl(uri(s), uri(p), oValue);
     }

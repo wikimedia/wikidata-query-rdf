@@ -8,6 +8,7 @@ import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 import com.bigdata.rdf.internal.impl.TermId;
 import com.bigdata.rdf.internal.impl.uri.VocabURIByteIV;
@@ -61,7 +62,7 @@ public class WikibaseVocabularyUnitTest extends AbstractRandomizedBlazegraphTest
 
     @Test
     public void entityTruthyAndStatementAreBytes() {
-        BigdataStatement statement = roundTrip(uris().entity(), uris().truthy(), uris().statement());
+        BigdataStatement statement = roundTrip(uris().entity(), uris().property(PropertyType.DIRECT) + "P", uris().statement());
         assertThat(statement.getSubject().getIV(), instanceOf(VocabURIByteIV.class));
         assertThat(statement.getPredicate().getIV(), instanceOf(VocabURIByteIV.class));
         assertThat(statement.getObject().getIV(), instanceOf(VocabURIByteIV.class));
@@ -69,7 +70,7 @@ public class WikibaseVocabularyUnitTest extends AbstractRandomizedBlazegraphTest
 
     @Test
     public void valueReferenceAndQualifierAreBytes() {
-        BigdataStatement statement = roundTrip(uris().value(), uris().reference(), uris().qualifier());
+        BigdataStatement statement = roundTrip(uris().value(), uris().property(PropertyType.REFERENCE) + "P", uris().property(PropertyType.QUALIFIER) + "P");
         assertThat(statement.getSubject().getIV(), instanceOf(VocabURIByteIV.class));
         assertThat(statement.getPredicate().getIV(), instanceOf(VocabURIByteIV.class));
         assertThat(statement.getObject().getIV(), instanceOf(VocabURIByteIV.class));
@@ -88,21 +89,21 @@ public class WikibaseVocabularyUnitTest extends AbstractRandomizedBlazegraphTest
 
     @Test
     public void truthyPAndQAreBytes() {
-        BigdataStatement statement = roundTrip(uris().truthy() + "P", uris().truthy() + "Q", new LiteralImpl("cat"));
+        BigdataStatement statement = roundTrip(uris().entity() + "Q", uris().property(PropertyType.DIRECT) + "P", new LiteralImpl("cat"));
         assertThat(statement.getSubject().getIV(), instanceOf(VocabURIByteIV.class));
         assertThat(statement.getPredicate().getIV(), instanceOf(VocabURIByteIV.class));
     }
 
     @Test
     public void valuePAndQAreBytes() {
-        BigdataStatement statement = roundTrip(uris().value() + "P", uris().value() + "Q", new LiteralImpl("cat"));
+        BigdataStatement statement = roundTrip(uris().entity() + "P", uris().property(PropertyType.STATEMENT_VALUE) + "P", new LiteralImpl("cat"));
         assertThat(statement.getSubject().getIV(), instanceOf(VocabURIByteIV.class));
         assertThat(statement.getPredicate().getIV(), instanceOf(VocabURIByteIV.class));
     }
 
     @Test
     public void qualifierPAndQAreBytes() {
-        BigdataStatement statement = roundTrip(uris().qualifier() + "P", uris().qualifier() + "Q", new LiteralImpl(
+        BigdataStatement statement = roundTrip(uris().entity() + "P", uris().property(PropertyType.QUALIFIER) + "P", new LiteralImpl(
                 "cat"));
         assertThat(statement.getSubject().getIV(), instanceOf(VocabURIByteIV.class));
         assertThat(statement.getPredicate().getIV(), instanceOf(VocabURIByteIV.class));
