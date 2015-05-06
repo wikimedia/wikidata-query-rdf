@@ -16,11 +16,13 @@ import java.util.TimeZone;
 
 import org.apache.http.Consts;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -104,8 +106,10 @@ public class WikibaseRepository {
         RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
         StatementCollector collector = new StatementCollector();
         parser.setRDFHandler(new NormalizingRdfHandler(collector));
+        HttpGet request = new HttpGet(uri);
+        setNoCookies(request);
         try {
-            try (CloseableHttpResponse response = client.execute(new HttpGet(uri))) {
+            try (CloseableHttpResponse response = client.execute(request)) {
                 if (response.getStatusLine().getStatusCode() == 404) {
                     // A delete/nonexistent page
                     return Collections.emptyList();
@@ -210,6 +214,16 @@ public class WikibaseRepository {
     }
 
     /**
+     * Configure request to ignore cookies.
+     * @param request
+     */
+    private void setNoCookies(HttpRequestBase request) {
+        RequestConfig noCookiesConfig = RequestConfig.custom()
+                .setCookieSpec(CookieSpecs.IGNORE_COOKIES).build();
+        request.setConfig(noCookiesConfig);
+    }
+
+    /**
      * Perform an HTTP request and return the JSON in the response body.
      *
      * @param request request to perform
@@ -218,7 +232,8 @@ public class WikibaseRepository {
      *             thrown receiving the data
      * @throws ParseException the json was malformed and couldn't be parsed
      */
-    private JSONObject getJson(HttpUriRequest request) throws IOException, ParseException {
+    private JSONObject getJson(HttpRequestBase request) throws IOException, ParseException {
+        setNoCookies(request);
         try (CloseableHttpResponse response = client.execute(request)) {
             return (JSONObject) new JSONParser().parse(new InputStreamReader(response.getEntity().getContent(),
                     Charsets.UTF_8));
