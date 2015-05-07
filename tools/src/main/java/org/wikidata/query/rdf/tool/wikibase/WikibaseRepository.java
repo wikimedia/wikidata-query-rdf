@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDateFormat;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -40,6 +42,7 @@ import org.openrdf.rio.Rio;
 import org.openrdf.rio.helpers.StatementCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
@@ -420,4 +423,19 @@ public class WikibaseRepository {
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         return df;
     }
+
+    /**
+     * Create JSON change description for continuing.
+     * @param lastChange
+     * @return Change description that can be used to continue from the next change.
+     */
+    @SuppressWarnings("unchecked")
+    public JSONObject getContinueObject(Change lastChange) {
+        JSONObject nextContinue = new JSONObject();
+        nextContinue.put("rccontinue", outputDateFormat().format(lastChange.timestamp()) + "|" + (lastChange.rcid() + 1));
+        nextContinue.put("continue", "-||");
+        return nextContinue;
+    }
+
+
 }

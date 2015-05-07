@@ -8,7 +8,10 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.not;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
 
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -20,6 +23,7 @@ import org.json.simple.JSONObject;
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
@@ -88,14 +92,19 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         editShowsUpInRecentChangesTestCase("QueryTestProperty", "property");
     }
 
+    private JSONArray getRecentChanges(Date date, JSONObject contObj, int batchSize) throws RetryableException,
+        ContainedException {
+        JSONObject result = repo.fetchRecentChanges(date, contObj, batchSize);
+        return (JSONArray) ((JSONObject) result.get("query")).get("recentchanges");
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private void editShowsUpInRecentChangesTestCase(String label, String type) throws RetryableException,
             ContainedException {
         long now = System.currentTimeMillis();
         String entityId = repo.firstEntityIdForLabelStartingWith(label, "en", type);
         repo.setLabel(entityId, type, label + now, "en");
-        JSONObject result = repo.fetchRecentChanges(new Date(now), null, 10);
-        JSONArray changes = (JSONArray) ((JSONObject) result.get("query")).get("recentchanges");
+        JSONArray changes = getRecentChanges(new Date(now), null, 10);
         boolean found = false;
         String title = entityId;
         if (type.equals("property")) {
@@ -144,5 +153,45 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         assertTrue("Did not find correct ontology statements", foundGood);
         assertFalse("Found incorrect ontology statements", foundBad);
     }
+
+    @Test
+    public void continueWorks() throws RetryableException, ContainedException, ParseException {
+        long now = System.currentTimeMillis();
+        String entityId = repo.firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
+        repo.setLabel(entityId, "item", "QueryTestItem" + now, "en");
+        JSONArray changes = getRecentChanges(new Date(now), null, 10);
+        Change change = null;
+        long oldRevid = 0;
+        long oldRcid = 0;
+
+        for (Object changeObject : changes) {
+            JSONObject rc = (JSONObject) changeObject;
+            if (rc.get("title").equals(entityId)) {
+                DateFormat df = inputDateFormat();
+                Date timestamp = df.parse(rc.get("timestamp").toString());
+                oldRevid = (long) rc.get("revid");
+                oldRcid = (long)rc.get("rcid");
+                change = new Change(rc.get("title").toString(), oldRevid, timestamp, oldRcid);
+                break;
+            }
+        }
+        assertNotNull("Did not find the first edit", change);
+        JSONObject continueObject = repo.getContinueObject(change);
+        // make new edit now
+        repo.setLabel(entityId, "item", "QueryTestItem" + now + "updated", "en");
+        changes = getRecentChanges(new Date(now), continueObject, 10);
+        // check that new result does not contain old edit but contains new edit
+        boolean found = false;
+        for (Object changeObject : changes) {
+            JSONObject rc = (JSONObject) changeObject;
+            if (rc.get("title").equals(entityId)) {
+                assertNotEquals("Found old edit after continue: revid", oldRevid, (long) rc.get("revid"));
+                assertNotEquals("Found old edit after continue: rcid", oldRcid, (long) rc.get("rcid"));
+                found = true;
+            }
+        }
+        assertTrue("Did not find new edit", found);
+    }
+
     // TODO we should verify the RDF dump format against a stored file
 }

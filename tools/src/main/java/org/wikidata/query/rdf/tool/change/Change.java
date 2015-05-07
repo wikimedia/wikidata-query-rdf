@@ -12,7 +12,7 @@ import com.google.common.collect.ImmutableList;
 /**
  * A change in an entity in Wikibase.
  */
-public class Change {
+public class Change implements Comparable<Change> {
     /**
      * Entity that changed.
      */
@@ -26,7 +26,12 @@ public class Change {
      */
     private final Date timestamp;
 
-    public Change(String entityId, long revision, Date timestamp) {
+    /**
+     * rcid of the change.
+     */
+    private final long rcid;
+
+    public Change(String entityId, long revision, Date timestamp, long rcid) {
         if (entityId.startsWith("Property:")) {
             this.entityId = entityId.substring("Property:".length());
         } else {
@@ -34,6 +39,7 @@ public class Change {
         }
         this.revision = revision;
         this.timestamp = timestamp;
+        this.rcid = rcid;
     }
 
     /**
@@ -50,6 +56,15 @@ public class Change {
      */
     public long revision() {
         return revision;
+    }
+
+    /**
+     * The rcid of the change.
+     *
+     * @return the rcid number
+     */
+    public long rcid() {
+        return rcid;
     }
 
     /**
@@ -183,4 +198,10 @@ public class Change {
             }
         }
     }
+
+    @Override
+    public int compareTo(Change o) {
+        return (int)(rcid() - o.rcid());
+    }
+
 }

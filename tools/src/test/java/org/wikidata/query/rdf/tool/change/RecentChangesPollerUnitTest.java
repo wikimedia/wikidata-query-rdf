@@ -3,8 +3,14 @@ package org.wikidata.query.rdf.tool.change;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDateFormat;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,6 +22,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.wikidata.query.rdf.tool.change.RecentChangesPoller.Batch;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
@@ -42,6 +49,7 @@ public class RecentChangesPollerUnitTest {
             rc.put("title", "Q" + (i / 2));
             rc.put("timestamp", date);
             rc.put("revid", Long.valueOf(i));
+            rc.put("rcid", Long.valueOf(i));
             recentChanges.add(rc);
         }
         when(repository.fetchRecentChanges(startTime, null, batchSize)).thenReturn(result);
@@ -60,6 +68,58 @@ public class RecentChangesPollerUnitTest {
             assertEquals(changes.get(i).entityId(), "Q" + i);
             assertEquals(changes.get(i).revision(), 2 * i + 1);
         }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void continuePoll() throws RetryableException {
+        Date startTime = new Date();
+        int batchSize = 10;
+
+        JSONObject result = new JSONObject();
+        JSONObject rc = new JSONObject();
+        JSONArray recentChanges = new JSONArray();
+        JSONObject query = new JSONObject();
+
+        Date revDate = new Date();
+        String date = WikibaseRepository.inputDateFormat().format(revDate);
+        rc.put("ns", Long.valueOf(0));
+        rc.put("title", "Q666");
+        rc.put("timestamp", date);
+        rc.put("revid", 1L);
+        rc.put("rcid", 1L);
+        recentChanges.add(rc);
+        rc = new JSONObject();
+        rc.put("ns", Long.valueOf(0));
+        rc.put("title", "Q667");
+        rc.put("timestamp", date);
+        rc.put("revid", 7L);
+        rc.put("rcid", 7L);
+        recentChanges.add(rc);
+
+        query.put("recentchanges", recentChanges);
+        result.put("query", query);
+
+        JSONObject contJson = new JSONObject();
+        contJson.put("rccontinue", outputDateFormat().format(revDate) + "|8");
+        contJson.put("continue", "-||");
+
+        when(repository.fetchRecentChanges(startTime, null, batchSize)).thenReturn(result);
+        when(repository.getContinueObject((Change)any())).thenReturn(contJson);
+
+        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
+        Batch batch = poller.firstBatch();
+        assertEquals(2, batch.changes().size());
+        assertEquals(7, batch.changes().get(1).rcid());
+
+        recentChanges.clear();
+        ArgumentCaptor<JSONObject> argument = ArgumentCaptor.forClass(JSONObject.class);
+
+        when(repository.fetchRecentChanges((Date)any(), (JSONObject)any(), anyInt())).thenReturn(result);
+        // check that poller passes the continue object to the next batch
+        poller.nextBatch(batch);
+        verify(repository, times(2)).fetchRecentChanges((Date)any(), argument.capture(), eq(batchSize));
+        assertEquals(contJson, argument.getValue());
     }
 
     @Before

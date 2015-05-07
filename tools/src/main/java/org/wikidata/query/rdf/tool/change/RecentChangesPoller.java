@@ -4,7 +4,7 @@ import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateF
 
 import java.text.DateFormat;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.json.simple.JSONArray;
@@ -46,12 +46,12 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
     @Override
     public Batch firstBatch() throws RetryableException {
-        return batch(firstStartTime, null, null);
+        return batch(firstStartTime, null);
     }
 
     @Override
     public Batch nextBatch(Batch lastBatch) throws RetryableException {
-        return batch(lastBatch.leftOffDate, lastBatch.nextContinue, lastBatch.lastSeenId);
+        return batch(lastBatch.leftOffDate, lastBatch.nextContinue);
     }
 
     /**
@@ -67,25 +67,15 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
          * we left off.
          */
         private final JSONObject nextContinue;
-        /**
-         * The ID of the last change we've seen. Poller would ignore it next
-         * time.
-         */
-        private final String lastSeenId;
 
         /**
          * A batch that will next continue using the continue parameter.
          */
         private Batch(ImmutableList<Change> changes, long advanced, String leftOff, Date nextStartTime,
-                JSONObject nextContinue, String lastSeen) {
+                JSONObject nextContinue) {
             super(changes, advanced, leftOff);
-            this.nextContinue = nextContinue;
             leftOffDate = nextStartTime;
-            if (!changes.isEmpty()) {
-                lastSeenId = changes.get(changes.size() - 1).toString();
-            } else {
-                lastSeenId = lastSeen;
-            }
+            this.nextContinue = nextContinue;
         }
 
         @Override
@@ -104,10 +94,11 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      *
      * @throws RetryableException on parse failure
      */
-    private Batch batch(Date lastNextStartTime, JSONObject lastNextContinue, String lastSeen) throws RetryableException {
+    private Batch batch(Date lastNextStartTime, JSONObject lastNextContinue) throws RetryableException {
         try {
             JSONObject recentChanges = wikibase.fetchRecentChanges(lastNextStartTime, lastNextContinue, batchSize);
-            Map<String, Change> changesByTitle = new HashMap<>();
+            // Using LinkedHashMap here so that changes came out sorted by order of arrival
+            Map<String, Change> changesByTitle = new LinkedHashMap<>();
             JSONObject nextContinue = (JSONObject) recentChanges.get("continue");
             long nextStartTime = 0;
             JSONArray result = (JSONArray) ((JSONObject) recentChanges.get("query")).get("recentchanges");
@@ -120,26 +111,34 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                     continue;
                 }
                 Date timestamp = df.parse(rc.get("timestamp").toString());
-                Change change = new Change(rc.get("title").toString(), (long) rc.get("revid"), timestamp);
-                if (lastSeen == null || !lastSeen.equals(change.toString())) {
-                    /*
-                     * Remove duplicate changes by title keeping the latest
-                     * revision.
-                     */
-                    Change dupe = changesByTitle.put(change.entityId(), change);
-                    if (dupe != null && dupe.revision() > change.revision()) {
-                        changesByTitle.put(change.entityId(), dupe);
-                    }
+                Change change = new Change(rc.get("title").toString(), (long) rc.get("revid"), timestamp, (long)rc.get("rcid"));
+                /*
+                 * Remove duplicate changes by title keeping the latest
+                 * revision.
+                 */
+                Change dupe = changesByTitle.put(change.entityId(), change);
+                if (dupe != null && dupe.revision() > change.revision()) {
+                    // need to remove so that order will be correct
+                    changesByTitle.remove(change.entityId());
+                    changesByTitle.put(change.entityId(), dupe);
                 }
                 nextStartTime = Math.max(nextStartTime, timestamp.getTime());
+            }
+            ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
+            if (nextContinue == null) {
+                if (changes.size() != 0) {
+                    // Create fake rccontinue so we continue from last known change
+                    nextContinue = wikibase.getContinueObject(changes.get(changes.size() - 1));
+                } else {
+                    nextContinue = lastNextContinue;
+                }
             }
 
             // Show the user the polled time - one second because we can't
             // be sure we got the whole second
             String upTo = inputDateFormat().format(new Date(nextStartTime - 1000));
             long advanced = nextStartTime - lastNextStartTime.getTime();
-            return new Batch(ImmutableList.copyOf(changesByTitle.values()), advanced, upTo, new Date(nextStartTime),
-                    nextContinue, lastSeen);
+            return new Batch(changes, advanced, upTo, new Date(nextStartTime), nextContinue);
         } catch (java.text.ParseException e) {
             throw new RetryableException("Parse error from api", e);
         }

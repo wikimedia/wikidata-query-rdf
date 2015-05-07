@@ -92,7 +92,7 @@ public class IdChangeSource implements Change.Source<IdChangeSource.Batch> {
         long batchStop = min(batchStart + batchSize, stop + 1);
         ImmutableList.Builder<Change> changes = ImmutableList.builder();
         for (long id = batchStart; id < batchStop; id++) {
-            changes.add(new Change(String.format(Locale.ROOT, format, id), -1, null));
+            changes.add(new Change(String.format(Locale.ROOT, format, id), -1, null, id));
         }
         return new Batch(changes.build(), batchStop - batchStart, batchStop);
     }
