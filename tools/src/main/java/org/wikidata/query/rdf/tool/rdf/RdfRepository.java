@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool.rdf;
 
 import static com.google.common.io.Resources.getResource;
+import static org.wikidata.query.rdf.tool.FilteredStatements.filtered;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -282,6 +283,7 @@ public class RdfRepository {
         b.bind("uris.statement", uris.statement());
         b.bindStatements("insertStatements", statements);
         b.bindValues("valueStatements", statements);
+        b.bindValues("entityStatements", filtered(statements).withSubject(uris.entity() + entityId));
 
         long start = System.currentTimeMillis();
         int modified = execute("update", UPDATE_COUNT_RESPONSE, b.toString());
