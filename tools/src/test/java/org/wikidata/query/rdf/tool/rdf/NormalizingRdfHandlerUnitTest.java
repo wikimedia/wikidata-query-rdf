@@ -34,11 +34,11 @@ public class NormalizingRdfHandlerUnitTest {
         Statement o = statement("Q1", RDF.TYPE, new URIImpl(testStr));
         Statement o2 = statement("Q1", RDF.TYPE, new LiteralImpl(testStr));
 
-        checkStatement.expect("http://www.wikidata.org/ontology#Test", null, null);
+        checkStatement.expect("http://wikiba.se/ontology#Test", null, null);
         handler.handleStatement(s);
-        checkStatement.expect(null, "http://www.wikidata.org/ontology#Test", null);
+        checkStatement.expect(null, "http://wikiba.se/ontology#Test", null);
         handler.handleStatement(p);
-        checkStatement.expect(null, null, "http://www.wikidata.org/ontology#Test");
+        checkStatement.expect(null, null, "http://wikiba.se/ontology#Test");
         handler.handleStatement(o);
         checkStatement.expect(null, null, testStr);
         handler.handleStatement(o2);
@@ -49,7 +49,7 @@ public class NormalizingRdfHandlerUnitTest {
         StatementChecker checkStatement = new StatementChecker();
         NormalizingRdfHandler handler = new NormalizingRdfHandler(checkStatement);
 
-        checkStatement.expectURI("http://www.wikidata.org/ontology#Test");
+        checkStatement.expectURI("http://wikiba.se/ontology#Test");
         handler.handleNamespace("test", "http://www.wikidata.org/ontology-0.0.1#Test");
         handler.handleNamespace("test", "http://www.wikidata.org/ontology-beta#Test");
     }

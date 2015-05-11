@@ -147,6 +147,9 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
                 foundBad = true;
             }
             if (statement.getObject().stringValue().contains("http://www.wikidata.org/ontology#")) {
+                foundBad = true;
+            }
+            if (statement.getObject().stringValue().contains("http://wikiba.se/ontology#")) {
                 foundGood = true;
             }
         }

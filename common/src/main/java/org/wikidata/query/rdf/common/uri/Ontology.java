@@ -7,7 +7,12 @@ public final class Ontology {
     /**
      * Common prefix of all ontology parts.
      */
-    public static final String NAMESPACE = "http://www.wikidata.org/ontology#";
+    public static final String NAMESPACE = "http://wikiba.se/ontology#";
+    /**
+     * Old ontology prefix, for loading old dumps.
+     * TODO: remove this when ontology stabilizes.
+     */
+    public static final String OLD_NAMESPACE = "http://www.wikidata.org/ontology#";
 
     /**
      * Wikibase exports all items with an assertion that their RDF.TYPE is this
