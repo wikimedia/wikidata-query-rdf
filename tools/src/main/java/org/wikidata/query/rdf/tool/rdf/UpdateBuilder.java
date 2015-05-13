@@ -67,6 +67,10 @@ public class UpdateBuilder {
     public UpdateBuilder bindValues(String from, Collection<Statement> statements) {
         StringBuilder b = new StringBuilder(statements.size() * 30);
         for (Statement s : statements) {
+            if (s.getObject() instanceof BNode || s.getSubject() instanceof BNode) {
+                // skip bnodes since they can not be matched anyway
+                continue;
+            }
             b.append("( ").append(str(s.getSubject())).append(' ');
             b.append(str(s.getPredicate())).append(' ');
             b.append(str(s.getObject())).append(" )\n");

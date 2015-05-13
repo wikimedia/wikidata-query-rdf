@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.wikidata.query.rdf.tool.StatementHelper.uri;
 
 import java.util.ArrayList;
@@ -32,11 +33,19 @@ public final class Matchers {
     }
 
     /**
+     * Check binding to specific class.
+     */
+    public static Matcher<BindingSet> binds(String name, Class<?> value) {
+        return new BindsMatcher<Object>(name, instanceOf(value));
+    }
+
+    /**
      * Check a binding to a value.
      */
     public static <V> Matcher<BindingSet> binds(String name, V value) {
         return new BindsMatcher<V>(name, equalTo(value));
     }
+
 
     /**
      * Checks bindings.

@@ -17,7 +17,9 @@ import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.openrdf.model.BNode;
 import org.openrdf.model.Statement;
+import org.openrdf.model.impl.BNodeImpl;
 import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.query.QueryEvaluationException;
@@ -620,5 +622,18 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         Statement statement = statement(entityId, SchemaDotOrg.VERSION,
                 new IntegerLiteralImpl(new BigInteger(Integer.toString(version))));
         rdfRepository().sync(entityId, ImmutableList.of(statement));
+    }
+
+    @Test
+    public void statementWithBnode() throws QueryEvaluationException {
+        rdfRepository().sync("Q42", ImmutableList.of(//
+                statement("Q42", "P396", new BNodeImpl("testBnode"))));
+        TupleQueryResult r = rdfRepository().query("SELECT * WHERE {?s ?p ?o}");
+        assertTrue(r.hasNext());
+        assertThat(r.next(), allOf(//
+                binds("s", "Q42"), //
+                binds("p", "P396"), //
+                binds("o", BNode.class)));
+        assertFalse(r.hasNext());
     }
 }
