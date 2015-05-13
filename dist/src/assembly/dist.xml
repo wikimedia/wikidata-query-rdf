@@ -48,10 +48,12 @@
       <includes>
         <include>com.bigdata:bigdata:war</include>
       </includes>
-      <excludes>
-        <exclude>**/workbench.js</exclude>
-        <exclude>**/web.xml</exclude>
-      </excludes>
+       <unpackOptions>
+         <excludes>
+           <exclude>**/workbench.js</exclude>
+           <exclude>**/web.xml</exclude>
+         </excludes>
+        </unpackOptions>
       <useProjectArtifact>false</useProjectArtifact>
     </dependencySet>
 
