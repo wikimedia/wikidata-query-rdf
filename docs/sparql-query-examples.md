@@ -8,11 +8,11 @@
 
 ```sparql
 PREFIX entity: <http://www.wikidata.org/entity/>
-PREFIX v:      <http://www.wikidata.org/entity/value/>
+PREFIX t:      <http://www.wikidata.org/prop/direct/>
 PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?employer WHERE {
-  entity:Q39246 entity:P108/v:P108/rdfs:label ?employer .
+  entity:Q39246 t:P108/rdfs:label ?employer .
 } LIMIT 10
 ```
 
@@ -25,12 +25,12 @@ SELECT ?employer WHERE {
 
 ```sparql
 PREFIX entity: <http://www.wikidata.org/entity/>
-PREFIX v:      <http://www.wikidata.org/entity/value/>
+PREFIX t:      <http://www.wikidata.org/prop/direct/>
 PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?employer ?colleague WHERE {
-  entity:Q39246 entity:P108/v:P108 ?employerS .
-  ?colleagueS entity:P108/v:P108 ?employerS .
+  entity:Q39246 t:P108 ?employerS .
+  ?colleagueS t:P108 ?employerS .
   ?employerS rdfs:label ?employer .
   ?colleagueS rdfs:label ?colleague .
 } LIMIT 10
@@ -55,13 +55,13 @@ SELECT ?employer ?colleague WHERE {
 
 ```sparql
 PREFIX entity: <http://www.wikidata.org/entity/>
-PREFIX v:      <http://www.wikidata.org/entity/value/>
+PREFIX t:      <http://www.wikidata.org/prop/direct/>
 PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?colleague ?field WHERE {
-  entity:Q39246 entity:P108/v:P108 ?employerS .
-  ?colleagueS entity:P108/v:P108 ?employerS .
-  ?colleagueS entity:P101/v:P101/rdfs:label ?field .
+  entity:Q39246 t:P108 ?employerS .
+  ?colleagueS t:P108 ?employerS .
+  ?colleagueS t:P101/rdfs:label ?field .
   ?colleagueS rdfs:label ?colleague .
 } LIMIT 10
 ```
@@ -83,18 +83,18 @@ SELECT ?colleague ?field WHERE {
 physicists?
 
 * occupation: [P106](https://www.wikidata.org/wiki/Property:P106)
-* physicist: [Q169470](https://www.wikidata.org/wiki/Q169470)
+* mathematician: [Q170790](https://www.wikidata.org/wiki/Q170790)
 
 ```sparql
 PREFIX entity: <http://www.wikidata.org/entity/>
-PREFIX v:      <http://www.wikidata.org/entity/value/>
+PREFIX t:      <http://www.wikidata.org/prop/direct/>
 PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?colleague ?field WHERE {
-  entity:Q39246 entity:P108/v:P108 ?employerS .
-  ?colleagueS entity:P108/v:P108 ?employerS .
-  ?colleagueS entity:P106/v:P106 entity:Q170790 .
-  ?colleagueS entity:P101/v:P101/rdfs:label ?field .
+  entity:Q39246 t:P108 ?employerS .
+  ?colleagueS t:P108 ?employerS .
+  ?colleagueS t:P106 entity:Q170790 .
+  ?colleagueS t:P101/rdfs:label ?field .
   ?colleagueS rdfs:label ?colleague .
 } LIMIT 10
 ```
@@ -115,12 +115,12 @@ SELECT ?colleague ?field WHERE {
 
 ```sparql
 PREFIX entity: <http://www.wikidata.org/entity/>
-PREFIX v:      <http://www.wikidata.org/entity/value/>
+PREFIX t:      <http://www.wikidata.org/prop/direct/>
 PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd:    <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?entity (year(?date) as ?year) WHERE {
-  ?entityS entity:P569/v:P569 ?date .
+  ?entityS t:P569 ?date .
   ?entityS rdfs:label ?entity .
 
   FILTER (datatype(?date) = xsd:dateTime)
@@ -146,7 +146,6 @@ SELECT ?entity (year(?date) as ?year) WHERE {
 
 ```sparql
 PREFIX entity: <http://www.wikidata.org/entity/>
-PREFIX v:      <http://www.wikidata.org/entity/value/>
 PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd:    <http://www.w3.org/2001/XMLSchema#>
 
@@ -179,27 +178,29 @@ SELECT ?entity ?event (year(?date) as ?year) WHERE {
 
 ```sparql
 PREFIX entity: <http://www.wikidata.org/entity/>
-PREFIX v:      <http://www.wikidata.org/entity/value/>
+PREFIX t:      <http://www.wikidata.org/prop/direct/>
 PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX q:      <http://www.wikidata.org/entity/qualifier/>
+PREFIX q:      <http://www.wikidata.org/prop/qualifier/>
+PREFIX p:      <http://www.wikidata.org/prop/>
+PREFIX ps:     <http://www.wikidata.org/prop/statement/>
 
 SELECT (MAX(?population) AS ?max_population) ?city ?head WHERE {
-  ?cityS entity:P31/v:P31 entity:Q515 .     # find instances of subclasses of city
-  ?cityS entity:P6 ?x .                     # with a P6 (head of goverment) statement
-  ?x v:P6 ?headS .                          # ... that has the value ?headS
-  ?headS entity:P21/v:P21 entity:Q6581072 . # ... where the ?headS has P21 (sex or gender) female
+  ?cityS t:P31 entity:Q515 .           # find instances of subclasses of city
+  ?cityS p:P6 ?x .                     # with a P6 (head of goverment) statement
+  ?x ps:P6 ?headS .                    # ... that has the value ?headS
+  ?headS t:P21 entity:Q6581072 .       # ... where the ?headS has P21 (sex or gender) female
   FILTER NOT EXISTS { ?x q:P582 ?y }   # ... but the statement has no P582 (end date) qualifier
 
-  ?cityS entity:P1082/v:P1082 ?population .
+  ?cityS t:P1082 ?population .
 
   # Optionally, find English labels for city and head:
   OPTIONAL {
     ?cityS rdfs:label ?city .
-    FILTER ( lang(?city) = "en" )
+    FILTER (lang(?city) = "en")
   }
   OPTIONAL {
     ?headS rdfs:label ?head .
-    FILTER ( lang(?head) = "en" )
+    FILTER (lang(?head) = "en")
   }
 
 }
@@ -226,7 +227,7 @@ LIMIT 10
 ```sparql
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX entity: <http://www.wikidata.org/entity/>
-PREFIX t: <http://www.wikidata.org/entity/assert/>
+PREFIX t: <http://www.wikidata.org/prop/direct/>
 
 SELECT ?discoverer ?name (COUNT(?asteroid) AS ?count)
 WHERE {
@@ -260,7 +261,7 @@ LIMIT 10
 ```sparql
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX entity: <http://www.wikidata.org/entity/>
-PREFIX t: <http://www.wikidata.org/entity/assert/>
+PREFIX t: <http://www.wikidata.org/prop/direct/>
 
 SELECT ?discoverer ?name (COUNT(?planet) as ?count)
 WHERE {
@@ -279,6 +280,7 @@ LIMIT 10
 
 | discoverer                               | name                   | count  |
 | ---------------------------------------- | ---------------------- | ------ |
+| <http://www.wikidata.org/entity/Q123975> | Michel Mayor           | 3      |
 | <http://www.wikidata.org/entity/Q104154> | Urbain Le Verrier      | 2      |
 | <http://www.wikidata.org/entity/Q20015>  | John Couch Adams       | 2      |
 | <http://www.wikidata.org/entity/Q76431>  | Johann Gottfried Galle | 2      |
