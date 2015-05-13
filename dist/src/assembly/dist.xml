@@ -23,6 +23,14 @@
     </fileSet>
 
     <fileSet>
+      <outputDirectory>blazegraph/html/js</outputDirectory>
+      <directory>${project.basedir}/src/gui</directory>
+      <includes>
+        <include>workbench.js</include>
+      </includes>
+    </fileSet>
+
+    <fileSet>
       <outputDirectory>lib</outputDirectory>
       <directory>${project.basedir}/../tools/target</directory>
       <includes>
@@ -40,6 +48,10 @@
       <includes>
         <include>com.bigdata:bigdata:war</include>
       </includes>
+      <excludes>
+        <exclude>**/workbench.js</exclude>
+        <exclude>**/web.xml</exclude>
+      </excludes>
       <useProjectArtifact>false</useProjectArtifact>
     </dependencySet>
 
