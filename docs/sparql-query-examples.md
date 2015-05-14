@@ -263,7 +263,7 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX entity: <http://www.wikidata.org/entity/>
 PREFIX t: <http://www.wikidata.org/prop/direct/>
 
-SELECT ?discoverer ?name (COUNT(?planet) as ?count)
+SELECT ?discoverer ?name (COUNT(DISTINCT ?planet) as ?count)
 WHERE {
   ?ppart t:P279* entity:Q634 .
   ?planet t:P31 ?ppart .
@@ -274,18 +274,19 @@ WHERE {
   }
 }
 GROUP BY ?discoverer ?name
-ORDER BY DESC(?count)
+ORDER BY DESC(?count) ?name
 LIMIT 10
 ```
 
-| discoverer                               | name                   | count  |
-| ---------------------------------------- | ---------------------- | ------ |
-| <http://www.wikidata.org/entity/Q123975> | Michel Mayor           | 3      |
-| <http://www.wikidata.org/entity/Q104154> | Urbain Le Verrier      | 2      |
-| <http://www.wikidata.org/entity/Q20015>  | John Couch Adams       | 2      |
-| <http://www.wikidata.org/entity/Q76431>  | Johann Gottfried Galle | 2      |
-| <http://www.wikidata.org/entity/Q14277>  | William Herschel       | 2      |
-| <http://www.wikidata.org/entity/Q47272>  | Kepler                 | 2      |
-| <http://www.wikidata.org/entity/Q124013> | Didier Queloz          | 1      |
-| <http://www.wikidata.org/entity/Q123975> | Michel Mayor           | 1      |
-| <http://www.wikidata.org/entity/Q190232> | Clyde Tombaugh         | 1      |
+| discoverer                                | name                                     | count |
+| ----------------------------------------- | ---------------------------------------- | ----- |
+| <http://www.wikidata.org/entity/Q123975>  | Michel Mayor                             | 2     |
+| <http://www.wikidata.org/entity/Q2850870> | Anne-Marie Lagrange                      | 1     |
+| <http://www.wikidata.org/entity/Q712442>  | Artie P. Hatzes                          | 1     |
+| <http://www.wikidata.org/entity/Q190232>  | Clyde Tombaugh                           | 1     |
+| <http://www.wikidata.org/entity/Q124013>  | Didier Queloz                            | 1     |
+| <http://www.wikidata.org/entity/Q736811>  | Geoffrey Marcy                           | 1     |
+| <http://www.wikidata.org/entity/Q76431>   | Johann Gottfried Galle                   | 1     |
+| <http://www.wikidata.org/entity/Q20015>   | John Couch Adams                         | 1     |
+| <http://www.wikidata.org/entity/Q47272>   | Kepler                                   | 1     |
+| <http://www.wikidata.org/entity/Q1032158> | Optical Gravitational Lensing Experiment | 1     |
