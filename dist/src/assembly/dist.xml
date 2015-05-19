@@ -38,6 +38,16 @@
       </includes>
     </fileSet>
 
+    <fileSet>
+      <outputDirectory>docs</outputDirectory>
+      <directory>${project.basedir}/../docs</directory>
+    </fileSet>
+
+    <fileSet>
+      <outputDirectory>gui</outputDirectory>
+      <directory>${project.basedir}/../gui</directory>
+    </fileSet>
+
   </fileSets>
 
   <dependencySets>

@@ -1,0 +1,68 @@
+textarea {
+   margin: 5px 0;
+   width: 100%;
+   height: 200px;
+   box-sizing: border-box;
+}
+
+table {
+   border-collapse: collapse;
+   border-spacing: 0;
+}
+
+hr {
+   background: #cccccc;
+   border: none;
+   height: 3px;
+   width: 50%;
+   margin: 20px auto;
+}
+
+th, td {
+   border: 1px solid;
+   padding: 5px;
+}
+
+th {
+   font-weight: bold;
+}
+
+pre {
+   font-family: monospace;
+}
+
+#query-box {
+	clear: both;
+}
+
+.error {
+   margin: 20px;
+   overflow-x: scroll;
+   font-family: monospace;
+   white-space: pre;
+}
+
+#total, #query-result, #query-error, #hide-explorer {
+	display: none;
+}
+
+#shorturl {
+	float: right;
+}
+
+#total {
+	margin-bottom: 20px;
+}
+
+.namespace-shortcuts {
+   float: right;
+   margin-bottom: 20px;
+}
+
+.error-line {
+   background: red;
+}
+
+.error-character {
+   background: green;
+}
