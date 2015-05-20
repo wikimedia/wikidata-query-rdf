@@ -1,6 +1,8 @@
 var jQuery = $;
 var mediaWiki = {};
 
+var EDITOR = {};
+
 $(function() {
 	var SERVICE = '/bigdata/namespace/wdq/sparql';
 
@@ -59,7 +61,6 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\
 		mode : "sparql",
 	};
 
-	var EDITOR = {};
 	var ERROR_LINE_MARKER = null;
 	var ERROR_CHARACTER_MARKER = null;
 
@@ -273,19 +274,52 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\
 		$('#show-explorer').show();
 	}
 
+	function setupExamples() {
+		var exampleQueries = document.getElementById('exampleQueries');
+		exampleQueries.add(new Option('US presidents and wives',
+	    	        'PREFIX wd: <http://www.wikidata.org/entity/> \n' +
+	    	        'PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n' +
+	    	        'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n' +
+	    	        'PREFIX p: <http://www.wikidata.org/prop/>\n' +
+	    	        'PREFIX v: <http://www.wikidata.org/prop/statement/>\n' +
+	    	        'SELECT ?p ?w ?l ?wl WHERE {\n' +
+	    	        '   wd:Q30 p:P6/v:P6 ?p .\n' +
+	    	        '   ?p wdt:P26 ?w .\n' +
+	    	        '   OPTIONAL  {  \n' +
+	    	        '     ?p rdfs:label ?l FILTER (LANG(?l) = "en") . \n' +
+	    	        '   }\n' +
+	    	        '   OPTIONAL {\n' +
+	    	        '     ?w rdfs:label ?wl FILTER (LANG(?wl) = "en"). \n' +
+	    	        '   }\n' +
+	    	        ' }'
+	    	      ));
+	}
+
+	function pasteExample() {
+		var text = this.value;
+		this.selectedIndex = 0;
+		if(!text || !text.trim()) {
+			return;
+		}
+        EDITOR.setValue(text);
+    }
+
 	function setupHandlers() {
 		$('#query-form').submit(submitQuery);
 		$('.namespace-shortcuts').on('change', 'select', selectNamespace);
+		$('.exampleQueries').on('change', pasteExample);
 		$('#prefixes-button').click(addPrefixes);
 		$('#showhide').click(showHideHelp);
 		$('#hide-explorer').click(hideExlorer);
+		$('#clear-button').click(function () { EDITOR.setValue("") });
 
 	}
 
 	function startGUI() {
-		setupHandlers();
 		setupEditor();
+		setupExamples();
 		populateNamespaceShortcuts();
+		setupHandlers();
 		initQuery();
 	}
 
