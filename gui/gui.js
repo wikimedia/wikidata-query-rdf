@@ -95,7 +95,7 @@ window.EDITOR = {};
 	}
 
 	function showQueryResults(data) {
-		var results, thead, i, tr, j, binding, title,
+		var results, thead, i, tr, td, linkText, j, binding, title,
 			table = $('<table>').appendTo($('#query-result'));
 		$('#query-error').hide();
 		$('#query-result').show();
@@ -107,8 +107,8 @@ window.EDITOR = {};
 		}
 
 		results = data.results.bindings.length;
-		$('#total-results').html(results);
-		$('#query-time').html(Date.now() - QUERY_START);
+		$('#total-results').text(results);
+		$('#query-time').text(Date.now() - QUERY_START);
 		$('#total').show();
 		$('#shorturl').attr("href", SHORTURL+encodeURIComponent(window.location));
 
@@ -123,43 +123,52 @@ window.EDITOR = {};
 		for (i = 0; i < results; i++) {
 			tr = $('<tr>');
 			for (j = 0; j < data.head.vars.length; j++) {
+				td = $('<td>');
 				if (data.head.vars[j] in data.results.bindings[i]) {
 					binding = data.results.bindings[i][data.head.vars[j]];
 					text = binding.value;
 					if (binding.type == 'uri') {
 						text = abbreviate(text);
 					}
-					linkText = escapeHTML(text).replace(/\n/g, '<br>');
+					linkText = $('<pre>').text(text.trim());
 					if (binding.type == 'typed-literal') {
-						tdData = ' class="literal" data-datatype="' +
-								binding.datatype + '"';
+						td.attr({
+							"class": "literal",
+							"data-datatype": binding.datatype
+						}).append(linkText);
 					} else {
+						td.attr('class', binding.type);
 						if (binding.type == 'uri') {
-							text = '<a href="' + binding.value + '">' +
-									linkText + '</a>';
+							td.append($('<a>')
+								.attr("href", binding.value)
+								.append(linkText)
+							);
 							if(binding.value.match(/http:\/\/www.wikidata.org\/entity\//)) {
-								text += '<a href="javascript:exploreURL(\'' + binding.value + '\')">*</a>';
+								td.append($('<a>')
+									.attr("href", '#')
+									.bind('click', exploreURL.bind(undefined, binding.value))
+									.text('*')
+								);
 							}
+						} else {
+							td.append(linkText);
 						}
-						tdData = ' class="' + binding.type + '"';
+
 						if (binding['xml:lang']) {
-							title = text + "@" + binding['xml:lang'];
-							tdData += ' data-lang="' + binding['xml:lang'] +
-									'" title="' + title + '"';
+							td.attr({
+								"data-lang": binding["xml:lang"],
+								title: binding.value + '@' + binding["xml:lang"]
+							});
 						}
 					}
-					tr.append('<td' + tdData + '>' + text + '</td>');
 				} else {
 					// no binding
-					tr.append('<td class="unbound">');
+					td.attr("class", "unbound");
 				}
+				tr.append(td);
 			}
 			table.append(tr);
 		}
-	}
-
-	function escapeHTML(text) {
-		return $('<div/>').text(text).html();
 	}
 
 	function abbreviate(uri) {
@@ -183,7 +192,7 @@ window.EDITOR = {};
 	function populateNamespaceShortcuts() {
 		var category, select, ns;
 		// add namespaces to dropdowns
-		$('.namespace-shortcuts').html('Namespace prefixes: ');
+		$('.namespace-shortcuts').text('Namespace prefixes: ');
 		for ( category in NAMESPACE_SHORTCUTS) {
 			select = $('<select><option>' + category + '</option></select>')
 					.appendTo($('.namespace-shortcuts'));
@@ -251,7 +260,7 @@ window.EDITOR = {};
 		}
 	}
 
-	window.exploreURL = function(url) {
+	function exploreURL(url) {
 		var id,
 			match = url.match(/http:\/\/www.wikidata.org\/entity\/(.+)/);
 		if(!match) {
@@ -265,7 +274,7 @@ window.EDITOR = {};
 		}};
 		$('html, body').animate({ scrollTop: $("#explore").offset().top }, 500);
 		EXPLORER($, mw, $("#explore"));
-	};
+	}
 
 	function hideExlorer(e) {
 		e.preventDefault();
