@@ -7,7 +7,6 @@ window.EDITOR = {};
 		NAMESPACE_SHORTCUTS = {
 			'Wikidata' : {
 				'wikibase' : 'http://wikiba.se/ontology#',
-				'wdata' : 'http://wikidata.org/wiki/Special:EntityData/',
 				'wd' : 'http://wikidata.org/entity/',
 				'wdt' : 'http://wikidata.org/prop/direct/',
 				'wds' : 'http://wikidata.org/entity/statement/',
@@ -20,17 +19,19 @@ window.EDITOR = {};
 				'pqv' : 'http://wikidata.org/prop/qualifier/value/',
 				'pr' : 'http://wikidata.org/prop/reference/',
 				'prv' : 'http://wikidata.org/prop/reference/value/',
-				'wdno' : 'http://wikidata.org/prop/novalue/'
+				'wdno' : 'http://wikidata.org/prop/novalue/',
+				'wdata' : 'http://wikidata.org/wiki/Special:EntityData/'
 			},
 			'W3C' : {
 				'rdf' : 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
 				'rdfs' : 'http://www.w3.org/2000/01/rdf-schema#',
 				'owl' : 'http://www.w3.org/2002/07/owl#',
 				'skos' : 'http://www.w3.org/2004/02/skos/core#',
-				'xsd' : 'http://www.w3.org/2001/XMLSchema#'
+				'xsd' : 'http://www.w3.org/2001/XMLSchema#',
+				'prov' : 'http://www.w3.org/ns/prov#'
 			},
 			'Social/Other' : {
-				'schema' : 'http://schema.org/',
+				'schema' : 'http://schema.org/'
 			},
 			'Blazegraph' : {
 				'bd' : 'http://www.bigdata.com/rdf#',
