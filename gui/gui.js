@@ -2,7 +2,7 @@ window.mediaWiki = window.mediaWiki || {};
 window.EDITOR = {};
 
 (function($, mw) {
-	var SERVICE = '/bigdata/namespace/wdq/sparql',
+	var SERVICE = 'http://wdqs-beta.wmflabs.org/bigdata/namespace/wdq/sparql',
 		SHORTURL = 'http://tinyurl.com/create.php?url=',
 		NAMESPACE_SHORTCUTS = {
 			'Wikidata' : {
@@ -39,7 +39,7 @@ window.EDITOR = {};
 				'hint' : 'http://www.bigdata.com/queryHints#'
 			}
 		},
-		STANDARD_PREFIXES = [
+		STANDARD_PREFIXES =[
 				'PREFIX wd: <http://www.wikidata.org/entity/>',
 				'PREFIX wdt: <http://www.wikidata.org/prop/direct/>',
 				'PREFIX wikibase: <http://wikiba.se/ontology#>',
@@ -62,6 +62,7 @@ window.EDITOR = {};
 		EDITOR.save();
 
 		var query = $('#query-form').serialize(),
+			hash = encodeURIComponent(EDITOR.getValue()),
 			url = SERVICE + "?" + query,
 			settings = {
 				headers : {
@@ -75,7 +76,9 @@ window.EDITOR = {};
 		$('#total').hide();
 		$('#query-error').show();
 		$('#query-error').text('Running query...');
-		window.location.hash = encodeURIComponent(EDITOR.getValue());
+		if (window.location.hash !== hash) {
+			window.location.hash = hash;
+		}
 		QUERY_START = Date.now();
 		$.ajax(url, settings);
 	}
@@ -340,5 +343,6 @@ window.EDITOR = {};
 	$(document).ready(function() {
 		startGUI();
 	});
+	$(window).on('popstate', initQuery);
 })(jQuery, mediaWiki);
 
