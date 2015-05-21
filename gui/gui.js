@@ -2,7 +2,7 @@ window.mediaWiki = window.mediaWiki || {};
 window.EDITOR = {};
 
 (function($, mw) {
-	var SERVICE = 'http://wdqs-beta.wmflabs.org/bigdata/namespace/wdq/sparql',
+	var SERVICE = '/bigdata/namespace/wdq/sparql',
 		SHORTURL = 'http://tinyurl.com/create.php?url=',
 		NAMESPACE_SHORTCUTS = {
 			'Wikidata' : {
