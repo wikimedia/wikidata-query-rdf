@@ -96,7 +96,9 @@ window.EDITOR = {};
 
 	function showQueryResults(data) {
 		var results, thead, i, tr, td, linkText, j, binding, title,
-			table = $('<table>').appendTo($('#query-result'));
+			table = $('<table>')
+				.attr('class','table')
+				.appendTo($('#query-result'));
 		$('#query-error').hide();
 		$('#query-result').show();
 
@@ -190,16 +192,19 @@ window.EDITOR = {};
 	}
 
 	function populateNamespaceShortcuts() {
-		var category, select, ns;
+		var category, select, ns,
+			container = $('.namespace-shortcuts');
 		// add namespaces to dropdowns
-		$('.namespace-shortcuts').text('Namespace prefixes: ');
+		container.text('Namespace prefixes: ');
 		for ( category in NAMESPACE_SHORTCUTS) {
-			select = $('<select><option>' + category + '</option></select>')
-					.appendTo($('.namespace-shortcuts'));
+			select = $('<select>')
+				.attr('class', 'form-control')
+				.append($('<option>').text(category))
+				.appendTo(container);
 			for ( ns in NAMESPACE_SHORTCUTS[category]) {
-				select.append('<option value="' +
-						NAMESPACE_SHORTCUTS[category][ns] + '">' + ns +
-						 '</option>');
+				select.append($('<option>').text(ns).attr({
+					value: NAMESPACE_SHORTCUTS[category][ns]
+				}));
 			}
 		}
 	}
