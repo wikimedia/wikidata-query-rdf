@@ -59,7 +59,7 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
         Future<?> f = executor.submit(new Munge(uris(), munger, from, to));
         httpd.start();
         try {
-            assertEquals(938, rdfRepository().loadUrl("http://localhost:10999"));
+            assertEquals(944, rdfRepository().loadUrl("http://localhost:10999"));
         } finally {
             try {
                 /*
@@ -84,5 +84,13 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
 
         assertEquals(WikibaseRepository.inputDateFormat().parse("2015-04-02T10:54:56Z"), rdfRepository()
                 .fetchLeftOffTime());
+
+        assertTrue(rdfRepository().ask(
+                SchemaDotOrg.prefix(uris().prefixes(new StringBuilder()))
+                        .append("ASK { wd:Q20 schema:dateModified ?date }").toString()));
+
+        assertTrue(rdfRepository().ask(
+                SchemaDotOrg.prefix(uris().prefixes(new StringBuilder()))
+                        .append("ASK { wd:Q21 schema:version ?v }").toString()));
     }
 }

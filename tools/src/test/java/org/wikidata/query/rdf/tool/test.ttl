@@ -28,6 +28,8 @@ wikibase:Dump a schema:Dataset ;
 	schema:softwareVersion "0.0.1" ;
 	schema:dateModified "2015-04-02T10:54:56Z"^^xsd:dateTime .
 
+wd:Q20 owl:sameAs wd:Q19 .
+
 wdata:Q9 schema:version "7177"^^xsd:integer ;
 	schema:dateModified "2014-07-27T12:15:09Z"^^xsd:dateTime ;
 	a schema:Dataset ;
@@ -52,6 +54,8 @@ wd:Q9 a wikibase:Item ;
 <http://en.wikipedia.org/wiki/History%20of%20cartography> a schema:Article ;
 	schema:about wd:Q9 ;
 	schema:inLanguage "en" .
+
+wd:Q21 owl:sameAs wd:Q19 .
 
 wdata:P9 schema:version "183"^^xsd:integer ;
 	schema:dateModified "2013-06-08T16:02:44Z"^^xsd:dateTime ;
@@ -1984,3 +1988,4 @@ wds:P19-e1907a91-4e6d-abe1-c79d-5d69bb7176dc a wikibase:Statement ;
 	ps:P192 wd:Q21 ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
+

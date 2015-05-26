@@ -2,22 +2,31 @@ package org.wikidata.query.rdf.tool.rdf;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.TimeZone;
+
+import javax.xml.bind.DatatypeConverter;
 
 import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
+import org.openrdf.model.impl.LiteralImpl;
+import org.openrdf.model.impl.NumericLiteralImpl;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.vocabulary.XMLSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
@@ -26,6 +35,7 @@ import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
+import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -124,14 +134,18 @@ public class Munger {
      * @param statements statements to munge
      * @param existingValues Existing value statements
      * @param existingRefs Existing reference statements
+     * @param sourceChange Change that originated the operation
      */
     public void munge(String entityId, Collection<Statement> statements, Collection<String> existingValues,
-            Collection<String> existingRefs) {
+            Collection<String> existingRefs, Change sourceChange) {
         if (statements.isEmpty()) {
             // Empty collection is a delete.
             return;
         }
         MungeOperation op = new MungeOperation(entityId, statements, existingValues, existingRefs);
+        if (sourceChange != null) {
+            op.importFromChange(sourceChange);
+        }
         op.munge();
         // remove all values that we have seen as they are used by statements
         existingValues.removeAll(op.extraValidSubjects);
@@ -144,10 +158,23 @@ public class Munger {
      * RDF exports into a more queryable form.
      *
      * @param statements statements to munge
+     * @param existingValues Existing value statements
+     * @param existingRefs Existing reference statements
+     */
+    public void munge(String entityId, Collection<Statement> statements, Collection<String> existingValues,
+            Collection<String> existingRefs) {
+        munge(entityId, statements, existingValues, existingRefs, null);
+    }
+
+    /**
+     * Adds and removes entries from the statements collection to munge Wikibase
+     * RDF exports into a more queryable form.
+     *
+     * @param statements statements to munge
      */
     @SuppressWarnings("unchecked")
     public void munge(String entityId, Collection<Statement> statements) {
-        munge(entityId, statements, Collections.EMPTY_SET, Collections.EMPTY_SET);
+        munge(entityId, statements, Collections.EMPTY_SET, Collections.EMPTY_SET, null);
     }
 
     /**
@@ -216,6 +243,7 @@ public class Munger {
          * Revision id that we find while scanning the statements.
          */
         private Literal revisionId;
+
         /**
          * Last modified date that we find while scanning the statements.
          */
@@ -249,6 +277,22 @@ public class Munger {
             }
             this.existingValues = existingValues;
             this.existingRefs = existingRefs;
+        }
+
+        /**
+         * Import revision data from Change object.
+         * @param sourceChange
+         */
+        public void importFromChange(Change sourceChange) {
+            if (sourceChange.revision() > 0) {
+                this.revisionId = new NumericLiteralImpl(sourceChange.revision());
+            }
+            if (sourceChange.timestamp() != null) {
+                Date date = sourceChange.timestamp();
+                Calendar c = Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
+                c.setTime(date);
+                this.lastModified = new LiteralImpl(DatatypeConverter.printDate(c), XMLSchema.DATETIME);
+            }
         }
 
         /**
@@ -341,6 +385,7 @@ public class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
+        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         private boolean entityStatement() {
             if (!subject.equals(entityUri)) {
                 /*
@@ -368,8 +413,27 @@ public class Munger {
                 return limitLabelLanguage() && singleLabelMode(singleLabelModeWorkForDescription);
             case SKOS.ALT_LABEL:
                 return limitLabelLanguage();
+            case OWL.SAME_AS:
+                // TODO: remove when T100463 is fixed
+                redirectFix();
+                return true;
             default:
                 return entityStatementWithUnrecognizedPredicate();
+            }
+        }
+
+        /**
+         * Temporary fix for redirects not having revision/timestamp.
+         * TODO: remove when T100463 is fixed.
+         */
+        private void redirectFix() {
+            if (revisionId == null) {
+                revisionId = new NumericLiteralImpl(1);
+            }
+            if (lastModified == null) {
+                // This is horrible but we don't have better option now than invent the time
+                lastModified = new LiteralImpl(DatatypeConverter.printDateTime(
+                        Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT)), XMLSchema.DATETIME);
             }
         }
 

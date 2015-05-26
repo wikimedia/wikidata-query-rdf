@@ -31,6 +31,7 @@ import org.openrdf.rio.Rio;
 import org.openrdf.rio.turtle.TurtleParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
@@ -318,6 +319,17 @@ public class Munge implements Runnable {
                 next.output().handleStatement(statement);
                 return;
             }
+            if (statement.getPredicate().stringValue().equals(OWL.SAME_AS)) {
+                // Temporary fix for T100463
+                if (haveNonEntityDataStatements) {
+                    munge();
+                }
+                entityId = subject.substring(subject.lastIndexOf('/') + 1);
+                statements.add(statement);
+                haveNonEntityDataStatements = true;
+                return;
+            }
+
             haveNonEntityDataStatements = true;
             statements.add(statement);
         }

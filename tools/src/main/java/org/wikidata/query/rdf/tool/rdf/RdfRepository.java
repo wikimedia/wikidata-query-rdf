@@ -114,7 +114,7 @@ public class RdfRepository {
      * How long to delay after failing first HTTP call, in milliseconds.
      * Next retries would be slower by 2x, 3x, 4x etc. until maxRetries is exhausted.
      */
-    private int delay = 1000;
+    private int delay = 2000;
 
     /**
      * Allow subclass access to the HTTP client.

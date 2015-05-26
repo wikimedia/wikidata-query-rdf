@@ -99,15 +99,12 @@ public final class Ontology {
          * representing offset from UTC in minutes.
          */
         public static final String TIMEZONE = PREFIX + "Timezone";
-        // TODO we should check if we have to normalize the simple values to UTC
-        // or if wikibase does that
+        // Wikibase exports are all UTC so this is only for GUI purposes
         /**
          * Calendar model in which the date was defined.
          */
         public static final String CALENDAR_MODEL = PREFIX + "CalendarModel";
-
-        // TODO normalize simple values in different calendar models into
-        // Gregorian where possible
+        // Wikibase exports are all Gregorian so this is only for GUI purposes
         private Time() {
             // Utility class.
         }
