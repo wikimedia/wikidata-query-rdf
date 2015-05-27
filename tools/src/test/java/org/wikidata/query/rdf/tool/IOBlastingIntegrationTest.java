@@ -102,12 +102,12 @@ public class IOBlastingIntegrationTest extends AbstractUpdateIntegrationTestBase
             int statementCount = randomIntBetween(1, MAX_STATEMENTS_PER_NAMESPACE);
 
             // Make some noise
-            rdfRepository.sync(s, randomStatementsAbout(s, statementCount));
-            rdfRepository.sync(s, randomStatementsAbout(s, statementCount));
+            rdfRepository.sync(s, randomStatementsAbout(s, statementCount), null);
+            rdfRepository.sync(s, randomStatementsAbout(s, statementCount), null);
 
             // Now the *real* statements
             List<Statement> statements = randomStatementsAbout(s, statementCount);
-            rdfRepository.sync(s, statements);
+            rdfRepository.sync(s, statements, null);
 
             return statements;
         }

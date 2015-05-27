@@ -46,4 +46,16 @@ public class FilteredStatements {
         return Collections2.filter(statements, aboutSubject);
     }
 
+    /**
+     * Returns a collection of statements that have subject start with given {@link String}.
+     */
+    public Collection<Statement> withSubjectStarts(final String prefix) {
+        Predicate<Statement> aboutSubject = new Predicate<Statement>() {
+            @Override
+            public boolean apply(Statement statement) {
+                return statement.getSubject().stringValue().startsWith(prefix);
+            }
+        };
+        return Collections2.filter(statements, aboutSubject);
+    }
 }

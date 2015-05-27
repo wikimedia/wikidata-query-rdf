@@ -242,24 +242,6 @@ public class RdfRepository {
     }
 
     /**
-     * Clean subjects if they are not used anymore. The candidate values do not
-     * have to be actually unused - the cleanup query will figure out which are
-     * unused and delete only those.
-     *
-     * @param valueList List of potential candidates for cleanup.
-     */
-    public void cleanUnused(Collection<String> valueList) {
-        if (valueList.isEmpty()) {
-            return;
-        }
-        long start = System.currentTimeMillis();
-        UpdateBuilder b = new UpdateBuilder(cleanUnused);
-        b.bindUris("values", valueList);
-        int modified = execute("update", UPDATE_COUNT_RESPONSE, b.toString());
-        log.debug("Cleanup {} millis and modified {} statements", System.currentTimeMillis() - start, modified);
-    }
-
-    /**
      * Synchronizes the RDF repository's representation of an entity to be
      * exactly the provided statements. You can think of the RDF managed for an
      * entity as a tree rooted at the entity. The managed tree ends where the
@@ -270,9 +252,10 @@ public class RdfRepository {
      *
      * @param entityId id of the entity to sync
      * @param statements all known statements about the entity
+     * @param valueList list of used values, for cleanup
      * @return the number of statements modified
      */
-    public int sync(String entityId, Collection<Statement> statements) {
+    public int sync(String entityId, Collection<Statement> statements, Collection<String> valueList) {
         // TODO this is becoming a mess too
         log.debug("Updating data for {}", entityId);
         UpdateBuilder b = new UpdateBuilder(syncBody);
@@ -282,14 +265,41 @@ public class RdfRepository {
         b.bind("uris.value", uris.value());
         b.bind("uris.statement", uris.statement());
         b.bindStatements("insertStatements", statements);
-        b.bindValues("valueStatements", statements);
-        b.bindValues("entityStatements", filtered(statements).withSubject(uris.entity() + entityId));
+
+        Collection<Statement> entityStatements = filtered(statements).withSubject(uris.entity() + entityId);
+        b.bindValues("entityStatements", entityStatements);
+
+        Collection<Statement> statementStatements = filtered(statements).withSubjectStarts(uris.statement());
+        b.bindValues("statementStatements", statementStatements);
+
+        Collection<Statement> aboutStatements = new HashSet<Statement>(statements);
+        aboutStatements.removeAll(entityStatements);
+        aboutStatements.removeAll(statementStatements);
+        b.bindValues("valueStatements", aboutStatements);
+
+        if (valueList != null && !valueList.isEmpty()) {
+            UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
+            cleanup.bindUris("values", valueList);
+            b.bind("cleanupQuery", cleanup.toString());
+        }  else {
+            b.bind("cleanupQuery", "");
+        }
 
         long start = System.currentTimeMillis();
         int modified = execute("update", UPDATE_COUNT_RESPONSE, b.toString());
         log.debug("Updating {} took {} millis and modified {} statements", entityId,
                 System.currentTimeMillis() - start, modified);
         return modified;
+    }
+
+    /**
+     * @see sync(String entityId, Collection<Statement> statements, Collection<String> valueList)
+     * @param entityId id of the entity to sync
+     * @param statements all known statements about the entity
+     * @return the number of statements modified
+     */
+    public int sync(String entityId, Collection<Statement> statements) {
+        return sync(entityId, statements, null);
     }
 
     /**
@@ -374,6 +384,7 @@ public class RdfRepository {
             post.setHeader(new BasicHeader("Accept", responseHandler.acceptHeader()));
         }
         log.debug("Running SPARQL: {}", sparql);
+        long startQuery = System.currentTimeMillis();
         // TODO we might want to look into Blazegraph's incremental update
         // reporting.....
         List<NameValuePair> entity = new ArrayList<>();
@@ -387,6 +398,7 @@ public class RdfRepository {
                         throw new ContainedException("Non-200 response from triple store:  " + response + " body=\n"
                                 + responseBodyAsString(response));
                     }
+                    log.debug("Completed in {} ms", System.currentTimeMillis() - startQuery);
                     return responseHandler.parse(response.getEntity());
                 }
             } catch (IOException e) {

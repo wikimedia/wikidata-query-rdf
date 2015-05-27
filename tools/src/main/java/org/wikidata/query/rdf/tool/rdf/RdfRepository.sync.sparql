@@ -23,7 +23,7 @@ WHERE {
   ?s ?p ?o .
   FILTER NOT EXISTS {
     VALUES ( ?s ?p ?o ) {
-      %entityStatements%
+      %statementStatements%
     }
   }
 };
@@ -35,11 +35,12 @@ WHERE {
   %entity:id% ?p ?o .
   FILTER NOT EXISTS {
     VALUES ( ?s ?p ?o ) {
-      %valueStatements%
+      %entityStatements%
     }
   }
 };
+# Insert new data
 INSERT {
   %insertStatements%
-} WHERE {}
-
+} WHERE {};
+%cleanupQuery%

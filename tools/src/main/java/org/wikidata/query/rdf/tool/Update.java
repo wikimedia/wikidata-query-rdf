@@ -339,11 +339,10 @@ public class Update<B extends Change.Batch> implements Runnable {
         Set<String> values = rdfRepository.getValues(change.entityId());
         Set<String> refs = rdfRepository.getRefs(change.entityId());
         munger.munge(change.entityId(), statements, values, refs, change);
-        rdfRepository.sync(change.entityId(), statements);
         List<String> cleanupList = new ArrayList<>();
         cleanupList.addAll(values);
         cleanupList.addAll(refs);
-        rdfRepository.cleanUnused(cleanupList);
+        rdfRepository.sync(change.entityId(), statements, cleanupList);
         updateMeter.mark();
     }
 

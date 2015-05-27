@@ -244,11 +244,10 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         statement(george, statementUri, uris().property(PropertyType.STATEMENT_VALUE) + "P509", valueUri);
         statement(george, valueUri, Ontology.Time.VALUE, new LiteralImpl("dog"));
         statement(george, valueUri, Ontology.Time.CALENDAR_MODEL, new LiteralImpl("animals"));
-        rdfRepository().sync("Q23", george);
         Collection<String> cleanupList = new ArrayList<String>();
         cleanupList.add(valueUri);
         cleanupList.add(uris().value() + "someuuid");
-        rdfRepository().cleanUnused(cleanupList);
+        rdfRepository().sync("Q23", george);
         assertTrue(rdfRepository().ask(
                 Ontology.prefix(uris().prefixes(new StringBuilder()))
                 .append("ASK { wd:Q23 p:P509 [ psv:P509 [ ontology:timeValue \"dog\" ] ] }").toString()));
@@ -314,8 +313,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         statement(george, referenceUri, uris().property(PropertyType.REFERENCE_VALUE) + "P509", valueUri);
         statement(george, valueUri, Ontology.Time.VALUE, new LiteralImpl("dog"));
         statement(george, valueUri, Ontology.Time.CALENDAR_MODEL, new LiteralImpl("animals"));
-        rdfRepository().sync("Q23", george);
-        rdfRepository().cleanUnused(cleanupList);
+        rdfRepository().sync("Q23", george, cleanupList);
         assertTrue(rdfRepository()
                 .ask(Provenance
                         .prefix(Ontology.prefix(uris().prefixes(new StringBuilder())))
@@ -349,8 +347,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
                 Ontology.NORMAL_RANK, referenceUri);
         statement(george, referenceUri, uris().property(PropertyType.REFERENCE) + "P854", "http://www.anb.org/articles/02/02-00332.html");
         cleanupList.add(referenceUri);
-        rdfRepository().sync("Q23", george);
-        rdfRepository().cleanUnused(cleanupList);
+        rdfRepository().sync("Q23", george, cleanupList);
         StringBuilder query = Provenance.prefix(Ontology.prefix(uris().prefixes(new StringBuilder())));
         query.append("SELECT * WHERE { wd:Q23 p:P19 [ ps:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
         TupleQueryResult r = rdfRepository().query(query.toString());
@@ -370,8 +367,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
                 Ontology.NORMAL_RANK, referenceUri);
         cleanupList.add(referenceUri);
         statement(george, referenceUri, uris().property(PropertyType.REFERENCE) + "P854", "http://example.com");
-        rdfRepository().sync("Q23", george);
-        rdfRepository().cleanUnused(cleanupList);
+        rdfRepository().sync("Q23", george, cleanupList);
         StringBuilder query = Provenance.prefix(Ontology.prefix(uris().prefixes(new StringBuilder())));
         query.append("SELECT * WHERE { wd:Q23 p:P19 [ ps:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
         TupleQueryResult r = rdfRepository().query(query.toString());
@@ -391,8 +387,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
                 Ontology.NORMAL_RANK, referenceUri);
         cleanupList.add(referenceUri);
         statement(george, referenceUri, uris().property(PropertyType.REFERENCE) + "P143", "http://www.anb.org/articles/02/02-00332.html");
-        rdfRepository().sync("Q23", george);
-        rdfRepository().cleanUnused(cleanupList);
+        rdfRepository().sync("Q23", george, cleanupList);
         StringBuilder query = Provenance.prefix(Ontology.prefix(uris().prefixes(new StringBuilder())));
         query.append("SELECT * WHERE { wd:Q23 p:P19 [ ps:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
         TupleQueryResult r = rdfRepository().query(query.toString());
@@ -417,8 +412,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         List<Statement> dummy = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q1234134", "P19", "Q494413",
                 Ontology.NORMAL_RANK, referenceUri);
         dummy.add(refDecl);
-        rdfRepository().sync("Q1234134", dummy);
-        rdfRepository().cleanUnused(cleanupList);
+        rdfRepository().sync("Q1234134", dummy, cleanupList);
 
         // Now query and make sure you can find it
         StringBuilder query = Provenance.prefix(Ontology.prefix(uris().prefixes(new StringBuilder())));
@@ -461,8 +455,7 @@ public class RdfRepositoryIntegrationTest extends AbstractRdfRepositoryIntegrati
         // Now remove it from its last place
         george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
                 Ontology.NORMAL_RANK);
-        rdfRepository().sync("Q23", george);
-        rdfRepository().cleanUnused(cleanupList);
+        rdfRepository().sync("Q23", george, cleanupList);
 
         /*
          * Now query and find the reference now gone because it isn't used
