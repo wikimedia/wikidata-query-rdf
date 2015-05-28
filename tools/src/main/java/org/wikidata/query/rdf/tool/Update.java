@@ -230,6 +230,7 @@ public class Update<B extends Change.Batch> implements Runnable {
                 log.warn("Retryable error fetching first batch.  Retrying.", e);
             }
         } while (batch == null);
+        log.debug("{} changes in batch", batch.changes().size());
         while (true) {
             try {
                 handleChanges(batch);
