@@ -25,6 +25,8 @@ pushd $DIR
 echo "Running Blazegraph from `pwd` on :$PORT/$CONTEXT"
 java -Dcom.bigdata.rdf.sail.webapp.ConfigParams.propertyFile=RWStore.properties \
      -Dorg.eclipse.jetty.server.Request.maxFormContentSize=20000000 \
+     -Dcom.bigdata.rdf.sparql.ast.QueryHints.analytic=true \
+     -Dcom.bigdata.rdf.sparql.ast.QueryHints.analyticMaxMemoryPerQuery=1073741824 \
      -jar jetty-runner*.jar \
      --port $PORT \
      --path /$CONTEXT \
