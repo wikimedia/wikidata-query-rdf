@@ -100,7 +100,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             // Using LinkedHashMap here so that changes came out sorted by order of arrival
             Map<String, Change> changesByTitle = new LinkedHashMap<>();
             JSONObject nextContinue = (JSONObject) recentChanges.get("continue");
-            long nextStartTime = 0;
+            long nextStartTime = lastNextStartTime.getTime();
             JSONArray result = (JSONArray) ((JSONObject) recentChanges.get("query")).get("recentchanges");
             DateFormat df = inputDateFormat();
             for (Object rco : result) {

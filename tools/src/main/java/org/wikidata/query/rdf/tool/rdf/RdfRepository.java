@@ -162,7 +162,7 @@ public class RdfRepository {
      * Set retry delay.
      * Specifies how long to delay after failing first HTTP call, in milliseconds.
      * Next retries would be slower by 2x, 3x, 4x etc. until maxRetries is exhausted.
-     * @return
+     * @return The repository object
      */
     public RdfRepository setDelay(int delay) {
         this.delay = delay;
@@ -293,7 +293,8 @@ public class RdfRepository {
     }
 
     /**
-     * @see sync(String entityId, Collection<Statement> statements, Collection<String> valueList)
+     * Synchronizes the RDF repository's representation.
+     * @see {@link #sync(String, Collection<Statement>, Collection<String>) sync}
      * @param entityId id of the entity to sync
      * @param statements all known statements about the entity
      * @return the number of statements modified
