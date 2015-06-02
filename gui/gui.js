@@ -94,8 +94,11 @@ window.EDITOR = {};
 			response = $('<div>').append(jqXHR.responseText);
 			message += response.text();
 			highlightError(jqXHR.responseText);
+			if(jqXHR.responseText.match(/Query deadline is expired/)) {
+				message = "QUERY TIMEOUT\n"+message;
+			}
 		}
-		$('#query-error').text(message).show();
+		$('#query-error').html($('<pre>').text(message)).show();
 	}
 
 	function showQueryResults(data) {
