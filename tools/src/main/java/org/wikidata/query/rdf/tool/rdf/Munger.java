@@ -26,6 +26,7 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.WikibaseDate;
 import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
@@ -432,8 +433,8 @@ public class Munger {
             }
             if (lastModified == null) {
                 // This is horrible but we don't have better option now than invent the time
-                lastModified = new LiteralImpl(DatatypeConverter.printDateTime(
-                        Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT)), XMLSchema.DATETIME);
+                WikibaseDate wb = WikibaseDate.fromSecondsSinceEpoch(Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT).getTimeInMillis() / 1000);
+                lastModified = new LiteralImpl(wb.toString(WikibaseDate.ToStringFormat.DATE_TIME), XMLSchema.DATETIME);
             }
         }
 

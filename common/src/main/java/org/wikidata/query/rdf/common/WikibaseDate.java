@@ -11,16 +11,21 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
+
 /**
  * Handles wikidata dates. Note that this ignores leap seconds. This isn't ok
  * but its what joda time does so it where we're starting.
  */
 public class WikibaseDate {
+//    private static final transient Logger log = LoggerFactory.getLogger(WikibaseDate.class);
+
     /**
      * Pattern used to recognize dates sent from wikibase.
      */
     private static final Pattern FORMAT_PATTERN = Pattern
-            .compile("(?<year>[+-]?0+)-(?<month>0?0)-(?<day>0?0)(?:T(?<hour>0?0):(?<minute>0?0)(?::(?<second>0?0))?)?Z?"
+            .compile("(?<year>[+-]?0+)-(?<month>0?0)-(?<day>0?0)(?:T(?<hour>0?0):(?<minute>0?0)(?::(?<second>0?0)(?<ms>[.]000)?)?)?Z?"
                     .replace("0", "\\d"));
 
     /**
@@ -46,6 +51,7 @@ public class WikibaseDate {
         int hour = parseOr0(m, "hour");
         int minute = parseOr0(m, "minute");
         int second = parseOr0(m, "second");
+        // log.debug("Parsed {} into {}-{}-{}T{}:{}:{}", string, year, month, day, hour, minute, second);
         return new WikibaseDate(year, month, day, hour, minute, second);
     }
 
@@ -78,6 +84,7 @@ public class WikibaseDate {
         second %= SECONDS_PER_HOUR;
         int minute = second / SECONDS_PER_MINUTE;
         second %= SECONDS_PER_MINUTE;
+        // log.debug("Parsed {} into {}-{}-{}T{}:{}:{}", secondsSinceEpoch, year, month, day, hour, minute, second);
         return new WikibaseDate(year, month, day, hour, minute, second);
     }
 

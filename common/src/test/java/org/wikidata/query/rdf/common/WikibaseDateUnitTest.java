@@ -32,6 +32,7 @@ public class WikibaseDateUnitTest extends RandomizedTest {
         assertEquals(wbDate, fromString("1970-1-1T00:00"));
         assertEquals(wbDate, fromString("1970-1-1T00:00:00"));
         assertEquals(wbDate, fromString("1970-1-1T00:00:00Z"));
+        assertEquals(wbDate, fromString("1970-1-1T00:00:00.123Z"));
     }
 
     @Test
@@ -95,11 +96,20 @@ public class WikibaseDateUnitTest extends RandomizedTest {
     }
 
     @Test
+
     public void bigBang() {
         WikibaseDate wbDate = fromString("-13798000000-00-00T00:00:00Z").cleanWeirdStuff();
         assertEquals(wbDate, fromString("-13798000000-01-01T00:00:00Z"));
         assertEquals(-435422885863219200L, wbDate.secondsSinceEpoch());
         checkRoundTrip(wbDate);
+    }
+
+    @Test
+    public void transitionCE() {
+        long sec1BCE = fromString("-0001-01-01T00:00:00Z").secondsSinceEpoch();
+        long sec1CE = fromString("0001-01-01T00:00:00Z").secondsSinceEpoch();
+        long daysBetween = (sec1CE - sec1BCE) / (60 * 60 * 24);
+        assertEquals(365 + 366, daysBetween);
     }
 
     @Test
