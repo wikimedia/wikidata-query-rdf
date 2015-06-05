@@ -104,7 +104,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         long now = System.currentTimeMillis();
         String entityId = repo.firstEntityIdForLabelStartingWith(label, "en", type);
         repo.setLabel(entityId, type, label + now, "en");
-        JSONArray changes = getRecentChanges(new Date(now), null, 10);
+        JSONArray changes = getRecentChanges(new Date(now - 10000), null, 10);
         boolean found = false;
         String title = entityId;
         if (type.equals("property")) {
@@ -162,7 +162,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         long now = System.currentTimeMillis();
         String entityId = repo.firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
         repo.setLabel(entityId, "item", "QueryTestItem" + now, "en");
-        JSONArray changes = getRecentChanges(new Date(now), null, 10);
+        JSONArray changes = getRecentChanges(new Date(now - 10000), null, 10);
         Change change = null;
         long oldRevid = 0;
         long oldRcid = 0;
@@ -182,7 +182,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         JSONObject continueObject = repo.getContinueObject(change);
         // make new edit now
         repo.setLabel(entityId, "item", "QueryTestItem" + now + "updated", "en");
-        changes = getRecentChanges(new Date(now), continueObject, 10);
+        changes = getRecentChanges(new Date(now - 10000), continueObject, 10);
         // check that new result does not contain old edit but contains new edit
         boolean found = false;
         for (Object changeObject : changes) {
