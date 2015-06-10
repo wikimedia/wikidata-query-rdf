@@ -315,7 +315,8 @@ public class WikibaseRepository {
              * looking at you test.
              */
             builder.setPath(String.format(Locale.ROOT, "/wiki/Special:EntityData/%s.ttl", entityId));
-            builder.addParameter("nocache", "1");
+            // Cache is not our friend, try to work around it
+            builder.addParameter("nocache", Long.toString(new Date().getTime()));
             builder.addParameter("flavor", "dump");
             return build(builder);
         }
