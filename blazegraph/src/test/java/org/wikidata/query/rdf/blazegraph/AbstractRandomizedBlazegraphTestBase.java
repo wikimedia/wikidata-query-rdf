@@ -5,6 +5,8 @@ import static com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope.Sco
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.math.BigInteger;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -151,14 +153,17 @@ public class AbstractRandomizedBlazegraphTestBase extends RandomizedTest {
 
     /**
      * Close the temporary store used by this test.
+     * @throws InterruptedException if the executor service fails to await termination
      */
     @AfterClass
-    public static void closeTemporaryStore() {
+    public static void closeTemporaryStore() throws InterruptedException {
         if (temporaryStore == null) {
             return;
         }
+        ExecutorService executorService = temporaryStore.getExecutorService();
         temporaryStore.close();
         SynchronizedHardReferenceQueueWithTimeout.stopStaleReferenceCleaner();
+        executorService.awaitTermination(20, TimeUnit.SECONDS);
         temporaryStore = null;
     }
 }
