@@ -90,10 +90,19 @@ public class WikibaseUris {
      */
     private final String root;
     /**
+     * The root of the wikibase uris with https prefix - https://www.wikidata.org for Wikidata.
+     */
+    private final String rootHttps;
+    /**
      * Uri prefix wikibase uses to describe exports. The Munge process removes
      * uris with this prefix.
      */
     private final String entityData;
+    /**
+     * Uri prefix wikibase uses to describe exports, with https prefix.
+     * The Munge process removes uris with this prefix.
+     */
+    private final String entityDataHttps;
     /**
      * Uri prefix wikibase uses for entities. The canonical place for the entity
      * itself.
@@ -126,7 +135,9 @@ public class WikibaseUris {
      */
     public WikibaseUris(String host) {
         root = "http://" + host;
+        rootHttps = "https://" + host;
         entityData = root + "/wiki/Special:EntityData/";
+        entityDataHttps = rootHttps + "/wiki/Special:EntityData/";
         entity = root + "/entity/";
         statement = entity + "statement/";
         value = root + "/value/";
@@ -162,6 +173,14 @@ public class WikibaseUris {
      */
     public String entityData() {
         return entityData;
+    }
+
+    /**
+     * Uri prefix wikibase uses to describe exports, with https prefix.
+     * The Munge process removes uris with this prefix.
+     */
+    public String entityDataHttps() {
+        return entityDataHttps;
     }
 
     /**

@@ -325,7 +325,7 @@ public class Munger {
                 // temporary patch for T98405
                 return false;
             }
-            if (inNamespace(subject, uris.entityData())) {
+            if (inNamespace(subject, uris.entityData()) || inNamespace(subject, uris.entityDataHttps())) {
                 return entityDataStatement();
             }
             if (inNamespace(subject, uris.statement())) {
