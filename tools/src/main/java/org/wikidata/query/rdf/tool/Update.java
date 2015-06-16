@@ -38,7 +38,9 @@ import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
+import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.lexicalscope.jewel.cli.Option;
 
@@ -174,15 +176,22 @@ public class Update<B extends Change.Batch> implements Runnable {
     }
 
     /**
+     * Metric registry.
+     */
+    private final MetricRegistry metrics = new MetricRegistry();
+    /**
      * Meter for the raw number of updates synced.
      */
-    private final Meter updateMeter = new Meter();
+    private final Meter updateMeter = metrics.meter("updates");
     /**
      * Meter measuring in a batch specific unit. For the RecentChangesPoller its
      * milliseconds, for the IdChangeSource its ids.
      */
-    private final Meter batchAdvanced = new Meter();
-
+    private final Meter batchAdvanced = metrics.meter("batch-progress");
+    /**
+     * JMX interface for metrics counters.
+     */
+    private final JmxReporter reporter = JmxReporter.forRegistry(metrics).build();
     /**
      * Source of change batches.
      */
@@ -218,6 +227,7 @@ public class Update<B extends Change.Batch> implements Runnable {
         this.munger = munger;
         this.executor = executor;
         this.pollDelay = pollDelay;
+        reporter.start();
     }
 
     @Override
