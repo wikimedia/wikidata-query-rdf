@@ -55,4 +55,41 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdateIntegrat
         assertThat(result, binds("p", "P569"));
         assertThat(result, binds("o", new LiteralImpl("1732-02-22", XMLSchema.DATE)));
     }
+
+    /**
+     * This checks that date math works according to XML 1.1 standard.
+     * Year 0 exists and is 1BCE.
+     * @throws QueryEvaluationException
+     */
+    @Test
+    public void dateMath() throws QueryEvaluationException {
+        TupleQueryResult results = rdfRepository().query(
+            "SELECT * WHERE {BIND ( \"0001-01-01T00:00:00\"^^xsd:dateTime - \"-0001-01-01T00:00:00\"^^xsd:dateTime AS ?date)}");
+        BindingSet result = results.next();
+        // 731 days or 2 years since XML 1.1 has year 0 (which is 1BCE)
+        assertThat(result, binds("date", new LiteralImpl("731.0", XMLSchema.DOUBLE)));
+    }
+
+    @Test
+    public void dateMathMore() throws QueryEvaluationException {
+        String query = "prefix schema: <http://schema.org/>\n" +
+            "INSERT {\n" +
+            "<http://test.com/a> schema:lastModified \"0001-01-01T00:00:00\"^^xsd:dateTime .\n" +
+            "<http://test.com/a> schema:lastModified \"-0001-01-01\"^^xsd:date .\n" +
+            "<http://test.com/a> schema:lastModified \"-13798000000-01-01T00:00:00\"^^xsd:dateTime .\n" +
+            "<http://test.com/b> schema:lastModified \"0000-01-01T00:00:00\"^^xsd:dateTime .\n" +
+            "} WHERE {}";
+        rdfRepository().update(query);
+
+        TupleQueryResult results = rdfRepository().query("prefix schema: <http://schema.org/>\n" +
+            "SELECT (?a - ?b as ?diff) WHERE { <http://test.com/a> schema:lastModified ?a . <http://test.com/b> schema:lastModified ?b } ORDER BY DESC(?diff)");
+        BindingSet result = results.next();
+        assertThat(result, binds("diff", new LiteralImpl("366.0", XMLSchema.DOUBLE)));
+
+        result = results.next();
+        assertThat(result, binds("diff", new LiteralImpl("-365.0", XMLSchema.DOUBLE)));
+
+        result = results.next();
+        assertThat(result, binds("diff", new LiteralImpl("-5.039616015E12", XMLSchema.DOUBLE)));
+    }
 }

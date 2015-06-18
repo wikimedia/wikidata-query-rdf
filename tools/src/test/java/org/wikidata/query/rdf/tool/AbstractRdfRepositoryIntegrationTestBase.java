@@ -108,6 +108,13 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
         }
 
         /**
+         * Updates the repository.
+         */
+        public int update(String query) {
+            return execute("update", RdfRepository.UPDATE_COUNT_RESPONSE, query);
+        }
+
+        /**
          * Submit an HTTP request to the test Blazegraph server, and expect the
          * given response status.
          */

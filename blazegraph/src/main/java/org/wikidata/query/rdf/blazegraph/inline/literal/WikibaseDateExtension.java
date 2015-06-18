@@ -4,13 +4,21 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
+
 import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.wikidata.query.rdf.common.WikibaseDate;
 import org.wikidata.query.rdf.common.WikibaseDate.ToStringFormat;
 
+import com.bigdata.rdf.error.SparqlTypeErrorException;
 import com.bigdata.rdf.internal.IDatatypeURIResolver;
+import com.bigdata.rdf.internal.IV;
+import com.bigdata.rdf.internal.constraints.IMathOpHandler;
+import com.bigdata.rdf.internal.constraints.MathBOp.MathOp;
 import com.bigdata.rdf.internal.impl.literal.AbstractLiteralIV;
 import com.bigdata.rdf.internal.impl.literal.LiteralExtensionIV;
 import com.bigdata.rdf.internal.impl.literal.XSDNumericIV;
@@ -32,12 +40,26 @@ import com.bigdata.rdf.model.BigdataValueFactory;
  * @param <V> Blazegraph value to expand. These are usually treated a bit
  *            roughly by Blazegraph - lots of rawtypes
  */
-public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMultiTypeExtension<V> {
+public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMultiTypeExtension<V>
+    implements IMathOpHandler {
+
     /**
      * List of data types this extension can inline.
      */
     private static final List<URI> SUPPORTED_DATA_TYPES = Collections.unmodifiableList(Arrays.asList(
             XMLSchema.DATETIME, XMLSchema.DATE));
+
+    /**
+     * Datatype factory cache.
+     */
+    protected static final DatatypeFactory DATATYPE_FACTORY;
+    static {
+        try {
+            DATATYPE_FACTORY = DatatypeFactory.newInstance();
+        } catch (DatatypeConfigurationException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public WikibaseDateExtension(final IDatatypeURIResolver resolver) {
         super(resolver, SUPPORTED_DATA_TYPES);
@@ -68,5 +90,139 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
             return vf.createLiteral(date.toString(ToStringFormat.DATE), dt);
         }
         return vf.createLiteral(date.toString(ToStringFormat.DATE_TIME), dt);
+    }
+
+    /**
+     * Check whether this URI is of the type we support.
+     * @param lit
+     * @return
+     */
+    private boolean isWikibaseDateURI(URI lit) {
+        if (lit == null) {
+            return false;
+        }
+        if (SUPPORTED_DATA_TYPES.contains(lit)) {
+            return true;
+        }
+        return false;
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Override
+    public boolean canInvokeMathOp(final Literal... args) {
+        if (args.length != 2) {
+            // for now we handle only two args
+            return false;
+        }
+        URI dt1 = args[0].getDatatype();
+        URI dt2 = args[1].getDatatype();
+
+        boolean d1 = isWikibaseDateURI(dt1);
+        boolean d2 = isWikibaseDateURI(dt2);
+
+        if (d1 && d2) {
+            // both dates, we can handle it
+            return true;
+        }
+
+        if (d1 && dt2.equals(XMLSchema.DURATION)) {
+            // date and duration, is OK
+            return true;
+        }
+
+        if (d2 && dt1.equals(XMLSchema.DURATION)) {
+            // date and duration, is OK
+            return true;
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings({"rawtypes", "checkstyle:cyclomaticcomplexity"})
+    @Override
+    public IV doMathOp(
+            final Literal l1, final IV iv1,
+            final Literal l2, final IV iv2,
+            final MathOp op,
+            final BigdataValueFactory vf) {
+
+        URI dt1 = l1.getDatatype();
+        URI dt2 = l2.getDatatype();
+
+        boolean d1 = isWikibaseDateURI(dt1);
+        boolean d2 = isWikibaseDateURI(dt2);
+
+        if (!d1 && !d2) {
+            throw new SparqlTypeErrorException();
+        }
+
+        if (d1 && !(iv1 instanceof LiteralExtensionIV)) {
+            throw new IllegalArgumentException("Non-extended data passed to extension");
+        }
+
+        if (d2 && !(iv2 instanceof LiteralExtensionIV)) {
+            throw new IllegalArgumentException("Non-extended data passed to extension");
+        }
+
+        if (d1 && d2) {
+            return handleTwoDates((LiteralExtensionIV)iv1, (LiteralExtensionIV)iv2, op, vf);
+        }
+
+        // Now we have one date and one duration
+        if (op == MathOp.PLUS) {
+            LiteralExtensionIV iv = d1 ? (LiteralExtensionIV)iv1 : (LiteralExtensionIV)iv2;
+            Literal lduration = d1 ? l2 : l1;
+
+            return datePlusDuration(iv, DATATYPE_FACTORY.newDuration(lduration.getLabel()));
+        }
+
+        if (op == MathOp.MINUS) {
+            return datePlusDuration((LiteralExtensionIV)iv1,
+                    DATATYPE_FACTORY.newDuration(l2.getLabel()).negate());
+        }
+
+        throw new SparqlTypeErrorException();
+    }
+
+    /**
+     * Combine two dates.
+     * @param iv1
+     * @param iv2
+     * @param op
+     * @param vf
+     * @return
+     */
+    @SuppressWarnings("rawtypes")
+    private IV handleTwoDates(
+            final LiteralExtensionIV iv1,
+            final LiteralExtensionIV iv2,
+            final MathOp op,
+            final BigdataValueFactory vf) {
+        long ts1 = iv1.getDelegate().longValue();
+        long ts2 = iv2.getDelegate().longValue();
+        switch (op) {
+        case MIN:
+            return ts1 < ts2 ? iv1 : iv2;
+        case MAX:
+            return ts1 > ts2 ? iv1 : iv2;
+        case MINUS:
+            double days = (double) (ts1 - ts2) / ((double) (60 * 60 * 24));
+            return new XSDNumericIV(days);
+        default:
+            throw new SparqlTypeErrorException();
+        }
+    }
+
+    /**
+     * Add Duration to date.
+     * @param iv
+     * @param d
+     * @return
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private IV datePlusDuration(LiteralExtensionIV iv, Duration d) {
+        long ts = iv.getDelegate().longValue();
+        WikibaseDate newdate = WikibaseDate.fromSecondsSinceEpoch(ts).addDuration(d);
+        return new LiteralExtensionIV(new XSDNumericIV(newdate.secondsSinceEpoch()), iv.getExtensionIV());
     }
 }

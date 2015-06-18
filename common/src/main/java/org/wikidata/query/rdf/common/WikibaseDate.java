@@ -11,6 +11,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.datatype.Duration;
+
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 
@@ -466,5 +468,85 @@ public class WikibaseDate {
             d++;
         }
         return d;
+    }
+
+    /**
+     * Add Duration to time value.
+     * @param d
+     */
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public WikibaseDate addDuration(Duration d) {
+        int newSecond = second + d.getSeconds();
+        int newMinute = minute + d.getMinutes();
+        int newHour = hour + d.getHours();
+        int newDay = day + d.getDays();
+        int newMonth = (month - 1) + d.getMonths();
+        long newYear = year + d.getYears();
+
+        if (newSecond < 0) {
+            int mins = newSecond / SECONDS_PER_MINUTE - 1;
+            newSecond -= SECONDS_PER_MINUTE * mins;
+            newMinute += mins;
+        } else if (newSecond >= SECONDS_PER_MINUTE) {
+            int mins = newSecond / SECONDS_PER_MINUTE;
+            newSecond -= mins * SECONDS_PER_MINUTE;
+            newMinute += mins;
+        }
+
+        if (newMinute < 0) {
+            int hrs = newMinute / 60 - 1;
+            newMinute -= 60 * hrs;
+            newHour += hrs;
+        } else if (newMinute >= 60) {
+            int hrs = newMinute / 60;
+            newMinute -= hrs * 60;
+            newHour += hrs;
+        }
+
+        if (newHour < 0) {
+            int days = newHour / 24 - 1;
+            newMinute -= 60 * days;
+            newDay += days;
+        } else if (newHour >= 24) {
+            int days = newHour / 24;
+            newHour -= days * 24;
+            newDay += days;
+        }
+
+        // To simplify calculations, we temporarily uses months 0-11
+        if (newMonth < 0) {
+            int yr = newMonth / 12 - 1;
+            newMonth -= 12 * yr;
+            newYear += yr;
+        } else if (newMonth >= 12) {
+            int yr = newMonth / 12;
+            newMonth -= yr * 12;
+            newYear += yr;
+        }
+        // Add 1 back to month
+        newMonth++;
+
+        if (newDay <= 0) {
+            while (newDay <= 0) {
+                newMonth--;
+                if (newMonth == 0) {
+                    newYear--;
+                    newMonth = 12;
+                }
+                newDay += daysInMonth(newYear, newMonth);
+            }
+        } else if (newDay > daysInMonth(newYear, newMonth)) {
+            int dim;
+            for (dim = daysInMonth(newYear, newMonth); newDay > dim; dim = daysInMonth(newYear, newMonth)) {
+                newDay -= dim;
+                newMonth++;
+                if (newMonth > 12) {
+                    newYear++;
+                    newMonth = 1;
+                }
+            }
+        }
+
+        return new WikibaseDate(newYear, newMonth, newDay, newHour, newMinute, newSecond);
     }
 }
