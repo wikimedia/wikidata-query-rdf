@@ -301,7 +301,7 @@ public class Munge implements Runnable {
         @Override
         public void handleStatement(Statement statement) throws RDFHandlerException {
             String subject = statement.getSubject().stringValue();
-            if (subject.startsWith(uris.entityData())) {
+            if (subject.startsWith(uris.entityDataHttps()) || subject.startsWith(uris.entityData())) {
                 if (haveNonEntityDataStatements) {
                     munge();
                 }
