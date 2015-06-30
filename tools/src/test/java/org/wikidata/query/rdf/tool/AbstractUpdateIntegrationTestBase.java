@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.change.Change;
-import org.wikidata.query.rdf.tool.change.IdChangeSource;
+import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
@@ -28,7 +28,7 @@ public class AbstractUpdateIntegrationTestBase extends AbstractRdfRepositoryInte
      * Update all ids from from to to.
      */
     public void update(int from, int to) {
-        Change.Source<?> source = IdChangeSource.forItems(from, to, 30);
+        Change.Source<?> source = IdRangeChangeSource.forItems(from, to, 30);
         ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>());
         Update<?> update = new Update<>(source, wikibaseRepository, rdfRepository(), munger, executorService, 0);

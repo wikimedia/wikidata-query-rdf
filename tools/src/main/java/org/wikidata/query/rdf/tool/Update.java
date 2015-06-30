@@ -30,7 +30,8 @@ import org.wikidata.query.rdf.tool.OptionsUtils.MungerOptions;
 import org.wikidata.query.rdf.tool.OptionsUtils.WikibaseOptions;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.Change.Batch;
-import org.wikidata.query.rdf.tool.change.IdChangeSource;
+import org.wikidata.query.rdf.tool.change.IdListChangeSource;
+import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
 import org.wikidata.query.rdf.tool.change.RecentChangesPoller;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
@@ -117,14 +118,23 @@ public class Update<B extends Change.Batch> implements Runnable {
      * @return null if non can be built - its ok to just exit - errors have been
      *         logged to the user
      */
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private static Change.Source<? extends Batch> buildChangeSource(Options options, RdfRepository rdfRepository,
             WikibaseRepository wikibaseRepository) {
         if (options.ids() != null) {
+            if (options.ids().contains(",")) {
+                // Id list
+                return new IdListChangeSource(options.ids().split(","), options.batchSize());
+            }
             String[] ids = options.ids().split("-");
             long start;
             long end;
             switch (ids.length) {
             case 1:
+                if (!Character.isDigit(ids[0].charAt(0))) {
+                    // Not a digit - probably just single ID
+                    return new IdListChangeSource(ids, options.batchSize());
+                }
                 start = Long.parseLong(ids[0]);
                 end = start;
                 break;
@@ -136,7 +146,7 @@ public class Update<B extends Change.Batch> implements Runnable {
                 log.error("Invalid format for --ids.  Need <start>-<stop>.");
                 return null;
             }
-            return IdChangeSource.forItems(start, end, options.batchSize());
+            return IdRangeChangeSource.forItems(start, end, options.batchSize());
         }
         long startTime;
         if (options.start() != null) {

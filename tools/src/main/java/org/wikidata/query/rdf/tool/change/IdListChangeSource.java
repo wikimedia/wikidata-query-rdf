@@ -3,51 +3,40 @@ package org.wikidata.query.rdf.tool.change;
 import static java.lang.Math.min;
 
 import java.util.Date;
-import java.util.Locale;
 
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
 import com.google.common.collect.ImmutableList;
 
 /**
- * Blindly iterates an id range and returns those as "changes". Can be used to
- * load known ids.
+ * Creates a change source out of the list of IDs.
  */
-public class IdChangeSource implements Change.Source<IdChangeSource.Batch> {
+public class IdListChangeSource implements Change.Source<IdListChangeSource.Batch> {
     /**
      * Build and IdChangeSource for items as opposed to properties.
      */
-    public static IdChangeSource forItems(long start, long stop, long batchSize) {
-        return new IdChangeSource("Q%s", start, stop, batchSize);
+    public static IdListChangeSource forItems(String [] ids, int batchSize) {
+        return new IdListChangeSource(ids, batchSize);
     }
 
     /**
-     * Format of the entity id.
-     */
-    private final String format;
-    /**
-     * First id to return.
-     */
-    private final long start;
-    /**
      * Last id to return.
      */
-    private final long stop;
-    /**
-     * Batch size to split up ids.
-     */
-    private final long batchSize;
+    private final int batchSize;
 
-    public IdChangeSource(String format, long start, long stop, long batchSize) {
-        this.format = format;
-        this.start = start;
-        this.stop = stop;
+    /**
+     * List of changed entity IDs.
+     */
+    private final String[] ids;
+
+    public IdListChangeSource(String[] ids, int batchSize) {
         this.batchSize = batchSize;
+        this.ids = ids;
     }
 
     @Override
     public Batch firstBatch() throws RetryableException {
-        return batch(start);
+        return batch(0);
     }
 
     @Override
@@ -62,9 +51,9 @@ public class IdChangeSource implements Change.Source<IdChangeSource.Batch> {
         /**
          * Next id to start polling.
          */
-        private final long nextStart;
+        private final int nextStart;
 
-        private Batch(ImmutableList<Change> changes, long advanced, long nextStart) {
+        private Batch(ImmutableList<Change> changes, long advanced, int nextStart) {
             super(changes, advanced, nextStart - 1);
             this.nextStart = nextStart;
         }
@@ -76,7 +65,7 @@ public class IdChangeSource implements Change.Source<IdChangeSource.Batch> {
 
         @Override
         public boolean last() {
-            return nextStart > stop;
+            return nextStart >= ids.length;
         }
 
         @Override
@@ -88,11 +77,11 @@ public class IdChangeSource implements Change.Source<IdChangeSource.Batch> {
     /**
      * Build a batch starting at batchStart.
      */
-    private Batch batch(long batchStart) {
-        long batchStop = min(batchStart + batchSize, stop + 1);
+    private Batch batch(int batchStart) {
+        int batchStop = min(batchStart + batchSize, ids.length);
         ImmutableList.Builder<Change> changes = ImmutableList.builder();
-        for (long id = batchStart; id < batchStop; id++) {
-            changes.add(new Change(String.format(Locale.ROOT, format, id), -1, null, id));
+        for (int id = batchStart; id < batchStop; id++) {
+            changes.add(new Change(ids[id], -1, null, id));
         }
         return new Batch(changes.build(), batchStop - batchStart, batchStop);
     }
