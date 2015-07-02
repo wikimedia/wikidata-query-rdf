@@ -55,7 +55,7 @@
    <param-name>queryTimeout</param-name>
    <param-value>30000</param-value>
   </context-param>
-- <!-- We can't use the builtin whitelist because it breaks label relation. But we enable our own whitelist so its all good. -->
+  <!-- We can't use the builtin whitelist because it breaks label relation. But we enable our own whitelist so its all good. -->
   <!--
   <context-param>
    <description>List of allowed services.</description>
