@@ -15,6 +15,9 @@ do
   esac
 done
 
+# allow extra args
+shift $((OPTIND-1))
+
 if [ -z "$NAMESPACE" ]
 then
   echo "Usage: $0 -n <namespace> [-h <host>] [-c <context>]"
@@ -31,8 +34,14 @@ if [ ! -z "SKIPSITE" ]; then
     ARGS="$ARGS --skipSiteLinks"
 fi
 
+if [ -f updater-logs.xml ]; then
+    LOG="-Dlogback.configurationFile=updater-logs.xml"
+else
+    LOG=""
+fi
+
 CP=lib/wikidata-query-tools-*-jar-with-dependencies.jar
 MAIN=org.wikidata.query.rdf.tool.Update
 SPARQL_URL=$HOST/$CONTEXT/namespace/$NAMESPACE/sparql
 echo "Updating via $SPARQL_URL"
-java -cp $CP $MAIN $ARGS --sparqlUrl $SPARQL_URL
+java -cp $CP $LOG $MAIN $ARGS --sparqlUrl $SPARQL_URL "$@"
