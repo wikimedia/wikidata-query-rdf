@@ -24,8 +24,7 @@
    <!-- the servlet container. The "ant war" target rewrites this to be -->
    <!-- relative to the root of the servlet container by default.       -->
    <param-name>propertyFile</param-name>
-   <!-- from blazegraph/WEB-INF/ -->
-   <param-value>../../RWStore.properties</param-value>
+   <param-value>RWStore.properties</param-value>
   </context-param>
   <context-param>
    <description>The default bigdata namespace of for the triple or quad store

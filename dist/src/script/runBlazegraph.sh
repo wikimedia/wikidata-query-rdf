@@ -31,4 +31,4 @@ java -Dcom.bigdata.rdf.sail.webapp.ConfigParams.propertyFile=RWStore.properties 
      -jar jetty-runner*.jar \
      --port $PORT \
      --path /$CONTEXT \
-     blazegraph
+     blazegraph-service-*.war

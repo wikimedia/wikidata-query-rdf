@@ -6,11 +6,11 @@
     <artifactId>parent</artifactId>
     <version>0.0.3-SNAPSHOT</version>
   </parent>
-  <artifactId>service</artifactId>
+  <artifactId>blazegraph-service</artifactId>
   <packaging>pom</packaging>
 
-  <name>Wikibase RDF Query Service</name>
-  <description>Service to host Wikidata RDF Query Service.</description>
+  <name>Blazegraph Service Package</name>
+  <description>Package for running Blazegraph service.</description>
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
@@ -21,22 +21,19 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.wikidata.query.rdf</groupId>
-      <artifactId>blazegraph-service</artifactId>
-      <version>${project.parent.version}</version>
-      <classifier>dist</classifier>
+      <groupId>com.bigdata</groupId>
+      <artifactId>bigdata</artifactId>
+      <version>${blazegraph.version}</version>
       <type>war</type>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-runner</artifactId>
-      <version>9.2.9.v20150224</version>
+      <groupId>org.wikidata.query.rdf</groupId>
+      <artifactId>common</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.jolokia</groupId>
-      <artifactId>jolokia-jvm</artifactId>
-      <version>1.3.1</version>
-      <classifier>agent</classifier>
+      <groupId>org.wikidata.query.rdf</groupId>
+      <artifactId>blazegraph</artifactId>
+      <version>${project.parent.version}</version>
     </dependency>
   </dependencies>
 

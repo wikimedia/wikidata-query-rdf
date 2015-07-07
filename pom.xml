@@ -17,6 +17,7 @@
     <module>common</module>
     <module>blazegraph</module>
     <module>tools</module>
+    <module>war</module>
     <module>dist</module>
   </modules>
 
@@ -34,6 +35,12 @@
       <name>Nik Everett</name>
       <email>nik9000+wikidata@gmail.com</email>
       <timezone>America/New York</timezone>
+    </developer>
+    <developer>
+      <id>smalyshev</id>
+      <name>Stas Malyshev</name>
+      <email>smalsyhev@wikimedia.org</email>
+      <timezone>America/Los Angeles</timezone>
     </developer>
   </developers>
 
@@ -191,7 +198,7 @@
                 </excludes>
                 <!-- Use as many JVMs as the test runner wants to use. -->
                 <parallelism>auto</parallelism>
-                <!-- The listeners and balancers elements do three things: 1. Control how output is formatted during tests 
+                <!-- The listeners and balancers elements do three things: 1. Control how output is formatted during tests
                   2. Dump the report to the right spot 3. Log an "execution-hints" file that is used to balance the load when tests are forked. -->
                 <listeners>
                   <report-ant-xml mavenExtensions="true" dir="${project.build.directory}/surefire-reports" />
@@ -258,7 +265,7 @@
               </goals>
               <configuration>
                 <quiet>true</quiet>
-                <!-- We don't want Java 8's strict javadoc checking so we use this trick borrowed from dropwizard to turn 
+                <!-- We don't want Java 8's strict javadoc checking so we use this trick borrowed from dropwizard to turn
                   it off -->
                 <additionalparam>${javadoc.doclint.none}</additionalparam>
               </configuration>
@@ -327,7 +334,7 @@
                 <signaturesFile>${project.parent.basedir}/src/build/forbidden/core.txt</signaturesFile>
               </signaturesFiles>
               <excludes>
-                <!-- Some portions of the project need access to System.out and things so we contain them in inner classes 
+                <!-- Some portions of the project need access to System.out and things so we contain them in inner classes
                   of this form. -->
                 <exclude>**/*$ForbiddenOk**.class</exclude>
               </excludes>
@@ -535,6 +542,33 @@
                 </goals>
               </execution>
             </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+     <id>deploy-archiva</id>
+      <distributionManagement>
+       <repository>
+         <id>wikimedia.releases</id>
+         <name>Wikimedia Release Repository</name>
+         <url>https://archiva.wikimedia.org/repository/releases/</url>
+       </repository>
+       <snapshotRepository>
+         <id>wikimedia.snapshots</id>
+         <name>Wikimedia Snapshot Repository</name>
+         <url>https://archiva.wikimedia.org/repository/snapshots/</url>
+       </snapshotRepository>
+      </distributionManagement>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.18.1</version>
+            <configuration>
+              <skipTests>true</skipTests>
+            </configuration>
           </plugin>
         </plugins>
       </build>
