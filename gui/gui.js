@@ -351,7 +351,8 @@ window.EDITOR = {};
 	function showDbQueryResults(data) {
 		try {
 			var updateDate = new Date(data.results.bindings[0][data.head.vars[0]].value);
-			$('#dbUpdated').text(updateDate.toLocaleTimeString() + ", " + updateDate.toDateString());
+			$('#dbUpdated').text(updateDate.toLocaleTimeString(navigator.language, {timeZoneName:'short'} ) + ", " +
+				updateDate.toLocaleDateString(navigator.language, {month:'short', day:'numeric', year:'numeric'} ));
 			}
 		catch(err) {
 			$('#dbUpdated').text('[unable to connect]');
