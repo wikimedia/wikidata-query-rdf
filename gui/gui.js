@@ -335,12 +335,40 @@ window.EDITOR = {};
 		$('#clear-button').click(function () { EDITOR.setValue("") });
 	}
 
+	function getDbUpdated() {
+		var query = encodeURI("prefix schema: <http://schema.org/> SELECT * WHERE {<http://www.wikidata.org> schema:dateModified ?y}");
+		var url = SERVICE + '?query=' + query,
+			settings = {
+				headers : {
+					'Accept' : 'application/sparql-results+json'
+				},
+				success : showDbQueryResults,
+				error : DbQueryResultsError
+			};
+		$.ajax(url, settings);
+	}
+
+	function showDbQueryResults(data) {
+		try {
+			var updateDate = new Date(data.results.bindings[0][data.head.vars[0]].value);
+			$('#dbUpdated').text(updateDate.toLocaleTimeString() + ", " + updateDate.toDateString());
+			}
+		catch(err) {
+			$('#dbUpdated').text('[unable to connect]');
+			}
+	}
+
+	function DbQueryResultsError(jqXHR, textStatus, errorThrown) {
+		$('#dbUpdated').text('[unable to connect]');
+	}
+
 	function startGUI() {
 		setupEditor();
 		setupExamples();
 		populateNamespaceShortcuts();
 		setupHandlers();
 		initQuery();
+		getDbUpdated();
 	}
 
 
