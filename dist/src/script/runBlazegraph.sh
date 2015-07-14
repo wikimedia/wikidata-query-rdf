@@ -29,6 +29,7 @@ java -Dcom.bigdata.rdf.sail.webapp.ConfigParams.propertyFile=RWStore.properties 
      -Dcom.bigdata.rdf.sparql.ast.QueryHints.analyticMaxMemoryPerQuery=1073741824 \
      -DASTOptimizerClass=org.wikidata.query.rdf.blazegraph.WikibaseOptimizers \
      -jar jetty-runner*.jar \
+     --host localhost \
      --port $PORT \
      --path /$CONTEXT \
      blazegraph-service-*.war
