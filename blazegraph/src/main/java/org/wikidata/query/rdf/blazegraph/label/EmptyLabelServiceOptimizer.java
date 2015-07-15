@@ -8,6 +8,7 @@ import org.openrdf.model.vocabulary.SKOS;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 
+import com.bigdata.bop.BOp;
 import com.bigdata.bop.IBindingSet;
 import com.bigdata.bop.IConstant;
 import com.bigdata.bop.IVariable;
@@ -23,6 +24,7 @@ import com.bigdata.rdf.sparql.ast.VarNode;
 import com.bigdata.rdf.sparql.ast.eval.AST2BOpContext;
 import com.bigdata.rdf.sparql.ast.optimizers.AbstractJoinGroupOptimizer;
 import com.bigdata.rdf.sparql.ast.service.ServiceNode;
+import com.bigdata.rdf.store.BD;
 
 /**
  * Rewrites empty calls to the label service to attempt to resolve labels based
@@ -48,9 +50,19 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
                 continue;
             }
             JoinGroupNode g = (JoinGroupNode) service.getGraphPattern();
-            if (!g.args().isEmpty()) {
+            boolean foundArg = false;
+            for (BOp st : g.args()) {
+                StatementPatternNode sn = (StatementPatternNode) st;
+                if (sn.s().isConstant() && BD.SERVICE_PARAM.equals(sn.s().getValue())) {
+                    continue;
+                }
+                foundArg = true;
+                break;
+            }
+            if (foundArg) {
                 continue;
             }
+
             addResolutions(ctx, g, sa.getQueryRoot().getProjection());
             // We can really only do this once....
             return;

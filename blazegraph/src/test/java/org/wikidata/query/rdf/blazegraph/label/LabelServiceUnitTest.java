@@ -95,7 +95,7 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         query.append("  ontology:dummy ontology:dummy ?s .\n");
         query.append("  {\n");
         query.append("    ?s ontology:dummy ?p .\n");
-        query.append("    SERVICE ontology:label.en {}\n");
+        query.append("    SERVICE ontology:label { bd:serviceParam ontology:language \"en,de\" . }\n");
         query.append("  }\n");
         query.append("}\n");
         assertResult(query(query.toString()), binds("pLabel", "in en", "en"));
@@ -120,6 +120,20 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
 
     }
 
+    private String languageParams(String inLanguages) {
+        String[] langs;
+        StringBuilder params = new StringBuilder();
+        if (inLanguages.contains(".")) {
+            langs = inLanguages.split("\\.");
+        } else {
+            langs = new String[] {inLanguages};
+        }
+        for (String lang: langs) {
+            params.append("bd:serviceParam ontology:language \"" + lang + "\".\n");
+        }
+        return params.toString();
+    }
+
     private TupleQueryResult lookupLabel(String otherQuery, String inLanguages, String subject, String... labelTypes)
             throws QueryEvaluationException {
         if (inLanguages.indexOf(' ') >= 0) {
@@ -136,7 +150,7 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         if (otherQuery != null) {
             query.append(otherQuery).append("\n");
         }
-        query.append("  SERVICE ontology:label.").append(inLanguages).append(" {\n");
+        query.append("  SERVICE ontology:label {\n").append(languageParams(inLanguages));
         if (subject.contains(":") || rarely()) {
             // We rarely explicitly specify the labels to load
             for (String labelType : labelTypes) {
@@ -149,6 +163,7 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         if (log.isDebugEnabled()) {
             log.debug("Query:  " + query);
         }
+        log.warn("Running query: " + query.toString());
         return query(query.toString());
     }
 

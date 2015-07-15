@@ -6,10 +6,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.openrdf.model.Literal;
+import org.openrdf.model.URI;
+import org.openrdf.model.Value;
 import org.openrdf.model.impl.LiteralImpl;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDFS;
-import org.wikidata.query.rdf.blazegraph.PrefixDelegatingServiceFactory;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 
@@ -25,16 +28,18 @@ import com.bigdata.rdf.lexicon.LexiconRelation;
 import com.bigdata.rdf.model.BigdataValue;
 import com.bigdata.rdf.sparql.ast.JoinGroupNode;
 import com.bigdata.rdf.sparql.ast.StatementPatternNode;
+import com.bigdata.rdf.sparql.ast.TermNode;
 import com.bigdata.rdf.sparql.ast.VarNode;
+import com.bigdata.rdf.sparql.ast.eval.AbstractServiceFactory;
+import com.bigdata.rdf.sparql.ast.eval.ServiceParams;
 import com.bigdata.rdf.sparql.ast.service.BigdataNativeServiceOptions;
 import com.bigdata.rdf.sparql.ast.service.BigdataServiceCall;
 import com.bigdata.rdf.sparql.ast.service.IServiceOptions;
-import com.bigdata.rdf.sparql.ast.service.ServiceCall;
 import com.bigdata.rdf.sparql.ast.service.ServiceCallCreateParams;
-import com.bigdata.rdf.sparql.ast.service.ServiceFactory;
 import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
 import com.bigdata.rdf.spo.ISPO;
 import com.bigdata.rdf.store.AbstractTripleStore;
+import com.bigdata.rdf.store.BD;
 import com.bigdata.striterator.IChunkedOrderedIterator;
 
 import cutthecrap.utils.striterators.ICloseableIterator;
@@ -44,7 +49,8 @@ import cutthecrap.utils.striterators.ICloseableIterator;
  * change the cardinality of the result set. You can call it like this: <code>
  *  SELECT *
  *  WHERE {
- *    SERVICE wikibase:label.en.de.fr {
+ *    SERVICE wikibase:label {
+ *      bd:serviceParam wikibase:language "en,de,fr" .
  *      wd:Q123 rdfs:label ?q123Label .
  *      wd:Q123 rdfs:altLabel ?q123Alt .
  *      wd:Q123 schema:description ?q123Desc .
@@ -55,7 +61,9 @@ import cutthecrap.utils.striterators.ICloseableIterator;
  *  SELECT ?sLabel ?sAltLabel ?sDescription ?oLabel
  *  WHERE {
  *    ?s wdt:P22 ?o .
- *    SERVICE wikibase:label.en.de.fr {
+ *    SERVICE wikibase:label {
+ *      bd:serviceParam wikibase:language "en,de" .
+ *      bd:serviceParam wikibase:language "fr" .
  *    }
  *  }
  * </code>
@@ -75,19 +83,30 @@ import cutthecrap.utils.striterators.ICloseableIterator;
  * to inspect the query and automatically build the first form out of the second
  * form by inspecting the query's projection.
  */
-public class LabelService implements ServiceFactory {
+public class LabelService extends AbstractServiceFactory {
+    private static final Logger log = Logger
+            .getLogger(LabelService.class);
+
     /**
      * Options configuring this service as a native Blazegraph service.
      */
     private static final BigdataNativeServiceOptions SERVICE_OPTIONS = new BigdataNativeServiceOptions();
 
     /**
+     * The URI service key.
+     */
+    public static final URI SERVICE_KEY = new URIImpl(Ontology.LABEL);
+
+    /**
+     * URI for service language parameter.
+     */
+    private static final URIImpl LANGUAGE_PARAM = new URIImpl(Ontology.NAMESPACE + "language");
+
+    /**
      * Register the service so it is recognized by Blazegraph.
      */
     public static void register() {
-        ServiceRegistry.getInstance().setDefaultServiceFactory(
-                new PrefixDelegatingServiceFactory(ServiceRegistry.getInstance().getDefaultServiceFactory(),
-                        Ontology.LABEL, new LabelService()));
+        ServiceRegistry.getInstance().add(SERVICE_KEY, new LabelService());
     }
 
     @Override
@@ -96,14 +115,14 @@ public class LabelService implements ServiceFactory {
     }
 
     @Override
-    public ServiceCall<?> create(ServiceCallCreateParams params) {
+    public BigdataServiceCall create(ServiceCallCreateParams params, final ServiceParams serviceParams) {
         /*
          * Luckily service calls are always pushed to the last operation in a
          * query. We still check it and tell users we won't resolve labels for
          * unbound subjects.
          */
         // TODO this whole class just throws RuntimeException instead of ??
-        return new LabelServiceCall(new ResolutionContext(params.getTripleStore(), findLanguageFallbacks(params)),
+        return new LabelServiceCall(new ResolutionContext(params.getTripleStore(), findLanguageFallbacks(serviceParams)),
                 findResolutions(params));
     }
 
@@ -111,25 +130,44 @@ public class LabelService implements ServiceFactory {
      * Resolve the language fallbacks from the statement pattern node in the
      * query.
      */
-    private Map<String, Integer> findLanguageFallbacks(ServiceCallCreateParams params) {
-        String uri = params.getServiceURI().stringValue();
-        if (!uri.startsWith(Ontology.LABEL + ".")) {
+    private Map<String, Integer> findLanguageFallbacks(final ServiceParams params) {
+        List<TermNode> paramNodes = params.get(LANGUAGE_PARAM);
+
+        if (paramNodes.size() < 1) {
             throw new IllegalArgumentException("You must provide the label service a list of languages.");
         }
-        String fallbacks = uri.substring(Ontology.LABEL.length() + 1);
+
         // TODO there has to be a better data structure for this.
         /*
          * Lucene has tons of things for this, but yeah. Maybe it doesn't
          * matter.
          */
         Map<String, Integer> fallbacksMap = new HashMap<>();
-        String[] lang = fallbacks.split("\\.");
-        for (int i = 0; i < lang.length; i++) {
-            fallbacksMap.put(lang[i], i);
+        int cnt = 0;
+        for (TermNode term: paramNodes) {
+            if (term.isVariable()) {
+                throw new IllegalArgumentException("not a constant");
+            }
+
+            final Value v = term.getValue();
+
+            if (!(v instanceof Literal)) {
+                throw new IllegalArgumentException("not a literal");
+            }
+
+            final String s = v.stringValue();
+            if (s.contains(",")) {
+                // we also allow comma lists for convenience
+                for (String ls: s.split(",")) {
+                    fallbacksMap.put(ls, cnt);
+                    ++cnt;
+                }
+            } else {
+                fallbacksMap.put(s, cnt);
+            }
+            ++cnt;
         }
-        if (fallbacksMap.isEmpty()) {
-            throw new IllegalArgumentException("You must provide the label service a list of languages.");
-        }
+
         return fallbacksMap;
     }
 
@@ -140,7 +178,12 @@ public class LabelService implements ServiceFactory {
         JoinGroupNode g = (JoinGroupNode) params.getServiceNode().getGraphPattern();
         List<Resolution> resolutions = new ArrayList<>(g.args().size());
         for (BOp st : g.args()) {
-            resolutions.add(new Resolution((StatementPatternNode) st));
+            StatementPatternNode sn = (StatementPatternNode) st;
+            if (sn.s().isConstant() && BD.SERVICE_PARAM.equals(sn.s().getValue())) {
+                // skip service params
+                continue;
+            }
+            resolutions.add(new Resolution(sn));
         }
         return resolutions;
     }

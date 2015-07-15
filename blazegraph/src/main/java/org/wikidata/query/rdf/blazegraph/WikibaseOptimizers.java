@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.blazegraph;
 
 import org.wikidata.query.rdf.blazegraph.label.EmptyLabelServiceOptimizer;
+import org.wikidata.query.rdf.blazegraph.label.LabelServicePlacementOptimizer;
 
 import com.bigdata.rdf.sparql.ast.optimizers.DefaultOptimizerList;
 
@@ -12,5 +13,6 @@ public class WikibaseOptimizers extends DefaultOptimizerList {
 
     public WikibaseOptimizers() {
         add(new EmptyLabelServiceOptimizer());
+        add(new LabelServicePlacementOptimizer());
     }
 }

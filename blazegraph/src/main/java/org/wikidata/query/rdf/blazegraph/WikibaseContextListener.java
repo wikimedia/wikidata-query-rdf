@@ -5,10 +5,10 @@ import javax.servlet.ServletContextEvent;
 import org.wikidata.query.rdf.blazegraph.label.LabelService;
 
 import com.bigdata.rdf.sail.webapp.BigdataRDFServletContextListener;
+import com.bigdata.rdf.sparql.ast.eval.AbstractServiceFactoryBase;
 import com.bigdata.rdf.sparql.ast.service.IServiceOptions;
 import com.bigdata.rdf.sparql.ast.service.ServiceCall;
 import com.bigdata.rdf.sparql.ast.service.ServiceCallCreateParams;
-import com.bigdata.rdf.sparql.ast.service.ServiceFactory;
 import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
 
 /**
@@ -33,7 +33,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     /**
      * Service factory that disables remote access.
      */
-    private static final class DisableRemotesServiceFactory implements ServiceFactory {
+    private static final class DisableRemotesServiceFactory extends AbstractServiceFactoryBase {
 
         @Override
         public IServiceOptions getServiceOptions() {

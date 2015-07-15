@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.blazegraph;
 
 import org.openrdf.model.URI;
 
+import com.bigdata.rdf.sparql.ast.eval.AbstractServiceFactoryBase;
 import com.bigdata.rdf.sparql.ast.service.IServiceOptions;
 import com.bigdata.rdf.sparql.ast.service.ServiceCall;
 import com.bigdata.rdf.sparql.ast.service.ServiceCallCreateParams;
@@ -13,7 +14,7 @@ import com.bigdata.rdf.sparql.ast.service.ServiceFactory;
  * defaultService so some prefixes can be reserved for different types of
  * services.
  */
-public class PrefixDelegatingServiceFactory implements ServiceFactory {
+public class PrefixDelegatingServiceFactory extends AbstractServiceFactoryBase {
     /**
      * Service factory to use if the prefix doesn't match.
      */
