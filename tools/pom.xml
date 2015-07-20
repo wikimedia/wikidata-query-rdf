@@ -239,6 +239,34 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.1.1</version>
+        <executions>
+          <execution>
+            <id>start-proxy</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <classpathScope>test</classpathScope>
+              <mainClass>org.wikidata.query.rdf.tool.Proxy</mainClass>
+              <arguments>
+                <argument>--port</argument>
+                <argument>8812</argument>
+                <argument>--error</argument>
+                <argument>503</argument>
+                <argument>--errorMod</argument>
+                <argument>2</argument>
+                <argument>--embedded</argument>
+                <argument>-v</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
           <execution>

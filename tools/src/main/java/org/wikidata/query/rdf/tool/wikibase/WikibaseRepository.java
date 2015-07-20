@@ -16,8 +16,6 @@ import java.util.TimeZone;
 
 import org.apache.http.Consts;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.config.CookieSpecs;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -40,6 +38,7 @@ import org.openrdf.rio.Rio;
 import org.openrdf.rio.helpers.StatementCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.tool.HttpClientUtils;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
@@ -108,7 +107,7 @@ public class WikibaseRepository {
         StatementCollector collector = new StatementCollector();
         parser.setRDFHandler(new NormalizingRdfHandler(collector));
         HttpGet request = new HttpGet(uri);
-        setNoCookies(request);
+        HttpClientUtils.ignoreCookies(request);
         try {
             try (CloseableHttpResponse response = client.execute(request)) {
                 if (response.getStatusLine().getStatusCode() == 404) {
@@ -215,16 +214,6 @@ public class WikibaseRepository {
     }
 
     /**
-     * Configure request to ignore cookies.
-     * @param request
-     */
-    private void setNoCookies(HttpRequestBase request) {
-        RequestConfig noCookiesConfig = RequestConfig.custom()
-                .setCookieSpec(CookieSpecs.IGNORE_COOKIES).build();
-        request.setConfig(noCookiesConfig);
-    }
-
-    /**
      * Perform an HTTP request and return the JSON in the response body.
      *
      * @param request request to perform
@@ -234,7 +223,7 @@ public class WikibaseRepository {
      * @throws ParseException the json was malformed and couldn't be parsed
      */
     private JSONObject getJson(HttpRequestBase request) throws IOException, ParseException {
-        setNoCookies(request);
+        HttpClientUtils.ignoreCookies(request);
         try (CloseableHttpResponse response = client.execute(request)) {
             return (JSONObject) new JSONParser().parse(new InputStreamReader(response.getEntity().getContent(),
                     Charsets.UTF_8));
@@ -260,7 +249,7 @@ public class WikibaseRepository {
     /**
      * URIs used for accessing wikibase.
      */
-    private class Uris {
+    public static class Uris {
         /**
          * Uri scheme for wikibase.
          */
@@ -379,7 +368,7 @@ public class WikibaseRepository {
         /**
          * Build a URIBuilder for wikibase requests.
          */
-        private URIBuilder builder() {
+        public URIBuilder builder() {
             URIBuilder builder = new URIBuilder();
             builder.setHost(host);
             builder.setScheme(scheme);
@@ -397,6 +386,21 @@ public class WikibaseRepository {
                 throw new FatalException("Unable to build url!?", e);
             }
         }
+
+        /**
+         * The wikibase host.
+         */
+        public String getHost() {
+            return host;
+        }
+
+        /**
+         * The uri scheme for the wikibase instance.
+         */
+        public String getScheme() {
+            return scheme;
+        }
+
     }
 
     /**
