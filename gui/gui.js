@@ -297,7 +297,7 @@ window.EDITOR = {};
 
 	function setupExamples() {
 		var exampleQueries = document.getElementById('exampleQueries');
-		exampleQueries.add(new Option('US presidents and wives',
+		exampleQueries.add(new Option('US presidents and spouses',
 			'PREFIX wd: <http://www.wikidata.org/entity/> \n' +
 			'PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n' +
 			'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n' +
@@ -314,6 +314,36 @@ window.EDITOR = {};
 			'   }\n' +
 			' }'
 		));
+		exampleQueries.add(new Option('Largest cities with female mayors',
+			'PREFIX wd: <http://www.wikidata.org/entity/>\n' +
+			'PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n' +
+			'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n' +
+			'PREFIX p: <http://www.wikidata.org/prop/>\n' +
+			'PREFIX q: <http://www.wikidata.org/prop/qualifier/>\n' +
+			'PREFIX v: <http://www.wikidata.org/prop/statement/>\n\n' +
+
+			'SELECT DISTINCT ?city ?citylabel ?mayorlabel WHERE {\n' +
+			'  ?city wdt:P31/wdt:P279* wd:Q515 .  # find instances of subclasses of city\n' +
+			'  ?city p:P6 ?statement .            # with a P6 (head of goverment) statement\n' +
+			'  ?statement v:P6 ?mayor .           # ... that has the value ?mayor\n' +
+			'  ?mayor wdt:P21 wd:Q6581072 .       # ... where the ?mayor has P21 (sex or gender) female\n' +
+			'  FILTER NOT EXISTS { ?statement q:P582 ?x }  # ... but the statement has no P582 (end date) qualifier\n\n' +
+ 
+			'  # Now select the population value of the ?city\n' +
+			'  # (the number is reached through a chain of three properties)\n' +
+			'  ?city wdt:P1082 ?population .\n\n' +
+ 
+			'  # Optionally, find English labels for city and mayor:\n' +
+			'  OPTIONAL {\n' +
+			'    ?city rdfs:label ?citylabel .\n' +
+			'    FILTER ( LANG(?citylabel) = "en" )\n' +
+			'  }\n' +
+			'  OPTIONAL {\n' +
+			'    ?mayor rdfs:label ?mayorlabel .\n' +
+			'    FILTER ( LANG(?mayorlabel) = "en" )\n' +
+			'  }\n' +
+			' } ORDER BY DESC(?population) LIMIT 10'
+	 	));
 	}
 
 	function pasteExample() {

@@ -52,7 +52,7 @@
   <context-param>
    <description>When non-zero, the timeout for queries (milliseconds).</description>
    <param-name>queryTimeout</param-name>
-   <param-value>30000</param-value>
+   <param-value>600000</param-value>
   </context-param>
   <!-- We can't use the builtin whitelist because it breaks label relation. But we enable our own whitelist so its all good. -->
   <!--
