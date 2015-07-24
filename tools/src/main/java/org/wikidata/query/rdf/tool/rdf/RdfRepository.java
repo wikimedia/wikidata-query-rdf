@@ -275,7 +275,9 @@ public class RdfRepository {
         Collection<Statement> aboutStatements = new HashSet<Statement>(statements);
         aboutStatements.removeAll(entityStatements);
         aboutStatements.removeAll(statementStatements);
-        b.bindValues("valueStatements", aboutStatements);
+        aboutStatements.removeAll(filtered(statements).withSubjectStarts(uris.value()));
+        aboutStatements.removeAll(filtered(statements).withSubjectStarts(uris.reference()));
+        b.bindValues("aboutStatements", aboutStatements);
 
         if (valueList != null && !valueList.isEmpty()) {
             UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
@@ -294,7 +296,7 @@ public class RdfRepository {
 
     /**
      * Synchronizes the RDF repository's representation.
-     * @see {@link #sync(String, Collection<Statement>, Collection<String>) sync}
+     * See also: sync(String, Collection<Statement>, Collection<String>)
      * @param entityId id of the entity to sync
      * @param statements all known statements about the entity
      * @return the number of statements modified

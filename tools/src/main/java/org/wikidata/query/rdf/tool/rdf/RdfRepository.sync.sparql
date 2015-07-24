@@ -9,7 +9,7 @@ WHERE {
   # that are still in use.
   FILTER NOT EXISTS {
     VALUES ( ?s ?p ?o ) {
-      %valueStatements%
+      %aboutStatements%
     }
   }
 };
