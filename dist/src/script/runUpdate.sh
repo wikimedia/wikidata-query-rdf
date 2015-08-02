@@ -30,7 +30,7 @@ else
     ARGS="--labelLanguage $LANGS --singleLabel $LANGS"
 fi
 
-if [ ! -z "SKIPSITE" ]; then
+if [ ! -z "$SKIPSITE" ]; then
     ARGS="$ARGS --skipSiteLinks"
 fi
 
