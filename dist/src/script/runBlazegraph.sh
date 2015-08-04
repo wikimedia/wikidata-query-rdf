@@ -3,6 +3,7 @@
 CONTEXT=bigdata
 PORT=9999
 DIR=`dirname $0`
+MEMORY=-Xmx8g
 
 function usage() {
   echo "Usage: $0 [-d <dir>] [-c <context>] [-p <port>]"
@@ -23,7 +24,7 @@ done
 pushd $DIR
 
 echo "Running Blazegraph from `pwd` on :$PORT/$CONTEXT"
-java -XX:+UseG1GC -Xmx8g -Dcom.bigdata.rdf.sail.webapp.ConfigParams.propertyFile=RWStore.properties \
+java -server -XX:+UseG1GC ${MEMORY} -Dcom.bigdata.rdf.sail.webapp.ConfigParams.propertyFile=RWStore.properties \
      -Dorg.eclipse.jetty.server.Request.maxFormContentSize=20000000 \
      -Dcom.bigdata.rdf.sparql.ast.QueryHints.analytic=true \
      -Dcom.bigdata.rdf.sparql.ast.QueryHints.analyticMaxMemoryPerQuery=1073741824 \
