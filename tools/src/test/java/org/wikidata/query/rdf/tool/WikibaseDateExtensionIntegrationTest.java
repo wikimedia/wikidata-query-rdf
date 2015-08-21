@@ -4,7 +4,10 @@ import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import org.junit.Test;
 import org.openrdf.model.Statement;
@@ -92,4 +95,48 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdateIntegrat
         result = results.next();
         assertThat(result, binds("diff", new LiteralImpl("-5.039616015E12", XMLSchema.DOUBLE)));
     }
+
+    @Test
+    public void dateFunctions() throws QueryEvaluationException {
+        List<Statement> statements = new ArrayList<>();
+        statements.add(statement("Q23", "P569", new LiteralImpl("0000-01-01T00:00:00Z", XMLSchema.DATETIME)));
+        rdfRepository().sync("Q23", statements);
+        TupleQueryResult results = rdfRepository().query("SELECT (year(?date) as ?year) WHERE { ?s ?p ?date }");
+        BindingSet result = results.next();
+        assertThat(result, binds("year", new LiteralImpl("0", XMLSchema.INTEGER)));
+        results = rdfRepository().query("SELECT (day(?date) as ?day) WHERE { ?s ?p ?date FILTER (year(?date) != year(now())) }");
+        result = results.next();
+        assertThat(result, binds("day", new LiteralImpl("1", XMLSchema.INTEGER)));
+    }
+
+    @Test
+    public void dateFunctionsMore() throws QueryEvaluationException {
+        List<Statement> statements = new ArrayList<>();
+        statements.add(statement("Q23", "P569", new LiteralImpl("0000-01-02T03:04:05Z", XMLSchema.DATETIME)));
+        rdfRepository().sync("Q23", statements);
+        TupleQueryResult results = rdfRepository().query("SELECT " +
+            "(year(?date) as ?year) " +
+            "(month(?date) as ?month) " +
+            "(day(?date) as ?day) " +
+            "(hours(?date) as ?hour) " +
+            "(minutes(?date) as ?min) " +
+            "(seconds(?date) as ?sec) " +
+            " WHERE { ?s ?p ?date }");
+        BindingSet result = results.next();
+        assertThat(result, binds("year", new LiteralImpl("0", XMLSchema.INTEGER)));
+        assertThat(result, binds("month", new LiteralImpl("1", XMLSchema.INTEGER)));
+        assertThat(result, binds("day", new LiteralImpl("2", XMLSchema.INTEGER)));
+        assertThat(result, binds("hour", new LiteralImpl("3", XMLSchema.INTEGER)));
+        assertThat(result, binds("min", new LiteralImpl("4", XMLSchema.INTEGER)));
+        assertThat(result, binds("sec", new LiteralImpl("5", XMLSchema.INTEGER)));
+    }
+
+    @Test
+    public void dateNow() throws QueryEvaluationException {
+        TupleQueryResult results = rdfRepository().query("SELECT (year(now()) as ?year) WHERE {  }");
+        BindingSet result = results.next();
+        int year = Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT).get(Calendar.YEAR);
+        assertThat(result, binds("year", new LiteralImpl(String.valueOf(year), XMLSchema.INTEGER)));
+    }
+
 }
