@@ -83,10 +83,17 @@ public class UpdateBuilder {
      * Bind some uris to a string.
      */
     public UpdateBuilder bindUris(String from, Collection<String> uris) {
+        return bindUris(from, uris, "");
+    }
+
+    /**
+     * Bind some uris to a string.
+     */
+    public UpdateBuilder bindUris(String from, Collection<String> uris, String prefix) {
         StringBuilder b = new StringBuilder(uris.size() * 80);
 
         for (String s : uris) {
-            b.append('<').append(s).append("> ");
+            b.append('<').append(prefix).append(s).append("> ");
         }
         bind(from, b.toString().trim());
         return this;
@@ -124,7 +131,7 @@ public class UpdateBuilder {
             StringBuilder sb = new StringBuilder(l.getLabel().length() * 2);
 
             sb.append('"');
-            sb.append(l.getLabel().replace("\\", "\\\\").replace("\"", "\\\""));
+            sb.append(l.getLabel().replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n"));
             sb.append('"');
 
             if (l.getLanguage() != null) {

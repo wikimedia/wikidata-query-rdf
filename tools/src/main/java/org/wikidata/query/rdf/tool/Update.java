@@ -11,9 +11,13 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -42,6 +46,7 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.lexicalscope.jewel.cli.Option;
 
@@ -79,7 +84,7 @@ public class Update<B extends Change.Batch> implements Runnable {
         @Option(shortName = "t", defaultValue = "10", description = "Thread count")
         int threadCount();
 
-        @Option(shortName = "b", defaultValue = "10", description = "Number of recent changes fetched at a time.")
+        @Option(shortName = "b", defaultValue = "100", description = "Number of recent changes fetched at a time.")
         int batchSize();
     }
 
@@ -109,7 +114,7 @@ public class Update<B extends Change.Batch> implements Runnable {
                 new LinkedBlockingQueue<Runnable>(), threadFactory.build());
 
         Munger munger = mungerFromOptions(options);
-        new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor, options.pollDelay()).run();
+        new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor, options.pollDelay(), uris).run();
     }
 
     /**
@@ -228,15 +233,28 @@ public class Update<B extends Change.Batch> implements Runnable {
      * particular this will happen if the RecentChangesPoller finds no changes.
      */
     private final int pollDelay;
+    /**
+     * Uris for wikibase.
+     */
+    private final WikibaseUris uris;
+    /**
+     * Map entity->values list from repository.
+     */
+    private Multimap<String, String> repoValues;
+    /**
+     * Map entity->references list from repository.
+     */
+    private Multimap<String, String> repoRefs;
 
     public Update(Change.Source<B> changeSource, WikibaseRepository wikibase, RdfRepository rdfRepository,
-            Munger munger, ExecutorService executor, int pollDelay) {
+            Munger munger, ExecutorService executor, int pollDelay, WikibaseUris uris) {
         this.changeSource = changeSource;
         this.wikibase = wikibase;
         this.rdfRepository = rdfRepository;
         this.munger = munger;
         this.executor = executor;
         this.pollDelay = pollDelay;
+        this.uris = uris;
         reporter.start();
     }
 
@@ -290,28 +308,76 @@ public class Update<B extends Change.Batch> implements Runnable {
      *             changes
      */
     private void handleChanges(Change.Batch batch) throws InterruptedException, ExecutionException {
-        List<Future<?>> tasks = new ArrayList<>();
-        for (final Change change : batch.changes()) {
-            tasks.add(executor.submit(new Runnable() {
+        List<Future<String>> tasks = new ArrayList<>();
+        Set<Change> trueChanges = getRevisionUpdates(batch);
+        for (final Change change : trueChanges) {
+            tasks.add(executor.submit(new Callable<String>() {
                 @Override
-                public void run() {
+                public String call() {
                     while (true) {
                         try {
-                            handleChange(change);
-                            return;
+                            return handleChange(change);
                         } catch (RetryableException e) {
                             log.warn("Retryable error syncing.  Retrying.", e);
                         } catch (ContainedException e) {
                             log.warn("Contained error syncing.  Giving up on " + change.entityId(), e);
-                            return;
+                            return null;
                         }
                     }
                 }
             }));
         }
-        for (Future<?> task : tasks) {
-            task.get();
+        StringBuilder bigQuery = new StringBuilder();
+        for (Future<String> task : tasks) {
+            String query = task.get();
+            if (query != null) {
+                bigQuery.append(query);
+            }
         }
+        if (bigQuery.length() > 0) {
+            rdfRepository.syncQuery(bigQuery.toString());
+        }
+        updateMeter.mark(trueChanges.size());
+    }
+
+    /**
+     * Filter change by revisions.
+     * The revisions that have the same or superior revision in the DB will be removed.
+     * @param batch
+     * @return A set of changes that need to be entered into the repository.
+     */
+    private Set<Change> getRevisionUpdates(Change.Batch batch) {
+        // List of changes that indeed need update
+        Set<Change> trueChanges = new HashSet<>();
+        // List of entity URIs that were changed
+        Set<String> changeIds = new HashSet<>();
+        Map<String, Change> candidateChanges = new HashMap<>();
+        for (final Change change : batch.changes()) {
+            if (change.revision() >= 0) {
+                Change c = candidateChanges.get(change.entityId());
+                if (c == null || c.revision() < change.revision()) {
+                    candidateChanges.put(change.entityId(), change);
+                }
+            } else {
+                trueChanges.add(change);
+                changeIds.add(uris.entity() + change.entityId());
+            }
+        }
+        if (candidateChanges.size() > 0) {
+            for (String entityId: rdfRepository.hasRevisions(candidateChanges.values())) {
+                // Cut off the entity prefix from the resulting URI
+                changeIds.add(entityId);
+                trueChanges.add(candidateChanges.get(entityId.substring(uris.entity().length())));
+            }
+        }
+        log.debug("Filtered batch contains {} changes", trueChanges.size());
+
+        repoValues = rdfRepository.getValues(changeIds);
+        log.debug("Fetched {} values", repoValues.size());
+        repoRefs = rdfRepository.getRefs(changeIds);
+        log.debug("Fetched {} refs", repoRefs.size());
+
+        return trueChanges;
     }
 
     /**
@@ -350,21 +416,16 @@ public class Update<B extends Change.Batch> implements Runnable {
      * @throws RetryableException if there is a retryable error updating the rdf
      *             store
      */
-    private void handleChange(Change change) throws RetryableException {
-        log.debug("Received revision information {}", change);
-        if (change.revision() >= 0 && rdfRepository.hasRevision(change.entityId(), change.revision())) {
-            log.debug("RDF repository already has this revision, skipping.");
-            return;
-        }
+    private String handleChange(Change change) throws RetryableException {
+        log.debug("Processing data for {}", change);
         Collection<Statement> statements = wikibase.fetchRdfForEntity(change.entityId());
-        Set<String> values = rdfRepository.getValues(change.entityId());
-        Set<String> refs = rdfRepository.getRefs(change.entityId());
+        Set<String> values = new HashSet<>(repoValues.get(change.entityId()));
+        Set<String> refs = new HashSet<>(repoRefs.get(change.entityId()));
         munger.munge(change.entityId(), statements, values, refs, change);
         List<String> cleanupList = new ArrayList<>();
         cleanupList.addAll(values);
         cleanupList.addAll(refs);
-        rdfRepository.sync(change.entityId(), statements, cleanupList);
-        updateMeter.mark();
+        return rdfRepository.getSyncQuery(change.entityId(), statements, cleanupList);
     }
 
     /**

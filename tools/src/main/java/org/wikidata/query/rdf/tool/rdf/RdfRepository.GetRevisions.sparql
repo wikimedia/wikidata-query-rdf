@@ -1,0 +1,9 @@
+SELECT DISTINCT ?s WHERE {
+  VALUES (?s ?rev) {
+    %values%
+  }
+  OPTIONAL {
+     ?s %schema:about% ?repoRev
+  }
+  FILTER (!bound(?repoRev) || ?repoRev < ?rev)
+}

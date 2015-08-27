@@ -31,8 +31,8 @@ import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMaterialization{
 
     /**
-	 *
-	 */
+     *
+     */
     private static final long serialVersionUID = 9136864442064392445L;
 
     /**

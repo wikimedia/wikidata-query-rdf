@@ -102,6 +102,7 @@ public class WikibaseRepository {
     public Collection<Statement> fetchRdfForEntity(String entityId) throws RetryableException {
         // TODO handle ?flavor=dump or whatever parameters we need
         URI uri = uris.rdf(entityId);
+        long start = System.currentTimeMillis();
         log.debug("Fetching rdf from {}", uri);
         RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
         StatementCollector collector = new StatementCollector();
@@ -125,6 +126,7 @@ public class WikibaseRepository {
         } catch (RDFParseException | RDFHandlerException e) {
             throw new ContainedException("RDF parsing error for " + uri, e);
         }
+        log.debug("Done in {} ms", System.currentTimeMillis() - start);
         return collector.getStatements();
     }
 

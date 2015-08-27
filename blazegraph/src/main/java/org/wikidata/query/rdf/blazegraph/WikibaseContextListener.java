@@ -31,7 +31,7 @@ import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
  */
 public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
-    private static final transient Logger log = LoggerFactory.getLogger(WikibaseContextListener.class);
+    private static final Logger log = LoggerFactory.getLogger(WikibaseContextListener.class);
 
     /**
      * Replaces the default Blazegraph services with ones that do not allow

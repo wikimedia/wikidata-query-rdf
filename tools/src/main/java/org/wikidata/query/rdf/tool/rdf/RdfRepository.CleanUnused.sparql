@@ -4,4 +4,4 @@ DELETE { ?s ?p ?o } WHERE {
   # anywhere else.
   FILTER NOT EXISTS { ?someEntity ?someStatementPred ?s .  }
   ?s ?p ?o .
-}
+};

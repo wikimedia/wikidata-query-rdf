@@ -31,7 +31,8 @@ public class AbstractUpdateIntegrationTestBase extends AbstractRdfRepositoryInte
         Change.Source<?> source = IdRangeChangeSource.forItems(from, to, 30);
         ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>());
-        Update<?> update = new Update<>(source, wikibaseRepository, rdfRepository(), munger, executorService, 0);
+        WikibaseUris uris = new WikibaseUris("www.wikidata.org");
+        Update<?> update = new Update<>(source, wikibaseRepository, rdfRepository(), munger, executorService, 0, uris);
         update.run();
         executorService.shutdown();
     }
