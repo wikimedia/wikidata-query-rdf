@@ -310,6 +310,7 @@ public class Update<B extends Change.Batch> implements Runnable {
     private void handleChanges(Change.Batch batch) throws InterruptedException, ExecutionException {
         List<Future<String>> tasks = new ArrayList<>();
         Set<Change> trueChanges = getRevisionUpdates(batch);
+        long start = System.currentTimeMillis();
         for (final Change change : trueChanges) {
             tasks.add(executor.submit(new Callable<String>() {
                 @Override
@@ -334,6 +335,7 @@ public class Update<B extends Change.Batch> implements Runnable {
                 bigQuery.append(query);
             }
         }
+        log.debug("Preparing update data took {} ms", System.currentTimeMillis() - start);
         if (bigQuery.length() > 0) {
             rdfRepository.syncQuery(bigQuery.toString());
         }
