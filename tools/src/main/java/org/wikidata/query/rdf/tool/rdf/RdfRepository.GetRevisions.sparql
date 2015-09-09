@@ -3,7 +3,7 @@ SELECT DISTINCT ?s WHERE {
     %values%
   }
   OPTIONAL {
-     ?s %schema:about% ?repoRev
+     ?s %schema:version% ?repoRev
   }
   FILTER (!bound(?repoRev) || ?repoRev < ?rev)
 }

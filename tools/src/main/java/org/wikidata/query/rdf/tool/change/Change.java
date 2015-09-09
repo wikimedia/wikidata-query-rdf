@@ -2,9 +2,11 @@ package org.wikidata.query.rdf.tool.change;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
 import com.google.common.collect.ImmutableList;
@@ -25,6 +27,16 @@ public class Change implements Comparable<Change> {
      * Timestamp of the change.
      */
     private final Date timestamp;
+
+    /**
+     * Set of processed statements for the change.
+     */
+    private Collection<Statement> statements;
+
+    /**
+     * Cleanup list for the change.
+     */
+    private Collection<String> cleanupList;
 
     /**
      * rcid of the change.
@@ -204,4 +216,35 @@ public class Change implements Comparable<Change> {
         return (int)(rcid() - o.rcid());
     }
 
+    /**
+     * Set statements collection.
+     * @return
+     */
+    public Collection<Statement> getStatements() {
+        return statements;
+    }
+
+    /**
+     * Return statements collection.
+     * @return
+     */
+    public void setStatements(Collection<Statement> statements) {
+        this.statements = statements;
+    }
+
+    /**
+     * Set cleanup list.
+     * @return
+     */
+    public Collection<String> getCleanupList() {
+        return cleanupList;
+    }
+
+    /**
+     * Return cleanup list.
+     * @param cleanupList
+     */
+    public void setCleanupList(Collection<String> cleanupList) {
+        this.cleanupList = cleanupList;
+    }
 }

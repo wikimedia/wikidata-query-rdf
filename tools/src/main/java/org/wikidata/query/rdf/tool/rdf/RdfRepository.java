@@ -94,6 +94,10 @@ public class RdfRepository {
      */
     private final String syncBody;
     /**
+     * Sparql for a portion of the update, batched sync.
+     */
+    private final String msyncBody;
+    /**
      * Sparql for a portion of the update.
      */
     private final String getValues;
@@ -135,6 +139,7 @@ public class RdfRepository {
     public RdfRepository(URI uri, WikibaseUris uris) {
         this.uri = uri;
         this.uris = uris;
+        msyncBody = loadBody("multiSync");
         syncBody = loadBody("sync");
         updateLeftOffTimeBody = loadBody("updateLeftOffTime");
         getValues = loadBody("GetValues");
@@ -318,6 +323,64 @@ public class RdfRepository {
         }
 
         return b.toString();
+    }
+
+    /**
+     * Sync repository from changes list.
+     * @param changes List of changes.
+     * @return Number of triples modified.
+     */
+    public int syncFromChanges(Collection<Change> changes) {
+        if (changes.size() == 0) {
+            // no changes, we're done
+            return 0;
+        }
+        UpdateBuilder b = new UpdateBuilder(msyncBody);
+        b.bindUri("schema:about", SchemaDotOrg.ABOUT);
+        b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
+        b.bind("uris.value", uris.value());
+        b.bind("uris.statement", uris.statement());
+        Set<String> entityIds = new HashSet<String>(changes.size());
+
+        List<Statement> insertStatements = new ArrayList<Statement>();
+        List<Statement> entityStatements = new ArrayList<Statement>();
+        Set<String> valueList = new HashSet<String>();
+
+        for (final Change change : changes) {
+            entityIds.add(change.entityId());
+            insertStatements.addAll(change.getStatements());
+            entityStatements.addAll(filtered(change.getStatements()).withSubject(uris.entity() + change.entityId()));
+            valueList.addAll(change.getCleanupList());
+        }
+
+        b.bindUris("entityList", entityIds, uris.entity());
+        b.bindStatements("insertStatements", insertStatements);
+        b.bindValues("entityStatements", entityStatements);
+
+        Collection<Statement> statementStatements = filtered(insertStatements).withSubjectStarts(uris.statement());
+        b.bindValues("statementStatements", statementStatements);
+
+        Collection<Statement> aboutStatements = new HashSet<Statement>(insertStatements);
+        aboutStatements.removeAll(entityStatements);
+        aboutStatements.removeAll(statementStatements);
+        aboutStatements.removeAll(filtered(insertStatements).withSubjectStarts(uris.value()));
+        aboutStatements.removeAll(filtered(insertStatements).withSubjectStarts(uris.reference()));
+        b.bindValues("aboutStatements", aboutStatements);
+
+        if (!valueList.isEmpty()) {
+            UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
+            cleanup.bindUris("values", valueList);
+            b.bind("cleanupQuery", cleanup.toString());
+        }  else {
+            b.bind("cleanupQuery", "");
+        }
+
+        long start = System.currentTimeMillis();
+        int modified = execute("update", UPDATE_COUNT_RESPONSE, b.toString());
+        log.debug("Update query took {} millis and modified {} statements",
+                System.currentTimeMillis() - start, modified);
+        return modified;
+
     }
 
     /**

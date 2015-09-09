@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -308,37 +307,37 @@ public class Update<B extends Change.Batch> implements Runnable {
      *             changes
      */
     private void handleChanges(Change.Batch batch) throws InterruptedException, ExecutionException {
-        List<Future<String>> tasks = new ArrayList<>();
+        List<Future<?>> tasks = new ArrayList<>();
         Set<Change> trueChanges = getRevisionUpdates(batch);
         long start = System.currentTimeMillis();
         for (final Change change : trueChanges) {
-            tasks.add(executor.submit(new Callable<String>() {
+            tasks.add(executor.submit(new Runnable() {
                 @Override
-                public String call() {
+                public void run() {
                     while (true) {
                         try {
-                            return handleChange(change);
+                            handleChange(change);
+                            return;
                         } catch (RetryableException e) {
                             log.warn("Retryable error syncing.  Retrying.", e);
                         } catch (ContainedException e) {
                             log.warn("Contained error syncing.  Giving up on " + change.entityId(), e);
-                            return null;
+                            return;
                         }
                     }
                 }
             }));
         }
-        StringBuilder bigQuery = new StringBuilder();
-        for (Future<String> task : tasks) {
-            String query = task.get();
-            if (query != null) {
-                bigQuery.append(query);
-            }
+
+        for (Future<?> task : tasks) {
+            task.get();
         }
         log.debug("Preparing update data took {} ms", System.currentTimeMillis() - start);
-        if (bigQuery.length() > 0) {
-            rdfRepository.syncQuery(bigQuery.toString());
-        }
+        rdfRepository.syncFromChanges(trueChanges);
+//
+//        if (bigQuery.length() > 0) {
+//            rdfRepository.syncQuery(bigQuery.toString());
+//        }
         updateMeter.mark(trueChanges.size());
     }
 
@@ -374,10 +373,15 @@ public class Update<B extends Change.Batch> implements Runnable {
         }
         log.debug("Filtered batch contains {} changes", trueChanges.size());
 
-        repoValues = rdfRepository.getValues(changeIds);
-        log.debug("Fetched {} values", repoValues.size());
-        repoRefs = rdfRepository.getRefs(changeIds);
-        log.debug("Fetched {} refs", repoRefs.size());
+        if (trueChanges.size() > 0) {
+            repoValues = rdfRepository.getValues(changeIds);
+            log.debug("Fetched {} values", repoValues.size());
+            repoRefs = rdfRepository.getRefs(changeIds);
+            log.debug("Fetched {} refs", repoRefs.size());
+        } else {
+            repoValues = null;
+            repoRefs = null;
+        }
 
         return trueChanges;
     }
@@ -418,7 +422,7 @@ public class Update<B extends Change.Batch> implements Runnable {
      * @throws RetryableException if there is a retryable error updating the rdf
      *             store
      */
-    private String handleChange(Change change) throws RetryableException {
+    private void handleChange(Change change) throws RetryableException {
         log.debug("Processing data for {}", change);
         Collection<Statement> statements = wikibase.fetchRdfForEntity(change.entityId());
         Set<String> values = new HashSet<>(repoValues.get(change.entityId()));
@@ -427,7 +431,9 @@ public class Update<B extends Change.Batch> implements Runnable {
         List<String> cleanupList = new ArrayList<>();
         cleanupList.addAll(values);
         cleanupList.addAll(refs);
-        return rdfRepository.getSyncQuery(change.entityId(), statements, cleanupList);
+        change.setStatements(statements);
+        change.setCleanupList(cleanupList);
+//        return rdfRepository.getSyncQuery(change.entityId(), statements, cleanupList);
     }
 
     /**

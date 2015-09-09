@@ -1,0 +1,55 @@
+# Clear out of date site links
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+  VALUES ?entity {
+     %entityList%
+  }
+  ?s %schema:about% ?entity .
+  ?s ?p ?o .
+  # This construct is constantly reused throughout the updates.  Its job is to not delete statements
+  # that are still in use.
+  FILTER NOT EXISTS {
+    VALUES ( ?s ?p ?o ) {
+      %aboutStatements%
+    }
+  }
+};
+# Clear out of date statements about statements
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+  VALUES ?entity {
+     %entityList%
+  }
+  ?entity ?statementPred ?s .
+  FILTER( STRSTARTS(STR(?s), "%uris.statement%") ) .
+  ?s ?p ?o .
+  FILTER NOT EXISTS {
+    VALUES ( ?s ?p ?o ) {
+      %statementStatements%
+    }
+  }
+};
+# Clear out of date statements about the entity
+DELETE {
+  ?entity ?p ?o .
+}
+WHERE {
+  VALUES ?entity {
+       %entityList%
+  }
+  ?entity ?p ?o .
+  FILTER NOT EXISTS {
+    VALUES ( ?entity ?p ?o ) {
+      %entityStatements%
+    }
+  }
+};
+# Insert new data
+INSERT {
+  %insertStatements%
+} WHERE {};
+%cleanupQuery%

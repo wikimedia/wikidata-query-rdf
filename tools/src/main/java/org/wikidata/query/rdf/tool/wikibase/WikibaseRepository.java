@@ -2,8 +2,10 @@ package org.wikidata.query.rdf.tool.wikibase;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -121,6 +123,9 @@ public class WikibaseRepository {
                 }
                 parser.parse(new InputStreamReader(response.getEntity().getContent(), Charsets.UTF_8), uri.toString());
             }
+        } catch (UnknownHostException | SocketException e) {
+            // We want to bail on this, since it happens to be sticky for some reason
+            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RetryableException("Error fetching RDF for " + uri, e);
         } catch (RDFParseException | RDFHandlerException e) {
