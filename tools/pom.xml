@@ -211,6 +211,9 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
+              <!-- force overwrite even if the dest file is newer, in some case web.xml
+                 from blazgraph might be newer than our custom web.xml -->
+              <overwrite>true</overwrite>
               <outputDirectory>${basedir}/target/blazegraph/WEB-INF</outputDirectory>
               <resources>
                 <resource>

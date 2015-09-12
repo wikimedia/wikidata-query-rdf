@@ -90,6 +90,9 @@ public class WikibaseRepository {
         log.debug("Polling for changes from {}", uri);
         try {
             return checkApi(getJson(new HttpGet(uri)));
+        } catch (UnknownHostException | SocketException e) {
+            // We want to bail on this, since it happens to be sticky for some reason
+            throw new RuntimeException(e);
         } catch (IOException | ParseException e) {
             throw new RetryableException("Error fetching recent changes", e);
         }

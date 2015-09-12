@@ -650,10 +650,16 @@ public class RdfRepository {
          */
         private static final Pattern ELAPSED_LINE = Pattern.compile("><p>totalElapsed=[^ ]+ elapsed=([^<]+)</p");
         /**
-         * The pattern for the response for an update, with extended times.
+         * The pattern for the response for an update, with extended times for clauses.
          */
-        private static final Pattern EXTENDED_ELAPSED_LINE =
+        private static final Pattern ELAPSED_LINE_CLAUSES =
                 Pattern.compile("><p>totalElapsed=([^ ]+) elapsed=([^ ]+) whereClause=([^ ]+) deleteClause=([^ ]+) insertClause=([^ <]+)</p");
+        /**
+         * The pattern for the response for an update, with extended times for clauses and flush.
+         */
+        private static final Pattern ELAPSED_LINE_FLUSH =
+                Pattern.compile("><p>totalElapsed=([^ ]+) elapsed=([^ ]+) connFlush=([^ ]+) " +
+                        "batchResolve=([^ ]+) whereClause=([^ ]+) deleteClause=([^ ]+) insertClause=([^ <]+)</p");
         /**
          * The pattern for the response for a commit.
          */
@@ -677,7 +683,13 @@ public class RdfRepository {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     Matcher m;
-                    m = EXTENDED_ELAPSED_LINE.matcher(line);
+                    m = ELAPSED_LINE_FLUSH.matcher(line);
+                    if (m.matches()) {
+                        log.debug("total = {} elapsed = {} flush = {} batch = {} where = {} delete = {} insert = {}",
+                                m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6), m.group(7));
+                        continue;
+                    }
+                    m = ELAPSED_LINE_CLAUSES.matcher(line);
                     if (m.matches()) {
                         log.debug("total = {} elapsed = {} where = {} delete = {} insert = {}", m.group(1), m.group(2), m.group(3), m.group(4), m.group(5));
                         continue;
