@@ -56,11 +56,35 @@ window.EDITOR = {};
 				mode : "sparql",
 		},
 		ERROR_LINE_MARKER = null,
-		ERROR_CHARACTER_MARKER = null;
+		ERROR_CHARACTER_MARKER = null,
+		LAST_RESULT = null,
+		DOWNLOAD_FORMATS = {
+			'CSV': {
+				handler: getCSVData,
+				mimetype: 'text/csv;charset=utf-8',
+			},
+			'JSON': {
+				handler: getJSONData,
+				mimetype: 'application/json;charset=utf-8',
+			},
+			'TSV': {
+				handler: getTSVData,
+				mimetype: 'text/tab-separated-values;charset=utf-8',
+			},
+			'JSON-FULL': {
+				handler: getAllJSONData,
+				mimetype: 'application/json;charset=utf-8',
+			},
+		};
 
+	/**
+	 * Submit SPARQL query.
+	 */
 	function submitQuery(e) {
 		e.preventDefault();
 		EDITOR.save();
+
+		LAST_RESULT = null;
 
 		var query = $('#query-form').serialize(),
 			hash = encodeURIComponent(EDITOR.getValue()),
@@ -84,6 +108,9 @@ window.EDITOR = {};
 		$.ajax(url, settings);
 	}
 
+	/**
+	 * Handle SPARQL error.
+	 */
 	function queryResultsError(jqXHR, textStatus, errorThrown) {
 		var response,
 			message = 'ERROR: ';
@@ -101,6 +128,9 @@ window.EDITOR = {};
 		$('#query-error').html($('<pre>').text(message)).show();
 	}
 
+	/**
+	 * Show results of the query.
+	 */
 	function showQueryResults(data) {
 		var results, thead, i, tr, td, linkText, j, binding, title,
 			table = $('<table>')
@@ -115,6 +145,7 @@ window.EDITOR = {};
 			return;
 		}
 
+		LAST_RESULT = data;
 		results = data.results.bindings.length;
 		$('#total-results').text(results);
 		$('#query-time').text(Date.now() - QUERY_START);
@@ -180,6 +211,9 @@ window.EDITOR = {};
 		}
 	}
 
+	/**
+	 * Produce abbreviation of the URI.
+	 */
 	function abbreviate(uri) {
 		var nsGroup, ns;
 
@@ -193,11 +227,17 @@ window.EDITOR = {};
 		return '<' + uri + '>';
 	}
 
+	/**
+	 * Add standard prefixes to editor window.
+	 */
 	function addPrefixes() {
 		var current = EDITOR.getValue();
 		EDITOR.setValue(STANDARD_PREFIXES + current);
 	}
 
+	/**
+	 * Populate namespace shortcut selector.
+	 */
 	function populateNamespaceShortcuts() {
 		var category, select, ns,
 			container = $('.namespace-shortcuts');
@@ -216,6 +256,9 @@ window.EDITOR = {};
 		}
 	}
 
+	/**
+	 * Add selected namespace's prefix to editor.
+	 */
 	function selectNamespace() {
 		var ns,
 			uri = this.value,
@@ -230,6 +273,9 @@ window.EDITOR = {};
 		this.selectedIndex = 0;
 	}
 
+	/**
+	 * Show/hide help text.
+	 */
 	function showHideHelp(e) {
 		e.preventDefault();
 		$('#seealso').toggle();
@@ -240,7 +286,9 @@ window.EDITOR = {};
 		}
 	}
 
-
+	/**
+	 * Initialize query editor window.
+	 */
 	function initQuery() {
 		if(window.location.hash !== "") {
 			EDITOR.setValue(decodeURIComponent(window.location.hash.substr(1)));
@@ -248,6 +296,9 @@ window.EDITOR = {};
 		}
 	}
 
+	/**
+	 * Setup editor window.
+	 */
 	function setupEditor() {
 		EDITOR = CodeMirror.fromTextArea($('#query')[0], CODEMIRROR_DEFAULTS);
 		EDITOR.on('change', function() {
@@ -260,6 +311,9 @@ window.EDITOR = {};
 		EDITOR.focus();
 	}
 
+	/**
+	 * Highlight SPARQL error in editor window.
+	 */
 	function highlightError(description) {
 		var line, character,
 		    match = description.match(/line (\d+), column (\d+)/);
@@ -272,6 +326,9 @@ window.EDITOR = {};
 		}
 	}
 
+	/**
+	 * Show explorer window for given URL.
+	 */
 	function exploreURL(url) {
 		var id,
 			match = url.match(/http:\/\/www.wikidata.org\/entity\/(.+)/);
@@ -288,6 +345,9 @@ window.EDITOR = {};
 		EXPLORER($, mw, $("#explore"));
 	}
 
+	/**
+	 * Hide explorer window.
+	 */
 	function hideExlorer(e) {
 		e.preventDefault();
 		$('#explore').empty('');
@@ -295,6 +355,9 @@ window.EDITOR = {};
 		$('#show-explorer').show();
 	}
 
+	/**
+	 * Setup query examples.
+	 */
 	function setupExamples() {
 		var exampleQueries = document.getElementById('exampleQueries');
 		exampleQueries.add(new Option('US presidents and spouses',
@@ -339,6 +402,9 @@ window.EDITOR = {};
 	 	));
 	}
 
+	/**
+	 * Add query example to editor window.
+	 */
 	function pasteExample() {
 		var text = this.value;
 		this.selectedIndex = 0;
@@ -348,6 +414,9 @@ window.EDITOR = {};
 		EDITOR.setValue(text);
     }
 
+	/**
+	 * Setup event handlers.
+	 */
 	function setupHandlers() {
 		$('#query-form').submit(submitQuery);
 		$('.namespace-shortcuts').on('change', 'select', selectNamespace);
@@ -356,8 +425,29 @@ window.EDITOR = {};
 		$('#showhide').click(showHideHelp);
 		$('#hide-explorer').click(hideExlorer);
 		$('#clear-button').click(function () { EDITOR.setValue("") });
+		for(format in DOWNLOAD_FORMATS) {
+			$('#download'+format).click(downloadHandler('query.'+format.toLowerCase(),
+					DOWNLOAD_FORMATS[format].handler, DOWNLOAD_FORMATS[format].mimetype
+			));
+		}
 	}
 
+	/**
+	 * Create download handler function.
+	 */
+	function downloadHandler(filename, handler, mimetype) {
+		return function(e) {
+			e.preventDefault();
+			if(!LAST_RESULT) {
+				return "";
+			}
+			download(filename, handler(LAST_RESULT), mimetype);
+		}
+	}
+
+	/**
+	 * Fetch last DB update time.
+	 */
 	function getDbUpdated() {
 		var query = encodeURI("prefix schema: <http://schema.org/> SELECT * WHERE {<http://www.wikidata.org> schema:dateModified ?y}");
 		var url = SERVICE + '?query=' + query,
@@ -371,6 +461,9 @@ window.EDITOR = {};
 		$.ajax(url, settings);
 	}
 
+	/**
+	 * Show results for last DB update time.
+	 */
 	function showDbQueryResults(data) {
 		try {
 			var updateDate = new Date(data.results.bindings[0][data.head.vars[0]].value);
@@ -382,10 +475,16 @@ window.EDITOR = {};
 			}
 	}
 
+	/**
+	 * Show error for last DB update time.
+	 */
 	function DbQueryResultsError(jqXHR, textStatus, errorThrown) {
 		$('#dbUpdated').text('[unable to connect]');
 	}
 
+	/**
+	 * Initialize GUI
+	 */
 	function startGUI() {
 		setupEditor();
 		setupExamples();
@@ -395,6 +494,114 @@ window.EDITOR = {};
 		getDbUpdated();
 	}
 
+	/**
+	 * Process SPARQL query result.
+	 */
+	function processData(data, rowHandler, context) {
+		results = data.results.bindings.length;
+		for (i = 0; i < results; i++) {
+			rowBindings = {};
+			for (j = 0; j < data.head.vars.length; j++) {
+				if (data.head.vars[j] in data.results.bindings[i]) {
+					rowBindings[data.head.vars[j]] = data.results.bindings[i][data.head.vars[j]];
+				}
+			}
+			context = rowHandler(rowBindings, context);
+		}
+		return context;
+	}
+
+	/**
+	 * Encode string as CSV.
+	 */
+	function encodeCSV(string) {
+		var result = string.replace(/"/g, '""');
+		if (result.search(/("|,|\n)/g) >= 0) {
+			result = '"' + result + '"';
+		}
+		return result;
+	}
+
+	/**
+	 * Get CSV rendering of the result data.
+	 */
+	function getCSVData(data) {
+		out = data.head.vars.map(encodeCSV).join(",") + "\n";
+		out = processData(data, function(row, out) {
+			rowOut = "";
+			for(rowVar in row) {
+				var rowCSV = encodeCSV(row[rowVar].value)
+				if(rowOut.length > 0) {
+					rowOut += ",";
+				}
+				rowOut += rowCSV;
+			}
+			if(rowOut.length > 0) {
+				rowOut += "\n";
+			}
+			return out + rowOut;
+		}, out);
+		return out;
+	}
+
+	/**
+	 * Get TSV rendering of the result data.
+	 */
+	function getTSVData(data) {
+		out = data.head.vars.join("\t") + "\n";
+		out = processData(data, function(row, out) {
+			rowOut = "";
+			for(rowVar in row) {
+				var rowTSV = row[rowVar].value.replace(/\t/g, '');
+				if(rowOut.length > 0) {
+					rowOut += "\t";
+				}
+				rowOut += rowTSV;
+			}
+			if(rowOut.length > 0) {
+				rowOut += "\n";
+			}
+			return out + rowOut;
+		}, out);
+		return out;
+	}
+
+	/**
+	 * Get JSON rendering of the result data.
+	 */
+	function getJSONData(data) {
+		out = []
+		out = processData(data, function(row, out) {
+			extractRow = {};
+			for(rowVar in row) {
+				extractRow[rowVar] = row[rowVar].value;
+			}
+			out.push(extractRow);
+			return out;
+		}, out);
+		return JSON.stringify(out);
+	}
+
+	function getAllJSONData(data) {
+		return JSON.stringify(data);
+	}
+
+	/**
+	 * Produce file download.
+	 */
+	function download(filename, text, contentType) {
+		if(!text) {
+			return;
+		}
+		var element = document.createElement('a');
+		element.setAttribute('href', 'data:'+contentType+',' + encodeURIComponent(text));
+		element.setAttribute('download', filename);
+
+		element.style.display = 'none';
+		document.body.appendChild(element);
+		element.click();
+		document.body.removeChild(element);
+	}
 
 	$(document).ready(function() {
 		startGUI();

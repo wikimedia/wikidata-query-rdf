@@ -1,9 +1,10 @@
 <!doctype html>
 <html>
 <head>
-<script src="jquery-1.11.3.js"></script>
-<script src="gui.js"></script>
+<script src="https://www.mediawiki.org/w/load.php?debug=false&modules=jquery&only=scripts&raw=1"></script>
+<script src="bootstrap.min.js"></script>
 <script src="codemirror.js"></script>
+<script src="gui.js"></script>
 <script src="sparql.js"></script>
 <script src="wdqs.js"></script>
 <script src="wdqs-explorer.js"></script>
@@ -12,6 +13,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="codemirror.css">
 <link rel="shortcut icon" href="//www.wikidata.org/static/favicon/testwikidata.ico">
+
 <title>Wikidata Query Service Beta</title>
 </head>
 <body>
@@ -63,20 +65,29 @@
       <div class="col-md-12"><div id="explore"></div></div>
     </div>
     <div class="row" id="total">
-      <div class="col-md-10">
+    <div class="col-md-4 pull-left">
         Total results: <span id="total-results"></span>, duration: <span id="query-time"></span> ms.
         <span id="show-explorer">Click on <b>*</b> to explore.</span>
         <button id="hide-explorer" href="#">Hide explorer</button>
-      </div>
-      <div class="col-md-2">
+    </div>
+    <div class="col-sm-2 pull-right">
+        <a href="#" data-toggle="dropdown" class="dropdown-toggle">Download results<span class="caret"></span></a>
+        <ul class="dropdown-menu" role="menu">
+        <li><a id="downloadCSV" href="#">CSV</a></li>
+        <li><a id="downloadTSV" href="#">TSV</a></li>
+        <li><a id="downloadJSON" href="#">JSON</a></li>
+        <li><a id="downloadJSON-FULL" href="#">Full JSON</a></li>
+        </ul>
+    </div>
+    <div class="col-sm-2 pull-right">
         <a href="#" target="_blank" id="shorturl">Generate short URL</a>
       </div>
     </div>
     <div class="row">
-      <div class="col-md-11" id="query-result"></div>
+      <div class="col-md-10" id="query-result">Test result</div>
     </div>
     <div class="row">
-      <div class="col-md-12" id="query-error"></div>
+      <div class="col-md-10" id="query-error">Test error</div>
     </div>
   </div>
 </body>

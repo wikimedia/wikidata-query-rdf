@@ -5,8 +5,11 @@
    white-space: pre;
 }
 
-#total, #query-result, #query-error, #hide-explorer {
-	display: none;
+#total, #query-result,  #hide-explorer {
+   display: none;
+}
+#query-error {
+   display: none;
 }
 
 .error-line {
