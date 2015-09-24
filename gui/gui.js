@@ -4,6 +4,7 @@ window.EDITOR = {};
 (function($, mw) {
 	var SERVICE = '/bigdata/namespace/wdq/sparql',
 		SHORTURL = 'http://tinyurl.com/create.php?url=',
+		EXPLORE_URL = 'http://www.wikidata.org/entity/',
 		NAMESPACE_SHORTCUTS = {
 			'Wikidata' : {
 				'wikibase' : 'http://wikiba.se/ontology#',
@@ -183,7 +184,7 @@ window.EDITOR = {};
 								.attr("href", binding.value)
 								.append(linkText)
 							);
-							if(binding.value.match(/http:\/\/www.wikidata.org\/entity\//)) {
+							if(binding.value.match(EXPLORE_URL)) {
 								td.append($('<a>')
 									.attr("href", '#')
 									.bind('click', exploreURL.bind(undefined, binding.value))
@@ -331,12 +332,16 @@ window.EDITOR = {};
 	 */
 	function exploreURL(url) {
 		var id,
-			match = url.match(/http:\/\/www.wikidata.org\/entity\/(.+)/);
+			match = url.match(EXPLORE_URL+'(.+)');
 		if(!match) {
 			return;
 		}
-		$('#hide-explorer').show();
-		$('#show-explorer').hide();
+		if($('#hide-explorer').is(":visible")) {
+			$('#explore').empty('');
+		} else {
+			$('#hide-explorer').show();
+			$('#show-explorer').hide();
+		}
 		id = match[1];
 		mw.config = { get: function() {
 			return id;
