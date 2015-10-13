@@ -69,12 +69,18 @@ window.EDITOR = {};
 				mimetype: 'application/json;charset=utf-8',
 			},
 			'TSV': {
-				handler: getTSVData,
+				handler: getSparqlTSVData,
 				mimetype: 'text/tab-separated-values;charset=utf-8',
 			},
-			'JSON-FULL': {
+			'Simple TSV': {
+				handler: getSimpleTSVData,
+				mimetype: 'text/tab-separated-values;charset=utf-8',
+				ext: 'tsv',
+			},
+			'Full JSON': {
 				handler: getAllJSONData,
 				mimetype: 'application/json;charset=utf-8',
+				ext: 'json',
 			},
 		};
 
@@ -431,7 +437,9 @@ window.EDITOR = {};
 		$('#hide-explorer').click(hideExlorer);
 		$('#clear-button').click(function () { EDITOR.setValue("") });
 		for(format in DOWNLOAD_FORMATS) {
-			$('#download'+format).click(downloadHandler('query.'+format.toLowerCase(),
+			var extension = DOWNLOAD_FORMATS[format].ext || format.toLowerCase();
+			var formatName = format.replace(/\s/g, "-");
+			$('#download'+formatName).click(downloadHandler('query.'+extension,
 					DOWNLOAD_FORMATS[format].handler, DOWNLOAD_FORMATS[format].mimetype
 			));
 		}
@@ -552,7 +560,7 @@ window.EDITOR = {};
 	/**
 	 * Get TSV rendering of the result data.
 	 */
-	function getTSVData(data) {
+	function getSimpleTSVData(data) {
 		out = data.head.vars.join("\t") + "\n";
 		out = processData(data, function(row, out) {
 			rowOut = "";
@@ -571,6 +579,57 @@ window.EDITOR = {};
 		return out;
 	}
 
+	/**
+	 * Render value as per http://www.w3.org/TR/sparql11-results-csv-tsv/#tsv
+	 */
+	function renderValueTSV(binding) {
+		var value = binding.value.replace(/\t/g, '');
+		switch(binding.type) {
+			case 'uri':
+				return '<' + value + '>';
+			case 'bnode':
+				return "_:"+value;
+			case 'literal':
+				var lvalue = JSON.stringify(value);
+				if(binding["xml:lang"]) {
+					return lvalue + "@" + binding["xml:lang"];
+				}
+				if(binding.datatype) {
+					if(binding.datatype == 'http://www.w3.org/2001/XMLSchema#integer' ||
+						binding.datatype == 'http://www.w3.org/2001/XMLSchema#decimal' ||
+						binding.datatype == 'http://www.w3.org/2001/XMLSchema#double'
+					) {
+						return value;
+					}
+					return lvalue + "^^<" + binding.datatype + ">";
+				}
+				return lvalue;
+		}
+		return value;
+	}
+
+	/**
+	 * Get TSV rendering of the result data according to SPARQL standard.
+	 * See: http://www.w3.org/TR/sparql11-results-csv-tsv/#tsv
+	 */
+	function getSparqlTSVData(data) {
+		out = data.head.vars.map(function (vname) {return "?"+vname }).join("\t") + "\n";
+		out = processData(data, function(row, out) {
+			rowOut = "";
+			for(rowVar in row) {
+				var rowTSV = renderValueTSV(row[rowVar]);
+				if(rowOut.length > 0) {
+					rowOut += "\t";
+				}
+				rowOut += rowTSV;
+			}
+			if(rowOut.length > 0) {
+				rowOut += "\n";
+			}
+			return out + rowOut;
+		}, out);
+		return out;
+	}
 	/**
 	 * Get JSON rendering of the result data.
 	 */
