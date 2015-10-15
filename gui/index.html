@@ -6,12 +6,16 @@
 <script src="codemirror.js"></script>
 <script src="gui.js"></script>
 <script src="sparql.js"></script>
+<script src="addon/hint/show-hint.js"></script>
+<script src="addon/hint/wikibase-rdf-hint.js"></script>
 <script src="wdqs.js"></script>
 <script src="wdqs-explorer.js"></script>
 <script src="vis.js"></script>
 <link rel="stylesheet" href="bootstrap.min.css">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="codemirror.css">
+<link rel="stylesheet" href="addon/hint/show-hint.css">
+
 <link rel="shortcut icon" href="//www.wikidata.org/static/favicon/testwikidata.ico">
 
 <title>Wikidata Query Service Beta</title>
@@ -53,6 +57,7 @@
         <form class="form-horizontal" id="query-form">
           <div class="form-group">
             <textarea id="query" name="query"  placeholder="(Input a SPARQL query)"></textarea>
+            <div>Press <i>ctrl-space</i> to activate auto completion.</div>
           </div>
           <div class="form-group" id="form-buttons">
             <input class="btn btn-default" type="submit" id="execute-button" value="Execute">
