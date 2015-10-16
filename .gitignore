@@ -9,3 +9,4 @@ target/
 .project
 **/rules.log
 .execution-hints-*.log
+node_modules

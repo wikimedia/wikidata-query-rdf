@@ -1,0 +1,20 @@
+{
+	// Enforcing
+	"bitwise": true,
+	"eqeqeq": true,
+	"es3": true,
+	"latedef": true,
+	"noarg": true,
+	"nonew": true,
+	"undef": true,
+	"unused": true,
+	"strict": false,
+
+	// Environment
+	"browser": true,
+
+	"globals": {
+		"mw": false,
+		"$": false
+	}
+}
