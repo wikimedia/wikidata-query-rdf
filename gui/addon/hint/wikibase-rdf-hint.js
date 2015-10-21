@@ -36,6 +36,11 @@
 		ENTITY_SEARCH_API_ENDPOINT = 'https://www.wikidata.org/w/api.php?action=wbsearchentities&search={term}&format=json&language=en&uselang=en&type={entityType}&continue=0';
 
 	CodeMirror.registerHelper( 'hint', 'sparql', function ( editor, callback, options ) {
+
+		if( wikibase_sparqlhint ){
+			wikibase_sparqlhint( editor, callback, options );
+		}
+
 		var currentWord = getCurrentWord( getCurrentLine( editor ), getCurrentCurserPosition( editor ) ),
 			prefix,
 			term,
