@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-<script src="https://www.mediawiki.org/w/load.php?debug=false&modules=jquery&only=scripts&raw=1"></script>
+<script src="jquery-1.11.3.js"></script>
 <script src="bootstrap.min.js"></script>
 <script src="codemirror.js"></script>
 <script src="gui.js"></script>
@@ -16,87 +16,97 @@
 <link rel="stylesheet" href="codemirror.css">
 <link rel="stylesheet" href="addon/hint/show-hint.css">
 
-<link rel="shortcut icon" href="//www.wikidata.org/static/favicon/testwikidata.ico">
+<link rel="shortcut icon"
+	href="//www.wikidata.org/static/favicon/testwikidata.ico">
 
-<title>Wikidata Query Service Beta</title>
+<title>Wikidata Query Service (Beta)</title>
 </head>
 <body>
-  <div class="container-fluid">
-    <h1>Welcome to Wikidata Query Service Beta!</h1>
-    <div class="row">
-      <div class="col-md-4">
-        <p>Please enter your query below.</p>
-      </div>
-      <div class="col-md-4">
-        <p>See also: <small>[<a href="#" id="showhide">hide</a>]</small></p>
-        <div id="seealso">
-          <ul>
-            <li> <font size="4"><b><a href="https://www.mediawiki.org/w/index.php?title=Talk:Wikidata_query_service&action=edit&section=new">Give us your feedback!</a></b></font>
-            <li> <a href="https://www.mediawiki.org/wiki/Wikidata_query_service/User_Manual">User Manual</a>
-            <li> <a href="https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format">RDF data model</a>
-            (<a href="https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Full_list_of_prefixes">prefixes list</a>)
-            <li> <a href="https://github.com/wikimedia/wikidata-query-rdf/blob/master/docs/exploring-linked-data.md">Exploring Linked Data</a>
-            <li> <a href="https://www.mediawiki.org/wiki/Wikibase/Indexing/SPARQL_Query_Examples">SPARQL query examples</a>
-            <li> <a href="https://tools.wmflabs.org/wdq2sparql/w2s.php">WDQ syntax translator</a>
-            <li>
-              Sample query:
-              <select id="exampleQueries" class="exampleQueries">
-                <option value="">-</option>
-              </select>
-            </li>
-            <li>Last updated: <span id="dbUpdated">[connecting]</span></li>
-          </ul>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="namespace-shortcuts"></div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-md-12" id="query-box">
-        <form class="form-horizontal" id="query-form">
-          <div class="form-group">
-            <textarea id="query" name="query"  placeholder="(Input a SPARQL query)"></textarea>
-            <div>Press <i>ctrl-space</i> to activate auto completion.</div>
-          </div>
-          <div class="form-group" id="form-buttons">
-            <input class="btn btn-default" type="submit" id="execute-button" value="Execute">
-            <input class="btn btn-default" type="reset" id="clear-button" value="Clear">
-            <input class="btn btn-default" type="button" id="prefixes-button" value="Add prefixes">
-          </div>
-        </form>
-        <hr>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-md-12"><div id="explore"></div></div>
-    </div>
-    <div class="row" id="total">
-    <div class="col-md-4 pull-left">
-        Total results: <span id="total-results"></span>, duration: <span id="query-time"></span> ms.
-        <span id="show-explorer">Click on <b>*</b> to explore.</span>
-        <button id="hide-explorer" href="#">Hide explorer</button>
-    </div>
-    <div class="col-sm-2 pull-right">
-        <a href="#" data-toggle="dropdown" class="dropdown-toggle">Download results<span class="caret"></span></a>
-        <ul class="dropdown-menu" role="menu">
-        <li><a id="downloadCSV" href="#">CSV</a></li>
-        <li><a id="downloadTSV" href="#">TSV</a></li>
-        <li><a id="downloadJSON" href="#">JSON</a></li>
-        <li><a id="downloadSimple-TSV" href="#">Simple TSV</a></li>
-        <li><a id="downloadFull-JSON" href="#">Full JSON</a></li>
-        </ul>
-    </div>
-    <div class="col-sm-2 pull-right">
-        <a href="#" target="_blank" id="shorturl">Generate short URL</a>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-md-10" id="query-result">Test result</div>
-    </div>
-    <div class="row">
-      <div class="col-md-10" id="query-error">Test error</div>
-    </div>
-  </div>
+	<div class="container-fluid">
+		<div class="row">
+			<!-- Editor Navbar -->
+			<nav class="navbar navbar-default">
+				<div class="navbar-header">
+					<div class="navbar-brand">Wikidata Query Service  <span class="label label-info">Beta</span></div>
+				</div>
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav">
+						<li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Prefixes<span class="caret"></span></a>
+							<ul class="dropdown-menu">
+								<li><div class="namespace-shortcuts"></div></li>
+								<li role="separator" class="divider"></li>
+								<li><a class="addPrefixes">Add Standard Prefixes</a></li>
+							</ul>
+						</li>
+						<li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Tools<span class="caret"></span></a>
+							<ul class="dropdown-menu">
+								<li><a target="_blank" href="https://github.com/wikimedia/wikidata-query-rdf/blob/master/docs/exploring-linked-data.md">Exploring Linked Data</a></li>
+								<li><a target="_blank" href="https://tools.wmflabs.org/wdq2sparql/w2s.php">WDQ Syntax Translator</a></li>
+							</ul></li>
+						<li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Help<span class="caret"></span></a>
+							<ul class="dropdown-menu">
+								<li><a target="_blank" href="https://www.mediawiki.org/w/index.php?title=Talk:Wikidata_query_service&action=edit&section=new">Give Feedback!</a></li>
+								<li role="separator" class="divider"></li>
+								<li><a target="_blank" href="https://www.mediawiki.org/wiki/Wikidata_query_service/User_Manual">User Manual</a></li>
+								<li><a target="_blank" href="https://www.mediawiki.org/wiki/Wikibase/Indexing/SPARQL_Query_Examples">Sample Queries</a></li>
+								<li role="separator" class="divider"></li>
+								<li><a target="_blank" href="https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format">RDF Data Model</a></li>
+								<li><a target="_blank" href="https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Full_list_of_prefixes">List of prefixes</a></li>
+							</ul></li>
+						<li><select id="exampleQueries" class="exampleQueries form-control navbar-btn""><option value="">Query Examples</option></select></li>
+					</ul>
+				</div>
+			</nav>
+
+			<div class="col-md-12" id="query-box">
+				<form class="form-horizontal" id="query-form">
+					<div class="form-group">
+						<textarea id="query" name="query" placeholder="(Input a SPARQL query)"></textarea>
+						<div class="alert alert-success alert-dismissible" role="alert">
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+							Press <i>[CTRL-SPACE]</i> to activate auto completion. Data last updated: <span id="dbUpdated">[connecting]</span>
+						</div>
+					</div>
+					<input class="btn btn-default btn-lg" type="submit" id="execute-button" value="Execute"> <input class="btn btn-default btn-lg" type="reset" id="clear-button" value="Clear">
+				</form>
+				<hr>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+				<div id="explore"></div>
+			</div>
+		</div>
+		<div class="row" id="total">
+			<div class="col-md-4 pull-left">
+				Total results: <span id="total-results"></span>, duration: <span
+					id="query-time"></span> ms. <span id="show-explorer">Click
+					on <b>*</b> to explore.
+				</span>
+				<button id="hide-explorer" href="#">Hide explorer</button>
+			</div>
+			<div class="col-sm-2 pull-right">
+				<a href="#" data-toggle="dropdown" class="dropdown-toggle">Download
+					results<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu" role="menu">
+					<li><a id="downloadCSV" href="#">CSV</a></li>
+					<li><a id="downloadTSV" href="#">TSV</a></li>
+					<li><a id="downloadJSON" href="#">JSON</a></li>
+					<li><a id="downloadSimple-TSV" href="#">Simple TSV</a></li>
+					<li><a id="downloadFull-JSON" href="#">Full JSON</a></li>
+				</ul>
+			</div>
+			<div class="col-sm-2 pull-right">
+				<a href="#" target="_blank" id="shorturl">Generate short URL</a>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-10" id="query-result">Test result</div>
+		</div>
+		<div class="row">
+			<div class="col-md-10" id="query-error">Test error</div>
+		</div>
+	</div>
 </body>
 </html>

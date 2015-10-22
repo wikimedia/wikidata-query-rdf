@@ -240,7 +240,7 @@ window.EDITOR = {};
 	 */
 	function addPrefixes() {
 		var current = EDITOR.getValue();
-		EDITOR.setValue(STANDARD_PREFIXES + current);
+		EDITOR.setValue(STANDARD_PREFIXES +'\n\n'+ current);
 	}
 
 	/**
@@ -249,8 +249,12 @@ window.EDITOR = {};
 	function populateNamespaceShortcuts() {
 		var category, select, ns,
 			container = $('.namespace-shortcuts');
+
+		$('.namespace-shortcuts').click(function (e) {
+		    e.stopPropagation();
+		});
+
 		// add namespaces to dropdowns
-		container.text('Namespace prefixes: ');
 		for ( category in NAMESPACE_SHORTCUTS) {
 			select = $('<select>')
 				.attr('class', 'form-control')
@@ -372,46 +376,30 @@ window.EDITOR = {};
 	 */
 	function setupExamples() {
 		var exampleQueries = document.getElementById('exampleQueries');
-		exampleQueries.add(new Option('US presidents and spouses',
-			'PREFIX wikibase: <http://wikiba.se/ontology#>\n' +
-			'PREFIX wd: <http://www.wikidata.org/entity/> \n' +
-			'PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n' +
-			'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n' +
-			'PREFIX p: <http://www.wikidata.org/prop/>\n' +
-			'PREFIX v: <http://www.wikidata.org/prop/statement/>\n' +
-			'SELECT ?p ?pLabel ?w ?wLabel WHERE {\n' +
-			'   wd:Q30 p:P6/v:P6 ?p .\n' +
-			'   ?p wdt:P26 ?w .\n' +
-            '  SERVICE wikibase:label {\n'+
-            '    bd:serviceParam wikibase:language "en" .\n'+
-            '  }\n'+
-			' }'
-		));
-		exampleQueries.add(new Option('Largest cities with female mayors',
-			'PREFIX wikibase: <http://wikiba.se/ontology#>\n' +
-			'PREFIX wd: <http://www.wikidata.org/entity/>\n' +
-			'PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n' +
-			'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n' +
-			'PREFIX p: <http://www.wikidata.org/prop/>\n' +
-			'PREFIX q: <http://www.wikidata.org/prop/qualifier/>\n' +
-			'PREFIX v: <http://www.wikidata.org/prop/statement/>\n\n' +
 
-			'SELECT DISTINCT ?city ?cityLabel ?mayor ?mayorLabel WHERE {\n' +
-			'  ?city wdt:P31/wdt:P279* wd:Q515 .  # find instances of subclasses of city\n' +
-			'  ?city p:P6 ?statement .            # with a P6 (head of goverment) statement\n' +
-			'  ?statement v:P6 ?mayor .           # ... that has the value ?mayor\n' +
-			'  ?mayor wdt:P21 wd:Q6581072 .       # ... where the ?mayor has P21 (sex or gender) female\n' +
-			'  FILTER NOT EXISTS { ?statement q:P582 ?x }  # ... but the statement has no P582 (end date) qualifier\n\n' +
+		$.ajax({
+		    url: 'https://www.mediawiki.org/w/api.php?action=query&prop=revisions&titles=Wikibase/Indexing/SPARQL_Query_Examples&rvprop=content',
+		    data: {
+		        format: 'json'
+		    },
+		    dataType: 'jsonp'
+		}).done( function ( data ) {
 
-			'  # Now select the population value of the ?city\n' +
-			'  # (the number is reached through a chain of three properties)\n' +
-			'  ?city wdt:P1082 ?population .\n\n' +
-			'  # Optionally, find English labels for city and mayor:\n'+
-            '  SERVICE wikibase:label {\n'+
-            '    bd:serviceParam wikibase:language "en" .\n'+
-            '  }\n'+
-			' } ORDER BY DESC(?population) LIMIT 10'
-	 	));
+			var wikitext = data.query.pages[Object.keys( data.query.pages )].revisions[0]['*'];
+			var paragraphs = wikitext.split( "==" );
+
+			$.each(paragraphs, function( key, paragraph ){
+				if(paragraph.match(/SPARQL\|.*query\=/)){
+					var query = paragraph.substring( paragraph.indexOf( '|query=' )+7, ( paragraph.lastIndexOf('}}') ) ).trim();
+					var title = paragraphs[key-1] || "";
+					title = title.replace( '=', '' ).trim();
+
+					if( title ){
+						exampleQueries.add( new Option( title, query ) );
+					}
+				}
+			})
+		} );
 	}
 
 	/**
@@ -424,6 +412,7 @@ window.EDITOR = {};
 			return;
 		}
 		EDITOR.setValue(text);
+		addPrefixes();
     }
 
 	/**
@@ -433,7 +422,7 @@ window.EDITOR = {};
 		$('#query-form').submit(submitQuery);
 		$('.namespace-shortcuts').on('change', 'select', selectNamespace);
 		$('.exampleQueries').on('change', pasteExample);
-		$('#prefixes-button').click(addPrefixes);
+		$('.addPrefixes').click(addPrefixes);
 		$('#showhide').click(showHideHelp);
 		$('#hide-explorer').click(hideExlorer);
 		$('#clear-button').click(function () { EDITOR.setValue("") });
