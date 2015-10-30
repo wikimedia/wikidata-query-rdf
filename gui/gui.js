@@ -394,6 +394,11 @@ window.EDITOR = {};
 					var title = paragraphs[key-1] || "";
 					title = title.replace( '=', '' ).trim();
 
+					if(paragraph.match( 'extraprefix=' )){
+						var prefix =  paragraph.substring( paragraph.indexOf( '|extraprefix=' )+13, paragraph.indexOf( '|query=' ) ).trim();
+						query = prefix + '\n\n' + query;
+					}
+
 					if( title ){
 						exampleQueries.add( new Option( title, query ) );
 					}
