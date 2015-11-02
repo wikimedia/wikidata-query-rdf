@@ -104,6 +104,13 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         long now = System.currentTimeMillis();
         String entityId = repo.firstEntityIdForLabelStartingWith(label, "en", type);
         repo.setLabel(entityId, type, label + now, "en");
+        // Add a bit of a wait to try and improve Jenkins test stability.
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            // nothing to do here, sorry. I know it looks bad.
+        }
+
         JSONArray changes = getRecentChanges(new Date(now - 10000), null, 10);
         boolean found = false;
         String title = entityId;
