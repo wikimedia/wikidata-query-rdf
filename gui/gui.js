@@ -321,6 +321,8 @@ window.EDITOR = {};
 		});
 		EDITOR.addKeyMap({'Ctrl-Enter': submitQuery});
 		EDITOR.focus();
+
+		new WikibaseRDFTooltip(EDITOR);
 	}
 
 	/**
