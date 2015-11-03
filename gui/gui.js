@@ -140,7 +140,7 @@ window.EDITOR = {};
 	 * Show results of the query.
 	 */
 	function showQueryResults( data ) {
-		var results, thead, i, tr, td, linkText, j, binding, title,
+		var results, thead, i, tr, td, linkText, j, binding,
 			table = $( '<table>' )
 				.attr( 'class', 'table' )
 				.appendTo( $( '#query-result' ) );
@@ -250,7 +250,7 @@ window.EDITOR = {};
 		var category, select, ns,
 			container = $( '.namespace-shortcuts' );
 
-		$( '.namespace-shortcuts' ).click( function ( e ) {
+		container.click( function ( e ) {
 			e.stopPropagation();
 		} );
 
@@ -289,9 +289,11 @@ window.EDITOR = {};
 	 * Show/hide help text.
 	 */
 	function showHideHelp( e ) {
+		var $seeAlso = $( '#seealso' );
+
 		e.preventDefault();
-		$( '#seealso' ).toggle();
-		if ( $( '#seealso' ).is( ':visible' ) ) {
+		$seeAlso.toggle();
+		if ( $seeAlso.is( ':visible' ) ) {
 			$( '#showhide' ).text( 'hide' );
 		} else {
 			$( '#showhide' ).text( 'show' );
@@ -335,8 +337,16 @@ window.EDITOR = {};
 			// highlight character at error position
 			line = match[1] - 1;
 			character = match[2] - 1;
-			ERROR_LINE_MARKER = EDITOR.doc.markText( { line: line, ch: 0 }, { line: line }, { className: 'error-line' } );
-			ERROR_CHARACTER_MARKER = EDITOR.doc.markText( { line: line, ch: character }, { line: line, ch: character + 1 }, { className: 'error-character' } );
+			ERROR_LINE_MARKER = EDITOR.doc.markText(
+				{ line: line, ch: 0 },
+				{ line: line },
+				{ className: 'error-line' }
+			);
+			ERROR_CHARACTER_MARKER = EDITOR.doc.markText(
+				{ line: line, ch: character },
+				{ line: line, ch: character + 1 },
+				{ className: 'error-character' }
+			);
 		}
 	}
 
@@ -380,7 +390,8 @@ window.EDITOR = {};
 		var exampleQueries = document.getElementById( 'exampleQueries' );
 
 		$.ajax( {
-			url: 'https://www.mediawiki.org/w/api.php?action=query&prop=revisions&titles=Wikibase/Indexing/SPARQL_Query_Examples&rvprop=content',
+			url: 'https://www.mediawiki.org/w/api.php?action=query&prop=revisions&titles=Wikibase/'
+				+ 'Indexing/SPARQL_Query_Examples&rvprop=content',
 			data: {
 				format: 'json'
 			},
@@ -391,7 +402,10 @@ window.EDITOR = {};
 
 			$.each( paragraphs, function ( key, paragraph ) {
 				if ( paragraph.match( /SPARQL\|.*query\=/ ) ) {
-					var query = paragraph.substring( paragraph.indexOf( '|query=' ) + 7, ( paragraph.lastIndexOf( '}}' ) ) ).trim();
+					var query = paragraph.substring(
+						paragraph.indexOf( '|query=' ) + 7,
+						paragraph.lastIndexOf( '}}' )
+					).trim();
 					var title = paragraphs[key - 1] || '';
 					title = title.replace( '=', '' ).trim();
 
@@ -460,7 +474,8 @@ window.EDITOR = {};
 	 * Fetch last DB update time.
 	 */
 	function getDbUpdated() {
-		var query = encodeURI( 'prefix schema: <http://schema.org/> SELECT * WHERE {<http://www.wikidata.org> schema:dateModified ?y}' );
+		var query = encodeURI( 'prefix schema: <http://schema.org/> '
+			+ 'SELECT * WHERE {<http://www.wikidata.org> schema:dateModified ?y}' );
 		var url = SERVICE + '?query=' + query,
 			settings = {
 				headers: {
@@ -478,8 +493,13 @@ window.EDITOR = {};
 	function showDbQueryResults( data ) {
 		try {
 			var updateDate = new Date( data.results.bindings[0][data.head.vars[0]].value );
-			$( '#dbUpdated' ).text( updateDate.toLocaleTimeString( navigator.language, { timeZoneName: 'short' } ) + ', ' +
-				updateDate.toLocaleDateString( navigator.language, { month: 'short', day: 'numeric', year: 'numeric' } ) );
+			$( '#dbUpdated' ).text( updateDate.toLocaleTimeString(
+				navigator.language,
+				{ timeZoneName: 'short' }
+			) + ', ' + updateDate.toLocaleDateString(
+				navigator.language,
+				{ month: 'short', day: 'numeric', year: 'numeric' }
+			) );
 		} catch ( err ) {
 			$( '#dbUpdated' ).text( '[unable to connect]' );
 		}
