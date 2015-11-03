@@ -42,20 +42,20 @@ window.EDITOR = {};
 			}
 		},
 		STANDARD_PREFIXES =[
-				'PREFIX wd: <http://www.wikidata.org/entity/>',
-				'PREFIX wdt: <http://www.wikidata.org/prop/direct/>',
-				'PREFIX wikibase: <http://wikiba.se/ontology#>',
-				'PREFIX p: <http://www.wikidata.org/prop/>',
-				'PREFIX v: <http://www.wikidata.org/prop/statement/>',
-				'PREFIX q: <http://www.wikidata.org/prop/qualifier/>',
-				'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>'
+			'PREFIX wd: <http://www.wikidata.org/entity/>',
+			'PREFIX wdt: <http://www.wikidata.org/prop/direct/>',
+			'PREFIX wikibase: <http://wikiba.se/ontology#>',
+			'PREFIX p: <http://www.wikidata.org/prop/>',
+			'PREFIX v: <http://www.wikidata.org/prop/statement/>',
+			'PREFIX q: <http://www.wikidata.org/prop/qualifier/>',
+			'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>'
 		].join( '\n' ),
 		QUERY_START = 0,
 		CODEMIRROR_DEFAULTS = {
-				lineNumbers: true,
-				matchBrackets: true,
-				mode: 'sparql',
-				extraKeys: { 'Ctrl-Space': 'autocomplete' }
+			lineNumbers: true,
+			matchBrackets: true,
+			mode: 'sparql',
+			extraKeys: { 'Ctrl-Space': 'autocomplete' }
 		},
 		ERROR_LINE_MARKER = null,
 		ERROR_CHARACTER_MARKER = null,
@@ -251,7 +251,7 @@ window.EDITOR = {};
 			container = $( '.namespace-shortcuts' );
 
 		$( '.namespace-shortcuts' ).click( function ( e ) {
-		    e.stopPropagation();
+			e.stopPropagation();
 		} );
 
 		// add namespaces to dropdowns
@@ -314,10 +314,10 @@ window.EDITOR = {};
 	function setupEditor() {
 		EDITOR = CodeMirror.fromTextArea( $( '#query' )[0], CODEMIRROR_DEFAULTS );
 		EDITOR.on( 'change', function () {
-				if ( ERROR_LINE_MARKER ) {
-						ERROR_LINE_MARKER.clear();
-						ERROR_CHARACTER_MARKER.clear();
-				}
+			if ( ERROR_LINE_MARKER ) {
+				ERROR_LINE_MARKER.clear();
+				ERROR_CHARACTER_MARKER.clear();
+			}
 		} );
 		EDITOR.addKeyMap( { 'Ctrl-Enter': submitQuery } );
 		EDITOR.focus();
@@ -330,7 +330,7 @@ window.EDITOR = {};
 	 */
 	function highlightError( description ) {
 		var line, character,
-		    match = description.match( /line (\d+), column (\d+)/ );
+			match = description.match( /line (\d+), column (\d+)/ );
 		if ( match ) {
 			// highlight character at error position
 			line = match[1] - 1;
@@ -380,11 +380,11 @@ window.EDITOR = {};
 		var exampleQueries = document.getElementById( 'exampleQueries' );
 
 		$.ajax( {
-		    url: 'https://www.mediawiki.org/w/api.php?action=query&prop=revisions&titles=Wikibase/Indexing/SPARQL_Query_Examples&rvprop=content',
-		    data: {
-		        format: 'json'
-		    },
-		    dataType: 'jsonp'
+			url: 'https://www.mediawiki.org/w/api.php?action=query&prop=revisions&titles=Wikibase/Indexing/SPARQL_Query_Examples&rvprop=content',
+			data: {
+				format: 'json'
+			},
+			dataType: 'jsonp'
 		} ).done( function ( data ) {
 			var wikitext = data.query.pages[Object.keys( data.query.pages )].revisions[0]['*'];
 			var paragraphs = wikitext.split( '==' );
@@ -419,7 +419,7 @@ window.EDITOR = {};
 		}
 		EDITOR.setValue( text );
 		addPrefixes();
-    }
+	}
 
 	/**
 	 * Setup event handlers.
@@ -431,12 +431,14 @@ window.EDITOR = {};
 		$( '.addPrefixes' ).click( addPrefixes );
 		$( '#showhide' ).click( showHideHelp );
 		$( '#hide-explorer' ).click( hideExlorer );
-		$( '#clear-button' ).click( function () { EDITOR.setValue( '' ) } );
+		$( '#clear-button' ).click( function () {
+			EDITOR.setValue( '' );
+		} );
 		for ( format in DOWNLOAD_FORMATS ) {
 			var extension = DOWNLOAD_FORMATS[format].ext || format.toLowerCase();
 			var formatName = format.replace( /\s/g, '-' );
 			$( '#download' + formatName ).click( downloadHandler( 'query.' + extension,
-					DOWNLOAD_FORMATS[format].handler, DOWNLOAD_FORMATS[format].mimetype
+				DOWNLOAD_FORMATS[format].handler, DOWNLOAD_FORMATS[format].mimetype
 			) );
 		}
 	}
@@ -608,7 +610,9 @@ window.EDITOR = {};
 	 * See: http://www.w3.org/TR/sparql11-results-csv-tsv/#tsv
 	 */
 	function getSparqlTSVData( data ) {
-		out = data.head.vars.map( function ( vname ) { return '?' + vname; } ).join( '\t' ) + '\n';
+		out = data.head.vars.map( function ( vname ) {
+			return '?' + vname;
+		} ).join( '\t' ) + '\n';
 		out = processData( data, function ( row, out ) {
 			rowOut = '';
 			for ( rowVar in row ) {
