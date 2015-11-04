@@ -55,7 +55,8 @@ window.EDITOR = {};
 			lineNumbers: true,
 			matchBrackets: true,
 			mode: 'sparql',
-			extraKeys: { 'Ctrl-Space': 'autocomplete' }
+			extraKeys: { 'Ctrl-Space': 'autocomplete' },
+			viewportMargin: Infinity
 		},
 		ERROR_LINE_MARKER = null,
 		ERROR_CHARACTER_MARKER = null,
