@@ -3,20 +3,21 @@
 <head>
 <script src="jquery-1.11.3.js"></script>
 <script src="bootstrap.min.js"></script>
-<script src="codemirror.js"></script>
-<script src="sparql.js"></script>
-<script src="addon/hint/show-hint.js"></script>
-<script src="addon/hint/wikibase-sparql-hint.js"></script>
-<script src="addon/hint/wikibase-rdf-hint.js"></script>
-<script src="addon/tooltip/WikibaseRDFTooltip.js"></script>
+<script src="vendor/codemirror/lib/codemirror.js"></script>
+<script src="vendor/codemirror/mode/sparql.js"></script>
+<script src="vendor/codemirror/addon/hint/show-hint.js"></script>
+<script src="vendor/codemirror/addon/hint/wikibase-sparql-hint.js"></script>
+<script src="vendor/codemirror/addon/hint/wikibase-rdf-hint.js"></script>
+<script src="vendor/codemirror/addon/tooltip/WikibaseRDFTooltip.js"></script>
+<script src="vendor/codemirror/addon/display/placeholder.js"></script>
 <script src="gui.js"></script>
 <script src="vis.js"></script>
 <script src="wdqs.js"></script>
 <script src="wdqs-explorer.js"></script>
 <link rel="stylesheet" href="bootstrap.min.css">
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="codemirror.css">
-<link rel="stylesheet" href="addon/hint/show-hint.css">
+<link rel="stylesheet" href="vendor/codemirror/lib/codemirror.css">
+<link rel="stylesheet" href="vendor/codemirror/addon/hint/show-hint.css">
 
 <link rel="shortcut icon"
 	href="//www.wikidata.org/static/favicon/testwikidata.ico">
@@ -63,7 +64,7 @@
 			<div class="col-md-12" id="query-box">
 				<form class="form-horizontal" id="query-form">
 					<div class="form-group">
-						<textarea id="query" name="query" placeholder="(Input a SPARQL query)"></textarea>
+						<textarea id="query" name="query" placeholder="(Input a SPARQL query or choose a query example)"></textarea>
 						<div class="alert alert-success alert-dismissible" role="alert">
 							<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 							Press <i>[CTRL-SPACE]</i> to activate auto completion. Data last updated: <span id="dbUpdated">[connecting]</span>
