@@ -27,6 +27,10 @@
   background-color: inherit;
 }
 
+.cm-s-default .cm-bracket {
+  color: #000;
+}
+
 .CodeMirror {
   border: 1px solid #ccc;
   height: auto!important;
