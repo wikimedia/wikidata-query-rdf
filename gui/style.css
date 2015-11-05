@@ -27,6 +27,14 @@
   background-color: inherit;
 }
 
+.CodeMirror {
+  border: 1px solid #ccc;
+  height: auto!important;
+}
+
+.CodeMirror-scroll {
+  min-height: 300px; 
+}
 
 .exampleQueries{
 	width:160px;
