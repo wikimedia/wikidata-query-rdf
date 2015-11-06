@@ -41,7 +41,7 @@ window.EDITOR = {};
 				'hint': 'http://www.bigdata.com/queryHints#'
 			}
 		},
-		STANDARD_PREFIXES =[
+		STANDARD_PREFIXES = [
 			'PREFIX wd: <http://www.wikidata.org/entity/>',
 			'PREFIX wdt: <http://www.wikidata.org/prop/direct/>',
 			'PREFIX wikibase: <http://wikiba.se/ontology#>',
@@ -63,24 +63,24 @@ window.EDITOR = {};
 		LAST_RESULT = null,
 		DOWNLOAD_FORMATS = {
 			'CSV': {
-				handler: getCSVData,
+				handler: getCsvData,
 				mimetype: 'text/csv;charset=utf-8'
 			},
 			'JSON': {
-				handler: getJSONData,
+				handler: getJsonData,
 				mimetype: 'application/json;charset=utf-8'
 			},
 			'TSV': {
-				handler: getSparqlTSVData,
+				handler: getSparqlTsvData,
 				mimetype: 'text/tab-separated-values;charset=utf-8'
 			},
 			'Simple TSV': {
-				handler: getSimpleTSVData,
+				handler: getSimpleTsvData,
 				mimetype: 'text/tab-separated-values;charset=utf-8',
 				ext: 'tsv'
 			},
 			'Full JSON': {
-				handler: getAllJSONData,
+				handler: getAllJsonData,
 				mimetype: 'application/json;charset=utf-8',
 				ext: 'json'
 			}
@@ -88,6 +88,8 @@ window.EDITOR = {};
 
 	/**
 	 * Submit SPARQL query.
+	 *
+	 * @param {Event} e
 	 */
 	function submitQuery( e ) {
 		e.preventDefault();
@@ -119,6 +121,10 @@ window.EDITOR = {};
 
 	/**
 	 * Handle SPARQL error.
+	 *
+	 * @param {Object} jqXHR
+	 * @param {string} textStatus
+	 * @param {string} errorThrown
 	 */
 	function queryResultsError( jqXHR, textStatus, errorThrown ) {
 		var response,
@@ -139,6 +145,8 @@ window.EDITOR = {};
 
 	/**
 	 * Show results of the query.
+	 *
+	 * @param {Object} data
 	 */
 	function showQueryResults( data ) {
 		var results, thead, i, tr, td, linkText, j, binding,
@@ -175,7 +183,7 @@ window.EDITOR = {};
 				td = $( '<td>' ) ;
 				if ( data.head.vars[j] in data.results.bindings[i] ) {
 					binding = data.results.bindings[i][data.head.vars[j]];
-					text = binding.value;
+					var text = binding.value;
 					if ( binding.type === 'uri' ) {
 						text = abbreviate( text );
 					}
@@ -195,7 +203,7 @@ window.EDITOR = {};
 							if ( binding.value.match( EXPLORE_URL ) ) {
 								td.append( $( '<a>' )
 									.attr( 'href', '#' )
-									.bind( 'click', exploreURL.bind( undefined, binding.value ) )
+									.bind( 'click', exploreUrl.bind( undefined, binding.value ) )
 									.text( '*' )
 								);
 							}
@@ -222,6 +230,9 @@ window.EDITOR = {};
 
 	/**
 	 * Produce abbreviation of the URI.
+	 *
+	 * @param {string} uri
+	 * @returns {string}
 	 */
 	function abbreviate( uri ) {
 		var nsGroup, ns;
@@ -288,6 +299,8 @@ window.EDITOR = {};
 
 	/**
 	 * Show/hide help text.
+	 *
+	 * @param {Event} e
 	 */
 	function showHideHelp( e ) {
 		var $seeAlso = $( '#seealso' );
@@ -330,6 +343,8 @@ window.EDITOR = {};
 
 	/**
 	 * Highlight SPARQL error in editor window.
+	 *
+	 * @param {string} description
 	 */
 	function highlightError( description ) {
 		var line, character,
@@ -353,8 +368,10 @@ window.EDITOR = {};
 
 	/**
 	 * Show explorer window for given URL.
+	 *
+	 * @param {string} url
 	 */
-	function exploreURL( url ) {
+	function exploreUrl( url ) {
 		var id,
 			match = url.match( EXPLORE_URL + '(.+)' );
 		if ( !match ) {
@@ -376,8 +393,10 @@ window.EDITOR = {};
 
 	/**
 	 * Hide explorer window.
+	 *
+	 * @param {Event} e
 	 */
-	function hideExlorer( e ) {
+	function hideExplorer( e ) {
 		e.preventDefault();
 		$( '#explore' ).empty( '' );
 		$( '#hide-explorer' ).hide();
@@ -445,7 +464,7 @@ window.EDITOR = {};
 		$( '.exampleQueries' ).on( 'change', pasteExample );
 		$( '.addPrefixes' ).click( addPrefixes );
 		$( '#showhide' ).click( showHideHelp );
-		$( '#hide-explorer' ).click( hideExlorer );
+		$( '#hide-explorer' ).click( hideExplorer );
 		$( '#clear-button' ).click( function () {
 			EDITOR.setValue( '' );
 		} );
@@ -460,6 +479,11 @@ window.EDITOR = {};
 
 	/**
 	 * Create download handler function.
+	 *
+	 * @param {string} filename
+	 * @param {Function} handler
+	 * @param {string} mimetype
+	 * @return {Function}
 	 */
 	function downloadHandler( filename, handler, mimetype ) {
 		return function ( e ) {
@@ -483,13 +507,15 @@ window.EDITOR = {};
 					'Accept': 'application/sparql-results+json'
 				},
 				success: showDbQueryResults,
-				error: DbQueryResultsError
+				error: dbQueryResultsError
 			};
 		$.ajax( url, settings );
 	}
 
 	/**
 	 * Show results for last DB update time.
+	 *
+	 * @param {Object} data
 	 */
 	function showDbQueryResults( data ) {
 		try {
@@ -508,15 +534,19 @@ window.EDITOR = {};
 
 	/**
 	 * Show error for last DB update time.
+	 *
+	 * @param {Object} jqXHR
+	 * @param {string} textStatus
+	 * @param {string} errorThrown
 	 */
-	function DbQueryResultsError( jqXHR, textStatus, errorThrown ) {
+	function dbQueryResultsError( jqXHR, textStatus, errorThrown ) {
 		$( '#dbUpdated' ).text( '[unable to connect]' );
 	}
 
 	/**
 	 * Initialize GUI
 	 */
-	function startGUI() {
+	function startGui() {
 		setupEditor();
 		setupExamples();
 		populateNamespaceShortcuts();
@@ -527,12 +557,17 @@ window.EDITOR = {};
 
 	/**
 	 * Process SPARQL query result.
+	 *
+	 * @param {Object} data
+	 * @param {Function} rowHandler
+	 * @param {*} context
+	 * @return {*} The provided context, modified by the rowHandler.
 	 */
 	function processData( data, rowHandler, context ) {
-		results = data.results.bindings.length;
-		for ( i = 0; i < results; i++ ) {
-			rowBindings = {};
-			for ( j = 0; j < data.head.vars.length; j++ ) {
+		var results = data.results.bindings.length;
+		for ( var i = 0; i < results; i++ ) {
+			var rowBindings = {};
+			for ( var j = 0; j < data.head.vars.length; j++ ) {
 				if ( data.head.vars[j] in data.results.bindings[i] ) {
 					rowBindings[data.head.vars[j]] = data.results.bindings[i][data.head.vars[j]];
 				}
@@ -544,8 +579,11 @@ window.EDITOR = {};
 
 	/**
 	 * Encode string as CSV.
+	 *
+	 * @param {string} string
+	 * @return {string}
 	 */
-	function encodeCSV( string ) {
+	function encodeCsv( string ) {
 		var result = string.replace( /"/g, '""' );
 		if ( result.search( /("|,|\n)/g ) >= 0 ) {
 			result = '"' + result + '"';
@@ -555,13 +593,16 @@ window.EDITOR = {};
 
 	/**
 	 * Get CSV rendering of the result data.
+	 *
+	 * @param {Object} data
+	 * @return {string}
 	 */
-	function getCSVData( data ) {
-		out = data.head.vars.map( encodeCSV ).join( ',' ) + '\n';
+	function getCsvData( data ) {
+		var out = data.head.vars.map( encodeCsv ).join( ',' ) + '\n';
 		out = processData( data, function ( row, out ) {
-			rowOut = '';
+			var rowOut = '';
 			for ( rowVar in row ) {
-				var rowCSV = encodeCSV( row[rowVar].value );
+				var rowCSV = encodeCsv( row[rowVar].value );
 				if ( rowOut.length > 0 ) {
 					rowOut += ',';
 				}
@@ -577,11 +618,14 @@ window.EDITOR = {};
 
 	/**
 	 * Get TSV rendering of the result data.
+	 *
+	 * @param {Object} data
+	 * @return {string}
 	 */
-	function getSimpleTSVData( data ) {
-		out = data.head.vars.join( '\t' ) + '\n';
+	function getSimpleTsvData( data ) {
+		var out = data.head.vars.join( '\t' ) + '\n';
 		out = processData( data, function ( row, out ) {
-			rowOut = '';
+			var rowOut = '';
 			for ( rowVar in row ) {
 				var rowTSV = row[rowVar].value.replace( /\t/g, '' );
 				if ( rowOut.length > 0 ) {
@@ -599,6 +643,9 @@ window.EDITOR = {};
 
 	/**
 	 * Render value as per http://www.w3.org/TR/sparql11-results-csv-tsv/#tsv
+	 *
+	 * @param {Object} binding
+	 * @return {string}
 	 */
 	function renderValueTSV( binding ) {
 		var value = binding.value.replace( /\t/g, '' );
@@ -629,13 +676,16 @@ window.EDITOR = {};
 	/**
 	 * Get TSV rendering of the result data according to SPARQL standard.
 	 * See: http://www.w3.org/TR/sparql11-results-csv-tsv/#tsv
+	 *
+	 * @param {Object} data
+	 * @return {string}
 	 */
-	function getSparqlTSVData( data ) {
-		out = data.head.vars.map( function ( vname ) {
+	function getSparqlTsvData( data ) {
+		var out = data.head.vars.map( function ( vname ) {
 			return '?' + vname;
 		} ).join( '\t' ) + '\n';
 		out = processData( data, function ( row, out ) {
-			rowOut = '';
+			var rowOut = '';
 			for ( rowVar in row ) {
 				var rowTSV = renderValueTSV( row[rowVar] );
 				if ( rowOut.length > 0 ) {
@@ -650,13 +700,17 @@ window.EDITOR = {};
 		}, out );
 		return out;
 	}
+
 	/**
 	 * Get JSON rendering of the result data.
+	 *
+	 * @param {Object} data
+	 * @return {string}
 	 */
-	function getJSONData( data ) {
-		out = [];
+	function getJsonData( data ) {
+		var out = [];
 		out = processData( data, function ( row, out ) {
-			extractRow = {};
+			var extractRow = {};
 			for ( rowVar in row ) {
 				extractRow[rowVar] = row[rowVar].value;
 			}
@@ -666,12 +720,20 @@ window.EDITOR = {};
 		return JSON.stringify( out );
 	}
 
-	function getAllJSONData( data ) {
+	/**
+	 * @param {Object} data
+	 * @returns {string}
+	 */
+	function getAllJsonData( data ) {
 		return JSON.stringify( data );
 	}
 
 	/**
 	 * Produce file download.
+	 *
+	 * @param {string} filename
+	 * @param {string} text
+	 * @param {string} contentType
 	 */
 	function download( filename, text, contentType ) {
 		if ( !text ) {
@@ -688,7 +750,7 @@ window.EDITOR = {};
 	}
 
 	$( document ).ready( function () {
-		startGUI();
+		startGui();
 	} );
 	$( window ).on( 'popstate', initQuery );
 } )( jQuery, mediaWiki );

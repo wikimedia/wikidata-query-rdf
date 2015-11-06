@@ -27,7 +27,6 @@ var wikibase_sparqlhint = null;
 		var currentWord = getCurrentWord( getCurrentLine( editor ), getCurrentCurserPosition( editor ) ),
 			hintList = [];
 
-
 		if ( currentWord.word.indexOf('?') === 0 ) {
 			hintList = hintList.concat( getVariableHints( currentWord.word,
 										getDefinedVariables( editor.doc.getValue() ) ) );
@@ -38,8 +37,7 @@ var wikibase_sparqlhint = null;
 		if(hintList.length > 0){
 			callback( getHintCompletion( editor, currentWord, hintList ) );
 		}
-
-	}
+	};
 
 	CodeMirror.hint.sparql.async = true;
 	CodeMirror.defaults.hintOptions = {};
@@ -71,7 +69,6 @@ var wikibase_sparqlhint = null;
 	}
 
 	function getVariableHints( term, variables ) {
-
 		var list = [];
 
 		if(!term || term === '?'){
@@ -88,7 +85,6 @@ var wikibase_sparqlhint = null;
 	}
 
 	function getHintCompletion( editor, currentWord , list) {
-
 		var completion = { list: [] };
 		completion.from = CodeMirror.Pos( editor.getCursor().line, currentWord.start );
 		completion.to = CodeMirror.Pos( editor.getCursor().line, currentWord.end );
@@ -97,12 +93,10 @@ var wikibase_sparqlhint = null;
 		return completion;
 	}
 
-
 	function getCurrentWord(line, position) {
 		var words = line.split(' '), matchedWord = "", scannedPostion = 0;
 
 		$.each(words, function(key, word) {
-
 			scannedPostion += word.length;
 
 			if (key > 0) {// add spaces to position

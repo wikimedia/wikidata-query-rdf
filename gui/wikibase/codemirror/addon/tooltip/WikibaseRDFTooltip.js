@@ -1,7 +1,6 @@
 var WikibaseRDFTooltip = ( function( CodeMirror, $ ) {
 	"use strict";
 
-
 	/**
 	 * Wikibase RDF tooltip for codemirror editor
 	 *
@@ -11,14 +10,12 @@ var WikibaseRDFTooltip = ( function( CodeMirror, $ ) {
 	 * @constructor
 	 */
 	function SELF( editor ) {
-
 		this.editor = editor;
 		this._registerHandler();
 	}
 
 	SELF.prototype.editor = null;
 	SELF.prototype.tooltipTimeoutHandler = null;
-
 
 	var ENTITY_TYPES = { "http://www.wikidata.org/prop/direct/": "property",
 			"http://www.wikidata.org/prop/": "property",
@@ -33,7 +30,6 @@ var WikibaseRDFTooltip = ( function( CodeMirror, $ ) {
 			"http://www.wikidata.org/entity/": "item" };
 
 	var ENTITY_SEARCH_API_ENDPOINT = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search={term}&format=json&language=en&uselang=en&type={entityType}&continue=0";
-
 
 	SELF.prototype._registerHandler = function(){
 		CodeMirror.on(this.editor.getWrapperElement(), "mouseover", $.proxy(this._triggerTooltip, this));
@@ -50,9 +46,7 @@ var WikibaseRDFTooltip = ( function( CodeMirror, $ ) {
 		}, 500);
 	};
 
-
 	SELF.prototype._createTooltip = function( e ){
-
 		var posX = e.clientX, posY = (e.clientY +  $(window).scrollTop());
 
 		var token = this.editor.getTokenAt(this.editor.coordsChar({left: posX, top: posY})).string;
@@ -97,7 +91,6 @@ var WikibaseRDFTooltip = ( function( CodeMirror, $ ) {
 		.appendTo( "body" )
 		.fadeIn( "slow" );
 	};
-
 
 	SELF.prototype._extractPrefixes = function( text ) {
 		var prefixes = {},

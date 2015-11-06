@@ -36,7 +36,6 @@
 		ENTITY_SEARCH_API_ENDPOINT = 'https://www.wikidata.org/w/api.php?action=wbsearchentities&search={term}&format=json&language=en&uselang=en&type={entityType}&continue=0';
 
 	CodeMirror.registerHelper( 'hint', 'sparql', function ( editor, callback, options ) {
-
 		if( wikibase_sparqlhint ){
 			wikibase_sparqlhint( editor, callback, options );
 		}
@@ -70,15 +69,12 @@
 				callback( getHintCompletion( editor, currentWord, prefix, list ) );
 			} );
 		}
-
 	} );
 
 	CodeMirror.hint.sparql.async = true;
 	CodeMirror.defaults.hintOptions = {};
 	CodeMirror.defaults.hintOptions.closeCharacters = /[]/;
 	CodeMirror.defaults.hintOptions.completeSingle = false;
-
-
 
 	function getPrefixFromWord( word ) {
 		return word.split( ':' ).shift();
@@ -97,7 +93,6 @@
 	}
 
 	function getHintCompletion( editor, currentWord, prefix , list) {
-
 		var completion = { list: [] };
 		completion.from = CodeMirror.Pos( editor.getCursor().line, currentWord.start + prefix.length + 1 );
 		completion.to = CodeMirror.Pos( editor.getCursor().line, currentWord.end );
@@ -114,9 +109,12 @@
 			url: ENTITY_SEARCH_API_ENDPOINT.replace( '{term}', term ).replace( '{entityType}', type ),
 			dataType: 'jsonp'
 		} ).done( function ( data ) {
-
 			$.each( data.search, function ( key, value ) {
-				entityList.push( { className: 'wikibase-rdf-hint', text: value.id, displayText: value.label + ' (' + value.id + ') ' + value.description + '\n' } );
+				entityList.push( {
+					className: 'wikibase-rdf-hint',
+					text: value.id,
+					displayText: value.label + ' (' + value.id + ') ' + value.description + '\n'
+				} );
 			} );
 
 			deferred.resolve( entityList );
@@ -164,7 +162,7 @@
 					prefixes[ matches[ 2 ] ] = ENTITY_TYPES[ matches[ 3 ] ];
 				}
 			}
-		} )
+		} );
 
 		return prefixes;
 	}
