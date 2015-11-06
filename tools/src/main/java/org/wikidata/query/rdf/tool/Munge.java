@@ -270,7 +270,7 @@ public class Munge implements Runnable {
         private boolean haveNonEntityDataStatements;
         /**
          * The current entity being read. When we hit a new entity we start send
-         * the old statements to the munger and theyn sync them to next.
+         * the old statements to the munger and then sync them to next.
          */
         private String entityId;
 

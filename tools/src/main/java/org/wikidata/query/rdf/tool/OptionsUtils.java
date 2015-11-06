@@ -56,6 +56,9 @@ public final class OptionsUtils {
 
         @Option(description = "Skip site links")
         boolean skipSiteLinks();
+
+        @Option(description = "Preserve all types")
+        boolean keepTypes();
     }
 
     /**
@@ -123,6 +126,9 @@ public final class OptionsUtils {
         }
         if (options.singleLabelLanguages() != null) {
             munger = munger.singleLabelMode(splitByComma(options.singleLabelLanguages()));
+        }
+        if (options.keepTypes()) {
+            munger = munger.keepTypes(true);
         }
         return munger;
     }
