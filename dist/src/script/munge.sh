@@ -19,6 +19,9 @@ do
   esac
 done
 
+# allow extra args
+shift $((OPTIND-1))
+
 if [ -z "$FROM" -o ! -f "$FROM" ]
 then
   echo "Usage: $0 -f <dumpfile> [-d <directory>] [-l languages]"
@@ -36,5 +39,5 @@ fi
 
 CP=lib/wikidata-query-tools-*-jar-with-dependencies.jar
 MAIN=org.wikidata.query.rdf.tool.Munge
-java -cp $CP $MAIN --from $FROM --to $LOCATION/$FORMAT $ARGS --chunkSize $CHUNK
+java -cp $CP $MAIN --from $FROM --to $LOCATION/$FORMAT $ARGS --chunkSize $CHUNK "$@"
 	

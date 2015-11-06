@@ -28,6 +28,11 @@ wikibase:Dump a schema:Dataset ;
 	schema:softwareVersion "0.0.1" ;
 	schema:dateModified "2015-04-02T10:54:56Z"^^xsd:dateTime .
 
+wdata:Q20 a schema:Dataset ;
+        schema:about wd:Q20 ;
+        schema:version "246311974"^^xsd:integer ;
+        schema:dateModified "2015-08-29T18:31:32Z"^^xsd:dateTime .
+
 wd:Q20 owl:sameAs wd:Q19 .
 
 wdata:Q9 schema:version "7177"^^xsd:integer ;
@@ -54,6 +59,11 @@ wd:Q9 a wikibase:Item ;
 <http://en.wikipedia.org/wiki/History%20of%20cartography> a schema:Article ;
 	schema:about wd:Q9 ;
 	schema:inLanguage "en" .
+
+wdata:Q21 a schema:Dataset ;
+        schema:about wd:Q21 ;
+        schema:version "246311974"^^xsd:integer ;
+        schema:dateModified "2015-08-29T18:31:32Z"^^xsd:dateTime .
 
 wd:Q21 owl:sameAs wd:Q19 .
 

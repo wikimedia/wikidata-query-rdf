@@ -26,7 +26,6 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.WikibaseDate;
 import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
@@ -73,6 +72,11 @@ public class Munger {
      */
     private final boolean removeSiteLinks;
 
+    /**
+     * True if we want to keep types for Statement and Item.
+     */
+    private boolean keepTypes;
+
     public Munger(WikibaseUris uris) {
         this(uris, null, null, false);
     }
@@ -83,6 +87,16 @@ public class Munger {
         this.limitLabelLanguages = limitLabelLanguages;
         this.singleLabelModeLanguages = singleLabelModeLanguages;
         this.removeSiteLinks = removeSiteLinks;
+    }
+
+    /**
+     * Set the keep types parameter.
+     * @param keep
+     * @return
+     */
+    public Munger keepTypes(boolean keep) {
+        keepTypes = keep;
+        return this;
     }
 
     /**
@@ -377,7 +391,7 @@ public class Munger {
             default:
                 // Noop - fall out is ok as we just remove them.
             }
-            // All EntityDate statements are removed.
+            // All EntityData statements are removed.
             return false;
         }
 
@@ -398,6 +412,9 @@ public class Munger {
             }
             switch (predicate) {
             case RDF.TYPE:
+                if (keepTypes) {
+                    return true;
+                }
                 /*
                  * We don't need wd:Q1 a ontology:Item because its super common
                  * and not super interesting.
@@ -415,26 +432,9 @@ public class Munger {
             case SKOS.ALT_LABEL:
                 return limitLabelLanguage();
             case OWL.SAME_AS:
-                // TODO: remove when T100463 is fixed
-                redirectFix();
                 return true;
             default:
                 return entityStatementWithUnrecognizedPredicate();
-            }
-        }
-
-        /**
-         * Temporary fix for redirects not having revision/timestamp.
-         * TODO: remove when T100463 is fixed.
-         */
-        private void redirectFix() {
-            if (revisionId == null) {
-                revisionId = new NumericLiteralImpl(1);
-            }
-            if (lastModified == null) {
-                // This is horrible but we don't have better option now than invent the time
-                WikibaseDate wb = WikibaseDate.fromSecondsSinceEpoch(Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT).getTimeInMillis() / 1000);
-                lastModified = new LiteralImpl(wb.toString(WikibaseDate.ToStringFormat.DATE_TIME), XMLSchema.DATETIME);
             }
         }
 
@@ -459,6 +459,9 @@ public class Munger {
         private boolean entityStatementStatement() {
             switch (predicate) {
             case RDF.TYPE:
+                if (keepTypes) {
+                    return true;
+                }
                 /*
                  * We don't need s:<uuid> a ontology:Statement because its super
                  * common and not super interesting.
@@ -507,6 +510,9 @@ public class Munger {
             }
             switch (predicate) {
             case RDF.TYPE:
+                if (keepTypes) {
+                    return true;
+                }
                 /*
                  * We don't need r:<uuid> a ontology:Reference because its super
                  * common and not super interesting.
@@ -549,6 +555,9 @@ public class Munger {
             }
             switch (predicate) {
             case RDF.TYPE:
+                if (keepTypes) {
+                    return true;
+                }
                 /*
                  * We don't need v:<uuid> a ontology:Value because its super
                  * common and not super interesting.
