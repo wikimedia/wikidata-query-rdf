@@ -39,11 +39,6 @@ var wikibase_sparqlhint = null;
 		}
 	};
 
-	CodeMirror.hint.sparql.async = true;
-	CodeMirror.defaults.hintOptions = {};
-	CodeMirror.defaults.hintOptions.closeCharacters = /[]/;
-	CodeMirror.defaults.hintOptions.completeSingle = false;
-
 	function getSPARQLHints( term ){
 		var list = [];
 
@@ -60,7 +55,7 @@ var wikibase_sparqlhint = null;
 		var variables = [];
 
 		$.each(text.split(' '), function( key, word ){
-			if( word.indexOf('?') === 0){
+			if( word.match(/^\?\w+$/)){
 				variables.push(word);
 			}
 		});

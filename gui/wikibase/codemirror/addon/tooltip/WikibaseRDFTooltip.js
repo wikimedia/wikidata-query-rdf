@@ -50,7 +50,6 @@ var WikibaseRDFTooltip = ( function( CodeMirror, $ ) {
 		var posX = e.clientX, posY = (e.clientY +  $(window).scrollTop());
 
 		var token = this.editor.getTokenAt(this.editor.coordsChar({left: posX, top: posY})).string;
-		console.log(token);
 
 		if(!token.match(/.+\:(Q|P)[0-9]*/)){
 			return;
