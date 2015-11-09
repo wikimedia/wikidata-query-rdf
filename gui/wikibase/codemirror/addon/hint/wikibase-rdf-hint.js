@@ -12,31 +12,34 @@
  */
 
 ( function ( mod ) {
-	if ( typeof exports == 'object' && typeof module == 'object' ) {// CommonJS
+	if ( typeof exports == 'object' && typeof module == 'object' ) { // CommonJS
 		mod( require( '../../lib/codemirror' ) );
-	} else if ( typeof define == 'function' && define.amd ) {// AMD
+	} else if ( typeof define == 'function' && define.amd ) { // AMD
 		define( [ '../../lib/codemirror' ], mod );
-	} else {// Plain browser env
+	} else { // Plain browser env
 		mod( CodeMirror );
 	}
 } )( function ( CodeMirror ) {
 	'use strict';
 
-	var ENTITY_TYPES = { 'http://www.wikidata.org/prop/direct/': 'property',
-						'http://www.wikidata.org/prop/': 'property',
-						'http://www.wikidata.org/prop/novalue/': 'property',
-						'http://www.wikidata.org/prop/statement/': 'property',
-						'http://www.wikidata.org/prop/statement/value/': 'property',
-						'http://www.wikidata.org/prop/qualifier/': 'property',
-						'http://www.wikidata.org/prop/qualifier/value/': 'property',
-						'http://www.wikidata.org/prop/reference/': 'property',
-						'http://www.wikidata.org/prop/reference/value/': 'property',
-						'http://www.wikidata.org/wiki/Special:EntityData/': 'item',
-						'http://www.wikidata.org/entity/': 'item' },
-		ENTITY_SEARCH_API_ENDPOINT = 'https://www.wikidata.org/w/api.php?action=wbsearchentities&search={term}&format=json&language=en&uselang=en&type={entityType}&continue=0';
+	var ENTITY_TYPES = {
+			'http://www.wikidata.org/prop/direct/': 'property',
+			'http://www.wikidata.org/prop/': 'property',
+			'http://www.wikidata.org/prop/novalue/': 'property',
+			'http://www.wikidata.org/prop/statement/': 'property',
+			'http://www.wikidata.org/prop/statement/value/': 'property',
+			'http://www.wikidata.org/prop/qualifier/': 'property',
+			'http://www.wikidata.org/prop/qualifier/value/': 'property',
+			'http://www.wikidata.org/prop/reference/': 'property',
+			'http://www.wikidata.org/prop/reference/value/': 'property',
+			'http://www.wikidata.org/wiki/Special:EntityData/': 'item',
+			'http://www.wikidata.org/entity/': 'item'
+		},
+		ENTITY_SEARCH_API_ENDPOINT = 'https://www.wikidata.org/w/api.php?action=wbsearchentities&'
+			+ 'search={term}&format=json&language=en&uselang=en&type={entityType}&continue=0';
 
 	CodeMirror.registerHelper( 'hint', 'sparql', function ( editor, callback, options ) {
-		if( wikibase_sparqlhint ){
+		if ( wikibase_sparqlhint ){
 			wikibase_sparqlhint( editor, callback, options );
 		}
 
@@ -53,18 +56,17 @@
 		term = getTermFromWord( currentWord.word );
 		entityPrefixes = extractPrefixes( editor.doc.getValue() );
 
-
-		if (! entityPrefixes[ prefix ] ) {//unknown prefix
-			var list = [{text: term, displayText:'Unknown prefix \''+prefix+':\''}];
+		if ( !entityPrefixes[ prefix ] ) { // unknown prefix
+			var list = [{ text: term, displayText: 'Unknown prefix \'' + prefix + ':\'' }];
 			return callback( getHintCompletion( editor, currentWord, prefix, list ) );
 		}
 
-		if(term.length === 0){//empty search term
-			var list = [{text: term, displayText:'Type to search for an entity'}];
+		if ( term.length === 0 ) { // empty search term
+			var list = [{ text: term, displayText: 'Type to search for an entity' }];
 			return callback( getHintCompletion( editor, currentWord, prefix, list ) );
 		}
 
-		if ( entityPrefixes[ prefix ] ) {//search entity
+		if ( entityPrefixes[ prefix ] ) { // search entity
 			searchEntities( term, entityPrefixes[ prefix ] ).done( function ( list ) {
 				callback( getHintCompletion( editor, currentWord, prefix, list ) );
 			} );
@@ -92,7 +94,7 @@
 		return editor.getCursor().ch;
 	}
 
-	function getHintCompletion( editor, currentWord, prefix , list) {
+	function getHintCompletion( editor, currentWord, prefix, list ) {
 		var completion = { list: [] };
 		completion.from = CodeMirror.Pos( editor.getCursor().line, currentWord.start + prefix.length + 1 );
 		completion.to = CodeMirror.Pos( editor.getCursor().line, currentWord.end );
