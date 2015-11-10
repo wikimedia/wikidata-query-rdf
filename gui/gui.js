@@ -4,7 +4,7 @@ window.EDITOR = {};
 ( function ( $, mw ) {
 	var SERVICE = '/bigdata/namespace/wdq/sparql',
 		SHORTURL = 'http://tinyurl.com/create.php?url=',
-		EXPLORE_URL = 'http://www.wikidata.org/entity/',
+		EXPLORE_URL = 'http://www.wikidata.org/entity/Q',
 		NAMESPACE_SHORTCUTS = {
 			'Wikidata': {
 				'wikibase': 'http://wikiba.se/ontology#',
