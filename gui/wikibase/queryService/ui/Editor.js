@@ -44,8 +44,11 @@ wikibase.queryService.ui.Editor = ( function( $ ) {
 		var self = this;
 
 		this._editor = CodeMirror.fromTextArea( element, CODEMIRROR_DEFAULTS );
-		this._editor.on( 'change', function () {
+		this._editor.on( 'change', function ( editor, changeObj ) {
 			self.clearError();
+			if( changeObj.text[0] === '?' ){
+				editor.showHint({closeCharacters: /[\s]/});
+			}
 		} );
 		this._editor.focus();
 
