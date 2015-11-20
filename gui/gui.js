@@ -288,7 +288,7 @@ window.EDITOR = {};
 			uri = this.value,
 			current = EDITOR.getValue();
 
-		if ( current.indexOf( uri ) === -1 ) {
+		if ( current.indexOf( '<' + uri + '>' ) === -1 ) {
 			ns = $( this ).find( ':selected' ).text();
 			EDITOR.setValue( 'prefix ' + ns + ': <' + uri + '>\n' + current );
 		}
