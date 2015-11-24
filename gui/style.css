@@ -46,3 +46,19 @@
 .exampleQueries {
 	width: 160px;
 }
+
+.navbar, .alert {
+	margin-bottom: 0;
+}
+
+.navbar-right {
+	margin-right: 0;
+}
+
+.label {
+	font-size: 100%;
+}
+
+.actionMessage {
+	display: none;
+}

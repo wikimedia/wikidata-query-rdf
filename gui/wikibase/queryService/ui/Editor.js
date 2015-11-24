@@ -41,13 +41,11 @@ wikibase.queryService.ui.Editor = ( function( $ ) {
 	 * @param {Element} element
 	 **/
 	SELF.prototype.fromTextArea = function( element ) {
+		var self = this;
 
 		this._editor = CodeMirror.fromTextArea( element, CODEMIRROR_DEFAULTS );
 		this._editor.on( 'change', function () {
-			if ( ERROR_LINE_MARKER ) {
-				ERROR_LINE_MARKER.clear();
-				ERROR_CHARACTER_MARKER.clear();
-			}
+			self.clearError();
 		} );
 		this._editor.focus();
 
@@ -115,6 +113,18 @@ wikibase.queryService.ui.Editor = ( function( $ ) {
 				{ 'line': line, 'ch': character + 1 },
 				{ 'className': 'error-character' }
 			);
+		}
+	};
+
+	/**
+	 * Clear SPARQL error in editor window.
+	 *
+	 * @param {string} description
+	 */
+	SELF.prototype.clearError = function() {
+		if ( ERROR_LINE_MARKER ) {
+			ERROR_LINE_MARKER.clear();
+			ERROR_CHARACTER_MARKER.clear();
 		}
 	};
 

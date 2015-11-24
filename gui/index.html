@@ -2,7 +2,7 @@
 <html>
 <head>
 <script src="vendor/jquery/jquery-1.11.3.js"></script>
-<script src="vendor/bootstrap/bootstrap.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
 <script src="vendor/codemirror/lib/codemirror.js"></script>
 <script src="vendor/codemirror/mode/sparql.js"></script>
 <script src="vendor/codemirror/addon/hint/show-hint.js"></script>
@@ -22,7 +22,7 @@
 <script src="wdqs.js"></script>
 <script src="wdqs-explorer.js"></script>
 
-<link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.css">
 <link rel="stylesheet" href="vendor/codemirror/lib/codemirror.css">
 <link rel="stylesheet" href="vendor/codemirror/addon/hint/show-hint.css">
 <link rel="stylesheet" href="style.css">
@@ -37,7 +37,9 @@
 			<!-- Editor Navbar -->
 			<nav class="navbar navbar-default">
 				<div class="navbar-header">
-					<div class="navbar-brand">Wikidata Query Service  <span class="label label-info">Beta</span></div>
+					<div class="navbar-brand">
+						Wikidata Query Service <span class="label label-info">Beta</span>
+					</div>
 				</div>
 				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 					<ul class="nav navbar-nav">
@@ -46,8 +48,7 @@
 								<li><div class="namespace-shortcuts"></div></li>
 								<li role="separator" class="divider"></li>
 								<li><a class="addPrefixes">Add Standard Prefixes</a></li>
-							</ul>
-						</li>
+							</ul></li>
 						<li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Tools<span class="caret"></span></a>
 							<ul class="dropdown-menu">
 								<li><a target="_blank" href="https://github.com/wikimedia/wikidata-query-rdf/blob/master/docs/exploring-linked-data.md">Exploring Linked Data</a></li>
@@ -68,53 +69,54 @@
 				</div>
 			</nav>
 
-			<div class="col-md-12" id="query-box">
-				<form class="form-horizontal" id="query-form">
-					<div class="form-group">
-						<textarea class="queryEditor" name="query" placeholder="(Input a SPARQL query or choose a query example)"></textarea>
-						<div class="alert alert-success alert-dismissible" role="alert">
-							<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-							Press <i>[CTRL-SPACE]</i> to activate auto completion. Data last updated: <span id="dbUpdated">[connecting]</span>
-						</div>
+			<div id="query-box">
+				<form id="query-form">
+					<textarea class="queryEditor" name="query" placeholder="(Input a SPARQL query or choose a query example)"></textarea>
+					<div class="alert alert-success alert-dismissible" role="alert">
+						<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+						Press <i>[CTRL-SPACE]</i> to activate auto completion. Data last updated: <span id="dbUpdated">[connecting]</span>
 					</div>
-					<input class="btn btn-default btn-lg" type="submit" id="execute-button" value="Execute"> <input class="btn btn-default btn-lg" type="reset" id="clear-button" value="Clear">
+					<nav class="navbar navbar-default">
+						<div class="navbar-form navbar-left">
+							<div class="form-group">
+								<input class="btn btn-default" type="submit" id="execute-button" value="Execute"> <input class="btn btn-default" type="reset" id="clear-button" value="Clear">
+							</div>
+						</div>
+						<ul class="nav navbar-nav navbar-right" id="total">
+							<li class="navbar-text">
+								<span class="label label-primary"><span id="total-results" ></span> Results</span> 
+								<span> <span class="label label-info">in <span id="query-time"></span> ms </span> &nbsp;</span>
+							</li>
+							<li><a href="#" data-toggle="dropdown" class="dropdown-toggle"> <span class="glyphicon glyphicon-download-alt" aria-hidden="true">Download</span><span class="caret"></span>
+							</a>
+								<ul class="dropdown-menu" role="menu">
+									<li><a id="downloadCSV" href="#">CSV</a></li>
+									<li><a id="downloadTSV" href="#">TSV</a></li>
+									<li><a id="downloadJSON" href="#">JSON</a></li>
+									<li><a id="downloadSimple-TSV" href="#">Simple TSV</a></li>
+									<li><a id="downloadFull-JSON" href="#">Full JSON</a></li>
+								</ul></li>
+							<li><a href="#" target="_blank" id="shorturl"><span class="glyphicon glyphicon-link" aria-hidden="true">ShortUrl</span></a></li>
+						</ul>
+					</nav>
 				</form>
-				<hr>
 			</div>
 		</div>
 		<div class="row">
-			<div class="col-md-12">
-				<div id="explore"></div>
-			</div>
-		</div>
-		<div class="row" id="total">
-			<div class="col-md-4 pull-left">
-				Total results: <span id="total-results"></span>, duration: <span
-					id="query-time"></span> ms. <span id="show-explorer">
-				</span>
-				<button id="hide-explorer" href="#">Hide explorer</button>
-			</div>
-			<div class="col-sm-2 pull-right">
-				<a href="#" data-toggle="dropdown" class="dropdown-toggle">Download
-					results<span class="caret"></span>
-				</a>
-				<ul class="dropdown-menu" role="menu">
-					<li><a id="downloadCSV" href="#">CSV</a></li>
-					<li><a id="downloadTSV" href="#">TSV</a></li>
-					<li><a id="downloadJSON" href="#">JSON</a></li>
-					<li><a id="downloadSimple-TSV" href="#">Simple TSV</a></li>
-					<li><a id="downloadFull-JSON" href="#">Full JSON</a></li>
-				</ul>
-			</div>
-			<div class="col-sm-2 pull-right">
-				<a href="#" target="_blank" id="shorturl">Generate short URL</a>
+			<div>
+				<div id="explore"></div><button id="hide-explorer" href="#">Hide explorer</button>
 			</div>
 		</div>
 		<div class="row">
-			<div class="col-md-10" id="query-result">Test result</div>
+			<div id="query-result" class="panel-heading">Test result</div>
 		</div>
 		<div class="row">
-			<div class="col-md-10" id="query-error">Test error</div>
+			<div class="actionMessage panel-heading label label-danger">Action</div>
+		</div>
+		<div class="row">
+			<div id="query-error" class="panel-heading">Test error</div>
 		</div>
 	</div>
 </body>
