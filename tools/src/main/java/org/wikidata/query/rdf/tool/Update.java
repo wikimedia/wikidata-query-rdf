@@ -85,6 +85,9 @@ public class Update<B extends Change.Batch> implements Runnable {
 
         @Option(shortName = "b", defaultValue = "100", description = "Number of recent changes fetched at a time.")
         int batchSize();
+
+        @Option(shortName = "V", longName = "verify", description = "Verify updates (may have performance impact)")
+        boolean verify();
     }
 
     /**
@@ -113,7 +116,8 @@ public class Update<B extends Change.Batch> implements Runnable {
                 new LinkedBlockingQueue<Runnable>(), threadFactory.build());
 
         Munger munger = mungerFromOptions(options);
-        new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor, options.pollDelay(), uris).run();
+        new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
+                options.pollDelay(), uris, options.verify()).run();
     }
 
     /**
@@ -244,9 +248,13 @@ public class Update<B extends Change.Batch> implements Runnable {
      * Map entity->references list from repository.
      */
     private Multimap<String, String> repoRefs;
+    /**
+     * Should we verify updates?
+     */
+    private final boolean verify;
 
     public Update(Change.Source<B> changeSource, WikibaseRepository wikibase, RdfRepository rdfRepository,
-            Munger munger, ExecutorService executor, int pollDelay, WikibaseUris uris) {
+            Munger munger, ExecutorService executor, int pollDelay, WikibaseUris uris, boolean verify) {
         this.changeSource = changeSource;
         this.wikibase = wikibase;
         this.rdfRepository = rdfRepository;
@@ -254,6 +262,7 @@ public class Update<B extends Change.Batch> implements Runnable {
         this.executor = executor;
         this.pollDelay = pollDelay;
         this.uris = uris;
+        this.verify = verify;
         reporter.start();
     }
 
@@ -333,11 +342,7 @@ public class Update<B extends Change.Batch> implements Runnable {
             task.get();
         }
         log.debug("Preparing update data took {} ms", System.currentTimeMillis() - start);
-        rdfRepository.syncFromChanges(trueChanges);
-//
-//        if (bigQuery.length() > 0) {
-//            rdfRepository.syncQuery(bigQuery.toString());
-//        }
+        rdfRepository.syncFromChanges(trueChanges, verify);
         updateMeter.mark(trueChanges.size());
     }
 
@@ -433,7 +438,6 @@ public class Update<B extends Change.Batch> implements Runnable {
         cleanupList.addAll(refs);
         change.setStatements(statements);
         change.setCleanupList(cleanupList);
-//        return rdfRepository.getSyncQuery(change.entityId(), statements, cleanupList);
     }
 
     /**

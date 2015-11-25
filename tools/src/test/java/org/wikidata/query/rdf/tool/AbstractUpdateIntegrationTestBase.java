@@ -32,7 +32,7 @@ public class AbstractUpdateIntegrationTestBase extends AbstractRdfRepositoryInte
         ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>());
         WikibaseUris uris = new WikibaseUris("www.wikidata.org");
-        Update<?> update = new Update<>(source, wikibaseRepository, rdfRepository(), munger, executorService, 0, uris);
+        Update<?> update = new Update<>(source, wikibaseRepository, rdfRepository(), munger, executorService, 0, uris, false);
         update.run();
         executorService.shutdown();
     }

@@ -90,34 +90,37 @@ public class RdfRepository {
 
     // SPARQL queries
     /**
-     * Sparql for a portion of the update.
+     * SPARQL for a portion of the update.
      */
     private final String syncBody;
     /**
-     * Sparql for a portion of the update, batched sync.
+     * SPARQL for a portion of the update, batched sync.
      */
     private final String msyncBody;
     /**
-     * Sparql for a portion of the update.
+     * SPARQL for a portion of the update.
      */
     private final String getValues;
     /**
-     * Sparql for a portion of the update.
+     * SPARQL for a portion of the update.
      */
     private final String getRefs;
     /**
-     * Sparql for a portion of the update.
+     * SPARQL for a portion of the update.
      */
     private final String cleanUnused;
     /**
-     * Sparql to sync the left off time.
+     * SPARQL to sync the left off time.
      */
     private final String updateLeftOffTimeBody;
     /**
-     * Sparql to filter entities for newer revisions.
+     * SPARQL to filter entities for newer revisions.
      */
     private final String getRevisions;
-
+    /**
+     * SPARQL to verify update worked.
+     */
+    private final String verify;
 
     /**
      * How many times we retry a failed HTTP call.
@@ -146,6 +149,7 @@ public class RdfRepository {
         getRefs = loadBody("GetRefs");
         cleanUnused = loadBody("CleanUnused");
         getRevisions = loadBody("GetRevisions");
+        verify = loadBody("verify");
     }
 
     /**
@@ -283,7 +287,7 @@ public class RdfRepository {
     }
 
     /**
-     * Provides the SPARQL needed to syncronize the data statements.
+     * Provides the SPARQL needed to synchronize the data statements.
      *
      * @param entityId id of the entity to sync
      * @param statements all known statements about the entity
@@ -330,7 +334,7 @@ public class RdfRepository {
      * @param changes List of changes.
      * @return Number of triples modified.
      */
-    public int syncFromChanges(Collection<Change> changes) {
+    public int syncFromChanges(Collection<Change> changes, boolean verifyResult) {
         if (changes.size() == 0) {
             // no changes, we're done
             return 0;
@@ -379,8 +383,46 @@ public class RdfRepository {
         int modified = execute("update", UPDATE_COUNT_RESPONSE, b.toString());
         log.debug("Update query took {} millis and modified {} statements",
                 System.currentTimeMillis() - start, modified);
-        return modified;
 
+        if (verifyResult) {
+            try {
+                verifyStatements(entityIds, insertStatements);
+            } catch (QueryEvaluationException e) {
+                throw new FatalException("Can't load verify results: " + e, e);
+            }
+        }
+
+        return modified;
+    }
+
+    /**
+     * Verify that the database matches the statement data for these IDs.
+     * @param entityIds List of IDs
+     * @param statements List of statements for these IDs
+     * @throws QueryEvaluationException if there is a problem retrieving result.
+     */
+    private void verifyStatements(Set<String> entityIds, List<Statement> statements)
+            throws QueryEvaluationException {
+        log.debug("Verifying the update");
+        UpdateBuilder bv = new UpdateBuilder(verify);
+        bv.bindUri("schema:about", SchemaDotOrg.ABOUT);
+        bv.bind("uris.statement", uris.statement());
+        bv.bindUris("entityList", entityIds, uris.entity());
+        bv.bindValues("allStatements", statements);
+        TupleQueryResult result = query(bv.toString());
+        if (result.hasNext()) {
+            log.error("Update failed, we have extra data!");
+            while (result.hasNext()) {
+                BindingSet bindings = result.next();
+                Binding s = bindings.getBinding("s");
+                Binding p = bindings.getBinding("p");
+                Binding o = bindings.getBinding("o");
+                log.error("{}\t{}\t{}", s.getValue().stringValue(),
+                        p.getValue().stringValue(), o.getValue().stringValue());
+            }
+            throw new FatalException("Update failed, bad old data in the store");
+        }
+        log.debug("Verification OK");
     }
 
     /**

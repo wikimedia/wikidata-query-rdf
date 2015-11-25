@@ -1,0 +1,25 @@
+SELECT * WHERE {
+  {
+    SELECT ?s ?p ?o WHERE {
+      VALUES ?entity { %entityList% }
+      ?s %schema:about% ?entity .
+      ?s ?p ?o .
+    }
+  } UNION {
+    SELECT (?entity as ?s) ?p ?o WHERE {
+      VALUES ?entity { %entityList% }
+      ?entity ?p ?o .
+    }
+  } UNION {
+    SELECT ?s ?p ?o WHERE {
+      VALUES ?entity { %entityList% }
+      ?entity ?statementPred ?s .
+      FILTER( STRSTARTS(STR(?s), "%uris.statement%") ) .
+      ?s ?p ?o .
+    }
+  } MINUS {
+    VALUES ( ?s ?p ?o ) {
+     %allStatements%
+    }
+  }
+}
