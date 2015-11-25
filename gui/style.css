@@ -62,3 +62,9 @@
 .actionMessage {
 	display: none;
 }
+
+iframe.shortUrl {
+	border: none;
+	width: 250px;
+	height: 40px;
+}

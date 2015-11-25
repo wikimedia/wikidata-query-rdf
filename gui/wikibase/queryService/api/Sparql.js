@@ -45,6 +45,13 @@ wikibase.queryService.api.Sparql = (function($) {
 	SELF.prototype._rawData = null;
 
 	/**
+	 * @property {string}
+	 * @private
+	 **/
+	SELF.prototype._queryUri = null;
+
+
+	/**
 	 * Submit a query to the API
 	 *
 	 * @return {jQuery.Promise}
@@ -86,18 +93,18 @@ wikibase.queryService.api.Sparql = (function($) {
 	 * @return {jQuery.Promise}
 	 */
 	SELF.prototype.query = function(query) {
-		var deferred = $.Deferred(), self = this;
-
-		var url = SERVICE + '?' + query, settings = {
+		var deferred = $.Deferred(), self = this, settings = {
 			'headers' : {
 				'Accept' : 'application/sparql-results+json'
 			},
 		};
 
+		this._queryUri = SERVICE + '?' + query;
+
 		this._executionTime = Date.now();
-		$.ajax( url, settings ).done(function( data, textStatus, jqXHR ) {
+		$.ajax( this._queryUri, settings ).done(function( data, textStatus, jqXHR ) {
 			self._executionTime = Date.now() - self._executionTime;
-			self._resultLength = data.results.bindings.length || null;
+			self._resultLength = data.results.bindings.length || 0;
 			self._rawData = data;
 
 			deferred.resolve();
@@ -176,6 +183,15 @@ wikibase.queryService.api.Sparql = (function($) {
 	 */
 	SELF.prototype.getResultLength = function() {
 		return this._resultLength;
+	};
+
+	/**
+	 * Get query URI
+	 *
+	 * @return {string}
+	 */
+	SELF.prototype.getQueryUri = function() {
+		return this._queryUri;
 	};
 
 	/**

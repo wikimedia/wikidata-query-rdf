@@ -7,6 +7,7 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 	"use strict";
 
 	var SHORTURL = 'http://tinyurl.com/create.php?url=';
+	var SHORTURL_API = 'http://tinyurl.com/api-create.php?url=';
 	var EXPLORE_URL = 'http://www.wikidata.org/entity/Q';
 
 	/**
@@ -184,6 +185,16 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 
 		$( window ).on( 'popstate', $.proxy( this._initQuery(), this ) );
 
+		$('body').on('click', function (e) {
+		    $('[data-toggle="popover"]').each(function () {
+		        //the 'is' for buttons that trigger popups
+		        //the 'has' for icons within a button that triggers a popup
+		        if (!$(this).is(e.target) && $(this).has(e.target).length === 0 && $('.popover').has(e.target).length === 0) {
+		            $(this).popover('hide');
+		        }
+		    });
+		});
+
 		this._initHandlersDownloads();
 	};
 
@@ -259,6 +270,19 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 		}
 		$( '#shorturl' ).attr( 'href', SHORTURL + encodeURIComponent( window.location ) );
 
+		$( '#shorturl' ).click( function(){
+
+	    	$( '#shorturl' ).popover({
+	    		placement : 'left',
+	    		'html':true,
+	    		'content':function(){
+	    			return '<iframe class="shortUrl" src="' + SHORTURL_API + encodeURIComponent( window.location )  +   '">';
+	    		}
+	    	});
+	    	$( '#shorturl' ).popover('show');
+			return false;
+		} );
+
 		$( '#query-result' ).empty( '' );
 		$( '#query-result' ).hide();
 		$( '#total' ).hide();
@@ -274,6 +298,7 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 			self._editor.highlightError( self._sparqlApi.getErrorMessage() );
 		} );
 
+		$( '.queryUri' ).attr( 'href',self._sparqlApi.getQueryUri() );
 	};
 
 	/**
@@ -299,7 +324,6 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 
 		//$linkableItems.attr( 'href', '#');
 	};
-
 
 	/**
 	 * @private
