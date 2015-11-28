@@ -10,7 +10,7 @@ WHERE {
   ?s ?p ?o .
   # This construct is constantly reused throughout the updates.  Its job is to not delete statements
   # that are still in use.
-  FILTER NOT EXISTS {
+  MINUS {
     VALUES ( ?s ?p ?o ) {
       %aboutStatements%
     }
@@ -27,7 +27,7 @@ WHERE {
   ?entity ?statementPred ?s .
   FILTER( STRSTARTS(STR(?s), "%uris.statement%") ) .
   ?s ?p ?o .
-  FILTER NOT EXISTS {
+  MINUS {
     VALUES ( ?s ?p ?o ) {
       %statementStatements%
     }
@@ -42,7 +42,7 @@ WHERE {
        %entityList%
   }
   ?entity ?p ?o .
-  FILTER NOT EXISTS {
+  MINUS {
     VALUES ( ?entity ?p ?o ) {
       %entityStatements%
     }
