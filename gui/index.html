@@ -10,10 +10,18 @@
 <script src="wikibase/codemirror/addon/hint/wikibase-sparql-hint.js"></script>
 <script src="wikibase/codemirror/addon/hint/wikibase-rdf-hint.js"></script>
 <script src="wikibase/codemirror/addon/tooltip/WikibaseRDFTooltip.js"></script>
-<script src="gui.js"></script>
+
+<script src="wikibase/queryService/ui/App.js"></script>
+<script src="wikibase/queryService/ui/Editor.js"></script>
+<script src="wikibase/queryService/api/Sparql.js"></script>
+<script src="wikibase/queryService/api/QuerySamples.js"></script>
+<script src="wikibase/queryService/RdfNamespaces.js"></script>
+<script src="wikibase/init.js"></script>
+
 <script src="vis.js"></script>
 <script src="wdqs.js"></script>
 <script src="wdqs-explorer.js"></script>
+
 <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
 <link rel="stylesheet" href="vendor/codemirror/lib/codemirror.css">
 <link rel="stylesheet" href="vendor/codemirror/addon/hint/show-hint.css">
@@ -24,7 +32,7 @@
 <title>Wikidata Query Service (Beta)</title>
 </head>
 <body>
-	<div class="container-fluid">
+	<div class="wikibase-queryservice container-fluid">
 		<div class="row">
 			<!-- Editor Navbar -->
 			<nav class="navbar navbar-default">
@@ -55,7 +63,7 @@
 								<li><a target="_blank" href="https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format">RDF Data Model</a></li>
 								<li><a target="_blank" href="https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Full_list_of_prefixes">List of prefixes</a></li>
 							</ul></li>
-						<li><select id="exampleQueries" class="exampleQueries form-control navbar-btn"><option value="">Query Examples</option></select></li>
+						<li><select class="exampleQueries form-control navbar-btn"><option value="">Query Examples</option></select></li>
 					</ul>
 				</div>
 			</nav>
@@ -63,7 +71,7 @@
 			<div class="col-md-12" id="query-box">
 				<form class="form-horizontal" id="query-form">
 					<div class="form-group">
-						<textarea id="query" name="query" placeholder="(Input a SPARQL query or choose a query example)"></textarea>
+						<textarea class="queryEditor" name="query" placeholder="(Input a SPARQL query or choose a query example)"></textarea>
 						<div class="alert alert-success alert-dismissible" role="alert">
 							<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 							Press <i>[CTRL-SPACE]</i> to activate auto completion. Data last updated: <span id="dbUpdated">[connecting]</span>
@@ -82,8 +90,7 @@
 		<div class="row" id="total">
 			<div class="col-md-4 pull-left">
 				Total results: <span id="total-results"></span>, duration: <span
-					id="query-time"></span> ms. <span id="show-explorer">Click
-					on <b>*</b> to explore.
+					id="query-time"></span> ms. <span id="show-explorer">
 				</span>
 				<button id="hide-explorer" href="#">Hide explorer</button>
 			</div>

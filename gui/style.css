@@ -16,7 +16,7 @@
 }
 
 .error-line {
-	background: red;
+	border-bottom: 2px dotted red;
 }
 
 .error-character {
