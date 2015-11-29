@@ -262,13 +262,14 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 		$( '#query-result' ).empty( '' );
 		$( '#query-result' ).hide();
 		$( '#total' ).hide();
-		$( '#query-error' ).show();
-		$( '#query-error' ).text( 'Running query...' );
+		$( '.actionMessage' ).show();
+		$( '.actionMessage' ).text( 'Running query...' );
 
 		var query = $( '#query-form' ).serialize();
 		this._sparqlApi.query(query)
 		.done( $.proxy( this._handleQueryResult, this ) )
 		.fail(function(){
+			$( '.actionMessage' ).hide();
 			$( '#query-error' ).html( $( '<pre>' ).text( self._sparqlApi.getErrorMessage() ) ).show();
 			self._editor.highlightError( self._sparqlApi.getErrorMessage() );
 		} );
@@ -285,6 +286,7 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 		$( '#query-time' ).text( api.getExecutionTime() );
 		$( '#total' ).show();
 		$( '#query-result' ).append( api.getResultAsTable() ).show();
+		$( '.actionMessage' ).hide();
 		$( '#query-error' ).hide();
 
 		var $linkableItems = $( '#query-result' ).find('a').filter( function() {
