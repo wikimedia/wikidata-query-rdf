@@ -96,10 +96,10 @@
 							</div>
 						</div>
 						<ul class="nav navbar-nav navbar-right" id="total">
-							<li class="navbar-text">
-								<span class="label label-primary"><span id="total-results" ></span> Results</span> 
-								<span> <span class="label label-info">in <span id="query-time"></span> ms </span> &nbsp;</span>
-							</li>
+							<li class="navbar-text"><span class="label label-primary"><span id="total-results"></span> Results</span> <span> <span class="label label-info">in <span id="query-time"></span>
+										ms
+								</span> &nbsp;
+							</span></li>
 							<li><a href="#" data-toggle="dropdown" class="dropdown-toggle"> <span class="glyphicon glyphicon-download-alt" aria-hidden="true">Download</span><span class="caret"></span>
 							</a>
 								<ul class="dropdown-menu" role="menu">
@@ -124,11 +124,6 @@
 			</div>
 		</div>
 		<div class="row">
-			<div>
-				<div id="explore"></div><button id="hide-explorer" href="#">Hide explorer</button>
-			</div>
-		</div>
-		<div class="row">
 			<div id="query-result" class="panel-heading">Test result</div>
 		</div>
 		<div class="row">
@@ -136,6 +131,18 @@
 		</div>
 		<div class="row">
 			<div id="query-error" class="panel-heading">Test error</div>
+		</div>
+
+		<div class="explorer-panel panel panel-default">
+		    <div class="panel-heading clearfix">
+		      <h1 class="panel-title pull-left" style="padding-top: 7.5px;">Explorer</h1>
+		      <div class="btn-group pull-right">
+		        <a href="#" class="btn btn-default btn-sm explorer-close"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>Close</a>
+		      </div>
+		    </div>
+			<div class="panel-body">
+				<div class="explorer"></div>
+			</div>
 		</div>
 	</div>
 	
