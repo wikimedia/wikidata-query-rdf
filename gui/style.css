@@ -47,6 +47,15 @@
 	width: 160px;
 }
 
+iframe.shortUrl {
+	border: none;
+	width: 250px;
+	height: 40px;
+}
+
+/**
+	Bootstrap Styles
+**/
 .navbar, .alert {
 	margin-bottom: 0;
 }
@@ -63,8 +72,25 @@
 	display: none;
 }
 
-iframe.shortUrl {
-	border: none;
-	width: 250px;
-	height: 40px;
+.popover{
+   max-width: 100%; /* Max Width of the popover (depending on the container!) */
+}
+
+/**
+	Query example dialog
+**/
+
+.QueryExamples input.tags-input {
+	visibility: hidden;
+}
+
+.QueryExamples .tagFilter {
+	padding-bottom: 0px!important;
+}
+
+.QueryExamples  .exampleTable {
+	max-height: 500px; 
+	overflow-y: auto; 
+	overflow-x: hidden;
+	border: 1px solid #ccc;
 }

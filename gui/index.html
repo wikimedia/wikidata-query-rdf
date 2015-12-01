@@ -7,12 +7,15 @@
 <script src="vendor/codemirror/mode/sparql.js"></script>
 <script src="vendor/codemirror/addon/hint/show-hint.js"></script>
 <script src="vendor/codemirror/addon/display/placeholder.js"></script>
+<script src="vendor/jqcloud/jqcloud-1.0.4.min.js"></script>
+<script src="vendor/bootstrap-tags/js/bootstrap-tags.min.js"></script>
 <script src="wikibase/codemirror/addon/hint/wikibase-sparql-hint.js"></script>
 <script src="wikibase/codemirror/addon/hint/wikibase-rdf-hint.js"></script>
 <script src="wikibase/codemirror/addon/tooltip/WikibaseRDFTooltip.js"></script>
 
 <script src="wikibase/queryService/ui/App.js"></script>
 <script src="wikibase/queryService/ui/Editor.js"></script>
+<script src="wikibase/queryService/ui/QueryExampleDialog.js"></script>
 <script src="wikibase/queryService/api/Sparql.js"></script>
 <script src="wikibase/queryService/api/QuerySamples.js"></script>
 <script src="wikibase/queryService/RdfNamespaces.js"></script>
@@ -23,6 +26,8 @@
 <script src="wdqs-explorer.js"></script>
 
 <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.css">
+<link rel="stylesheet" href="vendor/jqcloud/jqcloud.css">
+<link rel="stylesheet" href="vendor/bootstrap-tags/css/bootstrap-tags.css">
 <link rel="stylesheet" href="vendor/codemirror/lib/codemirror.css">
 <link rel="stylesheet" href="vendor/codemirror/addon/hint/show-hint.css">
 <link rel="stylesheet" href="style.css">
@@ -65,7 +70,12 @@
 								<li><a target="_blank" href="https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format">RDF Data Model</a></li>
 								<li><a target="_blank" href="https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Full_list_of_prefixes">List of prefixes</a></li>
 							</ul></li>
-						<li><select class="exampleQueries form-control navbar-btn"><option value="">Query Examples</option></select></li>
+					</ul>
+
+					<ul class="nav navbar-nav navbar-right">
+						<li>
+							<button type="button" class="btn btn-danger navbar-btn" data-toggle="modal" data-target="#QueryExamples"><span class="glyphicon glyphicon-star" aria-hidden="true"></span>Examples</button>
+						</li>
 					</ul>
 				</div>
 			</nav>
@@ -126,6 +136,35 @@
 		</div>
 		<div class="row">
 			<div id="query-error" class="panel-heading">Test error</div>
+		</div>
+	</div>
+	
+
+	<!-- Query Example Modal -->
+	<div class="modal fade QueryExamples" id="QueryExamples" tabindex="-1" role="dialog" aria-labelledby="QueryExamplesModalLabel">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header panel-heading">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h3 class="modal-title" id="QueryExamplesModalLabel">SPARQL Query Examples</h3>
+				</div>
+				<div class="modal-body">
+					<div class="input-group">
+						<span class="input-group-addon"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span></span> <input type="text" class="tableFilter form-control" placeholder="Type here..."> <span class="input-group-btn">
+							<a class="tagCloudPopover btn btn-primary" data-toggle="popover" title="Filter by tags"><span data-toggle="popover" class="glyphicon glyphicon-tags" aria-hidden="true"></span></a>
+						</span> 
+					</div>
+					 <div class="tagFilter"></div>
+					<div class="exampleTable">
+						<table class="table table-striped">
+						    <tbody class="searchable">
+						    </tbody>
+						</table>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </body>

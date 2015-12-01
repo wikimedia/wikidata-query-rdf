@@ -99,12 +99,16 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 	 * @private
 	 **/
 	SELF.prototype._initExamples = function() {
-
 		var self = this;
-		this._querySamplesApi.getExamples().done( function( examples ){
-			$.each( examples, function( title, query ) {
-				self._$element.find( '.exampleQueries' ).append( $(new Option( title, query ) )  );
-			});
+
+		new wikibase.queryService.ui.QueryExampleDialog( $( '#QueryExamples' ), this._querySamplesApi, function( query ){
+			if ( !query || !query.trim() ) {
+				return;
+			}
+
+			self._editor.setValue( query );
+			var prefixes = wikibase.queryService.RdfNamespaces.STANDARD_PREFIXES.join( '\n' );
+			self._editor.prepandValue( prefixes + '\n\n' );
 		} );
 	};
 
@@ -165,7 +169,6 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 
 		$( '#query-form' ).submit(  $.proxy( this._handleQuerySubmit, this ) );
 		$( '.namespace-shortcuts' ).on( 'change', 'select', $.proxy( this._handleNamespaceSelected, this ) );
-		$( '.exampleQueries' ).on( 'change',  $.proxy( this._handleExampleSelected, this )  );
 
 		$( '.addPrefixes' ).click( function() {
 			var prefixes = wikibase.queryService.RdfNamespaces.STANDARD_PREFIXES.join( '\n' );
@@ -186,13 +189,10 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 		$( window ).on( 'popstate', $.proxy( this._initQuery(), this ) );
 
 		$('body').on('click', function (e) {
-		    $('[data-toggle="popover"]').each(function () {
-		        //the 'is' for buttons that trigger popups
-		        //the 'has' for icons within a button that triggers a popup
-		        if (!$(this).is(e.target) && $(this).has(e.target).length === 0 && $('.popover').has(e.target).length === 0) {
-		            $(this).popover('hide');
-		        }
-		    });
+		    if ($(e.target).data('toggle') !== 'popover'
+		        && $(e.target).parents('.popover.in').length === 0) {
+		        $('[data-toggle="popover"]').popover('hide');
+		    }
 		});
 
 		this._initHandlersDownloads();
@@ -338,24 +338,6 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 
 		// reselect group label
 		e.target.selectedIndex = 0;
-	};
-
-
-	/**
-	 * @private
-	 */
-	SELF.prototype._handleExampleSelected = function( e ) {
-		var text = e.target.value;
-		e.target.selectedIndex = 0;
-		if ( !text || !text.trim() ) {
-			return;
-		}
-		this._editor.setValue( text );
-
-		var prefixes = wikibase.queryService.RdfNamespaces.STANDARD_PREFIXES.join( '\n' );
-
-		this._editor.prepandValue( prefixes + '\n\n' );
-
 	};
 
 	/**
