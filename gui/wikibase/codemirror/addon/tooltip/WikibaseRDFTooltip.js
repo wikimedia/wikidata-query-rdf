@@ -119,7 +119,8 @@ var WikibaseRDFTooltip = ( function ( CodeMirror, $ ) {
 		} ).done( function ( data ) {
 
 			$.each( data.search, function ( key, value ) {
-				entityList.push( value.label + ' (' + value.id + ')\n' + value.description );
+				entityList.push( value.label + ' (' + value.id + ')\n'
+									+ (value.description?value.description:'') );
 			} );
 
 			deferred.resolve( entityList );
