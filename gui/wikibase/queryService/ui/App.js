@@ -6,8 +6,8 @@ window.mediaWiki = window.mediaWiki || {};
 wikibase.queryService.ui.App = ( function( $, mw ) {
 	"use strict";
 
-	var SHORTURL = 'http://tinyurl.com/create.php?url=';
-	var SHORTURL_API = 'http://tinyurl.com/api-create.php?url=';
+	var SHORTURL = '//tinyurl.com/create.php?url=';
+	var SHORTURL_API = '//tinyurl.com/api-create.php?url=';
 	var EXPLORE_URL = 'http://www.wikidata.org/entity/Q';
 
 	/**
