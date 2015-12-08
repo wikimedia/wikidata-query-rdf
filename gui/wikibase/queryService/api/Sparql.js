@@ -68,6 +68,10 @@ wikibase.queryService.api.Sparql = (function($) {
 		};
 
 		$.ajax( url, settings ).done(function( data ){
+			if(!data.results.bindings[0]) {
+				deferred.reject();
+				return;
+			}
 			var updateDate = new Date( data.results.bindings[0][data.head.vars[0]].value ),
 			dateText = updateDate.toLocaleTimeString(
 				navigator.language,
