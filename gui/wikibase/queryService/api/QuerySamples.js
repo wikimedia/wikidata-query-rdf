@@ -23,7 +23,7 @@ wikibase.queryService.api.QuerySamples = ( function( $ ) {
 	 **/
 	SELF.prototype.getExamples = function() {
 
-		var examples = {}, deferred = $.Deferred();
+		var examples = [], deferred = $.Deferred();
 
 		$.ajax( {
 			url: 'https://www.mediawiki.org/w/api.php?action=query&prop=revisions&titles=Wikibase/'	+
@@ -33,30 +33,34 @@ wikibase.queryService.api.QuerySamples = ( function( $ ) {
 			},
 			dataType: 'jsonp'
 		} ).done( function ( data ) {
+
 			var wikitext = data.query.pages[Object.keys( data.query.pages )].revisions[0]['*'];
-			var paragraphs = wikitext.split( '==' );
+				wikitext = wikitext.replace( /\{\{!\}\}/g, '|' );
 
-			//TODO extract and make more robust against wrong formatting on the wiki page
-			$.each( paragraphs, function ( key, paragraph ) {
-				if ( paragraph.match( /SPARQL\|.*query\=/ ) ) {
-					var query = paragraph.substring(
-						paragraph.indexOf( '|query=' ) + 7,
-						paragraph.lastIndexOf( '}}' )
-					).trim();
-					var title = paragraphs[key - 1] || '';
-					title = title.replace( '=', '' ).trim();
+			var re = /(?:[\=]+)([^\=]*)(?:[\=]+)\n(?:[]*?)(?:[^=]*?)({{SPARQL\|[\s\S]*?}}\n){1}/g, m,
+				regexQuery = /query\s*\=([^]+)(?:}}|\|)/,
+				regexExtraPrefix = /extraprefix\s*\=([^]+?)(?:\||}})+/,
+				regexTags = /{{Q\|([^]+?)\|([^]+?)}}+/g;
 
-					if ( paragraph.match( 'extraprefix=' ) ) {
-						var prefix = paragraph.substring( paragraph.indexOf( '|extraprefix=' ) + 13, paragraph.indexOf( '|query=' ) ).trim();
-						query = prefix + '\n\n' + query;
+			while ( m = re.exec( wikitext ) ) {
+				var paragraph = m[0],
+					title = m[1].trim(),
+					tags = [], tag,
+					href = 'https://www.mediawiki.org/wiki/Wikibase/Indexing/SPARQL_Query_Examples#' + encodeURIComponent(title.replace( / /g, "_" )).replace( /%/g, "." ) ,
+					sparqlTemplate = m[2],
+					query = sparqlTemplate.match( regexQuery )[1].trim();
+
+					if(sparqlTemplate.match( regexExtraPrefix )){
+						query = sparqlTemplate.match(regexExtraPrefix)[1] + '\n\n' + query;
+					}
+					if( paragraph.match( regexTags ) ) {
+						while(tag = regexTags.exec( paragraph ) ) {
+							tags.push(tag[2].trim() + ' (' + tag[1].trim() + ')');
+						}
 					}
 
-					if ( title ) {
-						examples[title] = query;
-					}
-				}
-			} );
-
+				examples.push( {title: title, query: query, href: href, tags: tags} );
+			}
 			deferred.resolve( examples );
 		} );
 
