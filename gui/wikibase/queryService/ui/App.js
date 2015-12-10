@@ -227,7 +227,7 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 				}
 			};
 
-		var download = function( filename, handler, mimetype ) {
+		var downloadHandler = function( filename, handler, mimetype ) {
 
 			return function ( e ) {
 				e.preventDefault();
@@ -236,10 +236,8 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 					return '';
 				}
 
-				var link = document.createElement("a");
-			    link.download = filename;
-			    link.href = 'data:' + mimetype + ',' + encodeURIComponent( handler() );
-			    link.click();
+				// see: http://danml.com/download.html
+				download(handler(), filename, mimetype);
 			};
 		};
 
@@ -247,7 +245,7 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 			var extension = DOWNLOAD_FORMATS[format].ext || format.toLowerCase();
 			var formatName = format.replace( /\s/g, '-' );
 			$( '#download' + formatName ).click(
-					download( 'query.' + extension,	DOWNLOAD_FORMATS[format].handler,
+					downloadHandler( 'query.' + extension,	DOWNLOAD_FORMATS[format].handler,
 							DOWNLOAD_FORMATS[format].mimetype )
 			 );
 		}
