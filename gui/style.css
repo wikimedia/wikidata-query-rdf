@@ -112,3 +112,20 @@ iframe.shortUrl {
 	max-width:100vw;
 	overflow:auto;
 }
+
+/* colors */
+
+div.jqcloud { color: #337ab7; }
+div.jqcloud a { color: inherit; }
+div.jqcloud a:hover { color: #337ab7; }
+div.jqcloud a:hover { color: #337ab7; }
+div.jqcloud span.w10 { color: rgba(51,122,183,1); }
+div.jqcloud span.w9 { color: rgba(51,122,183,0.9); }
+div.jqcloud span.w8 { color: rgba(51,122,183,0.8); }
+div.jqcloud span.w7 { color: rgba(51,122,183,0.75); }
+div.jqcloud span.w6 { color: rgba(51,122,183,0.6); }
+div.jqcloud span.w5 { color: rgba(51,122,183,0.65); }
+div.jqcloud span.w4 { color: rgba(51,122,183,0.5); }
+div.jqcloud span.w3 { color: rgba(51,122,183,0.55); }
+div.jqcloud span.w2 { color: rgba(51,122,183,0.4); }
+div.jqcloud span.w1 { color: rgba(51,122,183,0.45); }

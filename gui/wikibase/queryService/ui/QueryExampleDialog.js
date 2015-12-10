@@ -103,7 +103,6 @@ wikibase.queryService.ui.QueryExampleDialog = ( function( $ ) {
 			placement: 'right',
 			trigger: 'click',
 			container: 'body',
-	        title: '<b>Filter by tags</b>',
 	        content: '<div class="tagCloud" style="height:400px; width:400px;"></div>',
 	        html: true
 	    });
