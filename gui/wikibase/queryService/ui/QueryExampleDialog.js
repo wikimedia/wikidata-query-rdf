@@ -100,7 +100,7 @@ wikibase.queryService.ui.QueryExampleDialog = ( function( $ ) {
 		var self = this;
 
 		this._$element.find( '.tagCloudPopover' ).popover({
-			placement: 'right',
+			placement: 'bottom',
 			trigger: 'click',
 			container: 'body',
 	        content: '<div class="tagCloud" style="height:400px; width:400px;"></div>',
