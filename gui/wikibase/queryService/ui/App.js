@@ -184,7 +184,7 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 			$( '.explorer-panel' ).hide();
 		} );
 
-		$( window ).on( 'popstate', $.proxy( this._initQuery(), this ) );
+		$( window ).on( 'popstate', $.proxy( this._initQuery, this ) );
 
 		$('body').on('click', function (e) {
 		    if ($(e.target).data('toggle') !== 'popover'
