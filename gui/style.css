@@ -73,7 +73,8 @@ iframe.shortUrl {
 }
 
 .popover{
-   max-width: 100%; /* Max Width of the popover (depending on the container!) */
+	max-width: 500px;
+	width: auto;
 }
 
 /**
