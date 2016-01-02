@@ -281,7 +281,7 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 
 		$( '#query-result' ).empty( '' );
 		$( '#query-result' ).hide();
-		$( '#total' ).hide();
+		$( '.query-total' ).hide();
 		$( '.actionMessage' ).show();
 		$( '.actionMessage' ).text( 'Running query...' );
 
@@ -305,7 +305,7 @@ wikibase.queryService.ui.App = ( function( $, mw ) {
 		var api = this._sparqlApi;
 		$( '#total-results' ).text( api.getResultLength() );
 		$( '#query-time' ).text( api.getExecutionTime() );
-		$( '#total' ).show();
+		$( '.query-total' ).show();
 		$( '#query-result' ).append( api.getResultAsTable() ).show();
 		$( '.actionMessage' ).hide();
 		$( '#query-error' ).hide();

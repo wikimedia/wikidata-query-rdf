@@ -5,7 +5,7 @@
 	white-space: pre;
 }
 
-#total,
+.query-total,
 #query-result,
 #hide-explorer {
 	display: none;
@@ -75,6 +75,10 @@ iframe.shortUrl {
 .popover{
 	max-width: 500px;
 	width: auto;
+}
+
+.dropdown-toggle .glyphicon:before {
+	margin-right: 3px;
 }
 
 /**

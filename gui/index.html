@@ -69,14 +69,17 @@
 					<nav class="navbar navbar-default">
 						<div class="navbar-form navbar-left">
 							<div class="form-group">
-								<input class="btn btn-default" type="submit" id="execute-button" value="Execute"> <input class="btn btn-default" type="reset" id="clear-button" value="Clear">
+								<button type="submit" class="btn btn-danger" id="execute-button" value="Execute">
+									<span class="glyphicon glyphicon-play" aria-hidden="true"></span> Execute
+								</button>
+								<input class="btn btn-default" type="reset" id="clear-button" value="Clear"> 
+								<span class="query-total"><span class="label label-primary"><span id="total-results"></span> Results</span> <span>
+										<span class="label label-info">in <span id="query-time"></span> ms
+									</span> &nbsp;
+								</span> </span>
 							</div>
 						</div>
-						<ul class="nav navbar-nav navbar-right" id="total">
-							<li class="navbar-text"><span class="label label-primary"><span id="total-results"></span> Results</span> <span> <span class="label label-info">in <span id="query-time"></span>
-										ms
-								</span> &nbsp;
-							</span></li>
+						<ul class="nav navbar-nav navbar-right query-total">
 							<li><a href="#" data-toggle="dropdown" class="dropdown-toggle"> <span class="glyphicon glyphicon-download-alt" aria-hidden="true">Download</span><span class="caret"></span>
 							</a>
 								<ul class="dropdown-menu" role="menu">
@@ -87,7 +90,7 @@
 									<li><a id="downloadFull-JSON" href="#">Full JSON</a></li>
 								</ul></li>
 							<li>
-								  <a data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								  <a data-toggle="dropdown" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">
 								    <span class="glyphicon glyphicon-link" aria-hidden="true">Link</span><span class="caret"></span>
 								  </a>
 								  <ul class="dropdown-menu">
