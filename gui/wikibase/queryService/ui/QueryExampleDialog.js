@@ -204,12 +204,12 @@ wikibase.queryService.ui.QueryExampleDialog = ( function( $ ) {
 	SELF.prototype._addExample = function( title, query, href, tags ) {
 		var self = this;
 
-		var title = $( '<a>' ).text(title).attr( 'href', href ).attr( 'target', '_blank' ),
-			tags = $( '<td/>' ).text( tags.join( '|' ) ).hide(),
-			select = $( '<a href="#" title="Select this Query" data-dismiss="modal">'
-						+'<span class="glyphicon glyphicon-copy" aria-hidden="true"></span></a>' ).click( function(){
-				self._callback( query );
+		var link = $( '<a title="Select this query" data-dismiss="modal">' ).text(title).attr( 'href', '#' ).click( function(){
+			self._callback( query );
 			} ),
+			tags = $( '<td/>' ).text( tags.join( '|' ) ).hide(),
+			edit = $( '<a title="Edit this Query">' ).attr( 'href', href ).attr( 'target', '_blank' )
+						.append( '<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span></a>' ),
 			preview = $( '<span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>' ).popover({
 				placement: 'bottom',
 				trigger: 'hover',
@@ -220,9 +220,9 @@ wikibase.queryService.ui.QueryExampleDialog = ( function( $ ) {
 		    });
 
 		var example = $( '<tr/>' );
-		example.append( $( '<td/>' ).append( title ) );
+		example.append( $( '<td/>' ).append( link ) );
 		example.append( $( '<td/>' ).append( preview ) );
-		example.append( $( '<td/>' ).append( select ) );
+		example.append( $( '<td/>' ).append( edit ) );
 		example.append( tags );
 
 		this._$element.find( '.searchable' ).append( example );
