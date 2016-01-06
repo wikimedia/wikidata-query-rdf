@@ -26,7 +26,7 @@
       <outputDirectory></outputDirectory>
       <unpack>true</unpack>
       <includes>
-        <include>com.bigdata:bigdata:war</include>
+        <include>com.blazegraph:bigdata-war:war</include>
       </includes>
        <unpackOptions>
          <excludes>

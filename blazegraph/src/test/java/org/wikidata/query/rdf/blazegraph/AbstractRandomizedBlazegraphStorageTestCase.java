@@ -75,9 +75,11 @@ public class AbstractRandomizedBlazegraphStorageTestCase extends RandomizedTest 
         }
         Properties properties = new Properties();
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.vocabularyClass",
-                WikibaseVocabulary.V001.class.getName());
+                WikibaseVocabulary.VOCABULARY_CLASS.getName());
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.inlineURIFactory",
                 WikibaseInlineUriFactory.class.getName());
+        properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.extensionFactoryClass",
+                WikibaseExtensionFactory.class.getName());
         store = new TempTripleStore(temporaryStore(), properties, null);
         return store;
     }
@@ -93,7 +95,7 @@ public class AbstractRandomizedBlazegraphStorageTestCase extends RandomizedTest 
         }
         ExecutorService executorService = temporaryStore.getExecutorService();
         temporaryStore.close();
-        QueryEngine queryEngine = QueryEngineFactory.getExistingQueryController(temporaryStore);
+        QueryEngine queryEngine = QueryEngineFactory.getInstance().getExistingQueryController(temporaryStore);
         if (queryEngine != null) {
             queryEngine.shutdownNow();
         }

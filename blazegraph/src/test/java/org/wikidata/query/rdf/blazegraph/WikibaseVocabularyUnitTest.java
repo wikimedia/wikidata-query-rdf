@@ -134,4 +134,5 @@ public class WikibaseVocabularyUnitTest extends AbstractRandomizedBlazegraphTest
         assertThat(statement.getPredicate().getIV(), instanceOf(VocabURIByteIV.class));
         assertThat(statement.getObject().getIV(), instanceOf(VocabURIByteIV.class));
     }
+
 }

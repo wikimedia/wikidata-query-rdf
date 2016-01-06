@@ -138,6 +138,21 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
         return false;
     }
 
+    /**
+     * Normalize IV - convert to LiteralExtension.
+     * @param l Original literal, will be parsed if IV is not inlined.
+     * @param iv Original IV
+     * @return Normalized IV, parsed through Wikidata if needed
+     */
+    @SuppressWarnings({"rawtypes", "checkstyle:cyclomaticcomplexity"})
+    private LiteralExtensionIV normalizeIV(Literal l, IV iv) {
+        if (iv instanceof LiteralExtensionIV) {
+            return (LiteralExtensionIV)iv;
+        } else {
+            return createIV(l);
+        }
+    }
+
     @SuppressWarnings({"rawtypes", "checkstyle:cyclomaticcomplexity"})
     @Override
     public IV doMathOp(
@@ -156,28 +171,23 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
             throw new SparqlTypeErrorException();
         }
 
-        if (d1 && !(iv1 instanceof LiteralExtensionIV)) {
-            throw new IllegalArgumentException("Non-extended data passed to extension");
-        }
-
-        if (d2 && !(iv2 instanceof LiteralExtensionIV)) {
-            throw new IllegalArgumentException("Non-extended data passed to extension");
-        }
+        LiteralExtensionIV liv1 = d1 ? normalizeIV(l1, iv1) : null;
+        LiteralExtensionIV liv2 = d2 ? normalizeIV(l2, iv2) : null;
 
         if (d1 && d2) {
-            return handleTwoDates((LiteralExtensionIV)iv1, (LiteralExtensionIV)iv2, op, vf);
+            return handleTwoDates(liv1, liv2, op, vf);
         }
 
         // Now we have one date and one duration
         if (op == MathOp.PLUS) {
-            LiteralExtensionIV iv = d1 ? (LiteralExtensionIV)iv1 : (LiteralExtensionIV)iv2;
+            LiteralExtensionIV iv = d1 ? liv1 : liv2;
             Literal lduration = d1 ? l2 : l1;
 
             return datePlusDuration(iv, DATATYPE_FACTORY.newDuration(lduration.getLabel()));
         }
 
         if (op == MathOp.MINUS) {
-            return datePlusDuration((LiteralExtensionIV)iv1,
+            return datePlusDuration(liv1,
                     DATATYPE_FACTORY.newDuration(l2.getLabel()).negate());
         }
 

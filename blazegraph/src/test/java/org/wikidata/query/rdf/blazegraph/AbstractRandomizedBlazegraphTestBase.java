@@ -44,9 +44,9 @@ public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlaz
      */
     protected TupleQueryResult query(String query) {
         try {
-            ASTContainer astContainer = new Bigdata2ASTSPARQLParser(store()).parseQuery2(query, null);
+            ASTContainer astContainer = new Bigdata2ASTSPARQLParser().parseQuery2(query, null);
 
-            return ASTEvalHelper.evaluateTupleQuery(store(), astContainer, new QueryBindingSet());
+            return ASTEvalHelper.evaluateTupleQuery(store(), astContainer, new QueryBindingSet(), null);
         } catch (MalformedQueryException | QueryEvaluationException e) {
             throw new RuntimeException(e);
         }

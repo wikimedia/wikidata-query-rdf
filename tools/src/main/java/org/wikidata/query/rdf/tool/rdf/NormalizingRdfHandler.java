@@ -1,12 +1,16 @@
 package org.wikidata.query.rdf.tool.rdf;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
 import org.wikidata.query.rdf.common.uri.Ontology;
@@ -46,6 +50,8 @@ public class NormalizingRdfHandler extends DelegatingRdfHandler {
         predicate = fixUri(predicate);
         if (object instanceof URI) {
             object = fixUri((URI) object);
+        } else if (object instanceof Literal) {
+            object = fixNumber((Literal)object);
         }
 
         // No need to build a new statement if the old one matches.
@@ -54,6 +60,25 @@ public class NormalizingRdfHandler extends DelegatingRdfHandler {
             statement = new StatementImpl(subject, predicate, object);
         }
         super.handleStatement(statement);
+    }
+
+    /**
+     * Fixes numeric literal by ensuring it is actually contains numeric data.
+     * If not, it will be converted to 0.
+     * @param value
+     * @return
+     */
+    private Value fixNumber(Literal value) {
+        if (value.getDatatype().equals(XMLSchema.DECIMAL)) {
+            if (!NumberUtils.isNumber(value.getLabel())) {
+                return new LiteralImpl("0", XMLSchema.DECIMAL);
+            }
+        } else if (value.getDatatype().equals(XMLSchema.INTEGER)) {
+            if (!NumberUtils.isNumber(value.getLabel())) {
+                return new LiteralImpl("0", XMLSchema.INTEGER);
+            }
+        }
+        return value;
     }
 
     /**

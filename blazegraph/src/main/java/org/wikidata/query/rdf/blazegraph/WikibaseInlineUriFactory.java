@@ -6,6 +6,7 @@ import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 import com.bigdata.rdf.internal.InlineURIFactory;
+import com.bigdata.rdf.internal.InlineURIHandler;
 import com.bigdata.rdf.internal.InlineUnsignedIntegerURIHandler;
 import com.bigdata.rdf.internal.NormalizingInlineUriHandler;
 import com.bigdata.rdf.internal.TrailingSlashRemovingInlineUriHandler;
@@ -45,8 +46,11 @@ public class WikibaseInlineUriFactory extends InlineURIFactory {
         addHandler(new InlineUnsignedIntegerURIHandler(uris.entity() + "Q"));
 
         // These aren't part of wikibase but are common in wikidata
-        addHandler(new NormalizingInlineUriHandler(new TrailingSlashRemovingInlineUriHandler(
-                new InlineUnsignedIntegerURIHandler(CommonValues.VIAF)), CommonValues.VIAF_HTTP));
+        // TODO: add more prefixes?
+        InlineURIHandler viaf = new TrailingSlashRemovingInlineUriHandler(
+                new InlineUnsignedIntegerURIHandler(CommonValues.VIAF));
+        addHandler(viaf);
+        addHandler(new NormalizingInlineUriHandler(viaf, CommonValues.VIAF_HTTP));
 
         /*
          * Value nodes are inlined even though they are pretty big (uuids). It

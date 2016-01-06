@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.wikidata.query.rdf</groupId>
     <artifactId>parent</artifactId>
-    <version>0.1.3</version>
+    <version>0.2.0-SNAPSHOT</version>
   </parent>
   <artifactId>service</artifactId>
   <packaging>pom</packaging>
