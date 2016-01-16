@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.blazegraph;
 
 import org.wikidata.query.rdf.blazegraph.vocabulary.CommonValuesVocabularyDecl;
+import org.wikidata.query.rdf.blazegraph.vocabulary.GeoSparqlVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.OntologyVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.ProvenanceVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.SchemaDotOrgVocabularyDecl;
@@ -8,7 +9,7 @@ import org.wikidata.query.rdf.blazegraph.vocabulary.WikibaseUrisVocabularyDecl;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 
 import com.bigdata.rdf.vocab.DefaultBigdataVocabulary;
-import com.bigdata.rdf.vocab.core.BigdataCoreVocabulary_v20151210;
+import com.bigdata.rdf.vocab.core.BigdataCoreVocabulary_v20160317;
 
 /**
  * Versioned vocabulary classes for wikibase. All classes need a namespace and a
@@ -19,7 +20,7 @@ public class WikibaseVocabulary {
     /**
      * Current vocabulary class.
      */
-    public static final Class VOCABULARY_CLASS = V001.class;
+    public static final Class VOCABULARY_CLASS = V002.class;
 
     protected WikibaseVocabulary() {
         // prevents calls from subclass
@@ -47,7 +48,7 @@ public class WikibaseVocabulary {
         @Override
         protected void addValues() {
             // TODO lookup wikibase host and default to wikidata
-            addDecl(new WikibaseUrisVocabularyDecl(WikibaseUris.WIKIDATA));
+            addDecl(new WikibaseUrisVocabularyDecl(WikibaseUris.getURISystem()));
             addDecl(new OntologyVocabularyDecl());
             addDecl(new SchemaDotOrgVocabularyDecl());
             addDecl(new ProvenanceVocabularyDecl());
@@ -57,10 +58,10 @@ public class WikibaseVocabulary {
     }
 
     /**
-     * Class for BG 2.0.
-     * Inherits different vocabulary
+     * Class for BG 2.0 with geospatial.
+     * Inherits different vocabulary and adds geospatial types.
      */
-    public static class V002 extends BigdataCoreVocabulary_v20151210 {
+    public static class V002 extends BigdataCoreVocabulary_v20160317 {
         public V002() {
         }
 
@@ -71,11 +72,12 @@ public class WikibaseVocabulary {
         @Override
         protected void addValues() {
             // TODO lookup wikibase host and default to wikidata
-            addDecl(new WikibaseUrisVocabularyDecl(WikibaseUris.WIKIDATA));
+            addDecl(new WikibaseUrisVocabularyDecl(WikibaseUris.getURISystem()));
             addDecl(new OntologyVocabularyDecl());
             addDecl(new SchemaDotOrgVocabularyDecl());
             addDecl(new ProvenanceVocabularyDecl());
             addDecl(new CommonValuesVocabularyDecl());
+            addDecl(new GeoSparqlVocabularyDecl());
             super.addValues();
         }
     }

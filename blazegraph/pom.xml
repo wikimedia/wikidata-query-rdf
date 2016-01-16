@@ -32,8 +32,7 @@
       <!-- Blazegraph needs http client to run services. -->
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-client</artifactId>
-      <version>9.2.10.v20150310</version>
-      <scope>test</scope>
+      <version>${jetty.version}</version>
     </dependency>
     <dependency>
       <groupId>org.wikidata.query.rdf</groupId>

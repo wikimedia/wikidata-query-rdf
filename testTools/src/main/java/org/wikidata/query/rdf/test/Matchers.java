@@ -34,7 +34,7 @@ public final class Matchers {
      */
     public static Matcher<BindingSet> binds(String name, String value) {
         if (value.startsWith("P")) {
-            value = WikibaseUris.WIKIDATA.property(PropertyType.CLAIM) + value;
+            value = WikibaseUris.getURISystem().property(PropertyType.CLAIM) + value;
         }
         return new BindsMatcher<URI>(name, equalTo(uri(value)));
     }

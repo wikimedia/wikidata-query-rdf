@@ -528,7 +528,7 @@ public class LabelService extends AbstractServiceFactory {
          */
         private WikibaseUris uris() {
             // TODO lookup wikibase host and default to wikidata
-            return WikibaseUris.WIKIDATA;
+            return WikibaseUris.getURISystem();
         }
 
         /**

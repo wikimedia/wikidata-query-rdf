@@ -8,7 +8,7 @@ import com.bigdata.rdf.vocab.BaseVocabularyDecl;
 
 /**
  * Vocabulary containing the URIs from
- * {@linkplain org.wikidata.query.rdf.common.uri.Ontology} that are imported
+ * {@linkplain org.wikidata.query.rdf.common.uri.Provenance} that are imported
  * into Blazegraph.
  */
 public class ProvenanceVocabularyDecl extends BaseVocabularyDecl {

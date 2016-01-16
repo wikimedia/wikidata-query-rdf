@@ -29,9 +29,7 @@ import com.bigdata.rdf.internal.TrailingSlashRemovingInlineUriHandler;
  */
 public class WikibaseInlineUriFactory extends InlineURIFactory {
     public WikibaseInlineUriFactory() {
-        // TODO lookup wikibase host and default to wikidata
-        final WikibaseUris uris = WikibaseUris.WIKIDATA;
-
+        WikibaseUris uris = WikibaseUris.getURISystem();
         /*
          * Order matters here because some of these are prefixes of each other.
          */

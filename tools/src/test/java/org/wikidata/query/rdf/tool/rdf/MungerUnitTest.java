@@ -322,7 +322,7 @@ public class MungerUnitTest extends RandomizedTest {
     @Test
     public void coordinateSwitch() {
         List<Statement> result = entity("Q23")
-                .remove(statement(uris.entityData() + "Q23", SchemaDotOrg.SOFTWARE_VERSION, new LiteralImpl("0.0.2")))
+                .remove(statement(uris.entityData() + "Q23", SchemaDotOrg.SOFTWARE_VERSION, new LiteralImpl("0.0.1")))
                 .remove(statement("Q23", uris.property(PropertyType.DIRECT) + "P9", new LiteralImpl("Point(1.2 3.4)", new URIImpl(GeoSparql.WKT_LITERAL))))
                 .testWithoutShuffle();
         Statement expected = statement("Q23", uris.property(PropertyType.DIRECT) + "P9", new LiteralImpl("Point(3.4 1.2)", new URIImpl(GeoSparql.WKT_LITERAL)));

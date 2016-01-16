@@ -11,6 +11,7 @@ import com.bigdata.rdf.model.BigdataLiteral;
  * InlineURIHandler for value and qualifier properties. Can't just use
  * InlineUnsignedIntegerURIHandler because values can end in -value. Those we
  * represent as negative numbers.
+ * @deprecated
  */
 public class ValuePropertiesInlineUriHandler extends InlineURIHandler {
     /**

@@ -8,7 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseDateBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseNowBOp;
+import org.wikidata.query.rdf.blazegraph.geo.GeoService;
 import org.wikidata.query.rdf.blazegraph.label.LabelService;
+import org.wikidata.query.rdf.common.uri.GeoSparql;
 import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
@@ -49,6 +51,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     public static void initializeServices() {
         ServiceRegistry.getInstance().setDefaultServiceFactory(new DisableRemotesServiceFactory());
         LabelService.register();
+        GeoService.register();
 
         // Override date functions so that we can handle them
         // via WikibaseDate
@@ -81,7 +84,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
                 return new WikibaseNowBOp(globals);
             }
         });
-        addPrefixes(WikibaseUris.WIKIDATA);
+        addPrefixes(WikibaseUris.getURISystem());
 
         log.warn("Wikibase services initialized.");
     }
@@ -106,6 +109,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         defaultDecls.put("prov", Provenance.NAMESPACE);
         defaultDecls.put("skos", SKOS.NAMESPACE);
         defaultDecls.put("owl", OWL.NAMESPACE);
+        defaultDecls.put("geo", GeoSparql.NAMESPACE);
     }
 
     @Override

@@ -12,7 +12,7 @@ public class WikibasePointUnitTest extends RandomizedTest {
 
     @Test
     public void fromStringDefault() {
-        pointFromString("Point(12.34 56.98)", "12.34", "56.98", null);
+        pointFromString("Point(56.98 12.34)", "12.34", "56.98", null);
     }
 
     @Test
@@ -27,7 +27,7 @@ public class WikibasePointUnitTest extends RandomizedTest {
 
     @Test
     public void fromStringGlobe() {
-        pointFromString("<On the Moon> Point(12.34 56.98)", "12.34", "56.98", "On the Moon");
+        pointFromString("<On the Moon> Point(56.98 12.34)", "12.34", "56.98", "On the Moon");
     }
 
     @Test

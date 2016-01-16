@@ -46,7 +46,7 @@ public final class StatementHelper {
             throw new IllegalArgumentException("Illegal object:  " + o);
         }
         if (p instanceof String && p.startsWith("P")) {
-            p = WikibaseUris.WIKIDATA.property(PropertyType.CLAIM) + p;
+            p = WikibaseUris.getURISystem().property(PropertyType.CLAIM) + p;
         }
         return new StatementImpl(uri(s), uri(p), oValue);
     }
@@ -102,7 +102,7 @@ public final class StatementHelper {
      */
     public static URI uri(String r) {
         if (r.startsWith("Q") || r.startsWith("P")) {
-            return new URIImpl(WikibaseUris.WIKIDATA.entity() + r);
+            return new URIImpl(WikibaseUris.getURISystem().entity() + r);
         }
         return new URIImpl(r);
     }

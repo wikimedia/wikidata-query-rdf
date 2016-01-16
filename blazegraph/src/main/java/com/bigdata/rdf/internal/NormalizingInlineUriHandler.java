@@ -38,7 +38,7 @@ public class NormalizingInlineUriHandler extends InlineURIHandler {
 
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
-    protected URIExtensionIV createInlineIV(URI uri) {
+    public URIExtensionIV createInlineIV(URI uri) {
         String prefix = getNamespace();
         if (uri.stringValue().startsWith(prefix)) {
             AbstractLiteralIV localNameIv = next.createInlineIV(uri.stringValue().substring(prefix.length()));

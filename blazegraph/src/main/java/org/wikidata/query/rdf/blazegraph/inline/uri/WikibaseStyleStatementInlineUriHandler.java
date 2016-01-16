@@ -26,6 +26,7 @@ import com.bigdata.rdf.model.BigdataLiteral;
  * statements to get scattered along the index which causes mighty right
  * amplification during loads and updates and probably doesn't help query
  * performance either.
+ * @deprecated
  */
 public class WikibaseStyleStatementInlineUriHandler extends InlineURIHandler {
     private static final Logger log = Logger.getLogger(WikibaseStyleStatementInlineUriHandler.class);

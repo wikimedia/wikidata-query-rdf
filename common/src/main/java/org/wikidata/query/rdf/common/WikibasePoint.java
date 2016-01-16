@@ -41,9 +41,9 @@ public class WikibasePoint {
 
     /**
      * Default coordinate order in the system.
-     * FIXME: for now it's lat-long, needs to be changed to long-lat.
+     * WKT requires long-lat order, but format 0.0.1 had lat-long.
      */
-    public static final CoordinateOrder DEFAULT_ORDER = CoordinateOrder.LAT_LONG;
+    public static final CoordinateOrder DEFAULT_ORDER = CoordinateOrder.LONG_LAT;
 
     /**
      * Get longitude.

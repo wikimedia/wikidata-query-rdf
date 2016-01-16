@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.runner.RunWith;
+import org.wikidata.query.rdf.blazegraph.inline.literal.WKTSerializer;
+import org.wikidata.query.rdf.common.uri.GeoSparql;
 
 import com.bigdata.bop.engine.QueryEngine;
 import com.bigdata.bop.fed.QueryEngineFactory;
@@ -80,6 +82,17 @@ public class AbstractRandomizedBlazegraphStorageTestCase extends RandomizedTest 
                 WikibaseInlineUriFactory.class.getName());
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.extensionFactoryClass",
                 WikibaseExtensionFactory.class.getName());
+        properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.geoSpatial", "true");
+        properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.geoSpatialDefaultDatatype", "http://www.opengis.net/ont/geosparql#wktLiteral");
+        properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.geoSpatialDatatypeConfig.0",
+                "{\"config\": "
+                        + "{ \"uri\": \"" + GeoSparql.WKT_LITERAL + "\", "
+                        + "\"literalSerializer\": \"" + WKTSerializer.class.getName() + "\",  "
+                        + "\"fields\": [ "
+                        + "{ \"valueType\": \"DOUBLE\", \"multiplier\": \"1000000000\", \"serviceMapping\": \"LONGITUDE\" }, "
+                        + "{ \"valueType\": \"DOUBLE\", \"multiplier\": \"1000000000\", \"serviceMapping\": \"LATITUDE\" }, "
+                        + "{ \"valueType\": \"LONG\", \"serviceMapping\": \"COORD_SYSTEM\" } "
+                        + "]}}");
         store = new TempTripleStore(temporaryStore(), properties, null);
         return store;
     }

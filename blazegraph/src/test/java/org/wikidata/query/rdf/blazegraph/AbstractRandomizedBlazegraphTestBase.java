@@ -30,7 +30,7 @@ public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlaz
     /**
      * Which uris this test uses.
      */
-    private WikibaseUris uris = WikibaseUris.WIKIDATA;
+    private WikibaseUris uris = WikibaseUris.getURISystem();
 
     /**
      * The uris this test uses.
