@@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsString;
 import static org.wikidata.query.rdf.test.Matchers.assertResult;
 import static org.wikidata.query.rdf.test.Matchers.binds;
-import static org.wikidata.query.rdf.test.Matchers.notBinds;
 
 import java.util.Locale;
 
@@ -59,10 +58,15 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
     }
 
     @Test
-    public void labelOverUnboundSubject() throws QueryEvaluationException {
-        TupleQueryResult result = lookupLabel(null, "en", "?s", "rdfs:label");
-        assertThat(result.next(), notBinds("sLabel"));
-        assertFalse(result.hasNext());
+    public void labelOverUnboundSubjectIsError() {
+        try {
+            lookupLabel(null, "en", "?s", "rdfs:label").next();
+            fail();
+        } catch (QueryEvaluationException e) {
+            assertThat(
+                    e.getMessage(),
+                    containsString("Refusing to lookup labels for unknown subject (s). That'd be way way way inefficient."));
+        }
     }
 
     @Test
