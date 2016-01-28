@@ -397,6 +397,9 @@ public class LabelService extends AbstractServiceFactory {
         public void resolve(Resolution resolution) {
             resolvedSubject = resolveToIvOrError(resolution.subject(), "subject");
             resolvedLabelType = resolveToIvOrError(resolution.labelType(), "label type");
+            if (resolvedSubject == null || resolvedLabelType == null) {
+                return;
+            }
             // TODO this is one at a time - maybe a batch things?
             fillBestLabels();
             IV label = pickOrBuildBestLabel();
@@ -496,9 +499,10 @@ public class LabelService extends AbstractServiceFactory {
         private IV resolveToIvOrError(IValueExpression expression, String nameOfExpression) {
             Object resolved = expression.get(binding);
             if (resolved == null) {
-                throw new RuntimeException(String.format(Locale.ROOT,
-                        "Refusing to lookup labels for unknown %s (%s). That'd be way way way inefficient.",
-                        nameOfExpression, expression));
+                return null;
+//                throw new RuntimeException(String.format(Locale.ROOT,
+//                        "Refusing to lookup labels for unknown %s (%s). That'd be way way way inefficient.",
+//                        nameOfExpression, expression));
             }
             try {
                 return (IV) resolved;
