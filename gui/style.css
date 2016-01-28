@@ -81,6 +81,18 @@ iframe.shortUrl {
 	margin-right: 3px;
 }
 
+.navbar-brand {
+    position: absolute;
+    width: 100%;
+    left: 0;
+    text-align: center;
+    margin: auto;
+}
+
+.navbar-toggle {
+	  z-index: 100;
+}
+
 /**
 	Query example dialog
 **/
