@@ -39,7 +39,7 @@
 	height: auto !important;
 }
 
-.CodeMirror-scroll {
+.CodeMirror-scroll, .queryEditor {
 	min-height: 300px;
 }
 
@@ -53,6 +53,10 @@ iframe.shortUrl {
 	height: 40px;
 }
 
+.queryEditor {
+	visibility: hidden;
+	padding: 0;
+}
 /**
 	Bootstrap Styles
 **/
