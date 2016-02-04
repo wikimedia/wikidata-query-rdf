@@ -5,6 +5,10 @@
 	white-space: pre;
 }
 
+#clear-button {
+	margin-right: 10px;
+}
+
 .query-total,
 #query-result,
 #hide-explorer {
@@ -95,6 +99,10 @@ iframe.shortUrl {
 
 .navbar-toggle {
 	  z-index: 100;
+}
+
+.navbar-btn {
+	margin-left: 15px;
 }
 
 /**
