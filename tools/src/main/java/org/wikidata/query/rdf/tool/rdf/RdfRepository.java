@@ -351,6 +351,10 @@ public class RdfRepository {
         Set<String> valueList = new HashSet<String>();
 
         for (final Change change : changes) {
+            if (change.getStatements() == null) {
+                // broken change, probably failed retrieval
+                continue;
+            }
             entityIds.add(change.entityId());
             insertStatements.addAll(change.getStatements());
             entityStatements.addAll(filtered(change.getStatements()).withSubject(uris.entity() + change.entityId()));
