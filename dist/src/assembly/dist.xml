@@ -33,6 +33,12 @@
     <fileSet>
       <outputDirectory>gui</outputDirectory>
       <directory>${project.basedir}/../gui</directory>
+      <excludes>
+        <exclude>Gruntfile.js</exclude>
+        <exclude>.git</exclude>
+        <exclude>.js*</exclude>
+        <exclude>README.md</exclude>
+      </excludes>
     </fileSet>
 
   </fileSets>
