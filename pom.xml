@@ -9,7 +9,7 @@
   </parent>
   <groupId>org.wikidata.query.rdf</groupId>
   <artifactId>parent</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
+  <version>0.1.3</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -57,7 +57,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <blazegraph.version>2.0.0</blazegraph.version>
+    <blazegraph.version>1.5.3-wmf-3</blazegraph.version>
     <!-- This Blazegraph version has backports onto the 1.5.1 branch and is hosted at WMF. Documentation on how to do that
       is in the backport_blazegraph.txt file. -->
     <sesame.version>2.8.1</sesame.version>
@@ -378,8 +378,8 @@
         <version>${sesame.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.blazegraph</groupId>
-        <artifactId>bigdata-core</artifactId>
+        <groupId>com.bigdata</groupId>
+        <artifactId>bigdata</artifactId>
         <version>${blazegraph.version}</version>
       </dependency>
       <dependency>
@@ -419,7 +419,12 @@
     </dependency>
   </dependencies>
 
+  <!-- Blazegraph isn't released to Maven central. Yet. -->
   <repositories>
+    <repository>
+      <id>bigdata.releases</id>
+      <url>http://www.systap.com/maven/releases</url>
+    </repository>
     <repository>
       <id>wmf.mirrored</id>
       <url>http://archiva.wikimedia.org/repository/mirrored</url>

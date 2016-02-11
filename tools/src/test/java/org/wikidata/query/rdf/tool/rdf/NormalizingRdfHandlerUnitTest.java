@@ -4,7 +4,6 @@ import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
 import org.wikidata.query.rdf.common.uri.Ontology;
@@ -61,16 +60,6 @@ public class NormalizingRdfHandlerUnitTest {
         NormalizingRdfHandler handler = new NormalizingRdfHandler(checkStatement);
         Statement s = statement("Q1", RDF.TYPE, "http://viaf.org/processed\\BNC|a10474614`^{}\n");
         checkStatement.expect(null, null, "http://viaf.org/processed%5CBNC%7Ca10474614%60%5E%7B%7D");
-        handler.handleStatement(s);
-    }
-
-    @Test
-    public void testHandleBadDecimal() throws RDFHandlerException {
-        StatementChecker checkStatement = new StatementChecker();
-        NormalizingRdfHandler handler = new NormalizingRdfHandler(checkStatement);
-        handler.handleNamespace("xsd", XMLSchema.NAMESPACE);
-        Statement s = statement("Q1", "P1", new LiteralImpl("", XMLSchema.DECIMAL));
-        checkStatement.expect(null, null, "0");
         handler.handleStatement(s);
     }
 

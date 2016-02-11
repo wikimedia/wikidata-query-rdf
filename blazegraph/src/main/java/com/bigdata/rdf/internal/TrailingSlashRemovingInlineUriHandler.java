@@ -14,7 +14,7 @@ public class TrailingSlashRemovingInlineUriHandler extends InlineURIHandler {
     private final InlineURIHandler next;
 
     public TrailingSlashRemovingInlineUriHandler(InlineURIHandler next) {
-        super(next.getNamespace());
+        super(next.namespace);
         this.next = next;
     }
 

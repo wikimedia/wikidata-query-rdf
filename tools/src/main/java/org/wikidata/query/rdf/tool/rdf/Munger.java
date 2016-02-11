@@ -355,7 +355,7 @@ public class Munger {
                 return entityStatement();
             }
             /*
-             *  Allow bnodes, they are not linked to specific entity
+             *  Allow bnodes, they are not linked to specific entitty
              *  but used to declare classes
              */
             if (statement.getSubject() instanceof BNode) {
