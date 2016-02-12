@@ -1,7 +1,6 @@
 package org.wikidata.query.rdf.tool.rdf;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -63,6 +62,36 @@ public class NormalizingRdfHandler extends DelegatingRdfHandler {
     }
 
     /**
+     * Check whether the string is a decimal numeric string.
+     * @param s
+     * @return Whether the string is an acceptable number.
+     */
+    private boolean isNumericString(final String s) {
+        int i = 0;
+        if (s.length() == 0) {
+            return false;
+        }
+        final char[] chars = s.toCharArray();
+        boolean seenDot = false;
+
+        if (chars[0] == '+' || chars[0] == '-') {
+            i++;
+        }
+        while (i < s.length()) {
+            if (chars[i] == '.') {
+                if (seenDot) {
+                    return false;
+                }
+                seenDot = true;
+            } else  if (chars[i] < '0' || chars[i] > '9') {
+                return false;
+            }
+            i++;
+        }
+        return true;
+    }
+
+    /**
      * Fixes numeric literal by ensuring it is actually contains numeric data.
      * If not, it will be converted to 0.
      * @param value
@@ -70,11 +99,11 @@ public class NormalizingRdfHandler extends DelegatingRdfHandler {
      */
     private Value fixNumber(Literal value) {
         if (value.getDatatype().equals(XMLSchema.DECIMAL)) {
-            if (!NumberUtils.isNumber(value.getLabel())) {
+            if (!isNumericString(value.getLabel())) {
                 return new LiteralImpl("0", XMLSchema.DECIMAL);
             }
         } else if (value.getDatatype().equals(XMLSchema.INTEGER)) {
-            if (!NumberUtils.isNumber(value.getLabel())) {
+            if (!isNumericString(value.getLabel())) {
                 return new LiteralImpl("0", XMLSchema.INTEGER);
             }
         }

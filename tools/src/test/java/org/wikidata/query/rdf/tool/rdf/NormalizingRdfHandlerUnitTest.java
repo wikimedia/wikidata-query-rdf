@@ -74,6 +74,28 @@ public class NormalizingRdfHandlerUnitTest {
         handler.handleStatement(s);
     }
 
+    @Test
+    public void testGoodDecimalPositive() throws RDFHandlerException {
+//        testDecimal("+1234");
+        testDecimal("+1234.567");
+        testDecimal("1234.5");
+    }
+
+    @Test
+    public void testGoodDecimalNegative() throws RDFHandlerException {
+        testDecimal("-1234");
+        testDecimal("-567.1234");
+    }
+
+    private void testDecimal(String str) throws RDFHandlerException {
+        StatementChecker checkStatement = new StatementChecker();
+        NormalizingRdfHandler handler = new NormalizingRdfHandler(checkStatement);
+        handler.handleNamespace("xsd", XMLSchema.NAMESPACE);
+        Statement s = statement("Q1", "P1", new LiteralImpl(str, XMLSchema.DECIMAL));
+        checkStatement.expect(null, null, str);
+        handler.handleStatement(s);
+    }
+
     private final class StatementChecker implements RDFHandler {
         private String expectSubject;
         private String expectPredicate;
