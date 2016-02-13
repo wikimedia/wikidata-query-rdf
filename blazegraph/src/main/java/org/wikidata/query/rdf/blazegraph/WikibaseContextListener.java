@@ -9,11 +9,19 @@ import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseDateBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseNowBOp;
 import org.wikidata.query.rdf.blazegraph.label.LabelService;
+import org.wikidata.query.rdf.common.uri.OWL;
+import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.Provenance;
+import org.wikidata.query.rdf.common.uri.SKOS;
+import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 import com.bigdata.bop.BOpContextBase;
 import com.bigdata.bop.IValueExpression;
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.internal.constraints.DateBOp.DateOp;
+import com.bigdata.rdf.sail.sparql.PrefixDeclProcessor;
 import com.bigdata.rdf.sail.webapp.BigdataRDFServletContextListener;
 import com.bigdata.rdf.sparql.ast.FunctionRegistry;
 import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
@@ -72,9 +80,31 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
                 return new WikibaseNowBOp(globals);
             }
         });
-
+        addPrefixes(WikibaseUris.WIKIDATA);
 
         log.warn("Wikibase services initialized.");
+    }
+
+    /**
+     * Add standard prefixes to the system.
+     * @param uris Wikidata URIs to use
+     */
+    private static void addPrefixes(final WikibaseUris uris) {
+        final Map<String, String> defaultDecls = PrefixDeclProcessor.defaultDecls;
+        for (PropertyType p: PropertyType.values()) {
+            defaultDecls.put(p.prefix(), uris.property(p));
+        }
+        defaultDecls.put("wikibase", Ontology.NAMESPACE);
+        defaultDecls.put("wd", uris.entity());
+        defaultDecls.put("wds", uris.statement());
+        defaultDecls.put("wdv", uris.value());
+        defaultDecls.put("wdref", uris.reference());
+        defaultDecls.put("wdata", uris.entityData());
+        // External schemata
+        defaultDecls.put("schema", SchemaDotOrg.NAMESPACE);
+        defaultDecls.put("prov", Provenance.NAMESPACE);
+        defaultDecls.put("skos", SKOS.NAMESPACE);
+        defaultDecls.put("owl", OWL.NAMESPACE);
     }
 
     @Override

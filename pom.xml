@@ -180,6 +180,10 @@
             <seed>${tests.seed}</seed>
             <jvmArgs>
               <param>-Xmx512m</param>
+<!--
+		<param>-Xdebug</param>
+		<param>-Xrunjdwp:transport=dt_socket,server=y,address=8765</param>
+-->
             </jvmArgs>
           </configuration>
           <executions>
