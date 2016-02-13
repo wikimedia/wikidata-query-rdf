@@ -111,8 +111,12 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
             String labelLanguage, String altLabelText, String altLabelLanguage) throws QueryEvaluationException {
         assertResult(
                 lookupLabel(extraQuery, language, subjectInQuery, "rdfs:label", "skos:altLabel"),
-                both(binds(labelName(subjectInQuery, "rdfs:label"), labelText, labelLanguage)).and(
-                        binds(labelName(subjectInQuery, "skos:altLabel"), altLabelText, altLabelLanguage)));
+                both(
+                        binds(labelName(subjectInQuery, "rdfs:label"), labelText, labelLanguage)
+                    ).and(
+                        binds(labelName(subjectInQuery, "skos:altLabel"), altLabelText, altLabelLanguage)
+                    )
+        );
 
     }
 

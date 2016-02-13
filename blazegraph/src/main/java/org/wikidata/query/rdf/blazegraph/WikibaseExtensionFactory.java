@@ -24,9 +24,9 @@ public class WikibaseExtensionFactory extends DefaultExtensionFactory {
     @Override
     @SuppressWarnings("rawtypes")
     protected void _init(IDatatypeURIResolver resolver, ILexiconConfiguration<BigdataValue> config,
-            Collection<IExtension> extensions) {
+            Collection<IExtension<? extends BigdataValue>> extensions) {
         if (config.isInlineDateTimes()) {
-            Iterator<IExtension> extensionsItr = extensions.iterator();
+            Iterator<IExtension<? extends BigdataValue>> extensionsItr = extensions.iterator();
             while (extensionsItr.hasNext()) {
                 if (extensionsItr.next() instanceof DateTimeExtension) {
                     extensionsItr.remove();
