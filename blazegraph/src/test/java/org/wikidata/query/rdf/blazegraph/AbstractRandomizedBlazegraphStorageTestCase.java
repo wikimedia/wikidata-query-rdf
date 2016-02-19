@@ -78,6 +78,8 @@ public class AbstractRandomizedBlazegraphStorageTestCase extends RandomizedTest 
                 WikibaseVocabulary.V001.class.getName());
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.inlineURIFactory",
                 WikibaseInlineUriFactory.class.getName());
+        properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.extensionFactoryClass",
+                WikibaseExtensionFactory.class.getName());
         store = new TempTripleStore(temporaryStore(), properties, null);
         return store;
     }
