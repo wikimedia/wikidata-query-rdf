@@ -30,6 +30,7 @@ import com.bigdata.rdf.sparql.ast.FunctionRegistry.Factory;
 import com.bigdata.rdf.sparql.ast.eval.AST2BOpUtility;
 import com.bigdata.rdf.sparql.ast.eval.AbstractServiceFactoryBase;
 import com.bigdata.rdf.sparql.ast.service.IServiceOptions;
+import com.bigdata.rdf.sparql.ast.service.RemoteServiceOptions;
 import com.bigdata.rdf.sparql.ast.service.ServiceCall;
 import com.bigdata.rdf.sparql.ast.service.ServiceCallCreateParams;
 import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
@@ -139,9 +140,16 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      */
     private static final class DisableRemotesServiceFactory extends AbstractServiceFactoryBase {
 
+        /**
+         * Default service options.
+         * We use remote since that's how we get to this service in the first place -
+         * local ones should have been served already.
+         */
+        private static final IServiceOptions OPTIONS = new RemoteServiceOptions();
+
         @Override
         public IServiceOptions getServiceOptions() {
-            return null;
+            return OPTIONS;
         }
 
         @Override
