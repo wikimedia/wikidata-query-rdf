@@ -58,8 +58,6 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <blazegraph.version>2.0.1-SNAPSHOT</blazegraph.version>
-    <!-- This Blazegraph version has backports onto the 1.5.1 branch and is hosted at WMF. Documentation on how to do that
-      is in the backport_blazegraph.txt file. -->
     <sesame.version>2.8.1</sesame.version>
   </properties>
 
