@@ -55,24 +55,23 @@ $ mkdir data
 * Download the dump file from https://dumps.wikimedia.org/wikidatawiki/entities/ (for subdirectory `20150427` the filename will be something like `wikidata-20150427-all-BETA.ttl.gz`) into the `data` directory.
 * Pre-process the dump with Munger utility:
 ```
-$ ./munge.sh -f data/wikidata-20150427-all-BETA.ttl.gz -d data -l en -s
+$ mkdir data/split
+$ ./munge.sh -f data/wikidata-20150427-all-BETA.ttl.gz -d data/split -l en -s
 ```
 The option `-l en` only imports English labels.  The option `-s` skips the sitelinks, for smaller storage and better performance.
 If you need labels in other languages, either add them to the list - `-l en,de,ru` - or skip the language option altogether. If you need sitelinks, remove the `-s` option.
 
 * The Munger will produce a lot of data files named like `wikidump-000000001.ttl.gz`, `wikidump-000000002.ttl.gz`, etc. To load these files, you can use the following script:
 ```
-$ ./loadData.sh -n wdq -d `pwd`/data
+$ ./loadRestAPI.sh -n wdq -d `pwd`/data/split
 ```
 
 This will load the data files one by one into the Blazegraph data store. Note that you need `curl` to be installed for it to work.
 
-You can also specify which files to load:
+You can also load specific files:
 ```
-$ ./loadData.sh -n wdq -d `pwd`/data -s 1 -e 3
+$ ./loadRestAPI.sh -n wdq -d `pwd`/data/split/wikidump-000000001.ttl.gz
 ```
-This will load files from with numbers from 1 to 3.
-
 
 ## Run updater
 
