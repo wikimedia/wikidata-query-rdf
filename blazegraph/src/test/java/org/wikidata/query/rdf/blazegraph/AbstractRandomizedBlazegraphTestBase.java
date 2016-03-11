@@ -53,6 +53,19 @@ public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlaz
     }
 
     /**
+     * Run an ASK query.
+     */
+    protected boolean ask(String query) {
+        try {
+            ASTContainer astContainer = new Bigdata2ASTSPARQLParser().parseQuery2(query, null);
+
+            return ASTEvalHelper.evaluateBooleanQuery(store(), astContainer, new QueryBindingSet(), null);
+        } catch (MalformedQueryException | QueryEvaluationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Add a triple to the store.
      */
     protected void add(Object s, Object p, Object o) {

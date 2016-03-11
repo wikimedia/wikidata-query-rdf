@@ -188,4 +188,14 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
                 + labelType.substring(start + 1);
     }
 
+    @Test
+    public void labelOnAsk() {
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("ASK {\n");
+        query.append("  ontology:dummy ontology:dummy ?s .\n");
+        query.append("  SERVICE ontology:label { bd:serviceParam ontology:language \"en,de\" . }\n");
+        query.append("}\n");
+        assertFalse(ask(query.toString()));
+    }
+
 }

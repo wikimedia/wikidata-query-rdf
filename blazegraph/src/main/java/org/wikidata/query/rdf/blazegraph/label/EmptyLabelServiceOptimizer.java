@@ -18,6 +18,8 @@ import com.bigdata.rdf.sparql.ast.AssignmentNode;
 import com.bigdata.rdf.sparql.ast.ConstantNode;
 import com.bigdata.rdf.sparql.ast.JoinGroupNode;
 import com.bigdata.rdf.sparql.ast.ProjectionNode;
+import com.bigdata.rdf.sparql.ast.QueryRoot;
+import com.bigdata.rdf.sparql.ast.QueryType;
 import com.bigdata.rdf.sparql.ast.StatementPatternNode;
 import com.bigdata.rdf.sparql.ast.StaticAnalysis;
 import com.bigdata.rdf.sparql.ast.VarNode;
@@ -41,6 +43,10 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
 
     @Override
     protected void optimizeJoinGroup(AST2BOpContext ctx, StaticAnalysis sa, IBindingSet[] bSets, JoinGroupNode op) {
+        final QueryRoot root = sa.getQueryRoot();
+        if (root.getQueryType() == QueryType.ASK) {
+            return;
+        }
         for (ServiceNode service : op.getServiceNodes()) {
             BigdataValue serviceRef = service.getServiceRef().getValue();
             if (serviceRef == null) {
@@ -63,7 +69,7 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
                 continue;
             }
 
-            addResolutions(ctx, g, sa.getQueryRoot().getProjection());
+            addResolutions(ctx, g, root.getProjection());
             // We can really only do this once....
             return;
         }
@@ -74,6 +80,9 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
      * service.
      */
     private void addResolutions(AST2BOpContext ctx, JoinGroupNode g, ProjectionNode p) {
+        if (p == null) {
+            return;
+        }
         for (AssignmentNode a : p) {
             IVariable<IV> var = a.getVar();
             if (a.getValueExpression() != var) {
