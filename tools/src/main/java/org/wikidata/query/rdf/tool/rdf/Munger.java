@@ -6,10 +6,12 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -77,6 +79,28 @@ public class Munger {
      */
     private boolean keepTypes;
 
+    /**
+     * Format version we're dealing with.
+     */
+    private String dumpFormatVersion;
+
+    /**
+     * Interface to handle format transformations.
+     */
+    public interface FormatHandler {
+        /**
+         * Transform statement to current latest format.
+         * @param statement
+         * @return Transformed statement or null if it needs to be deleted.
+         */
+        Statement handle(Statement statement);
+    }
+
+    /**
+     * Map of format handlers.
+     */
+    private final Map<String, FormatHandler> formatHandlers;
+
     public Munger(WikibaseUris uris) {
         this(uris, null, null, false);
     }
@@ -87,6 +111,7 @@ public class Munger {
         this.limitLabelLanguages = limitLabelLanguages;
         this.singleLabelModeLanguages = singleLabelModeLanguages;
         this.removeSiteLinks = removeSiteLinks;
+        this.formatHandlers = new HashMap<>();
     }
 
     /**
@@ -140,6 +165,23 @@ public class Munger {
      */
     public Munger removeSiteLinks() {
         return new Munger(uris, limitLabelLanguages, singleLabelModeLanguages, true);
+    }
+
+    /**
+     * Set format version.
+     * @param version
+     */
+    public void setFormatVersion(String version) {
+        this.dumpFormatVersion = version;
+    }
+
+    /**
+     * Add handler for specific non-default format.
+     * @param version Version to handle.
+     * @param handler Handler.
+     */
+    public void addFormatHandler(String version, FormatHandler handler) {
+        formatHandlers.put(version, handler);
     }
 
     /**
@@ -278,6 +320,11 @@ public class Munger {
          */
         private String predicate;
 
+        /**
+         * Format handler for current format.
+         */
+        private FormatHandler formatHandler;
+
         public MungeOperation(String entityId, Collection<Statement> statements, Collection<String> existingValues,
                 Collection<String> existingRefs) {
             this.statements = statements;
@@ -292,6 +339,15 @@ public class Munger {
             }
             this.existingValues = existingValues;
             this.existingRefs = existingRefs;
+            setFormatVersion(dumpFormatVersion);
+        }
+
+        /**
+         * Set current version of the format.
+         * @param version
+         */
+        private void setFormatVersion(String version) {
+            this.formatHandler = formatHandlers.get(version);
         }
 
         /**
@@ -317,6 +373,25 @@ public class Munger {
             Iterator<Statement> itr = statements.iterator();
             while (itr.hasNext()) {
                 statement = itr.next();
+                if (formatHandler != null) {
+                    Statement handled = formatHandler.handle(statement);
+                    if (handled == null) {
+                        // drop it
+                        itr.remove();
+                        continue;
+                    } else {
+                        if (!handled.equals(statement)) {
+                            // modified
+                            itr.remove();
+                            statement = handled;
+                            if (statement()) {
+                                // if we accept it in modified form, add back
+                                restoredStatements.add(statement);
+                                continue;
+                            }
+                        }
+                    }
+                }
                 if (!statement()) {
                     itr.remove();
                 }
@@ -387,6 +462,9 @@ public class Munger {
                 break;
             case SchemaDotOrg.DATE_MODIFIED:
                 lastModified = objectAsLiteral();
+                break;
+            case SchemaDotOrg.SOFTWARE_VERSION:
+                setFormatVersion(objectAsLiteral().stringValue());
                 break;
             default:
                 // Noop - fall out is ok as we just remove them.
@@ -711,7 +789,7 @@ public class Munger {
             try {
                 return (Literal) statement.getObject();
             } catch (ClassCastException e) {
-                throw new ContainedException("Unexpected Literal in object position of:  " + statement);
+                throw new ContainedException("Expected Literal in object position of:  " + statement);
             }
         }
 

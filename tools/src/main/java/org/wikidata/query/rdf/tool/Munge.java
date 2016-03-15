@@ -313,6 +313,9 @@ public class Munge implements Runnable {
                 return;
             }
             if (subject.equals(Ontology.DUMP)) {
+                if (statement.getPredicate().stringValue().equals(SchemaDotOrg.SOFTWARE_VERSION)) {
+                    munger.setFormatVersion(statement.getObject().stringValue());
+                }
                 /*
                  * Just pipe dump statements strait through.
                  */

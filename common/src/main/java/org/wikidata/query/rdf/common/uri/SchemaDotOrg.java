@@ -13,6 +13,10 @@ public final class SchemaDotOrg {
      */
     public static final String VERSION = NAMESPACE + "version";
     /**
+     * Wikibase uses the MediaWiki revision as the version.
+     */
+    public static final String SOFTWARE_VERSION = NAMESPACE + "softwareVersion";
+    /**
      * Wikibase adds this to EntityData with the date of the revision of the entity.
      */
     public static final String DATE_MODIFIED = NAMESPACE + "dateModified";

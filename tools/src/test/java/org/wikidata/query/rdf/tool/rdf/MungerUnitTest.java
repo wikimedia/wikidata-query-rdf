@@ -18,6 +18,7 @@ import org.junit.runner.RunWith;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.LiteralImpl;
+import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
@@ -302,6 +303,19 @@ public class MungerUnitTest extends RandomizedTest {
                 .test();
     }
 
+    public void formatVersions() {
+        List<Statement> result = entity("Q23")
+            .format("test")
+            .retain(statement("Q23", RDFS.LABEL, new LiteralImpl("george", "en")))
+            .remove(statement("Q23", RDF.TYPE, new LiteralImpl(Ontology.ITEM)))
+            .remove(statement("Q23", uris.property(PropertyType.DIRECT) + "P1", new LiteralImpl("deleteme", "en")))
+            .remove(statement("Q23", uris.property(PropertyType.DIRECT) + "P2", new LiteralImpl("modifyme", "en")))
+            .retain(statement("Q23", uris.property(PropertyType.DIRECT) + "P3", new LiteralImpl("keepme", "en")))
+            .test();
+        Statement expected = statement("Q23", uris.property(PropertyType.DIRECT) + "P2", new LiteralImpl("test modified"));
+        assertThat(result, hasItem(expected));
+    }
+
     private Mungekin entity(String id) {
         return new Mungekin(uris, id);
     }
@@ -385,6 +399,30 @@ public class MungerUnitTest extends RandomizedTest {
             for (Statement x : toRemove) {
                 assertThat(statements, not(hasItem(x)));
             }
+        }
+
+        private Mungekin format(String version) {
+            remove(statement(uris.entityData() + id, SchemaDotOrg.SOFTWARE_VERSION, new LiteralImpl(version)));
+            munger.addFormatHandler(version, new TestFormatHandler());
+            return this;
+        }
+    }
+
+    private final class TestFormatHandler implements Munger.FormatHandler {
+
+        @Override
+        public Statement handle(Statement statement) {
+            // Delete P1
+            if (statement.getPredicate().stringValue().endsWith("P1")) {
+                return null;
+            }
+            // Modify P2
+            if (statement.getPredicate().stringValue().endsWith("P2")) {
+                return new StatementImpl(statement.getSubject(), statement.getPredicate(),
+                        new LiteralImpl("test modified"));
+            }
+
+            return statement;
         }
     }
 }
