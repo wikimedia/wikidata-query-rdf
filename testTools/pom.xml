@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.wikidata.query.rdf</groupId>
     <artifactId>parent</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.2.0</version>
   </parent>
   <artifactId>testTools</artifactId>
   <packaging>jar</packaging>
