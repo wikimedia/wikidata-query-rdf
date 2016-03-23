@@ -221,4 +221,13 @@ public class WikibaseUris {
     public String property(PropertyType p) {
         return prop + p.suffix();
     }
+
+    /**
+     * Return current URI system.
+     * @return
+     */
+    public static WikibaseUris getURISystem() {
+        // FIXME: make it possible to configure URI system here
+        return WIKIDATA;
+    }
 }

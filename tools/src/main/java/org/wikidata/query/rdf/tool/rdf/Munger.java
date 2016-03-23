@@ -28,6 +28,8 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.WikibasePoint;
+import org.wikidata.query.rdf.common.WikibasePoint.CoordinateOrder;
 import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
@@ -112,6 +114,14 @@ public class Munger {
         this.singleLabelModeLanguages = singleLabelModeLanguages;
         this.removeSiteLinks = removeSiteLinks;
         this.formatHandlers = new HashMap<>();
+
+        // 0.0.1 has format lat-long, 0.0.2 has format long-lat
+        // Depending on which default we have now, we want to switch one of them
+        if (WikibasePoint.DEFAULT_ORDER == CoordinateOrder.LAT_LONG) {
+            addFormatHandler("0.0.2", new PointCoordinateSwitcher());
+        } else {
+            addFormatHandler("0.0.1", new PointCoordinateSwitcher());
+        }
     }
 
     /**

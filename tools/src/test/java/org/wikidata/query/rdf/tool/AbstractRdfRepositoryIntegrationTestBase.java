@@ -46,7 +46,7 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
      * Build the test against prod wikidata.
      */
     public AbstractRdfRepositoryIntegrationTestBase() {
-        this(WikibaseUris.WIKIDATA);
+        this(WikibaseUris.getURISystem());
     }
 
     public AbstractRdfRepositoryIntegrationTestBase(WikibaseUris uris) {

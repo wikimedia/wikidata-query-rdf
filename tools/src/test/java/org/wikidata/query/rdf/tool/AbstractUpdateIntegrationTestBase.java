@@ -22,7 +22,7 @@ public class AbstractUpdateIntegrationTestBase extends AbstractRdfRepositoryInte
     /**
      * Munger to test against.
      */
-    private final Munger munger = new Munger(WikibaseUris.WIKIDATA).removeSiteLinks();
+    private final Munger munger = new Munger(WikibaseUris.getURISystem()).removeSiteLinks();
 
     /**
      * Update all ids from from to to.
