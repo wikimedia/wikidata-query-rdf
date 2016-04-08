@@ -51,7 +51,7 @@ public class Proxy extends NanoHTTPD {
         @Option(defaultValue = "https", description = "Wikidata url scheme")
         String wikibaseScheme();
 
-        @Option(defaultValue = "false", description = "Immediately return and leave the server running in a thread")
+        @Option(description = "Immediately return and leave the server running in a thread")
         boolean embedded();
     }
 
@@ -142,8 +142,8 @@ public class Proxy extends NanoHTTPD {
     public Response serve(IHTTPSession session) {
         log.debug("Serving {} {}", session.getMethod(), session.getUri());
         long currentRequest = requestCount.incrementAndGet();
-        if (currentRequest % errorMod == 0) {
-            log.debug("Returning an {}", errorStatus);
+        if (currentRequest % errorMod == 1) {
+            log.debug("Returning an {}:{}", errorStatus.getRequestStatus(), errorStatus.getDescription());
             return new Response(errorStatus, NanoHTTPD.MIME_PLAINTEXT, "dummy error");
         }
         try {

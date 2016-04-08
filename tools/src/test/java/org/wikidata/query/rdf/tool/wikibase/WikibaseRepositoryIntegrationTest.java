@@ -202,5 +202,16 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         assertTrue("Did not find new edit", found);
     }
 
+    @Test
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public void recentChangesWithErrors() throws RetryableException, ContainedException {
+        WikibaseRepository proxyRepo = new WikibaseRepository("http", "localhost", 8812);
+        JSONObject changes = proxyRepo.fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
+        Map<String, Object> c = changes;
+        assertThat(c, not(hasKey("continue")));
+        assertThat(c, hasKey("query"));
+        assertThat((Map<String, Object>) c.get("query"), hasKey("recentchanges"));
+    }
+
     // TODO we should verify the RDF dump format against a stored file
 }

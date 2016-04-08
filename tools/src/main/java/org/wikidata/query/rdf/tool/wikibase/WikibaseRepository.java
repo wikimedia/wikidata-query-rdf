@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool.wikibase;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -16,17 +17,27 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
+
 import org.apache.http.Consts;
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpRequest;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HttpContext;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -58,9 +69,17 @@ public class WikibaseRepository {
     private static final Logger log = LoggerFactory.getLogger(WikibaseRepository.class);
 
     /**
+     * How many retries allowed on error.
+     */
+    private static final int RETRIES = 3;
+
+    /**
      * HTTP client for wikibase.
      */
-    private final CloseableHttpClient client = HttpClients.custom().setMaxConnPerRoute(100).setMaxConnTotal(100)
+    private final CloseableHttpClient client = HttpClients.custom()
+            .setMaxConnPerRoute(100).setMaxConnTotal(100)
+            .setRetryHandler(getRetryHandler(RETRIES))
+            .setServiceUnavailableRetryStrategy(new DefaultServiceUnavailableRetryStrategy(RETRIES, 500))
             .build();
     /**
      * Builds uris to get stuff from wikibase.
@@ -69,6 +88,57 @@ public class WikibaseRepository {
 
     public WikibaseRepository(String scheme, String host) {
         uris = new Uris(scheme, host);
+    }
+
+    public WikibaseRepository(String scheme, String host, int port) {
+        uris = new Uris(scheme, host, port);
+    }
+
+    /**
+     * Create retry handler.
+     * @param max Maximum retries number.
+     * @return
+     */
+    public static HttpRequestRetryHandler getRetryHandler(final int max) {
+        HttpRequestRetryHandler myRetryHandler = new HttpRequestRetryHandler() {
+            @Override
+            public boolean retryRequest(IOException exception, int executionCount,
+                    HttpContext context) {
+                log.debug("Exception: {} in attempt {}", exception, executionCount);
+                if (executionCount >= max) {
+                    // Do not retry if over max retry count
+                    return false;
+                }
+                if (exception instanceof InterruptedIOException) {
+                    // Timeout
+                    return true;
+                }
+                if (exception instanceof UnknownHostException) {
+                    // Unknown host
+                    return false;
+                }
+                if (exception instanceof ConnectTimeoutException) {
+                    // Connection refused
+                    return true;
+                }
+                if (exception instanceof SSLException) {
+                    // SSL handshake exception
+                    return false;
+                }
+
+                HttpClientContext clientContext = HttpClientContext.adapt(context);
+                HttpRequest request = clientContext.getRequest();
+                boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
+                if (idempotent) {
+                    // Retry if the request is considered idempotent
+                    return true;
+                }
+
+                return false;
+            }
+
+        };
+        return myRetryHandler;
     }
 
     /**
@@ -126,7 +196,7 @@ public class WikibaseRepository {
                 }
                 parser.parse(new InputStreamReader(response.getEntity().getContent(), Charsets.UTF_8), uri.toString());
             }
-        } catch (UnknownHostException | SocketException e) {
+        } catch (UnknownHostException | SocketException | SSLHandshakeException e) {
             // We want to bail on this, since it happens to be sticky for some reason
             throw new RuntimeException(e);
         } catch (IOException e) {
@@ -268,10 +338,21 @@ public class WikibaseRepository {
          * Host for wikibase.
          */
         private final String host;
+        /**
+         * Port to connect to.
+         */
+        private final int port;
 
         public Uris(String scheme, String host) {
             this.scheme = scheme;
             this.host = host;
+            this.port = 0;
+        }
+
+        public Uris(String scheme, String host, int port) {
+            this.scheme = scheme;
+            this.host = host;
+            this.port = port;
         }
 
         /**
@@ -382,6 +463,9 @@ public class WikibaseRepository {
             URIBuilder builder = new URIBuilder();
             builder.setHost(host);
             builder.setScheme(scheme);
+            if (port != 0) {
+                builder.setPort(port);
+            }
             return builder;
         }
 
