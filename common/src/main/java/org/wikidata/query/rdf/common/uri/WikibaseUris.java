@@ -8,10 +8,17 @@ public class WikibaseUris {
      * A WikibaseUris instance for wikidata.org.
      */
     public static final WikibaseUris WIKIDATA = new WikibaseUris("www.wikidata.org");
+
     /**
-     * A WikibaseUris instance for test.wikidata.org.
+     * Configuration for wikibase host.
      */
-    public static final WikibaseUris TEST_WIKIDATA = new WikibaseUris("test.wikidata.org");
+    public static final String WIKIBASE_HOST_PROPERTY = "wikibaseHost";
+
+    /**
+     * Current URI system.
+     * This is static since each instance has only one URI system.
+     */
+    private static WikibaseUris uriSystem;
 
     /**
      * Property types used in the ontology.
@@ -224,10 +231,16 @@ public class WikibaseUris {
 
     /**
      * Return current URI system.
-     * @return
+     * @return Current URI system.
      */
     public static WikibaseUris getURISystem() {
-        // FIXME: make it possible to configure URI system here
-        return WIKIDATA;
+        if (uriSystem == null) {
+            if (System.getProperty(WIKIBASE_HOST_PROPERTY) != null) {
+                uriSystem = new WikibaseUris(System.getProperty(WIKIBASE_HOST_PROPERTY));
+            } else {
+                uriSystem = WIKIDATA;
+            }
+        }
+        return uriSystem;
     }
 }

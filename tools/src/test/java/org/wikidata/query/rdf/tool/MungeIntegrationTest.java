@@ -38,7 +38,7 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
     private static final Logger log = LoggerFactory.getLogger(MungeIntegrationTest.class);
 
     public MungeIntegrationTest() {
-        super(WikibaseUris.TEST_WIKIDATA);
+        super(new WikibaseUris("test.wikidata.org"));
     }
 
     /**
