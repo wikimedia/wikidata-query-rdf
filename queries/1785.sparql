@@ -1,0 +1,7 @@
+# https://jira.blazegraph.com/browse/BLZG-1785
+SELECT ?country
+WHERE
+{
+	wd:Q513 wdt:P17 ?country .
+    FILTER(?country NOT IN (wd:Q148,wd:Q30) || !bound(?country))   
+}

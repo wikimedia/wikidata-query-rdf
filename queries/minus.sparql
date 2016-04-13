@@ -1,0 +1,5 @@
+# https://jira.blazegraph.com/browse/BLZG-1670
+SELECT (COUNT(DISTINCT(?item)) AS ?count) WHERE {
+       ?item wdt:P31/wdt:P279 wd:Q56061.
+       MINUS {?item wdt:P373 ?commonscat} .
+}

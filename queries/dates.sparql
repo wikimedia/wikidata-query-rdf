@@ -1,0 +1,10 @@
+# https://jira.blazegraph.com/browse/BLZG-1747
+SELECT ?entity (year(?date) as ?year)
+WHERE
+{
+?entity wdt:P569 ?date .
+FILTER (datatype(?date) = xsd:dateTime)
+FILTER (month(?date) = month(now()))
+FILTER (day(?date) = day(now()))
+}
+LIMIT 10

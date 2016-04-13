@@ -1,0 +1,10 @@
+# https://jira.blazegraph.com/browse/BLZG-1571
+SELECT ?wiki (count(?l) as ?lcount) WHERE {
+  ?wiki wdt:P31 wd:Q10876391 .
+  ?wiki rdfs:label ?l .
+  SERVICE wikibase:blah {
+     bd:serviceParam  wikibase:language "en" .
+     ?wiki rdfs:label ?wikiLabel .
+  }
+} GROUP BY ?wiki
+ORDER BY DESC(?lcount)

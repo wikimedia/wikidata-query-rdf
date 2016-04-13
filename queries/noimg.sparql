@@ -1,0 +1,7 @@
+# https://jira.blazegraph.com/browse/BLZG-1320
+prefix entity: <http://www.wikidata.org/entity/>
+
+SELECT ?item WHERE {
+ ?item wdt:P31 entity:Q5 .
+ FILTER NOT EXISTS { ?item wdt:P18 ?dummy0 }
+} limit 5

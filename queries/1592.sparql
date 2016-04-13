@@ -1,0 +1,6 @@
+# https://jira.blazegraph.com/browse/BLZG-1592
+SELECT ?id WHERE {
+  ?p wdt:P31 wd:Q5 .
+  ?p wdt:P21 wd:Q6581072 .
+  BIND(substr(str(?p), 33)+0 as ?id)
+} LIMIT 1

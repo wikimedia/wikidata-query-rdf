@@ -1,0 +1,8 @@
+# https://phabricator.wikimedia.org/T127014
+prefix wdt: <http://www.wikidata.org/prop/direct/>
+prefix wd: <http://www.wikidata.org/entity/>
+SELECT ?item WHERE {
+  ?item wdt:P22 ?sub0 .
+  ?tree0 (wdt:P40)* ?sub0 .
+  BIND (wd:Q7210 AS ?tree0)
+} LIMIT 1000

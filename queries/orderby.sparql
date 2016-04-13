@@ -1,0 +1,4 @@
+# https://jira.blazegraph.com/browse/BLZG-1591
+SELECT ?work ?author WHERE {
+  ?work wdt:P50 ?author .
+} ORDER BY ?work ?author LIMIT 10

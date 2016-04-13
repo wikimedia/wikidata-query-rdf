@@ -1,0 +1,24 @@
+# https://jira.blazegraph.com/browse/BLZG-1542
+# Query to return latitudes and longitudes
+# for places in Paris
+
+    SELECT ?a ?aLabel ?lat ?long WHERE {
+       ?a wdt:P131+ wd:Q90 .  # administrative territorial entity = Paris
+      
+       ?a p:P625 ?statement .  # coordinate-location statement
+       ?statement psv:P625 ?coordinate_node .
+       ?coordinate_node wikibase:geoLatitude ?lat .
+       ?coordinate_node wikibase:geoLongitude ?long .
+     
+       MINUS {                # ignore items with more than one pair of coordinates
+          SELECT ?a (COUNT(?a) AS ?count_stmt) WHERE {
+              ?a wdt:P131+ wd:Q90 .
+              ?a p:P625 ?statement 
+         } GROUP BY ?a HAVING (?count_stmt > 1)
+       }
+  
+      SERVICE wikibase:label {
+          bd:serviceParam wikibase:language "en" .
+       } .
+     
+    }  ORDER BY ASC(?lat) LIMIT 100
