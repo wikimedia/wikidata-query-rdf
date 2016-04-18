@@ -113,6 +113,14 @@ public class WikibaseDateUnitTest extends RandomizedTest {
     }
 
     @Test
+    public void badMonth() {
+        WikibaseDate wbDate = fromString("1844-13-31T00:00:00Z");
+        wbDate = wbDate.cleanWeirdStuff();
+        assertEquals(1845, wbDate.year());
+        assertEquals(1, wbDate.month());
+    }
+
+    @Test
     @Repeat(iterations = 100)
     public void randomDate() {
         // Build a valid random date

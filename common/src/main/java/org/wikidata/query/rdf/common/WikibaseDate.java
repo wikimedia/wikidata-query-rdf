@@ -201,6 +201,10 @@ public class WikibaseDate {
         if (month == 0) {
             newMonth = 1;
         }
+        if (month > 12) {
+            newYear += (month - 1) / 12;
+            newMonth = (month - 1) % 12 + 1;
+        }
         if (day == 0) {
             newDay = 1;
         } else {
