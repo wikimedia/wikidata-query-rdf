@@ -681,6 +681,11 @@ public class Munger {
                 return true;
             }
 
+            // This is <https://it.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+            if (predicate.equals(Ontology.WIKIGROUP)) {
+                return true;
+            }
+
             if (siteLinks.contains(subject)) {
                 return !removeSiteLinks;
             }
@@ -753,7 +758,7 @@ public class Munger {
                 if (statements.isEmpty() && restoredStatements.isEmpty()) {
                     throw new BadSubjectException(unknownSubjects.keySet(), uris);
                 } else {
-                    log.debug(
+                    log.info(
                             "Unrecognized subjects: {}.  Expected only sitelinks and subjects starting with {} and {}",
                             unknownSubjects.keySet(), uris.entityData(), uris.entity());
                 }

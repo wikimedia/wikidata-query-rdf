@@ -77,6 +77,10 @@ public final class Ontology {
      * queries.
      */
     public static final String LABEL = NAMESPACE + "label";
+    /**
+     * Prefix for wiki group.
+     */
+    public static final String WIKIGROUP = NAMESPACE + "wikiGroup";
 
     /**
      * Predicates used to describe a time.
