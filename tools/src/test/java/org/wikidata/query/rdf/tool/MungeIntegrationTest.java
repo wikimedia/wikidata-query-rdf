@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool;
 
 import static com.google.common.io.Resources.getResource;
+import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.tool.StreamUtils.utf8;
 
 import java.io.IOException;
@@ -19,6 +20,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
+import org.openrdf.model.impl.LiteralImpl;
+import org.openrdf.model.vocabulary.XMLSchema;
+import org.openrdf.query.BindingSet;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.TupleQueryResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Ontology;
@@ -34,6 +40,7 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 /**
  * Tests the munger that loads dumps.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBase {
     private static final Logger log = LoggerFactory.getLogger(MungeIntegrationTest.class);
 
@@ -46,7 +53,7 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
      */
     @Test
     @SuppressWarnings("checkstyle:illegalcatch")
-    public void loadTest() throws IOException, InterruptedException, ExecutionException, ParseException {
+    public void loadTest() throws IOException, InterruptedException, ExecutionException, ParseException, QueryEvaluationException {
         Reader from = utf8(getResource(MungeIntegrationTest.class, "test.ttl").openStream());
         PipedInputStream toHttp = new PipedInputStream();
         Writer writer = utf8(new PipedOutputStream(toHttp));
@@ -92,5 +99,12 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
         assertTrue(rdfRepository().ask(
                 SchemaDotOrg.prefix(uris().prefixes(new StringBuilder()))
                         .append("ASK { wd:Q21 schema:version ?v }").toString()));
+
+        TupleQueryResult results = rdfRepository().query(SchemaDotOrg.prefix(uris().prefixes(new StringBuilder()))
+                .append("SELECT ?x WHERE { wd:Q14 wdt:P69 ?x }").toString());
+        assertTrue(results.hasNext());
+        BindingSet result = results.next();
+        assertThat(result, binds("x", new LiteralImpl("1.23456789012345678901234567890123456789", XMLSchema.DECIMAL)));
+
     }
 }

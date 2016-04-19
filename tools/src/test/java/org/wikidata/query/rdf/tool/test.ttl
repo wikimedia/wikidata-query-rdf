@@ -684,7 +684,7 @@ wd:Q14 a wikibase:Item ;
 		"+12.345"^^xsd:decimal,
 		"+1234"^^xsd:decimal ;
 	wdt:P10 "Point(32.715 -117.1625)"^^geo:wktLiteral ;
-	wdt:P69 "+1"^^xsd:decimal ;
+	wdt:P69 "+1.234567890123456789012345678901234567890"^^xsd:decimal ;
 	wdt:P71 _:genid1 ;
 	p:P63 wds:Q14-7ca7fe20-4822-63db-200f-055ce04f0e57,
 		wds:Q14-568030e7-4a90-7b4e-48c5-3a58d80ebc32,
