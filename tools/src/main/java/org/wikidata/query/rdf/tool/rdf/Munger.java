@@ -417,6 +417,7 @@ public class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
+        @SuppressWarnings("checkstyle:npathcomplexity")
         private boolean statement() {
             subject = statement.getSubject().stringValue();
             predicate = statement.getPredicate().stringValue();
@@ -439,6 +440,9 @@ public class Munger {
             if (inNamespace(subject, uris.entity())) {
                 return entityStatement();
             }
+            if (subject.startsWith(uris.property(PropertyType.CLAIM))) {
+                return propertyStatement();
+            }
             /*
              *  Allow bnodes, they are not linked to specific entity
              *  but used to declare classes
@@ -458,6 +462,23 @@ public class Munger {
         private boolean inNamespace(String uri, String namespace) {
             return uri.startsWith(namespace) && uri.indexOf('/', namespace.length()) < 0;
         }
+
+        /**
+         * Process statement about property.
+         * @return true to keep the statement, false to remove it
+         */
+        private boolean propertyStatement() {
+            // This is wdno:P123 a owlClass, owl:complementOf _:blah - allow it
+            if (subject.startsWith(uris.property(PropertyType.NOVALUE))) {
+                return true;
+            }
+            // It's p:P2762 a owl:ObjectProperty, it's ok.
+            if (predicate.equals(RDF.TYPE)) {
+                return true;
+            }
+            return false;
+        }
+
 
         /**
          * Process a statement who's subject is in the entityData prefix.
@@ -676,11 +697,6 @@ public class Munger {
          * @return true to keep the statement, false to remove it
          */
         private boolean unknownStatement() {
-            // This is wdno:P123 a owlClass, owl:complementOf _:blah - allow it
-            if (subject.startsWith(uris.property(PropertyType.NOVALUE))) {
-                return true;
-            }
-
             // This is <https://it.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
             if (predicate.equals(Ontology.WIKIGROUP)) {
                 return true;

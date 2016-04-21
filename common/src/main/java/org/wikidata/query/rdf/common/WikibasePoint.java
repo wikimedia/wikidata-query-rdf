@@ -47,7 +47,7 @@ public class WikibasePoint {
 
     /**
      * Get longitude.
-     * @return
+     * @return Point's longitude.
      */
     public String getLongitude() {
         return longitude;
@@ -55,7 +55,7 @@ public class WikibasePoint {
 
     /**
      * Get latitude.
-     * @return
+     * @return Point's latitude.
      */
     public String getLatitude() {
         return latitude;
@@ -63,7 +63,7 @@ public class WikibasePoint {
 
     /**
      * Get globe.
-     * @return
+     * @return The globe.
      */
     public String getGlobe() {
         return globe;
@@ -149,7 +149,7 @@ public class WikibasePoint {
     /**
      * String representation in given coordinate order.
      * @param order
-     * @return
+     * @return String representation.
      */
     public String toOrder(CoordinateOrder order) {
         final StringBuffer buf = new StringBuffer();

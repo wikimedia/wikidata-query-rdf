@@ -16,10 +16,12 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openrdf.model.Statement;
+import org.openrdf.model.impl.BNodeImpl;
 import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.wikidata.query.rdf.common.uri.GeoSparql;
 import org.wikidata.query.rdf.common.uri.Ontology;
@@ -327,6 +329,17 @@ public class MungerUnitTest extends RandomizedTest {
                 .testWithoutShuffle();
         Statement expected = statement("Q23", uris.property(PropertyType.DIRECT) + "P9", new LiteralImpl("Point(3.4 1.2)", new URIImpl(GeoSparql.WKT_LITERAL)));
         assertThat(result, hasItem(expected));
+    }
+
+    @Test
+    public void propertyDefs() {
+        entity("P1234")
+            .retain(statement(uris.property(PropertyType.DIRECT) + "P1234", RDF.TYPE, OWL.OBJECTPROPERTY))
+            .retain(statement(uris.property(PropertyType.CLAIM) + "P1234", RDF.TYPE, OWL.DATATYPEPROPERTY))
+            .retain(statement(uris.property(PropertyType.NOVALUE) + "P1234", RDF.TYPE, OWL.CLASS))
+            .retain(statement(uris.property(PropertyType.NOVALUE) + "P1234", OWL.COMPLEMENTOF.toString(), new BNodeImpl("genid1")))
+            .remove(statement(uris.property(PropertyType.CLAIM) + "P1234", SchemaDotOrg.ABOUT, new LiteralImpl("deleteme", "en")))
+            .test();
     }
 
     private Mungekin entity(String id) {
