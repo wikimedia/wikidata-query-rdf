@@ -178,6 +178,9 @@ public abstract class GeoService extends AbstractServiceFactory {
         ServiceNode newServiceNode = new ServiceNode(
                 new DummyConstantNode(vf.asValue(GeoSpatial.SEARCH)), newGroup);
 
+        // Transfer hints
+        newServiceNode.setQueryHints(params.getServiceNode().getQueryHints());
+
         // Call delegate service
         HttpClient client = params.getClientConnectionManager();
         return (BigdataServiceCall) ServiceRegistry.getInstance().toServiceCall(
