@@ -35,9 +35,15 @@
       <directory>${project.basedir}/../gui</directory>
       <excludes>
         <exclude>Gruntfile.js</exclude>
-        <exclude>.git</exclude>
+        <exclude>.git*</exclude>
         <exclude>.js*</exclude>
+        <exclude>.settings</exclude>
+        <exclude>.project</exclude>
+        <exclude>package.json</exclude>
+        <exclude>jsduck.json</exclude>
         <exclude>README.md</exclude>
+        <exclude>node_modules/**</exclude>
+        <exclude>wikibase/tests/**</exclude>
       </excludes>
     </fileSet>
 

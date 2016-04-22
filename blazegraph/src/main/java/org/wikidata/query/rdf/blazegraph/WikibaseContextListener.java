@@ -4,9 +4,11 @@ import java.util.Map;
 
 import javax.servlet.ServletContextEvent;
 
+import org.openrdf.model.impl.URIImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseDateBOp;
+import org.wikidata.query.rdf.blazegraph.constraints.WikibaseDistanceBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseNowBOp;
 import org.wikidata.query.rdf.blazegraph.geo.GeoService;
 import org.wikidata.query.rdf.blazegraph.label.LabelService;
@@ -84,6 +86,10 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
                 return new WikibaseNowBOp(globals);
             }
         });
+
+        // Geospatial distance function
+        FunctionRegistry.add(new URIImpl(GeoSparql.FUNCTION_NAMESPACE + "distance"), getDistanceBOPFactory());
+
         addPrefixes(WikibaseUris.getURISystem());
 
         log.warn("Wikibase services initialized.");
@@ -110,6 +116,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         defaultDecls.put("skos", SKOS.NAMESPACE);
         defaultDecls.put("owl", OWL.NAMESPACE);
         defaultDecls.put("geo", GeoSparql.NAMESPACE);
+        defaultDecls.put("geof", GeoSparql.FUNCTION_NAMESPACE);
     }
 
     @Override
@@ -135,6 +142,30 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
                     AST2BOpUtility.toVE(context, globals, args[0]);
 
                 return new WikibaseDateBOp(left, dateop, globals);
+            }
+        };
+    }
+
+    /**
+     * Get WikibaseDistanceBOp factory.
+     * @return Factory to create WikibaseDistanceBOp
+     */
+    private static Factory getDistanceBOPFactory() {
+        return new Factory() {
+            public IValueExpression<? extends IV> create(final BOpContextBase context, final GlobalAnnotations globals,
+                    Map<String, Object> scalarValues, final ValueExpressionNode... args) {
+
+                if (args.length != 2) {
+                    throw new IllegalArgumentException("wrong # of args");
+                }
+
+                final IValueExpression<? extends IV> left = AST2BOpUtility.toVE(context,
+                        globals, args[0]);
+
+                final IValueExpression<? extends IV> right = AST2BOpUtility
+                            .toVE(context, globals, args[1]);
+
+                return new WikibaseDistanceBOp(left, right, globals);
             }
         };
     }
