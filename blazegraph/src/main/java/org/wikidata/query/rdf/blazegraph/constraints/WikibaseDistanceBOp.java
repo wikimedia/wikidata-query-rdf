@@ -17,6 +17,7 @@ import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 
 /**
  * Implementation of geof:distance function.
+ * FIXME: units not supported yet.
  */
 @SuppressWarnings("rawtypes")
 public class WikibaseDistanceBOp extends IVValueExpression<IV> implements INeedsMaterialization {

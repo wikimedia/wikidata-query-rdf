@@ -155,7 +155,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
             public IValueExpression<? extends IV> create(final BOpContextBase context, final GlobalAnnotations globals,
                     Map<String, Object> scalarValues, final ValueExpressionNode... args) {
 
-                if (args.length != 2) {
+                if (args.length < 2) {
                     throw new IllegalArgumentException("wrong # of args");
                 }
 

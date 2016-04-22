@@ -3,7 +3,9 @@ package org.wikidata.query.rdf.tool;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 
 import org.junit.Test;
+import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
@@ -105,4 +107,22 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdateIntegrati
         resultsAre(results, "place", "http://Barcelona", "http://Johannesburg", "http://SanFrancisco");
     }
 
+    @Test
+    public void distance() throws QueryEvaluationException {
+        TupleQueryResult results = rdfRepository().query(
+                "SELECT * WHERE {BIND ( geof:distance(\"Point(0 0)\"^^geo:wktLiteral, \"Point(-1 -1)\"^^geo:wktLiteral) AS ?distance)}");
+        BindingSet result = results.next();
+        // distance between two points
+        assertThat(result, binds("distance", new LiteralImpl("157.2418158675294", XMLSchema.DOUBLE)));
+    }
+
+    @Test
+    public void distanceWithUnits() throws QueryEvaluationException {
+        // FIXME: for now, we just accept anything as units and ignore it. We need to do better.
+        TupleQueryResult results = rdfRepository().query(
+                "SELECT * WHERE {BIND ( geof:distance(\"Point(0 0)\"^^geo:wktLiteral, \"Point(-1 -1)\"^^geo:wktLiteral, wd:Q2) AS ?distance)}");
+        BindingSet result = results.next();
+        // distance between two points
+        assertThat(result, binds("distance", new LiteralImpl("157.2418158675294", XMLSchema.DOUBLE)));
+    }
 }
