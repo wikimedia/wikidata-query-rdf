@@ -62,7 +62,8 @@ public class WikibaseDistanceBOp extends IVValueExpression<IV> implements INeeds
         final CoordinateDD leftPoint = getCoordinateFromIV(left);
         final CoordinateDD rightPoint = getCoordinateFromIV(right);
         // TODO: allow to supply Units
-        final double distance = leftPoint.distance(rightPoint, UNITS.Kilometers);
+        final double distance = leftPoint.equals(rightPoint) ? 0 :
+            leftPoint.distance(rightPoint, UNITS.Kilometers);
 
         final BigdataLiteral dist = getValueFactory().createLiteral(distance);
         return super.asIV(dist, bindingSet);

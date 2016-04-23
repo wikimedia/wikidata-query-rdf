@@ -117,6 +117,17 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdateIntegrati
     }
 
     @Test
+    public void distanceSelf() throws QueryEvaluationException {
+        TupleQueryResult results = rdfRepository().query(
+                "SELECT * WHERE {" +
+                "BIND(\"Point(-81.4167 -80.0)\"^^geo:wktLiteral as ?point)\n" +
+                "BIND(geof:distance(?point, ?point) AS ?distance)}");
+        BindingSet result = results.next();
+        // distance between point and itself should be 0
+        assertThat(result, binds("distance", new LiteralImpl("0.0", XMLSchema.DOUBLE)));
+    }
+
+    @Test
     public void distanceWithUnits() throws QueryEvaluationException {
         // FIXME: for now, we just accept anything as units and ignore it. We need to do better.
         TupleQueryResult results = rdfRepository().query(
