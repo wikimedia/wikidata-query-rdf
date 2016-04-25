@@ -56,8 +56,8 @@ public class WikibaseDistanceBOp extends IVValueExpression<IV> implements INeeds
 
     @Override
     public IV get(IBindingSet bindingSet) {
-        final IV left = get(0).get(bindingSet);
-        final IV right = get(1).get(bindingSet);
+        final IV left = getAndCheckLiteral(0, bindingSet);
+        final IV right = getAndCheckLiteral(1, bindingSet);
 
         final CoordinateDD leftPoint = getCoordinateFromIV(left);
         final CoordinateDD rightPoint = getCoordinateFromIV(right);
