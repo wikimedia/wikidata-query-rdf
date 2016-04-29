@@ -83,6 +83,7 @@ public class AbstractRandomizedBlazegraphStorageTestCase extends RandomizedTest 
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.extensionFactoryClass",
                 WikibaseExtensionFactory.class.getName());
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.geoSpatial", "true");
+        properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.geoSpatialIncludeBuiltinDatatypes",  "false");
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.geoSpatialDefaultDatatype", "http://www.opengis.net/ont/geosparql#wktLiteral");
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.geoSpatialDatatypeConfig.0",
                 "{\"config\": "
@@ -91,7 +92,7 @@ public class AbstractRandomizedBlazegraphStorageTestCase extends RandomizedTest 
                         + "\"fields\": [ "
                         + "{ \"valueType\": \"DOUBLE\", \"multiplier\": \"1000000000\", \"serviceMapping\": \"LONGITUDE\" }, "
                         + "{ \"valueType\": \"DOUBLE\", \"multiplier\": \"1000000000\", \"serviceMapping\": \"LATITUDE\" }, "
-                        + "{ \"valueType\": \"LONG\", \"serviceMapping\": \"COORD_SYSTEM\" } "
+                        + "{ \"valueType\": \"LONG\", \"multiplier\":\"1\",\"minValue\":\"0\", \"serviceMapping\": \"COORD_SYSTEM\" } "
                         + "]}}");
         store = new TempTripleStore(temporaryStore(), properties, null);
         return store;
