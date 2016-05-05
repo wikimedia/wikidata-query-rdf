@@ -43,5 +43,6 @@ fi
 CP=lib/wikidata-query-tools-*-jar-with-dependencies.jar
 MAIN=org.wikidata.query.rdf.tool.Update
 SPARQL_URL=$HOST/$CONTEXT/namespace/$NAMESPACE/sparql
+AGENT=-javaagent:lib/jolokia-jvm-1.3.1-agent.jar=port=8778,host=localhost
 echo "Updating via $SPARQL_URL"
-java -Xmx2g -cp $CP $LOG $MAIN $ARGS --sparqlUrl $SPARQL_URL "$@"
+java -Xmx2g -cp $CP $LOG $AGENT $MAIN $ARGS --sparqlUrl $SPARQL_URL "$@"
