@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.tool;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 
 import org.junit.Test;
+import org.openrdf.model.URI;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
@@ -25,6 +26,15 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdateIntegrati
                 "<http://MoonBremen> wdt:P625 \"<" + moonURI + "> Point(8.808888 53.07694)\"^^geo:wktLiteral .\n" +
                 "} WHERE {}";
         rdfRepository().update(query);
+    }
+
+    private void resultsAreLiteral(TupleQueryResult results, String var, URI type, String... matches) throws QueryEvaluationException {
+        BindingSet result;
+        for (String match : matches) {
+            result = results.next();
+            assertThat(result, binds(var, new LiteralImpl(match, type)));
+        }
+        assertFalse(results.hasNext());
     }
 
     private void resultsAre(TupleQueryResult results, String var, String... matches) throws QueryEvaluationException {
@@ -90,6 +100,22 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdateIntegrati
         );
 
         resultsAre(results, "place", "http://MoonBerlin", "http://MoonBremen");
+    }
+
+    @Test
+    public void circleSearchWithDistance() throws QueryEvaluationException {
+        insertPoints();
+
+        TupleQueryResult results = rdfRepository().query(
+                "SELECT * WHERE {\n" +
+                "SERVICE wikibase:around {\n" +
+                "  ?place wdt:P625 ?location .\n" +
+                " bd:serviceParam wikibase:center \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n" +
+                " bd:serviceParam wikibase:distance ?distance .\n" +
+                " bd:serviceParam wikibase:radius \"320\" .}} ORDER BY ?place\n "
+        );
+
+        resultsAreLiteral(results, "distance", XMLSchema.DOUBLE, "0.0", "313.728");
     }
 
     @Test

@@ -8,6 +8,7 @@ import org.wikidata.query.rdf.common.uri.GeoSparql;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 
 import com.bigdata.rdf.internal.IV;
+import com.bigdata.rdf.internal.gis.ICoordinate.UNITS;
 import com.bigdata.rdf.internal.impl.literal.XSDNumericIV;
 import com.bigdata.rdf.model.BigdataValueFactory;
 import com.bigdata.rdf.sparql.ast.DummyConstantNode;
@@ -21,7 +22,13 @@ import com.bigdata.service.geospatial.IGeoSpatialLiteralSerializer;
  *
  * Internal storage follows longitude-latitude order for this format.
  */
+@SuppressWarnings("rawtypes")
 public class WKTSerializer implements IGeoSpatialLiteralSerializer {
+
+    /**
+     * Serializer ID.
+     */
+    private static final long serialVersionUID = 6265973030789696486L;
 
     /**
      * Prefix for globe URIs.
@@ -139,4 +146,9 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
         throw new IllegalArgumentException("Time fields are not supported for this format");
     }
 
+    @Override
+    public IV<?, ?> serializeDistance(final BigdataValueFactory vf, final Double distance, final UNITS unit) {
+        // TODO: implement units support
+        return new XSDNumericIV(Math.round(distance * 1000) / 1000.0);
+    }
 }

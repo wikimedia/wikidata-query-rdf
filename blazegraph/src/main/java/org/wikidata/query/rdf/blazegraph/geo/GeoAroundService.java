@@ -32,6 +32,7 @@ import com.bigdata.service.geospatial.GeoSpatial.GeoFunction;
  *     ?place wdt:P625 ?location .
  *     bd:serviceParam wikibase:center ?parisLoc .
  *     bd:serviceParam wikibase:radius "1" .
+ *     bd:serviceParam wikibase:distance ?distance .
  *   }
  * }
  */
@@ -54,6 +55,12 @@ public class GeoAroundService extends GeoService {
      */
     public static final URIImpl RADIUS_PARAM = new URIImpl(
             Ontology.NAMESPACE + "radius");
+
+    /**
+     * wikibase:distance parameter name.
+     */
+    public static final URIImpl DISTANCE_PARAM = new URIImpl(
+            Ontology.NAMESPACE + "distance");
 
     @Override
     protected JoinGroupNode buildServiceNode(ServiceCallCreateParams params,
@@ -110,6 +117,15 @@ public class GeoAroundService extends GeoService {
                         new DummyConstantNode(vf.asValue(GeoSpatial.COORD_SYSTEM)),
                         getGlobeNode(vf, serviceParams)
                 ));
+        final TermNode distance = serviceParams.get(DISTANCE_PARAM, null);
+        if (distance != null) {
+            // ?var geo:distanceValue ?distance .
+            newGroup.addArg(new StatementPatternNode(
+                            searchVar,
+                            new DummyConstantNode(vf.asValue(GeoSpatial.DISTANCE_VALUE)),
+                            distance
+                    ));
+        }
 
         return newGroup;
     }
