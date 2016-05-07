@@ -57,7 +57,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <blazegraph.version>2.1.0</blazegraph.version>
+    <blazegraph.version>2.1.1-SNAPSHOT</blazegraph.version>
     <sesame.version>2.8.1</sesame.version>
     <jetty.version>9.2.9.v20150224</jetty.version>
   </properties>
