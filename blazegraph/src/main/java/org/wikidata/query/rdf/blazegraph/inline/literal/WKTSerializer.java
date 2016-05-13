@@ -28,7 +28,7 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
     /**
      * Serializer ID.
      */
-    private static final long serialVersionUID = 6265973030789696486L;
+    private static final long serialVersionUID = -8893919944620967416L;
 
     /**
      * Prefix for globe URIs.
