@@ -1,0 +1,30 @@
+0.2.2
+-----
+
+Add distance predicate to around query.
+Bugfixes for Blazegraph deadlock bug.
+Start Jolokia together with Updater.
+GUI improvements.
+
+0.2.1
+-----
+
+Geospatial search support.
+Switch coordinate order in wktLiteral to lon-lat.
+Retry Wikibase requests on error like 503.
+Added test queries.
+GUI improvements.
+
+0.2.0
+-----
+
+Upgraded to Blazegraph 2.0.
+Add Wikibase prefixes to list of default prefixes.
+GUI improvements.
+
+0.1.3
+-----
+
+Permit unbound variables in label service.
+GUI improvements.
+
