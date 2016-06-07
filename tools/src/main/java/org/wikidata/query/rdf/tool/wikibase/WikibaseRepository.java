@@ -267,6 +267,23 @@ public class WikibaseRepository {
     }
 
     /**
+     * Delete entity from repository.
+     * @param entityId
+     * @throws RetryableException thrown if there is an error communicating with
+     *             wikibase
+     */
+    public void delete(String entityId) throws RetryableException {
+        URI uri = uris.delete(entityId);
+        log.debug("Deleting entity {} using {}", entityId, uri);
+        try {
+            JSONObject result = checkApi(getJson(postWithToken(uri)));
+            log.debug("Deleted: {}", result);
+        } catch (IOException | ParseException e) {
+            throw new RetryableException("Error deleting page", e);
+        }
+    }
+
+    /**
      * Post with a csrf token.
      *
      * @throws IOException if its thrown while communicating with wikibase
@@ -443,6 +460,17 @@ public class WikibaseRepository {
                 builder.addParameter("new", newType);
             }
             builder.addParameter("data", data);
+            return build(builder);
+        }
+
+        /**
+         * Uri for deleting an entity.
+         * @param entityId Entity ID to delete
+         */
+        public URI delete(String entityId) {
+            URIBuilder builder = apiBuilder();
+            builder.addParameter("action", "delete");
+            builder.addParameter("title", entityId);
             return build(builder);
         }
 

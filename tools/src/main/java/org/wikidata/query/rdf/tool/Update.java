@@ -9,6 +9,7 @@ import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDate
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -70,9 +71,12 @@ public class Update<B extends Change.Batch> implements Runnable {
         @Option(shortName = "s", defaultToNull = true, description = "Start time in 2015-02-11T17:11:08Z or 20150211170100 format.")
         String start();
 
-        @Option(defaultToNull = true, description = "If specified must be <id> or <start>-<end>. Ids are iterated instead of recent "
+        @Option(defaultToNull = true, description = "If specified must be <id> or list of <id>, comma or space separated.")
+        List<String> ids();
+
+        @Option(defaultToNull = true, description = "If specified must be <start>-<end>. Ids are iterated instead of recent "
                 + "changes. Start and end are inclusive.")
-        String ids();
+        String idrange();
 
         @Option(shortName = "u", description = "URL to post updates and queries.")
         String sparqlUrl();
@@ -129,12 +133,8 @@ public class Update<B extends Change.Batch> implements Runnable {
     @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private static Change.Source<? extends Batch> buildChangeSource(Options options, RdfRepository rdfRepository,
             WikibaseRepository wikibaseRepository) {
-        if (options.ids() != null) {
-            if (options.ids().contains(",")) {
-                // Id list
-                return new IdListChangeSource(options.ids().split(","), options.batchSize());
-            }
-            String[] ids = options.ids().split("-");
+        if (options.idrange() != null) {
+            String[] ids = options.idrange().split("-");
             long start;
             long end;
             switch (ids.length) {
@@ -151,10 +151,22 @@ public class Update<B extends Change.Batch> implements Runnable {
                 end = Long.parseLong(ids[1]);
                 break;
             default:
-                log.error("Invalid format for --ids.  Need <start>-<stop>.");
+                log.error("Invalid format for --idrange.  Need <start>-<stop>.");
                 return null;
             }
             return IdRangeChangeSource.forItems(start, end, options.batchSize());
+        }
+        if (options.ids() != null) {
+            List<String> parsedIds = new ArrayList<String>();
+            for (String idOpt: options.ids()) {
+                if (idOpt.contains(",")) {
+                    // Id list
+                    parsedIds.addAll(Arrays.asList(idOpt.split(",")));
+                    continue;
+                }
+                parsedIds.add(idOpt);
+            }
+            return new IdListChangeSource(parsedIds.toArray(new String[parsedIds.size()]), options.batchSize());
         }
         long startTime;
         if (options.start() != null) {
