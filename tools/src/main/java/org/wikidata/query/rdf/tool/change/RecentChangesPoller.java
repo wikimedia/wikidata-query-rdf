@@ -94,6 +94,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      *
      * @throws RetryableException on parse failure
      */
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private Batch batch(Date lastNextStartTime, JSONObject lastNextContinue) throws RetryableException {
         try {
             JSONObject recentChanges = wikibase.fetchRecentChanges(lastNextStartTime, lastNextContinue, batchSize);
@@ -111,13 +112,20 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                     continue;
                 }
                 Date timestamp = df.parse(rc.get("timestamp").toString());
-                Change change = new Change(rc.get("title").toString(), (long) rc.get("revid"), timestamp, (long)rc.get("rcid"));
+                Change change;
+                if (rc.get("type").toString().equals("log") && (long)rc.get("revid") == 0) {
+                    // Deletes should always be processed, so put negative revision
+                    change = new Change(rc.get("title").toString(), -1L, timestamp, (long)rc.get("rcid"));
+                } else {
+                    change = new Change(rc.get("title").toString(), (long) rc.get("revid"), timestamp, (long)rc.get("rcid"));
+                }
                 /*
                  * Remove duplicate changes by title keeping the latest
-                 * revision.
+                 * revision. Note that negative revision means always update, so those
+                 * are kept.
                  */
                 Change dupe = changesByTitle.put(change.entityId(), change);
-                if (dupe != null && dupe.revision() > change.revision()) {
+                if (dupe != null && (dupe.revision() > change.revision() || dupe.revision() < 0)) {
                     // need to remove so that order will be correct
                     changesByTitle.remove(change.entityId());
                     changesByTitle.put(change.entityId(), dupe);

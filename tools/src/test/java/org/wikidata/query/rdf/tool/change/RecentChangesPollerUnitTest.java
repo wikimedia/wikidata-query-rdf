@@ -50,6 +50,7 @@ public class RecentChangesPollerUnitTest {
             rc.put("timestamp", date);
             rc.put("revid", Long.valueOf(i));
             rc.put("rcid", Long.valueOf(i));
+            rc.put("type", "edit");
             recentChanges.add(rc);
         }
         when(repository.fetchRecentChanges(startTime, null, batchSize)).thenReturn(result);
@@ -88,6 +89,7 @@ public class RecentChangesPollerUnitTest {
         rc.put("timestamp", date);
         rc.put("revid", 1L);
         rc.put("rcid", 1L);
+        rc.put("type", "edit");
         recentChanges.add(rc);
         rc = new JSONObject();
         rc.put("ns", Long.valueOf(0));
@@ -95,6 +97,7 @@ public class RecentChangesPollerUnitTest {
         rc.put("timestamp", date);
         rc.put("revid", 7L);
         rc.put("rcid", 7L);
+        rc.put("type", "edit");
         recentChanges.add(rc);
 
         query.put("recentchanges", recentChanges);
@@ -120,6 +123,47 @@ public class RecentChangesPollerUnitTest {
         poller.nextBatch(batch);
         verify(repository, times(2)).fetchRecentChanges((Date)any(), argument.capture(), eq(batchSize));
         assertEquals(contJson, argument.getValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void delete() throws RetryableException {
+        Date startTime = new Date();
+        int batchSize = 10;
+        // Build a result from wikibase with duplicate recent changes
+        JSONObject result = new JSONObject();
+        JSONObject query = new JSONObject();
+        result.put("query", query);
+        JSONArray recentChanges = new JSONArray();
+        query.put("recentchanges", recentChanges);
+        String date = WikibaseRepository.inputDateFormat().format(new Date());
+        JSONObject rc = new JSONObject();
+        rc.put("ns", Long.valueOf(0));
+        rc.put("title", "Q424242");
+        rc.put("timestamp", date);
+        rc.put("revid", Long.valueOf(0));
+        rc.put("rcid", 42L);
+        rc.put("type", "log");
+        recentChanges.add(rc);
+
+        rc = new JSONObject();
+        rc.put("ns", Long.valueOf(0));
+        rc.put("title", "Q424242");
+        rc.put("timestamp", date);
+        rc.put("revid", 7L);
+        rc.put("rcid", 45L);
+        rc.put("type", "edit");
+        recentChanges.add(rc);
+
+        when(repository.fetchRecentChanges(startTime, null, batchSize)).thenReturn(result);
+
+        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
+        Batch batch = poller.firstBatch();
+        List<Change> changes = batch.changes();
+        assertThat(changes, hasSize(1));
+        assertEquals(changes.get(0).entityId(), "Q424242");
+        assertEquals(changes.get(0).rcid(), 42L);
+        assertEquals(changes.get(0).revision(), -1L);
     }
 
     @Before
