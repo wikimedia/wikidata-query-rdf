@@ -80,7 +80,9 @@ public class WikibaseRepository {
             .setMaxConnPerRoute(100).setMaxConnTotal(100)
             .setRetryHandler(getRetryHandler(RETRIES))
             .setServiceUnavailableRetryStrategy(new DefaultServiceUnavailableRetryStrategy(RETRIES, 500))
+            .setUserAgent("Wikidata Query Service Updater")
             .build();
+
     /**
      * Builds uris to get stuff from wikibase.
      */

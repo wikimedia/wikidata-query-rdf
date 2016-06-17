@@ -35,7 +35,7 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
  */
 public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     private static final String HOST = "test.wikidata.org";
-    private final WikibaseRepository repo = new WikibaseRepository("http", HOST);
+    private final WikibaseRepository repo = new WikibaseRepository("https", HOST);
     private final WikibaseUris uris = new WikibaseUris(HOST);
 
     @Test
