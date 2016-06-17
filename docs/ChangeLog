@@ -5,6 +5,7 @@ Add distance predicate to around query.
 Bugfixes for Blazegraph deadlock bug.
 Start Jolokia together with Updater.
 GUI improvements.
+Blazegraph 2.1.1
 
 0.2.1
 -----
