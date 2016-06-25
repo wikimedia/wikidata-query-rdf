@@ -136,7 +136,7 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
         }
 
         if (d2 && dt1.equals(XMLSchema.DURATION)) {
-            // date and duration, is OK
+            // duration and date, is OK
             return true;
         }
 
