@@ -31,4 +31,18 @@ public class WikibaseDateUnitTest extends AbstractRandomizedBlazegraphTestBase {
         assertThat(result, binds("date", new LiteralImpl("731.0", XMLSchema.DOUBLE)));
     }
 
+    @Test
+    public void dateFunctionQuery() throws QueryEvaluationException {
+        TupleQueryResult results = query("SELECT * WHERE {BIND ( year(\"0000-01-01T00:00:00\"^^xsd:dateTime) AS ?date)}");
+        BindingSet result = results.next();
+        assertThat(result, binds("date", new LiteralImpl("0", XMLSchema.INTEGER)));
+    }
+
+    @Test
+    public void dateFunctionQueryYear() throws QueryEvaluationException {
+        TupleQueryResult results = query("SELECT * WHERE {BIND ( year(\"-13798000000-01-01T00:00:00\"^^xsd:dateTime) AS ?date)}");
+        BindingSet result = results.next();
+        assertThat(result, binds("date", new LiteralImpl("-13798000000", XMLSchema.INTEGER)));
+    }
+
 }

@@ -88,16 +88,18 @@ public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMate
      * @param iv
      * @return Wikibase date object
      */
+    @SuppressWarnings("rawtypes")
     private WikibaseDate getWikibaseDate(IV iv) {
-
-        return WikibaseDate.fromSecondsSinceEpoch(((LiteralExtensionIV)iv).getDelegate().longValue());
-
+        if (iv instanceof LiteralExtensionIV) {
+            return WikibaseDate.fromSecondsSinceEpoch(((LiteralExtensionIV)iv).getDelegate().longValue());
+        }
+        return WikibaseDate.fromString(iv.getValue().stringValue()).cleanWeirdStuff();
     }
 
     /**
      * Get expression value.
      */
-    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
+    @SuppressWarnings({"rawtypes", "checkstyle:cyclomaticcomplexity"})
     public IV get(final IBindingSet bs) {
 
         final IV left = left().get(bs);
@@ -107,15 +109,14 @@ public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMate
             throw new SparqlTypeErrorException.UnboundVarException();
         }
 
-        if (!(left instanceof LiteralExtensionIV)) {
-            return originalOp.get(bs);
-        }
-
         if (left.isLiteral()) {
 
             BigdataLiteral bl = (BigdataLiteral) left.getValue();
             if (XSD.DATETIME.equals(bl.getDatatype())) {
-                WikibaseDate date = getWikibaseDate(left);
+                final WikibaseDate date = getWikibaseDate(left);
+                if (date == null) {
+                    return originalOp.get(bs);
+                }
 
                 switch (op()) {
                 case YEAR:
