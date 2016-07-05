@@ -93,7 +93,11 @@ public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMate
         if (iv instanceof LiteralExtensionIV) {
             return WikibaseDate.fromSecondsSinceEpoch(((LiteralExtensionIV)iv).getDelegate().longValue());
         }
-        return WikibaseDate.fromString(iv.getValue().stringValue()).cleanWeirdStuff();
+        try {
+            return WikibaseDate.fromString(iv.getValue().stringValue()).cleanWeirdStuff();
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /**
@@ -110,12 +114,11 @@ public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMate
         }
 
         if (left.isLiteral()) {
-
             BigdataLiteral bl = (BigdataLiteral) left.getValue();
             if (XSD.DATETIME.equals(bl.getDatatype())) {
                 final WikibaseDate date = getWikibaseDate(left);
                 if (date == null) {
-                    return originalOp.get(bs);
+                    throw new SparqlTypeErrorException();
                 }
 
                 switch (op()) {
