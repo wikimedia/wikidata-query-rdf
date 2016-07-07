@@ -46,6 +46,8 @@ public class Change implements Comparable<Change> {
     public Change(String entityId, long revision, Date timestamp, long rcid) {
         if (entityId.startsWith("Property:")) {
             this.entityId = entityId.substring("Property:".length());
+        } else if (entityId.startsWith("Item:")) {
+            this.entityId = entityId.substring("Item:".length());
         } else {
             this.entityId = entityId;
         }
