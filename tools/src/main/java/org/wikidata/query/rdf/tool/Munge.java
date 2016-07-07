@@ -277,6 +277,11 @@ public class Munge implements Runnable {
          */
         private String entityId;
 
+        /**
+         * Last statement.
+         */
+        private Statement lastStatement;
+
         public EntityMungingRdfHandler(WikibaseUris uris, Munger munger, OutputPicker<RDFHandler> next) {
             this.uris = uris;
             this.munger = munger;
@@ -303,6 +308,7 @@ public class Munge implements Runnable {
 
         @Override
         public void handleStatement(Statement statement) throws RDFHandlerException {
+            lastStatement = statement;
             String subject = statement.getSubject().stringValue();
             if (subject.startsWith(uris.entityDataHttps()) || subject.startsWith(uris.entityData())) {
                 if (haveNonEntityDataStatements) {
@@ -673,6 +679,8 @@ public class Munge implements Runnable {
                              * be enough to recover.
                              */
                         }
+                    } else {
+                        throw e;
                     }
                 }
             }
