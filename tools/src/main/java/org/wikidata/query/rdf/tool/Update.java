@@ -92,6 +92,10 @@ public class Update<B extends Change.Batch> implements Runnable {
 
         @Option(shortName = "V", longName = "verify", description = "Verify updates (may have performance impact)")
         boolean verify();
+
+        @Option(defaultToNull = true, description = "If specified must be numbers of Item and Property namespaces"
+                + " that defined in Wikibase repository, comma separated.")
+        String entityNamespaces();
     }
 
     /**
@@ -99,7 +103,13 @@ public class Update<B extends Change.Batch> implements Runnable {
      */
     public static void main(String[] args) {
         Options options = handleOptions(Options.class, args);
-        WikibaseRepository wikibaseRepository = new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost());
+        WikibaseRepository wikibaseRepository;
+        if (options.entityNamespaces() == null) {
+            wikibaseRepository = new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost());
+        } else {
+            String[] entityNamespaces = options.entityNamespaces().split(",");
+            wikibaseRepository = new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost(), 0, entityNamespaces);
+        }
         URI sparqlUri;
         try {
             sparqlUri = new URI(options.sparqlUrl());

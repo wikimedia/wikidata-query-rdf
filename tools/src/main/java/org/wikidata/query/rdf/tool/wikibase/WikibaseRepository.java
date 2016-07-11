@@ -20,6 +20,7 @@ import java.util.TimeZone;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
@@ -94,6 +95,10 @@ public class WikibaseRepository {
 
     public WikibaseRepository(String scheme, String host, int port) {
         uris = new Uris(scheme, host, port);
+    }
+
+    public WikibaseRepository(String scheme, String host, int port, String[] entityNamespaces) {
+        uris = new Uris(scheme, host, port, entityNamespaces);
     }
 
     /**
@@ -361,6 +366,10 @@ public class WikibaseRepository {
          * Port to connect to.
          */
         private final int port;
+        /**
+         * Item and Property namespaces.
+         */
+        private String[] entityNamespaces = {"0", "120"};
 
         public Uris(String scheme, String host) {
             this.scheme = scheme;
@@ -372,6 +381,13 @@ public class WikibaseRepository {
             this.scheme = scheme;
             this.host = host;
             this.port = port;
+        }
+
+        public Uris(String scheme, String host, int port, String[] entityNamespaces) {
+            this.scheme = scheme;
+            this.host = host;
+            this.port = port;
+            this.entityNamespaces = entityNamespaces;
         }
 
         /**
@@ -389,7 +405,7 @@ public class WikibaseRepository {
             builder.addParameter("list", "recentchanges");
             builder.addParameter("rcdir", "newer");
             builder.addParameter("rcprop", "title|ids|timestamp");
-            builder.addParameter("rcnamespace", "0|120");
+            builder.addParameter("rcnamespace", StringUtils.join(this.entityNamespaces, "|"));
             builder.addParameter("rclimit", Integer.toString(batchSize));
             if (continueObject == null) {
                 builder.addParameter("continue", "");
