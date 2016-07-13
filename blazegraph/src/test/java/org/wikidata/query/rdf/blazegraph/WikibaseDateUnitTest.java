@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.blazegraph;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.wikidata.query.rdf.test.Matchers.binds;
+import static org.wikidata.query.rdf.test.Matchers.notBinds;
 
 import org.junit.Test;
 import org.openrdf.model.impl.LiteralImpl;
@@ -45,4 +46,14 @@ public class WikibaseDateUnitTest extends AbstractRandomizedBlazegraphTestBase {
         assertThat(result, binds("date", new LiteralImpl("-13798000000", XMLSchema.INTEGER)));
     }
 
+    @Test
+    public void dateAndString() throws QueryEvaluationException {
+        // See https://phabricator.wikimedia.org/T140151
+        TupleQueryResult results = query("SELECT ?age WHERE { "
+                + "BIND(\"2016-05-13T15:02:21Z\"^^xsd:dateTime as ?dateOfBirth) \n"
+                + "BIND(\"+0000-03-13T00:00:00Z\" as ?dateOfDeath) \n"
+                + "BIND(?dateOfDeath - ?dateOfBirth AS ?age). }");
+        BindingSet result = results.next();
+        assertThat(result, notBinds("age"));
+    }
 }
