@@ -34,10 +34,12 @@ if [ ! -z "$SKIPSITE" ]; then
     ARGS="$ARGS --skipSiteLinks"
 fi
 
+LOG=""
+if [ -f /etc/wdqs/updater-logs.xml ]; then
+    LOG="-Dlogback.configurationFile=/etc/wdqs/updater-logs.xml"
+fi
 if [ -f updater-logs.xml ]; then
     LOG="-Dlogback.configurationFile=updater-logs.xml"
-else
-    LOG=""
 fi
 
 CP=lib/wikidata-query-tools-*-jar-with-dependencies.jar
