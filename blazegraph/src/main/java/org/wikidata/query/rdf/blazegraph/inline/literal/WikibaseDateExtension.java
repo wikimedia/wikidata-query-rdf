@@ -117,6 +117,11 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
         URI dt1 = args[0].getDatatype();
         URI dt2 = args[1].getDatatype();
 
+        if (dt1 == null || dt2 == null) {
+            // can not operate on non-data URIs
+            return false;
+        }
+
         boolean d1 = isWikibaseDateURI(dt1);
         boolean d2 = isWikibaseDateURI(dt2);
 
