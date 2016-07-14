@@ -60,6 +60,9 @@ public final class Matchers {
         if (str == null && language == null) {
             return notBinds(name);
         }
+        if (language == null) {
+            return new BindsMatcher<Literal>(name, equalTo((Literal) new LiteralImpl(str)));
+        }
         return new BindsMatcher<Literal>(name, equalTo((Literal) new LiteralImpl(str, language)));
     }
 
