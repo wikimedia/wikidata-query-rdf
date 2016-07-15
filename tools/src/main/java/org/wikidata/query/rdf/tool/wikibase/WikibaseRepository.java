@@ -20,7 +20,7 @@ import java.util.TimeZone;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
@@ -97,7 +97,7 @@ public class WikibaseRepository {
         uris = new Uris(scheme, host, port);
     }
 
-    public WikibaseRepository(String scheme, String host, int port, String[] entityNamespaces) {
+    public WikibaseRepository(String scheme, String host, int port, long[] entityNamespaces) {
         uris = new Uris(scheme, host, port, entityNamespaces);
     }
 
@@ -351,6 +351,16 @@ public class WikibaseRepository {
     }
 
     /**
+     * Check that a namespace is valid wikibase entity namespace.
+     *
+     * @param namespace the namespace index
+     * @return
+     */
+    public boolean isEntityNamespace(long namespace) {
+        return ArrayUtils.contains(uris.getEntityNamespaces(), namespace);
+    }
+
+    /**
      * URIs used for accessing wikibase.
      */
     public static class Uris {
@@ -369,7 +379,7 @@ public class WikibaseRepository {
         /**
          * Item and Property namespaces.
          */
-        private String[] entityNamespaces = {"0", "120"};
+        private long[] entityNamespaces = {0, 120};
 
         public Uris(String scheme, String host) {
             this.scheme = scheme;
@@ -383,7 +393,7 @@ public class WikibaseRepository {
             this.port = port;
         }
 
-        public Uris(String scheme, String host, int port, String[] entityNamespaces) {
+        public Uris(String scheme, String host, int port, long[] entityNamespaces) {
             this.scheme = scheme;
             this.host = host;
             this.port = port;
@@ -405,7 +415,7 @@ public class WikibaseRepository {
             builder.addParameter("list", "recentchanges");
             builder.addParameter("rcdir", "newer");
             builder.addParameter("rcprop", "title|ids|timestamp");
-            builder.addParameter("rcnamespace", StringUtils.join(this.entityNamespaces, "|"));
+            builder.addParameter("rcnamespace", getEntityNamespacesString("|"));
             builder.addParameter("rclimit", Integer.toString(batchSize));
             if (continueObject == null) {
                 builder.addParameter("continue", "");
@@ -539,6 +549,24 @@ public class WikibaseRepository {
          */
         public String getScheme() {
             return scheme;
+        }
+
+        /**
+         * The wikibase entity namespace indexes.
+         */
+        private long[] getEntityNamespaces() {
+            return entityNamespaces;
+        }
+
+        /**
+         * The wikibase entity namespace indexes joined with a delimiter.
+         */
+        private String getEntityNamespacesString(String delimiter) {
+            String rcnamespace = "";
+            for (long i : entityNamespaces) {
+                rcnamespace += i + delimiter;
+            }
+            return rcnamespace.substring(0, rcnamespace.length() - delimiter.length()); // Remove delimiter at the end
         }
 
     }
