@@ -93,7 +93,7 @@ public class Update<B extends Change.Batch> implements Runnable {
         @Option(shortName = "V", longName = "verify", description = "Verify updates (may have performance impact)")
         boolean verify();
 
-        @Option(defaultToNull = true, description = "If specified must be numbers of Item and Property namespaces"
+        @Option(defaultToNull = true, description = "If specified must be numerical indexes of Item and Property namespaces"
                 + " that defined in Wikibase repository, comma separated.")
         String entityNamespaces();
     }
@@ -103,12 +103,9 @@ public class Update<B extends Change.Batch> implements Runnable {
      */
     public static void main(String[] args) {
         Options options = handleOptions(Options.class, args);
-        WikibaseRepository wikibaseRepository;
-        if (options.entityNamespaces() == null) {
-            wikibaseRepository = new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost());
-        } else {
-            String[] entityNamespaces = options.entityNamespaces().split(",");
-            wikibaseRepository = new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost(), 0, entityNamespaces);
+        WikibaseRepository wikibaseRepository = buildWikibaseRepository(options);
+        if (wikibaseRepository == null) {
+            return;
         }
         URI sparqlUri;
         try {
@@ -167,7 +164,7 @@ public class Update<B extends Change.Batch> implements Runnable {
             return IdRangeChangeSource.forItems(start, end, options.batchSize());
         }
         if (options.ids() != null) {
-            List<String> parsedIds = new ArrayList<String>();
+            List<String> parsedIds = new ArrayList<String>(); // FIXME use OptionsUtils.splitByComma(options.ids())
             for (String idOpt: options.ids()) {
                 if (idOpt.contains(",")) {
                     // Id list
@@ -213,6 +210,30 @@ public class Update<B extends Change.Batch> implements Runnable {
             }
         }
         return new RecentChangesPoller(wikibaseRepository, new Date(startTime), options.batchSize());
+    }
+
+    /**
+     * Build WikibaseRepository object.
+     *
+     * @return null if non can be built - its ok to just exit - errors have been
+     *         logged to the user
+     */
+    private static WikibaseRepository buildWikibaseRepository(Options options) {
+        if (options.entityNamespaces() == null) {
+            return new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost());
+        }
+
+        String[] strEntityNamespaces = options.entityNamespaces().split(","); // FIXME use OptionsUtils.splitByComma(options.entityNamespaces())
+        long[] longEntityNamespaces = new long[strEntityNamespaces.length];
+        try {
+            for (int i = 0; i < strEntityNamespaces.length; i++) {
+                longEntityNamespaces[i] = Long.parseLong(strEntityNamespaces[i]);
+            }
+        } catch (NumberFormatException e) {
+            log.error("Invalid value for --entityNamespaces. Namespace index should be an integer.", e);
+            return null;
+        }
+        return new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost(), 0, longEntityNamespaces);
     }
 
     /**

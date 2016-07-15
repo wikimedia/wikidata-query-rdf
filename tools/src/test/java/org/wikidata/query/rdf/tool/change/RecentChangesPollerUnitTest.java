@@ -54,6 +54,7 @@ public class RecentChangesPollerUnitTest {
             recentChanges.add(rc);
         }
         when(repository.fetchRecentChanges(startTime, null, batchSize)).thenReturn(result);
+        when(repository.isEntityNamespace(0)).thenReturn(true);
 
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
         Batch batch = poller.firstBatch();
@@ -109,6 +110,7 @@ public class RecentChangesPollerUnitTest {
 
         when(repository.fetchRecentChanges(startTime, null, batchSize)).thenReturn(result);
         when(repository.getContinueObject((Change)any())).thenReturn(contJson);
+        when(repository.isEntityNamespace(0)).thenReturn(true);
 
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
         Batch batch = poller.firstBatch();
@@ -156,6 +158,7 @@ public class RecentChangesPollerUnitTest {
         recentChanges.add(rc);
 
         when(repository.fetchRecentChanges(startTime, null, batchSize)).thenReturn(result);
+        when(repository.isEntityNamespace(0)).thenReturn(true);
 
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
         Batch batch = poller.firstBatch();

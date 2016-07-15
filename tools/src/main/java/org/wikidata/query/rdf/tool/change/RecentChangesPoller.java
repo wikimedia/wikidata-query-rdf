@@ -107,7 +107,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             for (Object rco : result) {
                 JSONObject rc = (JSONObject) rco;
                 long namespace = (long) rc.get("ns");
-                if (namespace != 0 && namespace != 120) {
+                if (!wikibase.isEntityNamespace(namespace)) {
                     log.debug("Skipping change in irrelevant namespace:  {}", rc);
                     continue;
                 }
