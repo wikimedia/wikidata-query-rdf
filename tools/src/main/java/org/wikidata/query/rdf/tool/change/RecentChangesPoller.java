@@ -87,6 +87,12 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         public Date leftOffDate() {
             return leftOffDate;
         }
+
+        @Override
+        public String leftOffHuman() {
+            return leftOffDate.toString() + " (next: " + nextContinue.get("rccontinue").toString()
+                    + ")";
+        }
     }
 
     /**
@@ -108,7 +114,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                 JSONObject rc = (JSONObject) rco;
                 long namespace = (long) rc.get("ns");
                 if (!wikibase.isEntityNamespace(namespace)) {
-                    log.debug("Skipping change in irrelevant namespace:  {}", rc);
+                    log.info("Skipping change in irrelevant namespace:  {}", rc);
                     continue;
                 }
                 Date timestamp = df.parse(rc.get("timestamp").toString());
@@ -140,6 +146,14 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                 } else {
                     nextContinue = lastNextContinue;
                 }
+            }
+
+            if (changes.size() != 0) {
+                log.info("Got {} changes, from {} to {}", changes.size(),
+                        changes.get(0).toString(),
+                        changes.get(changes.size() - 1).toString());
+            } else {
+                log.info("Got no real changes");
             }
 
             // Show the user the polled time - one second because we can't

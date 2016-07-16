@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.google.common.collect.ImmutableList;
 
@@ -101,7 +102,8 @@ public class Change implements Comparable<Change> {
             b.append('@').append(revision);
         }
         if (timestamp != null) {
-            b.append("@").append(timestamp);
+            b.append("@").append(WikibaseRepository.outputDateFormat().format(timestamp));
+            b.append("|").append(rcid);
         }
         return b.toString();
     }
