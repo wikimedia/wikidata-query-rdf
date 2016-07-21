@@ -16,19 +16,20 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdateIntegrati
     private final String moonURI = uris().entity() + "Q405";
 
     private void insertPoints() {
-        String query = "INSERT {\n" +
-                "<http://Berlin> wdt:P625 \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n" +
-                "<http://Bremen> wdt:P625 \"Point(8.808888 53.07694)\"^^geo:wktLiteral .\n" +
-                "<http://Barcelona> wdt:P625 \"Point(2.17694 41.3825)\"^^geo:wktLiteral .\n" +
-                "<http://SanFrancisco> wdt:P625 \"Point(-122.43333 37.76666)\"^^geo:wktLiteral .\n" +
-                "<http://Johannesburg> wdt:P625 \"Point(2.77777 -26.145 )\"^^geo:wktLiteral .\n" +
-                "<http://MoonBerlin> wdt:P625 \"<" + moonURI + "> Point(13.38333 52.516666)\"^^geo:wktLiteral .\n" +
-                "<http://MoonBremen> wdt:P625 \"<" + moonURI + "> Point(8.808888 53.07694)\"^^geo:wktLiteral .\n" +
-                "} WHERE {}";
+        String query = "INSERT {\n"
+                + "<http://Berlin> wdt:P625 \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n"
+                + "<http://Bremen> wdt:P625 \"Point(8.808888 53.07694)\"^^geo:wktLiteral .\n"
+                + "<http://Barcelona> wdt:P625 \"Point(2.17694 41.3825)\"^^geo:wktLiteral .\n"
+                + "<http://SanFrancisco> wdt:P625 \"Point(-122.43333 37.76666)\"^^geo:wktLiteral .\n"
+                + "<http://Johannesburg> wdt:P625 \"Point(2.77777 -26.145 )\"^^geo:wktLiteral .\n"
+                + "<http://MoonBerlin> wdt:P625 \"<" + moonURI + "> Point(13.38333 52.516666)\"^^geo:wktLiteral .\n"
+                + "<http://MoonBremen> wdt:P625 \"<" + moonURI + "> Point(8.808888 53.07694)\"^^geo:wktLiteral .\n"
+                + "} WHERE {}";
         rdfRepository().update(query);
     }
 
-    private void resultsAreLiteral(TupleQueryResult results, String var, URI type, String... matches) throws QueryEvaluationException {
+    private void resultsAreLiteral(TupleQueryResult results, String var,
+            URI type, String... matches) throws QueryEvaluationException {
         BindingSet result;
         for (String match : matches) {
             result = results.next();
@@ -37,7 +38,8 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdateIntegrati
         assertFalse(results.hasNext());
     }
 
-    private void resultsAre(TupleQueryResult results, String var, String... matches) throws QueryEvaluationException {
+    private void resultsAre(TupleQueryResult results, String var,
+            String... matches) throws QueryEvaluationException {
         BindingSet result;
         for (String match : matches) {
             result = results.next();
@@ -50,38 +52,33 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdateIntegrati
     public void circleSearch() throws QueryEvaluationException {
         insertPoints();
 
-        TupleQueryResult results = rdfRepository().query(
-                "SELECT * WHERE {\n" +
-                "SERVICE wikibase:around {\n" +
-                "  ?place wdt:P625 ?location .\n" +
-                " bd:serviceParam wikibase:center \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n" +
-                " bd:serviceParam wikibase:radius \"320\" .}} ORDER BY ?place\n "
-        );
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {\n"
+                + "SERVICE wikibase:around {\n"
+                + "  ?place wdt:P625 ?location .\n"
+                + " bd:serviceParam wikibase:center \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n"
+                + " bd:serviceParam wikibase:radius \"320\" .}} ORDER BY ?place\n ");
 
         resultsAre(results, "place", "http://Berlin", "http://Bremen");
 
-        results = rdfRepository().query(
-                "SELECT * WHERE {\n" +
-                "SERVICE wikibase:around {\n" +
-                "  ?place wdt:P625 ?location .\n" +
-                " bd:serviceParam wikibase:center \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n" +
-                " bd:serviceParam wikibase:radius \"2000\" .}} ORDER BY ?place\n "
-        );
+        results = rdfRepository().query("SELECT * WHERE {\n"
+                + "SERVICE wikibase:around {\n"
+                + "  ?place wdt:P625 ?location .\n"
+                + " bd:serviceParam wikibase:center \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n"
+                + " bd:serviceParam wikibase:radius \"2000\" .}} ORDER BY ?place\n ");
 
-        resultsAre(results, "place", "http://Barcelona", "http://Berlin", "http://Bremen");
+        resultsAre(results, "place", "http://Barcelona", "http://Berlin",
+                "http://Bremen");
     }
 
     @Test
     public void circleSearchGlobe() throws QueryEvaluationException {
         insertPoints();
-        TupleQueryResult results = rdfRepository().query(
-                "SELECT * WHERE {\n" +
-                "SERVICE wikibase:around {\n" +
-                "  ?place wdt:P625 ?location .\n" +
-                " bd:serviceParam wikibase:center \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n" +
-                " bd:serviceParam wikibase:globe <" + moonURI + ">.\n " +
-                " bd:serviceParam wikibase:radius \"320\" .}} ORDER BY ?place\n "
-        );
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {\n"
+                + "SERVICE wikibase:around {\n"
+                + "  ?place wdt:P625 ?location .\n"
+                + " bd:serviceParam wikibase:center \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n"
+                + " bd:serviceParam wikibase:globe <" + moonURI + ">.\n "
+                + " bd:serviceParam wikibase:radius \"320\" .}} ORDER BY ?place\n ");
 
         resultsAre(results, "place", "http://MoonBerlin", "http://MoonBremen");
     }
@@ -90,14 +87,12 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdateIntegrati
     public void circleSearchGlobeNumber() throws QueryEvaluationException {
         insertPoints();
 
-        TupleQueryResult results = rdfRepository().query(
-                "SELECT * WHERE {\n" +
-                "SERVICE wikibase:around {\n" +
-                "  ?place wdt:P625 ?location .\n" +
-                " bd:serviceParam wikibase:center \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n" +
-                " bd:serviceParam wikibase:globe \"405\" .\n " +
-                " bd:serviceParam wikibase:radius \"320\" .}} ORDER BY ?place\n "
-        );
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {\n"
+                + "SERVICE wikibase:around {\n"
+                + "  ?place wdt:P625 ?location .\n"
+                + " bd:serviceParam wikibase:center \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n"
+                + " bd:serviceParam wikibase:globe \"405\" .\n "
+                + " bd:serviceParam wikibase:radius \"320\" .}} ORDER BY ?place\n ");
 
         resultsAre(results, "place", "http://MoonBerlin", "http://MoonBremen");
     }
@@ -106,31 +101,71 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdateIntegrati
     public void circleSearchWithDistance() throws QueryEvaluationException {
         insertPoints();
 
-        TupleQueryResult results = rdfRepository().query(
-                "SELECT * WHERE {\n" +
-                "SERVICE wikibase:around {\n" +
-                "  ?place wdt:P625 ?location .\n" +
-                " bd:serviceParam wikibase:center \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n" +
-                " bd:serviceParam wikibase:distance ?distance .\n" +
-                " bd:serviceParam wikibase:radius \"320\" .}} ORDER BY ?place\n "
-        );
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {\n"
+                + "SERVICE wikibase:around {\n"
+                + "  ?place wdt:P625 ?location .\n"
+                + " bd:serviceParam wikibase:center \"Point(13.38333 52.516666)\"^^geo:wktLiteral .\n"
+                + " bd:serviceParam wikibase:distance ?distance .\n"
+                + " bd:serviceParam wikibase:radius \"320\" .}} ORDER BY ?place\n ");
 
-        resultsAreLiteral(results, "distance", XMLSchema.DOUBLE, "0.0", "313.728");
+        resultsAreLiteral(results, "distance", XMLSchema.DOUBLE, "0.0",
+                "313.728");
     }
 
     @Test
     public void boxSearch() throws QueryEvaluationException {
         insertPoints();
-        TupleQueryResult results = rdfRepository().query(
-                "SELECT * WHERE {\n" +
-                "SERVICE wikibase:box {\n" +
-                "  ?place wdt:P625 ?location .\n" +
-                " bd:serviceParam wikibase:cornerSouthWest \"Point(-180 -50)\"^^geo:wktLiteral .\n" +
-                " bd:serviceParam wikibase:cornerNorthEast \"Point(180 50)\"^^geo:wktLiteral .\n" +
-                " }} ORDER BY ?place\n "
-        );
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {\n"
+                + "SERVICE wikibase:box {\n" + "  ?place wdt:P625 ?location .\n"
+                + " bd:serviceParam wikibase:cornerSouthWest \"Point(-150 -50)\"^^geo:wktLiteral .\n"
+                + " bd:serviceParam wikibase:cornerNorthEast \"Point(150 50)\"^^geo:wktLiteral .\n"
+                + " }} ORDER BY ?place\n ");
 
-        resultsAre(results, "place", "http://Barcelona", "http://Johannesburg", "http://SanFrancisco");
+        resultsAre(results, "place", "http://Barcelona", "http://Johannesburg",
+                "http://SanFrancisco");
+    }
+
+    @Test
+    public void boxSearchCornersConst() throws QueryEvaluationException {
+        insertPoints();
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {\n"
+                + "SERVICE wikibase:box {\n" + "  ?place wdt:P625 ?location .\n"
+                + " bd:serviceParam wikibase:cornerWest \"Point(-150 -50)\"^^geo:wktLiteral .\n"
+                + " bd:serviceParam wikibase:cornerEast \"Point(150 50)\"^^geo:wktLiteral .\n"
+                + " }} ORDER BY ?place\n ");
+
+        resultsAre(results, "place", "http://Barcelona", "http://Johannesburg",
+                "http://SanFrancisco");
+    }
+
+    @Test
+    public void boxSearchCornersVar() throws QueryEvaluationException {
+        insertPoints();
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {\n"
+                + " BIND(\"Point(-150 -50)\"^^geo:wktLiteral as ?west) \n"
+                + " BIND(\"Point(150 50)\"^^geo:wktLiteral as ?east) \n"
+                + "SERVICE wikibase:box {\n" + "  ?place wdt:P625 ?location .\n"
+                + " bd:serviceParam wikibase:cornerWest ?west .\n"
+                + " bd:serviceParam wikibase:cornerEast ?east .\n"
+                + " }} ORDER BY ?place\n ");
+
+        resultsAre(results, "place", "http://Barcelona", "http://Johannesburg",
+                "http://SanFrancisco");
+    }
+
+    @Test
+    public void boxSearchCornersVarSwitch() throws QueryEvaluationException {
+        insertPoints();
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {\n"
+                + " BIND(\"Point(-150 50)\"^^geo:wktLiteral as ?west) \n"
+                + " BIND(\"Point(150 -50)\"^^geo:wktLiteral as ?east) \n"
+                + "SERVICE wikibase:box {\n" + "  ?place wdt:P625 ?location .\n"
+                + " bd:serviceParam wikibase:cornerWest ?west .\n"
+                + " bd:serviceParam wikibase:cornerEast ?east .\n"
+                + " }} ORDER BY ?place\n ");
+
+        resultsAre(results, "place", "http://Barcelona", "http://Johannesburg",
+                "http://SanFrancisco");
     }
 
     @Test
@@ -139,27 +174,30 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdateIntegrati
                 "SELECT * WHERE {BIND ( geof:distance(\"Point(0 0)\"^^geo:wktLiteral, \"Point(-1 -1)\"^^geo:wktLiteral) AS ?distance)}");
         BindingSet result = results.next();
         // distance between two points
-        assertThat(result, binds("distance", new LiteralImpl("157.2418158675294", XMLSchema.DOUBLE)));
+        assertThat(result, binds("distance",
+                new LiteralImpl("157.2418158675294", XMLSchema.DOUBLE)));
     }
 
     @Test
     public void distanceSelf() throws QueryEvaluationException {
-        TupleQueryResult results = rdfRepository().query(
-                "SELECT * WHERE {" +
-                "BIND(\"Point(-81.4167 -80.0)\"^^geo:wktLiteral as ?point)\n" +
-                "BIND(geof:distance(?point, ?point) AS ?distance)}");
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {"
+                + "BIND(\"Point(-81.4167 -80.0)\"^^geo:wktLiteral as ?point)\n"
+                + "BIND(geof:distance(?point, ?point) AS ?distance)}");
         BindingSet result = results.next();
         // distance between point and itself should be 0
-        assertThat(result, binds("distance", new LiteralImpl("0.0", XMLSchema.DOUBLE)));
+        assertThat(result,
+                binds("distance", new LiteralImpl("0.0", XMLSchema.DOUBLE)));
     }
 
     @Test
     public void distanceWithUnits() throws QueryEvaluationException {
-        // FIXME: for now, we just accept anything as units and ignore it. We need to do better.
+        // FIXME: for now, we just accept anything as units and ignore it. We
+        // need to do better.
         TupleQueryResult results = rdfRepository().query(
                 "SELECT * WHERE {BIND ( geof:distance(\"Point(0 0)\"^^geo:wktLiteral, \"Point(-1 -1)\"^^geo:wktLiteral, wd:Q2) AS ?distance)}");
         BindingSet result = results.next();
         // distance between two points
-        assertThat(result, binds("distance", new LiteralImpl("157.2418158675294", XMLSchema.DOUBLE)));
+        assertThat(result, binds("distance",
+                new LiteralImpl("157.2418158675294", XMLSchema.DOUBLE)));
     }
 }
