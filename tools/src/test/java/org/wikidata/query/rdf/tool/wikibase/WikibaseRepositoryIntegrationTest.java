@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.junit.Test;
@@ -40,14 +41,14 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void recentChangesWithLotsOfChangesHasContinue() throws RetryableException {
+    public void recentChangesWithLotsOfChangesHasContinue() throws RetryableException, ParseException {
         /*
          * This relies on there being lots of changes in the past 30 days. Which
          * is probably ok.
          */
         int batchSize = randomIntBetween(3, 30);
         JSONObject changes = repo.fetchRecentChanges(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30)),
-                null, batchSize);
+                batchSize);
         Map<String, Object> c = changes;
         assertThat(c, hasKey("continue"));
         assertThat((Map<String, Object>) changes.get("continue"), hasKey("rccontinue"));
@@ -63,7 +64,8 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
             assertThat(rc, hasEntry(equalTo("timestamp"), instanceOf(String.class)));
             assertThat(rc, hasEntry(equalTo("revid"), instanceOf(Long.class)));
         }
-        changes = repo.fetchRecentChanges(null /* ignored */, (JSONObject) changes.get("continue"), batchSize);
+        final Date nextDate = repo.getChangeFromContinue((Map<String, Object>)changes.get("continue")).timestamp();
+        changes = repo.fetchRecentChanges(nextDate, batchSize);
         assertThat(c, hasKey("query"));
         assertThat((Map<String, Object>) c.get("query"), hasKey("recentchanges"));
     }
@@ -73,9 +75,9 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     public void recentChangesWithFewChangesHasNoContinue() throws RetryableException {
         /*
          * This relies on there being very few changes in the current
-         * millisecond.
+         * second.
          */
-        JSONObject changes = repo.fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
+        JSONObject changes = repo.fetchRecentChanges(new Date(System.currentTimeMillis()), 500);
         Map<String, Object> c = changes;
         assertThat(c, not(hasKey("continue")));
         assertThat(c, hasKey("query"));
@@ -92,7 +94,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         editShowsUpInRecentChangesTestCase("QueryTestProperty", "property");
     }
 
-    private JSONArray getRecentChanges(Date date, JSONObject contObj, int batchSize) throws RetryableException,
+    private JSONArray getRecentChanges(Date date, int batchSize) throws RetryableException,
         ContainedException {
         // Add a bit of a wait to try and improve Jenkins test stability.
         try {
@@ -100,7 +102,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         } catch (InterruptedException e) {
             // nothing to do here, sorry. I know it looks bad.
         }
-        JSONObject result = repo.fetchRecentChanges(date, contObj, batchSize);
+        JSONObject result = repo.fetchRecentChanges(date, batchSize);
         return (JSONArray) ((JSONObject) result.get("query")).get("recentchanges");
     }
 
@@ -110,7 +112,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         long now = System.currentTimeMillis();
         String entityId = repo.firstEntityIdForLabelStartingWith(label, "en", type);
         repo.setLabel(entityId, type, label + now, "en");
-        JSONArray changes = getRecentChanges(new Date(now - 10000), null, 10);
+        JSONArray changes = getRecentChanges(new Date(now - 10000), 10);
         boolean found = false;
         String title = entityId;
         if (type.equals("property")) {
@@ -164,11 +166,11 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     }
 
     @Test
-    public void continueWorks() throws RetryableException, ContainedException, ParseException {
+    public void continueWorks() throws RetryableException, ContainedException, ParseException, InterruptedException {
         long now = System.currentTimeMillis();
         String entityId = repo.firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
         repo.setLabel(entityId, "item", "QueryTestItem" + now, "en");
-        JSONArray changes = getRecentChanges(new Date(now - 10000), null, 10);
+        JSONArray changes = getRecentChanges(new Date(now - 10000), 10);
         Change change = null;
         long oldRevid = 0;
         long oldRcid = 0;
@@ -185,10 +187,11 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
             }
         }
         assertNotNull("Did not find the first edit", change);
-        JSONObject continueObject = repo.getContinueObject(change);
+        // Ensure this change is in different second
+        Thread.sleep(1000);
         // make new edit now
         repo.setLabel(entityId, "item", "QueryTestItem" + now + "updated", "en");
-        changes = getRecentChanges(new Date(now - 10000), continueObject, 10);
+        changes = getRecentChanges(DateUtils.addSeconds(change.timestamp(), 1), 10);
         // check that new result does not contain old edit but contains new edit
         boolean found = false;
         for (Object changeObject : changes) {
@@ -206,7 +209,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void recentChangesWithErrors() throws RetryableException, ContainedException {
         WikibaseRepository proxyRepo = new WikibaseRepository("http", "localhost", 8812);
-        JSONObject changes = proxyRepo.fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
+        JSONObject changes = proxyRepo.fetchRecentChanges(new Date(System.currentTimeMillis()), 500);
         Map<String, Object> c = changes;
         assertThat(c, not(hasKey("continue")));
         assertThat(c, hasKey("query"));

@@ -200,11 +200,6 @@ public class Update<B extends Change.Batch> implements Runnable {
                             + "You will have to reload from scratch or you might have missing data.");
                     return null;
                 }
-                /*
-                 * -2 seconds to because our precision is only 1 second and
-                 * because it should be cheap to recheck that we have the right
-                 * revision.
-                 */
                 startTime = leftOff.getTime();
                 log.info("Found start time in the RDF store: {}", inputDateFormat().format(leftOff));
             }

@@ -103,7 +103,9 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
     @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private Batch batch(Date lastNextStartTime, JSONObject lastNextContinue) throws RetryableException {
         try {
-            JSONObject recentChanges = wikibase.fetchRecentChanges(lastNextStartTime, lastNextContinue, batchSize);
+            @SuppressWarnings("unchecked")
+            final Change continueChange = wikibase.getChangeFromContinue((Map<String, Object>)lastNextContinue);
+            JSONObject recentChanges = wikibase.fetchRecentChangesBackoff(lastNextStartTime, batchSize, true);
             // Using LinkedHashMap here so that changes came out sorted by order of arrival
             Map<String, Change> changesByTitle = new LinkedHashMap<>();
             JSONObject nextContinue = (JSONObject) recentChanges.get("continue");
@@ -113,15 +115,20 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             for (Object rco : result) {
                 JSONObject rc = (JSONObject) rco;
                 long namespace = (long) rc.get("ns");
+                long rcid = (long)rc.get("rcid");
                 if (!wikibase.isEntityNamespace(namespace)) {
                     log.info("Skipping change in irrelevant namespace:  {}", rc);
+                    continue;
+                }
+                if (continueChange != null && rcid < continueChange.rcid()) {
+                    // We've already seen this change, since it has older rcid - so skip it
                     continue;
                 }
                 Date timestamp = df.parse(rc.get("timestamp").toString());
                 Change change;
                 if (rc.get("type").toString().equals("log") && (long)rc.get("revid") == 0) {
                     // Deletes should always be processed, so put negative revision
-                    change = new Change(rc.get("title").toString(), -1L, timestamp, (long)rc.get("rcid"));
+                    change = new Change(rc.get("title").toString(), -1L, timestamp, rcid);
                 } else {
                     change = new Change(rc.get("title").toString(), (long) rc.get("revid"), timestamp, (long)rc.get("rcid"));
                 }
@@ -144,6 +151,12 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                     // Create fake rccontinue so we continue from last known change
                     nextContinue = wikibase.getContinueObject(changes.get(changes.size() - 1));
                 } else {
+                    if (result.size() >= batchSize) {
+                        // We have a problem here - due to backoff, we did not fetch any new items
+                        // Try to advance one second, even though we risk to lose a change
+                        log.info("Backoff overflow, advancing one second");
+                        nextStartTime += 1000;
+                    }
                     nextContinue = lastNextContinue;
                 }
             }
