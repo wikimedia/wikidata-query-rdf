@@ -163,8 +163,7 @@ public class WikibaseRepository {
      * @return Time when to start looking
      */
     private Date backoffTime(Date startTime) {
-        final Date now = new Date();
-        if (startTime.before(DateUtils.addMinutes(now, -5))) {
+        if (startTime.before(DateUtils.addMinutes(new Date(), -5))) {
             /*
              * if start time is before 5 minutes back, it's ok
              * -1 second because our precision is only 1 second and

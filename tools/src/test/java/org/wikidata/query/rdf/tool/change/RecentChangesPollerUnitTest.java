@@ -1,12 +1,17 @@
 package org.wikidata.query.rdf.tool.change;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.verify;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDateFormat;
 
 import java.util.ArrayList;
@@ -113,7 +118,7 @@ public class RecentChangesPollerUnitTest {
 
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
         Batch batch = poller.firstBatch();
-        assertEquals(2, batch.changes().size());
+        assertThat(batch.changes(), hasSize(2));
         assertEquals(7, batch.changes().get(1).rcid());
 
         ArgumentCaptor<Date> argument = ArgumentCaptor.forClass(Date.class);
@@ -122,7 +127,7 @@ public class RecentChangesPollerUnitTest {
         when(repository.fetchRecentChangesBackoff(argument.capture(), eq(batchSize), eq(true))).thenReturn(result);
         // check that poller passes the continue object to the next batch
         batch = poller.nextBatch(batch);
-        assertEquals(0, batch.changes().size());
+        assertThat(batch.changes(), hasSize(0));
         assertEquals(date, WikibaseRepository.inputDateFormat().format(argument.getValue()));
     }
 
@@ -166,6 +171,66 @@ public class RecentChangesPollerUnitTest {
         assertEquals(changes.get(0).entityId(), "Q424242");
         assertEquals(changes.get(0).rcid(), 42L);
         assertEquals(changes.get(0).revision(), -1L);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void backoffTime() throws RetryableException {
+        Date startTime = new Date();
+        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, 10);
+
+        JSONObject result = new JSONObject();
+        JSONObject query = new JSONObject();
+        result.put("query", query);
+        JSONArray recentChanges = new JSONArray();
+        query.put("recentchanges", recentChanges);
+
+        ArgumentCaptor<Date> argument = ArgumentCaptor.forClass(Date.class);
+        when(repository.fetchRecentChanges((Date)any(), anyInt())).thenReturn(result);
+        when(repository.fetchRecentChangesBackoff((Date)any(), anyInt(), anyBoolean())).thenCallRealMethod();
+        Batch batch = poller.firstBatch();
+
+        verify(repository).fetchRecentChanges(argument.capture(), eq(10));
+        // Ensure we backed off at least 10 seconds but no more than 30
+        assertThat(argument.getValue(), lessThan(DateUtils.addSeconds(startTime, -7)));
+        assertThat(argument.getValue(), greaterThan(DateUtils.addSeconds(startTime, -30)));
+    }
+
+    @SuppressWarnings("unchecked")
+    public void backoffTimeOld() throws RetryableException {
+        Date startTime = DateUtils.addDays(new Date(), -1);
+        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, 10);
+
+        JSONObject result = new JSONObject();
+        JSONObject query = new JSONObject();
+        result.put("query", query);
+        JSONArray recentChanges = new JSONArray();
+        query.put("recentchanges", recentChanges);
+
+        ArgumentCaptor<Date> argument = ArgumentCaptor.forClass(Date.class);
+        when(repository.fetchRecentChanges((Date)any(), anyInt())).thenReturn(result);
+        when(repository.fetchRecentChangesBackoff((Date)any(), anyInt(), anyBoolean())).thenCallRealMethod();
+        Batch batch = poller.firstBatch();
+
+        verify(repository).fetchRecentChanges(argument.capture(), eq(10));
+        // Ensure we backed off no more than one second
+        assertThat(argument.getValue(), lessThan(startTime));
+        assertThat(argument.getValue(), greaterThan(DateUtils.addSeconds(startTime, -2)));
+    }
+
+
+    @Test
+    public void backoffArg() throws RetryableException {
+        Date startTime = new Date();
+        JSONObject result = new JSONObject();
+
+        when(repository.fetchRecentChanges((Date)any(), eq(10))).thenReturn(result);
+        when(repository.fetchRecentChangesBackoff((Date)any(), anyInt(), anyBoolean())).thenCallRealMethod();
+        ArgumentCaptor<Date> argument = ArgumentCaptor.forClass(Date.class);
+
+        repository.fetchRecentChangesBackoff(startTime, 10, false);
+        verify(repository).fetchRecentChanges(argument.capture(), eq(10));
+        assertEquals(startTime, argument.getValue());
     }
 
     @Before
