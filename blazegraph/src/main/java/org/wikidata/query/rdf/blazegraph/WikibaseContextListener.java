@@ -39,6 +39,7 @@ import com.bigdata.rdf.sparql.ast.service.RemoteServiceOptions;
 import com.bigdata.rdf.sparql.ast.service.ServiceCall;
 import com.bigdata.rdf.sparql.ast.service.ServiceCallCreateParams;
 import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
+import com.bigdata.service.fts.FTS;
 
 /**
  * Context listener to enact configurations we need on initialization.
@@ -55,6 +56,9 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         ServiceRegistry.getInstance().setDefaultServiceFactory(new DisableRemotesServiceFactory());
         LabelService.register();
         GeoService.register();
+
+        // Remove FTS service for now since it allows arbitrary endpoints
+        ServiceRegistry.getInstance().remove(FTS.SEARCH);
 
         // Override date functions so that we can handle them
         // via WikibaseDate
