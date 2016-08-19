@@ -120,10 +120,12 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                     log.info("Skipping change in irrelevant namespace:  {}", rc);
                     continue;
                 }
-                if (continueChange != null && rcid < continueChange.rcid()) {
-                    // We've already seen this change, since it has older rcid - so skip it
-                    continue;
-                }
+// Looks like we can not rely on changes appearing in order, so we have to take them all and let SPARQL
+// sort out the dupes.
+//                if (continueChange != null && rcid < continueChange.rcid()) {
+//                    // We've already seen this change, since it has older rcid - so skip it
+//                    continue;
+//                }
                 Date timestamp = df.parse(rc.get("timestamp").toString());
                 Change change;
                 if (rc.get("type").toString().equals("log") && (long)rc.get("revid") == 0) {
