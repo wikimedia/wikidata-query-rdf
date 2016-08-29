@@ -8,6 +8,10 @@ import static org.wikidata.query.rdf.common.WikibaseDate.ToStringFormat.DATE;
 import static org.wikidata.query.rdf.common.WikibaseDate.ToStringFormat.DATE_TIME;
 import static org.wikidata.query.rdf.common.WikibaseDate.ToStringFormat.WIKIDATA;
 
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
+
 import org.joda.time.chrono.GregorianChronology;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -138,6 +142,17 @@ public class WikibaseDateUnitTest extends RandomizedTest {
         int minute = randomIntBetween(0, 59);
         int second = randomIntBetween(0, 59);
         check(year, month, day, hour, minute, second);
+    }
+
+    @Test
+    public void durations() throws DatatypeConfigurationException {
+        WikibaseDate wbDate = new WikibaseDate(2016, 8, 5, 0, 0, 0);
+        Duration d = DatatypeFactory.newInstance().newDuration("P7D");
+        WikibaseDate wdDate7days = wbDate.addDuration(d);
+        assertEquals(jodaSeconds(2016, 8, 12, 0, 0, 0), wdDate7days.secondsSinceEpoch());
+
+        wdDate7days = wbDate.addDuration(d.negate());
+        assertEquals(jodaSeconds(2016, 7, 29, 0, 0, 0), wdDate7days.secondsSinceEpoch());
     }
 
     /**

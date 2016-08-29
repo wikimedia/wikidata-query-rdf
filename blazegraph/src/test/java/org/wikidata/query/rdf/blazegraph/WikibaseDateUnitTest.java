@@ -47,6 +47,20 @@ public class WikibaseDateUnitTest extends AbstractRandomizedBlazegraphTestBase {
     }
 
     @Test
+    public void datePlusPeriod() throws QueryEvaluationException {
+        TupleQueryResult results = query("SELECT ?now WHERE { BIND( ( \"2016-01-01T00:00:00\"^^xsd:dateTime + \"P7D\"^^xsd:duration ) AS ?now ) . }");
+        BindingSet result = results.next();
+        assertThat(result, binds("now", new LiteralImpl("2016-01-08T00:00:00Z", XMLSchema.DATETIME)));
+    }
+
+    @Test
+    public void dateMinusPeriod() throws QueryEvaluationException {
+        TupleQueryResult results = query("SELECT ?now WHERE { BIND( ( \"2016-01-01T00:00:00\"^^xsd:dateTime - \"P7D\"^^xsd:duration ) AS ?now ) . }");
+        BindingSet result = results.next();
+        assertThat(result, binds("now", new LiteralImpl("2015-12-25T00:00:00Z", XMLSchema.DATETIME)));
+    }
+
+    @Test
     public void dateAndString() throws QueryEvaluationException {
         // See https://phabricator.wikimedia.org/T140151
         TupleQueryResult results = query("SELECT ?age WHERE { "

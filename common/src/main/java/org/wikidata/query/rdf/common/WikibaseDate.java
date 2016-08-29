@@ -480,12 +480,13 @@ public class WikibaseDate {
      */
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public WikibaseDate addDuration(Duration d) {
-        int newSecond = second + d.getSeconds();
-        int newMinute = minute + d.getMinutes();
-        int newHour = hour + d.getHours();
-        int newDay = day + d.getDays();
-        int newMonth = (month - 1) + d.getMonths();
-        long newYear = year + d.getYears();
+        int sign = d.getSign();
+        int newSecond = second + sign * d.getSeconds();
+        int newMinute = minute + sign * d.getMinutes();
+        int newHour = hour + sign * d.getHours();
+        int newDay = day + sign * d.getDays();
+        int newMonth = (month - 1) + sign * d.getMonths();
+        long newYear = year + sign * d.getYears();
 
         if (newSecond < 0) {
             int mins = newSecond / SECONDS_PER_MINUTE - 1;
