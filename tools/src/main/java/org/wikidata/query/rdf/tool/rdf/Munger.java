@@ -17,10 +17,13 @@ import java.util.TimeZone;
 
 import javax.xml.bind.DatatypeConverter;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
+import org.openrdf.model.URI;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.NumericLiteralImpl;
 import org.openrdf.model.impl.StatementImpl;
@@ -305,6 +308,12 @@ public class Munger {
          */
         private final Collection<String> existingRefs;
 
+        /**
+         * Statements that belong to data entity.
+         * We will transfer them to the item/property.
+         */
+        private final Set<Pair<URI, Literal>> dataStatements = new HashSet<>();
+
         // These are set by the entire munge operation
         /**
          * Revision id that we find while scanning the statements.
@@ -486,19 +495,29 @@ public class Munger {
          * @return true to keep the statement, false to remove it
          */
         private boolean entityDataStatement() {
+            boolean knownPredicate = false;
             // Three specific ones are recorded for later re-application
             switch (predicate) {
             case SchemaDotOrg.VERSION:
+                knownPredicate = true;
                 revisionId = objectAsLiteral();
                 break;
             case SchemaDotOrg.DATE_MODIFIED:
+                knownPredicate = true;
                 lastModified = objectAsLiteral();
                 break;
             case SchemaDotOrg.SOFTWARE_VERSION:
                 setFormatVersion(objectAsLiteral().stringValue());
                 break;
             default:
-                // Noop - fall out is ok as we just remove them.
+                if (predicate.startsWith(Ontology.NAMESPACE)) {
+                    knownPredicate = true;
+                }
+                    // Noop - fall out is ok as we just remove them.
+            }
+            if (knownPredicate) {
+                dataStatements.add(new ImmutablePair<URI, Literal>(
+                        statement.getPredicate(), objectAsLiteral()));
             }
             // All EntityData statements are removed.
             return false;
@@ -785,8 +804,13 @@ public class Munger {
             if (lastModified == null) {
                 throw new ContainedException("Didn't get a last modified date for " + statements);
             }
-            statements.add(new StatementImpl(entityUriImpl, new URIImpl(SchemaDotOrg.VERSION), revisionId));
-            statements.add(new StatementImpl(entityUriImpl, new URIImpl(SchemaDotOrg.DATE_MODIFIED), lastModified));
+
+            // Move all selected entity data statements to main entity statement
+            for (Pair<URI, Literal> dataStatement: dataStatements) {
+                statements.add(new StatementImpl(entityUriImpl,
+                        dataStatement.getLeft(), dataStatement.getRight()));
+            }
+
             statements.addAll(restoredStatements);
         }
 

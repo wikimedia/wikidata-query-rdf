@@ -49,8 +49,20 @@ public class MungerUnitTest extends RandomizedTest {
     @Test
     public void mungesEntityDataOntoEntity() {
         entity("Q23") //
-                .retain(statement("Q23", SchemaDotOrg.VERSION, new LiteralImpl("a revision number I promise")), //
-                        statement("Q23", SchemaDotOrg.DATE_MODIFIED, new LiteralImpl("a date I promise"))) //
+                .retain(statement("Q23", SchemaDotOrg.VERSION, new LiteralImpl("a revision number I promise")),
+                        statement("Q23", SchemaDotOrg.DATE_MODIFIED, new LiteralImpl("a date I promise")))
+                .test();
+    }
+
+    @Test
+    public void moreDataOnEntityData() {
+        String entityDataUri = uris.entityData() + "Q23";
+        entity("Q23") //
+                .given(statement(entityDataUri, Ontology.NAMESPACE + "sitelinks", new LiteralImpl("we have lotsa sitelinks")),
+                        statement(entityDataUri, Ontology.NAMESPACE + "cookies", new LiteralImpl("1000", XMLSchema.INTEGER)))
+                .willHave(statement("Q23", Ontology.NAMESPACE + "sitelinks", new LiteralImpl("we have lotsa sitelinks")),
+                          statement("Q23", Ontology.NAMESPACE + "cookies", new LiteralImpl("1000", XMLSchema.INTEGER)))
+                .remove(statement(entityDataUri, bogus + "cookies", new LiteralImpl("1000", XMLSchema.INTEGER)))
                 .test();
     }
 
@@ -382,6 +394,24 @@ public class MungerUnitTest extends RandomizedTest {
 
         private Mungekin retain(Collection<Statement> xs) {
             statements.addAll(xs);
+            toRetain.addAll(xs);
+            return this;
+        }
+
+        private Mungekin given(Statement... xs) {
+            return given(Arrays.asList(xs));
+        }
+
+        private Mungekin given(Collection<Statement> xs) {
+            statements.addAll(xs);
+            return this;
+        }
+
+        private Mungekin willHave(Statement... xs) {
+            return willHave(Arrays.asList(xs));
+        }
+
+        private Mungekin willHave(Collection<Statement> xs) {
             toRetain.addAll(xs);
             return this;
         }
