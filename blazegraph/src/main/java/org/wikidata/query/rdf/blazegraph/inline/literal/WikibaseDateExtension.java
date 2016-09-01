@@ -188,12 +188,12 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
             LiteralExtensionIV iv = d1 ? liv1 : liv2;
             Literal lduration = d1 ? l2 : l1;
 
-            return datePlusDuration(iv, DATATYPE_FACTORY.newDuration(lduration.getLabel()));
+            return datePlusDuration(iv, DATATYPE_FACTORY.newDuration(lduration.getLabel()), vf);
         }
 
         if (op == MathOp.MINUS) {
             return datePlusDuration(liv1,
-                    DATATYPE_FACTORY.newDuration(l2.getLabel()).negate());
+                    DATATYPE_FACTORY.newDuration(l2.getLabel()).negate(), vf);
         }
 
         throw new SparqlTypeErrorException();
@@ -232,12 +232,15 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
      * Add Duration to date.
      * @param iv
      * @param d
+     * @param vf
      * @return
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private IV datePlusDuration(LiteralExtensionIV iv, Duration d) {
+    private IV datePlusDuration(LiteralExtensionIV iv, Duration d, BigdataValueFactory vf) {
         long ts = iv.getDelegate().longValue();
         WikibaseDate newdate = WikibaseDate.fromSecondsSinceEpoch(ts).addDuration(d);
-        return new LiteralExtensionIV(new XSDNumericIV(newdate.secondsSinceEpoch()), iv.getExtensionIV());
+        LiteralExtensionIV result = new LiteralExtensionIV(new XSDNumericIV(newdate.secondsSinceEpoch()), iv.getExtensionIV());
+        result.setValue(safeAsValue(result, vf, (BigdataURI)iv.getExtensionIV().getValue()));
+        return result;
     }
 }
