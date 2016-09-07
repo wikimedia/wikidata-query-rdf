@@ -58,6 +58,7 @@ public class RecentChangesPollerUnitTest {
         }
         when(repository.fetchRecentChangesBackoff(startTime, batchSize, true)).thenReturn(result);
         when(repository.isEntityNamespace(0)).thenReturn(true);
+        when(repository.isValidEntity(any(String.class))).thenReturn(true);
 
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
         Batch batch = poller.firstBatch();
@@ -115,6 +116,7 @@ public class RecentChangesPollerUnitTest {
         when(repository.fetchRecentChangesBackoff(startTime, batchSize, true)).thenReturn(result);
         when(repository.getContinueObject((Change)any())).thenReturn(contJson);
         when(repository.isEntityNamespace(0)).thenReturn(true);
+        when(repository.isValidEntity(any(String.class))).thenReturn(true);
 
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
         Batch batch = poller.firstBatch();
@@ -163,6 +165,7 @@ public class RecentChangesPollerUnitTest {
 
         when(repository.fetchRecentChangesBackoff(startTime, batchSize, true)).thenReturn(result);
         when(repository.isEntityNamespace(0)).thenReturn(true);
+        when(repository.isValidEntity(any(String.class))).thenReturn(true);
 
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
         Batch batch = poller.firstBatch();
@@ -210,6 +213,7 @@ public class RecentChangesPollerUnitTest {
         ArgumentCaptor<Date> argument = ArgumentCaptor.forClass(Date.class);
         when(repository.fetchRecentChanges((Date)any(), anyInt())).thenReturn(result);
         when(repository.fetchRecentChangesBackoff((Date)any(), anyInt(), anyBoolean())).thenCallRealMethod();
+        when(repository.isValidEntity(any(String.class))).thenReturn(true);
         Batch batch = poller.firstBatch();
 
         verify(repository).fetchRecentChanges(argument.capture(), eq(10));
@@ -226,6 +230,7 @@ public class RecentChangesPollerUnitTest {
 
         when(repository.fetchRecentChanges((Date)any(), eq(10))).thenReturn(result);
         when(repository.fetchRecentChangesBackoff((Date)any(), anyInt(), anyBoolean())).thenCallRealMethod();
+        when(repository.isValidEntity(any(String.class))).thenReturn(true);
         ArgumentCaptor<Date> argument = ArgumentCaptor.forClass(Date.class);
 
         repository.fetchRecentChangesBackoff(startTime, 10, false);

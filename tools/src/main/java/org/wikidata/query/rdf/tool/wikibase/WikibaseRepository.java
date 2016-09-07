@@ -409,6 +409,15 @@ public class WikibaseRepository {
     }
 
     /**
+     * Check if the entity ID is a valid entity ID.
+     * @param name
+     * @return
+     */
+    public boolean isValidEntity(String name) {
+        return name.matches("^[A-Za-z0-9:]+$");
+    }
+
+    /**
      * URIs used for accessing wikibase.
      */
     public static class Uris {

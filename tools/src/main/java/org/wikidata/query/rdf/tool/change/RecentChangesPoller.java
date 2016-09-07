@@ -120,6 +120,10 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                     log.info("Skipping change in irrelevant namespace:  {}", rc);
                     continue;
                 }
+                if (!wikibase.isValidEntity(rc.get("title").toString())) {
+                    log.info("Skipping change with bogus id:  {}", rc.get("title").toString());
+                    continue;
+                }
 // Looks like we can not rely on changes appearing in order, so we have to take them all and let SPARQL
 // sort out the dupes.
 //                if (continueChange != null && rcid < continueChange.rcid()) {
