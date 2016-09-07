@@ -229,6 +229,24 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
     }
 
     /**
+     * Retrieve data type for the extension.
+     * @param iv
+     * @return
+     */
+    private BigdataURI getDataType(LiteralExtensionIV iv) {
+        if (iv.hasValue() && iv.getValue() instanceof BigdataLiteral) {
+            // Use dataType of cached value
+            return ((BigdataLiteral)iv.getValue()).getDatatype();
+        } else if (iv.getExtensionIV().hasValue()) {
+            // Use dataType from extension IV
+            return (BigdataURI)iv.getExtensionIV().getValue();
+        } else {
+            // Could not identify datatype of the result
+            throw new SparqlTypeErrorException();
+        }
+    }
+
+    /**
      * Add Duration to date.
      * @param iv
      * @param d
@@ -240,7 +258,7 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
         long ts = iv.getDelegate().longValue();
         WikibaseDate newdate = WikibaseDate.fromSecondsSinceEpoch(ts).addDuration(d);
         LiteralExtensionIV result = new LiteralExtensionIV(new XSDNumericIV(newdate.secondsSinceEpoch()), iv.getExtensionIV());
-        result.setValue(safeAsValue(result, vf, (BigdataURI)iv.getExtensionIV().getValue()));
+        result.setValue(safeAsValue(result, vf, getDataType(iv)));
         return result;
     }
 }
