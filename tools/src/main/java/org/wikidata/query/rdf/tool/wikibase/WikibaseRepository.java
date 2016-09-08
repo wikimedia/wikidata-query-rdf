@@ -84,6 +84,7 @@ public class WikibaseRepository {
             .setRetryHandler(getRetryHandler(RETRIES))
             .setServiceUnavailableRetryStrategy(new DefaultServiceUnavailableRetryStrategy(RETRIES, 500))
             .setUserAgent("Wikidata Query Service Updater")
+            .useSystemProperties()
             .build();
 
     /**
