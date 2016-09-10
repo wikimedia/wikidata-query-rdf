@@ -70,4 +70,11 @@ public class WikibaseDateUnitTest extends AbstractRandomizedBlazegraphTestBase {
         BindingSet result = results.next();
         assertThat(result, notBinds("age"));
     }
+
+    // TODO: @Test - does not work yet
+    public void dateCompare() throws QueryEvaluationException {
+        TupleQueryResult results = query("SELECT ((\"1990-01-01\"^^xsd:date < now()) as ?answer) WHERE {  }");
+        BindingSet result = results.next();
+        assertThat(result, binds("answer", new LiteralImpl("true", XMLSchema.BOOLEAN)));
+    }
 }
