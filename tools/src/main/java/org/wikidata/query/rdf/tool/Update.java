@@ -379,12 +379,8 @@ public class Update<B extends Change.Batch> implements Runnable {
         for (Future<?> task : tasks) {
             task.get();
         }
-        log.debug("Preparing update data took {} ms", System.currentTimeMillis() - start);
-        if (trueChanges.isEmpty()) {
-            log.debug("Got no changes, we're done");
-        } else {
-            rdfRepository.syncFromChanges(trueChanges, verify);
-        }
+        log.debug("Preparing update data took {} ms, have {} changes", System.currentTimeMillis() - start, trueChanges.size());
+        rdfRepository.syncFromChanges(trueChanges, verify);
         updateMeter.mark(trueChanges.size());
     }
 

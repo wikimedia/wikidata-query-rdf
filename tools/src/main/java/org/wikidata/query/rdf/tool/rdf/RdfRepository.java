@@ -361,6 +361,12 @@ public class RdfRepository {
             valueList.addAll(change.getCleanupList());
         }
 
+        if (entityIds.isEmpty()) {
+            // If we've got no IDs, this means all change retrieval failed
+            log.debug("Got no valid changes, we're done");
+            return 0;
+        }
+
         b.bindUris("entityList", entityIds, uris.entity());
         b.bindStatements("insertStatements", insertStatements);
         b.bindValues("entityStatements", entityStatements);
