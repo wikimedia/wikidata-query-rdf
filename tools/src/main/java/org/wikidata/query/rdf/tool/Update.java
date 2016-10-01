@@ -380,7 +380,11 @@ public class Update<B extends Change.Batch> implements Runnable {
             task.get();
         }
         log.debug("Preparing update data took {} ms", System.currentTimeMillis() - start);
-        rdfRepository.syncFromChanges(trueChanges, verify);
+        if (trueChanges.isEmpty()) {
+            log.debug("Got no changes, we're done");
+        } else {
+            rdfRepository.syncFromChanges(trueChanges, verify);
+        }
         updateMeter.mark(trueChanges.size());
     }
 
