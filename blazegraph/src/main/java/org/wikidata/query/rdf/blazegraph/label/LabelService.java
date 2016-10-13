@@ -159,11 +159,11 @@ public class LabelService extends AbstractServiceFactory {
             if (s.contains(",")) {
                 // we also allow comma lists for convenience
                 for (String ls: s.split(",")) {
-                    fallbacksMap.put(ls, cnt);
+                    fallbacksMap.put(ls.trim(), cnt);
                     ++cnt;
                 }
             } else {
-                fallbacksMap.put(s, cnt);
+                fallbacksMap.put(s.trim(), cnt);
             }
             ++cnt;
         }

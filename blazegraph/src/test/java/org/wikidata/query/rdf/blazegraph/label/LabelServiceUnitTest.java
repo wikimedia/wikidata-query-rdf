@@ -91,7 +91,7 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         query.append("  ontology:dummy ontology:dummy ?s .\n");
         query.append("  {\n");
         query.append("    ?s ontology:dummy ?p .\n");
-        query.append("    SERVICE ontology:label { bd:serviceParam ontology:language \"en,de\" . }\n");
+        query.append("    SERVICE ontology:label { bd:serviceParam ontology:language \"en , de\" . }\n");
         query.append("  }\n");
         query.append("}\n");
         assertResult(query(query.toString()), binds("pLabel", "in en", "en"));
