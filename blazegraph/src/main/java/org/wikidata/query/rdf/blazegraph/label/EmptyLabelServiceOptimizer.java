@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.label;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
@@ -65,6 +67,9 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
                 foundArg = true;
                 break;
             }
+
+            foundArg = restoreExtracted(service) || foundArg;
+
             if (foundArg) {
                 continue;
             }
@@ -73,6 +78,27 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
             // We can really only do this once....
             return;
         }
+    }
+
+    /**
+     * Restore extracted statement from label service node.
+     * @param service
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    private boolean restoreExtracted(ServiceNode service) {
+        boolean found = false;
+        JoinGroupNode g = (JoinGroupNode) service.getGraphPattern();
+
+        final List<BOp> extractedList = (List<BOp>)service.annotations().get(LabelServiceExtractOptimizer.EXTRACTOR_ANNOTATION);
+        if (extractedList != null && !extractedList.isEmpty()) {
+            for (BOp st : extractedList) {
+                g.addArg(st);
+            }
+            found = true;
+        }
+        service.annotations().remove(LabelServiceExtractOptimizer.EXTRACTOR_ANNOTATION);
+        return found;
     }
 
     /**
