@@ -8,6 +8,10 @@ Tools for Querying Wikibase instances with RDF.  The modules:
  * GPLv2 Licensed
 * common - Code shared between tools and blazegraph
  * Apache Licensed
+* gui - UI for running queries and displaying results
+ * Apache Licensed
+* dist - scripts for running the service
+ * Apache Licensed
 
 Development Notes
 -----------------
