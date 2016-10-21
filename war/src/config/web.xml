@@ -133,16 +133,44 @@
    <servlet-class>com.bigdata.rdf.sail.webapp.CountersServlet</servlet-class>
    <async-supported>true</async-supported>
   </servlet>
+  <servlet>
+   <servlet-name>LDF API</servlet-name>
+   <display-name>LDF API</display-name>
+   <description>API implementing linked data fragments.</description>
+   <servlet-class>org.wikidata.query.rdf.blazegraph.ldf.LDFServlet</servlet-class>
+   <async-supported>true</async-supported>
+   <init-param>
+     <description>Configuration file for the LDF server.</description>
+     <param-name>configFile</param-name>
+     <param-value>ldf-config.json</param-value>
+   </init-param>
+  </servlet>
+  <servlet>
+    <servlet-name>ldfassets</servlet-name>
+    <servlet-class>org.eclipse.jetty.servlet.DefaultServlet</servlet-class>
+    <init-param>
+        <param-name>relativeResourceBase</param-name>
+        <param-value>/html/</param-value>
+    </init-param>
+   </servlet>
   <!-- Note: The HALoadBalancerServlet is deployed from override-web.xml -->
   <!-- Serve anything under /html/* as a simple file. -->
   <servlet-mapping>
     <servlet-name>default</servlet-name>
     <url-pattern>/html/*</url-pattern>
   </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>ldfassets</servlet-name>
+    <url-pattern>/assets/*</url-pattern>
+  </servlet-mapping>
   <!-- Mapping for the default KB namespace (as configured above). -->
   <servlet-mapping>
   <servlet-name>REST API</servlet-name>
   <url-pattern>/sparql</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+  <servlet-name>LDF API</servlet-name>
+  <url-pattern>/ldf</url-pattern>
   </servlet-mapping>
   <!-- Mapping for access to non-default KB namespaces.
   <servlet-mapping>

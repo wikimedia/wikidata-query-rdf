@@ -1,3 +1,8 @@
+0.2.4
+-----
+Add LDF server
+Add external prefix configuration
+
 0.2.3
 -----
 Add normalized quantity predicates

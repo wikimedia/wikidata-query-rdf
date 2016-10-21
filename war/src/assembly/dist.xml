@@ -11,13 +11,9 @@
 
   <fileSets>
     <fileSet>
+      <useStrictFiltering>true</useStrictFiltering>
       <outputDirectory>WEB-INF</outputDirectory>
       <directory>${project.basedir}/src/config</directory>
-    </fileSet>
-
-    <fileSet>
-      <outputDirectory>html/js</outputDirectory>
-      <directory>${project.basedir}/src/js</directory>
     </fileSet>
   </fileSets>
 
@@ -30,11 +26,11 @@
       </includes>
        <unpackOptions>
          <excludes>
-           <exclude>**/workbench.js</exclude>
            <exclude>**/web.xml</exclude>
          </excludes>
         </unpackOptions>
       <useProjectArtifact>false</useProjectArtifact>
+	  <useStrictFiltering>true</useStrictFiltering>
     </dependencySet>
 
     <dependencySet>
@@ -43,7 +39,33 @@
         <include>${project.groupId}:*:jar</include>
       </includes>
       <useProjectArtifact>false</useProjectArtifact>
+	  <useStrictFiltering>true</useStrictFiltering>
     </dependencySet>
-  </dependencySets>
 
+    <dependencySet>
+      <outputDirectory>WEB-INF/lib</outputDirectory>
+      <includes>
+        <include>org.linkeddatafragments:ldfserver:jar</include>
+      </includes>
+      <useProjectArtifact>false</useProjectArtifact>
+	  <useStrictFiltering>true</useStrictFiltering>
+    </dependencySet>
+
+
+    <dependencySet>
+      <outputDirectory>html</outputDirectory>
+      <unpack>true</unpack>
+      <includes>
+        <include>org.linkeddatafragments:ldfserver</include>
+      </includes>
+       <unpackOptions>
+         <includes>
+           <include>assets/**</include>
+         </includes>
+        </unpackOptions>
+      <useProjectArtifact>false</useProjectArtifact>
+	  <useStrictFiltering>true</useStrictFiltering>
+    </dependencySet>
+
+  </dependencySets>
 </assembly>

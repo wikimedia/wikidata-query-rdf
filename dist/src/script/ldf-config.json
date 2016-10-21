@@ -1,0 +1,48 @@
+{
+  "title": "Wikidata Query Service LDF server",
+  "datasourcetypes": {
+    "BlazegraphDataSource"  : "org.wikidata.query.rdf.blazegraph.ldf.BlazegraphDataSourceType"
+  },
+
+  "datasources": {
+    "ldf": {
+        "title": "Wikidata",
+        "type": "BlazegraphDataSource",
+        "description": "Blazegraph data source"
+    }
+  },
+
+  "prefixes": {
+    "rdf":         "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs":        "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd":         "http://www.w3.org/2001/XMLSchema#",
+    "dc":          "http://purl.org/dc/terms/",
+    "foaf":        "http://xmlns.com/foaf/0.1/",
+    "void":        "http://rdfs.org/ns/void#",
+    "xsd":         "http://www.w3.org/2001/XMLSchema#",
+    "owl":         "http://www.w3.org/2002/07/owl#",
+    "skos":        "http://www.w3.org/2004/02/skos/core#",
+    "schema":      "http://schema.org/",
+    "cc":          "http://creativecommons.org/ns#",
+    "geo":         "http://www.opengis.net/ont/geosparql#",
+    "prov":        "http://www.w3.org/ns/prov#",
+    "wikibase":    "http://wikiba.se/ontology#",
+    "wdata":       "https://www.wikidata.org/wiki/Special:EntityData/",
+    "wd":          "http://www.wikidata.org/entity/",
+    "wds":         "http://www.wikidata.org/entity/statement/",
+    "wdref":       "http://www.wikidata.org/reference/",
+    "wdv":         "http://www.wikidata.org/value/",
+    "wdt":         "http://www.wikidata.org/prop/direct/",
+    "p":           "http://www.wikidata.org/prop/",
+    "ps":          "http://www.wikidata.org/prop/statement/",
+    "psv":         "http://www.wikidata.org/prop/statement/value/",
+    "psn":         "http://www.wikidata.org/prop/statement/value-normalized/",
+    "pq":          "http://www.wikidata.org/prop/qualifier/",
+    "pqv":         "http://www.wikidata.org/prop/qualifier/value/",
+    "pqn":         "http://www.wikidata.org/prop/qualifier/value-normalized/",
+    "pr":          "http://www.wikidata.org/prop/reference/",
+    "prv":         "http://www.wikidata.org/prop/reference/value/",
+    "prn":         "http://www.wikidata.org/prop/reference/value-normalized/",
+    "wdno":        "http://www.wikidata.org/prop/novalue/"
+  }
+}

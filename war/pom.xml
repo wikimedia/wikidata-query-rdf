@@ -35,6 +35,11 @@
       <artifactId>blazegraph</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
+    <dependency>
+       <groupId>org.linkeddatafragments</groupId>
+       <artifactId>ldfserver</artifactId>
+       <version>0.1.1-wmf</version>
+    </dependency>
   </dependencies>
 
   <build>
