@@ -54,7 +54,7 @@
     <dependencySet>
       <outputDirectory></outputDirectory>
       <includes>
-        <include>org.wikidata.query.rdf:blazegraph-service:war:dist</include>
+        <include>org.wikidata.query.rdf:blazegraph-service:war</include>
       </includes>
       <useProjectArtifact>false</useProjectArtifact>
     </dependencySet>

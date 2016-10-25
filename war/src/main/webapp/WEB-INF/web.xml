@@ -150,8 +150,12 @@
     <servlet-class>org.eclipse.jetty.servlet.DefaultServlet</servlet-class>
     <init-param>
         <param-name>relativeResourceBase</param-name>
-        <param-value>/html/</param-value>
+        <param-value>/WEB-INF/classes/assets</param-value>
     </init-param>
+      <init-param>
+          <param-name>pathInfoOnly</param-name>
+          <param-value>true</param-value>
+      </init-param>
    </servlet>
   <!-- Note: The HALoadBalancerServlet is deployed from override-web.xml -->
   <!-- Serve anything under /html/* as a simple file. -->

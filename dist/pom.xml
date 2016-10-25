@@ -24,7 +24,6 @@
       <groupId>org.wikidata.query.rdf</groupId>
       <artifactId>blazegraph-service</artifactId>
       <version>${project.parent.version}</version>
-      <classifier>dist</classifier>
       <type>war</type>
     </dependency>
     <dependency>

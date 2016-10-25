@@ -7,7 +7,7 @@
     <version>0.2.4-SNAPSHOT</version>
   </parent>
   <artifactId>blazegraph-service</artifactId>
-  <packaging>pom</packaging>
+  <packaging>war</packaging>
 
   <name>Blazegraph Service Package</name>
   <description>Package for running Blazegraph service.</description>
@@ -27,6 +27,19 @@
       <type>war</type>
     </dependency>
     <dependency>
+      <groupId>org.linkeddatafragments</groupId>
+      <artifactId>ldfserver</artifactId>
+      <version>0.1.1-wmf2</version>
+      <type>war</type>
+    </dependency>
+    <!-- include bigdata-war as a pom dependency to collect its transitive dependencies -->
+    <dependency>
+      <groupId>com.blazegraph</groupId>
+      <artifactId>bigdata-war</artifactId>
+      <version>${blazegraph.version}</version>
+      <type>pom</type>
+    </dependency>
+    <dependency>
       <groupId>org.wikidata.query.rdf</groupId>
       <artifactId>common</artifactId>
     </dependency>
@@ -35,29 +48,37 @@
       <artifactId>blazegraph</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
-    <dependency>
-       <groupId>org.linkeddatafragments</groupId>
-       <artifactId>ldfserver</artifactId>
-       <version>0.1.1-wmf2</version>
-    </dependency>
   </dependencies>
 
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.0.0</version>
         <configuration>
-          <descriptor>src/assembly/dist.xml</descriptor>
+          <overlays>
+            <overlay>
+              <groupId>com.blazegraph</groupId>
+              <artifactId>bigdata-war</artifactId>
+              <excludes>
+                <!--
+                ignore jars packaged in the bigdata war, we use a pom
+                dependency to collect all dependencies and let Maven do proper
+                dependency resolution
+                -->
+                <exclude>WEB-INF/lib/*</exclude>
+              </excludes>
+            </overlay>
+            <overlay>
+              <groupId>org.linkeddatafragments</groupId>
+              <artifactId>ldfserver</artifactId>
+              <includes>
+                <incldue>WEB-INF/classes/assets/**</incldue>
+              </includes>
+            </overlay>
+          </overlays>
         </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>
