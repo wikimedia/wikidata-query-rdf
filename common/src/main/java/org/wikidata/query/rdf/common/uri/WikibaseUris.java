@@ -29,25 +29,37 @@ public class WikibaseUris {
          */
         DIRECT          ("wdt", "direct/"),
         /**
-         * Statement->Value (wdv:).
+         * Statement->Value (wdv:xxx).
          */
         STATEMENT_VALUE ("psv", "statement/value/"),
+        /**
+         * Statement->Normalized Value (wdv:xxx).
+         */
+        STATEMENT_VALUE_NORMALIZED ("psn", "statement/value-normalized/"),
         /**
          * Statement-> Simple Value.
          */
         STATEMENT       ("ps",  "statement/"),
         /**
-         * Statement->Qualifier Value (wdv:).
+         * Statement->Qualifier Value (wdv:xxx).
          */
         QUALIFIER_VALUE ("pqv", "qualifier/value/"),
+        /**
+         * Statement->Qualifier Normalized Value (wdv:xxx).
+         */
+        QUALIFIER_VALUE_NORMALIZED ("pqn", "qualifier/value-normalized/"),
         /**
          * Statement-> Simple Qualifier Value.
          */
         QUALIFIER       ("pq",  "qualifier/"),
         /**
-         * Reference->Value (wdv:).
+         * Reference->Value (wdv:xxx).
          */
         REFERENCE_VALUE ("prv", "reference/value/"),
+        /**
+         * Reference->Normalized Value (wdv:xxx).
+         */
+        REFERENCE_VALUE_NORMALIZED ("prn", "reference/value-normalized/"),
         /**
          * Reference->Simple Value.
          */
