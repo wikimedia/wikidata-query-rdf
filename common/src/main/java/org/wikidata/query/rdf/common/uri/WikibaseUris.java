@@ -15,8 +15,8 @@ public class WikibaseUris {
     public static final String WIKIBASE_HOST_PROPERTY = "wikibaseHost";
 
     /**
-     * Current URI system.
-     * This is static since each instance has only one URI system.
+     * Current URI system. This is static since each instance has only one URI
+     * system.
      */
     private static WikibaseUris uriSystem;
 
@@ -27,51 +27,51 @@ public class WikibaseUris {
         /**
          * Truthy predicate.
          */
-        DIRECT          ("wdt", "direct/"),
+        DIRECT("wdt", "direct/"),
         /**
          * Statement->Value (wdv:xxx).
          */
-        STATEMENT_VALUE ("psv", "statement/value/"),
+        STATEMENT_VALUE("psv", "statement/value/"),
         /**
          * Statement->Normalized Value (wdv:xxx).
          */
-        STATEMENT_VALUE_NORMALIZED ("psn", "statement/value-normalized/"),
+        // STATEMENT_VALUE_NORMALIZED ("psn", "statement/value-normalized/"),
         /**
          * Statement-> Simple Value.
          */
-        STATEMENT       ("ps",  "statement/"),
+        STATEMENT("ps", "statement/"),
         /**
          * Statement->Qualifier Value (wdv:xxx).
          */
-        QUALIFIER_VALUE ("pqv", "qualifier/value/"),
+        QUALIFIER_VALUE("pqv", "qualifier/value/"),
         /**
          * Statement->Qualifier Normalized Value (wdv:xxx).
          */
-        QUALIFIER_VALUE_NORMALIZED ("pqn", "qualifier/value-normalized/"),
+        // QUALIFIER_VALUE_NORMALIZED ("pqn", "qualifier/value-normalized/"),
         /**
          * Statement-> Simple Qualifier Value.
          */
-        QUALIFIER       ("pq",  "qualifier/"),
+        QUALIFIER("pq", "qualifier/"),
         /**
          * Reference->Value (wdv:xxx).
          */
-        REFERENCE_VALUE ("prv", "reference/value/"),
+        REFERENCE_VALUE("prv", "reference/value/"),
         /**
          * Reference->Normalized Value (wdv:xxx).
          */
-        REFERENCE_VALUE_NORMALIZED ("prn", "reference/value-normalized/"),
+        // REFERENCE_VALUE_NORMALIZED ("prn", "reference/value-normalized/"),
         /**
          * Reference->Simple Value.
          */
-        REFERENCE       ("pr",  "reference/"),
+        REFERENCE("pr", "reference/"),
         /**
          * Novalue class for P123.
          */
-        NOVALUE         ("wdno", "novalue/"),
+        NOVALUE("wdno", "novalue/"),
         /**
          * Entity->Statement.
          */
-        CLAIM           ("p",    "");
+        CLAIM("p", "");
 
         /**
          * Short prefix for the type.
@@ -88,15 +88,16 @@ public class WikibaseUris {
         }
         /**
          * Get prefix.
+         *
          * @return prefix
          */
         public String prefix() {
             return prefix;
         }
         /**
-         * Get suffix.
-         * Protected since outside classes should not use it, they should go through
-         * WikibaseUris.property().
+         * Get suffix. Protected since outside classes should not use it, they
+         * should go through WikibaseUris.property().
+         *
          * @return suffix
          */
         protected String suffix() {
@@ -109,7 +110,8 @@ public class WikibaseUris {
      */
     private final String root;
     /**
-     * The root of the wikibase uris with https prefix - https://www.wikidata.org for Wikidata.
+     * The root of the wikibase uris with https prefix -
+     * https://www.wikidata.org for Wikidata.
      */
     private final String rootHttps;
     /**
@@ -118,8 +120,8 @@ public class WikibaseUris {
      */
     private final String entityData;
     /**
-     * Uri prefix wikibase uses to describe exports, with https prefix.
-     * The Munge process removes uris with this prefix.
+     * Uri prefix wikibase uses to describe exports, with https prefix. The
+     * Munge process removes uris with this prefix.
      */
     private final String entityDataHttps;
     /**
@@ -144,6 +146,7 @@ public class WikibaseUris {
     private final String reference;
     /**
      * Uri property prefix, used for properties.
+     *
      * @see PropertyType
      */
     private final String prop;
@@ -173,8 +176,21 @@ public class WikibaseUris {
         query.append("PREFIX wds: <").append(statement).append(">\n");
         query.append("PREFIX wdv: <").append(value).append(">\n");
         query.append("PREFIX wdref: <").append(reference).append(">\n");
-        for (PropertyType p: PropertyType.values()) {
-            query.append("PREFIX ").append(p.prefix()).append(": <").append(prop).append(p.suffix()).append(">\n");
+        for (PropertyType p : PropertyType.values()) {
+            query.append("PREFIX ").append(p.prefix()).append(": <")
+                    .append(prop).append(p.suffix()).append(">\n");
+            if (p.suffix.endsWith("/value/")) {
+                // FIXME: remove this horrible hack
+                // Make psv: /value/ => psn: /value-normalized/
+                query.append("PREFIX ")
+                        .append(p.prefix().
+                                substring(0, p.prefix().length() - 1))
+                        .append("n: <").append(prop)
+                        .append(p.suffix().
+                                substring(0, p.suffix().length() - 6))
+                        .append("value-normalized/>\n");
+
+            }
         }
         return query;
     }
@@ -195,8 +211,8 @@ public class WikibaseUris {
     }
 
     /**
-     * Uri prefix wikibase uses to describe exports, with https prefix.
-     * The Munge process removes uris with this prefix.
+     * Uri prefix wikibase uses to describe exports, with https prefix. The
+     * Munge process removes uris with this prefix.
      */
     public String entityDataHttps() {
         return entityDataHttps;
@@ -243,12 +259,14 @@ public class WikibaseUris {
 
     /**
      * Return current URI system.
+     *
      * @return Current URI system.
      */
     public static WikibaseUris getURISystem() {
         if (uriSystem == null) {
             if (System.getProperty(WIKIBASE_HOST_PROPERTY) != null) {
-                uriSystem = new WikibaseUris(System.getProperty(WIKIBASE_HOST_PROPERTY));
+                uriSystem = new WikibaseUris(
+                        System.getProperty(WIKIBASE_HOST_PROPERTY));
             } else {
                 uriSystem = WIKIDATA;
             }
