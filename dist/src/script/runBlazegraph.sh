@@ -39,6 +39,7 @@ java -server -XX:+UseG1GC ${MEMORY} -Dcom.bigdata.rdf.sail.webapp.ConfigParams.p
      -Dcom.bigdata.rdf.sparql.ast.QueryHints.analyticMaxMemoryPerQuery=1073741824 \
      -DASTOptimizerClass=org.wikidata.query.rdf.blazegraph.WikibaseOptimizers \
      -Dorg.wikidata.query.rdf.blazegraph.inline.literal.WKTSerializer.noGlobe=$DEFAULT_GLOBE \
+     -DwikibasePrefixes=$DIR/prefixes.conf \
      ${BLAZEGRAPH_OPTS} \
      -jar jetty-runner*.jar \
      --host $HOST \

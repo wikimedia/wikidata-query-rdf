@@ -124,6 +124,11 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         defaultDecls.put("owl", OWL.NAMESPACE);
         defaultDecls.put("geo", GeoSparql.NAMESPACE);
         defaultDecls.put("geof", GeoSparql.FUNCTION_NAMESPACE);
+        // Add supplemental prefixes
+        final Map<String, String> extra = uris.getExtraPrefixes();
+        for (String pref: extra.keySet()) {
+            defaultDecls.put(pref, extra.get(pref));
+        }
     }
 
     @Override

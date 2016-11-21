@@ -1,5 +1,12 @@
 package org.wikidata.query.rdf.common.uri;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Uris wikibase uses that are relative to the wikibase instance.
  */
@@ -15,10 +22,19 @@ public class WikibaseUris {
     public static final String WIKIBASE_HOST_PROPERTY = "wikibaseHost";
 
     /**
+     * Third-party prefixes filename.
+     */
+    public static final String WIKIBASE_PREFIXES = "wikibasePrefixes";
+    /**
      * Current URI system. This is static since each instance has only one URI
      * system.
      */
     private static WikibaseUris uriSystem;
+
+    /**
+     * Extra prefixes list.
+     */
+    private static Map<String, String> extraPrefixes;
 
     /**
      * Property types used in the ontology.
@@ -179,18 +195,12 @@ public class WikibaseUris {
         for (PropertyType p : PropertyType.values()) {
             query.append("PREFIX ").append(p.prefix()).append(": <")
                     .append(prop).append(p.suffix()).append(">\n");
-            if (p.suffix.endsWith("/value/")) {
-                // FIXME: remove this horrible hack
-                // Make psv: /value/ => psn: /value-normalized/
-                query.append("PREFIX ")
-                        .append(p.prefix().
-                                substring(0, p.prefix().length() - 1))
-                        .append("n: <").append(prop)
-                        .append(p.suffix().
-                                substring(0, p.suffix().length() - 6))
-                        .append("value-normalized/>\n");
-
-            }
+        }
+        // Add extra prefixes
+        final Map<String, String> extra = getExtraPrefixes();
+        for (String pref : extra.keySet()) {
+            query.append("PREFIX ").append(pref).append(": <").append(prop)
+                    .append(extra.get(pref)).append(">\n");
         }
         return query;
     }
@@ -272,5 +282,45 @@ public class WikibaseUris {
             }
         }
         return uriSystem;
+    }
+
+    /**
+     * Get the list of extra prefixes.
+     * @return
+     */
+    public static Map<String, String> getExtraPrefixes() {
+        if (extraPrefixes == null) {
+            extraPrefixes = new HashMap<>();
+            if (System.getProperty(WIKIBASE_PREFIXES) != null) {
+                ForbiddenOk.readPrefixes(System.getProperty(WIKIBASE_PREFIXES), extraPrefixes);
+            }
+        }
+        return extraPrefixes;
+    }
+
+    /**
+     * Methods in this class are ignored by the forbiddenapis checks. Thus you
+     * need to really really really be sure what you are putting in here is
+     * right.
+     */
+    private static class ForbiddenOk {
+        /**
+         * Read space-separated prefixes list into map.
+         * @param filename File where prefixes are.
+         * @param prefixes Prefixes map.
+         */
+        private static void readPrefixes(String filename, Map<String, String> prefixes) {
+            try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] parts = line.split("\\s+");
+                    prefixes.put(parts[0], parts[1]);
+                }
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException("Bad prefix filename: " + filename);
+            } catch (IOException e) {
+                // not much to do here, just continue
+            }
+        }
     }
 }
