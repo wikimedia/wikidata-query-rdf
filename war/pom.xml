@@ -38,7 +38,7 @@
     <dependency>
        <groupId>org.linkeddatafragments</groupId>
        <artifactId>ldfserver</artifactId>
-       <version>0.1.1-wmf</version>
+       <version>0.1.1-wmf2</version>
     </dependency>
   </dependencies>
 
