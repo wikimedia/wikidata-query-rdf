@@ -4,8 +4,10 @@ import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateF
 
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -51,7 +53,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
     @Override
     public Batch nextBatch(Batch lastBatch) throws RetryableException {
-        return batch(lastBatch.leftOffDate, lastBatch.nextContinue);
+        return batch(lastBatch.leftOffDate, lastBatch);
     }
 
     /**
@@ -62,20 +64,21 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
          * The date where we last left off.
          */
         private final Date leftOffDate;
+
         /**
-         * The continue object that must be sent to wikibase to continue where
-         * we left off.
+         * The set of the rcid's this batch seen.
+         * Note that some IDs may be seen but not processed
+         * due to duplicates, etc.
          */
-        private final JSONObject nextContinue;
+        private final Set<Long> seenIDs;
 
         /**
          * A batch that will next continue using the continue parameter.
          */
-        private Batch(ImmutableList<Change> changes, long advanced, String leftOff, Date nextStartTime,
-                JSONObject nextContinue) {
+        private Batch(ImmutableList<Change> changes, long advanced, String leftOff, Date nextStartTime, Set<Long> seenIDs) {
             super(changes, advanced, leftOff);
             leftOffDate = nextStartTime;
-            this.nextContinue = nextContinue;
+            this.seenIDs = seenIDs;
         }
 
         @Override
@@ -90,8 +93,16 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
         @Override
         public String leftOffHuman() {
-            return leftOffDate.toString() + " (next: " + nextContinue.get("rccontinue").toString()
-                    + ")";
+            return WikibaseRepository.inputDateFormat().format(leftOffDate);
+            // + " (next: " + nextContinue.get("rccontinue").toString() + ")";
+        }
+
+        /**
+         * Get the list of IDs this batch has seen.
+         * @return
+         */
+        public Set<Long> getSeenIDs() {
+            return seenIDs;
         }
     }
 
@@ -101,10 +112,9 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      * @throws RetryableException on parse failure
      */
     @SuppressWarnings("checkstyle:cyclomaticcomplexity")
-    private Batch batch(Date lastNextStartTime, JSONObject lastNextContinue) throws RetryableException {
+    private Batch batch(Date lastNextStartTime, Batch lastBatch) throws RetryableException {
         try {
             @SuppressWarnings("unchecked")
-            final Change continueChange = wikibase.getChangeFromContinue((Map<String, Object>)lastNextContinue);
             JSONObject recentChanges = wikibase.fetchRecentChangesBackoff(lastNextStartTime, batchSize, true);
             // Using LinkedHashMap here so that changes came out sorted by order of arrival
             Map<String, Change> changesByTitle = new LinkedHashMap<>();
@@ -112,6 +122,8 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             long nextStartTime = lastNextStartTime.getTime();
             JSONArray result = (JSONArray) ((JSONObject) recentChanges.get("query")).get("recentchanges");
             DateFormat df = inputDateFormat();
+            Set<Long> seenIds = new HashSet<>();
+
             for (Object rco : result) {
                 JSONObject rc = (JSONObject) rco;
                 long namespace = (long) rc.get("ns");
@@ -121,7 +133,13 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                     continue;
                 }
                 if (!wikibase.isValidEntity(rc.get("title").toString())) {
-                    log.info("Skipping change with bogus id:  {}", rc.get("title").toString());
+                    log.info("Skipping change with bogus title:  {}", rc.get("title").toString());
+                    continue;
+                }
+                seenIds.add(rcid);
+                if (lastBatch != null && lastBatch.getSeenIDs().contains(rcid)) {
+                    // This change was in the last batch
+                    log.debug("Skipping repeated change with rcid {}", rcid);
                     continue;
                 }
 // Looks like we can not rely on changes appearing in order, so we have to take them all and let SPARQL
@@ -152,19 +170,11 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                 nextStartTime = Math.max(nextStartTime, timestamp.getTime());
             }
             ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
-            if (nextContinue == null) {
-                if (changes.size() != 0) {
-                    // Create fake rccontinue so we continue from last known change
-                    nextContinue = wikibase.getContinueObject(changes.get(changes.size() - 1));
-                } else {
-                    if (result.size() >= batchSize) {
-                        // We have a problem here - due to backoff, we did not fetch any new items
-                        // Try to advance one second, even though we risk to lose a change
-                        log.info("Backoff overflow, advancing one second");
-                        nextStartTime += 1000;
-                    }
-                    nextContinue = lastNextContinue;
-                }
+            if (nextContinue == null && changes.size() == 0 && result.size() >= batchSize) {
+                // We have a problem here - due to backoff, we did not fetch any new items
+                // Try to advance one second, even though we risk to lose a change
+                log.info("Backoff overflow, advancing one second");
+                nextStartTime += 1000;
             }
 
             if (changes.size() != 0) {
@@ -179,7 +189,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             // be sure we got the whole second
             String upTo = inputDateFormat().format(new Date(nextStartTime - 1000));
             long advanced = nextStartTime - lastNextStartTime.getTime();
-            return new Batch(changes, advanced, upTo, new Date(nextStartTime), nextContinue);
+            return new Batch(changes, advanced, upTo, new Date(nextStartTime), seenIds);
         } catch (java.text.ParseException e) {
             throw new RetryableException("Parse error from api", e);
         }

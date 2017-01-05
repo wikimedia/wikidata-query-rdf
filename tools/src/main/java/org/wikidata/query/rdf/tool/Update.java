@@ -315,6 +315,7 @@ public class Update<B extends Change.Batch> implements Runnable {
             }
         } while (batch == null);
         log.debug("{} changes in batch", batch.changes().size());
+        Date oldDate = null;
         while (true) {
             try {
                 handleChanges(batch);
@@ -326,7 +327,11 @@ public class Update<B extends Change.Batch> implements Runnable {
                      * have some updates.
                      */
                     leftOffDate = new Date(batch.leftOffDate().getTime() - SECONDS.toMillis(1));
-                    rdfRepository.updateLeftOffTime(leftOffDate);
+                    if (oldDate == null || !oldDate.equals(leftOffDate)) {
+                        // Do not update repo with the same date
+                        oldDate = leftOffDate;
+                        rdfRepository.updateLeftOffTime(leftOffDate);
+                    }
                 }
                 // TODO wrap all retry-able exceptions in a special exception
                 batchAdvanced.mark(batch.advanced());
@@ -435,10 +440,11 @@ public class Update<B extends Change.Batch> implements Runnable {
      * @throws InterruptedException if the process was interrupted while waiting
      *             during the pollDelay or waiting on something else
      */
-    private B nextBatch(B batch) throws InterruptedException {
+    private B nextBatch(B prevBatch) throws InterruptedException {
+        B batch;
         while (true) {
             try {
-                batch = changeSource.nextBatch(batch);
+                batch = changeSource.nextBatch(prevBatch);
             } catch (RetryableException e) {
                 log.warn("Retryable error fetching next batch.  Retrying.", e);
                 continue;

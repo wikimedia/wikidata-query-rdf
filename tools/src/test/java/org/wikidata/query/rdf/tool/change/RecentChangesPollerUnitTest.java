@@ -122,6 +122,7 @@ public class RecentChangesPollerUnitTest {
         Batch batch = poller.firstBatch();
         assertThat(batch.changes(), hasSize(2));
         assertEquals(7, batch.changes().get(1).rcid());
+        assertEquals(date, batch.leftOffHuman());
 
         ArgumentCaptor<Date> argument = ArgumentCaptor.forClass(Date.class);
 
