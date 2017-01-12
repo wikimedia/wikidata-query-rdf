@@ -1,5 +1,11 @@
 package org.wikidata.query.rdf.blazegraph;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletContextEvent;
@@ -24,6 +30,7 @@ import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 import com.bigdata.bop.BOpContextBase;
 import com.bigdata.bop.IValueExpression;
+import com.bigdata.rdf.graph.impl.bd.GASService;
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.internal.constraints.DateBOp.DateOp;
 import com.bigdata.rdf.sail.sparql.PrefixDeclProcessor;
@@ -34,31 +41,58 @@ import com.bigdata.rdf.sparql.ast.ValueExpressionNode;
 import com.bigdata.rdf.sparql.ast.FunctionRegistry.Factory;
 import com.bigdata.rdf.sparql.ast.eval.AST2BOpUtility;
 import com.bigdata.rdf.sparql.ast.eval.AbstractServiceFactoryBase;
+import com.bigdata.rdf.sparql.ast.eval.SampleServiceFactory;
+import com.bigdata.rdf.sparql.ast.eval.SliceServiceFactory;
+import com.bigdata.rdf.sparql.ast.eval.ValuesServiceFactory;
 import com.bigdata.rdf.sparql.ast.service.IServiceOptions;
+import com.bigdata.rdf.sparql.ast.service.RemoteServiceFactoryImpl;
 import com.bigdata.rdf.sparql.ast.service.RemoteServiceOptions;
+import com.bigdata.rdf.sparql.ast.service.SPARQLVersion;
 import com.bigdata.rdf.sparql.ast.service.ServiceCall;
 import com.bigdata.rdf.sparql.ast.service.ServiceCallCreateParams;
+import com.bigdata.rdf.sparql.ast.service.ServiceFactory;
 import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
-import com.bigdata.service.fts.FTS;
+import com.bigdata.rdf.store.BDS;
 
 /**
  * Context listener to enact configurations we need on initialization.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
     private static final Logger log = LoggerFactory.getLogger(WikibaseContextListener.class);
 
     /**
-     * Replaces the default Blazegraph services with ones that do not allow
-     * remote services and a label resolution service.
+     * Default service whitelist filename.
+     */
+    public static final String WHITELIST_DEFAULT = "whitelist.txt";
+
+    /**
+     * Whitelist configuration name.
+     */
+    public static final String WHITELIST = System.getProperty("wikibaseServiceWhitelist", WHITELIST_DEFAULT);
+
+    /**
+     * Initializes BG service setup to allow whitelisted services.
+     * Also add additional custom services and functions.
      */
     public static void initializeServices() {
-        ServiceRegistry.getInstance().setDefaultServiceFactory(new DisableRemotesServiceFactory());
+        // Enable service whitelisting
+        final ServiceRegistry reg = ServiceRegistry.getInstance();
+        reg.setWhitelistEnabled(true);
         LabelService.register();
         GeoService.register();
 
-        // Remove FTS service for now since it allows arbitrary endpoints
-        ServiceRegistry.getInstance().remove(FTS.SEARCH);
+        // Whitelist services we like by default
+        reg.addWhitelistURL(GASService.Options.SERVICE_KEY.toString());
+        reg.addWhitelistURL(ValuesServiceFactory.SERVICE_KEY.toString());
+        reg.addWhitelistURL(BDS.SEARCH_IN_SEARCH.toString());
+        reg.addWhitelistURL(SliceServiceFactory.SERVICE_KEY.toString());
+        reg.addWhitelistURL(SampleServiceFactory.SERVICE_KEY.toString());
+        loadWhitelist(reg);
+
+        // Initialize remote services
+        reg.setDefaultServiceFactory(getDefaultServiceFactory());
 
         // Override date functions so that we can handle them
         // via WikibaseDate
@@ -100,6 +134,36 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         addPrefixes(WikibaseUris.getURISystem());
 
         log.warn("Wikibase services initialized.");
+    }
+
+    /**
+     * Get default service factory, with proper options.
+     * @return
+     */
+    private static ServiceFactory getDefaultServiceFactory() {
+        final RemoteServiceOptions options = new RemoteServiceOptions();
+        options.setSPARQLVersion(SPARQLVersion.SPARQL_11);
+        options.setGET(true);
+        return new RemoteServiceFactoryImpl(options);
+    }
+
+    /**
+     * Load whitelist from file.
+     * @param reg
+     */
+    private static void loadWhitelist(final ServiceRegistry reg) {
+        try {
+            List<String> lines = Files.readAllLines(Paths.get(WHITELIST),
+                    StandardCharsets.UTF_8);
+            for (String line : lines) {
+                reg.addWhitelistURL(line);
+            }
+        } catch (FileNotFoundException e) {
+            // ignore file not found
+            log.info("Whitelist file {} not found, ignoring.", WHITELIST);
+        } catch (IOException e) {
+            log.warn("Failed reading from whitelist file");
+        }
     }
 
     /**

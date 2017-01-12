@@ -106,7 +106,9 @@ public class LabelService extends AbstractServiceFactory {
      * Register the service so it is recognized by Blazegraph.
      */
     public static void register() {
-        ServiceRegistry.getInstance().add(SERVICE_KEY, new LabelService());
+        final ServiceRegistry reg = ServiceRegistry.getInstance();
+        reg.add(SERVICE_KEY, new LabelService());
+        reg.addWhitelistURL(SERVICE_KEY.toString());
     }
 
     @Override

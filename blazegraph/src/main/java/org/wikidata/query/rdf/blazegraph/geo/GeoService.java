@@ -59,8 +59,13 @@ public abstract class GeoService extends AbstractServiceFactory {
      * Register the service so it is recognized by Blazegraph.
      */
     public static void register() {
-        ServiceRegistry.getInstance().add(GeoAroundService.SERVICE_KEY, new GeoAroundService());
-        ServiceRegistry.getInstance().add(GeoBoxService.SERVICE_KEY, new GeoBoxService());
+        final ServiceRegistry reg = ServiceRegistry.getInstance();
+
+        reg.add(GeoAroundService.SERVICE_KEY, new GeoAroundService());
+        reg.addWhitelistURL(GeoAroundService.SERVICE_KEY.toString());
+        reg.add(GeoBoxService.SERVICE_KEY, new GeoBoxService());
+        reg.addWhitelistURL(GeoBoxService.SERVICE_KEY.toString());
+        reg.addWhitelistURL(GeoSpatial.SEARCH.toString());
     }
 
     @Override
