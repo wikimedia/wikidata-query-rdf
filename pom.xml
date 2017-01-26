@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.sonatype.oss</groupId>
@@ -11,15 +10,6 @@
   <artifactId>parent</artifactId>
   <version>0.2.4-SNAPSHOT</version>
   <packaging>pom</packaging>
-
-  <modules>
-    <module>testTools</module>
-    <module>common</module>
-    <module>blazegraph</module>
-    <module>tools</module>
-    <module>war</module>
-    <module>dist</module>
-  </modules>
 
   <licenses>
     <license>
@@ -44,10 +34,19 @@
     </developer>
   </developers>
 
+  <modules>
+    <module>testTools</module>
+    <module>common</module>
+    <module>blazegraph</module>
+    <module>tools</module>
+    <module>war</module>
+    <module>dist</module>
+  </modules>
+
   <scm>
-    <url>https://gerrit.wikimedia.org/r/#/admin/projects/wikidata/query/rdf</url>
     <connection>scm:git:https://gerrit.wikimedia.org/r/wikidata/query/rdf</connection>
     <developerConnection>scm:git:https://gerrit.wikimedia.org/r/wikidata/query/rdf</developerConnection>
+    <url>https://gerrit.wikimedia.org/r/#/admin/projects/wikidata/query/rdf</url>
   </scm>
 
   <issueManagement>
@@ -55,24 +54,237 @@
     <url><![CDATA[https://phabricator.wikimedia.org/maniphest/?statuses=open%2Cstalled&allProjects=PHID-PROJ-ceqceb2bnio6alj5nxov#R]]></url>
   </issueManagement>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <blazegraph.version>2.1.4</blazegraph.version>
-    <sesame.version>2.7.12</sesame.version>
-    <jetty.version>9.2.9.v20150224</jetty.version>
-    <slf4j.version>1.7.10</slf4j.version>
-  </properties>
-
   <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
     <repository>
       <id>ossrh</id>
       <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
   </distributionManagement>
+
+  <properties>
+    <blazegraph.version>2.1.4</blazegraph.version>
+    <jetty.version>9.2.9.v20150224</jetty.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <sesame.version>2.7.12</sesame.version>
+    <slf4j.version>1.7.10</slf4j.version>
+  </properties>
+
+  <dependencyManagement>
+    <!-- Decalare the default parameters for some dependencies. -->
+    <dependencies>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.1.2</version>
+      </dependency>
+      <dependency>
+        <groupId>com.blazegraph</groupId>
+        <artifactId>bigdata-core</artifactId>
+        <version>${blazegraph.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.blazegraph</groupId>
+        <artifactId>bigdata-war</artifactId>
+        <version>${blazegraph.version}</version>
+        <type>war</type>
+      </dependency>
+      <dependency>
+        <groupId>com.blazegraph</groupId>
+        <artifactId>bigdata-war</artifactId>
+        <version>${blazegraph.version}</version>
+        <type>pom</type>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>18.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.googlecode.json-simple</groupId>
+        <artifactId>json-simple</artifactId>
+        <version>1.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.lexicalscope.jewelcli</groupId>
+        <artifactId>jewelcli</artifactId>
+        <version>0.8.9</version>
+      </dependency>
+      <dependency>
+        <groupId>com.nanohttpd</groupId>
+        <artifactId>nanohttpd</artifactId>
+        <version>2.1.1</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-core</artifactId>
+        <version>3.1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>joda-time</groupId>
+        <artifactId>joda-time</artifactId>
+        <version>2.7</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>3.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-client</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-runner</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jolokia</groupId>
+        <artifactId>jolokia-jvm</artifactId>
+        <version>1.3.1</version>
+        <classifier>agent</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.linkeddatafragments</groupId>
+        <artifactId>ldfserver</artifactId>
+        <version>0.1.1-wmf2</version>
+        <classifier>classes</classifier>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>commons-cli</groupId>
+            <artifactId>commons-cli</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.linkeddatafragments</groupId>
+        <artifactId>ldfserver</artifactId>
+        <version>0.1.1-wmf2</version>
+        <type>war</type>
+      </dependency>
+      <dependency>
+        <groupId>org.openrdf.sesame</groupId>
+        <artifactId>sesame-query</artifactId>
+        <version>${sesame.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.openrdf.sesame</groupId>
+        <artifactId>sesame-queryresultio-binary</artifactId>
+        <version>${sesame.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.openrdf.sesame</groupId>
+        <artifactId>sesame-rio-turtle</artifactId>
+        <version>${sesame.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jcl-over-slf4j</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.wikidata.query.rdf</groupId>
+        <artifactId>blazegraph</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.wikidata.query.rdf</groupId>
+        <artifactId>blazegraph-service</artifactId>
+        <version>${project.version}</version>
+        <type>war</type>
+      </dependency>
+      <dependency>
+        <groupId>org.wikidata.query.rdf</groupId>
+        <artifactId>common</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.carrotsearch.randomizedtesting</groupId>
+        <artifactId>randomizedtesting-runner</artifactId>
+        <version>2.1.13</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.11</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit-dep</artifactId>
+        <version>4.11</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest-all</artifactId>
+        <version>1.3</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-all</artifactId>
+        <version>1.9.5</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.wikidata.query.rdf</groupId>
+        <artifactId>testTools</artifactId>
+        <version>${project.version}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.carrotsearch.randomizedtesting</groupId>
+      <artifactId>randomizedtesting-runner</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <id>wmf.mirrored</id>
+      <url>http://archiva.wikimedia.org/repository/mirrored</url>
+    </repository>
+    <repository>
+      <id>wmf.releases</id>
+      <url>http://archiva.wikimedia.org/repository/releases</url>
+    </repository>
+  </repositories>
 
   <build>
     <resources>
@@ -108,65 +320,6 @@
     <pluginManagement>
       <plugins>
         <plugin>
-          <groupId>org.sonatype.plugins</groupId>
-          <artifactId>nexus-staging-maven-plugin</artifactId>
-          <version>1.6.3</version>
-          <extensions>true</extensions>
-          <configuration>
-            <serverId>ossrh</serverId>
-            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>2.3.2</version>
-          <configuration>
-            <source>1.7</source>
-            <target>1.7</target>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-clean-plugin</artifactId>
-          <version>2.4.1</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-resources-plugin</artifactId>
-          <version>2.5</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-install-plugin</artifactId>
-          <version>2.3.1</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>2.3.2</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-release-plugin</artifactId>
-          <version>2.5</version>
-          <configuration>
-            <pushChanges>false</pushChanges>
-            <autoVersionSubmodules>true</autoVersionSubmodules>
-            <useReleaseProfile>false</useReleaseProfile>
-            <releaseProfiles>release</releaseProfiles>
-            <goals>deploy</goals>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <configuration>
-            <skipTests>true</skipTests>
-          </configuration>
-        </plugin>
-        <plugin>
           <groupId>com.carrotsearch.randomizedtesting</groupId>
           <artifactId>junit4-maven-plugin</artifactId>
           <version>2.1.13</version>
@@ -175,12 +328,12 @@
             <jvmOutputAction>pipe,warn</jvmOutputAction>
             <leaveTemporary>true</leaveTemporary>
             <assertions>
-              <enable />
+              <enable></enable>
             </assertions>
             <seed>${tests.seed}</seed>
             <jvmArgs>
               <param>-Xmx512m</param>
-<!--
+              <!--
 		<param>-Xdebug</param>
 		<param>-Xrunjdwp:transport=dt_socket,server=y,address=8765</param>
 -->
@@ -189,10 +342,10 @@
           <executions>
             <execution>
               <id>tests</id>
-              <phase>test</phase>
               <goals>
                 <goal>junit4</goal>
               </goals>
+              <phase>test</phase>
               <configuration>
                 <includes>
                   <include>**/*UnitTest.class</include>
@@ -205,26 +358,23 @@
                 <!-- The listeners and balancers elements do three things: 1. Control how output is formatted during tests
                   2. Dump the report to the right spot 3. Log an "execution-hints" file that is used to balance the load when tests are forked. -->
                 <listeners>
-                  <report-ant-xml mavenExtensions="true" dir="${project.build.directory}/surefire-reports" />
-                  <report-text showThrowable="true" showStackTraces="true" showOutput="onerror"
-                    showStatusOk="false" showStatusError="true" showStatusFailure="true" showStatusIgnored="true"
-                    showSuiteSummary="true" timestamps="true" />
-                  <report-execution-times historyLength="20"
-                    file="${basedir}/.execution-hints-${project.version}.log" />
+                  <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true"></report-ant-xml>
+                  <report-text showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="true"></report-text>
+                  <report-execution-times file="${basedir}/.execution-hints-${project.version}.log" historyLength="20"></report-execution-times>
                 </listeners>
                 <balancers>
                   <execution-times>
-                    <fileset dir="${basedir}" includes="${basedir}/.execution-hints-${project.version}.log" />
+                    <fileset dir="${basedir}" includes="${basedir}/.execution-hints-${project.version}.log"></fileset>
                   </execution-times>
                 </balancers>
               </configuration>
             </execution>
             <execution>
               <id>integration-tests</id>
-              <phase>integration-test</phase>
               <goals>
                 <goal>junit4</goal>
               </goals>
+              <phase>integration-test</phase>
               <configuration>
                 <includes>
                   <include>**/*IntegrationTest.class</include>
@@ -235,10 +385,8 @@
                 <!-- Use only a single JVM so we don't interfere with ourselves. -->
                 <parallelism>1</parallelism>
                 <listeners>
-                  <report-ant-xml mavenExtensions="true" dir="${project.build.directory}/failsafe-reports" />
-                  <report-text showThrowable="true" showStackTraces="true" showOutput="onerror"
-                    showStatusOk="false" showStatusError="true" showStatusFailure="true" showStatusIgnored="true"
-                    showSuiteSummary="true" timestamps="true" />
+                  <report-ant-xml dir="${project.build.directory}/failsafe-reports" mavenExtensions="true"></report-ant-xml>
+                  <report-text showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="true"></report-text>
                 </listeners>
               </configuration>
             </execution>
@@ -246,16 +394,57 @@
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-source-plugin</artifactId>
-          <version>2.2.1</version>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>2.13</version>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>6.2</version>
+            </dependency>
+          </dependencies>
           <executions>
             <execution>
-              <id>attach-sources</id>
+              <id>validate</id>
               <goals>
-                <goal>jar</goal>
+                <goal>check</goal>
               </goals>
+              <phase>test</phase>
+              <configuration>
+                <configLocation>${project.parent.basedir}/src/build/checkstyle/checkstyle.xml</configLocation>
+                <propertyExpansion>checkstyle.suppressions=${project.parent.basedir}/src/build/checkstyle/suppressions.xml</propertyExpansion>
+                <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                <encoding>UTF-8</encoding>
+                <consoleOutput>true</consoleOutput>
+                <failsOnError>true</failsOnError>
+                <linkXRef>false</linkXRef>
+              </configuration>
             </execution>
           </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>2.4.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>2.3.2</version>
+          <configuration>
+            <source>1.7</source>
+            <target>1.7</target>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>2.3.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>2.3.2</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -279,44 +468,88 @@
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>2.13</version>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.5</version>
+          <configuration>
+            <pushChanges>false</pushChanges>
+            <autoVersionSubmodules>true</autoVersionSubmodules>
+            <useReleaseProfile>false</useReleaseProfile>
+            <releaseProfiles>release</releaseProfiles>
+            <goals>deploy</goals>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>2.5</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>2.2.1</version>
           <executions>
             <execution>
-              <id>validate</id>
-              <phase>test</phase>
-              <configuration>
-                <configLocation>${project.parent.basedir}/src/build/checkstyle/checkstyle.xml</configLocation>
-                <propertyExpansion>checkstyle.suppressions=${project.parent.basedir}/src/build/checkstyle/suppressions.xml</propertyExpansion>
-                <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                <encoding>UTF-8</encoding>
-                <consoleOutput>true</consoleOutput>
-                <failsOnError>true</failsOnError>
-                <linkXRef>false</linkXRef>
-              </configuration>
+              <id>attach-sources</id>
               <goals>
-                <goal>check</goal>
+                <goal>jar</goal>
               </goals>
             </execution>
           </executions>
-          <dependencies>
-            <dependency>
-              <groupId>com.puppycrawl.tools</groupId>
-              <artifactId>checkstyle</artifactId>
-              <version>6.2</version>
-            </dependency>
-          </dependencies>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <skipTests>true</skipTests>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.sonatype.plugins</groupId>
+          <artifactId>nexus-staging-maven-plugin</artifactId>
+          <version>1.6.3</version>
+          <extensions>true</extensions>
+          <configuration>
+            <serverId>ossrh</serverId>
+            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <groupId>com.github.ekryd.sortpom</groupId>
+        <artifactId>sortpom-maven-plugin</artifactId>
+        <!-- version 2.5.0 is compiled with Java 8 as target class format -->
+        <version>2.4.0</version>
+        <configuration>
+          <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
+          <sortDependencies>scope,groupId,artifactId</sortDependencies>
+          <sortPlugins>groupId,artifactId</sortPlugins>
+          <lineSeparator>\n</lineSeparator>
+          <encoding>${project.build.sourceEncoding}</encoding>
+          <sortProperties>true</sortProperties>
+          <keepBlankLines>true</keepBlankLines>
+          <nrOfIndentSpace>2</nrOfIndentSpace>
+          <verifyFail>Stop</verifyFail>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>verify</goal>
+            </goals>
+            <phase>verify</phase>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
         <version>1.7</version>
         <configuration>
           <targetVersion>1.7</targetVersion>
-          <failOnMissingClasses>false</failOnMissingClasses> <!-- this is a bug in forbidden APIs since 1.5 looks also at annotations -->
+          <failOnMissingClasses>false</failOnMissingClasses>
+          <!-- this is a bug in forbidden APIs since 1.5 looks also at annotations -->
           <!-- disallow undocumented classes like sun.misc.Unsafe: -->
           <internalRuntimeForbidden>true</internalRuntimeForbidden>
           <bundledSignatures>
@@ -329,10 +562,10 @@
         <executions>
           <execution>
             <id>check-forbidden-apis</id>
-            <phase>compile</phase>
             <goals>
               <goal>check</goal>
             </goals>
+            <phase>compile</phase>
             <configuration>
               <signaturesFiles>
                 <signaturesFile>${project.parent.basedir}/src/build/forbidden/all.txt</signaturesFile>
@@ -347,10 +580,10 @@
           </execution>
           <execution>
             <id>check-forbidden-test-apis</id>
-            <phase>test-compile</phase>
             <goals>
               <goal>testCheck</goal>
             </goals>
+            <phase>test-compile</phase>
             <configuration>
               <signaturesFiles>
                 <signaturesFile>${project.parent.basedir}/src/build/forbidden/all.txt</signaturesFile>
@@ -362,218 +595,6 @@
       </plugin>
     </plugins>
   </build>
-
-  <dependencyManagement>
-    <!-- Decalare the default parameters for some dependencies. -->
-    <dependencies>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-runner</artifactId>
-        <version>${jetty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.lexicalscope.jewelcli</groupId>
-        <artifactId>jewelcli</artifactId>
-        <version>0.8.9</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jolokia</groupId>
-        <artifactId>jolokia-jvm</artifactId>
-        <version>1.3.1</version>
-        <classifier>agent</classifier>
-      </dependency>
-      <dependency>
-        <groupId>org.openrdf.sesame</groupId>
-        <artifactId>sesame-rio-turtle</artifactId>
-        <version>${sesame.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpclient</artifactId>
-        <version>4.4</version>
-      </dependency>
-      <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-classic</artifactId>
-        <version>1.1.2</version>
-      </dependency>
-      <dependency>
-        <groupId>io.dropwizard.metrics</groupId>
-        <artifactId>metrics-core</artifactId>
-        <version>3.1.0</version>
-      </dependency>
-      <dependency>
-        <groupId>com.nanohttpd</groupId>
-        <artifactId>nanohttpd</artifactId>
-        <version>2.1.1</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>3.4</version>
-      </dependency>
-      <dependency>
-        <groupId>org.openrdf.sesame</groupId>
-        <artifactId>sesame-queryresultio-binary</artifactId>
-        <version>${sesame.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.wikidata.query.rdf</groupId>
-        <artifactId>testTools</artifactId>
-        <version>${project.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>joda-time</groupId>
-        <artifactId>joda-time</artifactId>
-        <version>2.7</version>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
-        <version>${slf4j.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>jcl-over-slf4j</artifactId>
-        <version>${slf4j.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.wikidata.query.rdf</groupId>
-        <artifactId>blazegraph-service</artifactId>
-        <version>${project.version}</version>
-        <type>war</type>
-      </dependency>
-      <dependency>
-        <groupId>org.wikidata.query.rdf</groupId>
-        <artifactId>blazegraph</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.googlecode.json-simple</groupId>
-        <artifactId>json-simple</artifactId>
-        <version>1.1</version>
-      </dependency>
-      <dependency>
-        <groupId>org.linkeddatafragments</groupId>
-        <artifactId>ldfserver</artifactId>
-        <version>0.1.1-wmf2</version>
-        <classifier>classes</classifier>
-        <exclusions>
-          <exclusion>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-server</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlet</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>commons-cli</groupId>
-            <artifactId>commons-cli</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-client</artifactId>
-        <version>${jetty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>18.0</version>
-      </dependency>
-      <dependency>
-        <groupId>org.wikidata.query.rdf</groupId>
-        <artifactId>common</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.openrdf.sesame</groupId>
-        <artifactId>sesame-query</artifactId>
-        <version>${sesame.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.blazegraph</groupId>
-        <artifactId>bigdata-core</artifactId>
-        <version>${blazegraph.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.blazegraph</groupId>
-        <artifactId>bigdata-war</artifactId>
-        <version>${blazegraph.version}</version>
-        <type>war</type>
-      </dependency>
-      <dependency>
-        <groupId>com.blazegraph</groupId>
-        <artifactId>bigdata-war</artifactId>
-        <version>${blazegraph.version}</version>
-        <type>pom</type>
-      </dependency>
-      <dependency>
-        <groupId>org.hamcrest</groupId>
-        <artifactId>hamcrest-all</artifactId>
-        <version>1.3</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.linkeddatafragments</groupId>
-        <artifactId>ldfserver</artifactId>
-        <version>0.1.1-wmf2</version>
-        <type>war</type>
-      </dependency>
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.11</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>com.carrotsearch.randomizedtesting</groupId>
-        <artifactId>randomizedtesting-runner</artifactId>
-        <version>2.1.13</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-all</artifactId>
-        <version>1.9.5</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit-dep</artifactId>
-        <version>4.11</version>
-        <scope>test</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.carrotsearch.randomizedtesting</groupId>
-      <artifactId>randomizedtesting-runner</artifactId>
-    </dependency>
-  </dependencies>
-
-  <repositories>
-    <repository>
-      <id>wmf.mirrored</id>
-      <url>http://archiva.wikimedia.org/repository/mirrored</url>
-    </repository>
-    <repository>
-      <id>wmf.releases</id>
-      <url>http://archiva.wikimedia.org/repository/releases</url>
-    </repository>
-  </repositories>
 
   <profiles>
     <profile>
@@ -604,7 +625,7 @@
                         </goals>
                       </pluginExecutionFilter>
                       <action>
-                        <ignore />
+                        <ignore></ignore>
                       </action>
                     </pluginExecution>
                     <pluginExecution>
@@ -618,7 +639,7 @@
                         </goals>
                       </pluginExecutionFilter>
                       <action>
-                        <ignore />
+                        <ignore></ignore>
                       </action>
                     </pluginExecution>
                   </pluginExecutions>
@@ -643,17 +664,6 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-checkstyle-plugin</artifactId>
-            <version>2.13</version>
-            <executions>
-              <execution>
-                <id>validate</id>
-                <phase>none</phase>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
             <groupId>de.thetaphi</groupId>
             <artifactId>forbiddenapis</artifactId>
             <executions>
@@ -663,6 +673,17 @@
               </execution>
               <execution>
                 <id>check-forbidden-test-apis</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <version>2.13</version>
+            <executions>
+              <execution>
+                <id>validate</id>
                 <phase>none</phase>
               </execution>
             </executions>
@@ -681,10 +702,10 @@
             <executions>
               <execution>
                 <id>sign-artifacts</id>
-                <phase>verify</phase>
                 <goals>
                   <goal>sign</goal>
                 </goals>
+                <phase>verify</phase>
               </execution>
             </executions>
           </plugin>
@@ -692,18 +713,18 @@
       </build>
     </profile>
     <profile>
-     <id>deploy-archiva</id>
+      <id>deploy-archiva</id>
       <distributionManagement>
-       <repository>
-         <id>wikimedia.releases</id>
-         <name>Wikimedia Release Repository</name>
-         <url>https://archiva.wikimedia.org/repository/releases/</url>
-       </repository>
-       <snapshotRepository>
-         <id>wikimedia.snapshots</id>
-         <name>Wikimedia Snapshot Repository</name>
-         <url>https://archiva.wikimedia.org/repository/snapshots/</url>
-       </snapshotRepository>
+        <repository>
+          <id>wikimedia.releases</id>
+          <name>Wikimedia Release Repository</name>
+          <url>https://archiva.wikimedia.org/repository/releases/</url>
+        </repository>
+        <snapshotRepository>
+          <id>wikimedia.snapshots</id>
+          <name>Wikimedia Snapshot Repository</name>
+          <url>https://archiva.wikimedia.org/repository/snapshots/</url>
+        </snapshotRepository>
       </distributionManagement>
       <build>
         <plugins>

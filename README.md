@@ -42,3 +42,12 @@ We use Blazegraph for testing SPARQL.  You can start it from the command line by
 	cd tools && runBlazegraph.sh
 ```
 It is started automatically during integration testing.
+
+### Maven
+pom.xml files are sorted according to the usual code convention. The
+[sortpom-maven-plugin](https://github.com/Ekryd/sortpom/) is used to fail the
+build if this order is not respected. The pom.xml can be automatically sorted
+with:
+```bash
+mvn sortpom:sort
+```
