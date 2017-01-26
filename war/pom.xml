@@ -23,20 +23,17 @@
     <dependency>
       <groupId>com.blazegraph</groupId>
       <artifactId>bigdata-war</artifactId>
-      <version>${blazegraph.version}</version>
       <type>war</type>
     </dependency>
     <dependency>
       <groupId>org.linkeddatafragments</groupId>
       <artifactId>ldfserver</artifactId>
-      <version>0.1.1-wmf2</version>
       <type>war</type>
     </dependency>
     <!-- include bigdata-war as a pom dependency to collect its transitive dependencies -->
     <dependency>
       <groupId>com.blazegraph</groupId>
       <artifactId>bigdata-war</artifactId>
-      <version>${blazegraph.version}</version>
       <type>pom</type>
     </dependency>
     <dependency>
@@ -46,7 +43,6 @@
     <dependency>
       <groupId>org.wikidata.query.rdf</groupId>
       <artifactId>blazegraph</artifactId>
-      <version>${project.parent.version}</version>
     </dependency>
   </dependencies>
 

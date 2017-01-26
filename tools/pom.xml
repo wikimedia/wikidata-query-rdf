@@ -36,42 +36,34 @@
     <dependency>
       <groupId>com.lexicalscope.jewelcli</groupId>
       <artifactId>jewelcli</artifactId>
-      <version>0.8.9</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.7.10</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>jcl-over-slf4j</artifactId>
-      <version>1.7.10</version>
     </dependency>
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
       <artifactId>json-simple</artifactId>
-      <version>1.1</version>
     </dependency>
     <dependency>
       <groupId>org.openrdf.sesame</groupId>
       <artifactId>sesame-rio-turtle</artifactId>
-      <version>${sesame.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-      <version>4.4</version>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.1.2</version>
     </dependency>
     <dependency>
       <groupId>org.openrdf.sesame</groupId>
       <artifactId>sesame-queryresultio-binary</artifactId>
-      <version>${sesame.version}</version>
     </dependency>
     <dependency>
       <groupId>org.openrdf.sesame</groupId>
@@ -80,23 +72,19 @@
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-core</artifactId>
-      <version>3.1.0</version>
     </dependency>
     <dependency>
       <!-- Tiny http server used with Munge's to option in port style -->
       <groupId>com.nanohttpd</groupId>
       <artifactId>nanohttpd</artifactId>
-      <version>2.1.1</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.4</version>
     </dependency>
     <dependency>
       <groupId>org.wikidata.query.rdf</groupId>
       <artifactId>testTools</artifactId>
-      <version>${project.parent.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
