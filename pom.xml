@@ -149,6 +149,11 @@
         <version>${jetty.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.jhades</groupId>
+        <artifactId>jhades</artifactId>
+        <version>1.0.4</version>
+      </dependency>
+      <dependency>
         <groupId>org.jolokia</groupId>
         <artifactId>jolokia-jvm</artifactId>
         <version>1.3.1</version>

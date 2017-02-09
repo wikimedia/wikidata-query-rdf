@@ -32,6 +32,10 @@
       <type>pom</type>
     </dependency>
     <dependency>
+      <groupId>org.jhades</groupId>
+      <artifactId>jhades</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.linkeddatafragments</groupId>
       <artifactId>ldfserver</artifactId>
       <type>war</type>
