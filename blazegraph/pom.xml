@@ -20,9 +20,45 @@
 
   <dependencies>
     <dependency>
-      <!-- Blazegraph needs http client to run services. -->
+      <groupId>com.blazegraph</groupId>
+      <artifactId>bigdata-cache</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.blazegraph</groupId>
+      <artifactId>bigdata-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.blazegraph</groupId>
+      <artifactId>bigdata-common-util</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.blazegraph</groupId>
+      <artifactId>bigdata-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.blazegraph</groupId>
+      <artifactId>bigdata-util</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.blazegraph</groupId>
+      <artifactId>ctc-striterators</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.jena</groupId>
+      <artifactId>jena-core</artifactId>
+    </dependency>
+    <!-- Blazegraph needs http client to run services. -->
+    <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-http</artifactId>
     </dependency>
     <dependency>
       <groupId>org.linkeddatafragments</groupId>
@@ -30,13 +66,47 @@
       <classifier>classes</classifier>
     </dependency>
     <dependency>
+      <groupId>org.openrdf.sesame</groupId>
+      <artifactId>sesame-model</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.openrdf.sesame</groupId>
+      <artifactId>sesame-query</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.openrdf.sesame</groupId>
+      <artifactId>sesame-queryalgebra-evaluation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.openrdf.sesame</groupId>
+      <artifactId>sesame-queryresultio-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.wikidata.query.rdf</groupId>
       <artifactId>common</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.blazegraph</groupId>
-      <artifactId>bigdata-core</artifactId>
+      <groupId>xml-apis</groupId>
+      <artifactId>xml-apis</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.wikidata.query.rdf</groupId>

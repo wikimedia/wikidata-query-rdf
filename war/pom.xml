@@ -24,29 +24,35 @@
       <groupId>com.blazegraph</groupId>
       <artifactId>bigdata-war</artifactId>
       <type>war</type>
+      <scope>runtime</scope>
     </dependency>
     <!-- include bigdata-war as a pom dependency to collect its transitive dependencies -->
     <dependency>
       <groupId>com.blazegraph</groupId>
       <artifactId>bigdata-war</artifactId>
       <type>pom</type>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.jhades</groupId>
       <artifactId>jhades</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.linkeddatafragments</groupId>
       <artifactId>ldfserver</artifactId>
       <type>war</type>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.wikidata.query.rdf</groupId>
       <artifactId>blazegraph</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.wikidata.query.rdf</groupId>
       <artifactId>common</artifactId>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
 

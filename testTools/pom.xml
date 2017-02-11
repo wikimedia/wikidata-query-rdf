@@ -45,9 +45,8 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <scope>compile</scope>
+      <groupId>org.openrdf.sesame</groupId>
+      <artifactId>sesame-model</artifactId>
     </dependency>
     <dependency>
       <groupId>org.openrdf.sesame</groupId>

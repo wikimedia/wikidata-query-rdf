@@ -30,6 +30,10 @@
       <artifactId>logback-classic</artifactId>
     </dependency>
     <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
@@ -59,8 +63,24 @@
       <artifactId>httpclient</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-http</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-util</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.openrdf.sesame</groupId>
+      <artifactId>sesame-model</artifactId>
     </dependency>
     <dependency>
       <groupId>org.openrdf.sesame</groupId>
@@ -68,15 +88,19 @@
     </dependency>
     <dependency>
       <groupId>org.openrdf.sesame</groupId>
+      <artifactId>sesame-queryresultio-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.openrdf.sesame</groupId>
       <artifactId>sesame-queryresultio-binary</artifactId>
     </dependency>
     <dependency>
       <groupId>org.openrdf.sesame</groupId>
-      <artifactId>sesame-rio-turtle</artifactId>
+      <artifactId>sesame-rio-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>jcl-over-slf4j</artifactId>
+      <groupId>org.openrdf.sesame</groupId>
+      <artifactId>sesame-rio-turtle</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -85,6 +109,26 @@
     <dependency>
       <groupId>org.wikidata.query.rdf</groupId>
       <artifactId>common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.wikidata.query.rdf</groupId>
@@ -263,24 +307,24 @@
                   <value>org.wikidata.query.rdf.blazegraph.WikibaseOptimizers</value>
                 </property>
                 <property>
-                	<name>org.wikidata.query.rdf.blazegraph.inline.literal.WKTSerializer.noGlobe</name>
-                	<value>2</value>
+                  <name>org.wikidata.query.rdf.blazegraph.inline.literal.WKTSerializer.noGlobe</name>
+                  <value>2</value>
                 </property>
                 <property>
-                	<name>com.bigdata.rdf.sail.sparql.PrefixDeclProcessor.additionalDeclsFile</name>
-                	<value>${project.parent.basedir}/dist/src/script/prefixes.conf</value>
+                  <name>com.bigdata.rdf.sail.sparql.PrefixDeclProcessor.additionalDeclsFile</name>
+                  <value>${project.parent.basedir}/dist/src/script/prefixes.conf</value>
                 </property>
                 <property>
-                	<name>com.bigdata.rdf.sail.webapp.client.HttpClientConfigurator</name>
-                	<value>org.wikidata.query.rdf.blazegraph.ProxiedHttpConnectionFactory</value>
+                  <name>com.bigdata.rdf.sail.webapp.client.HttpClientConfigurator</name>
+                  <value>org.wikidata.query.rdf.blazegraph.ProxiedHttpConnectionFactory</value>
                 </property>
                 <property>
-                	<name>http.userAgent</name>
-                	<value>Wikidata Query Service (testing); https://query.wikidata.org/</value>
+                  <name>http.userAgent</name>
+                  <value>Wikidata Query Service (testing); https://query.wikidata.org/</value>
                 </property>
                 <property>
-                	<name>wikibaseServiceWhitelist</name>
-                	<value>${project.basedir}/src/test/resources/blazegraph/whitelist.txt</value>
+                  <name>wikibaseServiceWhitelist</name>
+                  <value>${project.basedir}/src/test/resources/blazegraph/whitelist.txt</value>
                 </property>
               </properties>
             </configuration>

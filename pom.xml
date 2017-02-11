@@ -82,15 +82,46 @@
         <version>1.1.2</version>
       </dependency>
       <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-core</artifactId>
+        <version>1.1.2</version>
+      </dependency>
+      <dependency>
+        <groupId>com.blazegraph</groupId>
+        <artifactId>bigdata-cache</artifactId>
+        <version>${blazegraph.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.blazegraph</groupId>
+        <artifactId>bigdata-client</artifactId>
+        <version>${blazegraph.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.blazegraph</groupId>
+        <artifactId>bigdata-common-util</artifactId>
+        <version>${blazegraph.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
         <groupId>com.blazegraph</groupId>
         <artifactId>bigdata-core</artifactId>
         <version>${blazegraph.version}</version>
         <exclusions>
           <exclusion>
             <groupId>commons-logging</groupId>
-              <artifactId>commons-logging</artifactId>
+            <artifactId>commons-logging</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.blazegraph</groupId>
+        <artifactId>bigdata-util</artifactId>
+        <version>${blazegraph.version}</version>
       </dependency>
       <dependency>
         <groupId>com.blazegraph</groupId>
@@ -109,6 +140,16 @@
             <artifactId>commons-logging</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.blazegraph</groupId>
+        <artifactId>ctc-striterators</artifactId>
+        <version>${blazegraph.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>2.5</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -136,6 +177,11 @@
         <version>3.1.0</version>
       </dependency>
       <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>javax.servlet-api</artifactId>
+        <version>3.1.0</version>
+      </dependency>
+      <dependency>
         <groupId>joda-time</groupId>
         <artifactId>joda-time</artifactId>
         <version>2.7</version>
@@ -157,8 +203,29 @@
         </exclusions>
       </dependency>
       <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpcore</artifactId>
+        <version>4.4</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.jena</groupId>
+        <artifactId>jena-core</artifactId>
+        <version>2.13.0</version>
+      </dependency>
+      <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-client</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-http</artifactId>
         <version>${jetty.version}</version>
       </dependency>
       <dependency>
@@ -167,9 +234,9 @@
         <version>${jetty.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.jhades</groupId>
-        <artifactId>jhades</artifactId>
-        <version>1.0.4</version>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-util</artifactId>
+        <version>${jetty.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jolokia</groupId>
@@ -213,12 +280,32 @@
       </dependency>
       <dependency>
         <groupId>org.openrdf.sesame</groupId>
+        <artifactId>sesame-model</artifactId>
+        <version>${sesame.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.openrdf.sesame</groupId>
         <artifactId>sesame-query</artifactId>
         <version>${sesame.version}</version>
       </dependency>
       <dependency>
         <groupId>org.openrdf.sesame</groupId>
+        <artifactId>sesame-queryalgebra-evaluation</artifactId>
+        <version>${sesame.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.openrdf.sesame</groupId>
+        <artifactId>sesame-queryresultio-api</artifactId>
+        <version>${sesame.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.openrdf.sesame</groupId>
         <artifactId>sesame-queryresultio-binary</artifactId>
+        <version>${sesame.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.openrdf.sesame</groupId>
+        <artifactId>sesame-rio-api</artifactId>
         <version>${sesame.version}</version>
       </dependency>
       <dependency>
@@ -251,6 +338,17 @@
         <groupId>org.wikidata.query.rdf</groupId>
         <artifactId>common</artifactId>
         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>xml-apis</groupId>
+        <artifactId>xml-apis</artifactId>
+        <version>1.4.01</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jhades</groupId>
+        <artifactId>jhades</artifactId>
+        <version>1.0.4</version>
+        <scope>runtime</scope>
       </dependency>
       <dependency>
         <groupId>com.carrotsearch.randomizedtesting</groupId>
