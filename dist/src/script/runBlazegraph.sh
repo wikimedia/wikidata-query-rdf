@@ -43,7 +43,7 @@ java -server -XX:+UseG1GC ${MEMORY} ${DEBUG} -Dcom.bigdata.rdf.sail.webapp.Confi
      -DASTOptimizerClass=org.wikidata.query.rdf.blazegraph.WikibaseOptimizers \
      -Dorg.wikidata.query.rdf.blazegraph.inline.literal.WKTSerializer.noGlobe=$DEFAULT_GLOBE \
      -Dcom.bigdata.rdf.sail.webapp.client.RemoteRepository.maxRequestURLLength=7168 \
-     -DwikibasePrefixes=$DIR/prefixes.conf \
+     -Dcom.bigdata.rdf.sail.sparql.PrefixDeclProcessor.additionalDeclsFile=$DIR/prefixes.conf \
      ${BLAZEGRAPH_OPTS} \
      -jar jetty-runner*.jar \
      --host $HOST \
