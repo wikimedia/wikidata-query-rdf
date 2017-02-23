@@ -4,6 +4,7 @@ import com.bigdata.rdf.lexicon.LexiconRelation;
 import com.bigdata.rdf.model.BigdataURI;
 import com.bigdata.rdf.model.BigdataValue;
 import com.bigdata.rdf.model.BigdataValueFactory;
+import com.bigdata.rdf.sail.sparql.PrefixDeclProcessor;
 
 import org.linkeddatafragments.util.TriplePatternElementParser;
 
@@ -39,9 +40,22 @@ public class TriplePatternElementParserForBlazegraph
         return valueFactory.createBNode(label);
     }
 
+    /**
+     * If URL has known prefix, resolve it.
+     * @param uri
+     * @return
+     */
+    private String resolvePossiblePrefix(final String uri) {
+        final String[] parts = uri.split(":", 2);
+        if (PrefixDeclProcessor.defaultDecls.containsKey(parts[0])) {
+            return PrefixDeclProcessor.defaultDecls.get(parts[0]) + parts[1];
+        }
+        return uri;
+    }
+
     @Override
     public BigdataValue createURI(final String uri) {
-        return valueFactory.createURI(uri);
+        return valueFactory.createURI(resolvePossiblePrefix(uri));
     }
 
     @Override
