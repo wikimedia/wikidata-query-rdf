@@ -131,7 +131,7 @@ public class RdfRepository {
      * How long to delay after failing first HTTP call, in milliseconds.
      * Next retries would be slower by 2x, 3x, 4x etc. until maxRetries is exhausted.
      */
-    private int delay = 2000;
+    private int delay = 1000;
 
     /**
      * Allow subclass access to the HTTP client.
@@ -621,7 +621,7 @@ public class RdfRepository {
                     // Increasing delay, with random 10% variation so threads won't all get restarts
                     // at the same time.
                     int retryIn = (int)Math.ceil(delay * (retries + 1) * (1 + Math.random() * 0.1));
-                    log.info("HTTP request failed: {}, retrying in {} ms", e, retryIn);
+                    log.info("HTTP request for {} failed: {}, retrying in {} ms", type, e, retryIn);
                     retries++;
                     try {
                         Thread.sleep(retryIn);
