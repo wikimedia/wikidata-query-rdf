@@ -27,6 +27,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -139,6 +140,16 @@ public class RdfRepository {
         return client;
     }
 
+    /**
+     * HTTP request configuration.
+     */
+    private RequestConfig requestConfig;
+
+    /**
+     * Request timeout property.
+     */
+    public static final String TIMEOUT_PROPERTY = RdfRepository.class + ".timeout";
+
     public RdfRepository(URI uri, WikibaseUris uris) {
         this.uri = uri;
         this.uris = uris;
@@ -150,6 +161,10 @@ public class RdfRepository {
         cleanUnused = loadBody("CleanUnused");
         getRevisions = loadBody("GetRevisions");
         verify = loadBody("verify");
+
+        final int timeout = Integer
+                .parseInt(System.getProperty(TIMEOUT_PROPERTY, "-1")) * 1000;
+        requestConfig = RequestConfig.custom().setSocketTimeout(timeout).build();
     }
 
     /**
@@ -576,6 +591,7 @@ public class RdfRepository {
      */
     protected <T> T execute(String type, ResponseHandler<T> responseHandler, String sparql) {
         HttpPost post = new HttpPost(uri);
+        post.setConfig(requestConfig);
         post.setHeader(new BasicHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8"));
         // Note that Blazegraph totally ignores the Accept header for SPARQL
         // updates like this so the response is just html....
