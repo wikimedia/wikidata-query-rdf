@@ -4,7 +4,7 @@ HOST=localhost
 CONTEXT=bigdata
 PORT=9999
 DIR=`dirname $0`
-MEMORY=-Xmx8g
+MEMORY=-Xmx16g
 BLAZEGRAPH_OPTS=""
 CONFIG_FILE=RWStore.properties
 DEBUG=-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n
