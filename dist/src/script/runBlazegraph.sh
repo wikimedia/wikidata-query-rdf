@@ -5,6 +5,16 @@ CONTEXT=bigdata
 PORT=9999
 DIR=`dirname $0`
 MEMORY=-Xmx16g
+GC_LOGS="-Xloggc:/var/log/wdqs/wdqs-blazegraph_jvm_gc.%p.log \
+         -XX:+PrintGCDetails \
+         -XX:+PrintGCDateStamps \
+         -XX:+PrintGCTimeStamps \
+         -XX:+PrintTenuringDistribution \
+         -XX:+PrintGCCause \
+         -XX:+PrintGCApplicationStoppedTime \
+         -XX:+UseGCLogFileRotation \
+         -XX:NumberOfGCLogFiles=10 \
+         -XX:GCLogFileSize=20M"
 BLAZEGRAPH_OPTS=""
 CONFIG_FILE=RWStore.properties
 DEBUG=-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n
@@ -36,7 +46,8 @@ pushd $DIR
 DEFAULT_GLOBE=2
 
 echo "Running Blazegraph from `pwd` on :$PORT/$CONTEXT"
-java -server -XX:+UseG1GC ${MEMORY} ${DEBUG} -Dcom.bigdata.rdf.sail.webapp.ConfigParams.propertyFile=${CONFIG_FILE} \
+java -server -XX:+UseG1GC ${MEMORY} ${DEBUG} ${GC_LOGS} \
+     -Dcom.bigdata.rdf.sail.webapp.ConfigParams.propertyFile=${CONFIG_FILE} \
      -Dorg.eclipse.jetty.server.Request.maxFormContentSize=200000000 \
      -Dcom.bigdata.rdf.sparql.ast.QueryHints.analytic=true \
      -Dcom.bigdata.rdf.sparql.ast.QueryHints.analyticMaxMemoryPerQuery=1073741824 \

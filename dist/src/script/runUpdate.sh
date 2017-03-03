@@ -2,6 +2,16 @@
 
 HOST=http://localhost:9999
 CONTEXT=bigdata
+GC_LOGS="-Xloggc:/var/log/wdqs/wdqs-updater_jvm_gc.%p.log \
+         -XX:+PrintGCDetails \
+         -XX:+PrintGCDateStamps \
+         -XX:+PrintGCTimeStamps \
+         -XX:+PrintTenuringDistribution \
+         -XX:+PrintGCCause \
+         -XX:+PrintGCApplicationStoppedTime \
+         -XX:+UseGCLogFileRotation \
+         -XX:NumberOfGCLogFiles=10 \
+         -XX:GCLogFileSize=20M"
 
 while getopts h:c:n:l:t:s option
 do
@@ -54,4 +64,4 @@ MAIN=org.wikidata.query.rdf.tool.Update
 SPARQL_URL=$HOST/$CONTEXT/namespace/$NAMESPACE/sparql
 AGENT=-javaagent:lib/jolokia-jvm-1.3.1-agent.jar=port=8778,host=localhost
 echo "Updating via $SPARQL_URL"
-java -Xmx2g -cp $CP $LOG $TIMEOUT_ARG $AGENT $MAIN $ARGS --sparqlUrl $SPARQL_URL "$@"
+java -Xmx2g -cp $CP $GC_LOGS $LOG $TIMEOUT_ARG $AGENT $MAIN $ARGS --sparqlUrl $SPARQL_URL "$@"
