@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.openrdf.query.BindingSet;
@@ -27,6 +28,7 @@ import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 /**
  * Does lots of simultaneous IO and state mutation on multiple namespaces.
  */
+@Ignore("temporarily disable")
 public class IOBlastingIntegrationTest extends AbstractUpdateIntegrationTestBase {
 
     // works up to at least 10,000,000, albeit slowly (3min)
