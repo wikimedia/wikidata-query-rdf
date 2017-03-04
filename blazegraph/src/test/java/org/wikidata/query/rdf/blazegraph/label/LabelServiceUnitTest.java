@@ -105,6 +105,7 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         slltcp(extraQuery, subjectInQuery, "dummy.en", "in en", "en", "alt label in en, alt label in en2", "en");
         slltcp(extraQuery, subjectInQuery, "en.ru", "in en", "en", "alt label in en, alt label in en2", "en");
         slltcp(extraQuery, subjectInQuery, "ru.de", "in ru", "ru", "alt label in de", "de");
+        slltcp(extraQuery, subjectInQuery, "en.ru.en", "in en", "en", "alt label in en, alt label in en2", "en");
     }
 
     private void slltcp(String extraQuery, String subjectInQuery, String language, String labelText,

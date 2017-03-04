@@ -157,15 +157,20 @@ public class LabelService extends AbstractServiceFactory {
                 throw new IllegalArgumentException("not a literal");
             }
 
-            final String s = v.stringValue();
+            final String s = v.stringValue().trim();
             if (s.contains(",")) {
                 // we also allow comma lists for convenience
                 for (String ls: s.split(",")) {
-                    fallbacksMap.put(ls.trim(), cnt);
+                    final String key = ls.trim();
+                    if (!fallbacksMap.containsKey(key)) {
+                        fallbacksMap.put(key, cnt);
+                    }
                     ++cnt;
                 }
             } else {
-                fallbacksMap.put(s.trim(), cnt);
+                if (!fallbacksMap.containsKey(s)) {
+                    fallbacksMap.put(s, cnt);
+                }
             }
             ++cnt;
         }
