@@ -11,6 +11,7 @@ import java.util.Map;
 import javax.servlet.ServletContextEvent;
 
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.query.resultio.TupleQueryResultFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseCornerBOp;
@@ -144,6 +145,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         final RemoteServiceOptions options = new RemoteServiceOptions();
         options.setSPARQLVersion(SPARQLVersion.SPARQL_11);
         options.setGET(true);
+        options.setAcceptHeader(TupleQueryResultFormat.SPARQL.getDefaultMIMEType());
         return new RemoteServiceFactoryImpl(options);
     }
 
