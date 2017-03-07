@@ -4,7 +4,7 @@ HOST=localhost
 CONTEXT=bigdata
 PORT=9999
 DIR=`dirname $0`
-MEMORY=-Xmx16g
+MEMORY="-Xms16g -Xmx16g"
 GC_LOGS="-Xloggc:/var/log/wdqs/wdqs-blazegraph_jvm_gc.%p.log \
          -XX:+PrintGCDetails \
          -XX:+PrintGCDateStamps \
