@@ -31,6 +31,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
@@ -79,6 +80,7 @@ public class RdfRepository {
      * Http connection pool for the rdf repository.
      */
     private final CloseableHttpClient client = HttpClients.custom().setMaxConnPerRoute(100).setMaxConnTotal(100)
+            .setConnectionReuseStrategy(new NoConnectionReuseStrategy())
             .build();
     /**
      * URI for the wikibase rdf repository.
