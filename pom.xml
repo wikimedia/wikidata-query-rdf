@@ -67,7 +67,7 @@
 
   <properties>
     <blazegraph.version>2.1.5-SNAPSHOT</blazegraph.version>
-    <jetty.version>9.2.9.v20150224</jetty.version>
+    <jetty.version>9.2.3.v20140905</jetty.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sesame.version>2.7.12</sesame.version>
     <slf4j.version>1.7.10</slf4j.version>
