@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 
-HOST=localhost
+if [ -r /etc/default/wdqs-blazegraph ]; then
+  . /etc/default/wdqs-blazegraph
+fi
+
+HOST=${HOST:-"localhost"}
 CONTEXT=bigdata
-PORT=9999
-DIR=`dirname $0`
-MEMORY="-Xms16g -Xmx16g -XX:+ExitOnOutOfMemoryError"
-GC_LOGS="-Xloggc:/var/log/wdqs/wdqs-blazegraph_jvm_gc.%p.log \
+PORT=${PORT:-"9999"}
+DIR=${DIR:-`dirname $0`}
+HEAP_SIZE=${HEAP_SIZE:-"16g"}
+MEMORY=${MEMORY:-"-Xms${HEAP_SIZE} -Xmx${HEAP_SIZE}"}
+GC_LOGS=${GC_LOGS:-"-Xloggc:/var/log/wdqs/wdqs-blazegraph_jvm_gc.%p.log \
          -XX:+PrintGCDetails \
          -XX:+PrintGCDateStamps \
          -XX:+PrintGCTimeStamps \
@@ -14,9 +19,9 @@ GC_LOGS="-Xloggc:/var/log/wdqs/wdqs-blazegraph_jvm_gc.%p.log \
          -XX:+PrintGCApplicationStoppedTime \
          -XX:+UseGCLogFileRotation \
          -XX:NumberOfGCLogFiles=10 \
-         -XX:GCLogFileSize=20M"
-BLAZEGRAPH_OPTS=""
-CONFIG_FILE=RWStore.properties
+         -XX:GCLogFileSize=20M"}
+BLAZEGRAPH_OPTS=${BLAZEGRAPH_OPTS:-""}
+CONFIG_FILE=${CONFIG_FILE:-"RWStore.properties"}
 DEBUG=-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n
 # Disable this for debugging
 DEBUG=
@@ -35,7 +40,7 @@ do
     p) PORT=${OPTARG};;
     d) DIR=${OPTARG};;
     o) BLAZEGRAPH_OPTS="${OPTARG}";;
-	f) CONFIG_FILE=${OPTARG};;
+    f) CONFIG_FILE=${OPTARG};;
     ?) usage;;
   esac
 done
