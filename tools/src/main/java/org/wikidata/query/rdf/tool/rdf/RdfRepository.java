@@ -3,9 +3,8 @@ package org.wikidata.query.rdf.tool.rdf;
 import static com.google.common.io.Resources.getResource;
 import static org.wikidata.query.rdf.tool.FilteredStatements.filtered;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -17,6 +16,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,18 +26,16 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.apache.http.Consts;
-import org.apache.http.HttpEntity;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.NoConnectionReuseStrategy;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.message.BasicNameValuePair;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.HttpProxy;
+import org.eclipse.jetty.client.ProxyConfiguration;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.util.FormContentProvider;
+import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.util.Fields;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -62,7 +62,6 @@ import org.wikidata.query.rdf.tool.exception.FatalException;
 import com.google.common.base.Charsets;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.io.CharStreams;
 import com.google.common.io.Resources;
 
 /**
@@ -79,9 +78,8 @@ public class RdfRepository {
     /**
      * Http connection pool for the rdf repository.
      */
-    private final CloseableHttpClient client = HttpClients.custom().setMaxConnPerRoute(100).setMaxConnTotal(100)
-            .setConnectionReuseStrategy(new NoConnectionReuseStrategy())
-            .build();
+    private final HttpClient httpClient;
+
     /**
      * URI for the wikibase rdf repository.
      */
@@ -136,21 +134,23 @@ public class RdfRepository {
     private int delay = 1000;
 
     /**
-     * Allow subclass access to the HTTP client.
+     * Configuration name for proxy host.
      */
-    protected CloseableHttpClient client() {
-        return client;
-    }
-
+    private static final String HTTP_PROXY = "http.proxyHost";
     /**
-     * HTTP request configuration.
+     * Configuration name for proxy port.
      */
-    private RequestConfig requestConfig;
+    private static final String HTTP_PROXY_PORT = "http.proxyPort";
 
     /**
      * Request timeout property.
      */
     public static final String TIMEOUT_PROPERTY = RdfRepository.class + ".timeout";
+
+    /**
+     * Request timeout.
+     */
+    private final int timeout;
 
     public RdfRepository(URI uri, WikibaseUris uris) {
         this.uri = uri;
@@ -164,9 +164,44 @@ public class RdfRepository {
         getRevisions = loadBody("GetRevisions");
         verify = loadBody("verify");
 
-        final int timeout = Integer
-                .parseInt(System.getProperty(TIMEOUT_PROPERTY, "-1")) * 1000;
-        requestConfig = RequestConfig.custom().setSocketTimeout(timeout).build();
+        timeout = Integer.parseInt(System.getProperty(TIMEOUT_PROPERTY, "-1"));
+        httpClient = new HttpClient(new SslContextFactory(true/* trustAll */));
+        setupHttpClient();
+    }
+
+    /**
+     * Setup HTTP client settings.
+     */
+    @SuppressWarnings("checkstyle:illegalcatch")
+    private void setupHttpClient() {
+        if (System.getProperty(HTTP_PROXY) != null
+                && System.getProperty(HTTP_PROXY_PORT) != null) {
+            final ProxyConfiguration proxyConfig = httpClient.getProxyConfiguration();
+            final HttpProxy proxy = new HttpProxy(
+                    System.getProperty(HTTP_PROXY),
+                    Integer.parseInt(System.getProperty(HTTP_PROXY_PORT)));
+            proxy.getExcludedAddresses().add("localhost");
+            proxy.getExcludedAddresses().add("127.0.0.1");
+            proxyConfig.getProxies().add(proxy);
+        }
+        try {
+            httpClient.start();
+        // Who would think declaring it as throws Exception is a good idea?
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to start HttpClient", e);
+        }
+    }
+
+    /**
+     * Close the repository.
+     */
+    @SuppressWarnings("checkstyle:illegalcatch")
+    public void close() {
+        try {
+            httpClient.stop();
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to stop HttpClient", e);
+        }
     }
 
     /**
@@ -592,33 +627,39 @@ public class RdfRepository {
      * @return results string from the server
      */
     protected <T> T execute(String type, ResponseHandler<T> responseHandler, String sparql) {
-        HttpPost post = new HttpPost(uri);
-        post.setConfig(requestConfig);
-        post.setHeader(new BasicHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8"));
+        Request post = httpClient.newRequest(uri);
+        post.method(HttpMethod.POST);
+        if (timeout > 0) {
+            post.timeout(timeout, TimeUnit.SECONDS);
+        }
         // Note that Blazegraph totally ignores the Accept header for SPARQL
         // updates like this so the response is just html....
         if (responseHandler.acceptHeader() != null) {
-            post.setHeader(new BasicHeader("Accept", responseHandler.acceptHeader()));
+            post.header("Accept", responseHandler.acceptHeader());
         }
+
         log.debug("Running SPARQL: {}", sparql);
         long startQuery = System.currentTimeMillis();
         // TODO we might want to look into Blazegraph's incremental update
         // reporting.....
-        List<NameValuePair> entity = new ArrayList<>();
-        entity.add(new BasicNameValuePair(type, sparql));
-        post.setEntity(new UrlEncodedFormEntity(entity, Consts.UTF_8));
+        final Fields fields = new Fields();
+        fields.add(type, sparql);
+        final FormContentProvider form = new FormContentProvider(fields, Charsets.UTF_8);
+        post.content(form);
+
         int retries = 0;
         while (true) {
             try {
-                try (CloseableHttpResponse response = client.execute(post)) {
-                    if (response.getStatusLine().getStatusCode() != 200) {
-                        throw new ContainedException("Non-200 response from triple store:  " + response + " body=\n"
-                                + responseBodyAsString(response));
-                    }
-                    log.debug("Completed in {} ms", System.currentTimeMillis() - startQuery);
-                    return responseHandler.parse(response.getEntity());
+                ContentResponse response = post.send();
+
+                if (response.getStatus() != HttpStatus.OK_200) {
+                    throw new ContainedException("Non-200 response from triple store:  " + response + " body=\n"
+                            + responseBodyAsString(response));
                 }
-            } catch (IOException e) {
+
+                log.debug("Completed in {} ms", System.currentTimeMillis() - startQuery);
+                return responseHandler.parse(response);
+            } catch (TimeoutException | ExecutionException | IOException e) {
                 if (retries < maxRetries) {
                     // Increasing delay, with random 10% variation so threads won't all get restarts
                     // at the same time.
@@ -633,6 +674,8 @@ public class RdfRepository {
                     continue;
                 }
                 throw new FatalException("Error updating triple store", e);
+            } catch (InterruptedException e) {
+                throw new FatalException("Interrupted updating triple store", e);
             }
         }
 
@@ -643,8 +686,8 @@ public class RdfRepository {
      *
      * @throws IOException if there is an error reading the response
      */
-    protected String responseBodyAsString(CloseableHttpResponse response) throws IOException {
-        return CharStreams.toString(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+    protected String responseBodyAsString(ContentResponse response) throws IOException {
+        return response.getContentAsString();
     }
 
     /**
@@ -694,7 +737,7 @@ public class RdfRepository {
          *
          * @throws IOException if there is an error reading the response
          */
-        T parse(HttpEntity entity) throws IOException;
+        T parse(ContentResponse entity) throws IOException;
     }
 
     /**
@@ -747,40 +790,42 @@ public class RdfRepository {
         }
 
         @Override
-        public Integer parse(HttpEntity entity) throws IOException {
+        public Integer parse(ContentResponse entity) throws IOException {
             Integer mutationCount = null;
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), Charsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    Matcher m;
-                    m = ELAPSED_LINE_FLUSH.matcher(line);
-                    if (m.matches()) {
-                        log.debug("total = {} elapsed = {} flush = {} batch = {} where = {} delete = {} insert = {}",
-                                m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6), m.group(7));
-                        continue;
-                    }
-                    m = ELAPSED_LINE_CLAUSES.matcher(line);
-                    if (m.matches()) {
-                        log.debug("total = {} elapsed = {} where = {} delete = {} insert = {}", m.group(1), m.group(2), m.group(3), m.group(4), m.group(5));
-                        continue;
-                    }
-                    m = ELAPSED_LINE.matcher(line);
-                    if (m.matches()) {
-                        log.debug("elapsed = {}", m.group(1));
-                        continue;
-                    }
-                    m = COMMIT_LINE.matcher(line);
-                    if (m.matches()) {
-                        log.debug("total = {} mutation count = {} ", m.group(1), m.group(2));
-                        mutationCount = Integer.valueOf(m.group(2));
-                        continue;
-                    }
-                    m = BULK_UPDATE_LINE.matcher(line);
-                    if (m.matches()) {
-                        log.debug("bulk updated {} items in {} millis", m.group(1), m.group(2));
-                        mutationCount = Integer.valueOf(m.group(1));
-                        continue;
-                    }
+            for (String line : entity.getContentAsString().split("\\r?\\n")) {
+                Matcher m;
+                m = ELAPSED_LINE_FLUSH.matcher(line);
+                if (m.matches()) {
+                    log.debug("total = {} elapsed = {} flush = {} batch = {} where = {} delete = {} insert = {}",
+                            m.group(1), m.group(2), m.group(3), m.group(4),
+                            m.group(5), m.group(6), m.group(7));
+                    continue;
+                }
+                m = ELAPSED_LINE_CLAUSES.matcher(line);
+                if (m.matches()) {
+                    log.debug("total = {} elapsed = {} where = {} delete = {} insert = {}",
+                            m.group(1), m.group(2), m.group(3), m.group(4),
+                            m.group(5));
+                    continue;
+                }
+                m = ELAPSED_LINE.matcher(line);
+                if (m.matches()) {
+                    log.debug("elapsed = {}", m.group(1));
+                    continue;
+                }
+                m = COMMIT_LINE.matcher(line);
+                if (m.matches()) {
+                    log.debug("total = {} mutation count = {} ", m.group(1),
+                            m.group(2));
+                    mutationCount = Integer.valueOf(m.group(2));
+                    continue;
+                }
+                m = BULK_UPDATE_LINE.matcher(line);
+                if (m.matches()) {
+                    log.debug("bulk updated {} items in {} millis", m.group(1),
+                            m.group(2));
+                    mutationCount = Integer.valueOf(m.group(1));
+                    continue;
                 }
             }
             if (mutationCount == null) {
@@ -800,12 +845,12 @@ public class RdfRepository {
         }
 
         @Override
-        public TupleQueryResult parse(HttpEntity entity) throws IOException {
+        public TupleQueryResult parse(ContentResponse entity) throws IOException {
             BinaryQueryResultParser p = new BinaryQueryResultParser();
             TupleQueryResultBuilder collector = new TupleQueryResultBuilder();
             p.setQueryResultHandler(collector);
             try {
-                p.parseQueryResult(entity.getContent());
+                p.parseQueryResult(new ByteArrayInputStream(entity.getContent()));
             } catch (QueryResultParseException | QueryResultHandlerException | IllegalStateException e) {
                 throw new RuntimeException("Error parsing query", e);
             }
@@ -823,10 +868,9 @@ public class RdfRepository {
         }
 
         @Override
-        public Boolean parse(HttpEntity entity) throws IOException {
+        public Boolean parse(ContentResponse entity) throws IOException {
             try {
-                JSONObject response = (JSONObject) new JSONParser().parse(new InputStreamReader(entity.getContent(),
-                        Charsets.UTF_8));
+                JSONObject response = (JSONObject) new JSONParser().parse(entity.getContentAsString());
                 return (Boolean) response.get("boolean");
             } catch (ParseException e) {
                 throw new IOException("Error parsing response", e);

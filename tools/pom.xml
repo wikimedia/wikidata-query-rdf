@@ -59,6 +59,10 @@
       <artifactId>httpclient</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-client</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.openrdf.sesame</groupId>
       <artifactId>sesame-query</artifactId>
     </dependency>

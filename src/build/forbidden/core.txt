@@ -17,7 +17,6 @@ java.lang.Character#codePointAt(char[],int) @ Implicit end offset is error-prone
 java.util.Collections#sort(java.util.List)
 java.util.Collections#sort(java.util.List,java.util.Comparator)
 
-java.io.StringReader#<init>(java.lang.String) @ Use FastStringReader instead
 
 @defaultMessage Only use wait / notify when really needed try to use concurrency primitives, latches or callbacks instead.
 java.lang.Object#wait()
