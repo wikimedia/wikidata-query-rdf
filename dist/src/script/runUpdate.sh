@@ -14,6 +14,7 @@ GC_LOGS="-Xloggc:/var/log/wdqs/wdqs-updater_jvm_gc.%p.log \
          -XX:NumberOfGCLogFiles=10 \
          -XX:GCLogFileSize=20M"
 
+NAMESPACE=wdq
 while getopts h:c:n:l:t:s option
 do
   case "${option}"

@@ -60,6 +60,7 @@ java -server -XX:+UseG1GC ${MEMORY} ${DEBUG} ${GC_LOGS} \
      -Dorg.wikidata.query.rdf.blazegraph.inline.literal.WKTSerializer.noGlobe=$DEFAULT_GLOBE \
      -Dcom.bigdata.rdf.sail.webapp.client.RemoteRepository.maxRequestURLLength=7168 \
      -Dcom.bigdata.rdf.sail.sparql.PrefixDeclProcessor.additionalDeclsFile=$DIR/prefixes.conf \
+     -Dcom.bigdata.rdf.sail.webapp.client.HttpClientConfigurator=org.wikidata.query.rdf.blazegraph.ProxiedHttpConnectionFactory \
      ${BLAZEGRAPH_OPTS} \
      -jar jetty-runner*.jar \
      --host $HOST \
