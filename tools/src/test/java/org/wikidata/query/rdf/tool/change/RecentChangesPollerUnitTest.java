@@ -273,6 +273,45 @@ public class RecentChangesPollerUnitTest {
         assertEquals(argument.getValue(), startTime);
     }
 
+    /**
+     * Backoff overflow check,
+     * Check that if we're backing off but find no new changes then time is advanced.
+     * @throws RetryableException
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void backoffOverflow() throws RetryableException {
+        Date startTime = new Date();
+        batchSize = 1;
+        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
+
+        JSONObject result = new JSONObject();
+        JSONObject query = new JSONObject();
+        result.put("query", query);
+        JSONArray recentChanges = new JSONArray();
+        query.put("recentchanges", recentChanges);
+
+        String date = WikibaseRepository.inputDateFormat().format(startTime);
+        JSONObject rc = new JSONObject();
+        rc.put("ns", Long.valueOf(0));
+        rc.put("title", "Q424242");
+        rc.put("timestamp", date);
+        rc.put("revid", 42L);
+        rc.put("rcid", 42L);
+        rc.put("type", "edit");
+        recentChanges.add(rc);
+
+        firstBatchReturns(startTime, result);
+        Batch batch = poller.firstBatch();
+        assertThat(batch.changes(), hasSize(1));
+        assertEquals(startTime, batch.leftOffDate());
+
+        batch = poller.nextBatch(batch);
+        assertThat(batch.changes(), hasSize(0));
+        assertThat(startTime, lessThan(batch.leftOffDate()));
+        assertEquals(DateUtils.addSeconds(startTime, 1), batch.leftOffDate());
+    }
+
     @Before
     public void setupMocks() {
         repository = mock(WikibaseRepository.class);

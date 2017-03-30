@@ -93,6 +93,10 @@ public class Update<B extends Change.Batch> implements Runnable {
         @Option(shortName = "V", longName = "verify", description = "Verify updates (may have performance impact)")
         boolean verify();
 
+        @Option(defaultValue = "0", shortName = "T", longName = "tailPoller",
+                description = "Use secondary poller with given gap (seconds) to catch up missed updates")
+        int tailPollerOffset();
+
         @Option(defaultToNull = true, description = "If specified must be numerical indexes of Item and Property namespaces"
                 + " that defined in Wikibase repository, comma separated.")
         String entityNamespaces();
@@ -204,7 +208,7 @@ public class Update<B extends Change.Batch> implements Runnable {
                 log.info("Found start time in the RDF store: {}", inputDateFormat().format(leftOff));
             }
         }
-        return new RecentChangesPoller(wikibaseRepository, new Date(startTime), options.batchSize());
+        return new RecentChangesPoller(wikibaseRepository, new Date(startTime), options.batchSize(), options.tailPollerOffset());
     }
 
     /**

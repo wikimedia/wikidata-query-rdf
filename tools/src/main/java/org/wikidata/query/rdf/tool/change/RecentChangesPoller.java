@@ -3,11 +3,12 @@ package org.wikidata.query.rdf.tool.change;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
 
 import java.text.DateFormat;
+import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.json.simple.JSONArray;
@@ -29,6 +30,12 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
     private static final Logger log = LoggerFactory.getLogger(RecentChangesPoller.class);
 
     /**
+     * How many IDs we keep in seen IDs map.
+     * Should be enough for 1 hour for speeds up to 100 updates/s.
+     * If we ever get faster updates, we'd have to bump this.
+     */
+    private static final int MAX_SEEN_IDS = 100 * 60 * 60;
+    /**
      * Wikibase repository to poll.
      */
     private final WikibaseRepository wikibase;
@@ -41,6 +48,19 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      */
     private final int batchSize;
     /**
+     * Set of the IDs we've seen before.
+     * We have to use map here because LinkedHashMap has removeEldestEntry
+     * and it does not implement Set. So we're using
+     * Map with boolean values as Set.
+     */
+    private final Map<Long, Boolean> seenIDs;
+    /**
+     * How far back should we tail with secondary tailing poller.
+     * The value is in milliseconds.
+     * 0 or negative means no tailing poller;
+     */
+    private final int tailSeconds;
+    /**
      * How much to back off for recent fetches, in seconds.
      */
     private static final int BACKOFF_TIME = 10;
@@ -48,12 +68,52 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      * How old should the change be to not apply backoff.
      * The number is in minutes.
      */
-    private static final int BACKOFF_THRESHOLD = 5;
+    private static final int BACKOFF_THRESHOLD = 2;
 
-    public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime, int batchSize) {
+    /**
+     * Queue for communicating with tailing updater.
+     */
+    private final Queue<Batch> queue = new ArrayBlockingQueue<>(100);
+
+    /**
+     * Optional tailing poller.
+     * This will be instantiated only if we were asked for it (tailSeconds > 0)
+     * and when the poller catches up enough so that it is beyond the tailing gap
+     * itself.
+     * Note that tailing poller runs in different thread.
+     */
+    private TailingChangesPoller tailPoller;
+
+    public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime,
+            int batchSize, Map<Long, Boolean> seenIDs, int tailSeconds) {
         this.wikibase = wikibase;
         this.firstStartTime = firstStartTime;
         this.batchSize = batchSize;
+        this.seenIDs = seenIDs;
+        this.tailSeconds = tailSeconds;
+    }
+
+    public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime, int batchSize) {
+        this(wikibase, firstStartTime, batchSize, createSeenMap(), -1);
+    }
+
+    public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime, int batchSize, int tailSeconds) {
+        this(wikibase, firstStartTime, batchSize, createSeenMap(), tailSeconds);
+    }
+
+    /**
+     * Create map of seen IDs.
+     * @return
+     */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static Map<Long, Boolean> createSeenMap() {
+        // Create hash map with max size, evicting oldest ID
+        final Map<Long, Boolean> map = new LinkedHashMap(MAX_SEEN_IDS, .75F, false) {
+            protected boolean removeEldestEntry(Map.Entry eldest) {
+                return size() > MAX_SEEN_IDS;
+            }
+        };
+        return Collections.synchronizedMap(map);
     }
 
     @Override
@@ -63,7 +123,40 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
     @Override
     public Batch nextBatch(Batch lastBatch) throws RetryableException {
-        return batch(lastBatch.leftOffDate, lastBatch);
+        Batch newBatch = batch(lastBatch.leftOffDate, lastBatch);
+        if (tailSeconds > 0) {
+            // Check if tail poller has something to say.
+            newBatch = checkTailPoller(newBatch);
+        }
+        return newBatch;
+    }
+
+    /**
+     * Check if we need to poll something from secondary poller queue.
+     * @param lastBatch
+     * @return
+     */
+    private Batch checkTailPoller(Batch lastBatch) {
+        if (tailSeconds <= 0 ||
+            lastBatch.leftOffDate().before(DateUtils.addSeconds(new Date(), -tailSeconds))) {
+            // still not caught up, do nothing
+            return lastBatch;
+        }
+        if (tailPoller == null) {
+            // We don't have poller yet - start it
+            log.info("Started trailing poller with gap of {} seconds", tailSeconds);
+            // Create new poller starting back tailSeconds and same IDs map.
+            final RecentChangesPoller poller = new RecentChangesPoller(wikibase, DateUtils.addSeconds(new Date(), -tailSeconds), batchSize, seenIDs, -1);
+            tailPoller = new TailingChangesPoller(poller, queue, tailSeconds);
+            tailPoller.start();
+        } else {
+            final Batch queuedBatch = queue.poll();
+            if (queuedBatch != null) {
+                log.info("Merging {} changes from trailing queue", queuedBatch.changes().size());
+                return lastBatch.merge(queuedBatch);
+            }
+        }
+        return lastBatch;
     }
 
     /**
@@ -76,13 +169,6 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         private final Date leftOffDate;
 
         /**
-         * The set of the rcid's this batch seen.
-         * Note that some IDs may be seen but not processed
-         * due to duplicates, etc.
-         */
-        private final Set<Long> seenIDs;
-
-        /**
          * Continue from last request. Can be null.
          */
         private final JSONObject lastContinue;
@@ -91,11 +177,9 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
          * A batch that will next continue using the continue parameter.
          */
         private Batch(ImmutableList<Change> changes, long advanced,
-                String leftOff, Date nextStartTime, JSONObject lastContinue,
-                Set<Long> seenIDs) {
+                String leftOff, Date nextStartTime, JSONObject lastContinue) {
             super(changes, advanced, leftOff);
             leftOffDate = nextStartTime;
-            this.seenIDs = seenIDs;
             this.lastContinue = lastContinue;
         }
 
@@ -116,11 +200,16 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         }
 
         /**
-         * Get the list of IDs this batch has seen.
+         * Merge this batch with another batch.
+         * @param another
          * @return
          */
-        public Set<Long> getSeenIDs() {
-            return seenIDs;
+        public Batch merge(Batch another) {
+            final ImmutableList<Change> newChanges = new ImmutableList.Builder<Change>()
+                    .addAll(another.changes())
+                    .addAll(changes())
+                    .build();
+            return new Batch(newChanges, advanced(), leftOffDate.toString(), leftOffDate, lastContinue);
         }
 
         /**
@@ -178,7 +267,6 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             long nextStartTime = lastNextStartTime.getTime();
             JSONArray result = (JSONArray) ((JSONObject) recentChanges.get("query")).get("recentchanges");
             DateFormat df = inputDateFormat();
-            Set<Long> seenIds = new HashSet<>();
 
             for (Object rco : result) {
                 JSONObject rc = (JSONObject) rco;
@@ -192,12 +280,12 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                     log.info("Skipping change with bogus title:  {}", rc.get("title").toString());
                     continue;
                 }
-                seenIds.add(rcid);
-                if (lastBatch != null && lastBatch.getSeenIDs().contains(rcid)) {
+                if (seenIDs.containsKey(rcid)) {
                     // This change was in the last batch
                     log.debug("Skipping repeated change with rcid {}", rcid);
                     continue;
                 }
+                seenIDs.put(rcid, true);
 // Looks like we can not rely on changes appearing in order, so we have to take them all and let SPARQL
 // sort out the dupes.
 //                if (continueChange != null && rcid < continueChange.rcid()) {
@@ -245,7 +333,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             // be sure we got the whole second
             String upTo = inputDateFormat().format(new Date(nextStartTime - 1000));
             long advanced = nextStartTime - lastNextStartTime.getTime();
-            return new Batch(changes, advanced, upTo, new Date(nextStartTime), nextContinue, seenIds);
+            return new Batch(changes, advanced, upTo, new Date(nextStartTime), nextContinue);
         } catch (java.text.ParseException e) {
             throw new RetryableException("Parse error from api", e);
         }
