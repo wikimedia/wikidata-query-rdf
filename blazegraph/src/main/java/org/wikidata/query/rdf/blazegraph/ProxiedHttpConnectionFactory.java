@@ -3,6 +3,8 @@ package org.wikidata.query.rdf.blazegraph;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.ProxyConfiguration;
+import org.eclipse.jetty.http.HttpField;
+import org.eclipse.jetty.http.HttpHeader;
 
 import com.bigdata.rdf.sail.webapp.client.DefaultHttpClientFactory;
 import com.bigdata.rdf.sail.webapp.client.IHttpClientFactory;
@@ -25,7 +27,10 @@ public class ProxiedHttpConnectionFactory implements IHttpClientFactory {
      * Configuration name for proxy port.
      */
     private static final String HTTP_PROXY_PORT = "http.proxyPort";
-
+    /**
+     * Configuration name for User agent.
+     */
+    private static final String HTTP_USER_AGENT = "http.userAgent";
     public ProxiedHttpConnectionFactory() {
         defaultFactory = new DefaultHttpClientFactory();
     }
@@ -43,6 +48,10 @@ public class ProxiedHttpConnectionFactory implements IHttpClientFactory {
             proxy.getExcludedAddresses().add("localhost");
             proxy.getExcludedAddresses().add("127.0.0.1");
             proxyConfig.getProxies().add(proxy);
+        }
+        final String userAgent = System.getProperty(HTTP_USER_AGENT);
+        if (userAgent != null) {
+            client.setUserAgentField(new HttpField(HttpHeader.USER_AGENT, userAgent));
         }
 
         return client;

@@ -49,6 +49,8 @@ pushd $DIR
 
 # Q-id of the default globe
 DEFAULT_GLOBE=2
+# Blazegraph HTTP User Agent for federation
+USER_AGENT="Wikidata Query Service; https://query.wikidata.org/";
 
 echo "Running Blazegraph from `pwd` on :$PORT/$CONTEXT"
 java -server -XX:+UseG1GC ${MEMORY} ${DEBUG} ${GC_LOGS} \
@@ -61,6 +63,7 @@ java -server -XX:+UseG1GC ${MEMORY} ${DEBUG} ${GC_LOGS} \
      -Dcom.bigdata.rdf.sail.webapp.client.RemoteRepository.maxRequestURLLength=7168 \
      -Dcom.bigdata.rdf.sail.sparql.PrefixDeclProcessor.additionalDeclsFile=$DIR/prefixes.conf \
      -Dcom.bigdata.rdf.sail.webapp.client.HttpClientConfigurator=org.wikidata.query.rdf.blazegraph.ProxiedHttpConnectionFactory \
+     -Dhttp.userAgent="${USER_AGENT}" \
      ${BLAZEGRAPH_OPTS} \
      -jar jetty-runner*.jar \
      --host $HOST \
