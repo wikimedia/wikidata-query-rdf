@@ -1,6 +1,5 @@
 package org.wikidata.query.rdf.tool;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.wikidata.query.rdf.tool.OptionsUtils.handleOptions;
 import static org.wikidata.query.rdf.tool.OptionsUtils.mungerFromOptions;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
@@ -25,6 +24,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.openrdf.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -326,11 +326,11 @@ public class Update<B extends Change.Batch> implements Runnable {
                      * super good and because its not big deal to recheck if we
                      * have some updates.
                      */
-                    leftOffDate = new Date(batch.leftOffDate().getTime() - SECONDS.toMillis(1));
+                    leftOffDate = DateUtils.addSeconds(leftOffDate, -1);
                     if (oldDate == null || !oldDate.equals(leftOffDate)) {
                         // Do not update repo with the same date
-                        oldDate = leftOffDate;
                         rdfRepository.updateLeftOffTime(leftOffDate);
+                        oldDate = leftOffDate;
                     }
                 }
                 // TODO wrap all retry-able exceptions in a special exception

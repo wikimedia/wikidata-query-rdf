@@ -48,7 +48,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
          */
         int batchSize = randomIntBetween(3, 30);
         JSONObject changes = repo.fetchRecentChanges(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30)),
-                batchSize);
+                null, batchSize);
         Map<String, Object> c = changes;
         assertThat(c, hasKey("continue"));
         assertThat((Map<String, Object>) changes.get("continue"), hasKey("rccontinue"));
@@ -65,7 +65,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
             assertThat(rc, hasEntry(equalTo("revid"), instanceOf(Long.class)));
         }
         final Date nextDate = repo.getChangeFromContinue((Map<String, Object>)changes.get("continue")).timestamp();
-        changes = repo.fetchRecentChanges(nextDate, batchSize);
+        changes = repo.fetchRecentChanges(nextDate, null, batchSize);
         assertThat(c, hasKey("query"));
         assertThat((Map<String, Object>) c.get("query"), hasKey("recentchanges"));
     }
@@ -77,7 +77,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
          * This relies on there being very few changes in the current
          * second.
          */
-        JSONObject changes = repo.fetchRecentChanges(new Date(System.currentTimeMillis()), 500);
+        JSONObject changes = repo.fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
         Map<String, Object> c = changes;
         assertThat(c, not(hasKey("continue")));
         assertThat(c, hasKey("query"));
@@ -102,7 +102,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         } catch (InterruptedException e) {
             // nothing to do here, sorry. I know it looks bad.
         }
-        JSONObject result = repo.fetchRecentChanges(date, batchSize);
+        JSONObject result = repo.fetchRecentChanges(date, null, batchSize);
         return (JSONArray) ((JSONObject) result.get("query")).get("recentchanges");
     }
 
@@ -209,7 +209,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void recentChangesWithErrors() throws RetryableException, ContainedException {
         WikibaseRepository proxyRepo = new WikibaseRepository("http", "localhost", 8812);
-        JSONObject changes = proxyRepo.fetchRecentChanges(new Date(System.currentTimeMillis()), 500);
+        JSONObject changes = proxyRepo.fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
         Map<String, Object> c = changes;
         assertThat(c, not(hasKey("continue")));
         assertThat(c, hasKey("query"));

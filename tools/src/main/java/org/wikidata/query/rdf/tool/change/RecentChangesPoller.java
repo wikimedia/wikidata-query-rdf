@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -39,6 +40,15 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      * Size of the batches to poll against wikibase.
      */
     private final int batchSize;
+    /**
+     * How much to back off for recent fetches, in seconds.
+     */
+    private static final int BACKOFF_TIME = 10;
+    /**
+     * How old should the change be to not apply backoff.
+     * The number is in minutes.
+     */
+    private static final int BACKOFF_THRESHOLD = 5;
 
     public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime, int batchSize) {
         this.wikibase = wikibase;
@@ -73,12 +83,20 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         private final Set<Long> seenIDs;
 
         /**
+         * Continue from last request. Can be null.
+         */
+        private final JSONObject lastContinue;
+
+        /**
          * A batch that will next continue using the continue parameter.
          */
-        private Batch(ImmutableList<Change> changes, long advanced, String leftOff, Date nextStartTime, Set<Long> seenIDs) {
+        private Batch(ImmutableList<Change> changes, long advanced,
+                String leftOff, Date nextStartTime, JSONObject lastContinue,
+                Set<Long> seenIDs) {
             super(changes, advanced, leftOff);
             leftOffDate = nextStartTime;
             this.seenIDs = seenIDs;
+            this.lastContinue = lastContinue;
         }
 
         @Override
@@ -93,8 +111,8 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
         @Override
         public String leftOffHuman() {
-            return WikibaseRepository.inputDateFormat().format(leftOffDate);
-            // + " (next: " + nextContinue.get("rccontinue").toString() + ")";
+            return WikibaseRepository.inputDateFormat().format(leftOffDate)
+                + " (next: " + lastContinue.get("rccontinue").toString() + ")";
         }
 
         /**
@@ -103,6 +121,45 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
          */
         public Set<Long> getSeenIDs() {
             return seenIDs;
+        }
+
+        /**
+         * Get continue object.
+         * @return
+         */
+        public JSONObject getLastContinue() {
+            return lastContinue;
+        }
+    }
+
+    /**
+     * Check whether change is very recent.
+     * If it is we need to backoff to allow capturing unsettled DB changes.
+     * @param nextStartTime
+     * @return
+     */
+    private boolean changeIsRecent(Date nextStartTime) {
+        return nextStartTime.after(DateUtils.addMinutes(new Date(), -BACKOFF_THRESHOLD));
+    }
+
+    /**
+     * Fetch recent changes from Wikibase.
+     * If we're close to current time, we back off a bit from last timestamp,
+     * and fetch by timestamp. If it's back in the past, we fetch by continuation.
+     * @param lastNextStartTime
+     * @param lastBatch
+     * @return
+     * @throws RetryableException on fetch failure
+     */
+    private JSONObject fetchRecentChanges(Date lastNextStartTime, Batch lastBatch) throws RetryableException {
+        if (changeIsRecent(lastNextStartTime)) {
+            return wikibase.fetchRecentChangesByTime(
+                    DateUtils.addSeconds(lastNextStartTime, -BACKOFF_TIME),
+                    batchSize);
+        } else {
+            return wikibase.fetchRecentChanges(lastNextStartTime,
+                    lastBatch != null ? lastBatch.getLastContinue() : null,
+                    batchSize);
         }
     }
 
@@ -114,8 +171,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
     @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private Batch batch(Date lastNextStartTime, Batch lastBatch) throws RetryableException {
         try {
-            @SuppressWarnings("unchecked")
-            JSONObject recentChanges = wikibase.fetchRecentChangesBackoff(lastNextStartTime, batchSize, true);
+            JSONObject recentChanges = fetchRecentChanges(lastNextStartTime, lastBatch);
             // Using LinkedHashMap here so that changes came out sorted by order of arrival
             Map<String, Change> changesByTitle = new LinkedHashMap<>();
             JSONObject nextContinue = (JSONObject) recentChanges.get("continue");
@@ -170,7 +226,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                 nextStartTime = Math.max(nextStartTime, timestamp.getTime());
             }
             ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
-            if (nextContinue == null && changes.size() == 0 && result.size() >= batchSize) {
+            if (changes.size() == 0 && result.size() >= batchSize) {
                 // We have a problem here - due to backoff, we did not fetch any new items
                 // Try to advance one second, even though we risk to lose a change
                 log.info("Backoff overflow, advancing one second");
@@ -189,7 +245,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             // be sure we got the whole second
             String upTo = inputDateFormat().format(new Date(nextStartTime - 1000));
             long advanced = nextStartTime - lastNextStartTime.getTime();
-            return new Batch(changes, advanced, upTo, new Date(nextStartTime), seenIds);
+            return new Batch(changes, advanced, upTo, new Date(nextStartTime), nextContinue, seenIds);
         } catch (java.text.ParseException e) {
             throw new RetryableException("Parse error from api", e);
         }
