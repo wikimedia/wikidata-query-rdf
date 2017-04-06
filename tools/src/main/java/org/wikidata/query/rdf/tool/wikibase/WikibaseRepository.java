@@ -22,7 +22,6 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
@@ -151,53 +150,6 @@ public class WikibaseRepository {
     }
 
     /**
-     * How much to back off for recent fetches, in seconds.
-     */
-    private static final int BACKOFF_TIME = 10;
-
-    /**
-     * Adds backoff time to start time.
-     * If the start time is too close to now, add backoff time,
-     * to avoid race conditions.
-     * @param startTime
-     * @return Time when to start looking
-     */
-    private Date backoffTime(Date startTime) {
-        if (startTime.before(DateUtils.addMinutes(new Date(), -5))) {
-            /*
-             * if start time is before 5 minutes back, it's ok
-             * -1 second because our precision is only 1 second and
-             * because it should be cheap to recheck that we have the right
-             * revision.
-             */
-            return DateUtils.addSeconds(startTime, -1);
-        }
-        return DateUtils.addSeconds(startTime, -BACKOFF_TIME);
-    }
-
-    /**
-     * Fetch recent changes starting from nextStartTime or continuing from
-     * lastContinue depending on the contents of lastContinue way to use
-     * MediaWiki. See RecentChangesPoller for how to poll these. Or just use it.
-     *
-     * @param nextStartTime if lastContinue is null then this is the start time
-     *            of the query
-     * @param batchSize the number of recent changes to fetch
-     * @param useBackoff Should we use backoff time to handle race conditions?
-     * @return result of query
-     * @throws RetryableException thrown if there is an error communicating with
-     *             wikibase
-     */
-    public JSONObject fetchRecentChangesBackoff(Date nextStartTime, int batchSize, boolean useBackoff) throws RetryableException
-    {
-        if (useBackoff) {
-            return fetchRecentChanges(backoffTime(nextStartTime), batchSize);
-        } else {
-            return fetchRecentChanges(nextStartTime, batchSize);
-        }
-    }
-
-    /**
      * Fetch recent changes starting from nextStartTime or continuing from
      * lastContinue depending on the contents of lastContinue way to use
      * MediaWiki. See RecentChangesPoller for how to poll these. Or just use it.
@@ -209,9 +161,26 @@ public class WikibaseRepository {
      * @throws RetryableException thrown if there is an error communicating with
      *             wikibase
      */
-    public JSONObject fetchRecentChanges(Date nextStartTime, int batchSize)
+    public JSONObject fetchRecentChangesByTime(Date nextStartTime, int batchSize) throws RetryableException {
+        return fetchRecentChanges(nextStartTime, null, batchSize);
+    }
+
+    /**
+     * Fetch recent changes starting from nextStartTime or continuing from
+     * lastContinue depending on the contents of lastContinue way to use
+     * MediaWiki. See RecentChangesPoller for how to poll these. Or just use it.
+     *
+     * @param nextStartTime if lastContinue is null then this is the start time
+     *            of the query
+     * @param batchSize the number of recent changes to fetch
+     * @param lastContinue Continuation object from last batch, or null.
+     * @return result of query
+     * @throws RetryableException thrown if there is an error communicating with
+     *             wikibase
+     */
+    public JSONObject fetchRecentChanges(Date nextStartTime, JSONObject lastContinue, int batchSize)
             throws RetryableException {
-        URI uri = uris.recentChanges(nextStartTime, batchSize);
+        URI uri = uris.recentChanges(nextStartTime, lastContinue, batchSize);
         log.debug("Polling for changes from {}", uri);
         try {
             return checkApi(getJson(new HttpGet(uri)));
@@ -464,7 +433,7 @@ public class WikibaseRepository {
          *            continueObject isn't null this is ignored by wikibase
          * @param batchSize maximum number of results we want back from wikibase
          */
-        public URI recentChanges(Date startTime, int batchSize) {
+        public URI recentChanges(Date startTime, JSONObject continueObject, int batchSize) {
             URIBuilder builder = apiBuilder();
             builder.addParameter("action", "query");
             builder.addParameter("list", "recentchanges");
@@ -472,8 +441,13 @@ public class WikibaseRepository {
             builder.addParameter("rcprop", "title|ids|timestamp");
             builder.addParameter("rcnamespace", getEntityNamespacesString("|"));
             builder.addParameter("rclimit", Integer.toString(batchSize));
-            builder.addParameter("continue", "");
-            builder.addParameter("rcstart", outputDateFormat().format(startTime));
+            if (continueObject == null) {
+                builder.addParameter("continue", "");
+                builder.addParameter("rcstart", outputDateFormat().format(startTime));
+            } else {
+                builder.addParameter("continue", continueObject.get("continue").toString());
+                builder.addParameter("rccontinue", continueObject.get("rccontinue").toString());
+            }
             return build(builder);
         }
 
