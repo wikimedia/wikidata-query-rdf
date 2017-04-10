@@ -195,8 +195,12 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
         @Override
         public String leftOffHuman() {
-            return WikibaseRepository.inputDateFormat().format(leftOffDate)
-                + " (next: " + lastContinue.get("rccontinue").toString() + ")";
+            if (lastContinue != null) {
+                return WikibaseRepository.inputDateFormat().format(leftOffDate)
+                    + " (next: " + lastContinue.get("rccontinue").toString() + ")";
+            } else {
+                return WikibaseRepository.inputDateFormat().format(leftOffDate);
+            }
         }
 
         /**
