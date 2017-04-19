@@ -4,7 +4,8 @@ import java.math.BigInteger;
 import java.util.Locale;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.bigdata.rdf.internal.InlineURIHandler;
 import com.bigdata.rdf.internal.impl.literal.AbstractLiteralIV;
@@ -29,7 +30,7 @@ import com.bigdata.rdf.model.BigdataLiteral;
  * @deprecated
  */
 public class WikibaseStyleStatementInlineUriHandler extends InlineURIHandler {
-    private static final Logger log = Logger.getLogger(WikibaseStyleStatementInlineUriHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(WikibaseStyleStatementInlineUriHandler.class);
 
     public WikibaseStyleStatementInlineUriHandler(String namespace) {
         super(namespace);
@@ -99,7 +100,7 @@ public class WikibaseStyleStatementInlineUriHandler extends InlineURIHandler {
             i = i.shiftLeft(Long.SIZE).or(unsigned(u.getLeastSignificantBits()));
             return new XSDIntegerIV(i);
         } catch (IllegalArgumentException e) {
-            Logger.getLogger(WikibaseStyleStatementInlineUriHandler.class).warn("tmp", e);
+            log.warn("tmp", e);
             return null;
         }
     }

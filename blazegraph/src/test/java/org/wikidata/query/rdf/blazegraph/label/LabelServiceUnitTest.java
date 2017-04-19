@@ -8,11 +8,12 @@ import static org.wikidata.query.rdf.test.Matchers.notBinds;
 
 import java.util.Locale;
 
-import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.blazegraph.AbstractRandomizedBlazegraphTestBase;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.RDFS;
@@ -20,7 +21,7 @@ import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 
 public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
-    private static final Logger log = Logger.getLogger(LabelServiceUnitTest.class);
+    private static final Logger log = LoggerFactory.getLogger(LabelServiceUnitTest.class);
 
     @Test
     public void labelOverConstant() throws QueryEvaluationException {

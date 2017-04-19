@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -84,9 +83,6 @@ import cutthecrap.utils.striterators.ICloseableIterator;
  * form by inspecting the query's projection.
  */
 public class LabelService extends AbstractServiceFactory {
-    private static final Logger log = Logger
-            .getLogger(LabelService.class);
-
     /**
      * Options configuring this service as a native Blazegraph service.
      */
@@ -218,7 +214,7 @@ public class LabelService extends AbstractServiceFactory {
         /**
          * Build with all the right stuff resolved.
          */
-        public LabelServiceCall(ResolutionContext context, List<Resolution> resolutions) {
+        LabelServiceCall(ResolutionContext context, List<Resolution> resolutions) {
             this.context = context;
             this.resolutions = resolutions;
         }
@@ -250,7 +246,7 @@ public class LabelService extends AbstractServiceFactory {
              */
             private int i;
 
-            public Chunk(IBindingSet[] bindingSets) {
+            Chunk(IBindingSet[] bindingSets) {
                 this.bindingSets = bindingSets;
             }
 
@@ -385,7 +381,7 @@ public class LabelService extends AbstractServiceFactory {
          */
         private IV rdfsLabelIv;
 
-        public ResolutionContext(AbstractTripleStore tripleStore, Map<String, Integer> languageFallbacks) {
+        ResolutionContext(AbstractTripleStore tripleStore, Map<String, Integer> languageFallbacks) {
             this.tripleStore = tripleStore;
             this.languageFallbacks = languageFallbacks;
             lexiconRelation = tripleStore.getLexiconRelation();

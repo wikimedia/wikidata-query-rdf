@@ -9,10 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.bigdata.rdf.internal.IDatatypeURIResolver;
 import com.bigdata.rdf.internal.IExtension;
@@ -32,7 +33,7 @@ import com.bigdata.util.InnerCause;
  *            roughly by Blazegraph - lots of rawtypes
  */
 public abstract class AbstractMultiTypeExtension<V extends BigdataValue> implements IExtension<V> {
-    private static final Logger log = Logger.getLogger(WikibaseDateExtension.class);
+    private static final Logger log = LoggerFactory.getLogger(WikibaseDateExtension.class);
 
     /**
      * IV to type map as resolved against resolver provided on construction.

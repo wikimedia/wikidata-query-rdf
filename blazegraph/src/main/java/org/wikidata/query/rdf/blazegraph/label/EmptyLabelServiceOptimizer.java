@@ -2,11 +2,12 @@ package org.wikidata.query.rdf.blazegraph.label;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.SKOS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 
@@ -36,7 +37,7 @@ import com.bigdata.rdf.store.BD;
  */
 @SuppressWarnings("rawtypes")
 public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
-    private static final Logger log = Logger.getLogger(EmptyLabelServiceOptimizer.class);
+    private static final Logger log = LoggerFactory.getLogger(EmptyLabelServiceOptimizer.class);
 
     /**
      * Schema.org's description property as a URI.
