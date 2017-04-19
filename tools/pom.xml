@@ -262,6 +262,26 @@
                   <name>ASTOptimizerClass</name>
                   <value>org.wikidata.query.rdf.blazegraph.WikibaseOptimizers</value>
                 </property>
+                <property>
+                	<name>org.wikidata.query.rdf.blazegraph.inline.literal.WKTSerializer.noGlobe</name>
+                	<value>2</value>
+                </property>
+                <property>
+                	<name>com.bigdata.rdf.sail.sparql.PrefixDeclProcessor.additionalDeclsFile</name>
+                	<value>${project.parent.basedir}/dist/src/script/prefixes.conf</value>
+                </property>
+                <property>
+                	<name>com.bigdata.rdf.sail.webapp.client.HttpClientConfigurator</name>
+                	<value>org.wikidata.query.rdf.blazegraph.ProxiedHttpConnectionFactory</value>
+                </property>
+                <property>
+                	<name>http.userAgent</name>
+                	<value>Wikidata Query Service (testing); https://query.wikidata.org/</value>
+                </property>
+                <property>
+                	<name>wikibaseServiceWhitelist</name>
+                	<value>${project.basedir}/src/test/resources/blazegraph/whitelist.txt</value>
+                </property>
               </properties>
             </configuration>
           </execution>
