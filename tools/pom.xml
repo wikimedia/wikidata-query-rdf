@@ -258,6 +258,10 @@
               <name>wikibaseServiceWhitelist</name>
               <value>${project.basedir}/src/test/resources/blazegraph/whitelist.txt</value>
             </systemProperty>
+            <systemProperty>
+              <name>org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.config</name>
+              <value>${project.basedir}/src/test/resources/blazegraph/services.json</value>
+            </systemProperty>
           </systemProperties>
         </configuration>
         <executions>

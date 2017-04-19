@@ -71,6 +71,7 @@
 
   <properties>
     <blazegraph.version>2.1.5-SNAPSHOT</blazegraph.version>
+    <jackson.version>2.2.3</jackson.version>
     <jetty.version>9.2.3.v20140905</jetty.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sesame.version>2.7.12</sesame.version>
@@ -209,6 +210,21 @@
         </exclusions>
       </dependency>
       <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.google.code.findbugs</groupId>
         <artifactId>annotations</artifactId>
         <version>3.0.1</version>
@@ -221,7 +237,7 @@
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>18.0</version>
+        <version>21.0</version>
       </dependency>
       <dependency>
         <groupId>com.googlecode.json-simple</groupId>
@@ -252,6 +268,11 @@
         <groupId>joda-time</groupId>
         <artifactId>joda-time</artifactId>
         <version>2.7</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-collections4</artifactId>
+        <version>4.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>
@@ -674,8 +695,8 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.6.1</version>
           <configuration>
-            <source>1.7</source>
-            <target>1.7</target>
+            <source>1.8</source>
+            <target>1.8</target>
           </configuration>
         </plugin>
         <plugin>
@@ -783,7 +804,7 @@
           <artifactId>exec-maven-plugin</artifactId>
           <version>1.6.0</version>
         </plugin>
-        <plugin>
+        <!-- plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>findbugs-maven-plugin</artifactId>
           <version>3.0.4</version>
@@ -800,7 +821,7 @@
               <phase>verify</phase>
             </execution>
           </executions>
-        </plugin>
+        </plugin -->
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>properties-maven-plugin</artifactId>
@@ -883,16 +904,14 @@
         <artifactId>forbiddenapis</artifactId>
         <version>2.3</version>
         <configuration>
-          <targetVersion>1.7</targetVersion>
+          <targetVersion>1.8</targetVersion>
           <failOnMissingClasses>false</failOnMissingClasses>
-          <!-- this is a bug in forbidden APIs since 1.5 looks also at annotations -->
-          <!-- disallow undocumented classes like sun.misc.Unsafe: -->
-          <internalRuntimeForbidden>true</internalRuntimeForbidden>
           <bundledSignatures>
             <!-- This will automatically choose the right signatures based on 'maven.compiler.target': -->
             <bundledSignature>jdk-unsafe</bundledSignature>
             <bundledSignature>jdk-deprecated</bundledSignature>
             <bundledSignaure>jdk-system-out</bundledSignaure>
+            <bundledSignaure>jdk-non-portable</bundledSignaure>
           </bundledSignatures>
         </configuration>
         <executions>
@@ -977,6 +996,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
+        <version>3.0.4</version>
       </plugin>
     </plugins>
   </build>

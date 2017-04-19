@@ -22,8 +22,6 @@ import com.bigdata.bop.IBindingSet;
 import com.bigdata.bop.IValueExpression;
 import com.bigdata.bop.IVariable;
 import com.bigdata.rdf.internal.IV;
-import com.bigdata.rdf.internal.VTE;
-import com.bigdata.rdf.internal.impl.TermId;
 import com.bigdata.rdf.lexicon.LexiconRelation;
 import com.bigdata.rdf.model.BigdataValue;
 import com.bigdata.rdf.sparql.ast.JoinGroupNode;
@@ -43,6 +41,7 @@ import com.bigdata.rdf.store.BD;
 import com.bigdata.striterator.IChunkedOrderedIterator;
 
 import cutthecrap.utils.striterators.ICloseableIterator;
+import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeIV;
 
 /**
  * Implements a "service" that resolves label like things in a way that doesn't
@@ -492,9 +491,7 @@ public class LabelService extends AbstractServiceFactory {
          * Build a mock IV from a literal.
          */
         private IV mock(Literal literal) {
-            TermId mock = TermId.mockIV(VTE.LITERAL);
-            mock.setValue(lexiconRelation.getValueFactory().asValue(literal));
-            return mock;
+            return makeIV(lexiconRelation.getValueFactory(), literal);
         }
 
         /**

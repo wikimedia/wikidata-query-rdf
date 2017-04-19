@@ -6,13 +6,10 @@ import org.wikidata.query.rdf.common.WikibasePoint;
 import org.wikidata.query.rdf.common.uri.GeoSparql;
 import org.wikidata.query.rdf.common.uri.Ontology;
 
-import com.bigdata.bop.Constant;
 import com.bigdata.bop.IBindingSet;
+import com.bigdata.bop.IConstant;
 import com.bigdata.bop.IVariable;
 import com.bigdata.rdf.internal.IV;
-import com.bigdata.rdf.internal.VTE;
-import com.bigdata.rdf.internal.impl.TermId;
-import com.bigdata.rdf.model.BigdataLiteral;
 import com.bigdata.rdf.model.BigdataValueFactory;
 import com.bigdata.rdf.sparql.ast.ConstantNode;
 import com.bigdata.rdf.sparql.ast.DummyConstantNode;
@@ -32,6 +29,7 @@ import com.bigdata.service.geospatial.GeoSpatial.GeoFunction;
 import cutthecrap.utils.striterators.ICloseableIterator;
 
 import static org.wikidata.query.rdf.blazegraph.geo.GeoUtils.pointFromIV;
+import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeConstant;
 
 /**
  * Implements a service to do geospatial search.
@@ -74,25 +72,25 @@ public class GeoBoxService extends GeoService {
     /**
      * wikibase:cornerNorthEast parameter name.
      */
-    public static final URIImpl NE_PARAM = new URIImpl(
+    public static final URI NE_PARAM = new URIImpl(
             Ontology.NAMESPACE + "cornerNorthEast");
 
     /**
      * wikibase:cornerSouthWest parameter name.
      */
-    public static final URIImpl SW_PARAM = new URIImpl(
+    public static final URI SW_PARAM = new URIImpl(
             Ontology.NAMESPACE + "cornerSouthWest");
 
     /**
      * wikibase:cornerEast parameter name.
      */
-    public static final URIImpl EAST_PARAM = new URIImpl(
+    public static final URI EAST_PARAM = new URIImpl(
             Ontology.NAMESPACE + "cornerEast");
 
     /**
      * wikibase:cornerWest parameter name.
      */
-    public static final URIImpl WEST_PARAM = new URIImpl(
+    public static final URI WEST_PARAM = new URIImpl(
             Ontology.NAMESPACE + "cornerWest");
 
     /**
@@ -103,8 +101,13 @@ public class GeoBoxService extends GeoService {
     /**
      * Service param to specify we need coordinate wrapping.
      */
-    public static final URIImpl WRAP_PARAM = new URIImpl(
+    public static final URI WRAP_PARAM = new URIImpl(
             Ontology.NAMESPACE + "cornerWrap");
+
+    /**
+     * WKT type URI.
+     */
+    public static final URI WKT_TYPE_URI = new URIImpl(GeoSparql.WKT_LITERAL);
 
     @Override
     protected JoinGroupNode buildServiceNode(ServiceCallCreateParams params,
@@ -264,10 +267,6 @@ public class GeoBoxService extends GeoService {
          */
         private final TermNode west;
         /**
-         * KB store.
-         */
-        private final AbstractTripleStore kb;
-        /**
          * Value factory.
          */
         private final BigdataValueFactory vf;
@@ -277,7 +276,6 @@ public class GeoBoxService extends GeoService {
             this.wrappedCall = wrappedCall;
             this.east = east;
             this.west = west;
-            this.kb = kb;
             this.vf = kb.getValueFactory();
         }
 
@@ -320,9 +318,9 @@ public class GeoBoxService extends GeoService {
                     pointFromIV(westIV));
 
             bs.set(getAssociatedVariable(east),
-                    new Constant<IV>(createIV(box.northEast())));
+                    createConstant(box.northEast()));
             bs.set(getAssociatedVariable(west),
-                    new Constant<IV>(createIV(box.southWest())));
+                    createConstant(box.southWest()));
         }
 
         /**
@@ -331,12 +329,8 @@ public class GeoBoxService extends GeoService {
          * @param wp
          * @return
          */
-        private IV createIV(WikibasePoint wp) {
-            final BigdataLiteral literal = vf.createLiteral(wp.toString(),
-                    new URIImpl(GeoSparql.WKT_LITERAL));
-            TermId mock = TermId.mockIV(VTE.LITERAL);
-            mock.setValue(vf.asValue(literal));
-            return mock;
+        private IConstant createConstant(WikibasePoint wp) {
+            return makeConstant(vf, wp.toString(), WKT_TYPE_URI);
         }
     }
 }

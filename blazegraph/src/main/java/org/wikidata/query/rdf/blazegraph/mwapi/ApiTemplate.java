@@ -1,0 +1,382 @@
+package org.wikidata.query.rdf.blazegraph.mwapi;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.openrdf.model.URI;
+import org.openrdf.model.impl.URIImpl;
+import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
+
+import com.bigdata.bop.IVariable;
+import com.bigdata.bop.IVariableOrConstant;
+import com.bigdata.rdf.internal.IV;
+import com.bigdata.rdf.sparql.ast.GraphPatternGroup;
+import com.bigdata.rdf.sparql.ast.IGroupMemberNode;
+import com.bigdata.rdf.sparql.ast.StatementPatternNode;
+import com.bigdata.rdf.sparql.ast.TermNode;
+import com.bigdata.rdf.sparql.ast.eval.ServiceParams;
+import com.bigdata.rdf.sparql.ast.service.ServiceNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+
+import static org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.paramNameToURI;
+/**
+ * This class represents API template.
+ */
+public class ApiTemplate {
+    /**
+     * Set of fixed API parameters.
+     */
+    private final Map<String, String> fixedParams;
+    /**
+     * Set of API parameters that should come from input vars.
+     */
+    private final Set<String> inputVars;
+    /**
+     * Set of defaults for API parameters that were not bound.
+     */
+    private final Map<String, String> defaults;
+    /**
+     * Set of API parameters that should be sent to output.
+     * The value is the XPath to find the value.
+     */
+    private final Map<String, String> outputVars;
+    /**
+     * XPath to result items.
+     */
+    private final String items;
+
+    /**
+     * Hidden ctor.
+     * Use fromJSON() to create the object.
+       */
+    protected ApiTemplate(Map<String, String> fixedParams,
+            Set<String> inputVars, Map<String, String> defaults,
+            Map<String, String> outputVars, String items) {
+        this.fixedParams = fixedParams;
+        this.inputVars = inputVars;
+        this.defaults = defaults;
+        this.outputVars = outputVars;
+        this.items = items;
+
+    }
+
+    /**
+     * Create API template from JSON configuration.
+     * @param json
+     * @return
+     */
+    public static ApiTemplate fromJSON(JsonNode json) {
+        Map<String, String> fixedParams = new HashMap<>();
+        Set<String> inputVars = new HashSet<>();
+        Map<String, String> defaults = new HashMap<>();
+        Map<String, String> outputVars = new HashMap<>();
+        // Parse input params
+        final JsonNode params = json.get("params");
+        Preconditions.checkNotNull(params, "Missing params node");
+        params.fieldNames().forEachRemaining(paramName -> {
+            if (fixedParams.containsKey(paramName)
+                    || inputVars.contains(paramName)) {
+                throw new IllegalArgumentException(
+                        "Repeated input parameter " + paramName);
+            }
+
+            JsonNode value = params.get(paramName);
+            // scalar value means fixed parameter
+            if (value.isValueNode()) {
+                fixedParams.put(paramName, value.asText());
+                return;
+            }
+            // otherwise it's a parameter
+            // FIXME: ignoring type for now
+            inputVars.add(paramName);
+            if (value.has("default")) {
+                defaults.put(paramName, value.get("default").asText());
+            }
+        });
+
+        // Parse output params
+        final JsonNode output = json.get("output");
+        Preconditions.checkNotNull(params, "Missing output node");
+        String items = output.get("items").asText();
+        final JsonNode vars = output.get("vars");
+        Preconditions.checkNotNull(vars, "Missing vars node");
+        vars.fieldNames().forEachRemaining(paramName -> {
+            if (inputVars.contains(paramName)
+                    || fixedParams.containsKey(paramName)) {
+                throw new IllegalArgumentException("Parameter " + paramName
+                        + " declared as both input and output");
+            }
+            outputVars.put(paramName, vars.get(paramName).asText());
+
+        });
+
+        return new ApiTemplate(ImmutableMap.copyOf(fixedParams),
+                ImmutableSet.copyOf(inputVars), ImmutableMap.copyOf(defaults),
+                ImmutableMap.copyOf(outputVars), items);
+    }
+
+    /**
+     * Get items XPath.
+     * @return
+     */
+    public String getItemsPath() {
+        return items;
+    }
+
+    /**
+     * Check if parameter is required.
+     * @param name
+     * @return
+     */
+    public boolean isRequiredParameter(String name) {
+        return inputVars.contains(name);
+    }
+
+    /**
+     * Get call fixed parameters.
+     * @return
+     */
+    public Map<String, String> getFixedParams() {
+        return fixedParams;
+    }
+
+    /**
+     * Find default for this parameter.
+     * @param name
+     * @return Default value or null.
+     */
+    public String getInputDefault(String name) {
+        return defaults.get(name);
+    }
+
+    /**
+     * Add input var from the service params to the map.
+     * @param vars Target Map
+     * @param varName Parameter name
+     * @param var Parameter node (can be null if it's pre-defined but not specified)
+     */
+    private void addInputVar(Map<String, IVariableOrConstant> vars, String varName, TermNode var) {
+        if (var == null) {
+            if (!defaults.containsKey(varName)) {
+                // Param should have either binding or default
+                throw new IllegalArgumentException("Parameter " + varName + " must be bound");
+            }
+            // If var is null but we have a default, put null there, service call will know
+            // how to handle it.
+            vars.put(varName, null);
+        } else {
+            if (!var.isConstant() && !var.isVariable()) {
+                // Binding should be constant or var
+                throw new IllegalArgumentException("Parameter " + varName + " must be constant or variable");
+            }
+            vars.put(varName, var.getValueExpression());
+        }
+    }
+
+    /**
+     * Create list of bindings from input params to specific variables or constants.
+     * @param serviceParams Specific invocation params.
+     * @return Map of bindings, which has constant or variable from service params if bound, or null if not bound.
+     */
+    public Map<String, IVariableOrConstant> getInputVars(final ServiceParams serviceParams) {
+        Map<String, IVariableOrConstant> vars = new HashMap<>(inputVars.size());
+
+        String prefix = paramNameToURI("").stringValue();
+        // Collect pre-defined vars
+        for (String entry : inputVars) {
+            addInputVar(vars, entry, serviceParams.get(paramNameToURI(entry), null));
+        }
+        // Now collect new vars
+        // TODO: think about how to better unite these two loops
+        serviceParams.iterator().forEachRemaining(param -> {
+            String paramNameFull = param.getKey().stringValue();
+            if (!paramNameFull.startsWith(prefix)) {
+                return;
+            }
+            String paramName = paramNameFull.substring(prefix.length());
+            if (param.getValue().size() > 1) {
+                throw new IllegalArgumentException("Parameter " + paramName + " is duplicated");
+            }
+            if (vars.containsKey(paramName)) {
+                // already taken care of
+                return;
+            }
+            addInputVar(vars, paramName, param.getValue().get(0));
+        });
+
+        return vars;
+    }
+
+    /**
+     * Create map of output variables from template and service params.
+     */
+    public List<OutputVariable> getOutputVars(final ServiceNode serviceNode) {
+        List<OutputVariable> vars = new ArrayList<>(outputVars.size());
+
+        final GraphPatternGroup<IGroupMemberNode> group = serviceNode.getGraphPattern();
+        Preconditions.checkNotNull(serviceNode, "Group node is null?");
+
+        String prefix = paramNameToURI("").stringValue();
+        group.iterator().forEachRemaining(node -> {
+            // Ouptut nodes are:
+            // ?variable wikibase:output mwapi:title
+            // or:
+            // ?variable wikibase:output "x/path"
+            if (node instanceof StatementPatternNode) {
+                final StatementPatternNode sp = (StatementPatternNode) node;
+
+                if (sp.s().isVariable() && sp.o().isConstant() && sp.p().isConstant()) {
+                    for (OutputVariable.Type varType : OutputVariable.Type.values()) {
+                        if (varType.predicate.equals(sp.p().getValue())) {
+                            IVariable var = (IVariable)sp.s().getValueExpression();
+                            IV value = sp.o().getValueExpression().get();
+                            if (value.isURI()) {
+                                String paramName = value.stringValue().substring(prefix.length());
+                                vars.add(new OutputVariable(varType, var, outputVars.get(paramName)));
+                            } else {
+                                vars.add(new OutputVariable(varType, var, value.stringValue()));
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        return vars;
+    }
+
+    /**
+     * Variable in the output of the API.
+     */
+    public static class OutputVariable {
+
+        /**
+         * Type of variable result.
+         */
+        public enum Type {
+            /**
+             * Plain string var.
+             */
+            STRING("apiOutput"),
+            /**
+             * Var transformed to URI.
+             */
+            URI("apiOutputURI"),
+            /**
+             * Item ID.
+             */
+            ITEM("apiOutputItem");
+
+            /**
+             * Predicate used for this type.
+             */
+            private final URI predicate;
+            Type(String predicate) {
+                this.predicate = new URIImpl(Ontology.NAMESPACE + predicate);
+            }
+
+            /**
+             * Get predicate.
+             * @return Predicate URI
+             */
+            URI predicate() {
+                return predicate;
+            }
+
+            @Override
+            public String toString() {
+                return predicate.stringValue();
+            }
+
+        };
+        /**
+         * Original Blazegraph var.
+         */
+        private final IVariable var;
+        /**
+         * Path expression to extract value from result.
+         * The path is relative to items in template.
+         * Currently XPath syntax is being used.
+         */
+        private final String path;
+
+        /**
+         * Variable type.
+         * Can be just string, URI or item ID.
+         */
+        private final Type type;
+
+        public OutputVariable(Type type, IVariable var, String xpath) {
+            this.var = var;
+            this.path = xpath;
+            this.type = type;
+        }
+
+        public OutputVariable(IVariable var, String xpath) {
+            this(Type.STRING, var, xpath);
+        }
+
+        /**
+         * Get associated variable.
+         * @return
+         */
+        public IVariable getVar() {
+            return var;
+        }
+
+        /**
+         * Get path to this variable.
+         * @return
+         */
+        public String getPath() {
+            return path;
+        }
+
+        /**
+         * Get associated variable name.
+         * @return
+         */
+        public String getName() {
+            return var.getName();
+        }
+
+        @Override
+        public String toString() {
+            return getName() + "(" + getPath() + ")";
+        }
+
+        /**
+         * Would this variable produce an URI?
+         * @return
+         */
+        public boolean isURI() {
+            return type != Type.STRING;
+        }
+
+        /**
+         * Get URI value matching variable type.
+         * @param value
+         * @return
+         */
+        public URI getURI(String value) {
+            switch (type) {
+            case URI:
+                return new URIImpl(value);
+            case ITEM:
+                return new URIImpl(WikibaseUris.getURISystem().entity() + value);
+            default:
+                throw new IllegalArgumentException("Can not produce URI for non-URI type " + type);
+            }
+        }
+    }
+
+}

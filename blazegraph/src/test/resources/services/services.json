@@ -1,0 +1,26 @@
+{
+"services": {
+	"Categories": {
+		"params": {
+			"action": "query",
+			"prop": "categories",
+			"titles": {
+				"type": "list"
+			},
+			"cllimit": {
+				"type": "int",
+				"default": 500
+			}
+		},
+		"output": {
+			"items": "/api/query/pages/page/categories/cl",
+			"vars": {
+				"category": "@title",
+				"title": "/api/query/pages/page/@title"
+			}
+		}
+	}
+},
+"endpoints": [".wikipedia.org", "www.mediawiki.org", "www.wikidata.org"]
+}
+

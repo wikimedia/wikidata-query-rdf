@@ -20,6 +20,7 @@ import org.wikidata.query.rdf.blazegraph.constraints.WikibaseDistanceBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseNowBOp;
 import org.wikidata.query.rdf.blazegraph.geo.GeoService;
 import org.wikidata.query.rdf.blazegraph.label.LabelService;
+import org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory;
 import org.wikidata.query.rdf.common.uri.GeoSparql;
 import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontology;
@@ -83,6 +84,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         reg.setWhitelistEnabled(true);
         LabelService.register();
         GeoService.register();
+        MWApiServiceFactory.register();
 
         // Whitelist services we like by default
         reg.addWhitelistURL(GASService.Options.SERVICE_KEY.toString());
@@ -134,7 +136,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
         addPrefixes(WikibaseUris.getURISystem());
 
-        log.warn("Wikibase services initialized.");
+        log.info("Wikibase services initialized.");
     }
 
     /**
