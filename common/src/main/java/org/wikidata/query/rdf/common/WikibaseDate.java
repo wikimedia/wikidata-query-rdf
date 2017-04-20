@@ -13,9 +13,6 @@ import java.util.regex.Pattern;
 
 import javax.xml.datatype.Duration;
 
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
-
 /**
  * Handles wikidata dates. Note that this ignores leap seconds. This isn't ok
  * but its what joda time does so it where we're starting.
