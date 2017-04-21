@@ -344,7 +344,7 @@ public class Munger {
          */
         private FormatHandler formatHandler;
 
-        public MungeOperation(String entityId, Collection<Statement> statements, Collection<String> existingValues,
+        MungeOperation(String entityId, Collection<Statement> statements, Collection<String> existingValues,
                 Collection<String> existingRefs) {
             this.statements = statements;
             entityUri = uris.entity() + entityId;

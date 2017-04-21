@@ -213,11 +213,11 @@ public class Proxy extends NanoHTTPD {
          */
         private final String description;
 
-        public SimpleStatus(StatusLine status) {
+        SimpleStatus(StatusLine status) {
             this(status.getStatusCode(), status.getReasonPhrase());
         }
 
-        public SimpleStatus(int code, String description) {
+        SimpleStatus(int code, String description) {
             this.code = code;
             this.description = description;
         }

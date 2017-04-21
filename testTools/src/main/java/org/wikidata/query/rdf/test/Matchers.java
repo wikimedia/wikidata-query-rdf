@@ -125,7 +125,7 @@ public final class Matchers {
          */
         private final Matcher<V> valueMatcher;
 
-        public BindsMatcher(String name, Matcher<V> valueMatcher) {
+        BindsMatcher(String name, Matcher<V> valueMatcher) {
             this.name = name;
             this.valueMatcher = valueMatcher;
         }
@@ -165,7 +165,7 @@ public final class Matchers {
          */
         private final String name;
 
-        public NotBindsMatcher(String name) {
+        NotBindsMatcher(String name) {
             this.name = name;
         }
 

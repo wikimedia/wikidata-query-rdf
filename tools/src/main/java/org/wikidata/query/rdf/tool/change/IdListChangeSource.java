@@ -15,7 +15,7 @@ public class IdListChangeSource implements Change.Source<IdListChangeSource.Batc
     /**
      * Build and IdChangeSource for items as opposed to properties.
      */
-    public static IdListChangeSource forItems(String [] ids, int batchSize) {
+    public static IdListChangeSource forItems(String[] ids, int batchSize) {
         return new IdListChangeSource(ids, batchSize);
     }
 

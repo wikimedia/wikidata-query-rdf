@@ -28,7 +28,7 @@ import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
  * @see com.bigdata.rdf.internal.constraints.DateBOp
  * We are not extending com.bigdata.rdf.internal.constraints since get() is final there.
  */
-public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMaterialization{
+public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMaterialization {
 
     /**
      *

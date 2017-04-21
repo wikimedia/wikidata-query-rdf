@@ -282,7 +282,7 @@ public class Munge implements Runnable {
          */
         private Statement lastStatement;
 
-        public EntityMungingRdfHandler(WikibaseUris uris, Munger munger, OutputPicker<RDFHandler> next) {
+        EntityMungingRdfHandler(WikibaseUris uris, Munger munger, OutputPicker<RDFHandler> next) {
             this.uris = uris;
             this.munger = munger;
             this.next = next;
@@ -478,7 +478,7 @@ public class Munge implements Runnable {
          */
         private int lastChunk = 1;
 
-        public ChunkedWriterOutputPicker(int chunkSize) {
+        ChunkedWriterOutputPicker(int chunkSize) {
             this.chunkSize = chunkSize;
         }
 
@@ -582,7 +582,7 @@ public class Munge implements Runnable {
          */
         private RDFHandler handler;
 
-        public WriterToRDFWriterChunkPicker(OutputPicker<Writer> next) {
+        WriterToRDFWriterChunkPicker(OutputPicker<Writer> next) {
             this.next = next;
             lastWriter = next.output();
             try {

@@ -17,7 +17,9 @@
   <module name="TreeWalker">
     <module name="SuppressWarningsHolder" />
     <!-- Javadoc -->
-    <module name="JavadocType" />
+    <module name="JavadocType">
+      <property name="allowMissingParamTags" value="true" /> <!-- Sometimes its just overkill -->
+    </module>
     <module name="JavadocMethod">
       <property name="allowUndeclaredRTE" value="true" /> <!-- You aren't supposed to declare these anyway... -->
       <property name="allowMissingReturnTag" value="true" /> <!-- Sometimes its just overkill -->

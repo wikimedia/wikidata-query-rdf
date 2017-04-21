@@ -272,7 +272,7 @@ public class GeoBoxService extends GeoService {
          */
         private final BigdataValueFactory vf;
 
-        public GeoBoxServiceCall(BigdataServiceCall wrappedCall, TermNode east,
+        GeoBoxServiceCall(BigdataServiceCall wrappedCall, TermNode east,
                 TermNode west, AbstractTripleStore kb) {
             this.wrappedCall = wrappedCall;
             this.east = east;

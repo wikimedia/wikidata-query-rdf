@@ -115,7 +115,7 @@ public class Update<B extends Change.Batch> implements Runnable {
         try {
             sparqlUri = new URI(options.sparqlUrl());
         } catch (URISyntaxException e) {
-            log.error("Invalid url:  " + options.sparqlUrl() + " caused by " + e.getMessage());
+            log.error("Invalid url:  " + options.sparqlUrl(), e);
             return;
         }
         WikibaseUris uris = new WikibaseUris(options.wikibaseHost());

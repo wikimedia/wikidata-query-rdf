@@ -19,7 +19,7 @@ import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 /**
  * Implements the now() operator.
  */
-public class WikibaseNowBOp extends IVValueExpression<IV> implements INeedsMaterialization{
+public class WikibaseNowBOp extends IVValueExpression<IV> implements INeedsMaterialization {
 
     /**
 	 *

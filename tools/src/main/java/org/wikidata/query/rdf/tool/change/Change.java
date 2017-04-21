@@ -172,7 +172,7 @@ public class Change implements Comparable<Change> {
         /**
          * Simple default implementation of Batch.
          */
-        public abstract static class AbstractDefaultImplementation implements Batch {
+        abstract class AbstractDefaultImplementation implements Batch {
             /**
              * Changes in this batch.
              */

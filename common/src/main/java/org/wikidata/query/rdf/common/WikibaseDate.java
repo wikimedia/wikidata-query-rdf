@@ -342,7 +342,7 @@ public class WikibaseDate {
     /**
      * Format for toString.
      */
-    public static enum ToStringFormat {
+    public enum ToStringFormat {
         /**
          * Wikidata style (+YYYYYYYYYYYY-MM-DDThh:mm:ssZ).
          */

@@ -94,7 +94,7 @@ public class WikibaseInlineUriFactoryUnitTest extends AbstractRandomizedBlazegra
     private static class HasValueMatcher extends TypeSafeMatcher<IV> {
         private final Matcher<? super BigdataValue> valueMatcher;
 
-        public HasValueMatcher(Matcher<? super BigdataValue> valueMatcher) {
+        HasValueMatcher(Matcher<? super BigdataValue> valueMatcher) {
             this.valueMatcher = valueMatcher;
         }
 

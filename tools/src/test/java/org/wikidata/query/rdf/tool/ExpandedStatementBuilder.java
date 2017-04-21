@@ -327,7 +327,7 @@ public class ExpandedStatementBuilder {
          */
         private final Object value;
 
-        public ExtraInfo(String property, Object value) {
+        ExtraInfo(String property, Object value) {
             this.property = property;
             this.value = value;
         }
@@ -370,7 +370,7 @@ public class ExpandedStatementBuilder {
          */
         private Statement typeDecl;
 
-        public AbstractComplexExtraInfo(String property, Object value) {
+        AbstractComplexExtraInfo(String property, Object value) {
             super(property, value);
         }
 
@@ -416,7 +416,7 @@ public class ExpandedStatementBuilder {
      * Builds a reference.
      */
     private class ReferenceInfo extends AbstractComplexExtraInfo {
-        public ReferenceInfo(String property, Object value) {
+        ReferenceInfo(String property, Object value) {
             super(property, value);
         }
 
@@ -446,7 +446,7 @@ public class ExpandedStatementBuilder {
      * Build qualifiers.
      */
     private class QualifierInfo extends ExtraInfo {
-        public QualifierInfo(String property, Object value) {
+        QualifierInfo(String property, Object value) {
             super(property, value);
         }
 
@@ -470,7 +470,7 @@ public class ExpandedStatementBuilder {
          */
         private List<ExpandedValueInfoEntry> entries = new ArrayList<>();
 
-        public ExpandedValueInfo(String property, Object value) {
+        ExpandedValueInfo(String property, Object value) {
             super(property, value);
         }
 
@@ -512,7 +512,7 @@ public class ExpandedStatementBuilder {
          */
         private final Object object;
 
-        public ExpandedValueInfoEntry(String predicate, Object object) {
+        ExpandedValueInfoEntry(String predicate, Object object) {
             this.predicate = predicate;
             this.object = object;
         }
