@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.time.DateUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -84,6 +85,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      */
     private TailingChangesPoller tailPoller;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "TODO: move to LocalDateTime")
     public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime,
             int batchSize, Map<Long, Boolean> seenIDs, int tailSeconds) {
         this.wikibase = wikibase;
@@ -189,6 +191,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         }
 
         @Override
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "TODO: move to LocalDateTime")
         public Date leftOffDate() {
             return leftOffDate;
         }

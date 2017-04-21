@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.common;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
 import static java.util.concurrent.TimeUnit.DAYS;
@@ -224,6 +226,7 @@ public class WikibaseDate {
     /**
      * Convert this date into a number of seconds since epoch.
      */
+    @SuppressFBWarnings(value = "ICAST_INTEGER_MULTIPLY_CAST_TO_LONG", justification = "No risk of overflow here")
     public long secondsSinceEpoch() {
         long seconds = calculateFirstDayOfYear(year) * SECONDS_PER_DAY;
         seconds += SECONDS_PER_MONTH_CUMULATIVE[month - 1];

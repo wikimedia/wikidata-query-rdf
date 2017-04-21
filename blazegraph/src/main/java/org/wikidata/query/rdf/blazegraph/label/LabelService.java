@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -177,6 +178,7 @@ public class LabelService extends AbstractServiceFactory {
     /**
      * Create the resolutions list from the service call parameters.
      */
+    @SuppressFBWarnings(value = "EC_UNRELATED_CLASS_AND_INTERFACE", justification = "equals() is actually correct for some subtypes of BigdataValue")
     private List<Resolution> findResolutions(ServiceCallCreateParams params) {
         JoinGroupNode g = (JoinGroupNode) params.getServiceNode().getGraphPattern();
         List<Resolution> resolutions = new ArrayList<>(g.args().size());

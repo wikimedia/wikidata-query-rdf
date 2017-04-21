@@ -21,6 +21,8 @@ import java.util.TimeZone;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
+import com.google.common.primitives.Longs;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -419,6 +421,7 @@ public class WikibaseRepository {
             this.port = port;
         }
 
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "minor enough")
         public Uris(String scheme, String host, int port, long[] entityNamespaces) {
             this.scheme = scheme;
             this.host = host;
@@ -586,11 +589,7 @@ public class WikibaseRepository {
          * The wikibase entity namespace indexes joined with a delimiter.
          */
         private String getEntityNamespacesString(String delimiter) {
-            String rcnamespace = "";
-            for (long i : entityNamespaces) {
-                rcnamespace += i + delimiter;
-            }
-            return rcnamespace.substring(0, rcnamespace.length() - delimiter.length()); // Remove delimiter at the end
+            return Longs.join(delimiter, entityNamespaces);
         }
 
     }

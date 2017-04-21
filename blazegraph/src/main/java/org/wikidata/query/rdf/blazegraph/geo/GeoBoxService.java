@@ -249,7 +249,7 @@ public class GeoBoxService extends GeoService {
      * Service call wrapper to switch coordinates for box search.
      */
     @SuppressWarnings("rawtypes")
-    private class GeoBoxServiceCall implements BigdataServiceCall {
+    private static class GeoBoxServiceCall implements BigdataServiceCall {
 
         /**
          * Actual GeoService call.

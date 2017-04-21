@@ -4,6 +4,7 @@ import static java.lang.Math.min;
 
 import java.util.Date;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
 import com.google.common.collect.ImmutableList;
@@ -29,6 +30,9 @@ public class IdListChangeSource implements Change.Source<IdListChangeSource.Batc
      */
     private final String[] ids;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "the ids field is used in few enough places that this is not an issue")
+    // FIXME - it would be better to use an ImmutableList here instead of an array, but this is minor enough that it can
+    // be ignored at the moment.
     public IdListChangeSource(String[] ids, int batchSize) {
         this.batchSize = batchSize;
         this.ids = ids;

@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.eclipse.jetty.client.HttpClient;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
@@ -217,6 +218,7 @@ public abstract class GeoService extends AbstractServiceFactory {
     }
 
     @Override
+    @SuppressFBWarnings(value = "EC_UNRELATED_CLASS_AND_INTERFACE", justification = "equals() is actually correct for some subtypes of BigdataValue")
     public Set<IVariable<?>> getRequiredBound(final ServiceNode serviceNode) {
         /**
          * This method extracts exactly those variables that are incoming,

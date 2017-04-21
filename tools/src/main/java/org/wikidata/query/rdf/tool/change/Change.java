@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
@@ -44,6 +45,7 @@ public class Change implements Comparable<Change> {
      */
     private final long rcid;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "TODO: move to LocalDateTime")
     public Change(String entityId, long revision, Date timestamp, long rcid) {
         if (entityId.startsWith("Property:")) {
             this.entityId = entityId.substring("Property:".length());
@@ -87,6 +89,7 @@ public class Change implements Comparable<Change> {
      *
      * @return the timestamp or null if that information is not available
      */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "TODO: move to LocalDateTime")
     public Date timestamp() {
         return timestamp;
     }
@@ -216,6 +219,11 @@ public class Change implements Comparable<Change> {
     }
 
     @Override
+    @SuppressFBWarnings(value = "EQ_COMPARETO_USE_OBJECT_EQUALS", justification = "This looks suspicious, but would need more investigation")
+    // FIXME - since compareTo() is implemented, it would make sense to also implement equals() and hashCode(). But that
+    // might lead to issues if the current code relies on Object.equals() in some places. It is probably simpler and
+    // safer to move to an external comparator and might better represent the fact that comparing changes by rcid is
+    // only one of the way to compare them (e.g. natural ordering of Changes might also be by timestamp).
     public int compareTo(Change o) {
         return (int)(rcid() - o.rcid());
     }

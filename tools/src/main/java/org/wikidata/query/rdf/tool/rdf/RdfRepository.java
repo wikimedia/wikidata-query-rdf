@@ -26,6 +26,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.ProxyConfiguration;
@@ -556,6 +557,7 @@ public class RdfRepository {
     /**
      * Does the triple store have this revision or better.
      */
+    @SuppressFBWarnings(value = "VA_FORMAT_STRING_USES_NEWLINE", justification = "we want to be platform independent here.")
     public boolean hasRevision(String entityId, long revision) {
         // TODO building queries with strings sucks because escaping....
         StringBuilder prefixes = new StringBuilder();

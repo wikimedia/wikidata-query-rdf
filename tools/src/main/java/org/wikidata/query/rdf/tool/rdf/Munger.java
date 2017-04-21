@@ -894,7 +894,7 @@ public class Munger {
     /**
      * Thrown when the munged triples contain a subject we don't recognize.
      */
-    public class BadSubjectException extends ContainedException {
+    public static class BadSubjectException extends ContainedException {
         private static final long serialVersionUID = -4869053066714948939L;
 
         public BadSubjectException(Set<String> badSubjects, WikibaseUris uris) {

@@ -45,7 +45,7 @@ public final class StatementHelper {
         } else {
             throw new IllegalArgumentException("Illegal object:  " + o);
         }
-        if (p instanceof String && p.startsWith("P")) {
+        if (p.startsWith("P")) {
             p = WikibaseUris.getURISystem().property(PropertyType.CLAIM) + p;
         }
         return new StatementImpl(uri(s), uri(p), oValue);

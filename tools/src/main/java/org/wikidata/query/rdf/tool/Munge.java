@@ -20,6 +20,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.rio.RDFFormat;
@@ -244,6 +245,7 @@ public class Munge implements Runnable {
      * </ul>
      * This is how the files are built so that is OK.
      */
+    @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "the unread lastStatement field is used for debugging")
     private static class EntityMungingRdfHandler implements RDFHandler {
         /**
          * Uris for this instance of wikibase. We match on these.

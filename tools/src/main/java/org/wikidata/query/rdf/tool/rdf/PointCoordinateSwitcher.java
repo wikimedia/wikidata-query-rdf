@@ -25,7 +25,7 @@ public class PointCoordinateSwitcher implements FormatHandler {
                 // Produce statement with coordinate order switched
                 return new StatementImpl(statement.getSubject(),
                         statement.getPredicate(),
-                        new LiteralImpl(point.toOrder(WikibasePoint.DEFAULT_ORDER.other),
+                        new LiteralImpl(point.toOrder(WikibasePoint.DEFAULT_ORDER.getOther()),
                                         new URIImpl(GeoSparql.WKT_LITERAL)));
             }
         }

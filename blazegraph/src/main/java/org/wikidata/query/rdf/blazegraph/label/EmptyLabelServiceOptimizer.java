@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.blazegraph.label;
 
 import java.util.List;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDFS;
@@ -45,6 +46,7 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
     private static final URI DESCRIPTION = new URIImpl(SchemaDotOrg.DESCRIPTION);
 
     @Override
+    @SuppressFBWarnings(value = "EC_UNRELATED_CLASS_AND_INTERFACE", justification = "equals() is actually correct for some subtypes of BigdataValue")
     protected void optimizeJoinGroup(AST2BOpContext ctx, StaticAnalysis sa, IBindingSet[] bSets, JoinGroupNode op) {
         final QueryRoot root = sa.getQueryRoot();
         if (root.getQueryType() == QueryType.ASK) {

@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.blazegraph.label;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wikidata.query.rdf.common.uri.Ontology;
 
 import com.bigdata.bop.BOp;
@@ -31,6 +32,7 @@ public class LabelServiceExtractOptimizer extends AbstractJoinGroupOptimizer {
     public static final String EXTRACTOR_ANNOTATION = LabelServiceExtractOptimizer.class.getName() + ".extractedStatements";
 
     @Override
+    @SuppressFBWarnings(value = "EC_UNRELATED_CLASS_AND_INTERFACE", justification = "equals() is actually correct for some subtypes of BigdataValue")
     protected void optimizeJoinGroup(AST2BOpContext ctx, StaticAnalysis sa,
             IBindingSet[] bSets, JoinGroupNode op) {
         final QueryRoot root = sa.getQueryRoot();

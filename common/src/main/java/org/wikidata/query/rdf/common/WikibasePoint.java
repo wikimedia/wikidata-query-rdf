@@ -31,7 +31,14 @@ public class WikibasePoint {
         /**
          * Other option.
          */
-        public CoordinateOrder other;
+        private CoordinateOrder other;
+
+        /**
+         * Other option.
+         */
+        public CoordinateOrder getOther() {
+            return other;
+        }
 
         static {
             LAT_LONG.other = LONG_LAT;
