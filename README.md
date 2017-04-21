@@ -51,3 +51,17 @@ with:
 ```bash
 mvn sortpom:sort
 ```
+
+The application can be started by running the following command in the war submodule:
+```bash
+mvn -pl war jetty:run
+```
+
+The `-pl war` argument tells maven to run inside the `war` submodule, this is equivalent to running:
+```bash
+cd war && mvn jetty:run
+```
+
+The same target can be used directly from your IDE to run in debug mode and use all the nice IDE integration (automatic class reloading, ...). Check your IDE documentation for details.
+
+Note: `jetty:run` will not automatically detect changes to other modules, but if you run `mvn install` in the root of the project, the changes should be compiled and jetty should auto reload the application.

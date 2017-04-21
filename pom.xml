@@ -701,6 +701,34 @@
           <groupId>org.eclipse.jetty</groupId>
           <artifactId>jetty-maven-plugin</artifactId>
           <version>${jetty.version}</version>
+          <configuration>
+            <scanIntervalSeconds>10</scanIntervalSeconds>
+            <stopKey>stopblazegraphrightnowplzkthx</stopKey>
+            <stopPort>9898</stopPort>
+            <scanIntervalSeconds>0</scanIntervalSeconds>
+            <httpConnector>
+              <port>9999</port>
+            </httpConnector>
+            <jettyXml>${project.basedir}/src/main/etc/jetty.xml</jettyXml>
+            <systemProperties>
+              <systemProperty>
+                <name>ASTOptimizerClass</name>
+                <value>org.wikidata.query.rdf.blazegraph.WikibaseOptimizers</value>
+              </systemProperty>
+              <systemProperty>
+                <name>org.wikidata.query.rdf.blazegraph.inline.literal.WKTSerializer.noGlobe</name>
+                <value>2</value>
+              </systemProperty>
+              <systemProperty>
+                <name>com.bigdata.rdf.sail.webapp.client.HttpClientConfigurator</name>
+                <value>org.wikidata.query.rdf.blazegraph.ProxiedHttpConnectionFactory</value>
+              </systemProperty>
+              <systemProperty>
+                <name>http.userAgent</name>
+                <value>Wikidata Query Service (testing); https://query.wikidata.org/</value>
+              </systemProperty>
+            </systemProperties>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.sonatype.plugins</groupId>

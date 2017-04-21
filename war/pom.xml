@@ -85,6 +85,31 @@
           </overlays>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-maven-plugin</artifactId>
+        <configuration>
+          <webApp>
+            <contextPath>/bigdata</contextPath>
+          </webApp>
+          <systemProperties combine.children="append">
+            <systemProperty>
+              <!-- By default Blazegraph's WAR thinks it running in tomcat and uses funky relative paths. They suggest
+                you overwrite it. We do. -->
+              <name>com.bigdata.rdf.sail.webapp.ConfigParams.propertyFile</name>
+              <value>${project.basedir}/../tools/src/test/resources/blazegraph/RWStore.properties</value>
+            </systemProperty>
+            <systemProperty>
+              <name>com.bigdata.rdf.sail.sparql.PrefixDeclProcessor.additionalDeclsFile</name>
+              <value>${project.basedir}/../dist/src/script/prefixes.conf</value>
+            </systemProperty>
+            <systemProperty>
+              <name>wikibaseServiceWhitelist</name>
+              <value>${project.basedir}/../tools/src/test/resources/blazegraph/whitelist.txt</value>
+            </systemProperty>
+          </systemProperties>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 

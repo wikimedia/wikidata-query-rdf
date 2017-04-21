@@ -44,7 +44,7 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
 
     public AbstractRdfRepositoryIntegrationTestBase(WikibaseUris uris) {
         this.uris = uris;
-        rdfRepository = new RdfRepositoryForTesting("kb");
+        rdfRepository = new RdfRepositoryForTesting("wdq");
     }
 
     /**

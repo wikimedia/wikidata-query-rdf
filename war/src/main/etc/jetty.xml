@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure_9_0.dtd">
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+    <Call name="setAttribute">
+        <!--
+            100x more than the default form size limit - our updates are
+            reasonably large and it isn't worth breaking them up. Hopefully.
+
+            Setting maxFormContentSize via configuration of the system
+            properties on the jetty-maven-plugin does not work (or at least I
+            don't understand how to make it work). Configuring it via jetty.xml
+            works, so let's use that for the moment.
+        -->
+        <Arg>org.eclipse.jetty.server.Request.maxFormContentSize</Arg>
+        <Arg>20000000</Arg>
+    </Call>
+</Configure>

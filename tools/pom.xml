@@ -116,6 +116,18 @@
       <scope>runtime</scope>
     </dependency>
     <dependency>
+      <!--
+        adding a runtime dependency to blazegraph service to ensure that the
+        reactor build order is coherent. There should be a better way to do
+        this, via an explicit dependency on the jetty-maven-plugin, but I can't
+        find the correct syntax at the moment.
+      -->
+      <groupId>org.wikidata.query.rdf</groupId>
+      <artifactId>blazegraph-service</artifactId>
+      <type>war</type>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-core</artifactId>
       <scope>test</scope>
@@ -167,82 +179,11 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>unpack-blazegraph</id>
-            <goals>
-              <goal>unpack</goal>
-            </goals>
-            <phase>pre-integration-test</phase>
-            <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>com.blazegraph</groupId>
-                  <artifactId>bigdata-war</artifactId>
-                  <version>${blazegraph.version}</version>
-                  <type>war</type>
-                </artifactItem>
-              </artifactItems>
-              <outputDirectory>${project.build.directory}/blazegraph</outputDirectory>
-            </configuration>
-          </execution>
-          <execution>
-            <id>drop-in-blazegraph-extension</id>
-            <goals>
-              <goal>copy</goal>
-            </goals>
-            <phase>pre-integration-test</phase>
-            <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>org.wikidata.query.rdf</groupId>
-                  <artifactId>common</artifactId>
-                  <version>${project.parent.version}</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.wikidata.query.rdf</groupId>
-                  <artifactId>blazegraph</artifactId>
-                  <version>${project.parent.version}</version>
-                </artifactItem>
-              </artifactItems>
-              <outputDirectory>${project.build.directory}/blazegraph/WEB-INF/lib</outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <!-- Copy web.xml from testTools to blazegraph webapp -->
-        <executions>
-          <execution>
-            <id>copy-resources</id>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <phase>pre-integration-test</phase>
-            <configuration>
-              <!-- force overwrite even if the dest file is newer, in some case web.xml
-                 from blazgraph might be newer than our custom web.xml -->
-              <overwrite>true</overwrite>
-              <outputDirectory>${basedir}/target/blazegraph/WEB-INF</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${basedir}/../testTools/src/config</directory>
-                  <filtering>false</filtering>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -276,76 +217,32 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>properties-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>setup-blazegraph-properties</id>
-            <goals>
-              <goal>set-system-properties</goal>
-            </goals>
-            <phase>pre-integration-test</phase>
-            <configuration>
-              <properties>
-                <property>
-                  <!-- By default Blazegraph's WAR thinks it running in tomcat and uses funky relative paths. They suggest
-                    you overwrite it. We do. -->
-                  <name>com.bigdata.rdf.sail.webapp.ConfigParams.propertyFile</name>
-                  <value>${project.basedir}/src/test/resources/blazegraph/RWStore.properties</value>
-                </property>
-                <property>
-                  <!-- 100x more than the default form size limit - our updates are reasonably large and it isn't worth breaking
-                    them up. Hopefully. -->
-                  <name>org.eclipse.jetty.server.Request.maxFormContentSize</name>
-                  <value>20000000</value>
-                </property>
-                <property>
-                  <name>ASTOptimizerClass</name>
-                  <value>org.wikidata.query.rdf.blazegraph.WikibaseOptimizers</value>
-                </property>
-                <property>
-                  <name>org.wikidata.query.rdf.blazegraph.inline.literal.WKTSerializer.noGlobe</name>
-                  <value>2</value>
-                </property>
-                <property>
-                  <name>com.bigdata.rdf.sail.sparql.PrefixDeclProcessor.additionalDeclsFile</name>
-                  <value>${project.parent.basedir}/dist/src/script/prefixes.conf</value>
-                </property>
-                <property>
-                  <name>com.bigdata.rdf.sail.webapp.client.HttpClientConfigurator</name>
-                  <value>org.wikidata.query.rdf.blazegraph.ProxiedHttpConnectionFactory</value>
-                </property>
-                <property>
-                  <name>http.userAgent</name>
-                  <value>Wikidata Query Service (testing); https://query.wikidata.org/</value>
-                </property>
-                <property>
-                  <name>wikibaseServiceWhitelist</name>
-                  <value>${project.basedir}/src/test/resources/blazegraph/whitelist.txt</value>
-                </property>
-              </properties>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-maven-plugin</artifactId>
         <configuration>
-          <scanIntervalSeconds>10</scanIntervalSeconds>
-          <stopKey>stopblazegraphrightnowplzkthx</stopKey>
-          <stopPort>9898</stopPort>
-          <scanIntervalSeconds>0</scanIntervalSeconds>
-          <httpConnector>
-            <port>9999</port>
-          </httpConnector>
           <contextHandlers>
             <contextHandler implementation="org.eclipse.jetty.maven.plugin.JettyWebAppContext">
-              <!-- TODO a war with the blazegraph extensions -->
-              <war>${project.build.directory}/blazegraph</war>
+              <war>${project.basedir}/../war/target/blazegraph-service-${project.version}.war</war>
               <contextPath>/bigdata</contextPath>
             </contextHandler>
           </contextHandlers>
+          <jettyXml></jettyXml>
+          <systemProperties combine.children="append">
+            <systemProperty>
+              <!-- By default Blazegraph's WAR thinks it running in tomcat and uses funky relative paths. They suggest
+                you overwrite it. We do. -->
+              <name>com.bigdata.rdf.sail.webapp.ConfigParams.propertyFile</name>
+              <value>${project.basedir}/src/test/resources/blazegraph/RWStore.properties</value>
+            </systemProperty>
+            <systemProperty>
+              <name>com.bigdata.rdf.sail.sparql.PrefixDeclProcessor.additionalDeclsFile</name>
+              <value>${project.parent.basedir}/dist/src/script/prefixes.conf</value>
+            </systemProperty>
+            <systemProperty>
+              <name>wikibaseServiceWhitelist</name>
+              <value>${project.basedir}/src/test/resources/blazegraph/whitelist.txt</value>
+            </systemProperty>
+          </systemProperties>
         </configuration>
         <executions>
           <execution>
@@ -367,36 +264,4 @@
       </plugin>
     </plugins>
   </build>
-  <profiles>
-    <profile>
-      <id>runBlazegraph</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>properties-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>setup-blazegraph-properties</id>
-                <phase>generate-sources</phase>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>run-blazegraph</id>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <phase>generate-sources</phase>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>
