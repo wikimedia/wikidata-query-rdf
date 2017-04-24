@@ -10,7 +10,7 @@
     <logger name="org.wikidata.query.rdf" level="info"/>
     <logger name="org.wikidata.query.rdf.tool.wikibase" level="debug"/>
 
-    <root level="warn">
+    <root level="info">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>
