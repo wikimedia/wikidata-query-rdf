@@ -131,18 +131,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <!--
-        adding a test dependency to blazegraph service to ensure that the
-        reactor build order is coherent. There should be a better way to do
-        this, via an explicit dependency on the jetty-maven-plugin, but I can't
-        find the correct syntax at the moment.
-      -->
-      <groupId>org.wikidata.query.rdf</groupId>
-      <artifactId>blazegraph-service</artifactId>
-      <type>war</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.wikidata.query.rdf</groupId>
       <artifactId>testTools</artifactId>
       <scope>test</scope>
@@ -176,6 +164,35 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <!--
+              Copy the blazegraph-service WAR in this module target/war
+              directory, so that we don't have a reference to a path in another
+              module (each module should be independent, except for explicit
+              dependencies).
+            -->
+            <id>copy-war</id>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <phase>process-resources</phase>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.wikidata.query.rdf</groupId>
+                  <artifactId>blazegraph-service</artifactId>
+                  <type>war</type>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.directory}/war</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -222,11 +239,10 @@
         <configuration>
           <contextHandlers>
             <contextHandler implementation="org.eclipse.jetty.maven.plugin.JettyWebAppContext">
-              <war>${project.basedir}/../war/target/blazegraph-service-${project.version}.war</war>
+              <war>${project.build.directory}/war/blazegraph-service-${project.version}.war</war>
               <contextPath>/bigdata</contextPath>
             </contextHandler>
           </contextHandlers>
-          <jettyXml></jettyXml>
           <systemProperties combine.children="append">
             <systemProperty>
               <!-- By default Blazegraph's WAR thinks it running in tomcat and uses funky relative paths. They suggest
