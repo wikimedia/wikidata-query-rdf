@@ -116,18 +116,6 @@
       <scope>runtime</scope>
     </dependency>
     <dependency>
-      <!--
-        adding a runtime dependency to blazegraph service to ensure that the
-        reactor build order is coherent. There should be a better way to do
-        this, via an explicit dependency on the jetty-maven-plugin, but I can't
-        find the correct syntax at the moment.
-      -->
-      <groupId>org.wikidata.query.rdf</groupId>
-      <artifactId>blazegraph-service</artifactId>
-      <type>war</type>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-core</artifactId>
       <scope>test</scope>
@@ -140,6 +128,18 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <!--
+        adding a test dependency to blazegraph service to ensure that the
+        reactor build order is coherent. There should be a better way to do
+        this, via an explicit dependency on the jetty-maven-plugin, but I can't
+        find the correct syntax at the moment.
+      -->
+      <groupId>org.wikidata.query.rdf</groupId>
+      <artifactId>blazegraph-service</artifactId>
+      <type>war</type>
       <scope>test</scope>
     </dependency>
     <dependency>
