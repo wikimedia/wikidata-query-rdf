@@ -131,8 +131,12 @@ public class Update<B extends Change.Batch> implements Runnable {
                 new LinkedBlockingQueue<Runnable>(), threadFactory.build());
 
         Munger munger = mungerFromOptions(options);
-        new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
+        try {
+            new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
                 options.pollDelay(), uris, options.verify()).run();
+        } finally {
+            rdfRepository.close();
+        }
     }
 
     /**
