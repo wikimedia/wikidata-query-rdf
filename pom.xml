@@ -42,8 +42,8 @@
     <module>testTools</module>
     <module>common</module>
     <module>blazegraph</module>
-    <module>tools</module>
     <module>war</module>
+    <module>tools</module>
     <module>dist</module>
   </modules>
 
