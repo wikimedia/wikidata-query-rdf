@@ -414,11 +414,39 @@ public class Munger {
                 if (!statement()) {
                     itr.remove();
                 }
+                // Check object length, cut if needed.
+                final Statement shortStatement = checkObjectLength();
+                if (shortStatement != null) {
+                    itr.remove();
+                    restoredStatements.add(shortStatement);
+                }
             }
 
             statement = null;
             finishSingleLabelMode();
             finishCommon();
+        }
+
+        /**
+         * Check whether object's length is more than 32k.
+         * If so, create new statement that cuts object down to 32k.
+         * @return New statement or null if not needed.
+         */
+        private Statement checkObjectLength() {
+            if (statement.getObject() instanceof Literal) {
+                final Literal value = (Literal)statement.getObject();
+                if (value.stringValue().length() > Short.MAX_VALUE) {
+                    final Literal newValue;
+                    if (value.getDatatype().equals(org.openrdf.model.vocabulary.RDF.LANGSTRING)) {
+                        newValue = new LiteralImpl(value.stringValue().substring(0, Short.MAX_VALUE), value.getLanguage());
+                    } else {
+                        newValue = new LiteralImpl(value.stringValue().substring(0, Short.MAX_VALUE), value.getDatatype());
+                    }
+                    return new StatementImpl(statement.getSubject(),
+                            statement.getPredicate(), newValue);
+                }
+            }
+            return null;
         }
 
         /**

@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openrdf.model.Statement;
@@ -342,6 +343,28 @@ public class MungerUnitTest extends RandomizedTest {
         Statement expected = statement("Q23", uris.property(PropertyType.DIRECT) + "P9", new LiteralImpl("Point(3.4 1.2)", new URIImpl(GeoSparql.WKT_LITERAL)));
         assertThat(result, hasItem(expected));
     }
+
+    /**
+     * Ensure that long strings are cut to MAX_VALUE.
+     */
+    @Test
+    public void veryLongValue() {
+        String longString = StringUtils.repeat("A", Short.MAX_VALUE);
+        List<Statement> result = entity("Q2223")
+                .remove(statement("Q2223", uris.property(PropertyType.DIRECT) + "P9", new LiteralImpl(longString + longString)))
+                // With type
+                .remove(statement("Q2223", uris.property(PropertyType.DIRECT) + "P10", new LiteralImpl(longString + longString, OWL.DATATYPEPROPERTY)))
+                // With language
+                .remove(statement("Q2223", uris.property(PropertyType.DIRECT) + "P11", new LiteralImpl(longString + longString, "en")))
+                .testWithoutShuffle();
+        Statement expected = statement("Q2223", uris.property(PropertyType.DIRECT) + "P9", new LiteralImpl(longString));
+        assertThat(result, hasItem(expected));
+        expected = statement("Q2223", uris.property(PropertyType.DIRECT) + "P10", new LiteralImpl(longString, OWL.DATATYPEPROPERTY));
+        assertThat(result, hasItem(expected));
+        expected = statement("Q2223", uris.property(PropertyType.DIRECT) + "P11", new LiteralImpl(longString, "en"));
+        assertThat(result, hasItem(expected));
+    }
+
 
     @Test
     public void propertyDefs() {
