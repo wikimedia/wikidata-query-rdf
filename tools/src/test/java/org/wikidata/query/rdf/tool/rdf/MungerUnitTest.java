@@ -178,6 +178,30 @@ public class MungerUnitTest extends RandomizedTest {
     }
 
     @Test
+    public void valueWithNormalized() {
+        String statementUri = uris.statement() + "q1-someuuid";
+        String valueUri = uris.value() + "someotheruuid";
+        String valueNormUri = uris.value() + "normalizedvalue";
+        entity("Q1")
+                //
+                .retain(statement("Q1", "P580", statementUri), //
+                        statement(statementUri, uris.property(PropertyType.STATEMENT) + "P580", new IntegerLiteralImpl(BigInteger.valueOf(123))),
+                        statement(statementUri, uris.property(PropertyType.STATEMENT_VALUE) + "P580", valueUri),
+                        statement(valueUri, Ontology.Quantity.AMOUNT, new IntegerLiteralImpl(BigInteger.valueOf(123))),
+                        statement(valueUri, Ontology.Quantity.UNIT, "Q12345"),
+                        statement(valueUri, Ontology.Quantity.NORMALIZED, valueNormUri),
+                        statement(valueNormUri, Ontology.Quantity.AMOUNT, new IntegerLiteralImpl(BigInteger.valueOf(456))),
+                        statement(valueNormUri, Ontology.Quantity.UNIT, "Q4567"),
+                        statement(valueNormUri, Ontology.Quantity.NORMALIZED, valueNormUri)
+                        )
+                .remove(statement(statementUri, RDF.TYPE, Ontology.STATEMENT),
+                        statement(valueNormUri, RDF.TYPE, Ontology.VALUE),
+                        statement(valueUri, RDF.TYPE, Ontology.VALUE))
+                .testWithoutShuffle();
+
+    }
+
+    @Test
     public void expandedValueOnQualifier() {
         String statementUri = uris.statement() + "q1-someuuid";
         String valueUri = uris.value() + "someotheruuid";

@@ -177,6 +177,10 @@ public final class Ontology {
          * The unit of the quantity.
          */
         public static final String UNIT = PREFIX + "Unit";
+        /**
+         * Normalized value for quantity.
+         */
+        public static final String NORMALIZED = PREFIX + "Normalized";
 
         private Quantity() {
             // Utility class.

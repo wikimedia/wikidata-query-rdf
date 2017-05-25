@@ -35,6 +35,7 @@ import org.wikidata.query.rdf.common.WikibasePoint;
 import org.wikidata.query.rdf.common.WikibasePoint.CoordinateOrder;
 import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.Ontology.Quantity;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
@@ -220,7 +221,6 @@ public class Munger {
         // remove all values that we have seen as they are used by statements
         existingValues.removeAll(op.extraValidSubjects);
         existingRefs.removeAll(op.extraValidSubjects);
-        return;
     }
 
     /**
@@ -722,6 +722,14 @@ public class Munger {
                     return false;
                 }
                 break;
+            case Quantity.NORMALIZED:
+                /* Keep normalized values. It's a bit tricky here since
+                 * normalized value may not be used yet and when we restore
+                 * regular value we may miss normalized one. So we always add
+                 * normalized ones to allowed list.
+                 */
+                registerExtraValidSubject(statement.getObject().stringValue());
+                break;
             default:
             }
             if (!extraValidSubjects.contains(subject)) {
@@ -822,8 +830,8 @@ public class Munger {
                     throw new BadSubjectException(unknownSubjects.keySet(), uris);
                 } else {
                     log.info(
-                            "Unrecognized subjects: {}.  Expected only sitelinks and subjects starting with {} and {}",
-                            unknownSubjects.keySet(), uris.entityData(), uris.entity());
+                            "Unrecognized subjects: {} while processing {}.  Expected only sitelinks and subjects starting with {} and {}",
+                            unknownSubjects.keySet(), entityUri, uris.entityData(), uris.entity());
                 }
             }
             if (revisionId == null) {
