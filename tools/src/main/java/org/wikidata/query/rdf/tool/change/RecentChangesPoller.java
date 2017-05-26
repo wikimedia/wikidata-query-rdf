@@ -7,8 +7,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.time.DateUtils;
@@ -74,7 +74,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
     /**
      * Queue for communicating with tailing updater.
      */
-    private final Queue<Batch> queue = new ArrayBlockingQueue<>(100);
+    private final BlockingQueue<Batch> queue = new ArrayBlockingQueue<>(100);
 
     /**
      * Optional tailing poller.

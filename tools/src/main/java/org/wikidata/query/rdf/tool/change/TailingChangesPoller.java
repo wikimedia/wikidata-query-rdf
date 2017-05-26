@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.tool.change;
 
 import java.util.Date;
-import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
@@ -41,9 +41,9 @@ public class TailingChangesPoller extends Thread {
     /**
      * Queue to post the batches in.
      */
-    private final Queue<Batch> queue;
+    private final BlockingQueue<Batch> queue;
 
-    public TailingChangesPoller(RecentChangesPoller poller, Queue<Batch> queue, int tailSeconds) {
+    public TailingChangesPoller(RecentChangesPoller poller, BlockingQueue<Batch> queue, int tailSeconds) {
         this.poller = poller;
         this.tailSeconds = tailSeconds;
         this.queue = queue;
@@ -78,7 +78,7 @@ public class TailingChangesPoller extends Thread {
                 // Process the batch
                 if (lastBatch.changes().size() > 0) {
                     log.info("Caught {} missing updates, adding to the queue", lastBatch.changes().size());
-                    queue.add(lastBatch);
+                    queue.put(lastBatch);
                 }
                 log.info("Tail poll up to {}", lastBatch.leftOffDate());
                 if (!isOldEnough(lastBatch.leftOffDate())) {
