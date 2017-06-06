@@ -2,16 +2,22 @@ Wikibase RDF Query
 ==================
 
 Tools for Querying Wikibase instances with RDF.  The modules:
-* tools - Tools for syncing a Wikibase instance with an SPARQL 1.1 compliant triple store
- * Apache Licensed
 * blazegraph - Blazegraph extension to make querying Wikibase instances more efficient
- * GPLv2 Licensed
+  * GPLv2 Licensed
+* war - Configurations for Blazegraph and the service
+  * GPLv2 Licensed
+* tools - Tools for syncing a Wikibase instance with an SPARQL 1.1 compliant triple store
+  * Apache Licensed
 * common - Code shared between tools and blazegraph
- * Apache Licensed
+  * Apache Licensed
+* testTools - Helpers for testing
+  * Apache Licensed
 * gui - UI for running queries and displaying results
- * Apache Licensed
+  * Apache Licensed
 * dist - scripts for running the service
- * Apache Licensed
+  * Apache Licensed
+
+See more in the [User Manual](https://www.mediawiki.org/wiki/Wikidata_query_service/User_Manual).
 
 Development Notes
 -----------------
