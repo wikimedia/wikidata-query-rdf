@@ -224,6 +224,7 @@
                 <argument>8812</argument>
                 <argument>--error</argument>
                 <argument>503</argument>
+                <argument>429</argument>
                 <argument>--errorMod</argument>
                 <argument>2</argument>
                 <argument>--embedded</argument>

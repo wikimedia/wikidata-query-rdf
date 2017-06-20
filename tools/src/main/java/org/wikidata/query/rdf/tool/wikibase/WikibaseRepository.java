@@ -27,8 +27,11 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpRequestRetryHandler;
+import org.apache.http.client.ServiceUnavailableRetryStrategy;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -78,12 +81,17 @@ public class WikibaseRepository {
     private static final int RETRIES = 3;
 
     /**
+     * Retry interval, in ms.
+     */
+    private static final int RETRY_INTERVAL = 500;
+
+    /**
      * HTTP client for wikibase.
      */
     private final CloseableHttpClient client = HttpClients.custom()
             .setMaxConnPerRoute(100).setMaxConnTotal(100)
             .setRetryHandler(getRetryHandler(RETRIES))
-            .setServiceUnavailableRetryStrategy(new DefaultServiceUnavailableRetryStrategy(RETRIES, 500))
+            .setServiceUnavailableRetryStrategy(getRetryStrategy(RETRIES, RETRY_INTERVAL))
             .setUserAgent("Wikidata Query Service Updater")
             .build();
 
@@ -105,11 +113,38 @@ public class WikibaseRepository {
     }
 
     /**
+     * Return retry strategy for "service unavailable".
+     * This one handles 503 and 429 by retrying it after a fixed period.
+     * TODO: 429 may contain header that we may want to use for retrying?
+     * @param max Maximum number of retries.
+     * @param interval Interval between retries, ms.
+     * @see DefaultServiceUnavailableRetryStrategy
+     * @return
+     */
+    private static ServiceUnavailableRetryStrategy getRetryStrategy(final int max, final int interval) {
+        // This is the same as DefaultServiceUnavailableRetryStrategy but also handles 429
+        return new ServiceUnavailableRetryStrategy() {
+            @Override
+            public boolean retryRequest(final HttpResponse response, final int executionCount, final HttpContext context) {
+                return executionCount <= max &&
+                    (response.getStatusLine().getStatusCode() == HttpStatus.SC_SERVICE_UNAVAILABLE ||
+                    response.getStatusLine().getStatusCode() == 429);
+            }
+
+            @Override
+            public long getRetryInterval() {
+                return interval;
+            }
+        };
+    }
+
+    /**
      * Create retry handler.
+     * Note: this is for retrying I/O exceptions.
      * @param max Maximum retries number.
      * @return
      */
-    public static HttpRequestRetryHandler getRetryHandler(final int max) {
+    private static HttpRequestRetryHandler getRetryHandler(final int max) {
         HttpRequestRetryHandler myRetryHandler = new HttpRequestRetryHandler() {
             @Override
             public boolean retryRequest(IOException exception, int executionCount,

@@ -3,8 +3,10 @@ package org.wikidata.query.rdf.tool;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -43,7 +45,7 @@ public class Proxy extends NanoHTTPD {
         int port();
 
         @Option(shortName = "e", description = "Error")
-        int error();
+        List<Integer> error();
 
         @Option(shortName = "m", description = "Error thrown every m requests")
         int errorMod();
@@ -63,7 +65,10 @@ public class Proxy extends NanoHTTPD {
     public static void main(String[] args) throws IOException {
         ProxyOptions options = OptionsUtils.handleOptions(ProxyOptions.class, args);
         WikibaseRepository.Uris wikibase = new WikibaseRepository.Uris(options.wikibaseScheme(), options.wikibaseHost());
-        Proxy p = new Proxy(options.port(), wikibase, buildErrorStatus(options.error()), options.errorMod());
+        // Create status objects for errors
+        IStatus[] statuses = options.error().stream().map(Proxy::buildErrorStatus)
+                .toArray(IStatus[]::new);
+        Proxy p = new Proxy(options.port(), wikibase, statuses, options.errorMod());
         p.start();
         if (options.embedded()) {
             return;
@@ -89,6 +94,8 @@ public class Proxy extends NanoHTTPD {
         switch (errorCode) {
         case 503:
             return new SimpleStatus(503, "Internal server error");
+        case 429:
+            return new SimpleStatus(429, "Too many requests");
         default:
         }
         // If it is supported by NanoHTTPD use its status
@@ -119,13 +126,17 @@ public class Proxy extends NanoHTTPD {
     /**
      * The status to return for the error.
      */
-    private final IStatus errorStatus;
+    private final IStatus[] errorStatus;
     /**
      * Throw an error every this many requests.
      */
     private final int errorMod;
+    /**
+     * Random number generator.
+     */
+    private final Random random = new Random();
 
-    public Proxy(int port, WikibaseRepository.Uris wikibase, IStatus errorStatus, int errorMod) {
+    public Proxy(int port, WikibaseRepository.Uris wikibase, IStatus[] errorStatus, int errorMod) {
         super(port);
         this.wikibase = wikibase;
         this.errorStatus = errorStatus;
@@ -143,8 +154,9 @@ public class Proxy extends NanoHTTPD {
         log.debug("Serving {} {}", session.getMethod(), session.getUri());
         long currentRequest = requestCount.incrementAndGet();
         if (currentRequest % errorMod == 1) {
-            log.debug("Returning an {}:{}", errorStatus.getRequestStatus(), errorStatus.getDescription());
-            return new Response(errorStatus, NanoHTTPD.MIME_PLAINTEXT, "dummy error");
+            final IStatus randomStatus = errorStatus[random.nextInt(errorStatus.length)];
+            log.debug("Returning an {}:{}", randomStatus.getRequestStatus(), randomStatus.getDescription());
+            return new Response(randomStatus, NanoHTTPD.MIME_PLAINTEXT, "dummy error");
         }
         try {
             URI uri = buildUri(session.getUri(), session.getParms());

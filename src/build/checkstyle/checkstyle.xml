@@ -128,7 +128,10 @@
 
 
     <!-- Really opinionated. Probably wrong. -->
-    <module name="ClassFanOutComplexity" />
+    <module name="ClassFanOutComplexity">
+      <property name="id" value="checkstyle:classfanoutcomplexity"/>
+      <property name="max" value="25"/>
+    </module>
     <module name="CyclomaticComplexity" />
     <module name="NPathComplexity" />
 

@@ -37,6 +37,7 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
 public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     private static final String HOST = "test.wikidata.org";
     private final WikibaseRepository repo = new WikibaseRepository("https", HOST);
+    private final WikibaseRepository proxyRepo = new WikibaseRepository("http", "localhost", 8812);
     private final WikibaseUris uris = new WikibaseUris(HOST);
 
     @Test
@@ -142,9 +143,10 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     @Test
     public void fetchIsNormalized() throws RetryableException, ContainedException {
         long now = System.currentTimeMillis();
+        WikibaseRepository proxyRepo = new WikibaseRepository("http", "localhost", 8812);
         String entityId = repo.firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
         repo.setLabel(entityId, "item", "QueryTestItem" + now, "en");
-        Collection<Statement> statements = repo.fetchRdfForEntity(entityId);
+        Collection<Statement> statements = proxyRepo.fetchRdfForEntity(entityId);
         boolean foundBad = false;
         boolean foundGood = false;
         for (Statement statement : statements) {
@@ -208,7 +210,6 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     @Test
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void recentChangesWithErrors() throws RetryableException, ContainedException {
-        WikibaseRepository proxyRepo = new WikibaseRepository("http", "localhost", 8812);
         JSONObject changes = proxyRepo.fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
         Map<String, Object> c = changes;
         assertThat(c, not(hasKey("continue")));
