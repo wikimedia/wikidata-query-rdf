@@ -85,6 +85,11 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      */
     private TailingChangesPoller tailPoller;
 
+    /**
+     * Whether to use backoff.
+     */
+    private boolean useBackoff = true;
+
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "TODO: move to LocalDateTime")
     public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime,
             int batchSize, Map<Long, Boolean> seenIDs, int tailSeconds) {
@@ -103,6 +108,13 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         this(wikibase, firstStartTime, batchSize, createSeenMap(), tailSeconds);
     }
 
+    /**
+     * Whether to use backoff.
+     * @param useBackoff
+     */
+    public void setBackoff(boolean useBackoff) {
+        this.useBackoff = useBackoff;
+    }
     /**
      * Create map of seen IDs.
      * @return
@@ -149,6 +161,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             log.info("Started trailing poller with gap of {} seconds", tailSeconds);
             // Create new poller starting back tailSeconds and same IDs map.
             final RecentChangesPoller poller = new RecentChangesPoller(wikibase, DateUtils.addSeconds(new Date(), -tailSeconds), batchSize, seenIDs, -1);
+            poller.setBackoff(false);
             tailPoller = new TailingChangesPoller(poller, queue, tailSeconds);
             tailPoller.start();
         } else {
@@ -248,7 +261,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      * @throws RetryableException on fetch failure
      */
     private JSONObject fetchRecentChanges(Date lastNextStartTime, Batch lastBatch) throws RetryableException {
-        if (changeIsRecent(lastNextStartTime)) {
+        if (useBackoff && changeIsRecent(lastNextStartTime)) {
             return wikibase.fetchRecentChangesByTime(
                     DateUtils.addSeconds(lastNextStartTime, -BACKOFF_TIME),
                     batchSize);
@@ -321,7 +334,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                 nextStartTime = Math.max(nextStartTime, timestamp.getTime());
             }
             ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
-            if (changes.size() == 0 && result.size() >= batchSize) {
+            if (useBackoff && changes.size() == 0 && result.size() >= batchSize) {
                 // We have a problem here - due to backoff, we did not fetch any new items
                 // Try to advance one second, even though we risk to lose a change
                 log.info("Backoff overflow, advancing one second");

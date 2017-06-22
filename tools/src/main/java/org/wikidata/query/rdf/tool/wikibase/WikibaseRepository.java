@@ -469,6 +469,7 @@ public class WikibaseRepository {
          *
          * @param startTime the first date to poll from - usually if
          *            continueObject isn't null this is ignored by wikibase
+         * @param continueObject Continue object from the last request
          * @param batchSize maximum number of results we want back from wikibase
          */
         public URI recentChanges(Date startTime, JSONObject continueObject, int batchSize) {
