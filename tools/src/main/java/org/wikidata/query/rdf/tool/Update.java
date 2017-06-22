@@ -104,8 +104,9 @@ public class Update<B extends Change.Batch> implements Runnable {
 
     /**
      * Run updates configured from the command line.
+     * @throws Exception on error
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         Options options = handleOptions(Options.class, args);
         WikibaseRepository wikibaseRepository = buildWikibaseRepository(options);
         if (wikibaseRepository == null) {
@@ -119,23 +120,20 @@ public class Update<B extends Change.Batch> implements Runnable {
             return;
         }
         WikibaseUris uris = new WikibaseUris(options.wikibaseHost());
-        RdfRepository rdfRepository = new RdfRepository(sparqlUri, uris);
-        Change.Source<? extends Change.Batch> changeSource = buildChangeSource(options, rdfRepository,
-                wikibaseRepository);
-        if (changeSource == null) {
-            return;
-        }
-        int threads = options.threadCount();
-        ThreadFactoryBuilder threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("update %s");
-        ExecutorService executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(), threadFactory.build());
+        try (RdfRepository rdfRepository = new RdfRepository(sparqlUri, uris)) {
+            Change.Source<? extends Change.Batch> changeSource = buildChangeSource(options, rdfRepository,
+                    wikibaseRepository);
+            if (changeSource == null) {
+                return;
+            }
+            int threads = options.threadCount();
+            ThreadFactoryBuilder threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("update %s");
+            ExecutorService executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<Runnable>(), threadFactory.build());
 
-        Munger munger = mungerFromOptions(options);
-        try {
+            Munger munger = mungerFromOptions(options);
             new Update<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
                 options.pollDelay(), uris, options.verify()).run();
-        } finally {
-            rdfRepository.close();
         }
     }
 

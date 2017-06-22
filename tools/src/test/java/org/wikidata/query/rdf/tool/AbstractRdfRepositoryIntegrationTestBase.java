@@ -71,9 +71,10 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
 
     /**
      * Close the repository at the end.
+     * @throws Exception on error
      */
     @After
-    public void close() {
+    public void closeRepo() throws Exception {
         rdfRepository.close();
     }
 
