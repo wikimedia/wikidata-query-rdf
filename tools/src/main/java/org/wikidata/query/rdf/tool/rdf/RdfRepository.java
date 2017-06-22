@@ -60,6 +60,13 @@ import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 
+import com.github.rholder.retry.Attempt;
+import com.github.rholder.retry.RetryException;
+import com.github.rholder.retry.RetryListener;
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
 import com.google.common.base.Charsets;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -70,7 +77,7 @@ import com.google.common.io.Resources;
  */
 // TODO fan out complexity
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-public class RdfRepository {
+public class RdfRepository implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(RdfRepository.class);
     /**
      * UTC timezone.
@@ -127,10 +134,11 @@ public class RdfRepository {
     /**
      * How many times we retry a failed HTTP call.
      */
-    private int maxRetries = 5;
+    private int maxRetries = 6;
     /**
      * How long to delay after failing first HTTP call, in milliseconds.
-     * Next retries would be slower by 2x, 3x, 4x etc. until maxRetries is exhausted.
+     * Next retries would be slower exponentially by 2x until maxRetries is exhausted.
+     * Note that the first retry is 2x delay due to the way Retryer is implemented.
      */
     private int delay = 1000;
 
@@ -153,6 +161,11 @@ public class RdfRepository {
      */
     private final int timeout;
 
+    /**
+     * Retryer for fetching data from RDF store.
+     */
+    private final Retryer<ContentResponse> retryer;
+
     public RdfRepository(URI uri, WikibaseUris uris) {
         this.uri = uri;
         this.uris = uris;
@@ -168,6 +181,26 @@ public class RdfRepository {
         timeout = Integer.parseInt(System.getProperty(TIMEOUT_PROPERTY, "-1"));
         httpClient = new HttpClient(new SslContextFactory(true/* trustAll */));
         setupHttpClient();
+
+        retryer = RetryerBuilder.<ContentResponse>newBuilder()
+                .retryIfExceptionOfType(TimeoutException.class)
+                .retryIfExceptionOfType(ExecutionException.class)
+                .retryIfExceptionOfType(IOException.class)
+                .retryIfRuntimeException()
+                .withWaitStrategy(WaitStrategies.exponentialWait(delay, 10, TimeUnit.SECONDS))
+                .withStopStrategy(StopStrategies.stopAfterAttempt(maxRetries))
+                .withRetryListener(new RetryListener() {
+                    @Override
+                    public <V> void onRetry(Attempt<V> attempt) {
+                        if (attempt.hasException()) {
+                            log.info("HTTP request failed: {}, attempt {}, will {}",
+                                    attempt.getExceptionCause(),
+                                    attempt.getAttemptNumber(),
+                                    attempt.getAttemptNumber() < maxRetries ? "retry" : "fail");
+                        }
+                    }
+                })
+                .build();
     }
 
     /**
@@ -195,14 +228,11 @@ public class RdfRepository {
 
     /**
      * Close the repository.
+     * @throws Exception
      */
-    @SuppressWarnings("checkstyle:illegalcatch")
-    public void close() {
-        try {
-            httpClient.stop();
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to stop HttpClient", e);
-        }
+    @Override
+    public void close() throws Exception {
+        httpClient.stop();
     }
 
     /**
@@ -623,64 +653,57 @@ public class RdfRepository {
     }
 
     /**
-     * Execute some raw SPARQL.
-     *
-     * @param type name of the parameter in which to send sparql
-     * @return results string from the server
+     * Create HTTP request.
+     * @param type Request type
+     * @param sparql SPARQL code
+     * @param accept Accept header (can be null)
+     * @return Request object
      */
-    protected <T> T execute(String type, ResponseHandler<T> responseHandler, String sparql) {
+    private Request makeRequest(String type, String sparql, String accept) {
         Request post = httpClient.newRequest(uri);
         post.method(HttpMethod.POST);
         if (timeout > 0) {
             post.timeout(timeout, TimeUnit.SECONDS);
         }
         // Note that Blazegraph totally ignores the Accept header for SPARQL
-        // updates like this so the response is just html....
-        if (responseHandler.acceptHeader() != null) {
-            post.header("Accept", responseHandler.acceptHeader());
+        // updates so the response is just html in that case...
+        if (accept != null) {
+            post.header("Accept", accept);
         }
 
-        log.debug("Running SPARQL: {}", sparql);
-        long startQuery = System.currentTimeMillis();
-        // TODO we might want to look into Blazegraph's incremental update
-        // reporting.....
         final Fields fields = new Fields();
         fields.add(type, sparql);
         final FormContentProvider form = new FormContentProvider(fields, Charsets.UTF_8);
         post.content(form);
+        return post;
+    }
 
-        int retries = 0;
-        while (true) {
-            try {
-                ContentResponse response = post.send();
+    /**
+     * Execute some raw SPARQL.
+     *
+     * @param type name of the parameter in which to send sparql
+     * @return results string from the server
+     */
+    protected <T> T execute(String type, ResponseHandler<T> responseHandler, String sparql) {
+        log.debug("Running SPARQL: {}", sparql);
+        long startQuery = System.currentTimeMillis();
+        // TODO we might want to look into Blazegraph's incremental update
+        // reporting.....
+        final ContentResponse response;
+        try {
+            response = retryer.call(()
+                -> makeRequest(type, sparql, responseHandler.acceptHeader()).send());
 
-                if (response.getStatus() != HttpStatus.OK_200) {
-                    throw new ContainedException("Non-200 response from triple store:  " + response + " body=\n"
-                            + responseBodyAsString(response));
-                }
-
-                log.debug("Completed in {} ms", System.currentTimeMillis() - startQuery);
-                return responseHandler.parse(response);
-            } catch (TimeoutException | ExecutionException | IOException e) {
-                if (retries < maxRetries) {
-                    // Increasing delay, with random 10% variation so threads won't all get restarts
-                    // at the same time.
-                    int retryIn = (int)Math.ceil(delay * (retries + 1) * (1 + Math.random() * 0.1));
-                    log.info("HTTP request for {} failed: {}, retrying in {} ms", type, e, retryIn);
-                    retries++;
-                    try {
-                        Thread.sleep(retryIn);
-                    } catch (InterruptedException e1) {
-                        throw new FatalException("Interrupted", e);
-                    }
-                    continue;
-                }
-                throw new FatalException("Error updating triple store", e);
-            } catch (InterruptedException e) {
-                throw new FatalException("Interrupted updating triple store", e);
+            if (response.getStatus() != HttpStatus.OK_200) {
+                throw new ContainedException("Non-200 response from triple store:  " + response
+                                + " body=\n" + responseBodyAsString(response));
             }
-        }
 
+            log.debug("Completed in {} ms", System.currentTimeMillis() - startQuery);
+            return responseHandler.parse(response);
+        } catch (ExecutionException | RetryException | IOException e) {
+            throw new FatalException("Error updating triple store", e);
+        }
     }
 
     /**
