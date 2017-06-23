@@ -1,31 +1,15 @@
 package org.wikidata.query.rdf.tool.rdf;
 
-import static com.google.common.io.Resources.getResource;
-import static org.wikidata.query.rdf.tool.FilteredStatements.filtered;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
-import javax.xml.datatype.XMLGregorianCalendar;
-
+import com.github.rholder.retry.Attempt;
+import com.github.rholder.retry.RetryException;
+import com.github.rholder.retry.RetryListener;
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
+import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.io.Resources;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
@@ -60,17 +44,31 @@ import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 
-import com.github.rholder.retry.Attempt;
-import com.github.rholder.retry.RetryException;
-import com.github.rholder.retry.RetryListener;
-import com.github.rholder.retry.Retryer;
-import com.github.rholder.retry.RetryerBuilder;
-import com.github.rholder.retry.StopStrategies;
-import com.github.rholder.retry.WaitStrategies;
-import com.google.common.base.Charsets;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.io.Resources;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
+import static com.google.common.io.Resources.getResource;
+import static org.wikidata.query.rdf.tool.FilteredStatements.filtered;
 
 /**
  * Wrapper for communicating with the RDF repository.
@@ -319,8 +317,8 @@ public class RdfRepository implements AutoCloseable {
      * @param valueBinding Binding name to serve as values
      * @return Collection of strings resulting from the query.
      */
-    private Multimap<String, String> resultToMap(TupleQueryResult result, String keyBinding, String valueBinding) {
-        Multimap<String, String> values = HashMultimap.create();
+    private ImmutableSetMultimap<String, String> resultToMap(TupleQueryResult result, String keyBinding, String valueBinding) {
+        ImmutableSetMultimap.Builder<String, String> values = ImmutableSetMultimap.builder();
         try {
             while (result.hasNext()) {
                 BindingSet bindings = result.next();
@@ -334,7 +332,7 @@ public class RdfRepository implements AutoCloseable {
         } catch (QueryEvaluationException e) {
             throw new FatalException("Can't load results: " + e, e);
         }
-        return values;
+        return values.build();
     }
 
     /**
@@ -344,7 +342,7 @@ public class RdfRepository implements AutoCloseable {
      * @param entityIds
      * @return Set of value subjects
      */
-    public Multimap<String, String> getValues(Collection<String> entityIds) {
+    public ImmutableSetMultimap<String, String> getValues(Collection<String> entityIds) {
         UpdateBuilder b = new UpdateBuilder(getValues);
         b.bindUris("entityList", entityIds);
         b.bind("uris.value", uris.value());
@@ -360,7 +358,7 @@ public class RdfRepository implements AutoCloseable {
      * @param entityIds
      * @return Set of references
      */
-    public Multimap<String, String> getRefs(Collection<String> entityIds) {
+    public ImmutableSetMultimap<String, String> getRefs(Collection<String> entityIds) {
         UpdateBuilder b = new UpdateBuilder(getRefs);
         b.bindUris("entityList", entityIds);
         b.bind("uris.statement", uris.statement());
@@ -427,11 +425,11 @@ public class RdfRepository implements AutoCloseable {
         b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
         b.bind("uris.value", uris.value());
         b.bind("uris.statement", uris.statement());
-        Set<String> entityIds = new HashSet<String>(changes.size());
+        Set<String> entityIds = newHashSetWithExpectedSize(changes.size());
 
-        List<Statement> insertStatements = new ArrayList<Statement>();
-        List<Statement> entityStatements = new ArrayList<Statement>();
-        Set<String> valueList = new HashSet<String>();
+        List<Statement> insertStatements = new ArrayList<>();
+        List<Statement> entityStatements = new ArrayList<>();
+        Set<String> valueList = new HashSet<>();
 
         for (final Change change : changes) {
             if (change.getStatements() == null) {
@@ -457,7 +455,7 @@ public class RdfRepository implements AutoCloseable {
         Collection<Statement> statementStatements = filtered(insertStatements).withSubjectStarts(uris.statement());
         b.bindValues("statementStatements", statementStatements);
 
-        Collection<Statement> aboutStatements = new HashSet<Statement>(insertStatements);
+        Collection<Statement> aboutStatements = new HashSet<>(insertStatements);
         aboutStatements.removeAll(entityStatements);
         aboutStatements.removeAll(statementStatements);
         aboutStatements.removeAll(filtered(insertStatements).withSubjectStarts(uris.value()));

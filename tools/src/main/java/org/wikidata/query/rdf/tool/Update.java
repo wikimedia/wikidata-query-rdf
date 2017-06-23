@@ -1,9 +1,29 @@
 package org.wikidata.query.rdf.tool;
 
-import static org.wikidata.query.rdf.tool.OptionsUtils.handleOptions;
-import static org.wikidata.query.rdf.tool.OptionsUtils.mungerFromOptions;
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDateFormat;
+import com.codahale.metrics.JmxReporter;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.lexicalscope.jewel.cli.Option;
+import org.apache.commons.lang3.time.DateUtils;
+import org.openrdf.model.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.tool.OptionsUtils.BasicOptions;
+import org.wikidata.query.rdf.tool.OptionsUtils.MungerOptions;
+import org.wikidata.query.rdf.tool.OptionsUtils.WikibaseOptions;
+import org.wikidata.query.rdf.tool.change.Change;
+import org.wikidata.query.rdf.tool.change.Change.Batch;
+import org.wikidata.query.rdf.tool.change.IdListChangeSource;
+import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
+import org.wikidata.query.rdf.tool.change.RecentChangesPoller;
+import org.wikidata.query.rdf.tool.exception.ContainedException;
+import org.wikidata.query.rdf.tool.exception.RetryableException;
+import org.wikidata.query.rdf.tool.rdf.Munger;
+import org.wikidata.query.rdf.tool.rdf.RdfRepository;
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -24,31 +44,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang3.time.DateUtils;
-import org.openrdf.model.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.tool.OptionsUtils.BasicOptions;
-import org.wikidata.query.rdf.tool.OptionsUtils.MungerOptions;
-import org.wikidata.query.rdf.tool.OptionsUtils.WikibaseOptions;
-import org.wikidata.query.rdf.tool.change.Change;
-import org.wikidata.query.rdf.tool.change.Change.Batch;
-import org.wikidata.query.rdf.tool.change.IdListChangeSource;
-import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
-import org.wikidata.query.rdf.tool.change.RecentChangesPoller;
-import org.wikidata.query.rdf.tool.exception.ContainedException;
-import org.wikidata.query.rdf.tool.exception.RetryableException;
-import org.wikidata.query.rdf.tool.rdf.Munger;
-import org.wikidata.query.rdf.tool.rdf.RdfRepository;
-import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
-
-import com.codahale.metrics.JmxReporter;
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.collect.Multimap;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.lexicalscope.jewel.cli.Option;
+import static org.wikidata.query.rdf.tool.OptionsUtils.handleOptions;
+import static org.wikidata.query.rdf.tool.OptionsUtils.mungerFromOptions;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDateFormat;
 
 /**
  * Update tool.
@@ -287,11 +286,11 @@ public class Update<B extends Change.Batch> implements Runnable {
     /**
      * Map entity->values list from repository.
      */
-    private Multimap<String, String> repoValues;
+    private volatile ImmutableSetMultimap<String, String> repoValues;
     /**
      * Map entity->references list from repository.
      */
-    private Multimap<String, String> repoRefs;
+    private volatile ImmutableSetMultimap<String, String> repoRefs;
     /**
      * Should we verify updates?
      */
@@ -324,7 +323,7 @@ public class Update<B extends Change.Batch> implements Runnable {
         Date oldDate = null;
         while (true) {
             try {
-                handleChanges(batch);
+                handleChanges(batch.changes());
                 Date leftOffDate = batch.leftOffDate();
                 if (leftOffDate != null) {
                     /*
@@ -364,24 +363,21 @@ public class Update<B extends Change.Batch> implements Runnable {
      * @throws ExecutionException if there is an error syncing any of the
      *             changes
      */
-    private void handleChanges(Change.Batch batch) throws InterruptedException, ExecutionException {
+    private void handleChanges(Iterable<Change> changes) throws InterruptedException, ExecutionException {
         List<Future<?>> tasks = new ArrayList<>();
-        Set<Change> trueChanges = getRevisionUpdates(batch);
+        Set<Change> trueChanges = getRevisionUpdates(changes);
         long start = System.currentTimeMillis();
         for (final Change change : trueChanges) {
-            tasks.add(executor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    while (true) {
-                        try {
-                            handleChange(change);
-                            return;
-                        } catch (RetryableException e) {
-                            log.warn("Retryable error syncing.  Retrying.", e);
-                        } catch (ContainedException e) {
-                            log.warn("Contained error syncing.  Giving up on " + change.entityId(), e);
-                            return;
-                        }
+            tasks.add(executor.submit(() -> {
+                while (true) {
+                    try {
+                        handleChange(change);
+                        return;
+                    } catch (RetryableException e) {
+                        log.warn("Retryable error syncing.  Retrying.", e);
+                    } catch (ContainedException e) {
+                        log.warn("Contained error syncing.  Giving up on " + change.entityId(), e);
+                        return;
                     }
                 }
             }));
@@ -398,16 +394,16 @@ public class Update<B extends Change.Batch> implements Runnable {
     /**
      * Filter change by revisions.
      * The revisions that have the same or superior revision in the DB will be removed.
-     * @param batch
      * @return A set of changes that need to be entered into the repository.
+     * @param changes
      */
-    private Set<Change> getRevisionUpdates(Change.Batch batch) {
+    private Set<Change> getRevisionUpdates(Iterable<Change> changes) {
         // List of changes that indeed need update
         Set<Change> trueChanges = new HashSet<>();
         // List of entity URIs that were changed
         Set<String> changeIds = new HashSet<>();
         Map<String, Change> candidateChanges = new HashMap<>();
-        for (final Change change : batch.changes()) {
+        for (final Change change : changes) {
             if (change.revision() >= 0) {
                 Change c = candidateChanges.get(change.entityId());
                 if (c == null || c.revision() < change.revision()) {
