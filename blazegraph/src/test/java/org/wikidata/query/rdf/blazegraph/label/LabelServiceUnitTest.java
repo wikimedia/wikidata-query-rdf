@@ -7,6 +7,7 @@ import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.test.Matchers.notBinds;
 
 import java.util.Locale;
+import java.util.Set;
 
 import org.junit.Test;
 import org.openrdf.model.impl.LiteralImpl;
@@ -19,6 +20,18 @@ import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+
+import com.bigdata.bop.IVariable;
+import com.bigdata.bop.Var;
+import com.bigdata.rdf.sparql.ast.JoinGroupNode;
+import com.bigdata.rdf.sparql.ast.StatementPatternNode;
+import com.bigdata.rdf.sparql.ast.VarNode;
+import com.bigdata.rdf.sparql.ast.service.ServiceNode;
+import com.bigdata.rdf.store.BD;
+
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 
 public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
     private static final Logger log = LoggerFactory.getLogger(LabelServiceUnitTest.class);
@@ -198,6 +211,45 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         query.append("  SERVICE ontology:label { bd:serviceParam ontology:language \"en,de\" . }\n");
         query.append("}\n");
         assertFalse(ask(query.toString()));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void desiredVars() {
+        JoinGroupNode patterns = new JoinGroupNode();
+        // Label
+        patterns.addArg(new StatementPatternNode(
+                new VarNode("item"),
+                createURI(RDFS.LABEL),
+                new VarNode("itemLabel")
+        ));
+        // Description
+        patterns.addArg(new StatementPatternNode(
+                new VarNode("item2"),
+                createURI(SchemaDotOrg.DESCRIPTION),
+                new VarNode("itemDesc")
+        ));
+        // Fixed name
+        patterns.addArg(new StatementPatternNode(
+                createURI(uris().entity() + "Q123"),
+                createURI(RDFS.LABEL),
+                new VarNode("qLabel")
+        ));
+        // Parameters
+        patterns.addArg(new StatementPatternNode(
+                createURI(BD.SERVICE_PARAM),
+                createURI(LabelService.LANGUAGE_PARAM),
+                createConstant("en,fr")
+        ));
+        ServiceNode serviceNode = new ServiceNode(createURI(LabelService.SERVICE_KEY), patterns);
+
+        final LabelService service = new LabelService();
+        Set<IVariable<?>> vars = service.getDesiredBound(serviceNode);
+        assertThat(vars, hasSize(2));
+
+        assertThat(vars, hasItems(
+                            equalTo(Var.var("item")),
+                            equalTo(Var.var("item2"))));
     }
 
 }

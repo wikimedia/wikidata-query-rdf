@@ -10,12 +10,8 @@ import org.wikidata.query.rdf.blazegraph.AbstractRandomizedBlazegraphTestBase;
 import org.wikidata.query.rdf.blazegraph.mwapi.ApiTemplate.OutputVariable;
 
 import com.bigdata.bop.IVariableOrConstant;
-import com.bigdata.rdf.model.BigdataLiteral;
-import com.bigdata.rdf.model.BigdataURI;
-import com.bigdata.rdf.sparql.ast.DummyConstantNode;
 import com.bigdata.rdf.sparql.ast.JoinGroupNode;
 import com.bigdata.rdf.sparql.ast.StatementPatternNode;
-import com.bigdata.rdf.sparql.ast.TermNode;
 import com.bigdata.rdf.sparql.ast.VarNode;
 import com.bigdata.rdf.sparql.ast.eval.ServiceParams;
 import com.bigdata.rdf.sparql.ast.service.ServiceNode;
@@ -68,26 +64,6 @@ public class ApiTemplateUnitTest extends AbstractRandomizedBlazegraphTestBase {
     private JsonNode parseJson(String jsonString) throws JsonProcessingException, IOException {
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readTree(jsonString);
-    }
-
-    /**
-     * Create a constant node from string.
-     * @param value
-     * @return
-     */
-    private TermNode createConstant(String value) {
-        BigdataLiteral literal = store().getLexiconRelation().getValueFactory().createLiteral(value);
-        return new DummyConstantNode(literal);
-    }
-
-    /**
-     * Create a constant URI node from string.
-     * @param value
-     * @return
-     */
-    private TermNode createURI(URI value) {
-        BigdataURI uri = store().getLexiconRelation().getValueFactory().createURI(value.toString());
-        return new DummyConstantNode(uri);
     }
 
     @Test

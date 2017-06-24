@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.openrdf.model.Literal;
@@ -34,11 +35,13 @@ import com.bigdata.rdf.sparql.ast.service.BigdataNativeServiceOptions;
 import com.bigdata.rdf.sparql.ast.service.BigdataServiceCall;
 import com.bigdata.rdf.sparql.ast.service.IServiceOptions;
 import com.bigdata.rdf.sparql.ast.service.ServiceCallCreateParams;
+import com.bigdata.rdf.sparql.ast.service.ServiceNode;
 import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
 import com.bigdata.rdf.spo.ISPO;
 import com.bigdata.rdf.store.AbstractTripleStore;
 import com.bigdata.rdf.store.BD;
 import com.bigdata.striterator.IChunkedOrderedIterator;
+import com.google.common.collect.ImmutableSet;
 
 import cutthecrap.utils.striterators.ICloseableIterator;
 import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeIV;
@@ -96,7 +99,7 @@ public class LabelService extends AbstractServiceFactory {
     /**
      * URI for service language parameter.
      */
-    private static final URIImpl LANGUAGE_PARAM = new URIImpl(Ontology.NAMESPACE + "language");
+    public static final URIImpl LANGUAGE_PARAM = new URIImpl(Ontology.NAMESPACE + "language");
 
     /**
      * Register the service so it is recognized by Blazegraph.
@@ -177,9 +180,16 @@ public class LabelService extends AbstractServiceFactory {
     /**
      * Create the resolutions list from the service call parameters.
      */
-    @SuppressFBWarnings(value = "EC_UNRELATED_CLASS_AND_INTERFACE", justification = "equals() is actually correct for some subtypes of BigdataValue")
     private List<Resolution> findResolutions(ServiceCallCreateParams params) {
-        JoinGroupNode g = (JoinGroupNode) params.getServiceNode().getGraphPattern();
+        return findResolutions(params.getServiceNode());
+    }
+
+    /**
+     * Create the resolutions list from the service call parameters.
+     */
+    @SuppressFBWarnings(value = "EC_UNRELATED_CLASS_AND_INTERFACE", justification = "equals() is actually correct for some subtypes of BigdataValue")
+    private List<Resolution> findResolutions(final ServiceNode params) {
+        JoinGroupNode g = (JoinGroupNode) params.getGraphPattern();
         List<Resolution> resolutions = new ArrayList<>(g.args().size());
         for (BOp st : g.args()) {
             StatementPatternNode sn = (StatementPatternNode) st;
@@ -576,4 +586,14 @@ public class LabelService extends AbstractServiceFactory {
             return mock(new LiteralImpl(b.toString(), language));
         }
     }
+
+    @Override
+    public Set<IVariable<?>> getDesiredBound(final ServiceNode serviceNode) {
+        final List<Resolution> res = findResolutions(serviceNode);
+        return res.stream()
+            .filter(resolution -> resolution.subject() instanceof IVariable)
+            .map(resolution -> (IVariable<?>)resolution.subject())
+            .collect(ImmutableSet.toImmutableSet());
+    }
+
 }

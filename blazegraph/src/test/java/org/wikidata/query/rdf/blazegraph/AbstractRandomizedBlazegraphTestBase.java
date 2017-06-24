@@ -15,9 +15,13 @@ import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
+import com.bigdata.rdf.model.BigdataLiteral;
 import com.bigdata.rdf.model.BigdataStatement;
+import com.bigdata.rdf.model.BigdataURI;
 import com.bigdata.rdf.sail.sparql.Bigdata2ASTSPARQLParser;
 import com.bigdata.rdf.sparql.ast.ASTContainer;
+import com.bigdata.rdf.sparql.ast.DummyConstantNode;
+import com.bigdata.rdf.sparql.ast.TermNode;
 import com.bigdata.rdf.sparql.ast.eval.ASTEvalHelper;
 
 /**
@@ -120,5 +124,34 @@ public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlaz
     static {
         WikibaseContextListener.initializeServices();
         System.setProperty("ASTOptimizerClass", WikibaseOptimizers.class.getName());
+    }
+
+    /**
+     * Create a constant node from string.
+     * @param value
+     * @return
+     */
+    protected TermNode createConstant(String value) {
+        BigdataLiteral literal = store().getLexiconRelation().getValueFactory().createLiteral(value);
+        return new DummyConstantNode(literal);
+    }
+
+    /**
+     * Create a constant URI node from string.
+     * @param value
+     * @return
+     */
+    protected TermNode createURI(URI value) {
+        BigdataURI uri = store().getLexiconRelation().getValueFactory().createURI(value.toString());
+        return new DummyConstantNode(uri);
+    }
+
+    /**
+     * Create a constant URI node from string.
+     * @param value
+     * @return
+     */
+    protected TermNode createURI(String value) {
+        return createURI(new URIImpl(value));
     }
 }
