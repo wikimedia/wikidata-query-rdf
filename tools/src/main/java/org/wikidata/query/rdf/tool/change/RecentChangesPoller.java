@@ -292,6 +292,10 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                 JSONObject rc = (JSONObject) rco;
                 long namespace = (long) rc.get("ns");
                 long rcid = (long)rc.get("rcid");
+                Date timestamp = df.parse(rc.get("timestamp").toString());
+                // Does not matter if the change matters for us or not, it
+                // still advances the time since we've seen it.
+                nextStartTime = Math.max(nextStartTime, timestamp.getTime());
                 if (!wikibase.isEntityNamespace(namespace)) {
                     log.info("Skipping change in irrelevant namespace:  {}", rc);
                     continue;
@@ -312,7 +316,6 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 //                    // We've already seen this change, since it has older rcid - so skip it
 //                    continue;
 //                }
-                Date timestamp = df.parse(rc.get("timestamp").toString());
                 Change change;
                 if (rc.get("type").toString().equals("log") && (long)rc.get("revid") == 0) {
                     // Deletes should always be processed, so put negative revision
@@ -331,7 +334,6 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                     changesByTitle.remove(change.entityId());
                     changesByTitle.put(change.entityId(), dupe);
                 }
-                nextStartTime = Math.max(nextStartTime, timestamp.getTime());
             }
             ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
             if (useBackoff && changes.size() == 0 && result.size() >= batchSize) {
