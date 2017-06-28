@@ -364,31 +364,38 @@ public class Update<B extends Change.Batch> implements Runnable {
      *             changes
      */
     private void handleChanges(Iterable<Change> changes) throws InterruptedException, ExecutionException {
-        List<Future<?>> tasks = new ArrayList<>();
         Set<Change> trueChanges = getRevisionUpdates(changes);
         long start = System.currentTimeMillis();
-        for (final Change change : trueChanges) {
-            tasks.add(executor.submit(() -> {
+
+        List<Future<Change>> futureChanges = new ArrayList<>();
+        for (Change change : trueChanges) {
+            futureChanges.add(executor.submit(() -> {
                 while (true) {
                     try {
                         handleChange(change);
-                        return;
+                        return change;
                     } catch (RetryableException e) {
                         log.warn("Retryable error syncing.  Retrying.", e);
                     } catch (ContainedException e) {
                         log.warn("Contained error syncing.  Giving up on " + change.entityId(), e);
-                        return;
+                        throw e;
                     }
                 }
             }));
         }
 
-        for (Future<?> task : tasks) {
-            task.get();
+        List<Change> processedChanges = new ArrayList<>();
+        for (Future<Change> f : futureChanges) {
+            try {
+                processedChanges.add(f.get());
+            } catch (ExecutionException ignore) {
+                // failure has already been logged
+            }
         }
-        log.debug("Preparing update data took {} ms, have {} changes", System.currentTimeMillis() - start, trueChanges.size());
-        rdfRepository.syncFromChanges(trueChanges, verify);
-        updateMeter.mark(trueChanges.size());
+
+        log.debug("Preparing update data took {} ms, have {} changes", System.currentTimeMillis() - start, processedChanges.size());
+        rdfRepository.syncFromChanges(processedChanges, verify);
+        updateMeter.mark(processedChanges.size());
     }
 
     /**
