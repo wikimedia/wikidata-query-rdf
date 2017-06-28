@@ -200,4 +200,37 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdateIntegrati
         assertThat(result, binds("distance",
                 new LiteralImpl("157.2418158675294", XMLSchema.DOUBLE)));
     }
+
+    @Test
+    public void coordinatePartsNoGlobe() throws QueryEvaluationException {
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {"
+                + "BIND(\"Point(-81.4167 -80.01)\"^^geo:wktLiteral as ?point)\n"
+                + "BIND(geof:globe(?point) AS ?globe)\n"
+                + "BIND(geof:longitude(?point) AS ?longitude)\n"
+                + "BIND(geof:latitude(?point) AS ?latitude)\n"
+                + "}");
+        BindingSet result = results.next();
+        assertThat(result, binds("longitude",
+                new LiteralImpl("-81.4167", XMLSchema.DOUBLE)));
+        assertThat(result, binds("latitude",
+                new LiteralImpl("-80.01", XMLSchema.DOUBLE)));
+        assertThat(result, binds("globe",
+                new LiteralImpl("")));
+    }
+
+    @Test
+    public void coordinatePartsWithGlobe() throws QueryEvaluationException {
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {"
+                + "BIND(\"<" + moonURI + "> Point(81.67 17.42)\"^^geo:wktLiteral as ?point)\n"
+                + "BIND(geof:globe(?point) AS ?globe)\n"
+                + "BIND(geof:longitude(?point) AS ?longitude)\n"
+                + "BIND(geof:latitude(?point) AS ?latitude)\n"
+                + "}");
+        BindingSet result = results.next();
+        assertThat(result, binds("longitude",
+                new LiteralImpl("81.67", XMLSchema.DOUBLE)));
+        assertThat(result, binds("latitude",
+                new LiteralImpl("17.42", XMLSchema.DOUBLE)));
+        assertThat(result, binds("globe", new URIImpl(moonURI)));
+    }
 }

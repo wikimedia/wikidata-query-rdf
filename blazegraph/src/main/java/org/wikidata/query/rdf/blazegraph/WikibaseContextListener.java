@@ -14,6 +14,8 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.resultio.TupleQueryResultFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.blazegraph.constraints.CoordinatePartBOp;
+import org.wikidata.query.rdf.blazegraph.constraints.DecodeUriBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseCornerBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseDateBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseDistanceBOp;
@@ -56,10 +58,11 @@ import com.bigdata.rdf.sparql.ast.service.ServiceFactory;
 import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
 import com.bigdata.rdf.store.BDS;
 
+import static com.bigdata.rdf.sparql.ast.FunctionRegistry.checkArgs;
 /**
  * Context listener to enact configurations we need on initialization.
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "rawtypes"})
 public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
     private static final Logger log = LoggerFactory.getLogger(WikibaseContextListener.class);
@@ -131,8 +134,14 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
         // Geospatial distance function
         FunctionRegistry.add(new URIImpl(GeoSparql.FUNCTION_NAMESPACE + "distance"), getDistanceBOPFactory());
+        // Geospatial functions
         FunctionRegistry.add(new URIImpl(GeoSparql.NORTH_EAST_FUNCTION), getCornersBOPFactory(WikibaseCornerBOp.Corners.NE));
         FunctionRegistry.add(new URIImpl(GeoSparql.SOUTH_WEST_FUNCTION), getCornersBOPFactory(WikibaseCornerBOp.Corners.SW));
+        FunctionRegistry.add(new URIImpl(GeoSparql.GLOBE_FUNCTION), getCoordinatePartBOpFactory(CoordinatePartBOp.Parts.GLOBE));
+        FunctionRegistry.add(new URIImpl(GeoSparql.LON_FUNCTION), getCoordinatePartBOpFactory(CoordinatePartBOp.Parts.LON));
+        FunctionRegistry.add(new URIImpl(GeoSparql.LAT_FUNCTION), getCoordinatePartBOpFactory(CoordinatePartBOp.Parts.LAT));
+        // wikibase:decodeUri
+        FunctionRegistry.add(new URIImpl(Ontology.NAMESPACE + "decodeUri"), getDecodeUriBOpFactory());
 
         addPrefixes(WikibaseUris.getURISystem());
 
@@ -207,11 +216,11 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      */
     private static Factory getWikibaseDateBOpFactory(final DateOp dateop) {
         return new Factory() {
+            @Override
             public IValueExpression<? extends IV> create(final BOpContextBase context,
                     final GlobalAnnotations globals, Map<String, Object> scalarValues, final ValueExpressionNode... args) {
 
-                FunctionRegistry.checkArgs(args,
-                        ValueExpressionNode.class);
+                checkArgs(args, ValueExpressionNode.class);
 
                 final IValueExpression<? extends IV> left =
                     AST2BOpUtility.toVE(context, globals, args[0]);
@@ -227,12 +236,11 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      */
     private static Factory getDistanceBOPFactory() {
         return new Factory() {
+            @Override
             public IValueExpression<? extends IV> create(final BOpContextBase context, final GlobalAnnotations globals,
                     Map<String, Object> scalarValues, final ValueExpressionNode... args) {
 
-                if (args.length < 2) {
-                    throw new IllegalArgumentException("wrong # of args");
-                }
+                checkArgs(args, ValueExpressionNode.class, ValueExpressionNode.class);
 
                 final IValueExpression<? extends IV> left = AST2BOpUtility.toVE(context,
                         globals, args[0]);
@@ -251,12 +259,11 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      */
     private static Factory getCornersBOPFactory(final WikibaseCornerBOp.Corners corner) {
         return new Factory() {
+            @Override
             public IValueExpression<? extends IV> create(final BOpContextBase context, final GlobalAnnotations globals,
                     Map<String, Object> scalarValues, final ValueExpressionNode... args) {
 
-                if (args.length < 2) {
-                    throw new IllegalArgumentException("wrong # of args");
-                }
+                checkArgs(args, ValueExpressionNode.class, ValueExpressionNode.class);
 
                 final IValueExpression<? extends IV> left = AST2BOpUtility.toVE(context,
                         globals, args[0]);
@@ -265,6 +272,42 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
                             .toVE(context, globals, args[1]);
 
                 return new WikibaseCornerBOp(left, right, corner, globals);
+            }
+        };
+    }
+
+    /**
+     * Get DecodeUriBOp factory.
+     * @return Factory to create DecodeUriBOp
+     */
+    private static Factory getDecodeUriBOpFactory() {
+        return new Factory() {
+            public IValueExpression<? extends IV> create(final BOpContextBase context, final GlobalAnnotations globals,
+                    Map<String, Object> scalarValues, final ValueExpressionNode... args) {
+
+                checkArgs(args, ValueExpressionNode.class);
+
+                final IValueExpression ve = AST2BOpUtility.toVE(context, globals, args[0]);
+
+                return new DecodeUriBOp(ve, globals);
+            }
+        };
+    }
+
+    /**
+     * Get CoordinatePartBOp factory.
+     * @return Factory to create CoordinatePartBOp
+     */
+    private static Factory getCoordinatePartBOpFactory(final CoordinatePartBOp.Parts part) {
+        return new Factory() {
+            public IValueExpression<? extends IV> create(final BOpContextBase context, final GlobalAnnotations globals,
+                    Map<String, Object> scalarValues, final ValueExpressionNode... args) {
+
+                checkArgs(args, ValueExpressionNode.class);
+
+                final IValueExpression ve = AST2BOpUtility.toVE(context, globals, args[0]);
+
+                return new CoordinatePartBOp(ve, part, globals);
             }
         };
     }

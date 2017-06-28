@@ -29,6 +29,19 @@ public final class GeoSparql {
      */
     public static final String SOUTH_WEST_FUNCTION = FUNCTION_NAMESPACE + "southWest";
 
+    /**
+     * Function name for function producing globe from WKT literal.
+     */
+    public static final String GLOBE_FUNCTION = FUNCTION_NAMESPACE + "globe";
+    /**
+     * Function name for function producing longitude from WKT literal.
+     */
+    public static final String LON_FUNCTION = FUNCTION_NAMESPACE + "longitude";
+    /**
+     * Function name for function producing latitude from WKT literal.
+     */
+    public static final String LAT_FUNCTION = FUNCTION_NAMESPACE + "latitude";
+
     private GeoSparql() {
         // Utility uncallable constructor
     }

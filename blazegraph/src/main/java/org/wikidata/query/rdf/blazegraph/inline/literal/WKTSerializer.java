@@ -33,7 +33,8 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
     /**
      * Prefix for globe URIs.
      */
-    private final String urlPrefix;
+    private static final String URL_PREFIX = WikibaseUris.getURISystem().entity() + "Q";
+    // FIXME: we need a way to handle non-wikidata URIs
 
     /**
      * This is put in coordinate field when there's no globe.
@@ -42,13 +43,16 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
             WKTSerializer.class.getName() + ".noGlobe", "0");
 
     /**
+     * Default globe URI.
+     */
+    public static final String DEFAULT_GLOBE = URL_PREFIX + NO_GLOBE;
+
+    /**
      * URI of the wkt literal datatype.
      */
     private static final URI WKT_LITERAL_URI = new URIImpl(GeoSparql.WKT_LITERAL);
 
     public WKTSerializer() {
-        // FIXME: we need a way to handle non-wikidata URIs
-        urlPrefix = WikibaseUris.getURISystem().entity() + "Q";
     }
 
     @Override
@@ -69,7 +73,7 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
         if (strComponents[2].equals(NO_GLOBE)) {
             point = new WikibasePoint(strComponents, null, CoordinateOrder.LONG_LAT);
         } else {
-            point = new WikibasePoint(strComponents, urlPrefix + strComponents[2], CoordinateOrder.LONG_LAT);
+            point = new WikibasePoint(strComponents, URL_PREFIX + strComponents[2], CoordinateOrder.LONG_LAT);
         }
 
         return point.toString();
@@ -82,10 +86,10 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
      * @return
      */
     public String trimCoordURI(String uri) {
-        if (!uri.startsWith(urlPrefix)) {
+        if (!uri.startsWith(URL_PREFIX)) {
             throw new GeoSpatialSearchException("Invalid coordinate URI for the WKT value");
         }
-        return uri.substring(urlPrefix.length());
+        return uri.substring(URL_PREFIX.length());
     }
 
     @Override
@@ -109,7 +113,7 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
     @Override
     public IV<?, ?> serializeCoordSystem(BigdataValueFactory vf, Object coordinateSystem) {
         // Returns URI with prefix, so you can match it with entities
-        return DummyConstantNode.toDummyIV(vf.createURI(urlPrefix + coordinateSystem.toString()));
+        return DummyConstantNode.toDummyIV(vf.createURI(URL_PREFIX + coordinateSystem.toString()));
     }
 
     @Override
