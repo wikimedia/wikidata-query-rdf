@@ -10,7 +10,6 @@ import org.wikidata.query.rdf.common.uri.GeoSparql;
 import com.bigdata.bop.BOp;
 import com.bigdata.bop.IBindingSet;
 import com.bigdata.bop.IValueExpression;
-import com.bigdata.bop.ImmutableBOp;
 import com.bigdata.bop.NV;
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.internal.constraints.INeedsMaterialization;
@@ -38,16 +37,10 @@ public class WikibaseCornerBOp extends IVValueExpression<IV> implements INeedsMa
 
     /**
      * Annotaion for specific corner.
+     * The operation to be applied to the operands (required).
+     * The value of this annotation is a {@link WikibaseCornerBOp.Corners}.
      */
-    public interface Annotations extends ImmutableBOp.Annotations {
-        /**
-         * The operation to be applied to the operands (required).
-         * The value of this annotation is a {@link WikibaseCornerBOp}.
-         *
-         * @see WikibaseCornerBOp
-         */
-        String OP = (WikibaseCornerBOp.class.getName() + ".op").intern();
-    }
+    private static final String OP_ANNOTATION = (WikibaseCornerBOp.class.getName() + ".op").intern();
 
     /**
      * Required shallow copy constructor.
@@ -73,7 +66,7 @@ public class WikibaseCornerBOp extends IVValueExpression<IV> implements INeedsMa
             final Corners corner,
             final GlobalAnnotations globals) {
         this(new BOp[]{left, right},
-                anns(globals, new NV(Annotations.OP, corner)));
+                anns(globals, new NV(OP_ANNOTATION, corner)));
     }
 
     /**
@@ -85,10 +78,10 @@ public class WikibaseCornerBOp extends IVValueExpression<IV> implements INeedsMa
 
     /**
      * Get which corner we're needing for this op.
-     * @return
+     * @return The corner for this specific op.
      */
     private Corners corner() {
-        return (Corners) getRequiredProperty(Annotations.OP);
+        return (Corners) getRequiredProperty(OP_ANNOTATION);
     }
 
     /**

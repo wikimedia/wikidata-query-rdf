@@ -9,7 +9,6 @@ import org.wikidata.query.rdf.common.WikibasePoint;
 import com.bigdata.bop.BOp;
 import com.bigdata.bop.IBindingSet;
 import com.bigdata.bop.IValueExpression;
-import com.bigdata.bop.ImmutableBOp;
 import com.bigdata.bop.NV;
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.internal.constraints.INeedsMaterialization;
@@ -33,17 +32,11 @@ public class CoordinatePartBOp extends IVValueExpression<IV> implements INeedsMa
     public enum Parts { GLOBE, LAT, LON };
 
     /**
-     * Annotaion for specific corner.
+     * Annotation for specific part.
+     * The operation to be applied to the operands (required).
+     * The value of this annotation is a {@link CoordinatePartBOp.Parts}.
      */
-    public interface Annotations extends ImmutableBOp.Annotations {
-        /**
-         * The operation to be applied to the operands (required).
-         * The value of this annotation is a {@link WikibaseCornerBOp}.
-         *
-         * @see WikibaseCornerBOp
-         */
-        String OP = (CoordinatePartBOp.class.getName() + ".op").intern();
-    }
+    private static final String OP_ANNOTATION = (CoordinatePartBOp.class.getName() + ".op").intern();
 
     /**
      * Required shallow copy constructor.
@@ -58,9 +51,8 @@ public class CoordinatePartBOp extends IVValueExpression<IV> implements INeedsMa
 
     /**
      * Main ctor.
-     * @param left Eastern corner of the box
-     * @param right Wester corner of the box
-     * @param corner Which corner we want as the result
+     * @param coord Coordinate
+     * @param part Which part we need to get
      * @param globals
      */
     @SuppressWarnings("rawtypes")
@@ -68,7 +60,7 @@ public class CoordinatePartBOp extends IVValueExpression<IV> implements INeedsMa
             final Parts part,
             final GlobalAnnotations globals) {
         this(new BOp[]{coord},
-                anns(globals, new NV(Annotations.OP, part)));
+                anns(globals, new NV(OP_ANNOTATION, part)));
     }
 
     /**
@@ -79,11 +71,11 @@ public class CoordinatePartBOp extends IVValueExpression<IV> implements INeedsMa
     }
 
     /**
-     * Get which corner we're needing for this op.
-     * @return
+     * Get which part we're needing for this op.
+     * @return Part which we're getting with this op
      */
     private Parts part() {
-        return (Parts) getRequiredProperty(Annotations.OP);
+        return (Parts) getRequiredProperty(OP_ANNOTATION);
     }
 
     @Override
