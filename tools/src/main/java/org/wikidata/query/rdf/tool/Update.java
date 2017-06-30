@@ -348,6 +348,7 @@ public class Update<B extends Change.Batch> implements Runnable {
                 batch = nextBatch(batch);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                break;
             } catch (ExecutionException e) {
                 log.error("Syncing encountered a fatal exception", e);
                 break;
