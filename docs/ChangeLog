@@ -1,6 +1,9 @@
 0.2.5
 -----
 Add Mediawiki API service
+New functions:
+- geof:globe, geof:latitude & geof:longitude for coordinate literals
+- wikibase:decodeUri for urldecoding strings
 
 0.2.4
 -----
