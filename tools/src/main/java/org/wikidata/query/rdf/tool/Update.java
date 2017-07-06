@@ -44,6 +44,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.Thread.currentThread;
 import static org.wikidata.query.rdf.tool.OptionsUtils.handleOptions;
 import static org.wikidata.query.rdf.tool.OptionsUtils.mungerFromOptions;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
@@ -321,7 +322,7 @@ public class Update<B extends Change.Batch> implements Runnable {
         } while (batch == null);
         log.debug("{} changes in batch", batch.changes().size());
         Date oldDate = null;
-        while (true) {
+        while (!currentThread().isInterrupted()) {
             try {
                 handleChanges(batch.changes());
                 Date leftOffDate = batch.leftOffDate();
@@ -347,8 +348,7 @@ public class Update<B extends Change.Batch> implements Runnable {
                 }
                 batch = nextBatch(batch);
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
+                currentThread().interrupt();
             } catch (ExecutionException e) {
                 log.error("Syncing encountered a fatal exception", e);
                 break;
