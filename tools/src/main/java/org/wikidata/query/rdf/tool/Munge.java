@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.tool;
 
-import static org.wikidata.query.rdf.tool.OptionsUtils.handleOptions;
-import static org.wikidata.query.rdf.tool.OptionsUtils.mungerFromOptions;
+import static org.wikidata.query.rdf.tool.options.OptionsUtils.handleOptions;
+import static org.wikidata.query.rdf.tool.options.OptionsUtils.mungerFromOptions;
 import static org.wikidata.query.rdf.tool.StreamUtils.utf8;
 
 import java.io.IOException;
@@ -39,16 +39,13 @@ import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.tool.OptionsUtils.BasicOptions;
-import org.wikidata.query.rdf.tool.OptionsUtils.MungerOptions;
-import org.wikidata.query.rdf.tool.OptionsUtils.WikibaseOptions;
+import org.wikidata.query.rdf.tool.options.MungeOptions;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
 import org.wikidata.query.rdf.tool.rdf.PrefixRecordingRdfHandler;
 
 import com.codahale.metrics.Meter;
-import com.lexicalscope.jewel.cli.Option;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -60,31 +57,11 @@ public class Munge implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(Munge.class);
 
     /**
-     * CLI options for use with JewelCli.
-     */
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public interface Options extends BasicOptions, MungerOptions, WikibaseOptions {
-        @Option(shortName = "f", defaultValue = "-", description = "Source file (or uri) to munge. Default is - aka stdin.")
-        String from();
-
-        @Option(shortName = "t", defaultValue = "-", description = "Destination of munge. Use port:<port_number> to start an "
-                + "http server on that port. Default is - aka stdout. If the file's parent directories don't exist then they "
-                + "will be created ala mkdir -p.")
-        String to();
-
-        @Option(defaultValue = "0", description = "Chunk size in entities. If specified then the \"to\" option must be a java "
-                + "format string containing a single format identifier which is replaced with the chunk number port:<port_numer>. "
-                + "%08d.ttl is a pretty good choice for format string. If \"to\" is in port form then every http request will "
-                + "get the next chunk. Must be greater than 0 and less than " + Integer.MAX_VALUE + ".")
-        int chunkSize();
-    }
-
-    /**
      * Run a bulk munge configured from the command line.
      */
     @SuppressWarnings("checkstyle:illegalcatch")
     public static void main(String[] args) {
-        Options options = handleOptions(Options.class, args);
+        MungeOptions options = handleOptions(MungeOptions.class, args);
         WikibaseUris uris = new WikibaseUris(options.wikibaseHost());
         Munger munger = mungerFromOptions(options);
 
