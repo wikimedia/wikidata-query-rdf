@@ -29,7 +29,7 @@ import org.wikidata.query.rdf.tool.rdf.RdfRepository;
  * Does lots of simultaneous IO and state mutation on multiple namespaces.
  */
 @Ignore("temporarily disable")
-public class IOBlastingIntegrationTest extends AbstractUpdateIntegrationTestBase {
+public class IOBlastingIntegrationTest extends AbstractUpdaterIntegrationTestBase {
 
     // works up to at least 10,000,000, albeit slowly (3min)
     private static final int MAX_STATEMENTS_PER_NAMESPACE = 100;

@@ -20,7 +20,7 @@ import org.openrdf.query.TupleQueryResult;
 /**
  * Validates the WikibaseDateExtension over the Blazegraph API.
  */
-public class WikibaseDateExtensionIntegrationTest extends AbstractUpdateIntegrationTestBase {
+public class WikibaseDateExtensionIntegrationTest extends AbstractUpdaterIntegrationTestBase {
     /**
      * Loads Q1 (universe) and validates that it can find it by searching for
      * things before some date very far in the past. Without our date extension

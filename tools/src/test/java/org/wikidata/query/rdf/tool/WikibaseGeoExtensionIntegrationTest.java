@@ -11,7 +11,7 @@ import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 
-public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdateIntegrationTestBase {
+public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdaterIntegrationTestBase {
 
     private final String moonURI = uris().entity() + "Q405";
 
