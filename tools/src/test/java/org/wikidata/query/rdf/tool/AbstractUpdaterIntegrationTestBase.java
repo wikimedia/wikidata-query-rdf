@@ -14,7 +14,7 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 /**
  * Superclass for tests that need to run a full update.
  */
-public class AbstractUpdateIntegrationTestBase extends AbstractRdfRepositoryIntegrationTestBase {
+public class AbstractUpdaterIntegrationTestBase extends AbstractRdfRepositoryIntegrationTestBase {
     /**
      * Wikibase test against.
      */
@@ -32,8 +32,8 @@ public class AbstractUpdateIntegrationTestBase extends AbstractRdfRepositoryInte
         ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>());
         WikibaseUris uris = new WikibaseUris("www.wikidata.org");
-        Update<?> update = new Update<>(source, wikibaseRepository, rdfRepository(), munger, executorService, 0, uris, false);
-        update.run();
+        Updater<?> updater = new Updater<>(source, wikibaseRepository, rdfRepository(), munger, executorService, 0, uris, false);
+        updater.run();
         executorService.shutdown();
     }
 

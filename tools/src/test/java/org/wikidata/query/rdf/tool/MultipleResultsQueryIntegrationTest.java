@@ -23,7 +23,7 @@ import com.google.common.collect.Lists;
  * Validates that many triples can be inserted, then retrieved in a single
  * query.
  */
-public class MultipleResultsQueryIntegrationTest extends AbstractUpdateIntegrationTestBase {
+public class MultipleResultsQueryIntegrationTest extends AbstractUpdaterIntegrationTestBase {
 
     private static final int MAX_STATEMENT_COUNT = 100;
 
