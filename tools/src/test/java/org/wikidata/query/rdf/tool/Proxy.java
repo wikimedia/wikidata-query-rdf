@@ -19,8 +19,9 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.tool.OptionsUtils.BasicOptions;
-import org.wikidata.query.rdf.tool.OptionsUtils.WikibaseOptions;
+import org.wikidata.query.rdf.tool.options.OptionsUtils;
+import org.wikidata.query.rdf.tool.options.OptionsUtils.BasicOptions;
+import org.wikidata.query.rdf.tool.options.OptionsUtils.WikibaseOptions;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.lexicalscope.jewel.cli.Option;

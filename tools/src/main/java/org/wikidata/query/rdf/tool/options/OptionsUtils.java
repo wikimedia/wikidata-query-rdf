@@ -1,4 +1,4 @@
-package org.wikidata.query.rdf.tool;
+package org.wikidata.query.rdf.tool.options;
 
 import static com.google.common.io.Resources.getResource;
 

@@ -5,15 +5,11 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.lexicalscope.jewel.cli.Option;
 import org.apache.commons.lang3.time.DateUtils;
 import org.openrdf.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.tool.OptionsUtils.BasicOptions;
-import org.wikidata.query.rdf.tool.OptionsUtils.MungerOptions;
-import org.wikidata.query.rdf.tool.OptionsUtils.WikibaseOptions;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.Change.Batch;
 import org.wikidata.query.rdf.tool.change.IdListChangeSource;
@@ -21,6 +17,7 @@ import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
 import org.wikidata.query.rdf.tool.change.RecentChangesPoller;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
+import org.wikidata.query.rdf.tool.options.UpdateOptions;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
@@ -45,8 +42,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.Thread.currentThread;
-import static org.wikidata.query.rdf.tool.OptionsUtils.handleOptions;
-import static org.wikidata.query.rdf.tool.OptionsUtils.mungerFromOptions;
+import static org.wikidata.query.rdf.tool.options.OptionsUtils.handleOptions;
+import static org.wikidata.query.rdf.tool.options.OptionsUtils.mungerFromOptions;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDateFormat;
 
@@ -61,53 +58,11 @@ public class Update<B extends Change.Batch> implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(Update.class);
 
     /**
-     * CLI options for use with JewelCli.
-     */
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public interface Options extends BasicOptions, MungerOptions, WikibaseOptions {
-        @Option(defaultValue = "https", description = "Wikidata url scheme")
-        String wikibaseScheme();
-
-        @Option(shortName = "s", defaultToNull = true, description = "Start time in 2015-02-11T17:11:08Z or 20150211170100 format.")
-        String start();
-
-        @Option(defaultToNull = true, description = "If specified must be <id> or list of <id>, comma or space separated.")
-        List<String> ids();
-
-        @Option(defaultToNull = true, description = "If specified must be <start>-<end>. Ids are iterated instead of recent "
-                + "changes. Start and end are inclusive.")
-        String idrange();
-
-        @Option(shortName = "u", description = "URL to post updates and queries.")
-        String sparqlUrl();
-
-        @Option(shortName = "d", defaultValue = "10", description = "Poll delay when no updates found")
-        int pollDelay();
-
-        @Option(shortName = "t", defaultValue = "10", description = "Thread count")
-        int threadCount();
-
-        @Option(shortName = "b", defaultValue = "100", description = "Number of recent changes fetched at a time.")
-        int batchSize();
-
-        @Option(shortName = "V", longName = "verify", description = "Verify updates (may have performance impact)")
-        boolean verify();
-
-        @Option(defaultValue = "0", shortName = "T", longName = "tailPoller",
-                description = "Use secondary poller with given gap (seconds) to catch up missed updates")
-        int tailPollerOffset();
-
-        @Option(defaultToNull = true, description = "If specified must be numerical indexes of Item and Property namespaces"
-                + " that defined in Wikibase repository, comma separated.")
-        String entityNamespaces();
-    }
-
-    /**
      * Run updates configured from the command line.
      * @throws Exception on error
      */
     public static void main(String[] args) throws Exception {
-        Options options = handleOptions(Options.class, args);
+        UpdateOptions options = handleOptions(UpdateOptions.class, args);
         WikibaseRepository wikibaseRepository = buildWikibaseRepository(options);
         if (wikibaseRepository == null) {
             return;
@@ -144,8 +99,8 @@ public class Update<B extends Change.Batch> implements Runnable {
      *         logged to the user
      */
     @SuppressWarnings("checkstyle:cyclomaticcomplexity")
-    private static Change.Source<? extends Batch> buildChangeSource(Options options, RdfRepository rdfRepository,
-            WikibaseRepository wikibaseRepository) {
+    private static Change.Source<? extends Batch> buildChangeSource(UpdateOptions options, RdfRepository rdfRepository,
+                                                                    WikibaseRepository wikibaseRepository) {
         if (options.idrange() != null) {
             String[] ids = options.idrange().split("-");
             long start;
@@ -219,7 +174,7 @@ public class Update<B extends Change.Batch> implements Runnable {
      * @return null if non can be built - its ok to just exit - errors have been
      *         logged to the user
      */
-    private static WikibaseRepository buildWikibaseRepository(Options options) {
+    private static WikibaseRepository buildWikibaseRepository(UpdateOptions options) {
         if (options.entityNamespaces() == null) {
             return new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost());
         }
