@@ -151,12 +151,16 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      * @return
      */
     private Batch checkTailPoller(Batch lastBatch) {
-        if (tailSeconds <= 0 ||
-            lastBatch.leftOffDate().before(DateUtils.addSeconds(new Date(), -tailSeconds))) {
-            // still not caught up, do nothing
+        if (tailSeconds <= 0) {
+            // not enabled, we're done here
             return lastBatch;
         }
+
         if (tailPoller == null) {
+            if (lastBatch.leftOffDate().before(DateUtils.addSeconds(new Date(), -tailSeconds))) {
+                // still not caught up, do nothing
+                return lastBatch;
+            }
             // We don't have poller yet - start it
             log.info("Started trailing poller with gap of {} seconds", tailSeconds);
             // Create new poller starting back tailSeconds and same IDs map.
@@ -165,6 +169,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             tailPoller = new TailingChangesPoller(poller, queue, tailSeconds);
             tailPoller.start();
         } else {
+            tailPoller.setPollerTs(lastBatch.leftOffDate().getTime());
             final Batch queuedBatch = queue.poll();
             if (queuedBatch != null) {
                 log.info("Merging {} changes from trailing queue", queuedBatch.changes().size());
@@ -189,6 +194,11 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         private final JSONObject lastContinue;
 
         /**
+         * Flag that states we have had changes, even though we didn't return them.
+         */
+        private boolean hasChanges;
+
+        /**
          * A batch that will next continue using the continue parameter.
          */
         private Batch(ImmutableList<Change> changes, long advanced,
@@ -197,6 +207,23 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             leftOffDate = nextStartTime;
             this.lastContinue = lastContinue;
         }
+
+        /**
+         * Set changes status.
+         * @param changes Whether we really had changes or not.
+         */
+        public void hasChanges(boolean changes) {
+            hasChanges = changes;
+        }
+
+        @Override
+        public boolean hasAnyChanges() {
+            if (hasChanges) {
+                return true;
+            }
+            return super.hasAnyChanges();
+        }
+
 
         @Override
         public String advancedUnits() {
@@ -277,7 +304,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      *
      * @throws RetryableException on parse failure
      */
-    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     private Batch batch(Date lastNextStartTime, Batch lastBatch) throws RetryableException {
         try {
             JSONObject recentChanges = fetchRecentChanges(lastNextStartTime, lastBatch);
@@ -335,12 +362,14 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                     changesByTitle.put(change.entityId(), dupe);
                 }
             }
-            ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
-            if (useBackoff && changes.size() == 0 && result.size() >= batchSize) {
+            final ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
+            final boolean backoffOverflow = useBackoff && changes.size() == 0 && result.size() >= batchSize;
+            if (backoffOverflow) {
                 // We have a problem here - due to backoff, we did not fetch any new items
-                // Try to advance one second, even though we risk to lose a change
-                log.info("Backoff overflow, advancing one second");
+                // Try to advance one second, even though we risk to lose a change - in hope
+                // that trailing poller will pick them up.
                 nextStartTime += 1000;
+                log.info("Backoff overflow, advancing to {}", inputDateFormat().format(new Date(nextStartTime)));
             }
 
             if (changes.size() != 0) {
@@ -355,7 +384,12 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             // be sure we got the whole second
             String upTo = inputDateFormat().format(new Date(nextStartTime - 1000));
             long advanced = nextStartTime - lastNextStartTime.getTime();
-            return new Batch(changes, advanced, upTo, new Date(nextStartTime), nextContinue);
+            Batch batch = new Batch(changes, advanced, upTo, new Date(nextStartTime), nextContinue);
+            if (backoffOverflow && nextContinue != null) {
+                // We will not sleep only if continue is provided.
+                batch.hasChanges(true);
+            }
+            return batch;
         } catch (java.text.ParseException e) {
             throw new RetryableException("Parse error from api", e);
         }

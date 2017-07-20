@@ -265,9 +265,12 @@ public class Updater<B extends Change.Batch> implements Runnable {
                 log.warn("Retryable error fetching next batch.  Retrying.", e);
                 continue;
             }
-            if (batch.changes().isEmpty()) {
-                log.debug("Sleeping for {} secs", pollDelay);
+            if (!batch.hasAnyChanges()) {
+                log.info("Sleeping for {} secs", pollDelay);
                 Thread.sleep(pollDelay * 1000);
+                continue;
+            }
+            if (batch.changes().isEmpty()) {
                 continue;
             }
             log.debug("{} changes in batch", batch.changes().size());

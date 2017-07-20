@@ -144,6 +144,12 @@ public class Change implements Comparable<Change> {
         List<Change> changes();
 
         /**
+         * Whether this batch had any changes, even invisible ones.
+         * @return had changes?
+         */
+        boolean hasAnyChanges();
+
+        /**
          * The unit of advanced() in English. Used for logging.
          */
         String advancedUnits();
@@ -198,6 +204,11 @@ public class Change implements Comparable<Change> {
             @Override
             public List<Change> changes() {
                 return changes;
+            }
+
+            @Override
+            public boolean hasAnyChanges() {
+                return !changes.isEmpty();
             }
 
             @Override

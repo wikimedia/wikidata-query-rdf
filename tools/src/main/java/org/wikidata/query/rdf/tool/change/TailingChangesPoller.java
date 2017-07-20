@@ -43,10 +43,23 @@ public class TailingChangesPoller extends Thread {
      */
     private final BlockingQueue<Batch> queue;
 
+    /**
+     * Main poller timestamp.
+     */
+    private volatile long mainPollerTs;
+
     public TailingChangesPoller(RecentChangesPoller poller, BlockingQueue<Batch> queue, int tailSeconds) {
         this.poller = poller;
         this.tailSeconds = tailSeconds;
         this.queue = queue;
+    }
+
+    /**
+     * Set main poller timestamp.
+     * @param ts Main poller timestamp.
+     */
+    public void setPollerTs(long ts) {
+        mainPollerTs = ts;
     }
 
     /**
@@ -81,6 +94,14 @@ public class TailingChangesPoller extends Thread {
                     queue.put(lastBatch);
                 }
                 log.info("Tail poll up to {}", lastBatch.leftOffDate());
+                if (mainPollerTs > 0 && mainPollerTs < lastBatch.leftOffDate().getTime()) {
+                    // We are ahead of main poller, this is not good, normally should not happen
+                    long sleepTime = lastBatch.leftOffDate().getTime() - mainPollerTs + tailSeconds * 1000;
+                    // Waiting for sleepTime does not guarantee RC poller would catch up
+                    // - we don't how long that would take - but it gives it a chance.
+                    log.info("Got ahead of main poller ({} > {}), sleeping for {}...", lastBatch.leftOffDate(), new Date(mainPollerTs), sleepTime);
+                    Thread.sleep(sleepTime);
+                }
                 if (!isOldEnough(lastBatch.leftOffDate())) {
                     // we're too far forward, let's sleep for a bit so we are couple
                     // of seconds behind
