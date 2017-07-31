@@ -86,10 +86,18 @@
   </listener>
   <filter>
       <filter-name>real-ip-filter</filter-name>
-      <filter-class>org.wikidata.query.rdf.blazegraph.throttling.ClientIPFilter</filter-class>
+      <filter-class>org.wikidata.query.rdf.blazegraph.filters.ClientIPFilter</filter-class>
   </filter>
   <filter-mapping>
     <filter-name>real-ip-filter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+  <filter>
+    <filter-name>logging-filter</filter-name>
+    <filter-class>org.wikidata.query.rdf.blazegraph.filters.LoggingFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>logging-filter</filter-name>
     <url-pattern>/*</url-pattern>
   </filter-mapping>
   <filter>

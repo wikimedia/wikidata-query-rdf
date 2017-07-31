@@ -1,4 +1,4 @@
-package org.wikidata.query.rdf.blazegraph.throttling;
+package org.wikidata.query.rdf.blazegraph.filters;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;

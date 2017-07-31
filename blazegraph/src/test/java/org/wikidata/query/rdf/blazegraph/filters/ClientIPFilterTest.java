@@ -1,4 +1,4 @@
-package org.wikidata.query.rdf.blazegraph.throttling;
+package org.wikidata.query.rdf.blazegraph.filters;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
