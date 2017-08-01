@@ -363,13 +363,18 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                 }
             }
             final ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
+            // Backoff overflow is when:
+            // a. We use backoff
+            // b. We got full batch of changes.
+            // c. None of those were new changes.
+            // In this case, sleeping and trying again is obviously useless.
             final boolean backoffOverflow = useBackoff && changes.size() == 0 && result.size() >= batchSize;
             if (backoffOverflow) {
                 // We have a problem here - due to backoff, we did not fetch any new items
                 // Try to advance one second, even though we risk to lose a change - in hope
                 // that trailing poller will pick them up.
                 nextStartTime += 1000;
-                log.info("Backoff overflow, advancing to {}", inputDateFormat().format(new Date(nextStartTime)));
+                log.info("Backoff overflow, advancing next time to {}", inputDateFormat().format(new Date(nextStartTime)));
             }
 
             if (changes.size() != 0) {
@@ -386,7 +391,8 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             long advanced = nextStartTime - lastNextStartTime.getTime();
             Batch batch = new Batch(changes, advanced, upTo, new Date(nextStartTime), nextContinue);
             if (backoffOverflow && nextContinue != null) {
-                // We will not sleep only if continue is provided.
+                // We will not sleep if continue is provided.
+                log.info("Got only old changes, next is: {}", nextContinue.toJSONString());
                 batch.hasChanges(true);
             }
             return batch;

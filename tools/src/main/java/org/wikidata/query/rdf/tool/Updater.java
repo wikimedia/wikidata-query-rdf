@@ -271,6 +271,7 @@ public class Updater<B extends Change.Batch> implements Runnable {
                 continue;
             }
             if (batch.changes().isEmpty()) {
+                prevBatch = batch;
                 continue;
             }
             log.debug("{} changes in batch", batch.changes().size());
