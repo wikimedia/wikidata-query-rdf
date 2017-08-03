@@ -9,7 +9,6 @@ import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.SKOS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 
 import com.bigdata.bop.BOp;
@@ -17,7 +16,6 @@ import com.bigdata.bop.IBindingSet;
 import com.bigdata.bop.IConstant;
 import com.bigdata.bop.IVariable;
 import com.bigdata.rdf.internal.IV;
-import com.bigdata.rdf.model.BigdataValue;
 import com.bigdata.rdf.sparql.ast.AssignmentNode;
 import com.bigdata.rdf.sparql.ast.ConstantNode;
 import com.bigdata.rdf.sparql.ast.JoinGroupNode;
@@ -52,14 +50,7 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
         if (root.getQueryType() == QueryType.ASK) {
             return;
         }
-        for (ServiceNode service : op.getServiceNodes()) {
-            BigdataValue serviceRef = service.getServiceRef().getValue();
-            if (serviceRef == null) {
-                continue;
-            }
-            if (!serviceRef.stringValue().startsWith(Ontology.LABEL)) {
-                continue;
-            }
+        LabelServiceUtils.getLabelServiceNodes(op).forEach(service -> {
             JoinGroupNode g = (JoinGroupNode) service.getGraphPattern();
             boolean foundArg = false;
             for (BOp st : g.args()) {
@@ -73,14 +64,11 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
 
             foundArg = restoreExtracted(service) || foundArg;
 
-            if (foundArg) {
-                continue;
+            if (!foundArg) {
+                addResolutions(ctx, g, root.getProjection());
             }
 
-            addResolutions(ctx, g, root.getProjection());
-            // We can really only do this once....
-            return;
-        }
+        });
     }
 
     /**
@@ -93,9 +81,11 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
         boolean found = false;
         JoinGroupNode g = (JoinGroupNode) service.getGraphPattern();
 
-        final List<BOp> extractedList = (List<BOp>)service.annotations().get(LabelServiceExtractOptimizer.EXTRACTOR_ANNOTATION);
+        final List<StatementPatternNode> extractedList = (List<StatementPatternNode>) service
+                .annotations()
+                .get(LabelServiceExtractOptimizer.EXTRACTOR_ANNOTATION);
         if (extractedList != null && !extractedList.isEmpty()) {
-            for (BOp st : extractedList) {
+            for (StatementPatternNode st : extractedList) {
                 g.addArg(st);
             }
             found = true;

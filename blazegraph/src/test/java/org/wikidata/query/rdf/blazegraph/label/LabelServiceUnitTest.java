@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.junit.Test;
 import org.openrdf.model.impl.LiteralImpl;
+import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 import org.slf4j.Logger;
@@ -252,4 +253,27 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
                             equalTo(Var.var("item2"))));
     }
 
+    @Test
+    public void labelWildcardAndBind() throws QueryEvaluationException {
+        addSimpleLabels("Q123");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT * WHERE {\n" +
+                "  BIND(wd:Q123 AS ?item)\n" +
+                "  SERVICE ontology:label {\n" +
+                "    bd:serviceParam ontology:language \"en\".\n" +
+                "    ?item rdfs:label ?itemLabel.\n" +
+                "  }\n" +
+                "  hint:Prior hint:runLast false .\n" +
+                "  BIND(?itemLabel as ?anotherLabel)\n" +
+                "}");
+        TupleQueryResult result = query(query.toString());
+        assertTrue(result.hasNext());
+        BindingSet resultSet = result.next();
+        assertThat(resultSet, both(
+                    binds("itemLabel", "in en", "en")
+                ).and(
+                    binds("anotherLabel", "in en", "en")
+                )
+        );
+    }
 }
