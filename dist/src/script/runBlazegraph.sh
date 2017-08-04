@@ -53,7 +53,8 @@ DEFAULT_GLOBE=2
 USER_AGENT="Wikidata Query Service; https://query.wikidata.org/";
 
 echo "Running Blazegraph from `pwd` on :$PORT/$CONTEXT"
-java -server -XX:+UseG1GC ${MEMORY} ${DEBUG} ${GC_LOGS} \
+exec java \
+     -server -XX:+UseG1GC ${MEMORY} ${DEBUG} ${GC_LOGS} \
      -Dcom.bigdata.rdf.sail.webapp.ConfigParams.propertyFile=${CONFIG_FILE} \
      -Dorg.eclipse.jetty.server.Request.maxFormContentSize=200000000 \
      -Dcom.bigdata.rdf.sparql.ast.QueryHints.analytic=true \
