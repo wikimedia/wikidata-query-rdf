@@ -43,35 +43,77 @@ public final class Update {
      * Run updates configured from the command line.
      * @throws Exception on error
      */
+    // Catching exception is OK in a main exception handler, more so since the
+    // exception is rethrown
+    @SuppressWarnings("checkstyle:IllegalCatch")
     public static void main(String[] args) throws Exception {
-        UpdateOptions options = handleOptions(UpdateOptions.class, args);
-        WikibaseRepository wikibaseRepository = buildWikibaseRepository(options);
-        if (wikibaseRepository == null) {
-            return;
+        RdfRepository rdfRepository = null;
+        Updater<? extends Change.Batch> updater;
+
+        try {
+            UpdateOptions options = handleOptions(UpdateOptions.class, args);
+            WikibaseRepository wikibaseRepository = buildWikibaseRepository(options);
+            URI sparqlUri = sparqlUri(options);
+            WikibaseUris uris = new WikibaseUris(options.wikibaseHost());
+            rdfRepository = new RdfRepository(sparqlUri, uris);
+            Change.Source<? extends Change.Batch> changeSource = buildChangeSource(options, rdfRepository,
+                    wikibaseRepository);
+            updater = createUpdater(options, wikibaseRepository, uris, rdfRepository, changeSource);
+        } catch (Exception e) {
+            log.error("Error during initialization.", e);
+            if (rdfRepository != null) {
+                rdfRepository.close();
+            }
+            throw e;
         }
+        try (RdfRepository r = rdfRepository) {
+            updater.run();
+        } catch (Exception e) {
+            log.error("Error during updater run.", e);
+            throw e;
+        }
+    }
+
+    /**
+     * Create an @{link Updater}.
+     *
+     * @param options
+     * @param wikibaseRepository
+     * @param uris
+     * @param rdfRepository
+     * @param changeSource
+     * @return a newly created updater
+     */
+    private static Updater<? extends Change.Batch> createUpdater(
+            UpdateOptions options,
+            WikibaseRepository wikibaseRepository,
+            WikibaseUris uris,
+            RdfRepository rdfRepository,
+            Change.Source<? extends Change.Batch> changeSource) {
+        int threads = options.threadCount();
+        ThreadFactoryBuilder threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("update %s");
+        ExecutorService executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(), threadFactory.build());
+
+        Munger munger = mungerFromOptions(options);
+        return new Updater<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
+                options.pollDelay(), uris, options.verify());
+    }
+
+    /**
+     * Create the sparql URI from the given configuration.
+     *
+     * @param options
+     * @return a newly created sparql URI
+     */
+    private static URI sparqlUri(UpdateOptions options) {
         URI sparqlUri;
         try {
             sparqlUri = new URI(options.sparqlUrl());
         } catch (URISyntaxException e) {
-            log.error("Invalid url:  " + options.sparqlUrl(), e);
-            return;
+            throw new IllegalArgumentException("Invalid url:  " + options.sparqlUrl(), e);
         }
-        WikibaseUris uris = new WikibaseUris(options.wikibaseHost());
-        try (RdfRepository rdfRepository = new RdfRepository(sparqlUri, uris)) {
-            Change.Source<? extends Change.Batch> changeSource = buildChangeSource(options, rdfRepository,
-                    wikibaseRepository);
-            if (changeSource == null) {
-                return;
-            }
-            int threads = options.threadCount();
-            ThreadFactoryBuilder threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("update %s");
-            ExecutorService executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<Runnable>(), threadFactory.build());
-
-            Munger munger = mungerFromOptions(options);
-            new Updater<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
-                options.pollDelay(), uris, options.verify()).run();
-        }
+        return sparqlUri;
     }
 
     /**
@@ -101,8 +143,7 @@ public final class Update {
                 end = Long.parseLong(ids[1]);
                 break;
             default:
-                log.error("Invalid format for --idrange.  Need <start>-<stop>.");
-                return null;
+                throw new IllegalArgumentException("Invalid format for --idrange.  Need <start>-<stop>.");
             }
             return IdRangeChangeSource.forItems(start, end, options.batchSize());
         }
@@ -126,8 +167,7 @@ public final class Update {
                 try {
                     startTime = inputDateFormat().parse(options.start()).getTime();
                 } catch (java.text.ParseException e2) {
-                    log.error("Invalid date:  {}", options.start());
-                    return null;
+                    throw  new IllegalArgumentException("Invalid date: " + options.start(), e2);
                 }
             }
         } else {
@@ -139,9 +179,8 @@ public final class Update {
                 log.info("Defaulting start time to 30 days ago:  {}", inputDateFormat().format(new Date(startTime)));
             } else {
                 if (leftOff.getTime() < minStartTime) {
-                    log.error("RDF store reports the last update time is before the minimum safe poll time.  "
+                    throw new IllegalStateException("RDF store reports the last update time is before the minimum safe poll time.  "
                             + "You will have to reload from scratch or you might have missing data.");
-                    return null;
                 }
                 startTime = leftOff.getTime();
                 log.info("Found start time in the RDF store: {}", inputDateFormat().format(leftOff));
@@ -168,8 +207,7 @@ public final class Update {
                 longEntityNamespaces[i] = Long.parseLong(strEntityNamespaces[i]);
             }
         } catch (NumberFormatException e) {
-            log.error("Invalid value for --entityNamespaces. Namespace index should be an integer.", e);
-            return null;
+            throw new IllegalArgumentException("Invalid value for --entityNamespaces. Namespace index should be an integer.", e);
         }
         return new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost(), 0, longEntityNamespaces);
     }
