@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.endsWith;
 import static org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.paramNameToURI;
 
 public class ApiTemplateUnitTest extends AbstractRandomizedBlazegraphTestBase {
@@ -144,12 +145,16 @@ public class ApiTemplateUnitTest extends AbstractRandomizedBlazegraphTestBase {
         assertThat(var.getPath(), equalTo("@somedata"));
         assertTrue(var.isURI());
         assertThat(var.getURI("http://test.com/"), instanceOf(URI.class));
-        // User-defined variable
+        // URI keeps the case
+        assertThat(var.getURI("http://test.com/test").toString(), endsWith("test"));
+        // User-defined variable which is an item
         var = outputs.get(2);
         assertThat(var.getName(), equalTo("var3"));
         assertThat(var.getPath(), equalTo("item/@wikibase_id"));
         assertTrue(var.isURI());
         assertThat(var.getURI("test"), instanceOf(URI.class));
+        // T172642: Item URIs will be uppercased
+        assertThat(var.getURI("test").toString(), endsWith("TEST"));
     }
 
     @Test(expected = NullPointerException.class)

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -372,7 +373,7 @@ public class ApiTemplate {
             case URI:
                 return new URIImpl(value);
             case ITEM:
-                return new URIImpl(WikibaseUris.getURISystem().entity() + value);
+                return new URIImpl(WikibaseUris.getURISystem().entity() + value.toUpperCase(Locale.ROOT));
             default:
                 throw new IllegalArgumentException("Can not produce URI for non-URI type " + type);
             }
