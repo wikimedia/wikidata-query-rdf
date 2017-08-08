@@ -33,11 +33,7 @@ public class ThrottlerTest {
                 .maximumSize(10000)
                 .expireAfterAccess(15, TimeUnit.MINUTES)
                 .build();
-        throttler = new Throttler<>(
-                Duration.of(20, SECONDS),
-                new UserAgentIpAddressBucketing(),
-                createThrottlingState(),
-                stateStore);
+        throttler = createThrottlerWithThrottlingHeader(stateStore, null);
     }
 
     private static Callable<ThrottlingState> createThrottlingState() {
@@ -157,6 +153,34 @@ public class ThrottlerTest {
         assertThat(backoffDelay.compareTo(Duration.of(60, SECONDS)), lessThan(0));
     }
 
+    @Test
+    public void throttleOnlyRequestsWithThrottlingHeader() {
+        MockHttpServletRequest request = createRequest("UA1", "1.2.3.4");
+        request.addHeader("do-throttle", "ignored value");
+
+        throttler = createThrottlerWithThrottlingHeader(stateStore, "do-throttle");
+
+        throttler.success(request, Duration.of(60, SECONDS));
+
+        assertTrue(throttler.isThrottled(request));
+
+        request = createRequest("UA1", "1.2.3.4");
+
+        throttler.success(request, Duration.of(60, SECONDS));
+
+        assertFalse(throttler.isThrottled(request));
+    }
+
+    private Throttler<Bucket> createThrottlerWithThrottlingHeader(
+            Cache<Bucket, ThrottlingState> stateStore,
+            String enableThrottlingIfHeader) {
+        return new Throttler<>(
+                Duration.of(20, SECONDS),
+                new UserAgentIpAddressBucketing(),
+                createThrottlingState(),
+                stateStore,
+                enableThrottlingIfHeader);
+    }
 
     private MockHttpServletRequest createRequest(String userAgent, String remoteAddr) {
         MockHttpServletRequest request = new MockHttpServletRequest();

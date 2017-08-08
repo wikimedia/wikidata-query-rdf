@@ -38,6 +38,17 @@ public class Throttler<B> {
     private final Callable<ThrottlingState> createThrottlingState;
 
     /**
+     * Throttling is only enabled if this header is set.
+     *
+     * This can be used to throttle only request coming through a revers proxy,
+     * which will set this specific header. Only the presence of the header is
+     * checked, not its value.
+     *
+     * If <code>null</code>, all requests will be throttled.
+     */
+    private String enableThrottlingIfHeader;
+
+    /**
      * Constructor.
      *
      * Note that a bucket represent our approximation of a single client.
@@ -49,16 +60,19 @@ public class Throttler<B> {
      *                              when we start tracking a specific client
      * @param stateStore the cache in which we store the per client state of
      *                   throttling
+     * @param enableThrottlingIfHeader throttling is only enabled if this header is present.
      */
     public Throttler(
             Duration requestTimeThreshold,
             Bucketing<B> bucketing,
             Callable<ThrottlingState> createThrottlingState,
-            Cache<B, ThrottlingState> stateStore) {
+            Cache<B, ThrottlingState> stateStore,
+            String enableThrottlingIfHeader) {
         this.requestTimeThreshold = requestTimeThreshold;
         this.bucketing = bucketing;
         this.state = stateStore;
         this.createThrottlingState = createThrottlingState;
+        this.enableThrottlingIfHeader = enableThrottlingIfHeader;
     }
 
     /**
@@ -68,10 +82,25 @@ public class Throttler<B> {
      * @return true if the request should be throttled
      */
     public boolean isThrottled(HttpServletRequest request) {
+        if (shouldBypassThrottling(request)) {
+            return false;
+        }
         ThrottlingState throttlingState = state.getIfPresent(bucketing.bucket(request));
         if (throttlingState == null) return false;
 
         return throttlingState.isThrottled();
+    }
+
+    /**
+     * Check whether this request should have throttling enabled.
+     * @param request
+     * @return if true then skip throttling
+     */
+    private boolean shouldBypassThrottling(HttpServletRequest request) {
+        if (enableThrottlingIfHeader == null) {
+            return false;
+        }
+        return request.getHeader(enableThrottlingIfHeader) == null;
     }
 
     /**
@@ -81,6 +110,9 @@ public class Throttler<B> {
      * @param elapsed how long that request took
      */
     public void success(HttpServletRequest request, Duration elapsed) {
+        if (shouldBypassThrottling(request)) {
+            return;
+        }
         try {
             B bucket = bucketing.bucket(request);
             ThrottlingState throttlingState;
@@ -105,6 +137,9 @@ public class Throttler<B> {
      * @param elapsed how long that request took
      */
     public void failure(HttpServletRequest request, Duration elapsed) {
+        if (shouldBypassThrottling(request)) {
+            return;
+        }
         try {
             ThrottlingState throttlingState = state.get(bucketing.bucket(request), createThrottlingState);
 

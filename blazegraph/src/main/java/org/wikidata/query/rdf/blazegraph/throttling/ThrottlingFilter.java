@@ -96,14 +96,13 @@ public class ThrottlingFilter implements Filter {
     /**
      * Initialise the filter.
      *
-     * Configuration is loaded from TODO.
+     * See {@link ThrottlingFilter#loadStringParam(String, FilterConfig)} for
+     * the details of where the configuration is loaded from.
+     *
      * @param filterConfig {@inheritDoc}
      */
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        // TODO: the value of the parameters are mostly invented, we need to
-        // find the correct ones.
-
         int requestDurationThresholdInSeconds = loadIntParam("request-duration-threshold-in-seconds", filterConfig, 10);
         int timeBucketCapacityInSeconds = loadIntParam("time-bucket-capacity-in-seconds", filterConfig, 60);
         int timeBucketRefillAmountInSeconds = loadIntParam("time-bucket-refill-amount-in-seconds", filterConfig, 60);
@@ -113,6 +112,8 @@ public class ThrottlingFilter implements Filter {
         int errorBucketRefillPeriodInMinutes = loadIntParam("error-bucket-refill-period-in-minutes", filterConfig, 1);
         int maxStateSize = loadIntParam("max-state-size", filterConfig, 10000);
         int stateExpirationInMinutes = loadIntParam("state-expiration-in-minutes", filterConfig, 15);
+
+        String enableThrottlingIfHeader = loadStringParam("enable-throttling-if-header", filterConfig);
 
         this.enabled = loadBooleanParam("enabled", filterConfig, true);
         throttler = new Throttler<>(
@@ -128,7 +129,8 @@ public class ThrottlingFilter implements Filter {
                 CacheBuilder.newBuilder()
                         .maximumSize(maxStateSize)
                         .expireAfterAccess(stateExpirationInMinutes, TimeUnit.MINUTES)
-                        .build());
+                        .build(),
+                enableThrottlingIfHeader);
     }
 
     /**

@@ -103,6 +103,10 @@
   <filter>
       <filter-name>throttling-filter</filter-name>
       <filter-class>org.wikidata.query.rdf.blazegraph.throttling.ThrottlingFilter</filter-class>
+      <init-param>
+          <param-name>enable-throttling-if-header</param-name>
+          <param-value>X-BIGDATA-READ-ONLY</param-value>
+      </init-param>
   </filter>
   <filter-mapping>
     <filter-name>throttling-filter</filter-name>
