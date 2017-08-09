@@ -104,11 +104,11 @@ public class ThrottlingFilter implements Filter {
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         int requestDurationThresholdInSeconds = loadIntParam("request-duration-threshold-in-seconds", filterConfig, 10);
-        int timeBucketCapacityInSeconds = loadIntParam("time-bucket-capacity-in-seconds", filterConfig, 60);
+        int timeBucketCapacityInSeconds = loadIntParam("time-bucket-capacity-in-seconds", filterConfig, 120);
         int timeBucketRefillAmountInSeconds = loadIntParam("time-bucket-refill-amount-in-seconds", filterConfig, 60);
         int timeBucketRefillPeriodInMinutes = loadIntParam("time-bucket-refill-period-in-minutes", filterConfig, 1);
-        int errorBucketCapacity = loadIntParam("error-bucket-capacity", filterConfig, 10);
-        int errorBucketRefillAmount = loadIntParam("error-bucket-refill-amount", filterConfig, 100);
+        int errorBucketCapacity = loadIntParam("error-bucket-capacity", filterConfig, 60);
+        int errorBucketRefillAmount = loadIntParam("error-bucket-refill-amount", filterConfig, 30);
         int errorBucketRefillPeriodInMinutes = loadIntParam("error-bucket-refill-period-in-minutes", filterConfig, 1);
         int maxStateSize = loadIntParam("max-state-size", filterConfig, 10000);
         int stateExpirationInMinutes = loadIntParam("state-expiration-in-minutes", filterConfig, 15);
