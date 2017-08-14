@@ -33,7 +33,7 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
     /**
      * Repository to test with.
      */
-    private final RdfRepositoryForTesting rdfRepository;
+    private RdfRepositoryForTesting rdfRepository;
 
     /**
      * Build the test against prod wikidata.
@@ -44,7 +44,34 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
 
     public AbstractRdfRepositoryIntegrationTestBase(WikibaseUris uris) {
         this.uris = uris;
+    }
+
+    /**
+     * Initializes the {@link RdfRepository} before each test.
+     *
+     * Since randomized testing ThreadLeakControl checks for leaked thread, not
+     * closing properly the RdfRepository after each test causes random false
+     * negative in the test results. Initializing the RdfRepository for each
+     * test might be slightly less performant, but at least it ensures
+     * reproducible tests.
+     */
+    @Before
+    public void initRdfRepository() {
         rdfRepository = new RdfRepositoryForTesting("wdq");
+        rdfRepository.clear();
+    }
+
+    /**
+     * Closes the {@link RdfRepository} after each test.
+     *
+     * @throws Exception on error
+     */
+    @After
+    public void clearAndShutdownRdfRepository() throws Exception {
+        if (rdfRepository != null) {
+            rdfRepository.clear();
+            rdfRepository.close();
+        }
     }
 
     /**
@@ -59,23 +86,6 @@ public abstract class AbstractRdfRepositoryIntegrationTestBase extends Randomize
      */
     public RdfRepositoryForTesting rdfRepository() {
         return rdfRepository;
-    }
-
-    /**
-     * Clear the repository so one test doesn't interfere with another.
-     */
-    @Before
-    public void clear() {
-        rdfRepository.clear();
-    }
-
-    /**
-     * Close the repository at the end.
-     * @throws Exception on error
-     */
-    @After
-    public void closeRepo() throws Exception {
-        rdfRepository.close();
     }
 
     /**
