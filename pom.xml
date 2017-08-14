@@ -73,6 +73,7 @@
     <blazegraph.version>2.1.5-SNAPSHOT</blazegraph.version>
     <jackson.version>2.2.3</jackson.version>
     <jetty.version>9.2.3.v20140905</jetty.version>
+    <logback.version>1.2.3</logback.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sesame.version>2.7.12</sesame.version>
     <slf4j.version>1.7.10</slf4j.version>
@@ -84,12 +85,12 @@
       <dependency>
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-classic</artifactId>
-        <version>1.1.2</version>
+        <version>${logback.version}</version>
       </dependency>
       <dependency>
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-core</artifactId>
-        <version>1.1.2</version>
+        <version>${logback.version}</version>
       </dependency>
       <dependency>
         <groupId>com.blazegraph</groupId>
@@ -553,6 +554,12 @@
         <groupId>xml-apis</groupId>
         <artifactId>xml-apis</artifactId>
         <version>1.4.01</version>
+      </dependency>
+      <dependency>
+        <groupId>net.logstash.logback</groupId>
+        <artifactId>logstash-logback-encoder</artifactId>
+        <version>4.11</version>
+        <scope>runtime</scope>
       </dependency>
       <dependency>
         <groupId>org.jhades</groupId>

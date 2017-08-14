@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+if [ -r /etc/default/wdqs-updater ]; then
+  . /etc/default/wdqs-updater
+fi
+
 HOST=http://localhost:9999
 CONTEXT=bigdata
 MEMORY="-Xms2g -Xmx2g"
@@ -13,6 +17,7 @@ GC_LOGS="-Xloggc:/var/log/wdqs/wdqs-updater_jvm_gc.%p.log \
          -XX:+UseGCLogFileRotation \
          -XX:NumberOfGCLogFiles=10 \
          -XX:GCLogFileSize=20M"
+LOG_CONFIG=${LOG_CONFIG:-""}
 NAMESPACE=wdq
 UPDATER_OPTS=${UPDATER_OPTS:-""}
 
@@ -53,13 +58,9 @@ fi
 if [ ! -z "$SKIPSITE" ]; then
     ARGS="$ARGS --skipSiteLinks"
 fi
-
-LOG=""
-if [ -f /etc/wdqs/updater-logs.xml ]; then
-    LOG="-Dlogback.configurationFile=/etc/wdqs/updater-logs.xml"
-fi
-if [ -f updater-logs.xml ]; then
-    LOG="-Dlogback.configurationFile=updater-logs.xml"
+LOG_OPTIONS=""
+if [ ! -z "$LOG_CONFIG" ]; then
+    LOG_OPTIONS="-Dlogback.configurationFile=${LOG_CONFIG}"
 fi
 
 CP=lib/wikidata-query-tools-*-jar-with-dependencies.jar
@@ -67,4 +68,4 @@ MAIN=org.wikidata.query.rdf.tool.Update
 SPARQL_URL=$HOST/$CONTEXT/namespace/$NAMESPACE/sparql
 AGENT=-javaagent:lib/jolokia-jvm-1.3.1-agent.jar=port=8778,host=localhost
 echo "Updating via $SPARQL_URL"
-exec java -cp $CP $MEMORY $GC_LOGS $LOG $TIMEOUT_ARG $AGENT ${UPDATER_OPTS} $MAIN $ARGS --sparqlUrl $SPARQL_URL "$@"
+exec java -cp $CP $MEMORY $GC_LOGS $LOG_OPTIONS $TIMEOUT_ARG $AGENT ${UPDATER_OPTS} $MAIN $ARGS --sparqlUrl $SPARQL_URL "$@"
