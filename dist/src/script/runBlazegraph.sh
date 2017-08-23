@@ -9,6 +9,7 @@ CONTEXT=bigdata
 PORT=${PORT:-"9999"}
 DIR=${DIR:-`dirname $0`}
 HEAP_SIZE=${HEAP_SIZE:-"16g"}
+LOG_CONFIG=${LOG_CONFIG:-""}
 MEMORY=${MEMORY:-"-Xms${HEAP_SIZE} -Xmx${HEAP_SIZE}"}
 GC_LOGS=${GC_LOGS:-"-Xloggc:/var/log/wdqs/wdqs-blazegraph_jvm_gc.%p.log \
          -XX:+PrintGCDetails \
@@ -52,9 +53,14 @@ DEFAULT_GLOBE=2
 # Blazegraph HTTP User Agent for federation
 USER_AGENT="Wikidata Query Service; https://query.wikidata.org/";
 
+LOG_OPTIONS=""
+if [ ! -z "$LOG_CONFIG" ]; then
+    LOG_OPTIONS="-Dlogback.configurationFile=${LOG_CONFIG}"
+fi
+
 echo "Running Blazegraph from `pwd` on :$PORT/$CONTEXT"
 exec java \
-     -server -XX:+UseG1GC ${MEMORY} ${DEBUG} ${GC_LOGS} \
+     -server -XX:+UseG1GC ${MEMORY} ${DEBUG} ${GC_LOGS} ${LOG_OPTIONS} \
      -Dcom.bigdata.rdf.sail.webapp.ConfigParams.propertyFile=${CONFIG_FILE} \
      -Dorg.eclipse.jetty.server.Request.maxFormContentSize=200000000 \
      -Dcom.bigdata.rdf.sparql.ast.QueryHints.analytic=true \
