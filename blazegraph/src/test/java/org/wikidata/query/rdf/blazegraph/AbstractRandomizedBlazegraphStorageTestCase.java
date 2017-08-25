@@ -75,7 +75,18 @@ public class AbstractRandomizedBlazegraphStorageTestCase extends RandomizedTest 
         if (store != null) {
             return store;
         }
-        Properties properties = new Properties();
+        Properties properties = initStoreProperties(new Properties());
+        store = new TempTripleStore(temporaryStore(), properties, null);
+        return store;
+    }
+
+    /**
+     * Initialize store properties.
+     * Allows property override by either updating properties object, or returning a new one.
+     * @param properties Properties that have been set so far
+     * @return Properties object after updating it
+     */
+    protected Properties initStoreProperties(Properties properties) {
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.vocabularyClass",
                 WikibaseVocabulary.VOCABULARY_CLASS.getName());
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.inlineURIFactory",
@@ -94,8 +105,8 @@ public class AbstractRandomizedBlazegraphStorageTestCase extends RandomizedTest 
                         + "{ \"valueType\": \"DOUBLE\", \"multiplier\": \"1000000000\", \"serviceMapping\": \"LATITUDE\" }, "
                         + "{ \"valueType\": \"LONG\", \"multiplier\":\"1\",\"minValue\":\"0\", \"serviceMapping\": \"COORD_SYSTEM\" } "
                         + "]}}");
-        store = new TempTripleStore(temporaryStore(), properties, null);
-        return store;
+
+        return properties;
     }
 
     /**
