@@ -93,11 +93,11 @@
     <url-pattern>/*</url-pattern>
   </filter-mapping>
   <filter>
-    <filter-name>logging-filter</filter-name>
-    <filter-class>org.wikidata.query.rdf.blazegraph.filters.LoggingFilter</filter-class>
+    <filter-name>mdc-inserting-filter</filter-name>
+    <filter-class>ch.qos.logback.classic.helpers.MDCInsertingServletFilter</filter-class>
   </filter>
   <filter-mapping>
-    <filter-name>logging-filter</filter-name>
+    <filter-name>mdc-inserting-filter</filter-name>
     <url-pattern>/*</url-pattern>
   </filter-mapping>
   <filter>
