@@ -233,4 +233,17 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdaterIntegrat
                 new LiteralImpl("17.42", XMLSchema.DOUBLE)));
         assertThat(result, binds("globe", new URIImpl(moonURI)));
     }
+
+    // Check distance between close points
+    @Test
+    public void distanceClosePoints() throws QueryEvaluationException {
+        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {"
+                + "BIND(\"Point(-96.0775581 46.2830152)\"^^geo:wktLiteral as ?b1)\n"
+                + "BIND(\"Point(-96.077558 46.283015)\"^^geo:wktLiteral as ?b2)\n"
+                + "BIND(geof:distance(?b1, ?b2) as ?distance)\n"
+                + "}");
+        BindingSet result = results.next();
+        assertThat(result, binds("distance",
+                new LiteralImpl("0.0", XMLSchema.DOUBLE)));
+    }
 }

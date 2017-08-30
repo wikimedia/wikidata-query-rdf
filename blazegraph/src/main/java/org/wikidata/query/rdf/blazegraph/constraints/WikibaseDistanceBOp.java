@@ -62,11 +62,40 @@ public class WikibaseDistanceBOp extends IVValueExpression<IV> implements INeeds
         final CoordinateDD leftPoint = getCoordinateFromIV(left);
         final CoordinateDD rightPoint = getCoordinateFromIV(right);
         // TODO: allow to supply Units
-        final double distance = leftPoint.equals(rightPoint) ? 0 :
-            leftPoint.distance(rightPoint, UNITS.Kilometers);
+        final double distance;
+        if (leftPoint.equals(rightPoint) || veryClose(leftPoint, rightPoint)) {
+            distance = 0;
+        } else {
+            distance = leftPoint.distance(rightPoint, UNITS.Kilometers);
+        }
 
         final BigdataLiteral dist = getValueFactory().createLiteral(distance);
         return super.asIV(dist, bindingSet);
+    }
+
+    /**
+     * Distance where the points are considered to be the same.
+     * Distance equivalent of degrees (on equator):
+     * 0.001   is about 110 m
+     * 0.0001  is about 11 m
+     * 0.00001 is about 1 m
+     * See: https://en.wikipedia.org/wiki/WP:OPCOORD
+     */
+    public static final double SMALL_DISTANCE = 0.00001;
+
+    /**
+     * Check whether two points are very close to each other, so distance between them
+     * can be considered zero.
+     * Current CoordinateDD.distance does not work well with small distances,
+     * so we take a shortcut here in order not to get the NaN.
+     * @param p1
+     * @param p2
+     * @return Whether the points are very close.
+     */
+    protected boolean veryClose(CoordinateDD p1, CoordinateDD p2) {
+        double dLon = p1.eastWest - p2.eastWest;
+        double dLat = p1.northSouth - p2.northSouth;
+        return Math.abs(dLon) < SMALL_DISTANCE && Math.abs(dLat) < SMALL_DISTANCE;
     }
 
     /**
