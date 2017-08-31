@@ -242,8 +242,15 @@ public class ThrottlingFilter implements Filter {
         Stopwatch stopwatch = Stopwatch.createStarted();
         try {
             chain.doFilter(request, response);
-            throttler.success(httpRequest, stopwatch.elapsed());
+            // for throttling purpose, consider all 1xx and 2xx status codes as
+            // success, 4xx and 5xx as failure
+            if (httpResponse.getStatus() < 400) {
+                throttler.success(httpRequest, stopwatch.elapsed());
+            } else {
+                throttler.failure(httpRequest, stopwatch.elapsed());
+            }
         } catch (IOException | ServletException e) {
+            // an exception processing the request is treated as a failure
             throttler.failure(httpRequest, stopwatch.elapsed());
             throw e;
         }
