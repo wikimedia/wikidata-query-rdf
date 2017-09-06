@@ -315,7 +315,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
          */
         private Iterator<IBindingSet> doSearchFromBinding(IBindingSet binding) {
             final Request req = getHttpRequest(binding);
-            log.info("MWAPI REQUEST: " + req.getQuery());
+            log.debug("MWAPI REQUEST: {}", req.getQuery());
             final Response response;
             InputStreamResponseListener listener = new InputStreamResponseListener();
             try {
