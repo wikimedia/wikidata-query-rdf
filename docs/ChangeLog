@@ -4,6 +4,7 @@ Add Mediawiki API service
 New functions:
 - geof:globe, geof:latitude & geof:longitude for coordinate literals
 - wikibase:decodeUri for urldecoding strings
+Add throttling and rate limits
 
 0.2.4
 -----
