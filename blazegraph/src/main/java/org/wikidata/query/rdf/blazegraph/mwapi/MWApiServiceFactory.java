@@ -78,7 +78,7 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
     /**
      * Namespace for MWAPI parameters.
      */
-    public static final String MWAPI_NAMESPACE = Ontology.NAMESPACE + "api#";
+    public static final String MWAPI_NAMESPACE = Ontology.MEDIAWIKI_NAMESPACE + "API/";
     /**
      * Default service config filename.
      */

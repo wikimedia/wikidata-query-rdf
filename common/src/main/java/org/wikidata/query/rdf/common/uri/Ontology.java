@@ -9,6 +9,10 @@ public final class Ontology {
      */
     public static final String NAMESPACE = "http://wikiba.se/ontology#";
     /**
+     * Common prefix of Mediawiki ontology parts.
+     */
+    public static final String MEDIAWIKI_NAMESPACE = "https://www.mediawiki.org/ontology#";
+    /**
      * Old ontology prefix, for loading old dumps.
      * TODO: remove this when ontology stabilizes.
      */
