@@ -15,7 +15,7 @@ if [ -z "$WIKI" ]; then
 	exit 1
 fi
 
-TS=$(curl -s -XGET $SOURCE/lastdump/$WIKI-categories.last)
+TS=$(curl -s -XGET $SOURCE/lastdump/$WIKI-categories.last | cut -c1-8)
 if [ -z "$TS" ]; then
 	echo "Could not load timestamp"
 	exit 1
