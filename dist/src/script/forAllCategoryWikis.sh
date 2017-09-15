@@ -1,6 +1,7 @@
 #!/bin/bash
 DUMP_LIST=${DUMP_LIST:-"https://noc.wikimedia.org/conf/categories-rdf.dblist"}
 DIR=${DIR:-`dirname $0`}
+COMMAND="$1"
 
 if [ -f $DUMP_LIST ]; then
 	fetch="cat"
@@ -9,6 +10,6 @@ else
 fi
 
 $fetch $DUMP_LIST | while read wiki; do
-	echo "Loading $wiki..."
-	$DIR/loadCategoryDump.sh $wiki
+	echo "Processing $wiki..."
+	$DIR/$COMMAND $wiki
 done 
