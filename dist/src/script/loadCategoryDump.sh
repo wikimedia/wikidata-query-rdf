@@ -15,13 +15,13 @@ if [ -z "$WIKI" ]; then
 	exit 1
 fi
 
-TS=$(curl -s -XGET $SOURCE/lastdump/$WIKI-categories.last | cut -c1-8)
+TS=$(curl -s -f -XGET $SOURCE/lastdump/$WIKI-categories.last | cut -c1-8)
 if [ -z "$TS" ]; then
 	echo "Could not load timestamp"
 	exit 1
 fi
 FILENAME=$WIKI-$TS-categories.ttl.gz
-curl -s -XGET $SOURCE/$TS/$FILENAME -o $DATA_DIR/$FILENAME
+curl -s -f -XGET $SOURCE/$TS/$FILENAME -o $DATA_DIR/$FILENAME
 if [ ! -s $DATA_DIR/$FILENAME ]; then
 	echo "Could not download $FILENAME"
 	exit 1

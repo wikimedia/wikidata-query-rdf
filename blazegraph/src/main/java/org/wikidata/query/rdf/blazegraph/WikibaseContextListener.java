@@ -14,6 +14,7 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.resultio.TupleQueryResultFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.blazegraph.categories.CategoriesStoredQuery;
 import org.wikidata.query.rdf.blazegraph.constraints.CoordinatePartBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.DecodeUriBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseCornerBOp;
@@ -88,6 +89,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         LabelService.register();
         GeoService.register();
         MWApiServiceFactory.register();
+        CategoriesStoredQuery.register();
 
         // Whitelist services we like by default
         reg.addWhitelistURL(GASService.Options.SERVICE_KEY.toString());

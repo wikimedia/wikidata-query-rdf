@@ -17,6 +17,7 @@ import org.openrdf.model.Value;
 import org.openrdf.model.impl.URIImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.uri.Mediawiki;
 import org.wikidata.query.rdf.common.uri.Ontology;
 
 import com.bigdata.bop.IVariable;
@@ -78,7 +79,7 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
     /**
      * Namespace for MWAPI parameters.
      */
-    public static final String MWAPI_NAMESPACE = Ontology.MEDIAWIKI_NAMESPACE + "API/";
+    public static final String MWAPI_NAMESPACE = Mediawiki.NAMESPACE + "API/";
     /**
      * Default service config filename.
      */
