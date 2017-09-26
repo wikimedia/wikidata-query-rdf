@@ -26,4 +26,4 @@ if [ ! -s $DATA_DIR/$FILENAME ]; then
 	echo "Could not download $FILENAME"
 	exit 1
 fi	
-curl -XPOST --data-binary update="LOAD <file://$DATA_DIR/$FILENAME>" $HOST/$CONTEXT/namespace/$NAMESPACE/sparql
+curl -s -XPOST --data-binary update="LOAD <file://$DATA_DIR/$FILENAME>" $HOST/$CONTEXT/namespace/$NAMESPACE/sparql
