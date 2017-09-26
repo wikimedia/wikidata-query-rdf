@@ -1,11 +1,11 @@
 package org.wikidata.query.rdf.blazegraph.ldf;
 
-import com.bigdata.rdf.sail.webapp.BigdataRDFContext;
-import com.bigdata.rdf.store.AbstractTripleStore;
-
 import org.linkeddatafragments.datasource.DataSourceBase;
 import org.linkeddatafragments.datasource.IFragmentRequestProcessor;
 import org.linkeddatafragments.fragments.IFragmentRequestParser;
+
+import com.bigdata.rdf.sail.webapp.BigdataRDFContext;
+import com.bigdata.rdf.store.AbstractTripleStore;
 
 /**
  * A Blazegraph-based data source.

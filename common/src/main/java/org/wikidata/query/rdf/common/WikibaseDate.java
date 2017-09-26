@@ -1,7 +1,5 @@
 package org.wikidata.query.rdf.common;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
 import static java.util.concurrent.TimeUnit.DAYS;
@@ -14,6 +12,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.xml.datatype.Duration;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Handles wikidata dates. Note that this ignores leap seconds. This isn't ok

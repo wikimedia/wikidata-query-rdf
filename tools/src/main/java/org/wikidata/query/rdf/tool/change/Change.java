@@ -6,12 +6,13 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.google.common.collect.ImmutableList;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * A change in an entity in Wikibase.

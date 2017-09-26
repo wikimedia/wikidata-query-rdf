@@ -1,8 +1,8 @@
 package org.wikidata.query.rdf.tool.options;
 
-import com.lexicalscope.jewel.cli.Option;
-
 import java.util.List;
+
+import com.lexicalscope.jewel.cli.Option;
 
 /**
  * CLI options for use with JewelCli.

@@ -20,7 +20,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.rio.RDFFormat;
@@ -47,6 +46,7 @@ import org.wikidata.query.rdf.tool.rdf.PrefixRecordingRdfHandler;
 
 import com.codahale.metrics.Meter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import fi.iki.elonen.NanoHTTPD;
 
 /**

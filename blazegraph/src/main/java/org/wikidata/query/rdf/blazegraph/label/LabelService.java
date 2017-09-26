@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.label;
 
+import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeIV;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,7 +9,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -44,7 +45,7 @@ import com.bigdata.striterator.IChunkedOrderedIterator;
 import com.google.common.collect.ImmutableSet;
 
 import cutthecrap.utils.striterators.ICloseableIterator;
-import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeIV;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Implements a "service" that resolves label like things in a way that doesn't

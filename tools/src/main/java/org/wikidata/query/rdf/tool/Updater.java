@@ -1,20 +1,6 @@
 package org.wikidata.query.rdf.tool;
 
-import com.codahale.metrics.JmxReporter;
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.collect.ImmutableSetMultimap;
-import org.apache.commons.lang3.time.DateUtils;
-import org.openrdf.model.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.tool.change.Change;
-import org.wikidata.query.rdf.tool.exception.ContainedException;
-import org.wikidata.query.rdf.tool.exception.RetryableException;
-import org.wikidata.query.rdf.tool.rdf.Munger;
-import org.wikidata.query.rdf.tool.rdf.RdfRepository;
-import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
+import static java.lang.Thread.currentThread;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,7 +15,22 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static java.lang.Thread.currentThread;
+import org.apache.commons.lang3.time.DateUtils;
+import org.openrdf.model.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.tool.change.Change;
+import org.wikidata.query.rdf.tool.exception.ContainedException;
+import org.wikidata.query.rdf.tool.exception.RetryableException;
+import org.wikidata.query.rdf.tool.rdf.Munger;
+import org.wikidata.query.rdf.tool.rdf.RdfRepository;
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
+
+import com.codahale.metrics.JmxReporter;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableSetMultimap;
 
 /**
  * Update tool.

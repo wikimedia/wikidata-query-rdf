@@ -1,12 +1,17 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.util.Locale.ENGLISH;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
-import com.google.common.base.Stopwatch;
-import com.google.common.cache.CacheBuilder;
-import org.isomorphism.util.TokenBuckets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.blazegraph.throttling.UserAgentIpAddressBucketing.Bucket;
+import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -16,18 +21,14 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.time.Duration;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static java.util.Locale.ENGLISH;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
+import org.isomorphism.util.TokenBuckets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.blazegraph.throttling.UserAgentIpAddressBucketing.Bucket;
+
+import com.google.common.base.Stopwatch;
+import com.google.common.cache.CacheBuilder;
 
 /**
  * A Servlet Filter that applies throttling.

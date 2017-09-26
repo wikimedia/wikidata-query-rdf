@@ -1,9 +1,9 @@
 package org.wikidata.query.rdf.blazegraph.ldf;
 
+import org.linkeddatafragments.fragments.tpf.TPFRequestParser;
+
 import com.bigdata.rdf.lexicon.LexiconRelation;
 import com.bigdata.rdf.model.BigdataValue;
-
-import org.linkeddatafragments.fragments.tpf.TPFRequestParser;
 
 /**
  * An {@link TPFRequestParser} for Blazegraph-based backends.

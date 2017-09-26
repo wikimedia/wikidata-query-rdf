@@ -1,12 +1,12 @@
 package org.wikidata.query.rdf.blazegraph.ldf;
 
+import org.linkeddatafragments.util.TriplePatternElementParser;
+
 import com.bigdata.rdf.lexicon.LexiconRelation;
 import com.bigdata.rdf.model.BigdataURI;
 import com.bigdata.rdf.model.BigdataValue;
 import com.bigdata.rdf.model.BigdataValueFactory;
 import com.bigdata.rdf.sail.sparql.PrefixDeclProcessor;
-
-import org.linkeddatafragments.util.TriplePatternElementParser;
 
 /**
  * A {@link TriplePatternElementParser} for Blazegraph-based backends.

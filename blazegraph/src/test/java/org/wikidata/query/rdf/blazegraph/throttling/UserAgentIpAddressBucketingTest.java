@@ -1,16 +1,16 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.wikidata.query.rdf.blazegraph.throttling.UserAgentIpAddressBucketing.Bucket;
-
-import javax.servlet.http.HttpServletRequest;
-
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.wikidata.query.rdf.blazegraph.throttling.UserAgentIpAddressBucketing.Bucket;
 
 public class UserAgentIpAddressBucketingTest {
 

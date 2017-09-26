@@ -21,8 +21,6 @@ import java.util.TimeZone;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
-import com.google.common.primitives.Longs;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -66,6 +64,9 @@ import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
 
 import com.google.common.base.Charsets;
+import com.google.common.primitives.Longs;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Wraps Wikibase api.

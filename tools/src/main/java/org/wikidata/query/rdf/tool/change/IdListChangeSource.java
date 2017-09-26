@@ -4,10 +4,11 @@ import static java.lang.Math.min;
 
 import java.util.Date;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
 import com.google.common.collect.ImmutableList;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Creates a change source out of the list of IDs.

@@ -13,13 +13,13 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 
 import org.joda.time.chrono.GregorianChronology;
-import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.Test;
 import org.wikidata.query.rdf.common.WikibaseDate.ToStringFormat;
 
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
-import com.carrotsearch.randomizedtesting.annotations.Repeat;
 
 @RunWith(RandomizedRunner.class)
 public class WikibaseDateUnitTest extends RandomizedTest {

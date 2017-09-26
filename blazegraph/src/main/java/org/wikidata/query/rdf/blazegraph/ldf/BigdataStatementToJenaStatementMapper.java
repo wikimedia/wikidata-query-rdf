@@ -1,5 +1,11 @@
 package org.wikidata.query.rdf.blazegraph.ldf;
 
+import org.openrdf.model.URI;
+
+import com.bigdata.rdf.model.BigdataLiteral;
+import com.bigdata.rdf.model.BigdataResource;
+import com.bigdata.rdf.model.BigdataStatement;
+import com.bigdata.rdf.model.BigdataValue;
 import com.hp.hpl.jena.datatypes.RDFDatatype;
 import com.hp.hpl.jena.datatypes.TypeMapper;
 import com.hp.hpl.jena.rdf.model.Property;
@@ -8,13 +14,6 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.ResourceFactory;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.util.iterator.Map1;
-
-import org.openrdf.model.URI;
-
-import com.bigdata.rdf.model.BigdataLiteral;
-import com.bigdata.rdf.model.BigdataResource;
-import com.bigdata.rdf.model.BigdataStatement;
-import com.bigdata.rdf.model.BigdataValue;
 
 /**
  * Implementation of {@link Map1} that transforms {@link BigdataStatement}s to

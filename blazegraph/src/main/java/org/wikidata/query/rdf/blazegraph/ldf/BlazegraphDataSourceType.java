@@ -1,11 +1,11 @@
 package org.wikidata.query.rdf.blazegraph.ldf;
 
-import com.bigdata.rdf.sail.webapp.BigdataRDFContext;
-import com.google.gson.JsonObject;
-
 import org.linkeddatafragments.datasource.IDataSource;
 import org.linkeddatafragments.datasource.IDataSourceType;
 import org.linkeddatafragments.exceptions.DataSourceCreationException;
+
+import com.bigdata.rdf.sail.webapp.BigdataRDFContext;
+import com.google.gson.JsonObject;
 
 /**
  * The type of Blazegraph-based Triple Pattern Fragment data sources.

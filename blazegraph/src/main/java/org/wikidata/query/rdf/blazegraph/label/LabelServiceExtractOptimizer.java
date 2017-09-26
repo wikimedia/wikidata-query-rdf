@@ -3,8 +3,6 @@ package org.wikidata.query.rdf.blazegraph.label;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.bigdata.bop.BOp;
 import com.bigdata.bop.IBindingSet;
 import com.bigdata.rdf.sparql.ast.JoinGroupNode;
@@ -15,6 +13,8 @@ import com.bigdata.rdf.sparql.ast.StaticAnalysis;
 import com.bigdata.rdf.sparql.ast.eval.AST2BOpContext;
 import com.bigdata.rdf.sparql.ast.optimizers.AbstractJoinGroupOptimizer;
 import com.bigdata.rdf.store.BD;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * This class extracts label statements from label service's SERVICE clause.

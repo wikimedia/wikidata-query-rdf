@@ -1,7 +1,8 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Segmentation of requests by user-agent and IP address.

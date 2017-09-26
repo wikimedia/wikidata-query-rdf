@@ -1,17 +1,5 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import org.isomorphism.util.TokenBuckets;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.wikidata.query.rdf.blazegraph.throttling.UserAgentIpAddressBucketing.Bucket;
-
-import java.time.Duration;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -21,6 +9,19 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import java.time.Duration;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
+import org.isomorphism.util.TokenBuckets;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.wikidata.query.rdf.blazegraph.throttling.UserAgentIpAddressBucketing.Bucket;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 public class ThrottlerTest {
 

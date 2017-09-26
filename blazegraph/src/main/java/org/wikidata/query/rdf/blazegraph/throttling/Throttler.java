@@ -1,15 +1,17 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
-import com.google.common.cache.Cache;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.time.temporal.ChronoUnit.MILLIS;
 
-import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
-import static java.time.temporal.ChronoUnit.MILLIS;
+import javax.servlet.http.HttpServletRequest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.cache.Cache;
 
 /**
  * Implement throttling logic.

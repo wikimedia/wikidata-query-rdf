@@ -4,6 +4,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.openrdf.model.Value;
+import org.linkeddatafragments.datasource.AbstractRequestProcessorForTriplePatterns;
+import org.linkeddatafragments.fragments.ILinkedDataFragment;
+import org.linkeddatafragments.fragments.tpf.ITriplePatternElement;
+import org.linkeddatafragments.fragments.tpf.ITriplePatternFragment;
+import org.linkeddatafragments.fragments.tpf.ITriplePatternFragmentRequest;
 
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.internal.impl.TermId;
@@ -12,12 +17,6 @@ import com.bigdata.rdf.spo.ISPO;
 import com.bigdata.rdf.spo.SPOFilter;
 import com.bigdata.rdf.store.AbstractTripleStore;
 import com.bigdata.relation.accesspath.IAccessPath;
-
-import org.linkeddatafragments.datasource.AbstractRequestProcessorForTriplePatterns;
-import org.linkeddatafragments.fragments.ILinkedDataFragment;
-import org.linkeddatafragments.fragments.tpf.ITriplePatternElement;
-import org.linkeddatafragments.fragments.tpf.ITriplePatternFragment;
-import org.linkeddatafragments.fragments.tpf.ITriplePatternFragmentRequest;
 
 /**
  * A Blazegraph-based data source.

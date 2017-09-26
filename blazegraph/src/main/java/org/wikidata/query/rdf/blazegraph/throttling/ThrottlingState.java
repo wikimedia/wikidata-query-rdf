@@ -1,13 +1,13 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
-import org.isomorphism.util.TokenBucket;
-
-import java.time.Duration;
-
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
+import java.time.Duration;
+
+import org.isomorphism.util.TokenBucket;
 
 /**
  * Keeps track of resource useage for a client.

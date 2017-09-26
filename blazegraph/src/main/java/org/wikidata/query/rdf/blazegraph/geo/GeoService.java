@@ -5,12 +5,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.eclipse.jetty.client.HttpClient;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.wikidata.query.rdf.blazegraph.inline.literal.WKTSerializer;
 import org.wikidata.query.rdf.common.uri.Ontology;
+
 import com.bigdata.bop.IVariable;
 import com.bigdata.bop.IVariableOrConstant;
 import com.bigdata.rdf.model.BigdataURI;
@@ -32,6 +32,8 @@ import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
 import com.bigdata.rdf.store.BD;
 import com.bigdata.service.geospatial.GeoSpatial;
 import com.bigdata.service.geospatial.GeoSpatialSearchException;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Implements a service to do geospatial search.

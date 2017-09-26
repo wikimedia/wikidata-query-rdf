@@ -1,5 +1,17 @@
 package org.wikidata.query.rdf.blazegraph.mwapi;
 
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeConstant;
+import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeVariable;
+import static org.wikidata.query.rdf.blazegraph.Matchers.binds;
+import static org.wikidata.query.rdf.blazegraph.Matchers.bindsItem;
+import static org.wikidata.query.rdf.blazegraph.Matchers.notBinds;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -21,19 +33,6 @@ import com.bigdata.bop.bindingSet.HashBindingSet;
 import com.bigdata.rdf.model.BigdataValueFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.not;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeConstant;
-import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeVariable;
-import static org.wikidata.query.rdf.blazegraph.Matchers.binds;
-import static org.wikidata.query.rdf.blazegraph.Matchers.bindsItem;
-import static org.wikidata.query.rdf.blazegraph.Matchers.notBinds;
 
 public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBase {
     private ApiTemplate template;

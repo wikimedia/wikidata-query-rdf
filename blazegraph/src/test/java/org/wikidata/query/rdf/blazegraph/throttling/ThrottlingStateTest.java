@@ -1,11 +1,5 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
-import org.isomorphism.util.TokenBucket;
-import org.isomorphism.util.TokenBuckets;
-import org.junit.Test;
-
-import java.time.Duration;
-
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -15,6 +9,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.time.Duration;
+
+import org.isomorphism.util.TokenBucket;
+import org.isomorphism.util.TokenBuckets;
+import org.junit.Test;
 
 public class ThrottlingStateTest {
 

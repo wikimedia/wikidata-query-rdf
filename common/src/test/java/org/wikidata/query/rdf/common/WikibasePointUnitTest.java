@@ -1,8 +1,8 @@
 package org.wikidata.query.rdf.common;
 
 import org.junit.runner.RunWith;
-import org.wikidata.query.rdf.common.WikibasePoint.CoordinateOrder;
 import org.junit.Test;
+import org.wikidata.query.rdf.common.WikibasePoint.CoordinateOrder;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;

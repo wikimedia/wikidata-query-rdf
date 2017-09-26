@@ -1,17 +1,9 @@
 package org.wikidata.query.rdf.tool;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.tool.change.Change;
-import org.wikidata.query.rdf.tool.change.IdListChangeSource;
-import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
-import org.wikidata.query.rdf.tool.change.RecentChangesPoller;
-import org.wikidata.query.rdf.tool.options.UpdateOptions;
-import org.wikidata.query.rdf.tool.rdf.Munger;
-import org.wikidata.query.rdf.tool.rdf.RdfRepository;
-import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
+import static org.wikidata.query.rdf.tool.options.OptionsUtils.handleOptions;
+import static org.wikidata.query.rdf.tool.options.OptionsUtils.mungerFromOptions;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDateFormat;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -24,10 +16,19 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static org.wikidata.query.rdf.tool.options.OptionsUtils.handleOptions;
-import static org.wikidata.query.rdf.tool.options.OptionsUtils.mungerFromOptions;
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDateFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.tool.change.Change;
+import org.wikidata.query.rdf.tool.change.IdListChangeSource;
+import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
+import org.wikidata.query.rdf.tool.change.RecentChangesPoller;
+import org.wikidata.query.rdf.tool.options.UpdateOptions;
+import org.wikidata.query.rdf.tool.rdf.Munger;
+import org.wikidata.query.rdf.tool.rdf.RdfRepository;
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * Update tool.

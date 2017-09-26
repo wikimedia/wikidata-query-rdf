@@ -98,6 +98,14 @@
     <module name="IllegalImport" />
     <module name="RedundantImport" />
     <module name="UnusedImports" />
+    <module name="ImportOrder">
+      <property name="option" value="top"/>
+      <property name="groups" value="/^java\./,javax,org,com,"/>
+      <property name="ordered" value="false"/>
+      <property name="caseSensitive" value="false"/>
+      <property name="separated" value="true"/>
+      <property name="sortStaticImportsAlphabetically" value="true"/>
+    </module>
 
 
     <!-- Common coding problems/opinionates stuff -->
