@@ -41,7 +41,7 @@ import com.google.common.collect.ImmutableSetMultimap;
  */
 // TODO fan out complexity
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-public class Updater<B extends Change.Batch> implements Runnable {
+public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(Updater.class);
 
     /**
@@ -161,6 +161,11 @@ public class Updater<B extends Change.Batch> implements Runnable {
                 break;
             }
         }
+    }
+
+    @Override
+    public void close() {
+        executor.shutdown();
     }
 
     /**

@@ -1,12 +1,12 @@
 package org.wikidata.query.rdf.tool;
 
+import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Files.newInputStream;
+import static java.nio.file.Files.newOutputStream;
 import static org.wikidata.query.rdf.tool.StreamUtils.utf8;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,10 +14,9 @@ import java.io.PrintStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import com.google.common.io.Files;
 
 /**
  * Utilities for command line scripts.
@@ -44,7 +43,7 @@ public final class CliUtils {
         }
         InputStream stream;
         if (!uri.contains(":/")) {
-            stream = new BufferedInputStream(new FileInputStream(uri));
+            stream = new BufferedInputStream(newInputStream(Paths.get(uri)));
         } else {
             stream = URI.create(uri).toURL().openStream();
         }
@@ -74,8 +73,8 @@ public final class CliUtils {
         if (out.equals("-")) {
             return ForbiddenOk.systemDotOut();
         }
-        Files.createParentDirs(new File(out));
-        OutputStream stream = new BufferedOutputStream(new FileOutputStream(out));
+        createDirectories(Paths.get(out));
+        OutputStream stream = new BufferedOutputStream(newOutputStream(Paths.get(out)));
         if (out.endsWith(".gz")) {
             stream = new GZIPOutputStream(stream);
         }

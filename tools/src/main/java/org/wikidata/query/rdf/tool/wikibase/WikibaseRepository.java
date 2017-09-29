@@ -146,45 +146,39 @@ public class WikibaseRepository {
      * @return
      */
     private static HttpRequestRetryHandler getRetryHandler(final int max) {
-        HttpRequestRetryHandler myRetryHandler = new HttpRequestRetryHandler() {
-            @Override
-            public boolean retryRequest(IOException exception, int executionCount,
-                    HttpContext context) {
-                log.debug("Exception: {} in attempt {}", exception, executionCount);
-                if (executionCount >= max) {
-                    // Do not retry if over max retry count
-                    return false;
-                }
-                if (exception instanceof InterruptedIOException) {
-                    // Timeout
-                    return true;
-                }
-                if (exception instanceof UnknownHostException) {
-                    // Unknown host
-                    return false;
-                }
-                if (exception instanceof ConnectTimeoutException) {
-                    // Connection refused
-                    return true;
-                }
-                if (exception instanceof SSLException) {
-                    // SSL handshake exception
-                    return false;
-                }
-
-                HttpClientContext clientContext = HttpClientContext.adapt(context);
-                HttpRequest request = clientContext.getRequest();
-                boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
-                if (idempotent) {
-                    // Retry if the request is considered idempotent
-                    return true;
-                }
-
+        return (exception, executionCount, context) -> {
+            log.debug("Exception in attempt {}", executionCount, exception);
+            if (executionCount >= max) {
+                // Do not retry if over max retry count
+                return false;
+            }
+            if (exception instanceof InterruptedIOException) {
+                // Timeout
+                return true;
+            }
+            if (exception instanceof UnknownHostException) {
+                // Unknown host
+                return false;
+            }
+            if (exception instanceof ConnectTimeoutException) {
+                // Connection refused
+                return true;
+            }
+            if (exception instanceof SSLException) {
+                // SSL handshake exception
                 return false;
             }
 
+            HttpClientContext clientContext = HttpClientContext.adapt(context);
+            HttpRequest request = clientContext.getRequest();
+            boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
+            if (idempotent) {
+                // Retry if the request is considered idempotent
+                return true;
+            }
+
+            return false;
         };
-        return myRetryHandler;
     }
 
     /**
@@ -473,7 +467,7 @@ public class WikibaseRepository {
          * @param continueObject Continue object from the last request
          * @param batchSize maximum number of results we want back from wikibase
          */
-        public URI recentChanges(Date startTime, JSONObject continueObject, int batchSize) {
+        public URI recentChanges(Date startTime, Map continueObject, int batchSize) {
             URIBuilder builder = apiBuilder();
             builder.addParameter("action", "query");
             builder.addParameter("list", "recentchanges");
@@ -649,6 +643,11 @@ public class WikibaseRepository {
 
     /**
      * Convert a DateFormat to always output in utc.
+     *
+     * Note that the DateFormat passed as a parameter is modified AND returned.
+     *
+     * @param df the DateFormat to modify
+     * @return the DateFormat that was passed as a parameter (useful for method chaining)
      */
     private static DateFormat utc(DateFormat df) {
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -674,6 +673,7 @@ public class WikibaseRepository {
      * @return Timestamp as date
      * @throws java.text.ParseException When data is in is wrong format
      */
+    @SuppressFBWarnings(value = "STT_STRING_PARSING_A_FIELD", justification = "low priority to fix")
     public Change getChangeFromContinue(Map<String, Object> nextContinue) throws java.text.ParseException {
         if (nextContinue == null) {
             return null;

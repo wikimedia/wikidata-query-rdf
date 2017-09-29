@@ -28,6 +28,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * of the previous poll, or, if there isn't a continue, then they start one
  * second after the last first start time.
  */
+@SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
 public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Batch> {
     private static final Logger log = LoggerFactory.getLogger(RecentChangesPoller.class);
 
@@ -183,7 +184,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
     /**
      * Batch implementation for this poller.
      */
-    public final class Batch extends Change.Batch.AbstractDefaultImplementation {
+    public static final class Batch extends Change.Batch.AbstractDefaultImplementation {
         /**
          * The date where we last left off.
          */
@@ -241,7 +242,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         public String leftOffHuman() {
             if (lastContinue != null) {
                 return WikibaseRepository.inputDateFormat().format(leftOffDate)
-                    + " (next: " + lastContinue.get("rccontinue").toString() + ")";
+                    + " (next: " + lastContinue.get("rccontinue") + ")";
             } else {
                 return WikibaseRepository.inputDateFormat().format(leftOffDate);
             }
@@ -252,6 +253,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
          * @param another
          * @return
          */
+        @SuppressFBWarnings(value = "OCP_OVERLY_CONCRETE_PARAMETER", justification = "Type seems semantically correct")
         public Batch merge(Batch another) {
             final ImmutableList<Change> newChanges = new ImmutableList.Builder<Change>()
                     .addAll(another.changes())

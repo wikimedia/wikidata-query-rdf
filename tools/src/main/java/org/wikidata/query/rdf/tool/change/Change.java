@@ -17,6 +17,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 /**
  * A change in an entity in Wikibase.
  */
+@SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
 public class Change implements Comparable<Change> {
     /**
      * Entity that changed.
@@ -106,8 +107,8 @@ public class Change implements Comparable<Change> {
             b.append('@').append(revision);
         }
         if (timestamp != null) {
-            b.append("@").append(WikibaseRepository.outputDateFormat().format(timestamp));
-            b.append("|").append(rcid);
+            b.append('@').append(WikibaseRepository.outputDateFormat().format(timestamp));
+            b.append('|').append(rcid);
         }
         return b.toString();
     }

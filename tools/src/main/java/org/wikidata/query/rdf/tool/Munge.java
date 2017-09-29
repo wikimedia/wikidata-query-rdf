@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool;
 
+import static java.lang.Boolean.FALSE;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.handleOptions;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.mungerFromOptions;
 import static org.wikidata.query.rdf.tool.StreamUtils.utf8;
@@ -286,6 +287,7 @@ public class Munge implements Runnable {
         }
 
         @Override
+        @SuppressFBWarnings(value = "STT_STRING_PARSING_A_FIELD", justification = "low priority to fix")
         public void handleStatement(Statement statement) throws RDFHandlerException {
             lastStatement = statement;
             String subject = statement.getSubject().stringValue();
@@ -499,6 +501,9 @@ public class Munge implements Runnable {
         }
 
         @Override
+        @SuppressFBWarnings(
+                value = "EXS_EXCEPTION_SOFTENING_NO_CHECKED",
+                justification = "Hiding IOException is suspicious, but seems to be the usual pattern in this project")
         protected Writer buildWriter(long chunk) {
             String file = String.format(Locale.ROOT, pattern, chunk);
             log.info("Switching to {}", file);
@@ -526,6 +531,9 @@ public class Munge implements Runnable {
         }
 
         @Override
+        @SuppressFBWarnings(
+                value = "EXS_EXCEPTION_SOFTENING_NO_CHECKED",
+                justification = "Hiding IOException is suspicious, but seems to be the usual pattern in this project")
         protected Writer buildWriter(long chunk) {
             PipedInputStream toQueue = new PipedInputStream();
             try {
@@ -607,7 +615,7 @@ public class Munge implements Runnable {
         private void setHandlerFromLastWriter() throws RDFHandlerException {
             final RDFWriter writer = Rio.createWriter(RDFFormat.TURTLE, lastWriter);
             final WriterConfig config = writer.getWriterConfig();
-            config.set(BasicWriterSettings.PRETTY_PRINT, false);
+            config.set(BasicWriterSettings.PRETTY_PRINT, FALSE);
             handler = new PrefixRecordingRdfHandler(writer, prefixes);
             for (Map.Entry<String, String> prefix : prefixes.entrySet()) {
                 handler.handleNamespace(prefix.getKey(), prefix.getValue());

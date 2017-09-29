@@ -285,7 +285,7 @@ public class RdfRepository implements AutoCloseable {
         try {
             return Resources.toString(url, Charsets.UTF_8);
         } catch (IOException e) {
-            throw new FatalException("Can't load " + url);
+            throw new FatalException("Can't load " + url, e);
         }
     }
 
@@ -419,7 +419,7 @@ public class RdfRepository implements AutoCloseable {
      * @return Number of triples modified.
      */
     public int syncFromChanges(Collection<Change> changes, boolean verifyResult) {
-        if (changes.size() == 0) {
+        if (changes.isEmpty()) {
             // no changes, we're done
             return 0;
         }
@@ -432,7 +432,7 @@ public class RdfRepository implements AutoCloseable {
 
         List<Statement> insertStatements = new ArrayList<>();
         List<Statement> entityStatements = new ArrayList<>();
-        Set<String> valueList = new HashSet<>();
+        Set<String> valueSet = new HashSet<>();
 
         for (final Change change : changes) {
             if (change.getStatements() == null) {
@@ -442,7 +442,7 @@ public class RdfRepository implements AutoCloseable {
             entityIds.add(change.entityId());
             insertStatements.addAll(change.getStatements());
             entityStatements.addAll(filtered(change.getStatements()).withSubject(uris.entity() + change.entityId()));
-            valueList.addAll(change.getCleanupList());
+            valueSet.addAll(change.getCleanupList());
         }
 
         if (entityIds.isEmpty()) {
@@ -465,9 +465,9 @@ public class RdfRepository implements AutoCloseable {
         aboutStatements.removeAll(filtered(insertStatements).withSubjectStarts(uris.reference()));
         b.bindValues("aboutStatements", aboutStatements);
 
-        if (!valueList.isEmpty()) {
+        if (!valueSet.isEmpty()) {
             UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
-            cleanup.bindUris("values", valueList);
+            cleanup.bindUris("values", valueSet);
             b.bind("cleanupQuery", cleanup.toString());
         }  else {
             b.bind("cleanupQuery", "");
@@ -578,7 +578,8 @@ public class RdfRepository implements AutoCloseable {
         UpdateBuilder b = new UpdateBuilder(getRevisions);
         StringBuilder values = new StringBuilder();
         for (Change entry: candidates) {
-            values.append("( <" + uris.entity() + entry.entityId() + "> " + entry.revision() + " )\n");
+            values.append("( <").append(uris.entity()).append(entry.entityId()).append("> ")
+                    .append(entry.revision()).append(" )\n");
         }
         b.bind("values", values.toString());
         b.bindUri("schema:version", SchemaDotOrg.VERSION);
@@ -603,6 +604,7 @@ public class RdfRepository implements AutoCloseable {
      *
      * @return the date or null if we have nowhere to start from
      */
+    @SuppressFBWarnings(value = "PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS", justification = "prefix() is called with different StringBuilders")
     public Date fetchLeftOffTime() {
         log.info("Checking for left off time from the updater");
         StringBuilder b = SchemaDotOrg.prefix(new StringBuilder());
@@ -816,6 +818,7 @@ public class RdfRepository implements AutoCloseable {
         }
 
         @Override
+        @SuppressFBWarnings(value = "PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS", justification = "more readable with 2 calls")
         public Integer parse(ContentResponse entity) throws IOException {
             Integer mutationCount = null;
             for (String line : entity.getContentAsString().split("\\r?\\n")) {

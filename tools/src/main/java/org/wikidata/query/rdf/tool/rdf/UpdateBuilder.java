@@ -140,7 +140,7 @@ public class UpdateBuilder {
             } else if (!l.getDatatype().equals(XMLSchema.STRING)) {
                 sb.append("^^<");
                 sb.append(l.getDatatype());
-                sb.append(">");
+                sb.append('>');
             }
 
             return sb.toString();

@@ -51,6 +51,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Munges RDF from Wikibase into a more queryable format. Note that this is
  * tightly coupled with Wikibase's export format.
@@ -194,7 +196,7 @@ public class Munger {
      * @param version Version to handle.
      * @param handler Handler.
      */
-    public void addFormatHandler(String version, FormatHandler handler) {
+    public final void addFormatHandler(String version, FormatHandler handler) {
         formatHandlers.put(version, handler);
     }
 
@@ -876,6 +878,7 @@ public class Munger {
         /**
          * Fetch the object from the current statement as a Literal.
          */
+        @SuppressFBWarnings(value = "LEST_LOST_EXCEPTION_STACK_TRACE", justification = "Cause is really not needed here.")
         private Literal objectAsLiteral() {
             try {
                 return (Literal) statement.getObject();

@@ -72,6 +72,8 @@ public final class Update {
         } catch (Exception e) {
             log.error("Error during updater run.", e);
             throw e;
+        } finally {
+            updater.close();
         }
     }
 
