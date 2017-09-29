@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.common.uri;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Uris wikibase uses that are relative to the wikibase instance.
  */
@@ -170,6 +172,7 @@ public class WikibaseUris {
     /**
      * Add the prefixes for all related uris.
      */
+    @SuppressFBWarnings(value = "CBX_CUSTOM_BUILT_XML", justification = "false positive - not actually XML")
     public StringBuilder prefixes(StringBuilder query) {
         query.append("PREFIX wdata: <").append(entityData).append(">\n");
         query.append("PREFIX wd: <").append(entity).append(">\n");
@@ -252,9 +255,10 @@ public class WikibaseUris {
      */
     public static WikibaseUris getURISystem() {
         if (uriSystem == null) {
-            if (System.getProperty(WIKIBASE_HOST_PROPERTY) != null) {
+            String wikibaseHostProperty = System.getProperty(WIKIBASE_HOST_PROPERTY);
+            if (wikibaseHostProperty != null) {
                 uriSystem = new WikibaseUris(
-                        System.getProperty(WIKIBASE_HOST_PROPERTY));
+                        wikibaseHostProperty);
             } else {
                 uriSystem = WIKIDATA;
             }

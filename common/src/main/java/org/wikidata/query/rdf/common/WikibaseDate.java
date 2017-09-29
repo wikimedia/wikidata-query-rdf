@@ -19,6 +19,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * Handles wikidata dates. Note that this ignores leap seconds. This isn't ok
  * but its what joda time does so it where we're starting.
  */
+@SuppressFBWarnings(value = "PL_PARALLEL_LISTS", justification = "SECONDS_PER_MONTH and SECONDS_PER_MONTH_CUMULATIVE make sense as separate arrays")
 public class WikibaseDate {
 //    private static final transient Logger log = LoggerFactory.getLogger(WikibaseDate.class);
 
@@ -304,8 +305,7 @@ public class WikibaseDate {
         result = prime * result + minute;
         result = prime * result + month;
         result = prime * result + second;
-        result = prime * result + (int) (year ^ (year >>> 32));
-        return result;
+        return prime * result + (int) (year ^ (year >>> 32));
     }
 
     @Override

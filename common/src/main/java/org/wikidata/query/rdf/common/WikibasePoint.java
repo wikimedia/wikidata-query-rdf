@@ -2,6 +2,8 @@ package org.wikidata.query.rdf.common;
 
 import java.util.Locale;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Representation of a coordinate point in Wikibase.
  */
@@ -123,6 +125,7 @@ public class WikibasePoint {
      * @param globe
      * @param order
      */
+    @SuppressFBWarnings(value = "CLI_CONSTANT_LIST_INDEX", justification = "array used as a pair")
     public WikibasePoint(String[] components, String globe, CoordinateOrder order) {
         if (order == CoordinateOrder.LAT_LONG) {
             latitude = components[0];
@@ -159,23 +162,23 @@ public class WikibasePoint {
      * @return String representation.
      */
     public String toOrder(CoordinateOrder order) {
-        final StringBuffer buf = new StringBuffer();
+        final StringBuilder buf = new StringBuilder();
         if (globe != null) {
-            buf.append("<");
+            buf.append('<');
             buf.append(globe);
             buf.append("> ");
         }
         buf.append("Point(");
         if (order == CoordinateOrder.LAT_LONG) {
             buf.append(latitude);
-            buf.append(" ");
+            buf.append(' ');
             buf.append(longitude);
         } else {
             buf.append(longitude);
-            buf.append(" ");
+            buf.append(' ');
             buf.append(latitude);
         }
-        buf.append(")");
+        buf.append(')');
         return buf.toString();
     }
 }
