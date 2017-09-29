@@ -5,7 +5,6 @@ import static java.util.Collections.unmodifiableSet;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,14 +25,17 @@ import com.bigdata.rdf.model.BigdataValue;
 import com.bigdata.rdf.model.BigdataValueFactory;
 import com.bigdata.util.InnerCause;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Abstract base class for implementing IExtension for multiple dataTypes.
  *
  * @param <V> Blazegraph value to expand. These are usually treated a bit
  *            roughly by Blazegraph - lots of rawtypes
  */
+@SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
 public abstract class AbstractMultiTypeExtension<V extends BigdataValue> implements IExtension<V> {
-    private static final Logger log = LoggerFactory.getLogger(WikibaseDateExtension.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractMultiTypeExtension.class);
 
     /**
      * IV to type map as resolved against resolver provided on construction.
@@ -45,7 +47,7 @@ public abstract class AbstractMultiTypeExtension<V extends BigdataValue> impleme
      */
     private final Set<BigdataURI> dataTypesSet;
 
-    public AbstractMultiTypeExtension(IDatatypeURIResolver resolver, List<URI> supportedDataTypes) {
+    public AbstractMultiTypeExtension(IDatatypeURIResolver resolver, Set<URI> supportedDataTypes) {
         @SuppressWarnings("rawtypes")
         Map<IV, BigdataURI> dataTypes = new HashMap<>();
         for (URI uri : supportedDataTypes) {
@@ -118,9 +120,10 @@ public abstract class AbstractMultiTypeExtension<V extends BigdataValue> impleme
      */
     @SuppressWarnings("rawtypes")
     protected BigdataURI resolveDataType(LiteralExtensionIV literal) {
-        BigdataURI dt = dataTypes.get(literal.getExtensionIV());
+        IV extensionIV = literal.getExtensionIV();
+        BigdataURI dt = dataTypes.get(extensionIV);
         if (dt == null) {
-            throw new IllegalArgumentException("Unrecognized datatype:  " + literal.getExtensionIV());
+            throw new IllegalArgumentException("Unrecognized datatype:  " + extensionIV);
         }
         return dt;
     }

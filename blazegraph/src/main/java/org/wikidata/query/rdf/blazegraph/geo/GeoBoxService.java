@@ -27,6 +27,7 @@ import com.bigdata.service.geospatial.GeoSpatial;
 import com.bigdata.service.geospatial.GeoSpatial.GeoFunction;
 
 import cutthecrap.utils.striterators.ICloseableIterator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static org.wikidata.query.rdf.blazegraph.geo.GeoUtils.pointFromIV;
 import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeConstant;
@@ -61,6 +62,7 @@ import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeConstant
  * The latter form automatically assigns point to the north to be NE corner and point
  * to the south to be SW corner.
  */
+@SuppressFBWarnings(value = "FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY", justification = "This should probably be fixed at some point")
 public class GeoBoxService extends GeoService {
 
     /**

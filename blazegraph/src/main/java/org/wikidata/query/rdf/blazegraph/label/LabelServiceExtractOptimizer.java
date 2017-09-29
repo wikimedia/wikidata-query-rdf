@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.blazegraph.label;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.bigdata.bop.BOp;
 import com.bigdata.bop.IBindingSet;
@@ -12,9 +13,8 @@ import com.bigdata.rdf.sparql.ast.StatementPatternNode;
 import com.bigdata.rdf.sparql.ast.StaticAnalysis;
 import com.bigdata.rdf.sparql.ast.eval.AST2BOpContext;
 import com.bigdata.rdf.sparql.ast.optimizers.AbstractJoinGroupOptimizer;
+import com.bigdata.rdf.sparql.ast.service.ServiceNode;
 import com.bigdata.rdf.store.BD;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * This class extracts label statements from label service's SERVICE clause.
@@ -29,7 +29,6 @@ public class LabelServiceExtractOptimizer extends AbstractJoinGroupOptimizer {
     public static final String EXTRACTOR_ANNOTATION = LabelServiceExtractOptimizer.class.getName() + ".extractedStatements";
 
     @Override
-    @SuppressFBWarnings(value = "EC_UNRELATED_CLASS_AND_INTERFACE", justification = "equals() is actually correct for some subtypes of BigdataValue")
     protected void optimizeJoinGroup(AST2BOpContext ctx, StaticAnalysis sa,
             IBindingSet[] bSets, JoinGroupNode op) {
         final QueryRoot root = sa.getQueryRoot();
@@ -38,24 +37,27 @@ public class LabelServiceExtractOptimizer extends AbstractJoinGroupOptimizer {
             return;
         }
 
-        LabelServiceUtils.getLabelServiceNodes(op).forEach(service -> {
-            JoinGroupNode g = (JoinGroupNode) service.getGraphPattern();
-            final List<StatementPatternNode> extractedNodes = new ArrayList<>();
-            for (BOp st : g.args()) {
-                StatementPatternNode sn = (StatementPatternNode) st;
-                if (sn.s().isConstant() && BD.SERVICE_PARAM.equals(sn.s().getValue())) {
-                    // skip parameters
-                    continue;
+        LabelServiceUtils.getLabelServiceNodes(op).forEach(new Consumer<ServiceNode>() {
+            @Override
+            public void accept(ServiceNode service) {
+                JoinGroupNode g = (JoinGroupNode) service.getGraphPattern();
+                final List<StatementPatternNode> extractedNodes = new ArrayList<>();
+                for (BOp st : g.args()) {
+                    StatementPatternNode sn = (StatementPatternNode) st;
+                    if (sn.s().isConstant() && BD.SERVICE_PARAM.equals(sn.s().getValue())) {
+                        // skip parameters
+                        continue;
+                    }
+                    extractedNodes.add(sn);
                 }
-                extractedNodes.add(sn);
-            }
 
-            for (BOp node: extractedNodes) {
-                g.removeArg(node);
-            }
+                for (BOp node : extractedNodes) {
+                    g.removeArg(node);
+                }
 
-            if (!extractedNodes.isEmpty()) {
-                service.annotations().put(EXTRACTOR_ANNOTATION, extractedNodes);
+                if (!extractedNodes.isEmpty()) {
+                    service.annotations().put(EXTRACTOR_ANNOTATION, extractedNodes);
+                }
             }
         });
     }

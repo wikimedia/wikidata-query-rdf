@@ -36,7 +36,7 @@ public class WikibaseOptimizers extends DefaultOptimizerList {
                 return;
             }
         }
-        throw new IllegalArgumentException("Cannot find placement for " + opt.getClass().toString());
+        throw new IllegalArgumentException("Cannot find placement for " + opt.getClass());
     }
 
     /**
@@ -51,6 +51,6 @@ public class WikibaseOptimizers extends DefaultOptimizerList {
                 return;
             }
         }
-        throw new IllegalArgumentException("Cannot find placement for " + opt.getClass().toString());
+        throw new IllegalArgumentException("Cannot find placement for " + opt.getClass());
     }
 }

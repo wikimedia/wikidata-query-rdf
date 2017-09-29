@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.label;
 
+import static java.lang.Boolean.TRUE;
+
 import com.bigdata.bop.IBindingSet;
 import com.bigdata.rdf.sparql.ast.JoinGroupNode;
 import com.bigdata.rdf.sparql.ast.QueryHints;
@@ -19,7 +21,7 @@ public class LabelServicePlacementOptimizer extends AbstractJoinGroupOptimizer {
             if (service.getProperty(QueryHints.RUN_LAST) != null || service.getProperty(QueryHints.RUN_FIRST) != null) {
                 return;
             }
-            service.setProperty(QueryHints.RUN_LAST, true);
+            service.setProperty(QueryHints.RUN_LAST, TRUE);
         });
     }
 }

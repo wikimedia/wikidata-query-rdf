@@ -62,7 +62,7 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
 
         if (components.length != 3)
             throw new GeoSpatialSearchException(
-                "Expected component string of lenth 2, but was " + components.length);
+                "Expected component string of lenth 3, but was " + components.length);
 
         String[] strComponents = new String[3];
         strComponents[0] = components[0].toString();
@@ -113,7 +113,7 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
     @Override
     public IV<?, ?> serializeCoordSystem(BigdataValueFactory vf, Object coordinateSystem) {
         // Returns URI with prefix, so you can match it with entities
-        return DummyConstantNode.toDummyIV(vf.createURI(URL_PREFIX + coordinateSystem.toString()));
+        return DummyConstantNode.toDummyIV(vf.createURI(URL_PREFIX + coordinateSystem));
     }
 
     @Override
@@ -135,8 +135,8 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
     }
 
     @Override
-    public IV<?, ?> serializeLocationAndTime(BigdataValueFactory arg0,
-            Object arg1, Object arg2, Object arg3) {
+    public IV<?, ?> serializeLocationAndTime(BigdataValueFactory vf, Object latitude,
+                                             Object longitude, Object time) {
         throw new IllegalArgumentException("Time fields are not supported for this format");
     }
 
@@ -146,7 +146,7 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
     }
 
     @Override
-    public IV<?, ?> serializeTime(BigdataValueFactory arg0, Object arg1) {
+    public IV<?, ?> serializeTime(BigdataValueFactory vf, Object time) {
         throw new IllegalArgumentException("Time fields are not supported for this format");
     }
 

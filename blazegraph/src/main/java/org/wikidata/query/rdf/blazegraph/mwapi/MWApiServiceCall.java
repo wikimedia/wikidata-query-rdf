@@ -48,12 +48,15 @@ import com.bigdata.rdf.sparql.ast.service.MockIVReturningServiceCall;
 import com.google.common.collect.Iterators;
 
 import cutthecrap.utils.striterators.ICloseableIterator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeConstant;
 
 /**
  * Instance of API service call.
  */
 @SuppressWarnings({"rawtypes", "unchecked", "checkstyle:classfanoutcomplexity"})
+@SuppressFBWarnings(value = "DMC_DUBIOUS_MAP_COLLECTION", justification = "while inputVars could be implemented as a list, the maps makes semantic sense.")
 public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServiceCall {
     private static final Logger log = LoggerFactory.getLogger(MWApiServiceCall.class);
 
@@ -195,7 +198,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
      */
     public IBindingSet[] parseResponse(InputStream responseStream,
             IBindingSet binding) throws SAXException, IOException, XPathExpressionException  {
-        if (outputVars.size() == 0) {
+        if (outputVars.isEmpty()) {
             return null;
         }
         Document doc = docBuilder.parse(responseStream);
@@ -322,7 +325,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                 req.send(listener);
                 response = listener.get(TIMEOUT, TimeUnit.SECONDS);
             } catch (ExecutionException | TimeoutException | InterruptedException e) {
-                throw new RuntimeException("MWAPI request failed " + e, e);
+                throw new RuntimeException("MWAPI request failed", e);
             }
             if (response.getStatus() != HttpStatus.OK_200) {
                 throw new RuntimeException("Bad response status: " + response.getStatus());
@@ -335,7 +338,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                 }
                 return Iterators.forArray(result);
             } catch (SAXException | IOException | XPathExpressionException e) {
-                throw new RuntimeException("Failed to parse response: " + e);
+                throw new RuntimeException("Failed to parse response", e);
             }
         }
 

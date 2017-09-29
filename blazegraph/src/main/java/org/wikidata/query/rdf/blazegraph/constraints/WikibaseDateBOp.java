@@ -167,7 +167,7 @@ public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMate
 
         final StringBuilder sb = new StringBuilder();
         sb.append(op());
-        sb.append("(").append(left()).append(")");
+        sb.append('(').append(left()).append(')');
         return sb.toString();
 
     }

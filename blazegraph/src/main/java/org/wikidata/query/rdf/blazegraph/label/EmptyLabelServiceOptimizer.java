@@ -45,7 +45,6 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
     private static final URI DESCRIPTION = new URIImpl(SchemaDotOrg.DESCRIPTION);
 
     @Override
-    @SuppressFBWarnings(value = "EC_UNRELATED_CLASS_AND_INTERFACE", justification = "equals() is actually correct for some subtypes of BigdataValue")
     protected void optimizeJoinGroup(AST2BOpContext ctx, StaticAnalysis sa, IBindingSet[] bSets, JoinGroupNode op) {
         final QueryRoot root = sa.getQueryRoot();
         if (root.getQueryType() == QueryType.ASK) {
@@ -63,10 +62,10 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
                 break;
             }
 
-            foundArg = restoreExtracted(service) || foundArg;
+            foundArg = EmptyLabelServiceOptimizer.this.restoreExtracted(service) || foundArg;
 
             if (!foundArg) {
-                addResolutions(ctx, g, root.getProjection());
+                EmptyLabelServiceOptimizer.this.addResolutions(ctx, g, root.getProjection());
             }
 
         });
@@ -117,7 +116,7 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
                     || addResolutionIfSuffix(ctx, g, "Label", RDFS.LABEL, var)
                     || addResolutionIfSuffix(ctx, g, "Description", DESCRIPTION, var);
             if (replaced && log.isDebugEnabled()) {
-                log.debug("Resolving " + var + " using a label lookup.");
+                log.debug("Resolving {} using a label lookup.", var);
             }
         }
     }
@@ -126,6 +125,9 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
      * Add the join group to resolve a variable if it matches a suffix,
      * returning true if it matched, false otherwise.
      */
+    @SuppressFBWarnings(
+            value = "OCP_OVERLY_CONCRETE_PARAMETER",
+            justification = "Using AST2BOpContext makes sense since it is the only type that will ever be passed")
     private boolean addResolutionIfSuffix(AST2BOpContext ctx, JoinGroupNode g, String suffix, URI labelType,
             IVariable<IV> var) {
         if (!var.getName().endsWith(suffix)) {

@@ -18,6 +18,8 @@ import com.bigdata.rdf.vocab.Vocabulary;
 import com.bigdata.service.geospatial.GeoSpatial;
 import com.bigdata.service.geospatial.GeoSpatial.GeoFunction;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Implements a service to do geospatial search.
  *
@@ -36,6 +38,7 @@ import com.bigdata.service.geospatial.GeoSpatial.GeoFunction;
  *   }
  * }
  */
+@SuppressFBWarnings(value = "FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY", justification = "This should probably be fixed at some point")
 public class GeoAroundService extends GeoService {
 
     /**

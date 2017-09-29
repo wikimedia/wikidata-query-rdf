@@ -145,7 +145,7 @@ public abstract class GeoService extends AbstractServiceFactory {
 
         List<StatementPatternNode> patterns = getStatementPatterns(serviceNode);
 
-        if (patterns.size() == 0) {
+        if (patterns.isEmpty()) {
             throw new IllegalArgumentException("This service requires arguments");
         }
 
@@ -202,6 +202,7 @@ public abstract class GeoService extends AbstractServiceFactory {
      * @param serviceNode
      * @return
      */
+    @SuppressFBWarnings(value = "OCP_OVERLY_CONCRETE_PARAMETER", justification = "ServiceNode is a good representation of the intent")
     protected List<StatementPatternNode> getStatementPatterns(final ServiceNode serviceNode) {
 
         final List<StatementPatternNode> statementPatterns =
@@ -220,7 +221,6 @@ public abstract class GeoService extends AbstractServiceFactory {
     }
 
     @Override
-    @SuppressFBWarnings(value = "EC_UNRELATED_CLASS_AND_INTERFACE", justification = "equals() is actually correct for some subtypes of BigdataValue")
     public Set<IVariable<?>> getRequiredBound(final ServiceNode serviceNode) {
         /**
          * This method extracts exactly those variables that are incoming,

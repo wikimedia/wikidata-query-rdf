@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.constraints;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Map;
@@ -15,6 +17,8 @@ import com.bigdata.rdf.internal.constraints.INeedsMaterialization;
 import com.bigdata.rdf.internal.constraints.IVValueExpression;
 import com.bigdata.rdf.model.BigdataLiteral;
 import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Implementation of URI decoder function.
@@ -44,10 +48,11 @@ public class DecodeUriBOp extends IVValueExpression<IV> implements INeedsMateria
     }
 
     @Override
+    @SuppressFBWarnings(value = "LEST_LOST_EXCEPTION_STACK_TRACE", justification = "SparqlTypeErrorException does not allow setting a cause")
     public IV get(final IBindingSet bs) throws SparqlTypeErrorException {
         final Literal lit = getAndCheckLiteralValue(0, bs);
         try {
-            final BigdataLiteral str = getValueFactory().createLiteral(URLDecoder.decode(lit.getLabel(), "UTF-8"));
+            final BigdataLiteral str = getValueFactory().createLiteral(URLDecoder.decode(lit.getLabel(), UTF_8.name()));
             return super.asIV(str, bs);
         } catch (UnsupportedEncodingException uee) {
             throw new SparqlTypeErrorException();

@@ -57,28 +57,25 @@ public class CategoriesStoredQuery extends SimpleStoredQueryService {
     @Override
     protected String getQuery(ServiceCallCreateParams createParams,
             ServiceParams serviceParams) {
-        final StringBuilder sb = new StringBuilder();
-
         final URI start = serviceParams.getAsURI(START_PARAM);
         final String direction = serviceParams.getAsString(DIRECTION_PARAM, "Reverse");
         final int depth = serviceParams.getAsInt(DEPTH_PARAM, MAX_DEPTH);
 
         // Fixed parts
-        sb.append("SELECT * WHERE {\n" +
+        return "SELECT * WHERE {\n" +
                 "SERVICE gas:service {\n" +
                 "     gas:program gas:gasClass \"com.bigdata.rdf.graph.analytics.BFS\" .\n" +
-                "     gas:program gas:linkType mediawiki:isInCategory .\n");
+                "     gas:program gas:linkType mediawiki:isInCategory .\n" +
         // Variable parts
-        sb.append("   gas:program gas:traversalDirection \"" + direction + "\" .\n" +
+                "   gas:program gas:traversalDirection \"" + direction + "\" .\n" +
                 "     gas:program gas:in <" + start.stringValue() + "> .\n" +
                 "     gas:program gas:out ?out .\n" +
                 "     gas:program gas:out1 ?depth .\n" +
                 "     gas:program gas:out2 ?predecessor .\n" +
-                "     gas:program gas:maxIterations " + depth + " .\n");
+                "     gas:program gas:maxIterations " + depth + " .\n" +
         // Fixed footer
-        sb.append("  }\n" +
-                "}");
-        return sb.toString();
+                "  }\n" +
+                "}";
     }
 
 }

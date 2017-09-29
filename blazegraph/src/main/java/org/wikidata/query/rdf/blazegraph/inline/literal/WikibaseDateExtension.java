@@ -1,8 +1,6 @@
 package org.wikidata.query.rdf.blazegraph.inline.literal;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -26,6 +24,9 @@ import com.bigdata.rdf.model.BigdataLiteral;
 import com.bigdata.rdf.model.BigdataURI;
 import com.bigdata.rdf.model.BigdataValue;
 import com.bigdata.rdf.model.BigdataValueFactory;
+import com.google.common.collect.ImmutableSet;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * This implementation of {@link com.bigdata.rdf.internal.IExtension} implements
@@ -46,8 +47,7 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
     /**
      * List of data types this extension can inline.
      */
-    private static final List<URI> SUPPORTED_DATA_TYPES = Collections.unmodifiableList(Arrays.asList(
-            XMLSchema.DATETIME, XMLSchema.DATE));
+    private static final Set<URI> SUPPORTED_DATA_TYPES = ImmutableSet.of(XMLSchema.DATETIME, XMLSchema.DATE);
 
     /**
      * Datatype factory cache.
@@ -158,7 +158,7 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
         }
     }
 
-    @SuppressWarnings({"rawtypes", "checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings({"rawtypes", "checkstyle:cyclomaticcomplexity", "checkstyle:NPathComplexity"})
     @Override
     public IV doMathOp(
             final Literal l1, final IV iv1,
@@ -180,7 +180,7 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
         LiteralExtensionIV liv2 = d2 ? normalizeIV(l2, iv2) : null;
 
         if (d1 && d2) {
-            return handleTwoDates(liv1, liv2, op, vf);
+            return handleTwoDates(liv1, liv2, op);
         }
 
         // Now we have one date and one duration
@@ -204,15 +204,13 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
      * @param iv1
      * @param iv2
      * @param op
-     * @param vf
      * @return
      */
     @SuppressWarnings("rawtypes")
     private IV handleTwoDates(
             final LiteralExtensionIV iv1,
             final LiteralExtensionIV iv2,
-            final MathOp op,
-            final BigdataValueFactory vf) {
+            final MathOp op) {
         long ts1 = iv1.getDelegate().longValue();
         long ts2 = iv2.getDelegate().longValue();
         switch (op) {
@@ -233,6 +231,7 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
      * @param iv
      * @return
      */
+    @SuppressFBWarnings(value = "PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS", justification = "more readable with 2 calls to getValue()")
     private BigdataURI getDataType(LiteralExtensionIV iv) {
         if (iv.hasValue() && iv.getValue() instanceof BigdataLiteral) {
             // Use dataType of cached value

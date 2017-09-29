@@ -92,7 +92,7 @@ public class WikibaseStyleStatementInlineUriHandler extends InlineURIHandler {
     @SuppressWarnings("rawtypes")
     private static AbstractLiteralIV inlineIvFrom(int signum, String localName) {
         int firstDash = localName.indexOf('-');
-        long entity = Long.valueOf(localName.substring(1, firstDash), 10);
+        long entity = Long.parseLong(localName.substring(1, firstDash), 10);
         try {
             UUID u = UUID.fromString(localName.substring(firstDash + 1));
             BigInteger i = BigInteger.valueOf(signum * entity);

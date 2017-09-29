@@ -60,6 +60,7 @@ import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
 import com.bigdata.rdf.store.BDS;
 
 import static com.bigdata.rdf.sparql.ast.FunctionRegistry.checkArgs;
+
 /**
  * Context listener to enact configurations we need on initialization.
  */
@@ -260,21 +261,17 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      * @return Factory to create WikibaseDistanceBOp
      */
     private static Factory getCornersBOPFactory(final WikibaseCornerBOp.Corners corner) {
-        return new Factory() {
-            @Override
-            public IValueExpression<? extends IV> create(final BOpContextBase context, final GlobalAnnotations globals,
-                    Map<String, Object> scalarValues, final ValueExpressionNode... args) {
+        return (context, globals, scalarValues, args) -> {
 
-                checkArgs(args, ValueExpressionNode.class, ValueExpressionNode.class);
+            checkArgs(args, ValueExpressionNode.class, ValueExpressionNode.class);
 
-                final IValueExpression<? extends IV> left = AST2BOpUtility.toVE(context,
-                        globals, args[0]);
+            final IValueExpression<? extends IV> left = AST2BOpUtility.toVE(context,
+                    globals, args[0]);
 
-                final IValueExpression<? extends IV> right = AST2BOpUtility
-                            .toVE(context, globals, args[1]);
+            final IValueExpression<? extends IV> right = AST2BOpUtility
+                        .toVE(context, globals, args[1]);
 
-                return new WikibaseCornerBOp(left, right, corner, globals);
-            }
+            return new WikibaseCornerBOp(left, right, corner, globals);
         };
     }
 
@@ -283,16 +280,13 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      * @return Factory to create DecodeUriBOp
      */
     private static Factory getDecodeUriBOpFactory() {
-        return new Factory() {
-            public IValueExpression<? extends IV> create(final BOpContextBase context, final GlobalAnnotations globals,
-                    Map<String, Object> scalarValues, final ValueExpressionNode... args) {
+        return (context, globals, scalarValues, args) -> {
 
-                checkArgs(args, ValueExpressionNode.class);
+            checkArgs(args, ValueExpressionNode.class);
 
-                final IValueExpression ve = AST2BOpUtility.toVE(context, globals, args[0]);
+            final IValueExpression ve = AST2BOpUtility.toVE(context, globals, args[0]);
 
-                return new DecodeUriBOp(ve, globals);
-            }
+            return new DecodeUriBOp(ve, globals);
         };
     }
 
@@ -301,16 +295,13 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      * @return Factory to create CoordinatePartBOp
      */
     private static Factory getCoordinatePartBOpFactory(final CoordinatePartBOp.Parts part) {
-        return new Factory() {
-            public IValueExpression<? extends IV> create(final BOpContextBase context, final GlobalAnnotations globals,
-                    Map<String, Object> scalarValues, final ValueExpressionNode... args) {
+        return (context, globals, scalarValues, args) -> {
 
-                checkArgs(args, ValueExpressionNode.class);
+            checkArgs(args, ValueExpressionNode.class);
 
-                final IValueExpression ve = AST2BOpUtility.toVE(context, globals, args[0]);
+            final IValueExpression ve = AST2BOpUtility.toVE(context, globals, args[0]);
 
-                return new CoordinatePartBOp(ve, part, globals);
-            }
+            return new CoordinatePartBOp(ve, part, globals);
         };
     }
 

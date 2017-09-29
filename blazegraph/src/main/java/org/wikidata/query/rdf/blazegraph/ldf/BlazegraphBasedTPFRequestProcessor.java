@@ -35,9 +35,7 @@ public class BlazegraphBasedTPFRequestProcessor extends
     }
 
     @Override
-    protected Worker getTPFSpecificWorker(
-            final ITriplePatternFragmentRequest<BigdataValue, String, String> req)
-                    throws IllegalArgumentException {
+    protected Worker getTPFSpecificWorker(final ITriplePatternFragmentRequest<BigdataValue, String, String> req) {
         return new Worker(req);
     }
 
@@ -51,7 +49,7 @@ public class BlazegraphBasedTPFRequestProcessor extends
             super(req);
         }
 
-        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
+        @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:NPathComplexity"})
         @Override
         protected ILinkedDataFragment createFragment(
                 final ITriplePatternElement<BigdataValue, String, String> s,
@@ -208,7 +206,7 @@ public class BlazegraphBasedTPFRequestProcessor extends
          */
         private final boolean checkO;
 
-        @SuppressWarnings({"checkstyle:localvariablename", "checkstyle:cyclomaticcomplexity"})
+        @SuppressWarnings({"checkstyle:localvariablename", "checkstyle:cyclomaticcomplexity", "checkstyle:NPathComplexity"})
         public VariablesBasedFilter(
                 final ITriplePatternElement<BigdataValue, String, String> s,
                 final ITriplePatternElement<BigdataValue, String, String> p,

@@ -45,7 +45,6 @@ import com.bigdata.striterator.IChunkedOrderedIterator;
 import com.google.common.collect.ImmutableSet;
 
 import cutthecrap.utils.striterators.ICloseableIterator;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Implements a "service" that resolves label like things in a way that doesn't
@@ -188,7 +187,6 @@ public class LabelService extends AbstractServiceFactory {
     /**
      * Create the resolutions list from the service call parameters.
      */
-    @SuppressFBWarnings(value = "EC_UNRELATED_CLASS_AND_INTERFACE", justification = "equals() is actually correct for some subtypes of BigdataValue")
     private List<Resolution> findResolutions(final ServiceNode params) {
         JoinGroupNode g = (JoinGroupNode) params.getGraphPattern();
         List<Resolution> resolutions = new ArrayList<>(g.args().size());
@@ -343,7 +341,7 @@ public class LabelService extends AbstractServiceFactory {
             try {
                 return ((VarNode) st.o()).getValueExpression();
             } catch (ClassCastException e) {
-                throw new RuntimeException("Expected a variable in the object position to which to bind the language.");
+                throw new RuntimeException("Expected a variable in the object position to which to bind the language.", e);
             }
         }
     }
@@ -521,7 +519,7 @@ public class LabelService extends AbstractServiceFactory {
                 return (IV) resolved;
             } catch (ClassCastException e) {
                 throw new RuntimeException(String.format(Locale.ROOT,
-                        "Expected %s (%s) to be bound to an IV but it wasn't.", nameOfExpression, expression));
+                        "Expected %s (%s) to be bound to an IV but it wasn't.", nameOfExpression, expression), e);
             }
         }
 
