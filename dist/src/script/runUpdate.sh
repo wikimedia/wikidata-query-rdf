@@ -17,6 +17,7 @@ GC_LOGS="-Xloggc:/var/log/wdqs/wdqs-updater_jvm_gc.%p.log \
          -XX:+UseGCLogFileRotation \
          -XX:NumberOfGCLogFiles=10 \
          -XX:GCLogFileSize=20M"
+EXTRA_JVM_OPTS=${EXTRA_JVM_OPTS:-""}
 LOG_CONFIG=${LOG_CONFIG:-""}
 NAMESPACE=wdq
 UPDATER_OPTS=${UPDATER_OPTS:-""}
@@ -68,4 +69,6 @@ MAIN=org.wikidata.query.rdf.tool.Update
 SPARQL_URL=$HOST/$CONTEXT/namespace/$NAMESPACE/sparql
 AGENT=-javaagent:lib/jolokia-jvm-1.3.1-agent.jar=port=8778,host=localhost
 echo "Updating via $SPARQL_URL"
-exec java -cp $CP $MEMORY $GC_LOGS $LOG_OPTIONS $TIMEOUT_ARG $AGENT ${UPDATER_OPTS} $MAIN $ARGS --sparqlUrl $SPARQL_URL "$@"
+exec java -cp ${CP} ${MEMORY} ${GC_LOGS} ${LOG_OPTIONS} ${EXTRA_JVM_OPTS} \
+     ${TIMEOUT_ARG} ${AGENT} ${UPDATER_OPTS} \
+     ${MAIN} ${ARGS} --sparqlUrl ${SPARQL_URL} "$@"
