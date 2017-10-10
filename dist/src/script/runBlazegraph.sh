@@ -21,6 +21,7 @@ GC_LOGS=${GC_LOGS:-"-Xloggc:/var/log/wdqs/wdqs-blazegraph_jvm_gc.%p.log \
          -XX:+UseGCLogFileRotation \
          -XX:NumberOfGCLogFiles=10 \
          -XX:GCLogFileSize=20M"}
+EXTRA_JVM_OPTS=${EXTRA_JVM_OPTS:-""}
 BLAZEGRAPH_OPTS=${BLAZEGRAPH_OPTS:-""}
 CONFIG_FILE=${CONFIG_FILE:-"RWStore.properties"}
 DEBUG=-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n
@@ -60,7 +61,7 @@ fi
 
 echo "Running Blazegraph from `pwd` on :$PORT/$CONTEXT"
 exec java \
-     -server -XX:+UseG1GC ${MEMORY} ${DEBUG} ${GC_LOGS} ${LOG_OPTIONS} \
+     -server -XX:+UseG1GC ${MEMORY} ${DEBUG} ${GC_LOGS} ${LOG_OPTIONS} ${EXTRA_JVM_OPTS} \
      -Dcom.bigdata.rdf.sail.webapp.ConfigParams.propertyFile=${CONFIG_FILE} \
      -Dorg.eclipse.jetty.server.Request.maxFormContentSize=200000000 \
      -Dcom.bigdata.rdf.sparql.ast.QueryHints.analytic=true \
