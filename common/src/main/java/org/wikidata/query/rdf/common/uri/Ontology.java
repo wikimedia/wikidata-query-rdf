@@ -81,11 +81,27 @@ public final class Ontology {
      * Prefix for wiki group.
      */
     public static final String WIKIGROUP = NAMESPACE + "wikiGroup";
+    /**
+     * Badge sitelink property.
+     */
+    public static final String BADGE = NAMESPACE + "badge";
+    /**
+     * Statements count.
+     */
+    public static final String STATEMENTS = NAMESPACE + "statements";
+    /**
+     * Sitelinks count.
+     */
+    public static final String SITELINKS = NAMESPACE + "sitelinks";
 
     /**
      * Predicates used to describe a time.
      */
     public static final class Time {
+        /**
+         * wikibase:TimeValue type.
+         */
+        public static final String TYPE = NAMESPACE + "TimeValue";
         /**
          * Common prefix of all time predicates.
          */
@@ -124,6 +140,10 @@ public final class Ontology {
      */
     public static final class Geo {
         /**
+         * wikibase:GlobecoordinateValue type.
+         */
+        public static final String TYPE = NAMESPACE + "GlobecoordinateValue";
+        /**
          * Common prefix of all geo predicates.
          */
         private static final String PREFIX = NAMESPACE + "geo";
@@ -156,6 +176,10 @@ public final class Ontology {
      * Predicates used to describe a quantity.
      */
     public static final class Quantity {
+        /**
+         * wikibase:QuantityValue type.
+         */
+        public static final String TYPE = NAMESPACE + "QuantityValue";
         /**
          * Common prefix of all quantity predicates.
          */

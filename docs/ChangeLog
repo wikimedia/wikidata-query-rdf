@@ -1,3 +1,7 @@
+0.3.0
+-----
+Add more URIs used by Wikibase to vocabulary (requires data reload)
+
 0.2.5
 -----
 Add Mediawiki API service

@@ -14,9 +14,10 @@ import org.wikidata.query.rdf.common.uri.Ontology.Time;
 import com.bigdata.rdf.vocab.BaseVocabularyDecl;
 
 /**
- * Vocabulary containing the URIs from
+ * Additonal vocabulary containing the URIs from
  * {@linkplain org.wikidata.query.rdf.common.uri.Ontology} that are imported
  * into Blazegraph.
+ * @see OntologyVocabularyDecl2
  */
 public class OntologyVocabularyDecl extends BaseVocabularyDecl {
     public OntologyVocabularyDecl() {

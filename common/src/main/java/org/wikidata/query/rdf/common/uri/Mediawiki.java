@@ -16,6 +16,10 @@ public final class Mediawiki {
      * mediawiki:isInCategory predicate.
      */
     public static final String IS_IN_CATEGORY = NAMESPACE + "isInCategory";
+    /**
+     * mwapi: Mediawiki API prefix.
+     */
+    public static final String API = NAMESPACE + "API/";
 
     private Mediawiki() {
         // Utility class.

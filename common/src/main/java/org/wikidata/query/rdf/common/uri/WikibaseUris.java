@@ -1,5 +1,9 @@
 package org.wikidata.query.rdf.common.uri;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
@@ -34,13 +38,17 @@ public class WikibaseUris {
          */
         DIRECT("wdt", "direct/"),
         /**
+         * Truthy normalized predicate.
+         */
+        DIRECT_NORMALIZED("wdtn", "direct-normalized/"),
+        /**
          * Statement->Value (wdv:xxx).
          */
         STATEMENT_VALUE("psv", "statement/value/"),
         /**
          * Statement->Normalized Value (wdv:xxx).
          */
-        // STATEMENT_VALUE_NORMALIZED ("psn", "statement/value-normalized/"),
+        STATEMENT_VALUE_NORMALIZED("psn", "statement/value-normalized/"),
         /**
          * Statement-> Simple Value.
          */
@@ -52,7 +60,7 @@ public class WikibaseUris {
         /**
          * Statement->Qualifier Normalized Value (wdv:xxx).
          */
-        // QUALIFIER_VALUE_NORMALIZED ("pqn", "qualifier/value-normalized/"),
+        QUALIFIER_VALUE_NORMALIZED("pqn", "qualifier/value-normalized/"),
         /**
          * Statement-> Simple Qualifier Value.
          */
@@ -64,7 +72,7 @@ public class WikibaseUris {
         /**
          * Reference->Normalized Value (wdv:xxx).
          */
-        // REFERENCE_VALUE_NORMALIZED ("prn", "reference/value-normalized/"),
+        REFERENCE_VALUE_NORMALIZED("prn", "reference/value-normalized/"),
         /**
          * Reference->Simple Value.
          */
@@ -107,6 +115,42 @@ public class WikibaseUris {
          */
         protected String suffix() {
             return suffix;
+        }
+
+        /**
+         * Get the list of property suffixes as list of strings.
+         * @return
+         */
+        public static List<String> suffixes() {
+            return suffixes(values());
+        }
+
+        /**
+         * Get the list of property suffixes as list of strings.
+         * @return
+         */
+        public static List<String> suffixes(PropertyType[] values) {
+            return Stream.of(values).map(v -> v.suffix)
+                    .collect(Collectors.toList());
+        }
+
+        /**
+         * Types list as it was in V001 dictionary.
+         * Used for BC. V002 has the same set, but V003 is different.
+         * @return
+         */
+        public static PropertyType[] V001() {
+            return new PropertyType[] {
+                DIRECT,
+                STATEMENT_VALUE,
+                STATEMENT,
+                QUALIFIER_VALUE,
+                QUALIFIER,
+                REFERENCE_VALUE,
+                REFERENCE,
+                NOVALUE,
+                CLAIM
+            };
         }
     };
 
@@ -244,11 +288,17 @@ public class WikibaseUris {
     }
 
     /**
-     * Uri prefix wikibase uses for qualifiers. They are of the form
-     * qualifier:%entity id of the property%(-value)?.
+     * Uri prefix wikibase uses for property types.
      */
     public String property(PropertyType p) {
         return prop + p.suffix();
+    }
+
+    /**
+     * Uri prefix wikibase uses for property types, from short suffix.
+     */
+    public String property(String suffix) {
+        return prop + suffix;
     }
 
     /**

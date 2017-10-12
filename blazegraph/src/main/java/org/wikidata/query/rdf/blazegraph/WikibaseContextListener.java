@@ -25,6 +25,7 @@ import org.wikidata.query.rdf.blazegraph.geo.GeoService;
 import org.wikidata.query.rdf.blazegraph.label.LabelService;
 import org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory;
 import org.wikidata.query.rdf.common.uri.GeoSparql;
+import org.wikidata.query.rdf.common.uri.Mediawiki;
 import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
@@ -204,6 +205,9 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         defaultDecls.put("owl", OWL.NAMESPACE);
         defaultDecls.put("geo", GeoSparql.NAMESPACE);
         defaultDecls.put("geof", GeoSparql.FUNCTION_NAMESPACE);
+        defaultDecls.put("mediawiki", Mediawiki.NAMESPACE);
+        defaultDecls.put("mwapi", Mediawiki.API);
+        defaultDecls.put("gas", GASService.Options.NAMESPACE);
     }
 
     @Override
