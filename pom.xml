@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>7</version>
+        <groupId>org.wikimedia.discovery</groupId>
+        <artifactId>discovery-parent-pom</artifactId>
+        <version>1.6</version>
     </parent>
     <groupId>org.wikidata.query.rdf</groupId>
     <artifactId>parent</artifactId>
@@ -34,10 +34,6 @@
         </developer>
     </developers>
 
-    <prerequisites>
-        <maven>3.3.1</maven>
-    </prerequisites>
-
     <modules>
         <module>testTools</module>
         <module>common</module>
@@ -49,7 +45,7 @@
 
     <scm>
         <connection>scm:git:https://gerrit.wikimedia.org/r/wikidata/query/rdf</connection>
-        <developerConnection>scm:git:https://gerrit.wikimedia.org/r/wikidata/query/rdf</developerConnection>
+        <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikidata/query/rdf</developerConnection>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/wikidata/query/rdf</url>
     </scm>
 
@@ -58,23 +54,11 @@
         <url><![CDATA[https://phabricator.wikimedia.org/maniphest/?statuses=open%2Cstalled&allProjects=PHID-PROJ-ceqceb2bnio6alj5nxov#R]]></url>
     </issueManagement>
 
-    <distributionManagement>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
-
     <properties>
         <blazegraph.version>2.1.5-SNAPSHOT</blazegraph.version>
         <jackson.version>2.2.3</jackson.version>
         <jetty.version>9.2.3.v20140905</jetty.version>
         <logback.version>1.2.3</logback.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sesame.version>2.7.12</sesame.version>
         <slf4j.version>1.7.10</slf4j.version>
     </properties>
@@ -229,16 +213,6 @@
                 <groupId>com.github.rholder</groupId>
                 <artifactId>guava-retrying</artifactId>
                 <version>2.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>findbugs-annotations</artifactId>
-                <version>3.0.1</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>jsr305</artifactId>
-                <version>3.0.2</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
@@ -598,12 +572,6 @@
                 <version>1.3</version>
                 <scope>test</scope>
             </dependency>
-            <!-- dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-all</artifactId>
-        <version>1.9.5</version>
-        <scope>test</scope>
-      </dependency -->
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
@@ -767,175 +735,50 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>3.0.0</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>2.17</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>com.puppycrawl.tools</groupId>
-                            <artifactId>checkstyle</artifactId>
-                            <version>7.6.1</version>
-                        </dependency>
-                    </dependencies>
-                    <executions>
-                        <execution>
-                            <id>validate</id>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                            <phase>test</phase>
-                            <configuration>
-                                <configLocation>${project.parent.basedir}/src/build/checkstyle/checkstyle.xml</configLocation>
-                                <propertyExpansion>checkstyle.suppressions=${project.parent.basedir}/src/build/checkstyle/suppressions.xml</propertyExpansion>
-                                <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                                <encoding>UTF-8</encoding>
-                                <consoleOutput>true</consoleOutput>
-                                <failsOnError>true</failsOnError>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.0.0</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.6.1</version>
-                    <configuration>
-                        <source>1.8</source>
-                        <target>1.8</target>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.0.0</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <version>2.8.2</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>1.4.1</version>
-                    <configuration>
-                        <rules>
-                            <requireMavenVersion>
-                                <version>3.3.1</version>
-                            </requireMavenVersion>
-                        </rules>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-install-plugin</artifactId>
-                    <version>2.5.2</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.0.2</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.10.4</version>
-                    <executions>
-                        <execution>
-                            <id>attach-javadocs</id>
-                            <goals>
-                                <goal>jar</goal>
-                            </goals>
-                            <configuration>
-                                <quiet>true</quiet>
-                                <!-- We don't want Java 8's strict javadoc checking so we use this trick borrowed from dropwizard to turn
-                  it off -->
-                                <additionalparam>${javadoc.doclint.none}</additionalparam>
-                                <excludePackageNames>com.bigdata.rdf.internal</excludePackageNames>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <version>2.5.3</version>
                     <configuration>
-                        <pushChanges>false</pushChanges>
-                        <autoVersionSubmodules>true</autoVersionSubmodules>
-                        <useReleaseProfile>false</useReleaseProfile>
-                        <releaseProfiles>release</releaseProfiles>
-                        <goals>deploy</goals>
+                        <excludePackageNames>com.bigdata.rdf.internal</excludePackageNames>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.0.2</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-site-plugin</artifactId>
-                    <version>3.6</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>3.0.1</version>
-                    <executions>
-                        <execution>
-                            <id>attach-sources</id>
-                            <goals>
-                                <goal>jar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.20</version>
                     <configuration>
                         <skipTests>true</skipTests>
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-war-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <groupId>org.basepom.maven</groupId>
+                    <artifactId>duplicate-finder-maven-plugin</artifactId>
+                    <configuration>
+                        <ignoredDependencies>
+                            <!--
+                the following dependencies are problematic but non trivial to
+                clean, it will come in a second time...
+              -->
+                            <dependency>
+                                <groupId>colt</groupId>
+                                <artifactId>colt</artifactId>
+                            </dependency>
+                            <dependency>
+                                <groupId>commons-beanutils</groupId>
+                                <artifactId>commons-beanutils</artifactId>
+                            </dependency>
+                            <dependency>
+                                <groupId>commons-beanutils</groupId>
+                                <artifactId>commons-beanutils-core</artifactId>
+                            </dependency>
+                            <dependency>
+                                <groupId>stax</groupId>
+                                <artifactId>stax-api</artifactId>
+                            </dependency>
+                            <dependency>
+                                <groupId>xml-apis</groupId>
+                                <artifactId>xml-apis</artifactId>
+                            </dependency>
+                        </ignoredDependencies>
+                    </configuration>
                 </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>exec-maven-plugin</artifactId>
-                    <version>1.6.0</version>
-                </plugin>
-                <!-- plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>findbugs-maven-plugin</artifactId>
-          <version>3.0.4</version>
-          <configuration>
-            <effort>high</effort>
-            <threshold>low</threshold>
-          </configuration>
-          <executions>
-            <execution>
-              <id>findbugs-check</id>
-              <goals>
-                <goal>check</goal>
-              </goals>
-              <phase>verify</phase>
-            </execution>
-          </executions>
-        </plugin -->
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>properties-maven-plugin</artifactId>
@@ -974,167 +817,12 @@
                         </systemProperties>
                     </configuration>
                 </plugin>
-                <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nexus-staging-maven-plugin</artifactId>
-                    <version>1.6.8</version>
-                    <extensions>true</extensions>
-                    <configuration>
-                        <serverId>ossrh</serverId>
-                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                    </configuration>
-                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
             <plugin>
-                <groupId>com.github.ekryd.sortpom</groupId>
-                <artifactId>sortpom-maven-plugin</artifactId>
-                <!-- version 2.5.0 is compiled with Java 8 as target class format -->
-                <version>2.4.0</version>
-                <configuration>
-                    <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
-                    <sortDependencies>scope,groupId,artifactId</sortDependencies>
-                    <sortPlugins>groupId,artifactId</sortPlugins>
-                    <lineSeparator>\n</lineSeparator>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                    <sortProperties>true</sortProperties>
-                    <keepBlankLines>true</keepBlankLines>
-                    <nrOfIndentSpace>2</nrOfIndentSpace>
-                    <verifyFail>Stop</verifyFail>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>verify</goal>
-                        </goals>
-                        <phase>verify</phase>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.github.ekryd.sortpom</groupId>
-                <artifactId>sortpom-maven-plugin</artifactId>
-                <version>2.8.0</version>
-                <configuration>
-                    <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
-                    <sortDependencies>scope,groupId,artifactId</sortDependencies>
-                    <sortPlugins>groupId,artifactId</sortPlugins>
-                    <lineSeparator>\n</lineSeparator>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                    <sortProperties>true</sortProperties>
-                    <keepBlankLines>true</keepBlankLines>
-                    <nrOfIndentSpace>4</nrOfIndentSpace>
-                    <verifyFail>Stop</verifyFail>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>verify</goal>
-                        </goals>
-                        <phase>verify</phase>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>de.thetaphi</groupId>
-                <artifactId>forbiddenapis</artifactId>
-                <version>2.3</version>
-                <configuration>
-                    <targetVersion>1.8</targetVersion>
-                    <failOnMissingClasses>false</failOnMissingClasses>
-                    <bundledSignatures>
-                        <!-- This will automatically choose the right signatures based on 'maven.compiler.target': -->
-                        <bundledSignature>jdk-unsafe</bundledSignature>
-                        <bundledSignature>jdk-deprecated</bundledSignature>
-                        <bundledSignaure>jdk-system-out</bundledSignaure>
-                        <bundledSignaure>jdk-non-portable</bundledSignaure>
-                    </bundledSignatures>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>check-forbidden-apis</id>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <phase>compile</phase>
-                        <configuration>
-                            <signaturesFiles>
-                                <signaturesFile>${project.parent.basedir}/src/build/forbidden/all.txt</signaturesFile>
-                                <signaturesFile>${project.parent.basedir}/src/build/forbidden/core.txt</signaturesFile>
-                            </signaturesFiles>
-                            <excludes>
-                                <!-- Some portions of the project need access to System.out and things so we contain them in inner classes
-                  of this form. -->
-                                <exclude>**/*$ForbiddenOk**.class</exclude>
-                            </excludes>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>check-forbidden-test-apis</id>
-                        <goals>
-                            <goal>testCheck</goal>
-                        </goals>
-                        <phase>test-compile</phase>
-                        <configuration>
-                            <signaturesFiles>
-                                <signaturesFile>${project.parent.basedir}/src/build/forbidden/all.txt</signaturesFile>
-                                <signaturesFile>${project.parent.basedir}/src/build/forbidden/test.txt</signaturesFile>
-                            </signaturesFiles>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.basepom.maven</groupId>
-                <artifactId>duplicate-finder-maven-plugin</artifactId>
-                <version>1.2.1</version>
-                <configuration>
-                    <failBuildInCaseOfDifferentContentConflict>true</failBuildInCaseOfDifferentContentConflict>
-                    <failBuildInCaseOfEqualContentConflict>false</failBuildInCaseOfEqualContentConflict>
-                    <failBuildInCaseOfConflict>false</failBuildInCaseOfConflict>
-                    <ignoredDependencies>
-                        <!--
-              the following dependencies are problematic but non trivial to
-              clean, it will come in a second time...
-            -->
-                        <dependency>
-                            <groupId>colt</groupId>
-                            <artifactId>colt</artifactId>
-                        </dependency>
-                        <dependency>
-                            <groupId>commons-beanutils</groupId>
-                            <artifactId>commons-beanutils</artifactId>
-                        </dependency>
-                        <dependency>
-                            <groupId>commons-beanutils</groupId>
-                            <artifactId>commons-beanutils-core</artifactId>
-                        </dependency>
-                        <dependency>
-                            <groupId>stax</groupId>
-                            <artifactId>stax-api</artifactId>
-                        </dependency>
-                        <dependency>
-                            <groupId>xml-apis</groupId>
-                            <artifactId>xml-apis</artifactId>
-                        </dependency>
-                    </ignoredDependencies>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>duplicate-classes-check</id>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <phase>verify</phase>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.4</version>
+                <groupId>com.carrotsearch.randomizedtesting</groupId>
+                <artifactId>junit4-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
@@ -1191,94 +879,6 @@
                         </plugin>
                     </plugins>
                 </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-            <id>java-8</id>
-            <activation>
-                <jdk>[1.8,)</jdk>
-            </activation>
-            <properties>
-                <javadoc.doclint.none>-Xdoclint:none</javadoc.doclint.none>
-            </properties>
-        </profile>
-        <profile>
-            <id>noVerify</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>de.thetaphi</groupId>
-                        <artifactId>forbiddenapis</artifactId>
-                        <executions>
-                            <execution>
-                                <id>check-forbidden-apis</id>
-                                <phase>none</phase>
-                            </execution>
-                            <execution>
-                                <id>check-forbidden-test-apis</id>
-                                <phase>none</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-checkstyle-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>validate</id>
-                                <phase>none</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>release</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                                <phase>verify</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>deploy-archiva</id>
-            <distributionManagement>
-                <repository>
-                    <id>wikimedia.releases</id>
-                    <name>Wikimedia Release Repository</name>
-                    <url>https://archiva.wikimedia.org/repository/releases/</url>
-                </repository>
-                <snapshotRepository>
-                    <id>wikimedia.snapshots</id>
-                    <name>Wikimedia Snapshot Repository</name>
-                    <url>https://archiva.wikimedia.org/repository/snapshots/</url>
-                </snapshotRepository>
-            </distributionManagement>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>2.18.1</version>
-                        <configuration>
-                            <skipTests>true</skipTests>
-                        </configuration>
-                    </plugin>
-                </plugins>
             </build>
         </profile>
     </profiles>
