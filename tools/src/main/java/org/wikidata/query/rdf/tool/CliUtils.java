@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.tool;
 
+import de.thetaphi.forbiddenapis.SuppressForbidden;
+
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.newInputStream;
 import static java.nio.file.Files.newOutputStream;
@@ -89,6 +91,7 @@ public final class CliUtils {
      * Methods on this class are public but a fairy dies every time you abuse
      * them.
      */
+    @SuppressForbidden
     public static class ForbiddenOk {
         /**
          * Get System.in. CliTools should be allowed to use System.in/out/err.

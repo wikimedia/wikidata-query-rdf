@@ -25,6 +25,8 @@ import org.openrdf.query.TupleQueryResult;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 /**
  * Does lots of simultaneous IO and state mutation on multiple namespaces.
  */
@@ -35,7 +37,9 @@ public class IOBlastingIntegrationTest extends AbstractUpdaterIntegrationTestBas
     private static final int MAX_STATEMENTS_PER_NAMESPACE = 100;
     private static final int TOTAL_NAMESPACES = 20;
 
-    private final ExecutorService pool = Executors.newFixedThreadPool(TOTAL_NAMESPACES);
+    private final ExecutorService pool = Executors.newFixedThreadPool(
+            TOTAL_NAMESPACES,
+            new ThreadFactoryBuilder().setNameFormat("IO-Blasting-%d").build());
     private List<Future<IOBlasterResults>> resultses = new ArrayList<>();
 
     @Before

@@ -37,6 +37,8 @@ import org.wikidata.query.rdf.tool.Munge.OutputPicker;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 /**
  * Tests the munger that loads dumps.
  */
@@ -62,7 +64,7 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
         queue.put(toHttp);
         Munge.Httpd httpd = new Httpd(10999, queue);
         Munger munger = new Munger(uris()).singleLabelMode("en");
-        ExecutorService executor = Executors.newFixedThreadPool(1);
+        ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Munge-IT-%d").build());
         Future<?> f = executor.submit(new Munge(uris(), munger, from, to));
         httpd.start();
         try {

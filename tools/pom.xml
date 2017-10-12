@@ -55,6 +55,11 @@
       <artifactId>nanohttpd</artifactId>
     </dependency>
     <dependency>
+      <groupId>de.thetaphi</groupId>
+      <artifactId>forbiddenapis</artifactId>
+      <version>2.3</version>
+    </dependency>
+    <dependency>
       <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-core</artifactId>
     </dependency>

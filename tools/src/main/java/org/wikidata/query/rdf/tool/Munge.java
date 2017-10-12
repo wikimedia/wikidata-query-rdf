@@ -47,6 +47,7 @@ import org.wikidata.query.rdf.tool.rdf.PrefixRecordingRdfHandler;
 
 import com.codahale.metrics.Meter;
 
+import de.thetaphi.forbiddenapis.SuppressForbidden;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import fi.iki.elonen.NanoHTTPD;
 
@@ -627,6 +628,7 @@ public class Munge implements Runnable {
      * We need access to getMessage from exceptions. This is brittle but
      * (hopefully) temporary.
      */
+    @SuppressForbidden
     private static class ForbiddenOk {
         /**
          * TurtleParser that tries to recover from errors we see in wikibase.
