@@ -5,6 +5,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 /**
  * Uris wikibase uses that are relative to the wikibase instance.
  */
+@SuppressFBWarnings(
+        value = "FCBL_FIELD_COULD_BE_LOCAL",
+        justification = "keeping `rootHttps` as an instance variable to be coherent with other fields")
 public class WikibaseUris {
     /**
      * A WikibaseUris instance for wikidata.org.
