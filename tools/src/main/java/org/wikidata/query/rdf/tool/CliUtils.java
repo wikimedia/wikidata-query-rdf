@@ -16,6 +16,7 @@ import java.io.PrintStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -75,8 +76,13 @@ public final class CliUtils {
         if (out.equals("-")) {
             return ForbiddenOk.systemDotOut();
         }
-        createDirectories(Paths.get(out).getParent());
-        OutputStream stream = new BufferedOutputStream(newOutputStream(Paths.get(out)));
+        Path path = Paths.get(out);
+        Path parent = path.getParent();
+        if (parent == null) {
+            throw new IllegalArgumentException("Invalid path: " + out);
+        }
+        createDirectories(parent);
+        OutputStream stream = new BufferedOutputStream(newOutputStream(path));
         if (out.endsWith(".gz")) {
             stream = new GZIPOutputStream(stream);
         }
