@@ -75,7 +75,7 @@ public final class CliUtils {
         if (out.equals("-")) {
             return ForbiddenOk.systemDotOut();
         }
-        createDirectories(Paths.get(out));
+        createDirectories(Paths.get(out).getParent());
         OutputStream stream = new BufferedOutputStream(newOutputStream(Paths.get(out)));
         if (out.endsWith(".gz")) {
             stream = new GZIPOutputStream(stream);
