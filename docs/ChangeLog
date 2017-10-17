@@ -5,6 +5,7 @@ New functions:
 - geof:globe, geof:latitude & geof:longitude for coordinate literals
 - wikibase:decodeUri for urldecoding strings
 Add throttling and rate limits
+Add category handling
 
 0.2.4
 -----
