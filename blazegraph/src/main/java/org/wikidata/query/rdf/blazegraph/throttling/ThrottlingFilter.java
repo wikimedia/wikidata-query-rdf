@@ -9,10 +9,20 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
+import javax.annotation.Nullable;
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -85,7 +95,7 @@ import com.google.common.cache.CacheBuilder;
  *
  * All state is limited to a single JVM, this filter is not cluster aware.
  */
-public class ThrottlingFilter implements Filter {
+public class ThrottlingFilter implements Filter, ThrottlingMXBean {
 
     private static final Logger log = LoggerFactory.getLogger(ThrottlingFilter.class);
 
@@ -93,6 +103,12 @@ public class ThrottlingFilter implements Filter {
     private boolean enabled;
     /** To delegate throttling logic. */
     private Throttler<Bucket> throttler;
+
+    /** Keeps track of the number of requests being throttled. */
+    private final AtomicLong nbThrottledRequests = new AtomicLong();
+
+    /** The object name under which the stats for this filter are exposed through JMX. */
+    @Nullable  private ObjectName objectName;
 
     /**
      * Initialise the filter.
@@ -132,6 +148,32 @@ public class ThrottlingFilter implements Filter {
                         .expireAfterAccess(stateExpirationInMinutes, TimeUnit.MINUTES)
                         .build(),
                 enableThrottlingIfHeader);
+
+        registerMBean(filterConfig.getFilterName());
+    }
+
+    /**
+     * Register this Filter as an MBean.
+     *
+     * On successful registration, the {@link ObjectName} used for registration
+     * will be stored into the instance field {@link ThrottlingFilter#objectName}.
+     *
+     * @param filterName
+     */
+    private void registerMBean(String filterName) {
+        try {
+            ObjectName objectName = new ObjectName(ThrottlingFilter.class.getName(), "filterName", filterName);
+            MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
+            platformMBeanServer.registerMBean(this, objectName);
+            this.objectName = objectName;
+            log.info("ThrottlingFilter MBean registered as {}.", objectName);
+        } catch (MalformedObjectNameException e) {
+            log.error("filter name {} is invalid as an MBean property.", filterName, e);
+        } catch (InstanceAlreadyExistsException e) {
+            log.error("MBean for ThrottlingFilter has already been registered.", e);
+        } catch (NotCompliantMBeanException | MBeanRegistrationException e) {
+            log.error("Could not register MBean for ThrottlingFilter.", e);
+        }
     }
 
     /**
@@ -235,6 +277,7 @@ public class ThrottlingFilter implements Filter {
         if (throttler.isThrottled(httpRequest)) {
             log.info("A request is being throttled.");
             if (enabled) {
+                nbThrottledRequests.incrementAndGet();
                 notifyUser(httpResponse, throttler.getBackoffDelay(httpRequest));
                 return;
             }
@@ -270,9 +313,34 @@ public class ThrottlingFilter implements Filter {
         response.sendError(429, format(ENGLISH, "Too Many Requests - Please retry in %s seconds.", retryAfter));
     }
 
-    /** {@inheritDoc} */
+    /** Unregister MBean. */
     @Override
     public void destroy() {
-        // Nothing to destroy
+        // Don't do anything if the MBean isn't registered.
+        if (objectName == null) return;
+
+        MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
+        try {
+            platformMBeanServer.unregisterMBean(objectName);
+            log.info("ThrottlingFilter MBean {} unregistered.", objectName);
+            objectName = null;
+        } catch (InstanceNotFoundException e) {
+            log.warn("MBean already unregistered.", e);
+        } catch (MBeanRegistrationException e) {
+            log.error("Could not unregister MBean.", e);
+        }
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public long getStateSize() {
+        return throttler.getStateSize();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long getNumberOfThrottledRequests() {
+        return nbThrottledRequests.get();
+    }
+
 }

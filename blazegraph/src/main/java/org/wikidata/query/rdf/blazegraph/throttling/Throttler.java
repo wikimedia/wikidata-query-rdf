@@ -78,6 +78,17 @@ public class Throttler<B> {
     }
 
     /**
+     * The size (in number of entries) of the throttling state.
+     *
+     * This correspond to the number of clients currently being tracked.
+     *
+     * @return the number of entries in state size
+     */
+    public long getStateSize() {
+        return state.size();
+    }
+
+    /**
      * Should this request be throttled.
      *
      * @param request the request to check
