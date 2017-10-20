@@ -3,7 +3,7 @@ package org.wikidata.query.rdf.blazegraph.throttling;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
-import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Locale.ENGLISH;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -120,7 +120,7 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
      */
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        int requestDurationThresholdInSeconds = loadIntParam("request-duration-threshold-in-seconds", filterConfig, 10);
+        int requestDurationThresholdInMillis = loadIntParam("request-duration-threshold-in-millis", filterConfig, 0);
         int timeBucketCapacityInSeconds = loadIntParam("time-bucket-capacity-in-seconds", filterConfig, 120);
         int timeBucketRefillAmountInSeconds = loadIntParam("time-bucket-refill-amount-in-seconds", filterConfig, 60);
         int timeBucketRefillPeriodInMinutes = loadIntParam("time-bucket-refill-period-in-minutes", filterConfig, 1);
@@ -134,7 +134,7 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
 
         this.enabled = loadBooleanParam("enabled", filterConfig, true);
         throttler = new Throttler<>(
-                Duration.of(requestDurationThresholdInSeconds, SECONDS),
+                Duration.of(requestDurationThresholdInMillis, MILLIS),
                 new UserAgentIpAddressBucketing(),
                 createThrottlingState(
                         timeBucketCapacityInSeconds,
