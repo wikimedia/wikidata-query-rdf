@@ -10,7 +10,7 @@ PORT=${PORT:-"9999"}
 DIR=${DIR:-`dirname $0`}
 HEAP_SIZE=${HEAP_SIZE:-"16g"}
 LOG_CONFIG=${LOG_CONFIG:-""}
-MEMORY=${MEMORY:-"-Xms${HEAP_SIZE} -Xmx${HEAP_SIZE}"}
+MEMORY=${MEMORY:-"-Xmx${HEAP_SIZE}"}
 GC_LOGS=${GC_LOGS:-"-Xloggc:/var/log/wdqs/wdqs-blazegraph_jvm_gc.%p.log \
          -XX:+PrintGCDetails \
          -XX:+PrintGCDateStamps \

@@ -6,7 +6,7 @@ fi
 
 HOST=http://localhost:9999
 CONTEXT=bigdata
-MEMORY="-Xms2g -Xmx2g"
+MEMORY="-Xmx2g"
 GC_LOGS="-Xloggc:/var/log/wdqs/wdqs-updater_jvm_gc.%p.log \
          -XX:+PrintGCDetails \
          -XX:+PrintGCDateStamps \
