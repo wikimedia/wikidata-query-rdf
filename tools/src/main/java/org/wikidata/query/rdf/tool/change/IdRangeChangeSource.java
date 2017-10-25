@@ -9,10 +9,13 @@ import org.wikidata.query.rdf.tool.exception.RetryableException;
 
 import com.google.common.collect.ImmutableList;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Blindly iterates an id range and returns those as "changes". Can be used to
  * load known ids.
  */
+@SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED", justification = "spotbug limitation: https://github.com/spotbugs/spotbugs/issues/463")
 public class IdRangeChangeSource implements Change.Source<IdRangeChangeSource.Batch> {
     /**
      * Build and IdChangeSource for items as opposed to properties.

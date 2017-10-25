@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.mwapi;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
@@ -39,7 +41,7 @@ public final class ServiceConfig {
      * @return Map of API templates per name.
      */
     private static Map<String, ApiTemplate> loadJSONConfig(JsonNode node) {
-        Preconditions.checkNotNull(node, "Must have services node");
+        requireNonNull(node, "Must have services node");
 
         return Streams.stream(node.fieldNames())
                 .collect(ImmutableMap.toImmutableMap(
@@ -53,7 +55,7 @@ public final class ServiceConfig {
      * @return
      */
     private static List<String> loadEndpoints(JsonNode node) {
-        Preconditions.checkNotNull(node, "Must have endpoints node");
+        requireNonNull(node, "Must have endpoints node");
         Preconditions.checkArgument(node.isArray(), "Endpoints config should be an array");
 
         // Get immutable list of elements' text representations

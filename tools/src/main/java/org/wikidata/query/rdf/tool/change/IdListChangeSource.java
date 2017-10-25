@@ -13,6 +13,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 /**
  * Creates a change source out of the list of IDs.
  */
+@SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED", justification = "spotbug limitation: https://github.com/spotbugs/spotbugs/issues/463")
 public class IdListChangeSource implements Change.Source<IdListChangeSource.Batch> {
     /**
      * Build and IdChangeSource for items as opposed to properties.

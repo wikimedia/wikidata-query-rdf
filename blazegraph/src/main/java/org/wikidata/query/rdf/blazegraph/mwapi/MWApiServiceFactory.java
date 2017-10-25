@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.mwapi;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -35,7 +37,6 @@ import com.bigdata.rdf.sparql.ast.service.ServiceCallCreateParams;
 import com.bigdata.rdf.sparql.ast.service.ServiceNode;
 import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
 import com.bigdata.rdf.store.BD;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -127,7 +128,7 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
     public BigdataServiceCall create(ServiceCallCreateParams params, final ServiceParams serviceParams) {
         ServiceNode serviceNode = params.getServiceNode();
 
-        Preconditions.checkNotNull(serviceNode, "Missing service node?");
+        requireNonNull(serviceNode, "Missing service node?");
 
         try {
             ApiTemplate template = getServiceTemplate(serviceParams);
@@ -154,7 +155,7 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
      */
     private ApiTemplate getServiceTemplate(final ServiceParams serviceParams) {
         final String templateName = serviceParams.getAsString(API_KEY);
-        Preconditions.checkNotNull(templateName, "Service name (wikibase:api) should be supplied");
+        requireNonNull(templateName, "Service name (wikibase:api) should be supplied");
         serviceParams.clear(API_KEY);
         return config.getService(templateName);
     }
@@ -167,9 +168,9 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
      */
     private String getServiceHost(final ServiceParams serviceParams) throws MalformedURLException {
         TermNode hostNode = serviceParams.get(ENDPOINT_KEY, null);
-        Preconditions.checkNotNull(hostNode, "Service name (wikibase:endpoint) should be supplied");
+        requireNonNull(hostNode, "Service name (wikibase:endpoint) should be supplied");
         // TODO: allow variable endpoints
-        Preconditions.checkArgument(hostNode.isConstant(), "Endpoint name should be a constant");
+        requireNonNull(hostNode.isConstant(), "Endpoint name should be a constant");
 
         serviceParams.clear(ENDPOINT_KEY);
         Value v = hostNode.getValue();
@@ -206,10 +207,10 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
      * @return
      */
     public ServiceParams serviceParamsFromNode(final ServiceNode serviceNode) {
-        Preconditions.checkNotNull(serviceNode, "Service node is null?");
+        requireNonNull(serviceNode, "Service node is null?");
 
         final GraphPatternGroup<IGroupMemberNode> group = serviceNode.getGraphPattern();
-        Preconditions.checkNotNull(serviceNode, "Group node is null?");
+        requireNonNull(serviceNode, "Group node is null?");
 
         final ServiceParams serviceParams = new ServiceParams();
         final Iterator<IGroupMemberNode> it = group.iterator();

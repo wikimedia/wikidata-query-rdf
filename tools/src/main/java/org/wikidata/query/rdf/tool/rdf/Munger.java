@@ -59,6 +59,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 // TODO fan out complexity
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED", justification = "spotbug limitation: https://github.com/spotbugs/spotbugs/issues/463")
 public class Munger {
     private static final Logger log = LoggerFactory.getLogger(Munger.class);
 

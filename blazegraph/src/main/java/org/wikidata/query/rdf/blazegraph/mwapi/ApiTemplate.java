@@ -1,5 +1,8 @@
 package org.wikidata.query.rdf.blazegraph.mwapi;
 
+import static java.util.Objects.requireNonNull;
+import static org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.paramNameToURI;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,11 +26,8 @@ import com.bigdata.rdf.sparql.ast.TermNode;
 import com.bigdata.rdf.sparql.ast.eval.ServiceParams;
 import com.bigdata.rdf.sparql.ast.service.ServiceNode;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-
-import static org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.paramNameToURI;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -85,7 +85,7 @@ public class ApiTemplate {
         Map<String, String> outputVars = new HashMap<>();
         // Parse input params
         final JsonNode params = json.get("params");
-        Preconditions.checkNotNull(params, "Missing params node");
+        requireNonNull(params, "Missing params node");
         params.fieldNames().forEachRemaining(paramName -> {
             if (fixedParams.containsKey(paramName)
                     || inputVars.contains(paramName)) {
@@ -109,10 +109,10 @@ public class ApiTemplate {
 
         // Parse output params
         final JsonNode output = json.get("output");
-        Preconditions.checkNotNull(params, "Missing output node");
+        requireNonNull(params, "Missing output node");
         String items = output.get("items").asText();
         final JsonNode vars = output.get("vars");
-        Preconditions.checkNotNull(vars, "Missing vars node");
+        requireNonNull(vars, "Missing vars node");
         vars.fieldNames().forEachRemaining(paramName -> {
             if (inputVars.contains(paramName)
                     || fixedParams.containsKey(paramName)) {
@@ -227,7 +227,7 @@ public class ApiTemplate {
         List<OutputVariable> vars = new ArrayList<>(outputVars.size());
 
         final GraphPatternGroup<IGroupMemberNode> group = serviceNode.getGraphPattern();
-        Preconditions.checkNotNull(serviceNode, "Group node is null?");
+        requireNonNull(serviceNode, "Group node is null?");
 
         String prefix = paramNameToURI("").stringValue();
         group.iterator().forEachRemaining(node -> {
