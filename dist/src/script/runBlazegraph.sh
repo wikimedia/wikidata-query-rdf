@@ -10,14 +10,17 @@ PORT=${PORT:-"9999"}
 DIR=${DIR:-`dirname $0`}
 HEAP_SIZE=${HEAP_SIZE:-"16g"}
 LOG_CONFIG=${LOG_CONFIG:-""}
+LOG_DIR=${LOG_DIR:-"/var/log/wdqs"}
 MEMORY=${MEMORY:-"-Xmx${HEAP_SIZE}"}
-GC_LOGS=${GC_LOGS:-"-Xloggc:/var/log/wdqs/wdqs-blazegraph_jvm_gc.%p.log \
+GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/wdqs-blazegraph_jvm_gc.%p.log \
          -XX:+PrintGCDetails \
          -XX:+PrintGCDateStamps \
          -XX:+PrintGCTimeStamps \
-         -XX:+PrintTenuringDistribution \
+         -XX:+PrintAdaptiveSizePolicy \
+         -XX:+PrintReferenceGC \
          -XX:+PrintGCCause \
          -XX:+PrintGCApplicationStoppedTime \
+         -XX:+PrintTenuringDistribution \
          -XX:+UseGCLogFileRotation \
          -XX:NumberOfGCLogFiles=10 \
          -XX:GCLogFileSize=20M"}

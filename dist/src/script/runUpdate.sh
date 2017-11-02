@@ -7,16 +7,19 @@ fi
 HOST=http://localhost:9999
 CONTEXT=bigdata
 MEMORY="-Xmx2g"
-GC_LOGS="-Xloggc:/var/log/wdqs/wdqs-updater_jvm_gc.%p.log \
+LOG_DIR=${LOG_DIR:-"/var/log/wdqs"}
+GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/wdqs-updater_jvm_gc.%p.log \
          -XX:+PrintGCDetails \
          -XX:+PrintGCDateStamps \
          -XX:+PrintGCTimeStamps \
-         -XX:+PrintTenuringDistribution \
+         -XX:+PrintAdaptiveSizePolicy \
+         -XX:+PrintReferenceGC \
          -XX:+PrintGCCause \
          -XX:+PrintGCApplicationStoppedTime \
+         -XX:+PrintTenuringDistribution \
          -XX:+UseGCLogFileRotation \
          -XX:NumberOfGCLogFiles=10 \
-         -XX:GCLogFileSize=20M"
+         -XX:GCLogFileSize=20M"}
 EXTRA_JVM_OPTS=${EXTRA_JVM_OPTS:-""}
 LOG_CONFIG=${LOG_CONFIG:-""}
 NAMESPACE=wdq
