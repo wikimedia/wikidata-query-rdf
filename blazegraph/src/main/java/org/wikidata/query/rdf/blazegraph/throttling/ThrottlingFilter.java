@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -131,6 +132,7 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
         int stateExpirationInMinutes = loadIntParam("state-expiration-in-minutes", filterConfig, 15);
 
         String enableThrottlingIfHeader = loadStringParam("enable-throttling-if-header", filterConfig);
+        String alwaysThrottleParam = loadStringParam("always-throttle-param", filterConfig, "throttleMe");
 
         this.enabled = loadBooleanParam("enabled", filterConfig, true);
         throttler = new Throttler<>(
@@ -147,7 +149,8 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
                         .maximumSize(maxStateSize)
                         .expireAfterAccess(stateExpirationInMinutes, TimeUnit.MINUTES)
                         .build(),
-                enableThrottlingIfHeader);
+                enableThrottlingIfHeader,
+                alwaysThrottleParam);
 
         registerMBean(filterConfig.getFilterName());
     }
@@ -225,6 +228,19 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
             result = sParam;
         }
         return result;
+    }
+
+    /**
+     * Load a parameter from multiple locations, with a default value.
+     *
+     * @see ThrottlingFilter#loadStringParam(String, FilterConfig)
+     * @param name
+     * @param filterConfig
+     * @param defaultValue
+     * @return the parameter's value
+     */
+    private String loadStringParam(String name, FilterConfig filterConfig, String defaultValue) {
+        return firstNonNull(loadStringParam(name, filterConfig), defaultValue);
     }
 
     /**

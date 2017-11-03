@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
+import static com.google.common.base.Strings.emptyToNull;
 import static java.time.temporal.ChronoUnit.MILLIS;
 
 import java.time.Duration;
@@ -32,7 +33,6 @@ public class Throttler<B> {
      * This is a slight abuse of Guava {@link Cache}, but makes it easy to have
      * an LRU map with an automatic cleanup mechanism.
      */
-    // TODO: we probably want to expose metrics on the size / usage of this cache
     private final Cache<B, ThrottlingState> state;
     /** Requests longer than this will trigger tracking resource consumption. */
     private final Duration requestTimeThreshold;
@@ -48,7 +48,14 @@ public class Throttler<B> {
      *
      * If <code>null</code>, all requests will be throttled.
      */
-    private String enableThrottlingIfHeader;
+    private final String enableThrottlingIfHeader;
+
+    /**
+     * This parameter in query will cause throttling no matter what.
+     *
+     * This can be used for testing.
+     */
+    public final String alwaysThrottleParam;
 
     /**
      * Constructor.
@@ -62,19 +69,22 @@ public class Throttler<B> {
      *                              when we start tracking a specific client
      * @param stateStore the cache in which we store the per client state of
      *                   throttling
-     * @param enableThrottlingIfHeader throttling is only enabled if this header is present.
+     * @param enableThrottlingIfHeader throttling is only enabled if this header is present
+     * @param alwaysThrottleParam this query parameter will cause throttling no matter what
      */
     public Throttler(
             Duration requestTimeThreshold,
             Bucketing<B> bucketing,
             Callable<ThrottlingState> createThrottlingState,
             Cache<B, ThrottlingState> stateStore,
-            String enableThrottlingIfHeader) {
+            String enableThrottlingIfHeader,
+            String alwaysThrottleParam) {
         this.requestTimeThreshold = requestTimeThreshold;
         this.bucketing = bucketing;
         this.state = stateStore;
         this.createThrottlingState = createThrottlingState;
-        this.enableThrottlingIfHeader = enableThrottlingIfHeader;
+        this.enableThrottlingIfHeader = emptyToNull(enableThrottlingIfHeader);
+        this.alwaysThrottleParam = emptyToNull(alwaysThrottleParam);
     }
 
     /**
@@ -95,13 +105,19 @@ public class Throttler<B> {
      * @return true if the request should be throttled
      */
     public boolean isThrottled(HttpServletRequest request) {
-        if (shouldBypassThrottling(request)) {
-            return false;
-        }
+        if (alwaysThrottle(request)) return true;
+        if (shouldBypassThrottling(request)) return false;
+
         ThrottlingState throttlingState = state.getIfPresent(bucketing.bucket(request));
         if (throttlingState == null) return false;
 
         return throttlingState.isThrottled();
+    }
+
+    private boolean alwaysThrottle(HttpServletRequest request) {
+        if (alwaysThrottleParam == null) return false;
+
+        return request.getParameter(alwaysThrottleParam) != null;
     }
 
     /**
@@ -110,9 +126,8 @@ public class Throttler<B> {
      * @return if true then skip throttling
      */
     private boolean shouldBypassThrottling(HttpServletRequest request) {
-        if (enableThrottlingIfHeader == null) {
-            return false;
-        }
+        if (enableThrottlingIfHeader == null) return false;
+
         return request.getHeader(enableThrottlingIfHeader) == null;
     }
 

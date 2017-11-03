@@ -172,6 +172,36 @@ public class ThrottlerTest {
         assertFalse(throttler.isThrottled(request));
     }
 
+    @Test
+    public void alwaysThrottleRequestsWithThrottlingParam() {
+        throttler = createThrottlerWithAlwaysThrottlingParam(stateStore, "throttleMe");
+
+        MockHttpServletRequest request = createRequest("UA1", "1.2.3.4");
+        request.addParameter("throttleMe", "");
+
+        assertTrue(throttler.isThrottled(request));
+
+        request = createRequest("UA1", "1.2.3.4");
+        request.addParameter("throttleMe", "abcd");
+
+        assertTrue(throttler.isThrottled(request));
+    }
+
+    @Test
+    public void dontThrottleRequestsWithoutThrottlingParam() {
+        throttler = createThrottlerWithAlwaysThrottlingParam(stateStore, "throttleMe");
+
+        MockHttpServletRequest request = createRequest("UA1", "1.2.3.4");
+        request.addParameter("doNotThrottle", "");
+
+        assertFalse(throttler.isThrottled(request));
+
+        request = createRequest("UA1", "1.2.3.4");
+        request.addParameter("doNotThrottle", "abcd");
+
+        assertFalse(throttler.isThrottled(request));
+    }
+
     private Throttler<Bucket> createThrottlerWithThrottlingHeader(
             Cache<Bucket, ThrottlingState> stateStore,
             String enableThrottlingIfHeader) {
@@ -180,7 +210,19 @@ public class ThrottlerTest {
                 new UserAgentIpAddressBucketing(),
                 createThrottlingState(),
                 stateStore,
-                enableThrottlingIfHeader);
+                enableThrottlingIfHeader,
+                null);
+    }
+
+    private Throttler<Bucket> createThrottlerWithAlwaysThrottlingParam(
+            Cache<Bucket, ThrottlingState> stateStore, String alwaysThrottleParam) {
+        return new Throttler<>(
+                Duration.of(20, SECONDS),
+                new UserAgentIpAddressBucketing(),
+                createThrottlingState(),
+                stateStore,
+                null,
+                alwaysThrottleParam);
     }
 
     private MockHttpServletRequest createRequest(String userAgent, String remoteAddr) {
