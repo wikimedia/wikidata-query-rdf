@@ -1,10 +1,10 @@
 package org.wikidata.query.rdf.blazegraph.vocabulary;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 import com.bigdata.rdf.vocab.BaseVocabularyDecl;
 
@@ -20,7 +20,7 @@ public class WikibaseUrisVocabularyDecl extends BaseVocabularyDecl {
      * @param uris Wikibase URIs handler
      * @return
      */
-    private static List<String> getUriList(WikibaseUris uris) {
+    private static List<String> getUriList(WikibaseUris uris, Collection<String> prefixes) {
         List<String> uriList = new LinkedList<String>();
         uriList.add(uris.entity());
         /*
@@ -34,13 +34,13 @@ public class WikibaseUrisVocabularyDecl extends BaseVocabularyDecl {
         uriList.add(uris.statement());
         uriList.add(uris.reference());
         uriList.add(uris.value());
-        for (PropertyType p: PropertyType.values()) {
+        for (String p: prefixes) {
             uriList.add(uris.property(p) + "P");
         }
         return uriList;
     }
 
-    public WikibaseUrisVocabularyDecl(WikibaseUris uris) {
-        super(getUriList(uris).toArray());
+    public WikibaseUrisVocabularyDecl(WikibaseUris uris, Collection<String> prefixes) {
+        super(getUriList(uris, prefixes).toArray());
     }
 }

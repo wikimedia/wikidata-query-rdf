@@ -45,10 +45,18 @@ public class WikibaseInlineUriFactory extends InlineURIFactory {
 
         // These aren't part of wikibase but are common in wikidata
         // TODO: add more prefixes?
+        // VIAF ID
         InlineURIHandler viaf = new TrailingSlashRemovingInlineUriHandler(
                 new InlineUnsignedIntegerURIHandler(CommonValues.VIAF));
         addHandler(viaf);
         addHandler(new NormalizingInlineUriHandler(viaf, CommonValues.VIAF_HTTP));
+        // GeoNames ID
+        addHandler(new TrailingSlashRemovingInlineUriHandler(
+                new InlineUnsignedIntegerURIHandler(CommonValues.GEONAMES)));
+        // PubChem ID
+        addHandler(new InlineUnsignedIntegerURIHandler(CommonValues.PUBCHEM));
+        // ChemSpider ID
+        addHandler(new InlineUnsignedIntegerURIHandler(CommonValues.CHEMSPIDER));
 
         /*
          * Value nodes are inlined even though they are pretty big (uuids). It

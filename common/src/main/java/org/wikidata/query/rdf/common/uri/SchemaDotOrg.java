@@ -31,6 +31,7 @@ public final class SchemaDotOrg {
     /**
      * Wikibase dumps the label in this, skos:prefLabel and rdfs:label. We only
      * keep rdfs:label.
+     * We also use this in sitelink names.
      */
     public static final String NAME = NAMESPACE + "name";
     /**
@@ -41,6 +42,10 @@ public final class SchemaDotOrg {
      * Wikibase adds the descriptions as schema:description.
      */
     public static final String DESCRIPTION = NAMESPACE + "description";
+    /**
+     * Wikibase adds this in sitelinks.
+     */
+    public static final String IS_PART_OF = NAMESPACE + "isPartOf";
 
     /**
      * Adds the schema: prefix to the query.

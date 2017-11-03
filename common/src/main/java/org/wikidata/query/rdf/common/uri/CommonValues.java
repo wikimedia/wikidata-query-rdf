@@ -15,6 +15,22 @@ public final class CommonValues {
      * better.
      */
     public static final String VIAF_HTTP = "http://viaf.org/viaf/";
+    /**
+     * Prefix for geonames URI: http://sws.geonames.org/$1/.
+     * See: https://www.wikidata.org/wiki/Property:P1566
+     */
+    public static final String GEONAMES = "http://sws.geonames.org/";
+    /**
+     * PubChem compound ID.
+     * See: https://www.wikidata.org/wiki/Property:P662
+     */
+    public static final String PUBCHEM = "http://rdf.ncbi.nlm.nih.gov/pubchem/compound/CID";
+
+    /**
+     * ChemSpider compound ID.
+     * See: https://www.wikidata.org/wiki/Property:P661
+     */
+    public static final String CHEMSPIDER = "http://rdf.chemspider.com/";
 
     private CommonValues() {
         // Utility uncallable constructor
