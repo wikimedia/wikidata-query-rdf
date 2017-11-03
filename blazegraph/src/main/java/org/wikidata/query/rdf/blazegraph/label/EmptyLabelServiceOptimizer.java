@@ -62,7 +62,9 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
                 break;
             }
 
-            foundArg = EmptyLabelServiceOptimizer.this.restoreExtracted(service) || foundArg;
+            if (EmptyLabelServiceOptimizer.this.restoreExtracted(service)) {
+                foundArg = true;
+            }
 
             if (!foundArg) {
                 EmptyLabelServiceOptimizer.this.addResolutions(ctx, g, root.getProjection());
