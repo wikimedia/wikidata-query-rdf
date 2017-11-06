@@ -242,6 +242,11 @@ public class ApiTemplate {
                     for (OutputVariable.Type varType : OutputVariable.Type.values()) {
                         if (varType.predicate.equals(sp.p().getValue())) {
                             IVariable var = (IVariable)sp.s().getValueExpression();
+                            if (varType == varType.ORDINAL) {
+                                // Ordinal values ignore the object
+                                vars.add(new OutputVariable(varType, var, "."));
+                                break;
+                             }
                             IV value = sp.o().getValueExpression().get();
                             if (value.isURI()) {
                                 String paramName = value.stringValue().substring(prefix.length());
@@ -279,7 +284,11 @@ public class ApiTemplate {
             /**
              * Item ID.
              */
-            ITEM("apiOutputItem");
+            ITEM("apiOutputItem"),
+            /**
+             * Ordinal - i.e. place of the result in the list.
+             */
+            ORDINAL("apiOrdinal");
 
             /**
              * Predicate used for this type.
@@ -360,11 +369,19 @@ public class ApiTemplate {
         }
 
         /**
+         * Is it the ordinal value?
+         * @return
+         */
+        public boolean isOrdinal() {
+            return type == Type.ORDINAL;
+        }
+
+        /**
          * Would this variable produce an URI?
          * @return
          */
         public boolean isURI() {
-            return type != Type.STRING;
+            return type != Type.STRING && type != Type.ORDINAL;
         }
 
         /**

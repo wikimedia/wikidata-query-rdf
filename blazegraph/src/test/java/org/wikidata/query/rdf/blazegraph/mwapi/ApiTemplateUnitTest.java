@@ -130,20 +130,28 @@ public class ApiTemplateUnitTest extends AbstractRandomizedBlazegraphTestBase {
                 createURI(ApiTemplate.OutputVariable.Type.ITEM.predicate()),
                 createConstant("item/@wikibase_id")
         ));
+        // Variable with ordinal
+        patterns.addArg(new StatementPatternNode(
+                new VarNode("var4"),
+                createURI(ApiTemplate.OutputVariable.Type.ORDINAL.predicate()),
+                createConstant("goat")
+        ));
 
         ServiceNode serviceNode = new ServiceNode(createConstant("test"), patterns);
 
         List<OutputVariable> outputs = template.getOutputVars(serviceNode);
-        assertThat(outputs.size(), equalTo(3));
+        assertThat(outputs.size(), equalTo(4));
         // Pre-defined variable
         OutputVariable var = outputs.get(0);
         assertThat(var.getName(), equalTo("somevar"));
         assertThat(var.getPath(), equalTo("@title"));
+        assertFalse(var.isOrdinal());
         // User-defined variable
         var = outputs.get(1);
         assertThat(var.getName(), equalTo("var2"));
         assertThat(var.getPath(), equalTo("@somedata"));
         assertTrue(var.isURI());
+        assertFalse(var.isOrdinal());
         assertThat(var.getURI("http://test.com/"), instanceOf(URI.class));
         // URI keeps the case
         assertThat(var.getURI("http://test.com/test").toString(), endsWith("test"));
@@ -152,9 +160,17 @@ public class ApiTemplateUnitTest extends AbstractRandomizedBlazegraphTestBase {
         assertThat(var.getName(), equalTo("var3"));
         assertThat(var.getPath(), equalTo("item/@wikibase_id"));
         assertTrue(var.isURI());
+        assertFalse(var.isOrdinal());
         assertThat(var.getURI("test"), instanceOf(URI.class));
         // T172642: Item URIs will be uppercased
         assertThat(var.getURI("test").toString(), endsWith("TEST"));
+        // Ordinal
+        var = outputs.get(3);
+        assertThat(var.getName(), equalTo("var4"));
+        assertThat(var.getPath(), equalTo("."));
+        assertFalse(var.isURI());
+        assertTrue(var.isOrdinal());
+
     }
 
     @Test(expected = NullPointerException.class)

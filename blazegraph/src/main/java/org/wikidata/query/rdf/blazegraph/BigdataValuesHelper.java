@@ -11,8 +11,11 @@ import com.bigdata.bop.Var;
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.internal.VTE;
 import com.bigdata.rdf.internal.impl.TermId;
+import com.bigdata.rdf.internal.impl.literal.XSDNumericIV;
 import com.bigdata.rdf.model.BigdataValue;
 import com.bigdata.rdf.model.BigdataValueFactory;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Helper class to create Bigdata values from constants.
@@ -109,6 +112,28 @@ public final class BigdataValuesHelper {
      */
     public static IConstant makeConstant(BigdataValueFactory vf, String value, URI type) {
         return new Constant(makeIV(vf, value, type));
+    }
+
+    /**
+     * Create constant from int.
+     * @param vf
+     * @param value
+     * @return
+     */
+    @SuppressFBWarnings(value = "UP_UNUSED_PARAMETER", justification = "Don't need BigdataValueFactory, but leave it to have uniform API")
+    public static IConstant makeConstant(BigdataValueFactory vf, int value) {
+        return new Constant(new XSDNumericIV<>(value));
+    }
+
+    /**
+     * Create constant from double.
+     * @param vf
+     * @param value
+     * @return
+     */
+    @SuppressFBWarnings(value = "UP_UNUSED_PARAMETER", justification = "Don't need BigdataValueFactory, but leave it to have uniform API")
+    public static IConstant makeConstant(BigdataValueFactory vf, double value) {
+        return new Constant(new XSDNumericIV<>(value));
     }
 
     /**

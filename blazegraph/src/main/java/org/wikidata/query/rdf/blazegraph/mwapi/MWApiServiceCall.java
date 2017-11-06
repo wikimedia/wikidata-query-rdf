@@ -222,9 +222,14 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
             final Node node = nodes.item(i);
             results[i] = binding.copy(null);
             for (Map.Entry<OutputVariable, XPathExpression> var: compiledVars.entrySet()) {
+                final IConstant constant;
+                if (var.getKey().isOrdinal()) {
+                    constant = makeConstant(lexiconRelation.getValueFactory(), i);
+                    results[i].set(var.getKey().getVar(), constant);
+                    continue;
+                }
                 final Node value = (Node)var.getValue().evaluate(node, XPathConstants.NODE);
                 if (value != null && value.getNodeValue() != null) {
-                    final IConstant constant;
                     if (var.getKey().isURI()) {
                         constant = makeConstant(lexiconRelation.getValueFactory(), var.getKey().getURI(value.getNodeValue()));
                     } else {
