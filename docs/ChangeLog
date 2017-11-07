@@ -1,6 +1,7 @@
 0.3.0
 -----
 Add more URIs used by Wikibase to vocabulary (requires data reload)
+Add wikibase:apiOrdinal for MWAPI queries
 
 0.2.5
 -----
