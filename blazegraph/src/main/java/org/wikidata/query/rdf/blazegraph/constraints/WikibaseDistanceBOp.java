@@ -7,6 +7,7 @@ import org.wikidata.query.rdf.common.WikibasePoint;
 import com.bigdata.bop.BOp;
 import com.bigdata.bop.IBindingSet;
 import com.bigdata.bop.IValueExpression;
+import com.bigdata.rdf.error.SparqlTypeErrorException;
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.internal.constraints.INeedsMaterialization;
 import com.bigdata.rdf.internal.constraints.IVValueExpression;
@@ -14,6 +15,8 @@ import com.bigdata.rdf.internal.gis.CoordinateDD;
 import com.bigdata.rdf.internal.gis.ICoordinate.UNITS;
 import com.bigdata.rdf.model.BigdataLiteral;
 import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Implementation of geof:distance function.
@@ -103,10 +106,15 @@ public class WikibaseDistanceBOp extends IVValueExpression<IV> implements INeeds
      * @param iv
      * @return Coordinate
      */
+    @SuppressFBWarnings(value = "LEST_LOST_EXCEPTION_STACK_TRACE", justification = "Converting to SPARQL exception")
     protected CoordinateDD getCoordinateFromIV(IV iv) {
         final WikibasePoint point = new WikibasePoint(asLiteral(iv).stringValue());
-        return new CoordinateDD(Double.parseDouble(point.getLatitude()),
+        try {
+            return new CoordinateDD(Double.parseDouble(point.getLatitude()),
                                 Double.parseDouble(point.getLongitude()));
+        } catch (IllegalArgumentException e) {
+            throw new SparqlTypeErrorException();
+        }
     }
 
     @Override
