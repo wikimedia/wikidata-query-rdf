@@ -10,6 +10,10 @@ CONTEXT=bigdata
 NAMESPACE=categories
 WIKI=$1
 
+if [ "x$2" != "x" ]; then
+	NAMESPACE=$2
+fi
+
 if [ -z "$WIKI" ]; then
 	echo "Use: $0 WIKI-NAME"
 	exit 1
@@ -17,7 +21,7 @@ fi
 
 TS=$(curl -s -f -XGET $SOURCE/lastdump/$WIKI-categories.last | cut -c1-8)
 if [ -z "$TS" ]; then
-	echo "Could not load timestamp"
+	echo "Could not load timestamp from $SOURCE/lastdump/$WIKI-categories.last"
 	exit 1
 fi
 FILENAME=$WIKI-$TS-categories.ttl.gz

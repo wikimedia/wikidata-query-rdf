@@ -9,7 +9,8 @@ else
 	fetch="curl -s -XGET"
 fi
 
+shift
 $fetch $DUMP_LIST | while read wiki; do
 	echo "Processing $wiki..."
-	$DIR/$COMMAND $wiki
+	$DIR/$COMMAND $wiki "$@"
 done 
