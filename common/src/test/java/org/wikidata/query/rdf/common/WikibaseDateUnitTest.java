@@ -37,6 +37,15 @@ public class WikibaseDateUnitTest extends RandomizedTest {
         assertEquals(wbDate, fromString("1970-1-1T00:00:00"));
         assertEquals(wbDate, fromString("1970-1-1T00:00:00Z"));
         assertEquals(wbDate, fromString("1970-1-1T00:00:00.123Z"));
+        assertEquals(wbDate, fromString("1970-1-1T00:00:00+00:00"));
+        assertEquals(wbDate, fromString("1970-1-1T00:00:00-00:00"));
+    }
+
+    // Other timezones are not supported yet
+    @Test(expected = IllegalArgumentException.class)
+    public void badTZ() {
+        WikibaseDate wbDate = check(1970, 1, 1, 0, 0, 0);
+        assertEquals(wbDate, fromString("1970-1-1T00:00:00-03:00"));
     }
 
     @Test

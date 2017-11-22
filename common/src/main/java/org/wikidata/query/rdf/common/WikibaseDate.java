@@ -27,8 +27,8 @@ public class WikibaseDate {
      * Pattern used to recognize dates sent from wikibase.
      */
     private static final Pattern FORMAT_PATTERN = Pattern
-            .compile("(?<year>[+-]?0+)-(?<month>0?0)-(?<day>0?0)(?:T(?<hour>0?0):(?<minute>0?0)(?::(?<second>0?0)(?<ms>[.]000)?)?)?Z?"
-                    .replace("0", "\\d"));
+            .compile("(?<year>[+-]?9+)-(?<month>9?9)-(?<day>9?9)(?:T(?<hour>9?9):(?<minute>9?9)(?::(?<second>9?9)(?<ms>[.]999)?)?)?(?:Z|[+-]00:00)?"
+                    .replace("9", "\\d"));
 
     /**
      * Build a WikibaseDate from the string representation. Supported:
