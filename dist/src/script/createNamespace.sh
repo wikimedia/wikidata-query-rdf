@@ -9,5 +9,5 @@ trap "rm -f $PROPS" EXIT
 
 sed -e "s/{NAMESPACE}/$CATEGORY/" < default.properties > $PROPS
 cat $PROPS
-curl -XPOST $URL --data-binary @$PROPS -H 'Content-type: text/plain'
+curl -s -XPOST $URL --data-binary @$PROPS -H 'Content-type: text/plain'
 echo
