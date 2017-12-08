@@ -97,6 +97,10 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             int batchSize, Map<Long, Boolean> seenIDs, int tailSeconds) {
         this.wikibase = wikibase;
         this.firstStartTime = firstStartTime;
+        // FIXME: temporary plug for T182464, remove after it's fixed
+        if (batchSize > 200) {
+            batchSize = 200;
+        }
         this.batchSize = batchSize;
         this.seenIDs = seenIDs;
         this.tailSeconds = tailSeconds;
