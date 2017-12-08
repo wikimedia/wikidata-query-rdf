@@ -19,7 +19,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.query.BindingSet;
@@ -37,18 +39,26 @@ import org.wikidata.query.rdf.tool.Munge.OutputPicker;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
+import com.carrotsearch.randomizedtesting.RandomizedRunner;
+import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * Tests the munger that loads dumps.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBase {
+@RunWith(RandomizedRunner.class)
+public class MungeIntegrationTest extends RandomizedTest {
     private static final Logger log = LoggerFactory.getLogger(MungeIntegrationTest.class);
 
-    public MungeIntegrationTest() {
-        super(new WikibaseUris("test.wikidata.org"));
-    }
+    /**
+     * Wikibase uris to test with.
+     */
+    private final WikibaseUris uris = new WikibaseUris("test.wikidata.org");
+
+
+    @Rule
+    public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq");
 
     /**
      * Loads a truncated version of a test dump from test wikidata.
@@ -63,12 +73,12 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
         BlockingQueue<InputStream> queue = new ArrayBlockingQueue<>(1);
         queue.put(toHttp);
         Munge.Httpd httpd = new Httpd(10999, queue);
-        Munger munger = new Munger(uris()).singleLabelMode("en");
+        Munger munger = new Munger(uris).singleLabelMode("en");
         ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Munge-IT-%d").build());
-        Future<?> f = executor.submit(new Munge(uris(), munger, from, to));
+        Future<?> f = executor.submit(new Munge(uris, munger, from, to));
         httpd.start();
         try {
-            assertEquals(944, rdfRepository().loadUrl("http://localhost:10999"));
+            assertEquals(944, rdfRepository.loadUrl("http://localhost:10999"));
         } finally {
             try {
                 /*
@@ -83,26 +93,26 @@ public class MungeIntegrationTest extends AbstractRdfRepositoryIntegrationTestBa
                 log.error("error shutting down", e);
             }
         }
-        assertTrue(rdfRepository().ask(
-                RDFS.prefix(uris().prefixes(new StringBuilder()))
+        assertTrue(rdfRepository.ask(
+                RDFS.prefix(uris.prefixes(new StringBuilder()))
                         .append("ASK { wd:Q10 rdfs:label \"Wikidata\"@en }").toString()));
-        assertTrue(rdfRepository().ask(
+        assertTrue(rdfRepository.ask(
                 SchemaDotOrg.prefix(Ontology.prefix(new StringBuilder()))
                         .append("ASK { ontology:Dump schema:dateModified \"2015-04-02T10:54:56Z\"^^xsd:dateTime }")
                         .toString()));
 
-        assertEquals(WikibaseRepository.inputDateFormat().parse("2015-04-02T10:54:56Z"), rdfRepository()
+        assertEquals(WikibaseRepository.inputDateFormat().parse("2015-04-02T10:54:56Z"), rdfRepository
                 .fetchLeftOffTime());
 
-        assertTrue(rdfRepository().ask(
-                SchemaDotOrg.prefix(uris().prefixes(new StringBuilder()))
+        assertTrue(rdfRepository.ask(
+                SchemaDotOrg.prefix(uris.prefixes(new StringBuilder()))
                         .append("ASK { wd:Q20 schema:dateModified ?date }").toString()));
 
-        assertTrue(rdfRepository().ask(
-                SchemaDotOrg.prefix(uris().prefixes(new StringBuilder()))
+        assertTrue(rdfRepository.ask(
+                SchemaDotOrg.prefix(uris.prefixes(new StringBuilder()))
                         .append("ASK { wd:Q21 schema:version ?v }").toString()));
 
-        TupleQueryResult results = rdfRepository().query(SchemaDotOrg.prefix(uris().prefixes(new StringBuilder()))
+        TupleQueryResult results = rdfRepository.query(SchemaDotOrg.prefix(uris.prefixes(new StringBuilder()))
                 .append("SELECT ?x WHERE { wd:Q14 wdt:P69 ?x }").toString());
         assertTrue(results.hasNext());
         BindingSet result = results.next();

@@ -28,7 +28,7 @@ public class MultipleResultsQueryIntegrationTest extends AbstractUpdaterIntegrat
     private static final int MAX_STATEMENT_COUNT = 100;
 
     private void expect(List<Statement> present, List<Statement> absent) throws QueryEvaluationException {
-        TupleQueryResult tupleQueryResult = rdfRepository().query("SELECT * WHERE {?s ?p ?o}");
+        TupleQueryResult tupleQueryResult = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         Iterable<BindingSet> results = toIterable(tupleQueryResult);
         assertThat(results, hasItems(subjectPredicateObjectMatchers(present)));
         for (Matcher<BindingSet> matcher : subjectPredicateObjectMatchers(absent)) {
@@ -43,16 +43,16 @@ public class MultipleResultsQueryIntegrationTest extends AbstractUpdaterIntegrat
         List<Statement> statements1 = randomStatementsAbout(s, randomIntBetween(1, MAX_STATEMENT_COUNT));
         List<Statement> statements2 = randomStatementsAbout(s, randomIntBetween(1, MAX_STATEMENT_COUNT));
 
-        rdfRepository().sync(s, statements1);
+        rdfRepository.sync(s, statements1);
         expect(statements1, statements2);
 
         List<Statement> all = Lists.newArrayList();
         all.addAll(statements1);
         all.addAll(statements2);
-        rdfRepository().sync(s, all);
+        rdfRepository.sync(s, all);
         expect(all, new ArrayList<Statement>());
 
-        rdfRepository().sync(s, statements2);
+        rdfRepository.sync(s, statements2);
         expect(statements2, statements1);
     }
 
@@ -62,8 +62,8 @@ public class MultipleResultsQueryIntegrationTest extends AbstractUpdaterIntegrat
         int statementCount = randomIntBetween(1, MAX_STATEMENT_COUNT);
         List<Statement> statements = randomStatementsAbout(s, statementCount);
 
-        rdfRepository().sync(s, statements);
-        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {?s ?p ?o}");
+        rdfRepository.sync(s, statements);
+        TupleQueryResult results = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
 
         assertThat(toIterable(results), hasItems(subjectPredicateObjectMatchers(statements)));
     }

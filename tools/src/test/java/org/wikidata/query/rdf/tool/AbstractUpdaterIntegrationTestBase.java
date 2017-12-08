@@ -5,16 +5,22 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Rule;
+import org.junit.runner.RunWith;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
+import com.carrotsearch.randomizedtesting.RandomizedRunner;
+import com.carrotsearch.randomizedtesting.RandomizedTest;
+
 /**
  * Superclass for tests that need to run a full update.
  */
-public class AbstractUpdaterIntegrationTestBase extends AbstractRdfRepositoryIntegrationTestBase {
+@RunWith(RandomizedRunner.class)
+public class AbstractUpdaterIntegrationTestBase extends RandomizedTest {
     /**
      * Wikibase test against.
      */
@@ -25,6 +31,13 @@ public class AbstractUpdaterIntegrationTestBase extends AbstractRdfRepositoryInt
     private final Munger munger = new Munger(WikibaseUris.getURISystem()).removeSiteLinks();
 
     /**
+     * Repository to test with.
+     */
+    @Rule
+    public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq");
+
+
+    /**
      * Update all ids from from to to.
      */
     public void update(int from, int to) {
@@ -32,7 +45,7 @@ public class AbstractUpdaterIntegrationTestBase extends AbstractRdfRepositoryInt
         ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>());
         WikibaseUris uris = new WikibaseUris("www.wikidata.org");
-        try (Updater<?> updater = new Updater<>(source, wikibaseRepository, rdfRepository(), munger, executorService, 0, uris, false)) {
+        try (Updater<?> updater = new Updater<>(source, wikibaseRepository, rdfRepository, munger, executorService, 0, uris, false)) {
             updater.run();
         }
     }
