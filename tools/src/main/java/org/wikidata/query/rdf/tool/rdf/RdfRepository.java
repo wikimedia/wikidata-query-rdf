@@ -2,7 +2,6 @@ package org.wikidata.query.rdf.tool.rdf;
 
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static com.google.common.io.Resources.getResource;
-import static org.wikidata.query.rdf.tool.FilteredStatements.filtered;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -372,7 +371,7 @@ public class RdfRepository implements AutoCloseable {
     }
 
     /**
-     * Provides the SPARQL needed to synchronize the data statements.
+     * Provides the SPARQL needed to synchronize the data statements for a single entity.
      *
      * @param entityId id of the entity to sync
      * @param statements all known statements about the entity
@@ -390,17 +389,13 @@ public class RdfRepository implements AutoCloseable {
         b.bind("uris.statement", uris.statement());
         b.bindStatements("insertStatements", statements);
 
-        Collection<Statement> entityStatements = filtered(statements).withSubject(uris.entity() + entityId);
+        List<Statement> entityStatements = new ArrayList<>();
+        List<Statement> statementStatements = new ArrayList<>();
+        Set<Statement> aboutStatements = new HashSet<>();
+        classifyStatements(statements, entityId, entityStatements, statementStatements, aboutStatements);
+
         b.bindValues("entityStatements", entityStatements);
-
-        Collection<Statement> statementStatements = filtered(statements).withSubjectStarts(uris.statement());
         b.bindValues("statementStatements", statementStatements);
-
-        Collection<Statement> aboutStatements = new HashSet<Statement>(statements);
-        aboutStatements.removeAll(entityStatements);
-        aboutStatements.removeAll(statementStatements);
-        aboutStatements.removeAll(filtered(statements).withSubjectStarts(uris.value()));
-        aboutStatements.removeAll(filtered(statements).withSubjectStarts(uris.reference()));
         b.bindValues("aboutStatements", aboutStatements);
 
         if (valueList != null && !valueList.isEmpty()) {
@@ -412,6 +407,36 @@ public class RdfRepository implements AutoCloseable {
         }
 
         return b.toString();
+    }
+
+    /**
+     * Sort statements into a set of specialized collections, by subject.
+     * @param statements List of statements to process
+     * @param entityId
+     * @param entityStatements subject is entity
+     * @param statementStatements subject is any statement
+     * @param aboutStatements not entity, not statement, not value and not reference
+     */
+    private void classifyStatements(Collection<Statement> statements,
+            String entityId, Collection<Statement> entityStatements,
+            Collection<Statement> statementStatements,
+            Collection<Statement> aboutStatements) {
+        for (Statement statement: statements) {
+            String s = statement.getSubject().stringValue();
+            if (s.equals(uris.entity() + entityId)) {
+                entityStatements.add(statement);
+            }
+            if (s.startsWith(uris.statement())) {
+                statementStatements.add(statement);
+            }
+            if (!s.equals(uris.entity() + entityId)
+                    && !s.startsWith(uris.statement())
+                    && !s.startsWith(uris.value())
+                    && !s.startsWith(uris.reference())
+            ) {
+                aboutStatements.add(statement);
+            }
+        }
     }
 
     /**
@@ -433,6 +458,8 @@ public class RdfRepository implements AutoCloseable {
 
         List<Statement> insertStatements = new ArrayList<>();
         List<Statement> entityStatements = new ArrayList<>();
+        List<Statement> statementStatements = new ArrayList<>();
+        Set<Statement> aboutStatements = new HashSet<>();
         Set<String> valueSet = new HashSet<>();
 
         for (final Change change : changes) {
@@ -442,7 +469,7 @@ public class RdfRepository implements AutoCloseable {
             }
             entityIds.add(change.entityId());
             insertStatements.addAll(change.getStatements());
-            entityStatements.addAll(filtered(change.getStatements()).withSubject(uris.entity() + change.entityId()));
+            classifyStatements(change.getStatements(), change.entityId(), entityStatements, statementStatements, aboutStatements);
             valueSet.addAll(change.getCleanupList());
         }
 
@@ -456,14 +483,7 @@ public class RdfRepository implements AutoCloseable {
         b.bindStatements("insertStatements", insertStatements);
         b.bindValues("entityStatements", entityStatements);
 
-        Collection<Statement> statementStatements = filtered(insertStatements).withSubjectStarts(uris.statement());
         b.bindValues("statementStatements", statementStatements);
-
-        Collection<Statement> aboutStatements = new HashSet<>(insertStatements);
-        aboutStatements.removeAll(entityStatements);
-        aboutStatements.removeAll(statementStatements);
-        aboutStatements.removeAll(filtered(insertStatements).withSubjectStarts(uris.value()));
-        aboutStatements.removeAll(filtered(insertStatements).withSubjectStarts(uris.reference()));
         b.bindValues("aboutStatements", aboutStatements);
 
         if (!valueSet.isEmpty()) {
