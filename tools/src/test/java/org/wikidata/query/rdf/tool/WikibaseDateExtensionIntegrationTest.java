@@ -40,7 +40,7 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdaterIntegra
         }
         query.append("\"^^xsd:dateTime)\n");
         query.append("}");
-        TupleQueryResult results = rdfRepository().query(query.toString());
+        TupleQueryResult results = rdfRepository.query(query.toString());
         assertTrue(results.hasNext());
         BindingSet result = results.next();
         assertThat(result, binds("s", "Q1"));
@@ -51,8 +51,8 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdaterIntegra
     public void date() throws QueryEvaluationException {
         List<Statement> statements = new ArrayList<>();
         statements.add(statement("Q23", "P569", new LiteralImpl("1732-02-22", XMLSchema.DATE)));
-        rdfRepository().sync("Q23", statements);
-        TupleQueryResult results = rdfRepository().query("SELECT * WHERE {?s ?p ?o}");
+        rdfRepository.sync("Q23", statements);
+        TupleQueryResult results = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         BindingSet result = results.next();
         assertThat(result, binds("s", "Q23"));
         assertThat(result, binds("p", "P569"));
@@ -66,7 +66,7 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdaterIntegra
      */
     @Test
     public void dateMath() throws QueryEvaluationException {
-        TupleQueryResult results = rdfRepository().query(
+        TupleQueryResult results = rdfRepository.query(
             "SELECT * WHERE {BIND ( \"0001-01-01T00:00:00\"^^xsd:dateTime - \"-0001-01-01T00:00:00\"^^xsd:dateTime AS ?date)}");
         BindingSet result = results.next();
         // 731 days or 2 years since XML 1.1 has year 0 (which is 1BCE)
@@ -82,9 +82,9 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdaterIntegra
             "<http://test.com/a> schema:lastModified \"-13798000000-01-01T00:00:00\"^^xsd:dateTime .\n" +
             "<http://test.com/b> schema:lastModified \"0000-01-01T00:00:00\"^^xsd:dateTime .\n" +
             "} WHERE {}";
-        rdfRepository().update(query);
+        rdfRepository.update(query);
 
-        TupleQueryResult results = rdfRepository().query("prefix schema: <http://schema.org/>\n" +
+        TupleQueryResult results = rdfRepository.query("prefix schema: <http://schema.org/>\n" +
             "SELECT (?a - ?b as ?diff) WHERE { <http://test.com/a> schema:lastModified ?a . <http://test.com/b> schema:lastModified ?b } ORDER BY DESC(?diff)");
         BindingSet result = results.next();
         assertThat(result, binds("diff", new LiteralImpl("366.0", XMLSchema.DOUBLE)));
@@ -100,11 +100,11 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdaterIntegra
     public void dateFunctions() throws QueryEvaluationException {
         List<Statement> statements = new ArrayList<>();
         statements.add(statement("Q23", "P569", new LiteralImpl("0000-01-01T00:00:00Z", XMLSchema.DATETIME)));
-        rdfRepository().sync("Q23", statements);
-        TupleQueryResult results = rdfRepository().query("SELECT (year(?date) as ?year) WHERE { ?s ?p ?date }");
+        rdfRepository.sync("Q23", statements);
+        TupleQueryResult results = rdfRepository.query("SELECT (year(?date) as ?year) WHERE { ?s ?p ?date }");
         BindingSet result = results.next();
         assertThat(result, binds("year", new LiteralImpl("0", XMLSchema.INTEGER)));
-        results = rdfRepository().query("SELECT (day(?date) as ?day) WHERE { ?s ?p ?date FILTER (year(?date) != year(now())) }");
+        results = rdfRepository.query("SELECT (day(?date) as ?day) WHERE { ?s ?p ?date FILTER (year(?date) != year(now())) }");
         result = results.next();
         assertThat(result, binds("day", new LiteralImpl("1", XMLSchema.INTEGER)));
     }
@@ -113,8 +113,8 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdaterIntegra
     public void dateFunctionsMore() throws QueryEvaluationException {
         List<Statement> statements = new ArrayList<>();
         statements.add(statement("Q23", "P569", new LiteralImpl("0000-01-02T03:04:05Z", XMLSchema.DATETIME)));
-        rdfRepository().sync("Q23", statements);
-        TupleQueryResult results = rdfRepository().query("SELECT " +
+        rdfRepository.sync("Q23", statements);
+        TupleQueryResult results = rdfRepository.query("SELECT " +
             "(year(?date) as ?year) " +
             "(month(?date) as ?month) " +
             "(day(?date) as ?day) " +
@@ -133,7 +133,7 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdaterIntegra
 
     @Test
     public void dateNow() throws QueryEvaluationException {
-        TupleQueryResult results = rdfRepository().query("SELECT (year(now()) as ?year) WHERE {  }");
+        TupleQueryResult results = rdfRepository.query("SELECT (year(now()) as ?year) WHERE {  }");
         BindingSet result = results.next();
         int year = Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT).get(Calendar.YEAR);
         assertThat(result, binds("year", new LiteralImpl(String.valueOf(year), XMLSchema.INTEGER)));

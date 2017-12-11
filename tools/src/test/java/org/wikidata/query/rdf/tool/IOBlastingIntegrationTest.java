@@ -18,6 +18,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.openrdf.model.Statement;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
@@ -25,13 +26,16 @@ import org.openrdf.query.TupleQueryResult;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 
+import com.carrotsearch.randomizedtesting.RandomizedRunner;
+import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * Does lots of simultaneous IO and state mutation on multiple namespaces.
  */
 @Ignore("temporarily disable")
-public class IOBlastingIntegrationTest extends AbstractUpdaterIntegrationTestBase {
+@RunWith(RandomizedRunner.class)
+public class IOBlastingIntegrationTest extends RandomizedTest {
 
     // works up to at least 10,000,000, albeit slowly (3min)
     private static final int MAX_STATEMENTS_PER_NAMESPACE = 100;
