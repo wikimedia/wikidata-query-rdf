@@ -228,11 +228,6 @@
                 <version>22.0</version>
             </dependency>
             <dependency>
-                <groupId>com.googlecode.json-simple</groupId>
-                <artifactId>json-simple</artifactId>
-                <version>1.1</version>
-            </dependency>
-            <dependency>
                 <groupId>com.lexicalscope.jewelcli</groupId>
                 <artifactId>jewelcli</artifactId>
                 <version>0.8.9</version>
@@ -379,6 +374,11 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-servlet</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlets</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
@@ -550,6 +550,12 @@
                 <groupId>com.carrotsearch.randomizedtesting</groupId>
                 <artifactId>randomizedtesting-runner</artifactId>
                 <version>2.1.17</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock</artifactId>
+                <version>2.12.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

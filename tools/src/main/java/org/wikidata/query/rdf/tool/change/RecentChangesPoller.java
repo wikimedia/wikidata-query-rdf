@@ -1,21 +1,23 @@
 package org.wikidata.query.rdf.tool.change;
 
+import static java.lang.Boolean.TRUE;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
 
-import java.text.DateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
+import org.wikidata.query.rdf.tool.wikibase.Continue;
+import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse;
+import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse.RecentChange;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.google.common.collect.ImmutableList;
@@ -193,7 +195,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         /**
          * Continue from last request. Can be null.
          */
-        private final JSONObject lastContinue;
+        private final Continue lastContinue;
 
         /**
          * Flag that states we have had changes, even though we didn't return them.
@@ -204,7 +206,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
          * A batch that will next continue using the continue parameter.
          */
         private Batch(ImmutableList<Change> changes, long advanced,
-                String leftOff, Date nextStartTime, JSONObject lastContinue) {
+                String leftOff, Date nextStartTime, Continue lastContinue) {
             super(changes, advanced, leftOff);
             leftOffDate = nextStartTime;
             this.lastContinue = lastContinue;
@@ -242,7 +244,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         public String leftOffHuman() {
             if (lastContinue != null) {
                 return WikibaseRepository.inputDateFormat().format(leftOffDate)
-                    + " (next: " + lastContinue.get("rccontinue") + ")";
+                    + " (next: " + lastContinue.getRcContinue() + ")";
             } else {
                 return WikibaseRepository.inputDateFormat().format(leftOffDate);
             }
@@ -266,7 +268,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
          * Get continue object.
          * @return
          */
-        public JSONObject getLastContinue() {
+        public Continue getLastContinue() {
             return lastContinue;
         }
     }
@@ -290,7 +292,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      * @return
      * @throws RetryableException on fetch failure
      */
-    private JSONObject fetchRecentChanges(Date lastNextStartTime, Batch lastBatch) throws RetryableException {
+    private RecentChangeResponse fetchRecentChanges(Date lastNextStartTime, Batch lastBatch) throws RetryableException {
         if (useBackoff && changeIsRecent(lastNextStartTime)) {
             return wikibase.fetchRecentChangesByTime(
                     DateUtils.addSeconds(lastNextStartTime, -BACKOFF_TIME),
@@ -309,98 +311,89 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      */
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     private Batch batch(Date lastNextStartTime, Batch lastBatch) throws RetryableException {
-        try {
-            JSONObject recentChanges = fetchRecentChanges(lastNextStartTime, lastBatch);
-            // Using LinkedHashMap here so that changes came out sorted by order of arrival
-            Map<String, Change> changesByTitle = new LinkedHashMap<>();
-            JSONObject nextContinue = (JSONObject) recentChanges.get("continue");
-            long nextStartTime = lastNextStartTime.getTime();
-            JSONArray result = (JSONArray) ((JSONObject) recentChanges.get("query")).get("recentchanges");
-            DateFormat df = inputDateFormat();
+        RecentChangeResponse recentChanges = fetchRecentChanges(lastNextStartTime, lastBatch);
+        // Using LinkedHashMap here so that changes came out sorted by order of arrival
+        Map<String, Change> changesByTitle = new LinkedHashMap<>();
+        Continue nextContinue = recentChanges.getContinue();
+        long nextStartTime = lastNextStartTime.getTime();
+        List<RecentChange> result = recentChanges.getQuery().getRecentChanges();
 
-            for (Object rco : result) {
-                JSONObject rc = (JSONObject) rco;
-                long namespace = (long) rc.get("ns");
-                long rcid = (long)rc.get("rcid");
-                Date timestamp = df.parse(rc.get("timestamp").toString());
-                // Does not matter if the change matters for us or not, it
-                // still advances the time since we've seen it.
-                nextStartTime = Math.max(nextStartTime, timestamp.getTime());
-                if (!wikibase.isEntityNamespace(namespace)) {
-                    log.info("Skipping change in irrelevant namespace:  {}", rc);
-                    continue;
-                }
-                if (!wikibase.isValidEntity(rc.get("title").toString())) {
-                    log.info("Skipping change with bogus title:  {}", rc.get("title").toString());
-                    continue;
-                }
-                if (seenIDs.containsKey(rcid)) {
-                    // This change was in the last batch
-                    log.debug("Skipping repeated change with rcid {}", rcid);
-                    continue;
-                }
-                seenIDs.put(rcid, true);
+        for (RecentChange rc : result) {
+            // Does not matter if the change matters for us or not, it
+            // still advances the time since we've seen it.
+            nextStartTime = Math.max(nextStartTime, rc.getTimestamp().getTime());
+            if (!wikibase.isEntityNamespace(rc.getNs())) {
+                log.info("Skipping change in irrelevant namespace:  {}", rc);
+                continue;
+            }
+            if (!wikibase.isValidEntity(rc.getTitle())) {
+                log.info("Skipping change with bogus title:  {}", rc.getTitle());
+                continue;
+            }
+            if (seenIDs.containsKey(rc.getRcId())) {
+                // This change was in the last batch
+                log.debug("Skipping repeated change with rcid {}", rc.getRcId());
+                continue;
+            }
+            seenIDs.put(rc.getRcId(), TRUE);
 // Looks like we can not rely on changes appearing in order, so we have to take them all and let SPARQL
 // sort out the dupes.
 //                if (continueChange != null && rcid < continueChange.rcid()) {
 //                    // We've already seen this change, since it has older rcid - so skip it
 //                    continue;
 //                }
-                Change change;
-                if (rc.get("type").toString().equals("log") && (long)rc.get("revid") == 0) {
-                    // Deletes should always be processed, so put negative revision
-                    change = new Change(rc.get("title").toString(), -1L, timestamp, rcid);
-                } else {
-                    change = new Change(rc.get("title").toString(), (long) rc.get("revid"), timestamp, (long)rc.get("rcid"));
-                }
-                /*
-                 * Remove duplicate changes by title keeping the latest
-                 * revision. Note that negative revision means always update, so those
-                 * are kept.
-                 */
-                Change dupe = changesByTitle.put(change.entityId(), change);
-                if (dupe != null && (dupe.revision() > change.revision() || dupe.revision() < 0)) {
-                    // need to remove so that order will be correct
-                    changesByTitle.remove(change.entityId());
-                    changesByTitle.put(change.entityId(), dupe);
-                }
-            }
-            final ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
-            // Backoff overflow is when:
-            // a. We use backoff
-            // b. We got full batch of changes.
-            // c. None of those were new changes.
-            // In this case, sleeping and trying again is obviously useless.
-            final boolean backoffOverflow = useBackoff && changes.size() == 0 && result.size() >= batchSize;
-            if (backoffOverflow) {
-                // We have a problem here - due to backoff, we did not fetch any new items
-                // Try to advance one second, even though we risk to lose a change - in hope
-                // that trailing poller will pick them up.
-                nextStartTime += 1000;
-                log.info("Backoff overflow, advancing next time to {}", inputDateFormat().format(new Date(nextStartTime)));
-            }
-
-            if (changes.size() != 0) {
-                log.info("Got {} changes, from {} to {}", changes.size(),
-                        changes.get(0).toString(),
-                        changes.get(changes.size() - 1).toString());
+            Change change;
+            if (rc.getType().equals("log") && rc.getRevId() == 0) {
+                // Deletes should always be processed, so put negative revision
+                change = new Change(rc.getTitle(), -1L, rc.getTimestamp(), rc.getRcId());
             } else {
-                log.info("Got no real changes");
+                change = new Change(rc.getTitle(), rc.getRevId(), rc.getTimestamp(), rc.getRcId());
             }
-
-            // Show the user the polled time - one second because we can't
-            // be sure we got the whole second
-            String upTo = inputDateFormat().format(new Date(nextStartTime - 1000));
-            long advanced = nextStartTime - lastNextStartTime.getTime();
-            Batch batch = new Batch(changes, advanced, upTo, new Date(nextStartTime), nextContinue);
-            if (backoffOverflow && nextContinue != null) {
-                // We will not sleep if continue is provided.
-                log.info("Got only old changes, next is: {}", nextContinue.toJSONString());
-                batch.hasChanges(true);
+            /*
+             * Remove duplicate changes by title keeping the latest
+             * revision. Note that negative revision means always update, so those
+             * are kept.
+             */
+            Change dupe = changesByTitle.put(change.entityId(), change);
+            if (dupe != null && (dupe.revision() > change.revision() || dupe.revision() < 0)) {
+                // need to remove so that order will be correct
+                changesByTitle.remove(change.entityId());
+                changesByTitle.put(change.entityId(), dupe);
             }
-            return batch;
-        } catch (java.text.ParseException e) {
-            throw new RetryableException("Parse error from api", e);
         }
+        final ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
+        // Backoff overflow is when:
+        // a. We use backoff
+        // b. We got full batch of changes.
+        // c. None of those were new changes.
+        // In this case, sleeping and trying again is obviously useless.
+        final boolean backoffOverflow = useBackoff && changes.size() == 0 && result.size() >= batchSize;
+        if (backoffOverflow) {
+            // We have a problem here - due to backoff, we did not fetch any new items
+            // Try to advance one second, even though we risk to lose a change - in hope
+            // that trailing poller will pick them up.
+            nextStartTime += 1000;
+            log.info("Backoff overflow, advancing next time to {}", inputDateFormat().format(new Date(nextStartTime)));
+        }
+
+        if (changes.size() != 0) {
+            log.info("Got {} changes, from {} to {}", changes.size(),
+                    changes.get(0).toString(),
+                    changes.get(changes.size() - 1).toString());
+        } else {
+            log.info("Got no real changes");
+        }
+
+        // Show the user the polled time - one second because we can't
+        // be sure we got the whole second
+        String upTo = inputDateFormat().format(new Date(nextStartTime - 1000));
+        long advanced = nextStartTime - lastNextStartTime.getTime();
+        Batch batch = new Batch(changes, advanced, upTo, new Date(nextStartTime), nextContinue);
+        if (backoffOverflow && nextContinue != null) {
+            // We will not sleep if continue is provided.
+            log.info("Got only old changes, next is: {}", nextContinue);
+            batch.hasChanges(true);
+        }
+        return batch;
     }
 }

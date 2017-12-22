@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.TimeZone;
 
 import javax.net.ssl.SSLException;
@@ -44,10 +43,6 @@ import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HttpContext;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.openrdf.model.Statement;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
@@ -62,8 +57,15 @@ import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
+import org.wikidata.query.rdf.tool.wikibase.EditRequest.Label;
+import org.wikidata.query.rdf.tool.wikibase.SearchResponse.SearchResult;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Longs;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -87,6 +89,11 @@ public class WikibaseRepository implements Closeable {
     private static final int RETRY_INTERVAL = 500;
 
     /**
+     * Standard representation of dates in Mediawiki API (ISO 8601).
+     */
+    public static final String INPUT_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+
+    /**
      * HTTP client for wikibase.
      */
     private final CloseableHttpClient client = HttpClients.custom()
@@ -102,16 +109,30 @@ public class WikibaseRepository implements Closeable {
      */
     private final Uris uris;
 
+    /**
+     * Object mapper used to deserialize JSON messages from Wikidata.
+     *
+     * Note that this mapper is configured to ignore unknown properties.
+     */
+    private final ObjectMapper mapper = new ObjectMapper();
+
     public WikibaseRepository(String scheme, String host) {
         uris = new Uris(scheme, host);
+        configureObjectMapper(mapper);
     }
 
     public WikibaseRepository(String scheme, String host, int port) {
         uris = new Uris(scheme, host, port);
+        configureObjectMapper(mapper);
     }
 
     public WikibaseRepository(String scheme, String host, int port, long[] entityNamespaces) {
         uris = new Uris(scheme, host, port, entityNamespaces);
+        configureObjectMapper(mapper);
+    }
+
+    private void configureObjectMapper(ObjectMapper mapper) {
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     /**
@@ -194,7 +215,7 @@ public class WikibaseRepository implements Closeable {
      * @throws RetryableException thrown if there is an error communicating with
      *             wikibase
      */
-    public JSONObject fetchRecentChangesByTime(Date nextStartTime, int batchSize) throws RetryableException {
+    public RecentChangeResponse fetchRecentChangesByTime(Date nextStartTime, int batchSize) throws RetryableException {
         return fetchRecentChanges(nextStartTime, null, batchSize);
     }
 
@@ -211,16 +232,19 @@ public class WikibaseRepository implements Closeable {
      * @throws RetryableException thrown if there is an error communicating with
      *             wikibase
      */
-    public JSONObject fetchRecentChanges(Date nextStartTime, JSONObject lastContinue, int batchSize)
+    public RecentChangeResponse fetchRecentChanges(Date nextStartTime, Continue lastContinue, int batchSize)
             throws RetryableException {
         URI uri = uris.recentChanges(nextStartTime, lastContinue, batchSize);
         log.debug("Polling for changes from {}", uri);
         try {
-            return checkApi(getJson(new HttpGet(uri)));
+            return checkApi(getJson(new HttpGet(uri), RecentChangeResponse.class));
         } catch (UnknownHostException | SocketException e) {
             // We want to bail on this, since it happens to be sticky for some reason
             throw new RuntimeException(e);
-        } catch (IOException | ParseException e) {
+        } catch (JsonParseException | JsonMappingException  e) {
+            // An invalid response will probably not fix itself with a retry, so let's bail
+            throw new RuntimeException(e);
+        } catch (IOException e) {
             throw new RetryableException("Error fetching recent changes", e);
         }
     }
@@ -275,14 +299,13 @@ public class WikibaseRepository implements Closeable {
         URI uri = uris.searchForLabel(label, language, type);
         log.debug("Searching for entity using {}", uri);
         try {
-            JSONObject result = checkApi(getJson(new HttpGet(uri)));
-            JSONArray resultList = (JSONArray) result.get("search");
+            SearchResponse result = checkApi(getJson(new HttpGet(uri), SearchResponse.class));
+            List<SearchResult> resultList = result.getSearch();
             if (resultList.isEmpty()) {
                 return null;
             }
-            result = (JSONObject) resultList.get(0);
-            return result.get("id").toString();
-        } catch (IOException | ParseException e) {
+            return resultList.get(0).getId();
+        } catch (IOException e) {
             throw new RetryableException("Error searching for page", e);
         }
     }
@@ -301,23 +324,20 @@ public class WikibaseRepository implements Closeable {
      */
     @SuppressWarnings("unchecked")
     public String setLabel(String entityId, String type, String label, String language) throws RetryableException {
-        JSONObject data = new JSONObject();
-        JSONObject labels = new JSONObject();
-        data.put("labels", labels);
-        JSONObject labelObject = new JSONObject();
-        labels.put("en", labelObject);
-        labelObject.put("language", language);
-        labelObject.put("value", label + System.currentTimeMillis());
-        if (type.equals("property")) {
-            // A data type is required for properties so lets just pick one
-            data.put("datatype", "string");
-        }
-        URI uri = uris.edit(entityId, type, data.toJSONString());
-        log.debug("Editing entity using {}", uri);
+        String datatype = type.equals("property") ? "string" : null;
+
+        EditRequest data = new EditRequest(
+                datatype,
+                ImmutableMap.of(
+                        language,
+                        new Label(language, label)));
+
         try {
-            JSONObject result = checkApi(getJson(postWithToken(uri)));
-            return ((JSONObject) result.get("entity")).get("id").toString();
-        } catch (IOException | ParseException e) {
+            URI uri = uris.edit(entityId, type, mapper.writeValueAsString(data));
+            log.debug("Editing entity using {}", uri);
+            EditResponse result = checkApi(getJson(postWithToken(uri), EditResponse.class));
+            return result.getEntity().getId();
+        } catch (IOException e) {
             throw new RetryableException("Error adding page", e);
         }
     }
@@ -332,9 +352,9 @@ public class WikibaseRepository implements Closeable {
         URI uri = uris.delete(entityId);
         log.debug("Deleting entity {} using {}", entityId, uri);
         try {
-            JSONObject result = checkApi(getJson(postWithToken(uri)));
+            DeleteResponse result = checkApi(getJson(postWithToken(uri), DeleteResponse.class));
             log.debug("Deleted: {}", result);
-        } catch (IOException | ParseException e) {
+        } catch (IOException e) {
             throw new RetryableException("Error deleting page", e);
         }
     }
@@ -343,9 +363,8 @@ public class WikibaseRepository implements Closeable {
      * Post with a csrf token.
      *
      * @throws IOException if its thrown while communicating with wikibase
-     * @throws ParseException if wikibase's response can't be parsed
      */
-    private HttpPost postWithToken(URI uri) throws IOException, ParseException {
+    private HttpPost postWithToken(URI uri) throws IOException {
         HttpPost request = new HttpPost(uri);
         List<NameValuePair> entity = new ArrayList<>();
         entity.add(new BasicNameValuePair("token", csrfToken()));
@@ -357,13 +376,11 @@ public class WikibaseRepository implements Closeable {
      * Fetch a csrf token.
      *
      * @throws IOException if its thrown while communicating with wikibase
-     * @throws ParseException if wikibase's response can't be parsed
      */
-    private String csrfToken() throws IOException, ParseException {
+    private String csrfToken() throws IOException {
         URI uri = uris.csrfToken();
         log.debug("Fetching csrf token from {}", uri);
-        return ((JSONObject) ((JSONObject) getJson(new HttpGet(uri)).get("query")).get("tokens")).get("csrftoken")
-                .toString();
+        return getJson(new HttpGet(uri), CsrfTokenResponse.class).getQuery().getTokens().getCsrfToken();
     }
 
     /**
@@ -373,12 +390,11 @@ public class WikibaseRepository implements Closeable {
      * @return json response
      * @throws IOException if there is an error parsing the json or if one is
      *             thrown receiving the data
-     * @throws ParseException the json was malformed and couldn't be parsed
      */
-    private JSONObject getJson(HttpRequestBase request) throws IOException, ParseException {
+    private <T extends WikibaseResponse> T getJson(HttpRequestBase request, Class<T> valueType)
+            throws IOException {
         try (CloseableHttpResponse response = client.execute(request)) {
-            return (JSONObject) new JSONParser().parse(new InputStreamReader(response.getEntity().getContent(),
-                    Charsets.UTF_8));
+            return mapper.readValue(response.getEntity().getContent(), valueType);
         }
     }
 
@@ -390,8 +406,8 @@ public class WikibaseRepository implements Closeable {
      * @throws RetryableException thrown if there is an error communicating with
      *             wikibase
      */
-    private JSONObject checkApi(JSONObject response) throws RetryableException {
-        Object error = response.get("error");
+    private <T extends WikibaseResponse> T checkApi(T response) throws RetryableException {
+        Object error = response.getError();
         if (error != null) {
             throw new RetryableException("Error result from Mediawiki:  " + error);
         }
@@ -471,7 +487,7 @@ public class WikibaseRepository implements Closeable {
          * @param continueObject Continue object from the last request
          * @param batchSize maximum number of results we want back from wikibase
          */
-        public URI recentChanges(Date startTime, Map continueObject, int batchSize) {
+        public URI recentChanges(Date startTime, Continue continueObject, int batchSize) {
             URIBuilder builder = apiBuilder();
             builder.addParameter("action", "query");
             builder.addParameter("list", "recentchanges");
@@ -483,8 +499,8 @@ public class WikibaseRepository implements Closeable {
                 builder.addParameter("continue", "");
                 builder.addParameter("rcstart", outputDateFormat().format(startTime));
             } else {
-                builder.addParameter("continue", continueObject.get("continue").toString());
-                builder.addParameter("rccontinue", continueObject.get("rccontinue").toString());
+                builder.addParameter("continue", continueObject.getContinue());
+                builder.addParameter("rccontinue", continueObject.getRcContinue());
             }
             return build(builder);
         }
@@ -642,7 +658,7 @@ public class WikibaseRepository implements Closeable {
      * in the format that wikibase returns.
      */
     public static DateFormat inputDateFormat() {
-        return utc(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT));
+        return utc(new SimpleDateFormat(INPUT_DATE_FORMAT, Locale.ROOT));
     }
 
     /**
@@ -659,31 +675,17 @@ public class WikibaseRepository implements Closeable {
     }
 
     /**
-     * Create JSON change description for continuing.
-     * @param lastChange
-     * @return Change description that can be used to continue from the next change.
-     */
-    @SuppressWarnings("unchecked")
-    public JSONObject getContinueObject(Change lastChange) {
-        JSONObject nextContinue = new JSONObject();
-        nextContinue.put("rccontinue", outputDateFormat().format(lastChange.timestamp()) + "|" + (lastChange.rcid() + 1));
-        nextContinue.put("continue", "-||");
-        return nextContinue;
-    }
-
-    /**
      * Extract timestamp from continue JSON object.
      * @param nextContinue
      * @return Timestamp as date
      * @throws java.text.ParseException When data is in is wrong format
      */
     @SuppressFBWarnings(value = "STT_STRING_PARSING_A_FIELD", justification = "low priority to fix")
-    public Change getChangeFromContinue(Map<String, Object> nextContinue) throws java.text.ParseException {
+    public Change getChangeFromContinue(Continue nextContinue) throws java.text.ParseException {
         if (nextContinue == null) {
             return null;
         }
-        final String rccontinue = (String)nextContinue.get("rccontinue");
-        final String[] parts = rccontinue.split("\\|");
+        final String[] parts = nextContinue.getRcContinue().split("\\|");
         return new Change("DUMMY", -1, outputDateFormat().parse(parts[0]), Long.parseLong(parts[1]));
     }
 

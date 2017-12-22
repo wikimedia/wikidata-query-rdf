@@ -2,27 +2,17 @@ package org.wikidata.query.rdf.tool.wikibase;
 
 import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.isA;
-import static org.hamcrest.Matchers.not;
 import static org.wikidata.query.rdf.test.CloseableRule.autoClose;
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
 
 import java.io.IOException;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.openrdf.model.Statement;
@@ -31,6 +21,7 @@ import org.wikidata.query.rdf.test.CloseableRule;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
+import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse.RecentChange;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 
@@ -53,27 +44,25 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
          * is probably ok.
          */
         int batchSize = randomIntBetween(3, 30);
-        JSONObject changes = repo.get().fetchRecentChanges(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30)),
+        RecentChangeResponse changes = repo.get().fetchRecentChanges(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30)),
                 null, batchSize);
-        Map<String, Object> c = changes;
-        assertThat(c, hasKey("continue"));
-        assertThat((Map<String, Object>) changes.get("continue"), hasKey("rccontinue"));
-        assertThat(c, hasKey("query"));
-        Map<String, Object> query = (Map<String, Object>) c.get("query");
-        assertThat(query, hasKey("recentchanges"));
-        List<Object> recentChanges = (JSONArray) ((Map<String, Object>) c.get("query")).get("recentchanges");
+        assertNotNull(changes.getContinue());
+        assertNotNull(changes.getContinue());
+        assertNotNull(changes.getQuery());
+        RecentChangeResponse.Query query = changes.getQuery();
+        assertNotNull(query.getRecentChanges());
+        List<RecentChange> recentChanges = changes.getQuery().getRecentChanges();
         assertThat(recentChanges, hasSize(batchSize));
-        for (Object rco : recentChanges) {
-            Map<String, Object> rc = (Map<String, Object>) rco;
-            assertThat(rc, hasEntry(equalTo("ns"), either(equalTo((Object) 0L)).or(equalTo((Object) 120L))));
-            assertThat(rc, hasEntry(equalTo("title"), instanceOf(String.class)));
-            assertThat(rc, hasEntry(equalTo("timestamp"), instanceOf(String.class)));
-            assertThat(rc, hasEntry(equalTo("revid"), instanceOf(Long.class)));
+        for (RecentChange rc : recentChanges) {
+            assertThat(rc.getNs(), either(equalTo(0L)).or(equalTo(120L)));
+            assertNotNull(rc.getTitle());
+            assertNotNull(rc.getTimestamp());
+            assertNotNull(rc.getRevId());
         }
-        final Date nextDate = repo.get().getChangeFromContinue((Map<String, Object>)changes.get("continue")).timestamp();
+        final Date nextDate = repo.get().getChangeFromContinue(changes.getContinue()).timestamp();
         changes = repo.get().fetchRecentChanges(nextDate, null, batchSize);
-        assertThat(c, hasKey("query"));
-        assertThat((Map<String, Object>) c.get("query"), hasKey("recentchanges"));
+        assertNotNull(changes.getQuery());
+        assertNotNull(changes.getQuery().getRecentChanges());
     }
 
     @Test
@@ -83,11 +72,10 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
          * This relies on there being very few changes in the current
          * second.
          */
-        JSONObject changes = repo.get().fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
-        Map<String, Object> c = changes;
-        assertThat(c, not(hasKey("continue")));
-        assertThat(c, hasKey("query"));
-        assertThat((Map<String, Object>) c.get("query"), hasKey("recentchanges"));
+        RecentChangeResponse changes = repo.get().fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
+        assertNull(changes.getContinue());
+        assertNotNull(changes.getQuery());
+        assertNotNull(changes.getQuery().getRecentChanges());
     }
 
     @Test
@@ -100,7 +88,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         editShowsUpInRecentChangesTestCase("QueryTestProperty", "property");
     }
 
-    private JSONArray getRecentChanges(Date date, int batchSize) throws RetryableException,
+    private List<RecentChange> getRecentChanges(Date date, int batchSize) throws RetryableException,
         ContainedException {
         // Add a bit of a wait to try and improve Jenkins test stability.
         try {
@@ -108,8 +96,8 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         } catch (InterruptedException e) {
             // nothing to do here, sorry. I know it looks bad.
         }
-        JSONObject result = repo.get().fetchRecentChanges(date, null, batchSize);
-        return (JSONArray) ((JSONObject) result.get("query")).get("recentchanges");
+        RecentChangeResponse result = repo.get().fetchRecentChanges(date, null, batchSize);
+        return result.getQuery().getRecentChanges();
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -118,18 +106,16 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         long now = System.currentTimeMillis();
         String entityId = repo.get().firstEntityIdForLabelStartingWith(label, "en", type);
         repo.get().setLabel(entityId, type, label + now, "en");
-        JSONArray changes = getRecentChanges(new Date(now - 10000), 10);
+        List<RecentChange> changes = getRecentChanges(new Date(now - 10000), 10);
         boolean found = false;
         String title = entityId;
         if (type.equals("property")) {
             title = "Property:" + title;
         }
-        for (Object changeObject : changes) {
-            JSONObject change = (JSONObject) changeObject;
-            if (change.get("title").equals(title)) {
+        for (RecentChange change : changes) {
+            if (change.getTitle().equals(title)) {
                 found = true;
-                Map<String, Object> c = change;
-                assertThat(c, hasEntry(equalTo("revid"), isA((Class) Long.class)));
+                assertNotNull(change.getRevId());
                 break;
             }
         }
@@ -178,19 +164,16 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         long now = System.currentTimeMillis();
         String entityId = repo.get().firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
         repo.get().setLabel(entityId, "item", "QueryTestItem" + now, "en");
-        JSONArray changes = getRecentChanges(new Date(now - 10000), 10);
+        List<RecentChange> changes = getRecentChanges(new Date(now - 10000), 10);
         Change change = null;
-        long oldRevid = 0;
-        long oldRcid = 0;
+        Long oldRevid = 0L;
+        Long oldRcid = 0L;
 
-        for (Object changeObject : changes) {
-            JSONObject rc = (JSONObject) changeObject;
-            if (rc.get("title").equals(entityId)) {
-                DateFormat df = inputDateFormat();
-                Date timestamp = df.parse(rc.get("timestamp").toString());
-                oldRevid = (long) rc.get("revid");
-                oldRcid = (long)rc.get("rcid");
-                change = new Change(rc.get("title").toString(), oldRevid, timestamp, oldRcid);
+        for (RecentChange rc : changes) {
+            if (rc.getTitle().equals(entityId)) {
+                oldRevid = rc.getRevId();
+                oldRcid = rc.getRcId();
+                change = new Change(rc.getTitle(), oldRevid, rc.getTimestamp(), oldRcid);
                 break;
             }
         }
@@ -202,11 +185,10 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         changes = getRecentChanges(DateUtils.addSeconds(change.timestamp(), 1), 10);
         // check that new result does not contain old edit but contains new edit
         boolean found = false;
-        for (Object changeObject : changes) {
-            JSONObject rc = (JSONObject) changeObject;
-            if (rc.get("title").equals(entityId)) {
-                assertNotEquals("Found old edit after continue: revid", oldRevid, (long) rc.get("revid"));
-                assertNotEquals("Found old edit after continue: rcid", oldRcid, (long) rc.get("rcid"));
+        for (RecentChange rc: changes) {
+            if (rc.getTitle().equals(entityId)) {
+                assertNotEquals("Found old edit after continue: revid", oldRevid, rc.getRevId());
+                assertNotEquals("Found old edit after continue: rcid", oldRcid, rc.getRcId());
                 found = true;
             }
         }
@@ -216,11 +198,10 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     @Test
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void recentChangesWithErrors() throws RetryableException, ContainedException {
-        JSONObject changes = proxyRepo.get().fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
-        Map<String, Object> c = changes;
-        assertThat(c, not(hasKey("continue")));
-        assertThat(c, hasKey("query"));
-        assertThat((Map<String, Object>) c.get("query"), hasKey("recentchanges"));
+        RecentChangeResponse changes = proxyRepo.get().fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
+        assertNull(changes.getContinue());
+        assertNotNull(changes.getQuery());
+        assertNotNull(changes.getQuery().getRecentChanges());
     }
 
     // TODO we should verify the RDF dump format against a stored file

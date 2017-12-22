@@ -36,9 +36,6 @@ import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.Fields;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.query.Binding;
@@ -59,6 +56,12 @@ import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.rholder.retry.Attempt;
 import com.github.rholder.retry.RetryException;
 import com.github.rholder.retry.RetryListener;
@@ -920,11 +923,23 @@ public class RdfRepository implements AutoCloseable {
         @Override
         public Boolean parse(ContentResponse entity) throws IOException {
             try {
-                JSONObject response = (JSONObject) new JSONParser().parse(entity.getContentAsString());
-                return (Boolean) response.get("boolean");
-            } catch (ParseException e) {
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                return mapper.readValue(entity.getContentAsString(), Resp.class).aBoolean;
+
+            } catch (JsonParseException | JsonMappingException e) {
                 throw new IOException("Error parsing response", e);
             }
         }
+
+        public static class Resp {
+            private final Boolean aBoolean;
+
+            @JsonCreator
+            Resp(@JsonProperty("boolean") Boolean aBoolean) {
+                this.aBoolean = aBoolean;
+            }
+        }
     }
+
 }

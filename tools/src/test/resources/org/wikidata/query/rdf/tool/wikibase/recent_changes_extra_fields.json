@@ -1,0 +1,33 @@
+{
+  "batchcomplete": "",
+  "continue": {
+    "rccontinue": "20171126140446|634268213",
+    "continue": "-||"
+  },
+  "query": {
+    "recentchanges": [
+      {
+        "type": "edit",
+        "ns": 0,
+        "title": "Q16013051",
+        "pageid": 17630512,
+        "revid": 598908952,
+        "old_revid": 582982420,
+        "rcid": 634268202,
+        "timestamp": "2017-11-26T14:04:45Z",
+        "extra_field": 1234
+      },
+      {
+        "type": "new",
+        "ns": 0,
+        "title": "Q43758077",
+        "pageid": 44966689,
+        "revid": 598908953,
+        "old_revid": 0,
+        "rcid": 634268204,
+        "timestamp": "2017-11-26T14:04:45Z",
+        "extra_field": 5678
+      }
+    ]
+  }
+}

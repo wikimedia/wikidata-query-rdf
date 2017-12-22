@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": 123,
+    "reason": "some reason"
+  }
+}
