@@ -56,7 +56,6 @@ import org.openrdf.rio.Rio;
 import org.openrdf.rio.helpers.StatementCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.tool.HttpClientUtils;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
@@ -93,6 +92,7 @@ public class WikibaseRepository {
             .setMaxConnPerRoute(100).setMaxConnTotal(100)
             .setRetryHandler(getRetryHandler(RETRIES))
             .setServiceUnavailableRetryStrategy(getRetryStrategy(RETRIES, RETRY_INTERVAL))
+            .disableCookieManagement()
             .setUserAgent("Wikidata Query Service Updater")
             .build();
 
@@ -239,7 +239,6 @@ public class WikibaseRepository {
         StatementCollector collector = new StatementCollector();
         parser.setRDFHandler(new NormalizingRdfHandler(collector));
         HttpGet request = new HttpGet(uri);
-        HttpClientUtils.ignoreCookies(request);
         try {
             try (CloseableHttpResponse response = client.execute(request)) {
                 if (response.getStatusLine().getStatusCode() == 404) {
@@ -376,7 +375,6 @@ public class WikibaseRepository {
      * @throws ParseException the json was malformed and couldn't be parsed
      */
     private JSONObject getJson(HttpRequestBase request) throws IOException, ParseException {
-        HttpClientUtils.ignoreCookies(request);
         try (CloseableHttpResponse response = client.execute(request)) {
             return (JSONObject) new JSONParser().parse(new InputStreamReader(response.getEntity().getContent(),
                     Charsets.UTF_8));
