@@ -619,11 +619,15 @@
     <repositories>
         <repository>
             <id>wmf.mirrored</id>
-            <url>http://archiva.wikimedia.org/repository/mirrored</url>
+            <url>https://archiva.wikimedia.org/repository/mirrored</url>
         </repository>
         <repository>
             <id>wmf.releases</id>
-            <url>http://archiva.wikimedia.org/repository/releases</url>
+            <url>https://archiva.wikimedia.org/repository/releases</url>
+        </repository>
+        <repository>
+            <id>wmf.snapshots</id>
+            <url>https://archiva.wikimedia.org/repository/snapshots</url>
         </repository>
     </repositories>
 
