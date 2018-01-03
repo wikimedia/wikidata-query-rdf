@@ -8,8 +8,10 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.not;
+import static org.wikidata.query.rdf.test.CloseableRule.autoClose;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Collection;
@@ -21,9 +23,11 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.time.DateUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.junit.Rule;
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.test.CloseableRule;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
@@ -36,8 +40,9 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
  */
 public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     private static final String HOST = "test.wikidata.org";
-    private final WikibaseRepository repo = new WikibaseRepository("https", HOST);
-    private final WikibaseRepository proxyRepo = new WikibaseRepository("http", "localhost", 8812);
+    @Rule
+    public final CloseableRule<WikibaseRepository> repo = autoClose(new WikibaseRepository("https", HOST));
+    private final CloseableRule<WikibaseRepository> proxyRepo = autoClose(new WikibaseRepository("http", "localhost", 8812));
     private final WikibaseUris uris = new WikibaseUris(HOST);
 
     @Test
@@ -48,7 +53,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
          * is probably ok.
          */
         int batchSize = randomIntBetween(3, 30);
-        JSONObject changes = repo.fetchRecentChanges(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30)),
+        JSONObject changes = repo.get().fetchRecentChanges(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30)),
                 null, batchSize);
         Map<String, Object> c = changes;
         assertThat(c, hasKey("continue"));
@@ -65,8 +70,8 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
             assertThat(rc, hasEntry(equalTo("timestamp"), instanceOf(String.class)));
             assertThat(rc, hasEntry(equalTo("revid"), instanceOf(Long.class)));
         }
-        final Date nextDate = repo.getChangeFromContinue((Map<String, Object>)changes.get("continue")).timestamp();
-        changes = repo.fetchRecentChanges(nextDate, null, batchSize);
+        final Date nextDate = repo.get().getChangeFromContinue((Map<String, Object>)changes.get("continue")).timestamp();
+        changes = repo.get().fetchRecentChanges(nextDate, null, batchSize);
         assertThat(c, hasKey("query"));
         assertThat((Map<String, Object>) c.get("query"), hasKey("recentchanges"));
     }
@@ -78,7 +83,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
          * This relies on there being very few changes in the current
          * second.
          */
-        JSONObject changes = repo.fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
+        JSONObject changes = repo.get().fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
         Map<String, Object> c = changes;
         assertThat(c, not(hasKey("continue")));
         assertThat(c, hasKey("query"));
@@ -103,7 +108,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         } catch (InterruptedException e) {
             // nothing to do here, sorry. I know it looks bad.
         }
-        JSONObject result = repo.fetchRecentChanges(date, null, batchSize);
+        JSONObject result = repo.get().fetchRecentChanges(date, null, batchSize);
         return (JSONArray) ((JSONObject) result.get("query")).get("recentchanges");
     }
 
@@ -111,8 +116,8 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     private void editShowsUpInRecentChangesTestCase(String label, String type) throws RetryableException,
             ContainedException {
         long now = System.currentTimeMillis();
-        String entityId = repo.firstEntityIdForLabelStartingWith(label, "en", type);
-        repo.setLabel(entityId, type, label + now, "en");
+        String entityId = repo.get().firstEntityIdForLabelStartingWith(label, "en", type);
+        repo.get().setLabel(entityId, type, label + now, "en");
         JSONArray changes = getRecentChanges(new Date(now - 10000), 10);
         boolean found = false;
         String title = entityId;
@@ -129,7 +134,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
             }
         }
         assertTrue("Didn't find new page in recent changes", found);
-        Collection<Statement> statements = repo.fetchRdfForEntity(entityId);
+        Collection<Statement> statements = repo.get().fetchRdfForEntity(entityId);
         found = false;
         for (Statement statement : statements) {
             if (statement.getSubject().stringValue().equals(uris.entity() + entityId)) {
@@ -141,37 +146,38 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     }
 
     @Test
-    public void fetchIsNormalized() throws RetryableException, ContainedException {
+    public void fetchIsNormalized() throws RetryableException, ContainedException, IOException {
         long now = System.currentTimeMillis();
-        WikibaseRepository proxyRepo = new WikibaseRepository("http", "localhost", 8812);
-        String entityId = repo.firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
-        repo.setLabel(entityId, "item", "QueryTestItem" + now, "en");
-        Collection<Statement> statements = proxyRepo.fetchRdfForEntity(entityId);
-        boolean foundBad = false;
-        boolean foundGood = false;
-        for (Statement statement : statements) {
-            if (statement.getObject().stringValue().contains("http://www.wikidata.org/ontology-beta#")) {
-                foundBad = true;
+        try (WikibaseRepository proxyRepo = new WikibaseRepository("http", "localhost", 8812)) {
+            String entityId = repo.get().firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
+            repo.get().setLabel(entityId, "item", "QueryTestItem" + now, "en");
+            Collection<Statement> statements = proxyRepo.fetchRdfForEntity(entityId);
+            boolean foundBad = false;
+            boolean foundGood = false;
+            for (Statement statement : statements) {
+                if (statement.getObject().stringValue().contains("http://www.wikidata.org/ontology-beta#")) {
+                    foundBad = true;
+                }
+                if (statement.getObject().stringValue().contains("http://www.wikidata.org/ontology-0.0.1#")) {
+                    foundBad = true;
+                }
+                if (statement.getObject().stringValue().contains("http://www.wikidata.org/ontology#")) {
+                    foundBad = true;
+                }
+                if (statement.getObject().stringValue().contains("http://wikiba.se/ontology#")) {
+                    foundGood = true;
+                }
             }
-            if (statement.getObject().stringValue().contains("http://www.wikidata.org/ontology-0.0.1#")) {
-                foundBad = true;
-            }
-            if (statement.getObject().stringValue().contains("http://www.wikidata.org/ontology#")) {
-                foundBad = true;
-            }
-            if (statement.getObject().stringValue().contains("http://wikiba.se/ontology#")) {
-                foundGood = true;
-            }
+            assertTrue("Did not find correct ontology statements", foundGood);
+            assertFalse("Found incorrect ontology statements", foundBad);
         }
-        assertTrue("Did not find correct ontology statements", foundGood);
-        assertFalse("Found incorrect ontology statements", foundBad);
     }
 
     @Test
     public void continueWorks() throws RetryableException, ContainedException, ParseException, InterruptedException {
         long now = System.currentTimeMillis();
-        String entityId = repo.firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
-        repo.setLabel(entityId, "item", "QueryTestItem" + now, "en");
+        String entityId = repo.get().firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
+        repo.get().setLabel(entityId, "item", "QueryTestItem" + now, "en");
         JSONArray changes = getRecentChanges(new Date(now - 10000), 10);
         Change change = null;
         long oldRevid = 0;
@@ -192,7 +198,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         // Ensure this change is in different second
         Thread.sleep(1000);
         // make new edit now
-        repo.setLabel(entityId, "item", "QueryTestItem" + now + "updated", "en");
+        repo.get().setLabel(entityId, "item", "QueryTestItem" + now + "updated", "en");
         changes = getRecentChanges(DateUtils.addSeconds(change.timestamp(), 1), 10);
         // check that new result does not contain old edit but contains new edit
         boolean found = false;
@@ -210,7 +216,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     @Test
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void recentChangesWithErrors() throws RetryableException, ContainedException {
-        JSONObject changes = proxyRepo.fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
+        JSONObject changes = proxyRepo.get().fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
         Map<String, Object> c = changes;
         assertThat(c, not(hasKey("continue")));
         assertThat(c, hasKey("query"));

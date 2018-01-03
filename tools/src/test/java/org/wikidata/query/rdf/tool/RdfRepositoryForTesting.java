@@ -84,6 +84,7 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
     }
 
     /** {@inheritDoc} */
+    @Override
     public Statement apply(final Statement base, Description description) {
         return new Statement() {
             @Override
