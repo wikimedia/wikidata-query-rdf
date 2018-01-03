@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.tool;
 
+import static org.wikidata.query.rdf.test.CloseableRule.autoClose;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -8,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Rule;
 import org.junit.runner.RunWith;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.test.CloseableRule;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
 import org.wikidata.query.rdf.tool.rdf.Munger;
@@ -24,7 +27,8 @@ public class AbstractUpdaterIntegrationTestBase extends RandomizedTest {
     /**
      * Wikibase test against.
      */
-    private final WikibaseRepository wikibaseRepository = new WikibaseRepository("https", "www.wikidata.org");
+    @Rule
+    public final CloseableRule<WikibaseRepository> wikibaseRepository = autoClose(new WikibaseRepository("https", "www.wikidata.org"));
     /**
      * Munger to test against.
      */
@@ -42,10 +46,9 @@ public class AbstractUpdaterIntegrationTestBase extends RandomizedTest {
      */
     public void update(int from, int to) {
         Change.Source<?> source = IdRangeChangeSource.forItems(from, to, 30);
-        ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
+        ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
         WikibaseUris uris = new WikibaseUris("www.wikidata.org");
-        try (Updater<?> updater = new Updater<>(source, wikibaseRepository, rdfRepository, munger, executorService, 0, uris, false)) {
+        try (Updater<?> updater = new Updater<>(source, wikibaseRepository.get(), rdfRepository, munger, executorService, 0, uris, false)) {
             updater.run();
         }
     }

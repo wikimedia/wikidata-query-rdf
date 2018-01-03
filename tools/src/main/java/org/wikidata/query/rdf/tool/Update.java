@@ -50,10 +50,11 @@ public final class Update {
     public static void main(String[] args) throws Exception {
         RdfRepository rdfRepository = null;
         Updater<? extends Change.Batch> updater;
+        WikibaseRepository wikibaseRepository;
 
         try {
             UpdateOptions options = handleOptions(UpdateOptions.class, args);
-            WikibaseRepository wikibaseRepository = buildWikibaseRepository(options);
+            wikibaseRepository = buildWikibaseRepository(options);
             URI sparqlUri = sparqlUri(options);
             WikibaseUris uris = new WikibaseUris(options.wikibaseHost());
             rdfRepository = new RdfRepository(sparqlUri, uris);
@@ -67,13 +68,15 @@ public final class Update {
             }
             throw e;
         }
-        try (RdfRepository r = rdfRepository) {
+        try (
+                WikibaseRepository w = wikibaseRepository;
+                RdfRepository r = rdfRepository;
+                Updater u = updater
+        ) {
             updater.run();
         } catch (Exception e) {
             log.error("Error during updater run.", e);
             throw e;
-        } finally {
-            updater.close();
         }
     }
 

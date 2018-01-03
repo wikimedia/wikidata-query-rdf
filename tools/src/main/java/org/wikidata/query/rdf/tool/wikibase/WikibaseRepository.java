@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
@@ -72,7 +73,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 // TODO fan out complexity
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-public class WikibaseRepository {
+public class WikibaseRepository implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(WikibaseRepository.class);
 
     /**
@@ -414,6 +415,11 @@ public class WikibaseRepository {
      */
     public boolean isValidEntity(String name) {
         return name.matches("^[A-Za-z0-9:]+$");
+    }
+
+    @Override
+    public void close() throws IOException {
+        client.close();
     }
 
     /**
