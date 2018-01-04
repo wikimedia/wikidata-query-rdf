@@ -10,6 +10,7 @@
     <packaging>jar</packaging>
 
     <name>Blazegraph extension to improve performance for Wikibase</name>
+    <description>Code that integrates into Blazegraph and implements custom functions, services and mappings for WDQS data types. </description>
     <licenses>
         <!-- To be compatible with Blazegraph -->
         <license>
