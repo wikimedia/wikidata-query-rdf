@@ -57,10 +57,12 @@
     <properties>
         <blazegraph.version>2.1.5-SNAPSHOT</blazegraph.version>
         <jackson.version>2.9.3</jackson.version>
+        <!-- matching version used by Blazegraph here -->
         <jetty.version>9.2.3.v20140905</jetty.version>
         <logback.version>1.2.3</logback.version>
+        <!-- matching version used by Blazegraph here -->
         <sesame.version>2.7.12</sesame.version>
-        <slf4j.version>1.7.10</slf4j.version>
+        <slf4j.version>1.7.25</slf4j.version>
     </properties>
 
     <dependencyManagement>
@@ -242,7 +244,7 @@
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
-                <version>3.1.0</version>
+                <version>3.2.6</version>
             </dependency>
             <dependency>
                 <groupId>javax.servlet</groupId>
@@ -252,7 +254,7 @@
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.7</version>
+                <version>2.9.9</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -267,6 +269,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
+                <!-- matching version used by Blazegraph here -->
                 <version>4.4</version>
                 <exclusions>
                     <exclusion>
@@ -278,6 +281,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
+                <!-- matching version used by Blazegraph here -->
                 <version>4.4</version>
                 <exclusions>
                     <exclusion>
@@ -394,7 +398,7 @@
             <dependency>
                 <groupId>org.isomorphism</groupId>
                 <artifactId>token-bucket</artifactId>
-                <version>1.6</version>
+                <version>1.7</version>
             </dependency>
             <dependency>
                 <groupId>org.jolokia</groupId>
@@ -539,13 +543,13 @@
             <dependency>
                 <groupId>com.carrotsearch.randomizedtesting</groupId>
                 <artifactId>randomizedtesting-runner</artifactId>
-                <version>2.1.13</version>
+                <version>2.1.17</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.11</version>
+                <version>4.12</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -575,7 +579,7 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>1.9.5</version>
+                <version>1.10.19</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -587,7 +591,7 @@
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-test</artifactId>
-                <version>4.3.10.RELEASE</version>
+                <version>4.3.13.RELEASE</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -679,9 +683,9 @@
                         <jvmArgs>
                             <param>-Xmx512m</param>
                             <!--
-		<param>-Xdebug</param>
-		<param>-Xrunjdwp:transport=dt_socket,server=y,address=8765</param>
--->
+                            <param>-Xdebug</param>
+                            <param>-Xrunjdwp:transport=dt_socket,server=y,address=8765</param>
+                            -->
                         </jvmArgs>
                     </configuration>
                     <executions>
