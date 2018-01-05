@@ -71,3 +71,5 @@ cd war && mvn jetty:run
 The same target can be used directly from your IDE to run in debug mode and use all the nice IDE integration (automatic class reloading, ...). Check your IDE documentation for details.
 
 Note: `jetty:run` will not automatically detect changes to other modules, but if you run `mvn install` in the root of the project, the changes should be compiled and jetty should auto reload the application.
+
+Current central released version: [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.wikidata.query.rdf/service/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.wikidata.query.rdf/service)
