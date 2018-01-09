@@ -41,6 +41,7 @@
         <module>war</module>
         <module>tools</module>
         <module>dist</module>
+        <module>gui</module>
     </modules>
 
     <scm>
@@ -524,6 +525,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wikidata.query.rdf</groupId>
+                  <artifactId>gui</artifactId>
+                  <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>xml-apis</groupId>
                 <artifactId>xml-apis</artifactId>
                 <version>1.4.01</version>
@@ -740,6 +746,11 @@
                             </configuration>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.eirslett</groupId>
+                    <artifactId>frontend-maven-plugin</artifactId>
+                    <version>1.6</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

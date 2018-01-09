@@ -1,6 +1,6 @@
-<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
 
   <id>dist</id>
 
@@ -32,19 +32,7 @@
 
     <fileSet>
       <outputDirectory>gui</outputDirectory>
-      <directory>${project.basedir}/../gui</directory>
-      <excludes>
-        <exclude>Gruntfile.js</exclude>
-        <exclude>.git*</exclude>
-        <exclude>.js*</exclude>
-        <exclude>.settings</exclude>
-        <exclude>.project</exclude>
-        <exclude>package.json</exclude>
-        <exclude>jsduck.json</exclude>
-        <exclude>README.md</exclude>
-        <exclude>node_modules/**</exclude>
-        <exclude>wikibase/tests/**</exclude>
-      </excludes>
+      <directory>${project.basedir}/../gui/build</directory>
     </fileSet>
 
   </fileSets>
