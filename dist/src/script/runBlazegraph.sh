@@ -12,7 +12,7 @@ HEAP_SIZE=${HEAP_SIZE:-"16g"}
 LOG_CONFIG=${LOG_CONFIG:-""}
 LOG_DIR=${LOG_DIR:-"/var/log/wdqs"}
 MEMORY=${MEMORY:-"-Xmx${HEAP_SIZE}"}
-GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/wdqs-blazegraph_jvm_gc.%p.log \
+GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/wdqs-blazegraph_jvm_gc.%p-%t.log \
          -XX:+PrintGCDetails \
          -XX:+PrintGCDateStamps \
          -XX:+PrintGCTimeStamps \
@@ -21,6 +21,9 @@ GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/wdqs-blazegraph_jvm_gc.%p.log \
          -XX:+PrintGCCause \
          -XX:+PrintGCApplicationStoppedTime \
          -XX:+PrintTenuringDistribution \
+         -XX:+UnlockExperimentalVMOptions \
+         -XX:G1NewSizePercent=20 \
+         -XX:+ParallelRefProcEnabled \
          -XX:+UseGCLogFileRotation \
          -XX:NumberOfGCLogFiles=10 \
          -XX:GCLogFileSize=20M"}
