@@ -16,6 +16,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nonnull;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
@@ -35,6 +37,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  */
 public final class Update {
     private static final Logger log = LoggerFactory.getLogger(Update.class);
+
+    private static final String MAX_DAYS_BACK_NAME = "wikibaseMaxDaysBack";
 
     private Update() {
         // this class should never be instantiated
@@ -125,64 +129,40 @@ public final class Update {
     /**
      * Build a change source.
      *
-     * @return null if non can be built - its ok to just exit - errors have been
-     *         logged to the user
+     * @return the change source
+     * @throws IllegalArgumentException if the options are invalid
+     * @throws IllegalStateException if the left of date is too ancient
      */
-    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
+    @Nonnull
     private static Change.Source<? extends Change.Batch> buildChangeSource(UpdateOptions options, RdfRepository rdfRepository,
                                                                            WikibaseRepository wikibaseRepository) {
-        if (options.idrange() != null) {
-            String[] ids = options.idrange().split("-");
-            long start;
-            long end;
-            switch (ids.length) {
-            case 1:
-                if (!Character.isDigit(ids[0].charAt(0))) {
-                    // Not a digit - probably just single ID
-                    return new IdListChangeSource(ids, options.batchSize());
-                }
-                start = Long.parseLong(ids[0]);
-                end = start;
-                break;
-            case 2:
-                start = Long.parseLong(ids[0]);
-                end = Long.parseLong(ids[1]);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid format for --idrange.  Need <start>-<stop>.");
-            }
-            return IdRangeChangeSource.forItems(start, end, options.batchSize());
-        }
-        if (options.ids() != null) {
-            List<String> parsedIds = new ArrayList<String>(); // FIXME use OptionsUtils.splitByComma(options.ids())
-            for (String idOpt: options.ids()) {
-                if (idOpt.contains(",")) {
-                    // Id list
-                    parsedIds.addAll(Arrays.asList(idOpt.split(",")));
-                    continue;
-                }
-                parsedIds.add(idOpt);
-            }
-            return new IdListChangeSource(parsedIds.toArray(new String[parsedIds.size()]), options.batchSize());
-        }
+        if (options.idrange() != null) return buildIdRangeChangeSource(options.idrange(), options.batchSize());
+        if (options.ids() != null) return buildIdListChangeSource(options.ids(), options.batchSize());
+        return buildRecentChangePollerChangeSource(
+                rdfRepository, wikibaseRepository,
+                options.start(), options.init(), options.batchSize(), options.tailPollerOffset());
+    }
+
+    /** Builds a change source polling latest changes from wikidata. */
+    @Nonnull
+    private static Change.Source<? extends Change.Batch> buildRecentChangePollerChangeSource(
+            RdfRepository rdfRepository, WikibaseRepository wikibaseRepository,
+            String start, boolean init, int batchSize, int tailPollerOffset) {
         long startTime;
-        if (options.start() != null) {
-            try {
-                startTime = outputDateFormat().parse(options.start()).getTime();
-            } catch (java.text.ParseException e) {
-                try {
-                    startTime = inputDateFormat().parse(options.start()).getTime();
-                } catch (java.text.ParseException e2) {
-                    throw  new IllegalArgumentException("Invalid date: " + options.start(), e2);
-                }
+        if (start != null) {
+            startTime = parseDate(start);
+            if (init) {
+                // Initialize left off time to start time
+                rdfRepository.updateLeftOffTime(new Date(startTime));
             }
         } else {
             log.info("Checking where we left off");
             Date leftOff = rdfRepository.fetchLeftOffTime();
-            long minStartTime = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30);
+            Integer maxDays = Integer.valueOf(System.getProperty(MAX_DAYS_BACK_NAME, "30"));
+            long minStartTime = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(maxDays.intValue());
             if (leftOff == null) {
                 startTime = minStartTime;
-                log.info("Defaulting start time to 30 days ago:  {}", inputDateFormat().format(new Date(startTime)));
+                log.info("Defaulting start time to {} days ago:  {}", maxDays, inputDateFormat().format(new Date(startTime)));
             } else {
                 if (leftOff.getTime() < minStartTime) {
                     throw new IllegalStateException("RDF store reports the last update time is before the minimum safe poll time.  "
@@ -192,7 +172,62 @@ public final class Update {
                 log.info("Found start time in the RDF store: {}", inputDateFormat().format(leftOff));
             }
         }
-        return new RecentChangesPoller(wikibaseRepository, new Date(startTime), options.batchSize(), options.tailPollerOffset());
+        return new RecentChangesPoller(wikibaseRepository, new Date(startTime), batchSize, tailPollerOffset);
+    }
+
+    /**
+     * Parse a string to a date, trying output format or the input format.
+     *
+     * @throws IllegalArgumentException if the date cannot be parsed with either format.
+     */
+    private static long parseDate(String dateStr) {
+        try {
+            return outputDateFormat().parse(dateStr).getTime();
+        } catch (java.text.ParseException e) {
+            try {
+                return inputDateFormat().parse(dateStr).getTime();
+            } catch (java.text.ParseException e2) {
+                throw  new IllegalArgumentException("Invalid date: " + dateStr, e2);
+            }
+        }
+    }
+
+    /** Builds a change source based on a list of IDs. */
+    private static Change.Source<? extends Change.Batch> buildIdListChangeSource(List<String> ids, int batchSize) {
+        List<String> parsedIds = new ArrayList<>(); // FIXME use OptionsUtils.splitByComma(options.ids())
+        for (String idOpt: ids) {
+            if (idOpt.contains(",")) {
+                // Id list
+                parsedIds.addAll(Arrays.asList(idOpt.split(",")));
+                continue;
+            }
+            parsedIds.add(idOpt);
+        }
+        return new IdListChangeSource(parsedIds.toArray(new String[parsedIds.size()]), batchSize);
+    }
+
+    /** Builds a change source based on a range of IDs. */
+    private static Change.Source<? extends Change.Batch> buildIdRangeChangeSource(String idrange, int batchSize) {
+        String[] ids = idrange.split("-");
+        long start;
+        long end;
+        switch (ids.length) {
+        case 1:
+            if (!Character.isDigit(ids[0].charAt(0))) {
+                // Not a digit - probably just single ID
+                return new IdListChangeSource(ids, batchSize);
+            }
+            start = Long.parseLong(ids[0]);
+            end = start;
+            break;
+        case 2:
+            start = Long.parseLong(ids[0]);
+            end = Long.parseLong(ids[1]);
+            break;
+        default:
+            throw new IllegalArgumentException("Invalid format for --idrange.  Need <start>-<stop>.");
+        }
+        return IdRangeChangeSource.forItems(start, end, batchSize);
     }
 
     /**
