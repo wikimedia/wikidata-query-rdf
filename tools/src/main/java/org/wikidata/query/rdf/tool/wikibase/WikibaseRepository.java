@@ -30,6 +30,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.ServiceUnavailableRetryStrategy;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -79,6 +80,14 @@ public class WikibaseRepository implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(WikibaseRepository.class);
 
     /**
+     * Timeout for communications to Wikidata, in ms.
+     */
+    private static final String TIMEOUT_MILLIS = "5000";
+    /**
+     * Request timeout property.
+     */
+    public static final String TIMEOUT_PROPERTY = WikibaseRepository.class + ".timeout";
+    /**
      * How many retries allowed on error.
      */
     private static final int RETRIES = 3;
@@ -104,6 +113,19 @@ public class WikibaseRepository implements Closeable {
             .setUserAgent("Wikidata Query Service Updater")
             .build();
 
+    /**
+     * Configured timeout for requests.
+     */
+    private final int requestTimeout = Integer
+            .parseInt(System.getProperty(TIMEOUT_PROPERTY, TIMEOUT_MILLIS));
+
+    /**
+     * Request configuration including timeout.
+     */
+    private final RequestConfig configWithTimeout = RequestConfig.custom()
+            .setSocketTimeout(requestTimeout)
+            .setConnectTimeout(requestTimeout)
+            .setConnectionRequestTimeout(requestTimeout).build();
     /**
      * Builds uris to get stuff from wikibase.
      */
@@ -236,8 +258,10 @@ public class WikibaseRepository implements Closeable {
             throws RetryableException {
         URI uri = uris.recentChanges(nextStartTime, lastContinue, batchSize);
         log.debug("Polling for changes from {}", uri);
+        HttpGet request = new HttpGet(uri);
+        request.setConfig(configWithTimeout);
         try {
-            return checkApi(getJson(new HttpGet(uri), RecentChangeResponse.class));
+            return checkApi(getJson(request, RecentChangeResponse.class));
         } catch (UnknownHostException | SocketException e) {
             // We want to bail on this, since it happens to be sticky for some reason
             throw new RuntimeException(e);
@@ -264,6 +288,7 @@ public class WikibaseRepository implements Closeable {
         StatementCollector collector = new StatementCollector();
         parser.setRDFHandler(new NormalizingRdfHandler(collector));
         HttpGet request = new HttpGet(uri);
+        request.setConfig(configWithTimeout);
         try {
             try (CloseableHttpResponse response = client.execute(request)) {
                 if (response.getStatusLine().getStatusCode() == 404) {
