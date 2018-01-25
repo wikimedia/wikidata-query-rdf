@@ -12,8 +12,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.URIImpl;
@@ -142,10 +140,7 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
                 );
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("Bad endpoint URL", e);
-        } catch (ParserConfigurationException e) {
-            throw new RuntimeException("Cannot instantiate XML parser", e);
         }
-
     }
 
     /**

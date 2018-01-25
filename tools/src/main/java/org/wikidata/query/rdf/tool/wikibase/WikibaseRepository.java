@@ -86,7 +86,7 @@ public class WikibaseRepository implements Closeable {
     /**
      * Request timeout property.
      */
-    public static final String TIMEOUT_PROPERTY = WikibaseRepository.class + ".timeout";
+    public static final String TIMEOUT_PROPERTY = WikibaseRepository.class.getName() + ".timeout";
     /**
      * How many retries allowed on error.
      */

@@ -13,6 +13,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.annotation.Nullable;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -31,6 +33,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.wikidata.query.rdf.blazegraph.mwapi.ApiTemplate.OutputVariable;
@@ -45,7 +48,9 @@ import com.bigdata.rdf.lexicon.LexiconRelation;
 import com.bigdata.rdf.sparql.ast.service.BigdataServiceCall;
 import com.bigdata.rdf.sparql.ast.service.IServiceOptions;
 import com.bigdata.rdf.sparql.ast.service.MockIVReturningServiceCall;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.UnmodifiableIterator;
 
 import cutthecrap.utils.striterators.ICloseableIterator;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -59,12 +64,14 @@ import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeConstant
 @SuppressFBWarnings(value = "DMC_DUBIOUS_MAP_COLLECTION", justification = "while inputVars could be implemented as a list, the maps makes semantic sense.")
 public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServiceCall {
     private static final Logger log = LoggerFactory.getLogger(MWApiServiceCall.class);
-
     /**
-     * Query timeout, in seconds.
-     * FIXME: make timeout configurable
+     * Request timeout property for MWAPI requests.
      */
-    private static final int TIMEOUT = 5;
+    private static final String TIMEOUT_PROPERTY = MWApiServiceCall.class.getName() + ".timeout";;
+    /**
+     * Default request timeout.
+     */
+    private static final String TIMEOUT_MILLIS = "5000";
     /**
      * Service call template.
      */
@@ -90,27 +97,60 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
      */
     private final String endpoint;
     /**
-     * Document builder.
+     * Request timeout, in ms.
      */
-    private final DocumentBuilder docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+    private final int requestTimeout;
     /**
-     * XPath factory.
+     * Config variable for changing maximum continue value.
      */
-    private final XPath xpath = XPathFactory.newInstance().newXPath();
+    private final String MAX_CONTINUE_CONFIG = MWApiServiceCall.class.getName()
+            + ".maxContinue";
+    /**
+     * Max number of elements fetched in one continue chain.
+     */
+    private final int maxContinue;
+    /**
+     * Thread-safe document builder.
+     */
+    private final ThreadLocal<DocumentBuilder> docBuilder;
+    /**
+     * Thread-safe xpath object.
+     */
+    private final ThreadLocal<XPath> xpath;
 
-    MWApiServiceCall(ApiTemplate template,
-            String endpoint,
+    MWApiServiceCall(ApiTemplate template, String endpoint,
             Map<String, IVariableOrConstant> inputVars,
-            List<OutputVariable> outputVars,
-            HttpClient client,
-            LexiconRelation lexiconRelation
-    ) throws MalformedURLException, ParserConfigurationException {
+            List<OutputVariable> outputVars, HttpClient client,
+            LexiconRelation lexiconRelation)
+            throws MalformedURLException {
         this.template = template;
         this.endpoint = new URL("https", endpoint, "/w/api.php").toExternalForm();
         this.inputVars = inputVars;
         this.outputVars = outputVars;
         this.client = client;
         this.lexiconRelation = lexiconRelation;
+        this.requestTimeout = Integer.parseInt(System.getProperty(TIMEOUT_PROPERTY, TIMEOUT_MILLIS));
+        this.maxContinue = Integer.parseInt(System.getProperty(MAX_CONTINUE_CONFIG, "10000"));
+        this.docBuilder = new ThreadLocal<DocumentBuilder>() {
+            @Override protected DocumentBuilder initialValue() {
+                DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+                try {
+                    dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+                    dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+                    dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+                    return dbf.newDocumentBuilder();
+                } catch (ParserConfigurationException e) {
+                    // Converting to runtime exception since anon classes + checked exceptions = :(
+                    log.error("Could not configure parser: {}", e);
+                    throw new IllegalStateException(e);
+                }
+            }
+        };
+        this.xpath = new ThreadLocal<XPath>() {
+            @Override protected XPath initialValue() {
+                return XPathFactory.newInstance().newXPath();
+            }
+        };
     }
 
     @Override
@@ -119,13 +159,13 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     }
 
     @Override
-    public ICloseableIterator<IBindingSet> call(IBindingSet[] bindingSets)
-            throws Exception {
+    public ICloseableIterator<IBindingSet> call(IBindingSet[] bindingSets) throws Exception {
         return new MultiSearchIterator(bindingSets);
     }
 
     /**
      * Get parameter string from binding.
+     *
      * @param binding
      * @return
      */
@@ -152,7 +192,8 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
             }
             if (value == null) {
                 if (template.isRequiredParameter(term.getKey())) {
-                    throw new IllegalArgumentException("Could not find binding for parameter " + term.getKey());
+                    throw new IllegalArgumentException(
+                            "Could not find binding for parameter " + term.getKey());
                 } else {
                     continue;
                 }
@@ -165,6 +206,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
 
     /**
      * Get HTTP request for this particular query & binding.
+     *
      * @param binding
      * @return
      */
@@ -181,14 +223,45 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     @Override
     public List<IVariable<IV>> getMockVariables() {
         List<IVariable<IV>> externalVars = new LinkedList<IVariable<IV>>();
-        for (OutputVariable v: outputVars) {
+        for (OutputVariable v : outputVars) {
             externalVars.add(v.getVar());
         }
         return externalVars;
     }
 
     /**
+     * Extract all continue variables from response.
+     * Only api/continue is supported for now.
+     * @param doc
+     * @return Map with continue variables, or null if no continue.
+     */
+    @Nullable
+    public ImmutableMap<String, String> parseContinue(Document doc, XPath xpath) {
+        try {
+            // TODO: support other options?
+            XPathExpression itemsXPath = xpath.compile("//api/continue");
+            Node continueNode = (Node) itemsXPath.evaluate(doc, XPathConstants.NODE);
+            if (continueNode == null) {
+                return null;
+            }
+            NamedNodeMap continueAttrs = continueNode.getAttributes();
+            if (continueAttrs.getLength() == 0) {
+                return null;
+            }
+            ImmutableMap.Builder<String, String> continueVars = new ImmutableMap.Builder<String, String>();
+            for (int i = 0; i < continueAttrs.getLength(); i++) {
+                final Node node = continueAttrs.item(i);
+                continueVars = continueVars.put(node.getNodeName(), node.getNodeValue());
+            }
+            return continueVars.build();
+        } catch (XPathExpressionException e) {
+            return null;
+        }
+    }
+
+    /**
      * Parse XML response from WM API.
+     *
      * @param responseStream Response body as stream
      * @param binding Current binding set.
      * @return Set of resulting bindings, or null if none found.
@@ -196,56 +269,65 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
      * @throws IOException on error
      * @throws XPathExpressionException on error
      */
-    public IBindingSet[] parseResponse(InputStream responseStream,
-            IBindingSet binding) throws SAXException, IOException, XPathExpressionException  {
+    public ResultWithContinue parseResponse(InputStream responseStream, IBindingSet binding)
+            throws SAXException, IOException, XPathExpressionException {
         if (outputVars.isEmpty()) {
             return null;
         }
-        Document doc = docBuilder.parse(responseStream);
-        // FIXME: we're re-compiling it each time. Should probably do it only once per template.
-        // Note though that XPathExpression is not thread-safe.
-        XPathExpression itemsXPath = xpath.compile(template.getItemsPath());
+        Document doc = docBuilder.get().parse(responseStream);
+        XPath path = xpath.get();
+        ImmutableMap<String, String> searchContinue = parseContinue(doc, path);
+        // FIXME: we're re-compiling it each time. Should probably do it only
+        // once per template.
+        // Note though that XPathExpression is not thread-safe. Maybe use ThreadLocal?
+        XPathExpression itemsXPath = path.compile(template.getItemsPath());
         NodeList nodes = (NodeList) itemsXPath.evaluate(doc, XPathConstants.NODESET);
         if (nodes.getLength() == 0) {
             return null;
         }
         IBindingSet[] results = new IBindingSet[nodes.getLength()];
         final Map<OutputVariable, XPathExpression> compiledVars = new HashMap<>();
-        // TODO: would be nice to convert it to stream expression, but xpath throws,
-        // and lambdas do not work with checked exceptions: xpath.compile(var.getPath()
+        // TODO: would be nice to convert it to stream expression, but xpath
+        // throws, and lambdas do not work with checked exceptions.
         // Thanks, Oracle!
-        for (OutputVariable var: outputVars) {
-            compiledVars.put(var, xpath.compile(var.getPath()));
+        for (OutputVariable var : outputVars) {
+            compiledVars.put(var, xpath.get().compile(var.getPath()));
         }
 
         for (int i = 0; i < nodes.getLength(); i++) {
             final Node node = nodes.item(i);
             results[i] = binding.copy(null);
-            for (Map.Entry<OutputVariable, XPathExpression> var: compiledVars.entrySet()) {
+            for (Map.Entry<OutputVariable, XPathExpression> var : compiledVars.entrySet()) {
                 final IConstant constant;
                 if (var.getKey().isOrdinal()) {
                     constant = makeConstant(lexiconRelation.getValueFactory(), i);
                     results[i].set(var.getKey().getVar(), constant);
                     continue;
                 }
-                final Node value = (Node)var.getValue().evaluate(node, XPathConstants.NODE);
+                final Node value = (Node) var.getValue().evaluate(node, XPathConstants.NODE);
                 if (value != null && value.getNodeValue() != null) {
                     if (var.getKey().isURI()) {
-                        constant = makeConstant(lexiconRelation.getValueFactory(), var.getKey().getURI(value.getNodeValue()));
+                        constant = makeConstant(
+                                lexiconRelation.getValueFactory(),
+                                var.getKey().getURI(value.getNodeValue()));
                     } else {
-                        constant = makeConstant(lexiconRelation.getValueFactory(), value.getNodeValue());
+                        constant = makeConstant(
+                                lexiconRelation.getValueFactory(),
+                                value.getNodeValue());
                     }
                     results[i].set(var.getKey().getVar(), constant);
                 }
             }
         }
 
-        return results;
+        return new ResultWithContinue(results, searchContinue);
     }
-
 
     /**
      * A chunk of calls to resolve labels.
+     * This will iterate over all results delivered for a set of bindings,
+     * which will be supplied as a chunk from upstream.
+     * Will use ContinueIterator for each specific IBindingSet.
      */
     private class MultiSearchIterator implements ICloseableIterator<IBindingSet> {
         /**
@@ -294,6 +376,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
 
         /**
          * Produce next search results iterator. Skips over empty results.
+         *
          * @return Result iterator or null if no more results.
          */
         private Iterator<IBindingSet> doNextSearch() {
@@ -305,45 +388,12 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
             Iterator<IBindingSet> result;
             do {
                 IBindingSet binding = bindingSets[i++];
-                result = doSearchFromBinding(binding);
-            } while (result != null && !result.hasNext() && i < bindingSets.length);
-            if (result != null && result.hasNext()) {
+                result = new ContinueIterator(binding);
+            } while (!result.hasNext() && i < bindingSets.length);
+            if (result.hasNext()) {
                 return result;
             } else {
                 return null;
-            }
-        }
-
-        /**
-         * Execute search for one specific binding set.
-         * @param binding
-         * @return Search results iterator.
-         * @throws java.util.concurrent.TimeoutException
-         * @throws InterruptedException
-         */
-        private Iterator<IBindingSet> doSearchFromBinding(IBindingSet binding) {
-            final Request req = getHttpRequest(binding);
-            log.debug("MWAPI REQUEST: {}", req.getQuery());
-            final Response response;
-            InputStreamResponseListener listener = new InputStreamResponseListener();
-            try {
-                req.send(listener);
-                response = listener.get(TIMEOUT, TimeUnit.SECONDS);
-            } catch (ExecutionException | TimeoutException | InterruptedException e) {
-                throw new RuntimeException("MWAPI request failed", e);
-            }
-            if (response.getStatus() != HttpStatus.OK_200) {
-                throw new RuntimeException("Bad response status: " + response.getStatus());
-            }
-
-            try {
-                IBindingSet[] result = parseResponse(listener.getInputStream(), binding);
-                if (result == null) {
-                    return null;
-                }
-                return Iterators.forArray(result);
-            } catch (SAXException | IOException | XPathExpressionException e) {
-                throw new RuntimeException("Failed to parse response", e);
             }
         }
 
@@ -373,6 +423,128 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         @Override
         public void close() {
             closed = true;
+        }
+    }
+
+    /**
+     * Iterates over the result of one query with one set of bindings.
+     *
+     */
+    private class ContinueIterator implements ICloseableIterator<IBindingSet> {
+        /**
+         * Has this chunk been closed?
+         */
+        private boolean closed;
+        /**
+         * Last continuation result.
+         */
+        private ResultWithContinue lastResult;
+        /**
+         * Current bindings.
+         */
+        private IBindingSet bindings;
+        /**
+         * Count of records sent out.
+         */
+        private int recordsCount;
+
+        ContinueIterator(IBindingSet binding) {
+            this.bindings = binding;
+            lastResult = doSearchRequest();
+        }
+
+        /**
+         * This performs actual HTTP request to Mediawiki API.
+         * This can be called several times if continue is present.
+         * @return Query results with continue structure.
+         */
+        private ResultWithContinue doSearchRequest() {
+            final Request req = getHttpRequest(bindings);
+            if (lastResult != null && lastResult.getContinue() != null) {
+                lastResult.getContinue().forEach((key, value) -> req.param(key, value));
+            }
+            log.debug("MWAPI REQUEST: {}", req.getQuery());
+            final Response response;
+            InputStreamResponseListener listener = new InputStreamResponseListener();
+            try {
+                req.send(listener);
+                response = listener.get(requestTimeout, TimeUnit.MILLISECONDS);
+            } catch (ExecutionException | TimeoutException | InterruptedException e) {
+                throw new RuntimeException("MWAPI request failed", e);
+            }
+            if (response.getStatus() != HttpStatus.OK_200) {
+                throw new RuntimeException("Bad response status: " + response.getStatus());
+            }
+
+            try {
+                return parseResponse(listener.getInputStream(), bindings);
+            } catch (SAXException | IOException | XPathExpressionException e) {
+                throw new RuntimeException("Failed to parse response", e);
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (closed || lastResult == null) {
+                return false;
+            }
+            return lastResult.getResultIterator().hasNext() || lastResult.searchContinue != null;
+        }
+
+        @Override
+        public IBindingSet next() {
+            if (recordsCount >= maxContinue) {
+                close();
+            }
+            if (closed || lastResult == null) {
+                return null;
+            }
+            if (lastResult.getResultIterator().hasNext()) {
+                recordsCount++;
+                return lastResult.getResultIterator().next();
+            }
+            // If we can continue, do the continue
+            if (lastResult.getContinue() != null) {
+                lastResult = doSearchRequest();
+            }
+            if (closed || lastResult == null) {
+                return null;
+            }
+            if (lastResult.getResultIterator().hasNext()) {
+                recordsCount++;
+                return lastResult.getResultIterator().next();
+            }
+            return null;
+        }
+
+        @Override
+        public void close() {
+            closed = true;
+        }
+
+    }
+
+    public static class ResultWithContinue {
+        /**
+         * Search continuation.
+         */
+        private final ImmutableMap<String, String> searchContinue;
+        /**
+         * Iterator over search result.
+         */
+        private final UnmodifiableIterator<IBindingSet> resultIterator;
+
+        ResultWithContinue(IBindingSet[] searchResult, ImmutableMap<String, String> searchContinue) {
+            this.searchContinue = searchContinue;
+            this.resultIterator = Iterators.forArray(searchResult);
+        }
+
+        public Iterator<IBindingSet> getResultIterator() {
+            return resultIterator;
+        }
+
+        public Map<String, String> getContinue() {
+            return searchContinue;
         }
     }
 }
