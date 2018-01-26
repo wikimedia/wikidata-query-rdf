@@ -15,6 +15,9 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     @Option(shortName = "s", defaultToNull = true, description = "Start time in 2015-02-11T17:11:08Z or 20150211170100 format.")
     String start();
 
+    @Option(shortName = "I", longName = "init", description = "Initialize last update time to start time")
+    boolean init();
+
     @Option(defaultToNull = true, description = "If specified must be <id> or list of <id>, comma or space separated.")
     List<String> ids();
 
