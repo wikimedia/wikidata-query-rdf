@@ -3,6 +3,7 @@
 Add more URIs used by Wikibase to vocabulary (requires data reload)
 Add wikibase:apiOrdinal for MWAPI queries
 Fix GUI build - now service.zip package contains full build of the GUI
+Add --init option and wikibaseMaxDaysBack config.
 
 0.2.5
 -----
