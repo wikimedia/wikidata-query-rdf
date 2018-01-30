@@ -240,6 +240,7 @@
                         </goals>
                         <phase>pre-integration-test</phase>
                         <configuration>
+                            <skip>${skipITs}</skip>
                             <classpathScope>test</classpathScope>
                             <mainClass>org.wikidata.query.rdf.tool.Proxy</mainClass>
                             <arguments>
@@ -296,6 +297,9 @@
                             <goal>start</goal>
                         </goals>
                         <phase>pre-integration-test</phase>
+                        <configuration>
+                            <skip>${skipITs}</skip>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>stop-blazegraph</id>
@@ -303,6 +307,9 @@
                             <goal>stop</goal>
                         </goals>
                         <phase>post-integration-test</phase>
+                        <configuration>
+                            <skip>${skipITs}</skip>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
