@@ -35,8 +35,8 @@
             <type>war</type>
         </dependency>
         <dependency>
-          <groupId>org.wikidata.query.rdf</groupId>
-          <artifactId>gui</artifactId>
+            <groupId>org.wikidata.query.rdf</groupId>
+            <artifactId>gui</artifactId>
         </dependency>
     </dependencies>
 

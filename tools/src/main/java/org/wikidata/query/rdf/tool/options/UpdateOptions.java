@@ -37,14 +37,23 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     @Option(shortName = "b", defaultValue = "100", description = "Number of recent changes fetched at a time.")
     int batchSize();
 
+    @Option(defaultToNull = true, description = "If specified must be numerical indexes of Item and Property namespaces"
+            + " that defined in Wikibase repository, comma separated.")
+    String entityNamespaces();
+
     @Option(shortName = "V", longName = "verify", description = "Verify updates (may have performance impact)")
     boolean verify();
 
     @Option(defaultValue = "0", shortName = "T", longName = "tailPoller",
-            description = "Use secondary poller with given gap (seconds) to catch up missed updates")
+            description = "Use secondary poller with given gap (seconds) to catch up missed updates. Applies only to RecentChanges poller.")
     int tailPollerOffset();
 
-    @Option(defaultToNull = true, description = "If specified must be numerical indexes of Item and Property namespaces"
-            + " that defined in Wikibase repository, comma separated.")
-    String entityNamespaces();
+    @Option(defaultToNull = true, shortName = "K", longName = "kafka", description = "If set, use Kafka polling with the argument as the broker server")
+    String kafkaBroker();
+
+    @Option(defaultToNull = true, shortName = "c", longName = "clusters", description = "Kafka cluster prefixes (e.g. eqiad, codfw), comma or space separated")
+    List<String> clusters();
+
+    @Option(description = "Run Updater in test mode - only report updates but do not record")
+    boolean testMode();
 }

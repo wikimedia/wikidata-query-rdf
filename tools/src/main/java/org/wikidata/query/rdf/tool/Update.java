@@ -24,7 +24,9 @@ import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.IdListChangeSource;
 import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
+import org.wikidata.query.rdf.tool.change.KafkaPoller;
 import org.wikidata.query.rdf.tool.change.RecentChangesPoller;
+import org.wikidata.query.rdf.tool.options.OptionsUtils;
 import org.wikidata.query.rdf.tool.options.UpdateOptions;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
@@ -53,7 +55,7 @@ public final class Update {
     @SuppressWarnings("checkstyle:IllegalCatch")
     public static void main(String[] args) throws Exception {
         RdfRepository rdfRepository = null;
-        Updater<? extends Change.Batch> updater;
+        Updater<? extends Change.Batch> updater = null;
         WikibaseRepository wikibaseRepository;
 
         try {
@@ -62,20 +64,23 @@ public final class Update {
             URI sparqlUri = sparqlUri(options);
             WikibaseUris uris = new WikibaseUris(options.wikibaseHost());
             rdfRepository = new RdfRepository(sparqlUri, uris);
-            Change.Source<? extends Change.Batch> changeSource = buildChangeSource(options, rdfRepository,
-                    wikibaseRepository);
+            Change.Source<? extends Change.Batch> changeSource = buildChangeSource(
+                    options, rdfRepository, wikibaseRepository);
             updater = createUpdater(options, wikibaseRepository, uris, rdfRepository, changeSource);
         } catch (Exception e) {
             log.error("Error during initialization.", e);
             if (rdfRepository != null) {
                 rdfRepository.close();
             }
+            if (updater != null) {
+                updater.close();
+            }
             throw e;
         }
         try (
                 WikibaseRepository w = wikibaseRepository;
                 RdfRepository r = rdfRepository;
-                Updater u = updater
+                Updater<? extends Change.Batch> u = updater;
         ) {
             updater.run();
         } catch (Exception e) {
@@ -106,6 +111,10 @@ public final class Update {
                 new LinkedBlockingQueue<>(), threadFactory.build());
 
         Munger munger = mungerFromOptions(options);
+        if (options.testMode()) {
+            return new TestUpdater<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
+                    options.pollDelay(), uris, options.verify());
+        }
         return new Updater<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
                 options.pollDelay(), uris, options.verify());
     }
@@ -135,9 +144,19 @@ public final class Update {
      */
     @Nonnull
     private static Change.Source<? extends Change.Batch> buildChangeSource(UpdateOptions options, RdfRepository rdfRepository,
-                                                                           WikibaseRepository wikibaseRepository) {
-        if (options.idrange() != null) return buildIdRangeChangeSource(options.idrange(), options.batchSize());
-        if (options.ids() != null) return buildIdListChangeSource(options.ids(), options.batchSize());
+        WikibaseRepository wikibaseRepository) {
+        if (options.idrange() != null) {
+            return buildIdRangeChangeSource(options.idrange(), options.batchSize());
+        }
+        if (options.ids() != null) {
+            return buildIdListChangeSource(options.ids(), options.batchSize());
+        }
+        if (options.kafkaBroker() != null) {
+            long startTime = getStartTime(options.start(), rdfRepository, options.init());
+            return KafkaPoller.buildKafkaPoller(options.kafkaBroker(),
+                    OptionsUtils.splitByComma(options.clusters()), wikibaseRepository.getUris(),
+                    options.batchSize(), new Date(startTime));
+        }
         return buildRecentChangePollerChangeSource(
                 rdfRepository, wikibaseRepository,
                 options.start(), options.init(), options.batchSize(), options.tailPollerOffset());
@@ -148,6 +167,11 @@ public final class Update {
     private static Change.Source<? extends Change.Batch> buildRecentChangePollerChangeSource(
             RdfRepository rdfRepository, WikibaseRepository wikibaseRepository,
             String start, boolean init, int batchSize, int tailPollerOffset) {
+        long startTime = getStartTime(start, rdfRepository, init);
+        return new RecentChangesPoller(wikibaseRepository, new Date(startTime), batchSize, tailPollerOffset);
+    }
+
+    private static long getStartTime(String start, RdfRepository rdfRepository, boolean init) {
         long startTime;
         if (start != null) {
             startTime = parseDate(start);
@@ -172,7 +196,7 @@ public final class Update {
                 log.info("Found start time in the RDF store: {}", inputDateFormat().format(leftOff));
             }
         }
-        return new RecentChangesPoller(wikibaseRepository, new Date(startTime), batchSize, tailPollerOffset);
+        return startTime;
     }
 
     /**
@@ -252,4 +276,5 @@ public final class Update {
         }
         return new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost(), 0, longEntityNamespaces);
     }
-}
+
+ }

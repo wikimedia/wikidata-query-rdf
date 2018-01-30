@@ -20,6 +20,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 @SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
 public class Change implements Comparable<Change> {
     /**
+     * Change that is not associated with specific revision.
+     */
+    public static final long NO_REVISION = -1L;
+    /**
      * Entity that changed.
      */
     private final String entityId;
@@ -117,7 +121,7 @@ public class Change implements Comparable<Change> {
      * Detects changes. Implementations should store all state in subclasses of
      * Change.Batch.
      */
-    public interface Source<B extends Change.Batch> {
+    public interface Source<B extends Change.Batch> extends AutoCloseable {
         /**
          * Fetch the first batch.
          *

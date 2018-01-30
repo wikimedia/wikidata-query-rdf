@@ -99,4 +99,9 @@ public class IdRangeChangeSource implements Change.Source<IdRangeChangeSource.Ba
         }
         return new Batch(changes.build(), batchStop - batchStart, batchStop);
     }
+
+    @Override
+    public void close() throws Exception {
+        // Nothing to do
+    }
 }

@@ -446,7 +446,7 @@ public class WikibaseRepository implements Closeable {
      * @return
      */
     public boolean isEntityNamespace(long namespace) {
-        return ArrayUtils.contains(uris.getEntityNamespaces(), namespace);
+        return uris.isEntityNamespace(namespace);
     }
 
     /**
@@ -655,10 +655,13 @@ public class WikibaseRepository implements Closeable {
         }
 
         /**
-         * The wikibase entity namespace indexes.
+         * Check that a namespace is valid wikibase entity namespace.
+         *
+         * @param namespace the namespace index
+         * @return
          */
-        private long[] getEntityNamespaces() {
-            return entityNamespaces;
+        public boolean isEntityNamespace(long namespace) {
+            return ArrayUtils.contains(entityNamespaces, namespace);
         }
 
         /**
@@ -714,4 +717,11 @@ public class WikibaseRepository implements Closeable {
         return new Change("DUMMY", -1, outputDateFormat().parse(parts[0]), Long.parseLong(parts[1]));
     }
 
+    /**
+     * Get repository URI setup.
+     * @return
+     */
+    public Uris getUris() {
+        return uris;
+    }
 }

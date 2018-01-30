@@ -140,9 +140,9 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
                      * have some updates.
                      */
                     leftOffDate = DateUtils.addSeconds(leftOffDate, -1);
+                    // Do not update repo with the same date
                     if (oldDate == null || !oldDate.equals(leftOffDate)) {
-                        // Do not update repo with the same date
-                        rdfRepository.updateLeftOffTime(leftOffDate);
+                        syncDate(leftOffDate);
                         oldDate = leftOffDate;
                     }
                 }
@@ -163,9 +163,18 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
         }
     }
 
+    /**
+     * Record that we reached certain date in permanent storage.
+     * @param newDate
+     */
+    protected void syncDate(Date newDate) {
+        rdfRepository.updateLeftOffTime(newDate);
+    }
+
     @Override
-    public void close() {
+    public void close() throws Exception {
         executor.shutdown();
+        changeSource.close();
     }
 
     /**
@@ -176,7 +185,7 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
      * @throws ExecutionException if there is an error syncing any of the
      *             changes
      */
-    private void handleChanges(Iterable<Change> changes) throws InterruptedException, ExecutionException {
+    protected void handleChanges(Iterable<Change> changes) throws InterruptedException, ExecutionException {
         Set<Change> trueChanges = getRevisionUpdates(changes);
         long start = System.currentTimeMillis();
 
@@ -224,7 +233,7 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
         Set<String> changeIds = new HashSet<>();
         Map<String, Change> candidateChanges = new HashMap<>();
         for (final Change change : changes) {
-            if (change.revision() >= 0) {
+            if (change.revision() > Change.NO_REVISION) {
                 Change c = candidateChanges.get(change.entityId());
                 if (c == null || c.revision() < change.revision()) {
                     candidateChanges.put(change.entityId(), change);

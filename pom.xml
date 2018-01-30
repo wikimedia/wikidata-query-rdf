@@ -303,6 +303,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+            <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-client</artifactId>
                 <version>${jetty.version}</version>
@@ -527,8 +532,8 @@
             </dependency>
             <dependency>
                 <groupId>org.wikidata.query.rdf</groupId>
-                  <artifactId>gui</artifactId>
-                  <version>${project.version}</version>
+                <artifactId>gui</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>xml-apis</groupId>

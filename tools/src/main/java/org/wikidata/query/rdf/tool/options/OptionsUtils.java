@@ -101,7 +101,7 @@ public final class OptionsUtils {
      * @param options Original options list
      * @return Split options list
      */
-    private static List<String> splitByComma(List<String> options) {
+    public static List<String> splitByComma(List<String> options) {
         List<String> newOptions = new LinkedList<String>();
         for (String option: options) {
             if (option.contains(",")) {

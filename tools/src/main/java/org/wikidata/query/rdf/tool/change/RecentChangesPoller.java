@@ -396,4 +396,9 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         }
         return batch;
     }
+
+    @Override
+    public void close() throws Exception {
+        // TODO: Do we need to do anything here?
+    }
 }

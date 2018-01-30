@@ -43,18 +43,25 @@ public class AbstractUpdaterIntegrationTestBase extends RandomizedTest {
 
     /**
      * Update all ids from from to to.
+     * @throws Exception
      */
+    @SuppressWarnings("checkstyle:IllegalCatch")
     public void update(int from, int to) {
-        Change.Source<?> source = IdRangeChangeSource.forItems(from, to, 30);
         ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
         WikibaseUris uris = new WikibaseUris("www.wikidata.org");
-        try (Updater<?> updater = new Updater<>(source, wikibaseRepository.get(), rdfRepository, munger, executorService, 0, uris, false)) {
+        try (
+            Change.Source<?> source = IdRangeChangeSource.forItems(from, to, 30);
+            Updater<?> updater = new Updater<>(source, wikibaseRepository.get(), rdfRepository, munger, executorService, 0, uris, false)
+        ) {
             updater.run();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
     /**
      * Update the specified id.
+     * @throws Exception
      */
     public void update(int id) {
         update(id, id);

@@ -713,7 +713,7 @@ public class RdfRepository implements AutoCloseable {
      * @return results string from the server
      */
     protected <T> T execute(String type, ResponseHandler<T> responseHandler, String sparql) {
-        log.debug("Running SPARQL: {}", sparql);
+        log.trace("Running SPARQL: {}", sparql);
         long startQuery = System.currentTimeMillis();
         // TODO we might want to look into Blazegraph's incremental update
         // reporting.....
