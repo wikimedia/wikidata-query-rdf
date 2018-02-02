@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.mwapi;
 
+import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeConstant;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -54,8 +56,6 @@ import com.google.common.collect.UnmodifiableIterator;
 
 import cutthecrap.utils.striterators.ICloseableIterator;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeConstant;
 
 /**
  * Instance of API service call.

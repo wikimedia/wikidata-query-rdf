@@ -1,5 +1,8 @@
 package org.wikidata.query.rdf.blazegraph.geo;
 
+import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeConstant;
+import static org.wikidata.query.rdf.blazegraph.geo.GeoUtils.pointFromIV;
+
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.wikidata.query.rdf.common.WikibasePoint;
@@ -28,9 +31,6 @@ import com.bigdata.service.geospatial.GeoSpatial.GeoFunction;
 
 import cutthecrap.utils.striterators.ICloseableIterator;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import static org.wikidata.query.rdf.blazegraph.geo.GeoUtils.pointFromIV;
-import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeConstant;
 
 /**
  * Implements a service to do geospatial search.

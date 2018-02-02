@@ -2,6 +2,9 @@ package org.wikidata.query.rdf.blazegraph.label;
 
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
 import static org.wikidata.query.rdf.test.Matchers.assertResult;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.test.Matchers.notBinds;
@@ -29,10 +32,6 @@ import com.bigdata.rdf.sparql.ast.StatementPatternNode;
 import com.bigdata.rdf.sparql.ast.VarNode;
 import com.bigdata.rdf.sparql.ast.service.ServiceNode;
 import com.bigdata.rdf.store.BD;
-
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 
 public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
     private static final Logger log = LoggerFactory.getLogger(LabelServiceUnitTest.class);

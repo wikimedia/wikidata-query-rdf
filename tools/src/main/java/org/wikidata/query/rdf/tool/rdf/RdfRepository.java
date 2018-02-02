@@ -519,6 +519,7 @@ public class RdfRepository implements AutoCloseable {
      * @param statements List of statements for these IDs
      * @throws QueryEvaluationException if there is a problem retrieving result.
      */
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT", justification = "We rely on that format.")
     private void verifyStatements(Set<String> entityIds, List<Statement> statements)
             throws QueryEvaluationException {
         log.debug("Verifying the update");

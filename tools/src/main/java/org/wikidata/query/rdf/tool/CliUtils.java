@@ -1,7 +1,5 @@
 package org.wikidata.query.rdf.tool;
 
-import de.thetaphi.forbiddenapis.SuppressForbidden;
-
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.newInputStream;
 import static java.nio.file.Files.newOutputStream;
@@ -20,6 +18,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import de.thetaphi.forbiddenapis.SuppressForbidden;
 
 /**
  * Utilities for command line scripts.

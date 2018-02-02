@@ -1,15 +1,15 @@
 package org.wikidata.query.rdf.blazegraph;
 
+import static org.hamcrest.Matchers.both;
+import static org.wikidata.query.rdf.test.Matchers.assertResult;
+import static org.wikidata.query.rdf.test.Matchers.binds;
+
 import org.junit.Test;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.TupleQueryResult;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
-
-import static org.wikidata.query.rdf.test.Matchers.assertResult;
-import static org.wikidata.query.rdf.test.Matchers.binds;
-import static org.hamcrest.Matchers.both;
 
 public class WikibasePrefixesUnitTest extends AbstractRandomizedBlazegraphTestBase {
 

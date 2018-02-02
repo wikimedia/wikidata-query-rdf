@@ -1,5 +1,8 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import static org.junit.Assert.assertEquals;
+import static org.wikidata.query.rdf.test.StatementHelper.statement;
+
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.LiteralImpl;
@@ -9,9 +12,6 @@ import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.RDF;
-
-import static org.junit.Assert.assertEquals;
-import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 public class NormalizingRdfHandlerUnitTest {
 
