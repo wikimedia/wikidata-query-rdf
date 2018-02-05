@@ -1,8 +1,9 @@
 package org.wikidata.query.rdf.blazegraph.vocabulary;
 
-import com.bigdata.rdf.vocab.BaseVocabularyDecl;
 import static org.wikidata.query.rdf.common.uri.GeoSparql.NAMESPACE;
 import static org.wikidata.query.rdf.common.uri.GeoSparql.WKT_LITERAL;
+
+import com.bigdata.rdf.vocab.BaseVocabularyDecl;
 
 
 /**

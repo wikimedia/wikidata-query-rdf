@@ -190,7 +190,7 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
                     } catch (RetryableException e) {
                         log.warn("Retryable error syncing.  Retrying.", e);
                     } catch (ContainedException e) {
-                        log.warn("Contained error syncing.  Giving up on " + change.entityId(), e);
+                        log.warn("Contained error syncing.  Giving up on {}", change.entityId(), e);
                         throw e;
                     }
                 }

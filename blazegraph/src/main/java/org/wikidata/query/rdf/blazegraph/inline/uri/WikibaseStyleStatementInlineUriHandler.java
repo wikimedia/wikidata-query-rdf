@@ -50,7 +50,7 @@ public class WikibaseStyleStatementInlineUriHandler extends InlineURIHandler {
             try {
                 return new UUIDLiteralIV(UUID.fromString(localName));
             } catch (IllegalArgumentException e) {
-                log.debug("Invalid uuid:  " + localName, e);
+                log.debug("Invalid uuid: {}", localName, e);
                 return null;
             }
         }

@@ -1,5 +1,12 @@
 package org.wikidata.query.rdf.blazegraph.mwapi;
 
+import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
+import static org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.paramNameToURI;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -18,12 +25,6 @@ import com.bigdata.rdf.sparql.ast.service.ServiceNode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.endsWith;
-import static org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.paramNameToURI;
 
 public class ApiTemplateUnitTest extends AbstractRandomizedBlazegraphTestBase {
 

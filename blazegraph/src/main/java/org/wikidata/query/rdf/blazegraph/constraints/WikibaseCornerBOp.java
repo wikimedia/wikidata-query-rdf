@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.constraints;
 
+import static org.wikidata.query.rdf.blazegraph.geo.GeoUtils.pointFromIV;
+
 import java.util.Map;
 
 import org.openrdf.model.impl.URIImpl;
@@ -17,8 +19,6 @@ import com.bigdata.rdf.internal.constraints.IVValueExpression;
 import com.bigdata.rdf.internal.gis.CoordinateDD;
 import com.bigdata.rdf.model.BigdataLiteral;
 import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
-
-import static org.wikidata.query.rdf.blazegraph.geo.GeoUtils.pointFromIV;
 
 /**
  * Get NE or SW corners of the box, given two arbitrary diagonal corners.

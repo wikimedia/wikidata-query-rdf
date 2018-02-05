@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.geo;
 
+import static com.bigdata.rdf.internal.constraints.IVValueExpression.asLiteral;
+
 import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.LiteralImpl;
@@ -10,8 +12,6 @@ import org.wikidata.query.rdf.common.uri.GeoSparql;
 
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.internal.gis.CoordinateDD;
-
-import static com.bigdata.rdf.internal.constraints.IVValueExpression.asLiteral;
 
 /**
  * Miscellaneous useful functions for geospatial code.

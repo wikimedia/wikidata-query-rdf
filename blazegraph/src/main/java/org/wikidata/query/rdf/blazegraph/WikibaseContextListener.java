@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.blazegraph;
 
+import static com.bigdata.rdf.sparql.ast.FunctionRegistry.checkArgs;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -42,9 +44,9 @@ import com.bigdata.rdf.internal.constraints.DateBOp.DateOp;
 import com.bigdata.rdf.sail.sparql.PrefixDeclProcessor;
 import com.bigdata.rdf.sail.webapp.BigdataRDFServletContextListener;
 import com.bigdata.rdf.sparql.ast.FunctionRegistry;
+import com.bigdata.rdf.sparql.ast.FunctionRegistry.Factory;
 import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 import com.bigdata.rdf.sparql.ast.ValueExpressionNode;
-import com.bigdata.rdf.sparql.ast.FunctionRegistry.Factory;
 import com.bigdata.rdf.sparql.ast.eval.AST2BOpUtility;
 import com.bigdata.rdf.sparql.ast.eval.AbstractServiceFactoryBase;
 import com.bigdata.rdf.sparql.ast.eval.SampleServiceFactory;
@@ -59,8 +61,6 @@ import com.bigdata.rdf.sparql.ast.service.ServiceCallCreateParams;
 import com.bigdata.rdf.sparql.ast.service.ServiceFactory;
 import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
 import com.bigdata.rdf.store.BDS;
-
-import static com.bigdata.rdf.sparql.ast.FunctionRegistry.checkArgs;
 
 /**
  * Context listener to enact configurations we need on initialization.
