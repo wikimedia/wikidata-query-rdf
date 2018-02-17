@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool.change;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
 
 import java.io.IOException;
 import java.util.Map;
@@ -9,7 +10,6 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -21,13 +21,11 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(JsonDeserializer.class);
 
-    private final ObjectMapper mapper;
+    private final ObjectMapper mapper = getObjectMapper();
 
     private final Map<String, Class<? extends T>> topicToClass;
 
     public JsonDeserializer(Map<String, Class<? extends T>> topicToClass) {
-        this.mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.topicToClass = topicToClass;
     }
 

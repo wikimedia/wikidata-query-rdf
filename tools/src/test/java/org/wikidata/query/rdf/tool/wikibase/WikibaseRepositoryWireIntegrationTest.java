@@ -10,11 +10,10 @@ import static com.google.common.io.Resources.getResource;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.Date;
+import java.time.Instant;
 
 import org.junit.After;
 import org.junit.Before;
@@ -43,12 +42,13 @@ public class WikibaseRepositoryWireIntegrationTest {
         repository.close();
     }
 
+    @SuppressWarnings("boxing")
     @Test
     public void recentChangesAreParsed() throws IOException, RetryableException, ParseException {
         stubFor(get(anyUrl())
                 .willReturn(aResponse().withBody(load("recent_changes.json"))));
 
-        RecentChangeResponse response = repository.fetchRecentChanges(new Date(), null, 10);
+        RecentChangeResponse response = repository.fetchRecentChanges(Instant.now(), null, 10);
 
         assertThat(response.getContinue().getRcContinue(), is("20171126140446|634268213"));
         assertThat(response.getContinue().getContinue(), is("-||"));
@@ -60,7 +60,7 @@ public class WikibaseRepositoryWireIntegrationTest {
         assertThat(change.getNs(), is(0L));
         assertThat(change.getRevId(), is(598908952L));
         assertThat(change.getRcId(), is(634268202L));
-        assertThat(change.getTimestamp(), is(inputDateFormat().parse("2017-11-26T14:04:45Z")));
+        assertThat(change.getTimestamp(), is(WikibaseRepository.INPUT_DATE_FORMATTER.parse("2017-11-26T14:04:45Z", Instant::from)));
     }
 
     @Test
@@ -68,7 +68,7 @@ public class WikibaseRepositoryWireIntegrationTest {
         stubFor(get(anyUrl())
                 .willReturn(aResponse().withBody(load("recent_changes_extra_fields.json"))));
 
-        RecentChangeResponse response = repository.fetchRecentChanges(new Date(), null, 10);
+        RecentChangeResponse response = repository.fetchRecentChanges(Instant.now(), null, 10);
 
         assertThat(response.getQuery().getRecentChanges(), hasSize(2));
         RecentChangeResponse.RecentChange change = response.getQuery().getRecentChanges().get(0);

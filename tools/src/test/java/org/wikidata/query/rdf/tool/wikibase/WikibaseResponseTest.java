@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.junit.Test;
+import org.wikidata.query.rdf.tool.MapperUtils;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -16,7 +17,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class WikibaseResponseTest {
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = MapperUtils.getObjectMapper();
 
     @Test
     public void stringErrorIsParsedCorrectly() throws IOException {

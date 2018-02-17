@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
+import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,15 +10,16 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -62,7 +65,6 @@ import org.wikidata.query.rdf.tool.wikibase.EditRequest.Label;
 import org.wikidata.query.rdf.tool.wikibase.SearchResponse.SearchResult;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
@@ -103,6 +105,26 @@ public class WikibaseRepository implements Closeable {
     public static final String INPUT_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
     /**
+     * DateTimeFormatter object that parses from and formats to the date
+     * in the format that wikibase returns, i.e. yyyy-MM-dd'T'HH:mm:ss
+     */
+    public static final DateTimeFormatter INPUT_DATE_FORMATTER = new DateTimeFormatterBuilder()
+                .appendPattern(INPUT_DATE_FORMAT)
+                .parseDefaulting(ChronoField.NANO_OF_SECOND, 0)
+                .toFormatter()
+                .withZone(ZoneId.of("Z"));
+
+    /**
+     * DateTimeFormatter object that parses from and formats to the date
+     * in the format that wikibase wants as input, i.e. yyyyMMddHHmmss.
+     */
+    public static final DateTimeFormatter OUTPUT_DATE_FORMATTER = new DateTimeFormatterBuilder()
+            .appendPattern("yyyyMMddHHmmss")
+            .parseDefaulting(ChronoField.NANO_OF_SECOND, 0)
+            .toFormatter()
+            .withZone(ZoneId.of("Z"));
+
+    /**
      * HTTP client for wikibase.
      */
     private final CloseableHttpClient client = HttpClients.custom()
@@ -136,25 +158,18 @@ public class WikibaseRepository implements Closeable {
      *
      * Note that this mapper is configured to ignore unknown properties.
      */
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = getObjectMapper();
 
     public WikibaseRepository(String scheme, String host) {
         uris = new Uris(scheme, host);
-        configureObjectMapper(mapper);
     }
 
     public WikibaseRepository(String scheme, String host, int port) {
         uris = new Uris(scheme, host, port);
-        configureObjectMapper(mapper);
     }
 
     public WikibaseRepository(String scheme, String host, int port, long[] entityNamespaces) {
         uris = new Uris(scheme, host, port, entityNamespaces);
-        configureObjectMapper(mapper);
-    }
-
-    private void configureObjectMapper(ObjectMapper mapper) {
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     /**
@@ -237,7 +252,7 @@ public class WikibaseRepository implements Closeable {
      * @throws RetryableException thrown if there is an error communicating with
      *             wikibase
      */
-    public RecentChangeResponse fetchRecentChangesByTime(Date nextStartTime, int batchSize) throws RetryableException {
+    public RecentChangeResponse fetchRecentChangesByTime(Instant nextStartTime, int batchSize) throws RetryableException {
         return fetchRecentChanges(nextStartTime, null, batchSize);
     }
 
@@ -254,7 +269,7 @@ public class WikibaseRepository implements Closeable {
      * @throws RetryableException thrown if there is an error communicating with
      *             wikibase
      */
-    public RecentChangeResponse fetchRecentChanges(Date nextStartTime, Continue lastContinue, int batchSize)
+    public RecentChangeResponse fetchRecentChanges(Instant nextStartTime, Continue lastContinue, int batchSize)
             throws RetryableException {
         URI uri = uris.recentChanges(nextStartTime, lastContinue, batchSize);
         log.debug("Polling for changes from {}", uri);
@@ -512,7 +527,7 @@ public class WikibaseRepository implements Closeable {
          * @param continueObject Continue object from the last request
          * @param batchSize maximum number of results we want back from wikibase
          */
-        public URI recentChanges(Date startTime, Continue continueObject, int batchSize) {
+        public URI recentChanges(Instant startTime, Continue continueObject, int batchSize) {
             URIBuilder builder = apiBuilder();
             builder.addParameter("action", "query");
             builder.addParameter("list", "recentchanges");
@@ -522,7 +537,7 @@ public class WikibaseRepository implements Closeable {
             builder.addParameter("rclimit", Integer.toString(batchSize));
             if (continueObject == null) {
                 builder.addParameter("continue", "");
-                builder.addParameter("rcstart", outputDateFormat().format(startTime));
+                builder.addParameter("rcstart", startTime.toString());
             } else {
                 builder.addParameter("continue", continueObject.getContinue());
                 builder.addParameter("rccontinue", continueObject.getRcContinue());
@@ -542,7 +557,7 @@ public class WikibaseRepository implements Closeable {
              */
             builder.setPath(String.format(Locale.ROOT, "/wiki/Special:EntityData/%s.ttl", entityId));
             // Cache is not our friend, try to work around it
-            builder.addParameter("nocache", Long.toString(new Date().getTime()));
+            builder.addParameter("nocache", String.valueOf(Instant.now().toEpochMilli()));
             builder.addParameter("flavor", "dump");
             return build(builder);
         }
@@ -674,47 +689,18 @@ public class WikibaseRepository implements Closeable {
     }
 
     /**
-     * Create a new DateFormat object that parses from and formats to the date
-     * in the format that wikibase wants as input.
-     */
-    public static DateFormat outputDateFormat() {
-        return utc(new SimpleDateFormat("yyyyMMddHHmmss", Locale.ROOT));
-    }
-
-    /**
-     * Create a new DateFormat object that parses from and formats to the date
-     * in the format that wikibase returns.
-     */
-    public static DateFormat inputDateFormat() {
-        return utc(new SimpleDateFormat(INPUT_DATE_FORMAT, Locale.ROOT));
-    }
-
-    /**
-     * Convert a DateFormat to always output in utc.
-     *
-     * Note that the DateFormat passed as a parameter is modified AND returned.
-     *
-     * @param df the DateFormat to modify
-     * @return the DateFormat that was passed as a parameter (useful for method chaining)
-     */
-    private static DateFormat utc(DateFormat df) {
-        df.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return df;
-    }
-
-    /**
      * Extract timestamp from continue JSON object.
      * @param nextContinue
      * @return Timestamp as date
      * @throws java.text.ParseException When data is in is wrong format
      */
     @SuppressFBWarnings(value = "STT_STRING_PARSING_A_FIELD", justification = "low priority to fix")
-    public Change getChangeFromContinue(Continue nextContinue) throws java.text.ParseException {
+    public Change getChangeFromContinue(Continue nextContinue) {
         if (nextContinue == null) {
             return null;
         }
         final String[] parts = nextContinue.getRcContinue().split("\\|");
-        return new Change("DUMMY", -1, outputDateFormat().parse(parts[0]), Long.parseLong(parts[1]));
+        return new Change("DUMMY", -1, OUTPUT_DATE_FORMATTER.parse(parts[0], Instant::from), Long.parseLong(parts[1]));
     }
 
     /**

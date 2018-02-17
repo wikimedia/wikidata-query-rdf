@@ -2,14 +2,15 @@ package org.wikidata.query.rdf.tool.rdf;
 
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static com.google.common.io.Resources.getResource;
+import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
@@ -22,8 +23,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.eclipse.jetty.client.HttpClient;
@@ -59,7 +58,6 @@ import org.wikidata.query.rdf.tool.exception.FatalException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.rholder.retry.Attempt;
@@ -630,11 +628,11 @@ public class RdfRepository implements AutoCloseable {
      * @return the date or null if we have nowhere to start from
      */
     @SuppressFBWarnings(value = "PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS", justification = "prefix() is called with different StringBuilders")
-    public Date fetchLeftOffTime() {
+    public Instant fetchLeftOffTime() {
         log.info("Checking for left off time from the updater");
         StringBuilder b = SchemaDotOrg.prefix(new StringBuilder());
         b.append("SELECT * WHERE { <").append(uris.root()).append("> schema:dateModified ?date }");
-        Date leftOffTime = dateFromQuery(b.toString());
+        Instant leftOffTime = dateFromQuery(b.toString());
         if (leftOffTime != null) {
             log.info("Found left off time from the updater");
             return leftOffTime;
@@ -650,19 +648,12 @@ public class RdfRepository implements AutoCloseable {
      * returns leftOffTime so we can continue from there after the updater is
      * restarted.
      */
-    public void updateLeftOffTime(Date leftOffTime) {
+    public void updateLeftOffTime(Instant leftOffTime) {
         log.debug("Setting last updated time to {}", leftOffTime);
         UpdateBuilder b = new UpdateBuilder(updateLeftOffTimeBody);
         b.bindUri("root", uris.root());
         b.bindUri("dateModified", SchemaDotOrg.DATE_MODIFIED);
-        GregorianCalendar c = new GregorianCalendar(UTC, Locale.ROOT);
-        c.setTime(leftOffTime);
-        try {
-            b.bindValue("date", DatatypeFactory.newInstance().newXMLGregorianCalendar(c));
-        } catch (DatatypeConfigurationException e) {
-            throw new FatalException("Holy cow datatype configuration exception on default "
-                    + "datatype factory.  Seems like something really really strange.", e);
-        }
+        b.bindValue("date", leftOffTime);
         execute("update", UPDATE_COUNT_RESPONSE, b.toString());
     }
 
@@ -747,7 +738,7 @@ public class RdfRepository implements AutoCloseable {
      * Run a query that returns just a date in the "date" binding and return its
      * result.
      */
-    private Date dateFromQuery(String query) {
+    private Instant dateFromQuery(String query) {
         TupleQueryResult result = query(query);
         try {
             if (!result.hasNext()) {
@@ -757,13 +748,14 @@ public class RdfRepository implements AutoCloseable {
             if (maxLastUpdate == null) {
                 return null;
             }
+            // Note that XML calendar and Instant have the same default format
             XMLGregorianCalendar xmlCalendar = ((Literal) maxLastUpdate.getValue()).calendarValue();
             /*
              * We convert rather blindly to a GregorianCalendar because we're
              * reasonably sure all the right data is present.
              */
             GregorianCalendar calendar = xmlCalendar.toGregorianCalendar();
-            return calendar.getTime();
+            return calendar.getTime().toInstant();
         } catch (QueryEvaluationException e) {
             throw new FatalException("Error evaluating query", e);
         }
@@ -916,6 +908,9 @@ public class RdfRepository implements AutoCloseable {
      * Parses responses to ask queries into booleans.
      */
     private static class AskQueryResponse implements ResponseHandler<Boolean> {
+
+        private final ObjectMapper mapper = getObjectMapper();
+
         @Override
         public String acceptHeader() {
             return "application/json";
@@ -924,10 +919,7 @@ public class RdfRepository implements AutoCloseable {
         @Override
         public Boolean parse(ContentResponse entity) throws IOException {
             try {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 return mapper.readValue(entity.getContentAsString(), Resp.class).aBoolean;
-
             } catch (JsonParseException | JsonMappingException e) {
                 throw new IOException("Error parsing response", e);
             }

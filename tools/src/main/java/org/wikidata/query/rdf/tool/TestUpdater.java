@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.tool;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -54,7 +54,7 @@ public class TestUpdater<B extends Change.Batch> extends Updater<B> {
     }
 
     @Override
-    protected void syncDate(Date newDate) {
+    protected void syncDate(Instant newDate) {
         log.info("Sync: {}", newDate);
     }
 

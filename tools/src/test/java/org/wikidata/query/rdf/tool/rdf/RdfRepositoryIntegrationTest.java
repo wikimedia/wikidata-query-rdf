@@ -6,10 +6,10 @@ import static org.wikidata.query.rdf.test.StatementHelper.siteLink;
 import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -620,9 +620,9 @@ public class RdfRepositoryIntegrationTest extends RandomizedTest {
 
     @Test
     public void updateLeftOffTimeFetch() {
-        Date d = new Date();
-        rdfRepository.updateLeftOffTime(d);
-        assertEquals(d, rdfRepository.fetchLeftOffTime());
+        Instant now = Instant.now();
+        rdfRepository.updateLeftOffTime(now);
+        assertEquals(now, rdfRepository.fetchLeftOffTime());
     }
 
     private void syncJustVersion(String entityId, int version) {

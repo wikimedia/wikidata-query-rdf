@@ -1,14 +1,14 @@
 package org.wikidata.query.rdf.tool.change;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.OUTPUT_DATE_FORMATTER;
 
+import java.time.Instant;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
-import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.google.common.collect.ImmutableList;
 
@@ -34,7 +34,7 @@ public class Change implements Comparable<Change> {
     /**
      * Timestamp of the change.
      */
-    private final Date timestamp;
+    private final Instant timestamp;
 
     /**
      * Set of processed statements for the change.
@@ -51,8 +51,7 @@ public class Change implements Comparable<Change> {
      */
     private final long rcid;
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "TODO: move to LocalDateTime")
-    public Change(String entityId, long revision, Date timestamp, long rcid) {
+    public Change(String entityId, long revision, Instant timestamp, long rcid) {
         if (entityId.startsWith("Property:")) {
             this.entityId = entityId.substring("Property:".length());
         } else if (entityId.startsWith("Item:")) {
@@ -95,8 +94,7 @@ public class Change implements Comparable<Change> {
      *
      * @return the timestamp or null if that information is not available
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "TODO: move to LocalDateTime")
-    public Date timestamp() {
+    public Instant timestamp() {
         return timestamp;
     }
 
@@ -111,7 +109,7 @@ public class Change implements Comparable<Change> {
             b.append('@').append(revision);
         }
         if (timestamp != null) {
-            b.append('@').append(WikibaseRepository.outputDateFormat().format(timestamp));
+            b.append('@').append(OUTPUT_DATE_FORMATTER.format(timestamp));
             b.append('|').append(rcid);
         }
         return b.toString();
@@ -177,7 +175,7 @@ public class Change implements Comparable<Change> {
          * updater process will attempt to mark the last update date in the rdf
          * store so it can pick up where it left off.
          */
-        Date leftOffDate();
+        Instant leftOffDate();
 
         /**
          * Was this the last batch?

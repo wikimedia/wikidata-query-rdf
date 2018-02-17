@@ -2,21 +2,18 @@ package org.wikidata.query.rdf.tool.change.events;
 
 import static com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING;
 
-import java.util.Date;
+import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 /**
  * Metadata for event record.
  * See: https://github.com/wikimedia/mediawiki-event-schemas/blob/master/jsonschema/resource_change/1.yaml
  */
-@SuppressFBWarnings(value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"}, justification = "Yup, Date is mutable, can't do much about it")
 public class EventsMeta {
-    private final Date timestamp;
+    private final Instant timestamp;
     private final String id;
     private final String domain;
 
@@ -24,7 +21,7 @@ public class EventsMeta {
 
     @JsonCreator
     public EventsMeta(
-            @JsonProperty("dt") @JsonFormat(shape = STRING, pattern = INPUT_DATE_FORMAT) Date timestamp,
+            @JsonProperty("dt") @JsonFormat(shape = STRING, pattern = INPUT_DATE_FORMAT) Instant timestamp,
             @JsonProperty("id") String id,
             @JsonProperty("domain") String domain
     ) {
@@ -33,7 +30,7 @@ public class EventsMeta {
         this.domain = domain;
     }
 
-    public Date timestamp() {
+    public Instant timestamp() {
         return timestamp;
     }
 

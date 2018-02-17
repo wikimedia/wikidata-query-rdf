@@ -2,7 +2,7 @@ package org.wikidata.query.rdf.tool.change;
 
 import static java.lang.Math.min;
 
-import java.util.Date;
+import java.time.Instant;
 
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
@@ -75,7 +75,7 @@ public class IdListChangeSource implements Change.Source<IdListChangeSource.Batc
         }
 
         @Override
-        public Date leftOffDate() {
+        public Instant leftOffDate() {
             return null;
         }
     }
