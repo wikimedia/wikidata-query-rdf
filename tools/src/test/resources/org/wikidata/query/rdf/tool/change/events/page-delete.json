@@ -1,0 +1,33 @@
+{
+  "comment": "Does not meet the",
+  "database": "wikidatawiki",
+  "meta": {
+    "domain": "acme.test",
+    "dt": "2018-01-19T18:53:59+00:00",
+    "id": "1bf42f55-fd4a-11e7-8629-1866da992497",
+    "request_id": "2d6b640c-c3f6-4a5a-bd86-4e2c30869e68",
+    "schema_uri": "mediawiki/page/delete/2",
+    "topic": "mediawiki.page-delete",
+    "uri": "https://www.wikidata.org/wiki/Q47462581"
+  },
+  "page_id": 4875,
+  "page_is_redirect": false,
+  "page_namespace": 0,
+  "page_title": "Q47462581",
+  "parsedcomment": "Does not meet",
+  "performer": {
+    "user_edit_count": 333,
+    "user_groups": [
+      "sysop",
+      "translationadmin",
+      "*",
+      "user",
+      "autoconfirmed"
+    ],
+    "user_id": 77,
+    "user_is_bot": false,
+    "user_text": "Bot"
+  },
+  "rev_count": 20,
+  "rev_id": 621830
+}

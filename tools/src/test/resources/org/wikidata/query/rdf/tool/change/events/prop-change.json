@@ -1,0 +1,34 @@
+{
+  "added_properties": {
+    "wb-sitelinks": 3
+  },
+  "database": "wikidatawiki",
+  "meta": {
+    "domain": "acme.test",
+    "dt": "2018-01-23T01:32:14+00:00",
+    "id": "3dc4c5d6-ffdd-11e7-8913-1866da99521a",
+    "request_id": "af26dc38-96f5-448e-bb3c-5c886e30cdaf",
+    "schema_uri": "mediawiki/page/properties-change/1",
+    "topic": "mediawiki.page-properties-change",
+    "uri": "https://www.wikidata.org/wiki/Q7359206"
+  },
+  "page_id": 7267221,
+  "page_is_redirect": false,
+  "page_namespace": 0,
+  "page_title": "Q7359206",
+  "performer": {
+    "user_edit_count": 4441,
+    "user_groups": [
+      "*",
+      "user",
+      "autoconfirmed"
+    ],
+    "user_id": 44554,
+    "user_is_bot": false,
+    "user_text": "Bot"
+  },
+  "removed_properties": {
+    "wb-sitelinks": "2"
+  },
+  "rev_id": 1693801
+}

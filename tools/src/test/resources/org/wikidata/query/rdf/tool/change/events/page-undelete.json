@@ -1,0 +1,31 @@
+{
+  "comment": "it is better to merge it",
+  "database": "wikidatawiki",
+  "meta": {
+    "domain": "acme.test",
+    "dt": "2018-01-21T09:30:46+00:00",
+    "id": "c29dbf46-fe8d-11e7-b405-141877614b03",
+    "request_id": "d9d46be5-c5f0-4a84-8a6f-00c2977d27ee",
+    "schema_uri": "mediawiki/page/undelete/2",
+    "topic": "mediawiki.page-undelete",
+    "uri": "https://www.wikidata.org/wiki/Q32451604"
+  },
+  "page_id": 59589685,
+  "page_is_redirect": false,
+  "page_namespace": 0,
+  "page_title": "Q32451604",
+  "parsedcomment": "it is better to merge it",
+  "performer": {
+    "user_edit_count": 444,
+    "user_groups": [
+      "sysop",
+      "*",
+      "user",
+      "autoconfirmed"
+    ],
+    "user_id": 777,
+    "user_is_bot": false,
+    "user_text": "יBot"
+  },
+  "rev_id": 565767
+}

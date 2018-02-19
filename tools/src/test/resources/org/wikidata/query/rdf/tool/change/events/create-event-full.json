@@ -1,0 +1,40 @@
+{
+  "comment": "/* wbsetreference-add:2| */ [[Property:P105]]",
+  "database": "wikidatawiki",
+  "meta": {
+    "domain": "acme.test",
+    "dt": "2018-01-21T16:38:20+00:00",
+    "id": "7d3650db-fec9-11e7-92be-1866da9953ca",
+    "request_id": "d0043120-1c17-43ec-a888-373f55441526",
+    "schema_uri": "mediawiki/revision/create/2",
+    "topic": "mediawiki.revision-create",
+    "uri": "https://www.wikidata.org/wiki/Q20672616"
+  },
+  "page_id": 22419364,
+  "page_is_redirect": false,
+  "page_namespace": 0,
+  "page_title": "Q20672616",
+  "parsedcomment": "‎<span dir=\"auto\">",
+  "performer": {
+    "user_edit_count": 4,
+    "user_groups": [
+      "bot",
+      "*",
+      "user",
+      "autoconfirmed"
+    ],
+    "user_id": 3,
+    "user_is_bot": true,
+    "user_registration_dt": "2013-09-27T16:02:35Z",
+    "user_text": "Bot"
+  },
+  "rev_content_changed": true,
+  "rev_content_format": "wikibase-item",
+  "rev_content_model": "wikibase-item",
+  "rev_id": 62295,
+  "rev_len": 9870,
+  "rev_minor_edit": false,
+  "rev_parent_id": 6299559,
+  "rev_sha1": "hfvnvv8qcnluq07gpz15tel9o15sl",
+  "rev_timestamp": "2018-01-21T16:38:20Z"
+}
