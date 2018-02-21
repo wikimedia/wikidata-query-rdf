@@ -3,7 +3,7 @@
 ## Clone the project
 
 ```
-$ git clone https://gerrit.wikimedia.org/r/wikidata/query/rdf wikidata-query-rdf
+$ git clone  --recurse-submodules https://gerrit.wikimedia.org/r/wikidata/query/rdf wikidata-query-rdf
 ```
 
 ## Build it
