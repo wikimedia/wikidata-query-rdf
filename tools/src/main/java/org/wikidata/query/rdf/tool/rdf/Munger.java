@@ -2,10 +2,8 @@ package org.wikidata.query.rdf.tool.rdf;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,9 +11,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
-
-import javax.xml.bind.DatatypeConverter;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -381,10 +376,7 @@ public class Munger {
                 this.revisionId = new NumericLiteralImpl(sourceChange.revision());
             }
             if (sourceChange.timestamp() != null) {
-                Date date = sourceChange.timestamp();
-                Calendar c = Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
-                c.setTime(date);
-                this.lastModified = new LiteralImpl(DatatypeConverter.printDate(c), XMLSchema.DATETIME);
+                this.lastModified = new LiteralImpl(sourceChange.timestamp().toString(), XMLSchema.DATETIME);
             }
         }
 

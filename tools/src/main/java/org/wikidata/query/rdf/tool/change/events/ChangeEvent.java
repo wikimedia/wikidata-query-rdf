@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.tool.change.events;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Generic change event.
@@ -24,7 +24,7 @@ public interface ChangeEvent {
     /**
      * Change timestamp.
      */
-    Date timestamp();
+    Instant timestamp();
     /**
      * Domain for the event.
      */

@@ -1,11 +1,11 @@
 package org.wikidata.query.rdf.tool.change;
 
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -25,6 +25,7 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.change.events.ChangeEvent;
 import org.wikidata.query.rdf.tool.change.events.PageDeleteEvent;
 import org.wikidata.query.rdf.tool.change.events.PropertiesChangeEvent;
@@ -36,8 +37,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * This poller will connect to Kafka event source and get changes from
@@ -52,7 +51,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
     /**
      * The first start time to poll.
      */
-    private final Date firstStartTime;
+    private final Instant firstStartTime;
     /**
      * Size of the batches to poll against wikibase.
      */
@@ -96,7 +95,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         // Make a map (topic, partition) -> timestamp
         for (String topic: topics) {
             for (PartitionInfo partition: consumer.partitionsFor(topic)) {
-                topicParts.put(new TopicPartition(topic, partition.partition()), firstStartTime.getTime());
+                topicParts.put(new TopicPartition(topic, partition.partition()), firstStartTime.toEpochMilli());
             }
         }
 //        Map<TopicPartition, Long> topicParts = topics.stream().flatMap(topic ->
@@ -130,16 +129,6 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         return fetch(lastBatch.leftOffDate());
     }
 
-    private Date dateMax(Date d1, Date d2) {
-        if (d1 == null) {
-            return d2;
-        }
-        if (d2 == null) {
-            return d1;
-        }
-        return d1.before(d2) ? d2 : d1;
-    }
-
     /**
      * Fetch changes from Kafka.
      * @param lastNextStartTime where last fetch ended up.
@@ -147,10 +136,10 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
      * @throws RetryableException
      */
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
-    private Batch fetch(Date lastNextStartTime) throws RetryableException {
+    private Batch fetch(Instant lastNextStartTime) throws RetryableException {
         Map<String, Change> changesByTitle = new LinkedHashMap<>();
         ConsumerRecords<String, ChangeEvent> records;
-        Map<String, Date> timesByTopic = newHashMapWithExpectedSize(topics.size());
+        Map<String, Instant> timesByTopic = newHashMapWithExpectedSize(topics.size());
         while (true) {
             try {
                 // TODO: make timeout configurable? Wait for a bit so we catch bursts of messages?
@@ -186,7 +175,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
                 // Now we have event that we want to process
                 foundSomething = true;
                 // Keep max time per topic
-                timesByTopic.put(topic, dateMax(new Date(record.timestamp()),
+                timesByTopic.put(topic, Utils.max(Instant.ofEpochMilli(record.timestamp()),
                                 timesByTopic.getOrDefault(topic, null)));
                 // Using offset here as RC id since we do not have real RC id (this not being RC poller) but
                 // the offset serves the same function in Kafka and is also useful for debugging.
@@ -224,23 +213,21 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         // but that's ok, since changes are checked by revid anyway.
         // This is important only on updater restart, otherwise Kafka offsets should
         // take care of tracking things.
-        long nextStartTime = timesByTopic.values().stream().min(Date::compareTo)
-                .orElse(lastNextStartTime).getTime();
-        // FIXME: Note tha due to batching nature of Kafka this timestamp could actually jump
+        Instant nextInstant = timesByTopic.values().stream().min(Instant::compareTo)
+                .orElse(lastNextStartTime);
+        // FIXME: Note that due to batching nature of Kafka this timestamp could actually jump
         // back and forth. Not sure what to do about it.
 
         final ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
         log.info("Found {} changes", changes.size());
-        long advanced = nextStartTime - lastNextStartTime.getTime();
+        long advanced = ChronoUnit.MILLIS.between(lastNextStartTime, nextInstant);
         // Show the user the polled time - one second because we can't
         // be sure we got the whole second
-        String upTo = inputDateFormat().format(new Date(nextStartTime - 1000));
-        return new Batch(changes, advanced, upTo, new Date(nextStartTime));
+        return new Batch(changes, advanced, nextInstant.minusSeconds(1).toString(), nextInstant);
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "TODO: will move to java.time")
     public KafkaPoller(Consumer<String, ChangeEvent> consumer, Uris uris,
-            Date firstStartTime, int batchSize, Collection<String> topics) {
+            Instant firstStartTime, int batchSize, Collection<String> topics) {
         this.consumer = consumer;
         this.uris = uris;
         this.firstStartTime = firstStartTime;
@@ -252,10 +239,9 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         /**
          * The date where we last left off.
          */
-        private final Date leftOffDate;
+        private final Instant leftOffDate;
 
-        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "TODO: will move to java.time")
-        public Batch(ImmutableList<Change> changes, long advanced, String leftOff, Date nextStartTime) {
+        public Batch(ImmutableList<Change> changes, long advanced, String leftOff, Instant nextStartTime) {
             super(changes, advanced, leftOff);
             leftOffDate = nextStartTime;
         }
@@ -266,8 +252,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         }
 
         @Override
-        @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "TODO: move to LocalDateTime")
-        public Date leftOffDate() {
+        public Instant leftOffDate() {
             return leftOffDate;
         }
     }
@@ -316,7 +301,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
     @Nonnull
     public static KafkaPoller buildKafkaPoller(
             String kafkaServers, Collection<String> clusterNames,
-            Uris uris, int batchSize, Date startTime) {
+            Uris uris, int batchSize, Instant startTime) {
         Map<String, Class<? extends ChangeEvent>> topicsToClass = clusterNamesAwareTopics(clusterNames);
         ImmutableSet<String> topics = ImmutableSet.copyOf(topicsToClass.keySet());
 

@@ -2,14 +2,16 @@ package org.wikidata.query.rdf.tool;
 
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.handleOptions;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.mungerFromOptions;
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.outputDateFormat;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.INPUT_DATE_FORMATTER;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.OUTPUT_DATE_FORMATTER;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -152,10 +154,10 @@ public final class Update {
             return buildIdListChangeSource(options.ids(), options.batchSize());
         }
         if (options.kafkaBroker() != null) {
-            long startTime = getStartTime(options.start(), rdfRepository, options.init());
             return KafkaPoller.buildKafkaPoller(options.kafkaBroker(),
                     OptionsUtils.splitByComma(options.clusters()), wikibaseRepository.getUris(),
-                    options.batchSize(), new Date(startTime));
+                    options.batchSize(),
+                    getStartTime(options.start(), rdfRepository, options.init()));
         }
         return buildRecentChangePollerChangeSource(
                 rdfRepository, wikibaseRepository,
@@ -167,33 +169,34 @@ public final class Update {
     private static Change.Source<? extends Change.Batch> buildRecentChangePollerChangeSource(
             RdfRepository rdfRepository, WikibaseRepository wikibaseRepository,
             String start, boolean init, int batchSize, int tailPollerOffset) {
-        long startTime = getStartTime(start, rdfRepository, init);
-        return new RecentChangesPoller(wikibaseRepository, new Date(startTime), batchSize, tailPollerOffset);
+        return new RecentChangesPoller(wikibaseRepository,
+                getStartTime(start, rdfRepository, init),
+                batchSize, tailPollerOffset);
     }
 
-    private static long getStartTime(String start, RdfRepository rdfRepository, boolean init) {
-        long startTime;
+    private static Instant getStartTime(String start, RdfRepository rdfRepository, boolean init) {
+        Instant startTime;
         if (start != null) {
             startTime = parseDate(start);
             if (init) {
                 // Initialize left off time to start time
-                rdfRepository.updateLeftOffTime(new Date(startTime));
+                rdfRepository.updateLeftOffTime(startTime);
             }
         } else {
             log.info("Checking where we left off");
-            Date leftOff = rdfRepository.fetchLeftOffTime();
+            Instant leftOff = rdfRepository.fetchLeftOffTime();
             Integer maxDays = Integer.valueOf(System.getProperty(MAX_DAYS_BACK_NAME, "30"));
-            long minStartTime = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(maxDays.intValue());
+            Instant minStartTime = Instant.now().minus(maxDays.intValue(), ChronoUnit.DAYS);
             if (leftOff == null) {
                 startTime = minStartTime;
-                log.info("Defaulting start time to {} days ago:  {}", maxDays, inputDateFormat().format(new Date(startTime)));
+                log.info("Defaulting start time to {} days ago: {}", maxDays, startTime);
             } else {
-                if (leftOff.getTime() < minStartTime) {
+                if (leftOff.isBefore(minStartTime)) {
                     throw new IllegalStateException("RDF store reports the last update time is before the minimum safe poll time.  "
                             + "You will have to reload from scratch or you might have missing data.");
                 }
-                startTime = leftOff.getTime();
-                log.info("Found start time in the RDF store: {}", inputDateFormat().format(leftOff));
+                startTime = leftOff;
+                log.info("Found start time in the RDF store: {}", leftOff);
             }
         }
         return startTime;
@@ -204,13 +207,13 @@ public final class Update {
      *
      * @throws IllegalArgumentException if the date cannot be parsed with either format.
      */
-    private static long parseDate(String dateStr) {
+    private static Instant parseDate(String dateStr) {
         try {
-            return outputDateFormat().parse(dateStr).getTime();
-        } catch (java.text.ParseException e) {
+            return OUTPUT_DATE_FORMATTER.parse(dateStr, Instant::from);
+        } catch (DateTimeParseException e) {
             try {
-                return inputDateFormat().parse(dateStr).getTime();
-            } catch (java.text.ParseException e2) {
+                return INPUT_DATE_FORMATTER.parse(dateStr, Instant::from);
+            } catch (DateTimeParseException e2) {
                 throw  new IllegalArgumentException("Invalid date: " + dateStr, e2);
             }
         }

@@ -11,6 +11,7 @@ import java.io.PipedOutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -101,7 +102,7 @@ public class MungeIntegrationTest extends RandomizedTest {
                         .append("ASK { ontology:Dump schema:dateModified \"2015-04-02T10:54:56Z\"^^xsd:dateTime }")
                         .toString()));
 
-        assertEquals(WikibaseRepository.inputDateFormat().parse("2015-04-02T10:54:56Z"), rdfRepository
+        assertEquals(WikibaseRepository.INPUT_DATE_FORMATTER.parse("2015-04-02T10:54:56Z", Instant::from), rdfRepository
                 .fetchLeftOffTime());
 
         assertTrue(rdfRepository.ask(

@@ -2,9 +2,9 @@ package org.wikidata.query.rdf.tool;
 
 import static java.lang.Thread.currentThread;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,7 +15,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang3.time.DateUtils;
 import org.openrdf.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,18 +127,18 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
             }
         } while (batch == null);
         log.debug("{} changes in batch", batch.changes().size());
-        Date oldDate = null;
+        Instant oldDate = null;
         while (!currentThread().isInterrupted()) {
             try {
                 handleChanges(batch.changes());
-                Date leftOffDate = batch.leftOffDate();
+                Instant leftOffDate = batch.leftOffDate();
                 if (leftOffDate != null) {
                     /*
                      * Back one second because the resolution on our poll isn't
                      * super good and because its not big deal to recheck if we
                      * have some updates.
                      */
-                    leftOffDate = DateUtils.addSeconds(leftOffDate, -1);
+                    leftOffDate = leftOffDate.minusSeconds(1);
                     // Do not update repo with the same date
                     if (oldDate == null || !oldDate.equals(leftOffDate)) {
                         syncDate(leftOffDate);
@@ -167,7 +166,7 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
      * Record that we reached certain date in permanent storage.
      * @param newDate
      */
-    protected void syncDate(Date newDate) {
+    protected void syncDate(Instant newDate) {
         rdfRepository.updateLeftOffTime(newDate);
     }
 

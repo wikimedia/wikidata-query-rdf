@@ -1,19 +1,20 @@
 package org.wikidata.query.rdf.tool.change;
 
 import static java.lang.Boolean.TRUE;
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.inputDateFormat;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.wikibase.Continue;
 import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse;
@@ -47,7 +48,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
     /**
      * The first start time to poll.
      */
-    private final Date firstStartTime;
+    private final Instant firstStartTime;
     /**
      * Size of the batches to poll against wikibase.
      */
@@ -68,12 +69,11 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
     /**
      * How much to back off for recent fetches, in seconds.
      */
-    private static final int BACKOFF_TIME = 10;
+    private static final Duration BACKOFF_TIME = Duration.ofSeconds(10);
     /**
      * How old should the change be to not apply backoff.
-     * The number is in minutes.
      */
-    private static final int BACKOFF_THRESHOLD = 2;
+    private static final Duration BACKOFF_THRESHOLD = Duration.ofMinutes(2);
 
     /**
      * Queue for communicating with tailing updater.
@@ -94,8 +94,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      */
     private boolean useBackoff = true;
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "TODO: move to LocalDateTime")
-    public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime,
+    public RecentChangesPoller(WikibaseRepository wikibase, Instant firstStartTime,
             int batchSize, Map<Long, Boolean> seenIDs, int tailSeconds) {
         this.wikibase = wikibase;
         this.firstStartTime = firstStartTime;
@@ -104,11 +103,11 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         this.tailSeconds = tailSeconds;
     }
 
-    public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime, int batchSize) {
+    public RecentChangesPoller(WikibaseRepository wikibase, Instant firstStartTime, int batchSize) {
         this(wikibase, firstStartTime, batchSize, createSeenMap(), -1);
     }
 
-    public RecentChangesPoller(WikibaseRepository wikibase, Date firstStartTime, int batchSize, int tailSeconds) {
+    public RecentChangesPoller(WikibaseRepository wikibase, Instant firstStartTime, int batchSize, int tailSeconds) {
         this(wikibase, firstStartTime, batchSize, createSeenMap(), tailSeconds);
     }
 
@@ -161,19 +160,21 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         }
 
         if (tailPoller == null) {
-            if (lastBatch.leftOffDate().before(DateUtils.addSeconds(new Date(), -tailSeconds))) {
+            if (lastBatch.leftOffDate().isBefore(Instant.now().minusSeconds(tailSeconds))) {
                 // still not caught up, do nothing
                 return lastBatch;
             }
             // We don't have poller yet - start it
             log.info("Started trailing poller with gap of {} seconds", tailSeconds);
             // Create new poller starting back tailSeconds and same IDs map.
-            final RecentChangesPoller poller = new RecentChangesPoller(wikibase, DateUtils.addSeconds(new Date(), -tailSeconds), batchSize, seenIDs, -1);
+            final RecentChangesPoller poller = new RecentChangesPoller(wikibase,
+                    Instant.now().minusSeconds(tailSeconds),
+                    batchSize, seenIDs, -1);
             poller.setBackoff(false);
             tailPoller = new TailingChangesPoller(poller, queue, tailSeconds);
             tailPoller.start();
         } else {
-            tailPoller.setPollerTs(lastBatch.leftOffDate().getTime());
+            tailPoller.setPollerTs(lastBatch.leftOffDate());
             final Batch queuedBatch = queue.poll();
             if (queuedBatch != null) {
                 log.info("Merging {} changes from trailing queue", queuedBatch.changes().size());
@@ -190,7 +191,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         /**
          * The date where we last left off.
          */
-        private final Date leftOffDate;
+        private final Instant leftOffDate;
 
         /**
          * Continue from last request. Can be null.
@@ -206,7 +207,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
          * A batch that will next continue using the continue parameter.
          */
         private Batch(ImmutableList<Change> changes, long advanced,
-                String leftOff, Date nextStartTime, Continue lastContinue) {
+                String leftOff, Instant nextStartTime, Continue lastContinue) {
             super(changes, advanced, leftOff);
             leftOffDate = nextStartTime;
             this.lastContinue = lastContinue;
@@ -235,18 +236,16 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         }
 
         @Override
-        @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "TODO: move to LocalDateTime")
-        public Date leftOffDate() {
+        public Instant leftOffDate() {
             return leftOffDate;
         }
 
         @Override
         public String leftOffHuman() {
             if (lastContinue != null) {
-                return WikibaseRepository.inputDateFormat().format(leftOffDate)
-                    + " (next: " + lastContinue.getRcContinue() + ")";
+                return leftOffDate + " (next: " + lastContinue.getRcContinue() + ")";
             } else {
-                return WikibaseRepository.inputDateFormat().format(leftOffDate);
+                return leftOffDate.toString();
             }
         }
 
@@ -279,8 +278,8 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      * @param nextStartTime
      * @return
      */
-    private boolean changeIsRecent(Date nextStartTime) {
-        return nextStartTime.after(DateUtils.addMinutes(new Date(), -BACKOFF_THRESHOLD));
+    private boolean changeIsRecent(Instant nextStartTime) {
+        return nextStartTime.isAfter(Instant.now().minus(BACKOFF_THRESHOLD));
     }
 
     /**
@@ -292,11 +291,10 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      * @return
      * @throws RetryableException on fetch failure
      */
-    private RecentChangeResponse fetchRecentChanges(Date lastNextStartTime, Batch lastBatch) throws RetryableException {
+    private RecentChangeResponse fetchRecentChanges(Instant lastNextStartTime, Batch lastBatch) throws RetryableException {
         if (useBackoff && changeIsRecent(lastNextStartTime)) {
             return wikibase.fetchRecentChangesByTime(
-                    DateUtils.addSeconds(lastNextStartTime, -BACKOFF_TIME),
-                    batchSize);
+                    lastNextStartTime.minus(BACKOFF_TIME), batchSize);
         } else {
             return wikibase.fetchRecentChanges(lastNextStartTime,
                     lastBatch != null ? lastBatch.getLastContinue() : null,
@@ -310,18 +308,18 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      * @throws RetryableException on parse failure
      */
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
-    private Batch batch(Date lastNextStartTime, Batch lastBatch) throws RetryableException {
+    private Batch batch(Instant lastNextStartTime, Batch lastBatch) throws RetryableException {
         RecentChangeResponse recentChanges = fetchRecentChanges(lastNextStartTime, lastBatch);
         // Using LinkedHashMap here so that changes came out sorted by order of arrival
         Map<String, Change> changesByTitle = new LinkedHashMap<>();
         Continue nextContinue = recentChanges.getContinue();
-        long nextStartTime = lastNextStartTime.getTime();
+        Instant nextStartTime = lastNextStartTime;
         List<RecentChange> result = recentChanges.getQuery().getRecentChanges();
 
         for (RecentChange rc : result) {
             // Does not matter if the change matters for us or not, it
             // still advances the time since we've seen it.
-            nextStartTime = Math.max(nextStartTime, rc.getTimestamp().getTime());
+            nextStartTime = Utils.max(nextStartTime, rc.getTimestamp());
             if (!wikibase.isEntityNamespace(rc.getNs())) {
                 log.info("Skipping change in irrelevant namespace:  {}", rc);
                 continue;
@@ -372,8 +370,8 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             // We have a problem here - due to backoff, we did not fetch any new items
             // Try to advance one second, even though we risk to lose a change - in hope
             // that trailing poller will pick them up.
-            nextStartTime += 1000;
-            log.info("Backoff overflow, advancing next time to {}", inputDateFormat().format(new Date(nextStartTime)));
+            nextStartTime = nextStartTime.plusSeconds(1);
+            log.info("Backoff overflow, advancing next time to {}", nextStartTime);
         }
 
         if (changes.size() != 0) {
@@ -386,9 +384,8 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
         // Show the user the polled time - one second because we can't
         // be sure we got the whole second
-        String upTo = inputDateFormat().format(new Date(nextStartTime - 1000));
-        long advanced = nextStartTime - lastNextStartTime.getTime();
-        Batch batch = new Batch(changes, advanced, upTo, new Date(nextStartTime), nextContinue);
+        long advanced = ChronoUnit.MILLIS.between(lastNextStartTime, nextStartTime);
+        Batch batch = new Batch(changes, advanced, nextStartTime.minusSeconds(1).toString(), nextStartTime, nextContinue);
         if (backoffOverflow && nextContinue != null) {
             // We will not sleep if continue is provided.
             log.info("Got only old changes, next is: {}", nextContinue);

@@ -7,12 +7,11 @@ import static org.wikidata.query.rdf.test.CloseableRule.autoClose;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.openrdf.model.Statement;
@@ -44,8 +43,8 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
          * is probably ok.
          */
         int batchSize = randomIntBetween(3, 30);
-        RecentChangeResponse changes = repo.get().fetchRecentChanges(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30)),
-                null, batchSize);
+        RecentChangeResponse changes = repo.get().fetchRecentChanges(
+                Instant.now().minus(30, ChronoUnit.DAYS), null, batchSize);
         assertNotNull(changes.getContinue());
         assertNotNull(changes.getContinue());
         assertNotNull(changes.getQuery());
@@ -59,7 +58,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
             assertNotNull(rc.getTimestamp());
             assertNotNull(rc.getRevId());
         }
-        final Date nextDate = repo.get().getChangeFromContinue(changes.getContinue()).timestamp();
+        final Instant nextDate = repo.get().getChangeFromContinue(changes.getContinue()).timestamp();
         changes = repo.get().fetchRecentChanges(nextDate, null, batchSize);
         assertNotNull(changes.getQuery());
         assertNotNull(changes.getQuery().getRecentChanges());
@@ -72,7 +71,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
          * This relies on there being very few changes in the current
          * second.
          */
-        RecentChangeResponse changes = repo.get().fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
+        RecentChangeResponse changes = repo.get().fetchRecentChanges(Instant.now(), null, 500);
         assertNull(changes.getContinue());
         assertNotNull(changes.getQuery());
         assertNotNull(changes.getQuery().getRecentChanges());
@@ -88,7 +87,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         editShowsUpInRecentChangesTestCase("QueryTestProperty", "property");
     }
 
-    private List<RecentChange> getRecentChanges(Date date, int batchSize) throws RetryableException,
+    private List<RecentChange> getRecentChanges(Instant date, int batchSize) throws RetryableException,
         ContainedException {
         // Add a bit of a wait to try and improve Jenkins test stability.
         try {
@@ -106,7 +105,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         long now = System.currentTimeMillis();
         String entityId = repo.get().firstEntityIdForLabelStartingWith(label, "en", type);
         repo.get().setLabel(entityId, type, label + now, "en");
-        List<RecentChange> changes = getRecentChanges(new Date(now - 10000), 10);
+        List<RecentChange> changes = getRecentChanges(Instant.now().minusSeconds(10), 10);
         boolean found = false;
         String title = entityId;
         if (type.equals("property")) {
@@ -164,7 +163,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         long now = System.currentTimeMillis();
         String entityId = repo.get().firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
         repo.get().setLabel(entityId, "item", "QueryTestItem" + now, "en");
-        List<RecentChange> changes = getRecentChanges(new Date(now - 10000), 10);
+        List<RecentChange> changes = getRecentChanges(Instant.now().minusSeconds(10), 10);
         Change change = null;
         Long oldRevid = 0L;
         Long oldRcid = 0L;
@@ -182,7 +181,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
         Thread.sleep(1000);
         // make new edit now
         repo.get().setLabel(entityId, "item", "QueryTestItem" + now + "updated", "en");
-        changes = getRecentChanges(DateUtils.addSeconds(change.timestamp(), 1), 10);
+        changes = getRecentChanges(change.timestamp().plusSeconds(1), 10);
         // check that new result does not contain old edit but contains new edit
         boolean found = false;
         for (RecentChange rc: changes) {
@@ -198,7 +197,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     @Test
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void recentChangesWithErrors() throws RetryableException, ContainedException {
-        RecentChangeResponse changes = proxyRepo.get().fetchRecentChanges(new Date(System.currentTimeMillis()), null, 500);
+        RecentChangeResponse changes = proxyRepo.get().fetchRecentChanges(Instant.now(), null, 500);
         assertNull(changes.getContinue());
         assertNotNull(changes.getQuery());
         assertNotNull(changes.getQuery().getRecentChanges());

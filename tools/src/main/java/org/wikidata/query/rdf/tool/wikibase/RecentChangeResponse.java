@@ -1,16 +1,13 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
 import static com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING;
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.INPUT_DATE_FORMAT;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class RecentChangeResponse extends WikibaseResponse {
 
@@ -48,11 +45,10 @@ public class RecentChangeResponse extends WikibaseResponse {
         }
     }
 
-    @SuppressFBWarnings(value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"}, justification = "We'll need to migrate to JSR310 at some point")
     public static class RecentChange {
         private final Long ns;
         private final String title;
-        private final Date timestamp;
+        private final Instant timestamp;
         private final Long revId;
         private final Long rcId;
         private final String type;
@@ -61,7 +57,7 @@ public class RecentChangeResponse extends WikibaseResponse {
         public RecentChange(
                 @JsonProperty("ns") Long ns,
                 @JsonProperty("title") String title,
-                @JsonProperty("timestamp") @JsonFormat(shape = STRING, pattern = INPUT_DATE_FORMAT) Date timestamp,
+                @JsonProperty("timestamp") @JsonFormat(shape = STRING) Instant timestamp,
                 @JsonProperty("revid") Long revId,
                 @JsonProperty("rcid") Long rcId,
                 @JsonProperty("type") String type
@@ -82,7 +78,7 @@ public class RecentChangeResponse extends WikibaseResponse {
             return title;
         }
 
-        public Date getTimestamp() {
+        public Instant getTimestamp() {
             return timestamp;
         }
 

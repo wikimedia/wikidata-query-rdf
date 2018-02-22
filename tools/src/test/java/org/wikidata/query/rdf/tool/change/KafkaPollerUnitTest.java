@@ -21,10 +21,10 @@ import static org.wikidata.query.rdf.tool.change.ChangeMatchers.hasTitle;
 import static org.wikidata.query.rdf.tool.change.ChangeMatchers.hasRevision;
 import static org.wikidata.query.rdf.tool.change.ChangeMatchers.hasTitleRevision;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -66,7 +66,7 @@ public class KafkaPollerUnitTest {
     private static final int BATCH_SIZE = 5;
 
     private KafkaPoller makePoller() {
-        Date startTime = new Date(BEGIN_DATE);
+        Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest");
 
         return new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics);
@@ -81,13 +81,13 @@ public class KafkaPollerUnitTest {
      */
     private ChangeEvent makeRCEvent(int tsOffset, long revid, String qid) {
         return new RevisionCreateEvent(
-                new EventsMeta(new Date(BEGIN_DATE + tsOffset), "", DOMAIN),
+                new EventsMeta(Instant.ofEpochMilli(BEGIN_DATE + tsOffset), "", DOMAIN),
                 revid, qid, 0);
     }
 
     private ChangeEvent makeDeleteEvent(int tsOffset, String qid) {
         return new PageDeleteEvent(
-                new EventsMeta(new Date(BEGIN_DATE + tsOffset), "", DOMAIN),
+                new EventsMeta(Instant.ofEpochMilli(BEGIN_DATE + tsOffset), "", DOMAIN),
                 qid, 0);
     }
 
@@ -99,7 +99,7 @@ public class KafkaPollerUnitTest {
      */
     private ChangeEvent makeRCEvent(int tsOffset, long revid, String qid, int ns, String domain) {
         return new RevisionCreateEvent(
-                new EventsMeta(new Date(BEGIN_DATE + tsOffset), "", domain),
+                new EventsMeta(Instant.ofEpochMilli(BEGIN_DATE + tsOffset), "", domain),
                 revid, qid, ns);
     }
 
@@ -322,7 +322,7 @@ public class KafkaPollerUnitTest {
         Batch batch = getBatchFromRecords(rs);
         // Advancement is minimum over maximal times of the topics
         assertThat(batch.advanced(), equalTo(122000L));
-        assertThat(batch.leftOffDate(), equalTo(new Date(BEGIN_DATE + 122000L)));
+        assertThat(batch.leftOffDate(), equalTo(Instant.ofEpochMilli(BEGIN_DATE + 122000L)));
     }
 
     private PartitionInfo makePartitionInfo(int id) {
@@ -333,7 +333,7 @@ public class KafkaPollerUnitTest {
 
     @Test
     public void topicSubscribe() throws RetryableException {
-        Date startTime = new Date(BEGIN_DATE);
+        Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest", "othertopic");
 
         ImmutableList<PartitionInfo> twoParts = ImmutableList.of(makePartitionInfo(0), makePartitionInfo(1));

@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.tool.change.events;
 
-import java.util.Date;
+import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,7 +24,7 @@ public abstract class EventWithMeta implements ChangeEvent {
     }
 
     @Override
-    public Date timestamp() {
+    public Instant timestamp() {
         return meta.timestamp();
     }
 

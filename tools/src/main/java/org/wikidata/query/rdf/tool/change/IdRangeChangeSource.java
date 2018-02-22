@@ -2,7 +2,7 @@ package org.wikidata.query.rdf.tool.change;
 
 import static java.lang.Math.min;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.Locale;
 
 import org.wikidata.query.rdf.tool.exception.RetryableException;
@@ -83,7 +83,7 @@ public class IdRangeChangeSource implements Change.Source<IdRangeChangeSource.Ba
         }
 
         @Override
-        public Date leftOffDate() {
+        public Instant leftOffDate() {
             return null;
         }
     }

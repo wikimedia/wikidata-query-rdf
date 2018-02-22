@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import java.time.Instant;
 import java.util.Collection;
 
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -121,6 +122,15 @@ public class UpdateBuilder {
             StringBuilder sb = new StringBuilder();
             sb.append('"');
             sb.append(c.toXMLFormat());
+            sb.append("\"^^<xsd:dateTime>");
+            return sb.toString();
+        }
+        // Instant and XML dateTime have the same string format
+        if (o instanceof Instant) {
+            Instant c = (Instant) o;
+            StringBuilder sb = new StringBuilder();
+            sb.append('"');
+            sb.append(c);
             sb.append("\"^^<xsd:dateTime>");
             return sb.toString();
         }
