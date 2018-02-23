@@ -159,6 +159,7 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
     }
 
     @SuppressWarnings({"rawtypes", "checkstyle:cyclomaticcomplexity", "checkstyle:NPathComplexity"})
+    @SuppressFBWarnings(value = "LEST_LOST_EXCEPTION_STACK_TRACE", justification = "Cause is really not needed here.")
     @Override
     public IV doMathOp(
             final Literal l1, final IV iv1,
@@ -183,17 +184,22 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
             return handleTwoDates(liv1, liv2, op);
         }
 
-        // Now we have one date and one duration
-        if (op == MathOp.PLUS) {
-            LiteralExtensionIV iv = d1 ? liv1 : liv2;
-            Literal lduration = d1 ? l2 : l1;
+        try {
+            // Now we have one date and one duration
+            if (op == MathOp.PLUS) {
+                LiteralExtensionIV iv = d1 ? liv1 : liv2;
+                Literal lduration = d1 ? l2 : l1;
 
-            return datePlusDuration(iv, DATATYPE_FACTORY.newDuration(lduration.getLabel()), vf);
-        }
+                return datePlusDuration(iv, DATATYPE_FACTORY.newDuration(lduration.getLabel()), vf);
+            }
 
-        if (op == MathOp.MINUS) {
-            return datePlusDuration(liv1,
-                    DATATYPE_FACTORY.newDuration(l2.getLabel()).negate(), vf);
+            if (op == MathOp.MINUS) {
+                return datePlusDuration(liv1,
+                        DATATYPE_FACTORY.newDuration(l2.getLabel()).negate(), vf);
+            }
+        } catch (IllegalArgumentException e) {
+            // If we had trouble converting any arguments, make it SPARQL error
+            throw new SparqlTypeErrorException();
         }
 
         throw new SparqlTypeErrorException();
