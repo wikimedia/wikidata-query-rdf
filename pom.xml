@@ -758,6 +758,15 @@
                     <groupId>com.github.eirslett</groupId>
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>1.6</version>
+                    <configuration>
+                        <!--
+                             npm installed from NodeJS distribution turns out
+                             to not be in PATH which has side effects.
+                             https://phabricator.wikimedia.org/T188285
+                             https://github.com/eirslett/frontend-maven-plugin/issues/560
+                        -->
+                        <npmVersion>3.8.3</npmVersion>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
