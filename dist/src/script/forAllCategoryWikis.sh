@@ -10,8 +10,7 @@ else
 fi
 
 shift
-set -e
 $fetch $DUMP_LIST | while read wiki; do
 	echo "Processing $wiki..."
 	$DIR/$COMMAND $wiki "$@"
-done 
+done
