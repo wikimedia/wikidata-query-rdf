@@ -90,14 +90,15 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
      * Uris for wikibase.
      */
     private final WikibaseUris uris;
+
     /**
      * Map entity->values list from repository.
      */
-    private volatile ImmutableSetMultimap<String, String> repoValues;
+    private ImmutableSetMultimap<String, String> repoValues;
     /**
      * Map entity->references list from repository.
      */
-    private volatile ImmutableSetMultimap<String, String> repoRefs;
+    private ImmutableSetMultimap<String, String> repoRefs;
     /**
      * Should we verify updates?
      */
@@ -251,16 +252,28 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
         log.debug("Filtered batch contains {} changes", trueChanges.size());
 
         if (trueChanges.size() > 0) {
-            repoValues = rdfRepository.getValues(changeIds);
-            log.debug("Fetched {} values", repoValues.size());
-            repoRefs = rdfRepository.getRefs(changeIds);
-            log.debug("Fetched {} refs", repoRefs.size());
+            setValuesAndRefs(
+                    rdfRepository.getValues(changeIds),
+                    rdfRepository.getRefs(changeIds)
+            );
+            if (log.isDebugEnabled()) {
+                synchronized (this) {
+                    log.debug("Fetched {} values", repoValues.size());
+                    log.debug("Fetched {} refs", repoRefs.size());
+                }
+            }
         } else {
-            repoValues = null;
-            repoRefs = null;
+            setValuesAndRefs(null, null);
         }
 
         return trueChanges;
+    }
+
+    private synchronized void setValuesAndRefs(
+            ImmutableSetMultimap<String, String> values,
+            ImmutableSetMultimap<String, String> refs) {
+        repoValues = values;
+        repoRefs = refs;
     }
 
     /**
@@ -309,6 +322,12 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
         Collection<Statement> statements = wikibase.fetchRdfForEntity(change.entityId());
         Set<String> values = new HashSet<>();
         Set<String> refs = new HashSet<>();
+        ImmutableSetMultimap<String, String> repoValues;
+        ImmutableSetMultimap<String, String> repoRefs;
+        synchronized (this) {
+            repoValues = this.repoValues;
+            repoRefs = this.repoRefs;
+        }
         munger.mungeWithValues(change.entityId(), statements, repoValues, repoRefs, values, refs, change);
         List<String> cleanupList = new ArrayList<>();
         cleanupList.addAll(values);

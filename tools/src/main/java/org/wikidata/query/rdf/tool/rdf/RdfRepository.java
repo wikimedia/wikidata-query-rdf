@@ -136,13 +136,13 @@ public class RdfRepository implements AutoCloseable {
     /**
      * How many times we retry a failed HTTP call.
      */
-    private int maxRetries = 6;
+    private final int MAX_RETRIES = 6;
     /**
      * How long to delay after failing first HTTP call, in milliseconds.
-     * Next retries would be slower exponentially by 2x until maxRetries is exhausted.
-     * Note that the first retry is 2x delay due to the way Retryer is implemented.
+     * Next retries would be slower exponentially by 2x until MAX_RETRIES is exhausted.
+     * Note that the first retry is 2x DELAY due to the way Retryer is implemented.
      */
-    private int delay = 1000;
+    private final int DELAY = 1000;
 
     /**
      * Configuration name for proxy host.
@@ -189,8 +189,8 @@ public class RdfRepository implements AutoCloseable {
                 .retryIfExceptionOfType(ExecutionException.class)
                 .retryIfExceptionOfType(IOException.class)
                 .retryIfRuntimeException()
-                .withWaitStrategy(WaitStrategies.exponentialWait(delay, 10, TimeUnit.SECONDS))
-                .withStopStrategy(StopStrategies.stopAfterAttempt(maxRetries))
+                .withWaitStrategy(WaitStrategies.exponentialWait(DELAY, 10, TimeUnit.SECONDS))
+                .withStopStrategy(StopStrategies.stopAfterAttempt(MAX_RETRIES))
                 .withRetryListener(new RetryListener() {
                     @Override
                     public <V> void onRetry(Attempt<V> attempt) {
@@ -198,7 +198,7 @@ public class RdfRepository implements AutoCloseable {
                             log.info("HTTP request failed: {}, attempt {}, will {}",
                                     attempt.getExceptionCause(),
                                     attempt.getAttemptNumber(),
-                                    attempt.getAttemptNumber() < maxRetries ? "retry" : "fail");
+                                    attempt.getAttemptNumber() < MAX_RETRIES ? "retry" : "fail");
                         }
                     }
                 })
@@ -234,42 +234,6 @@ public class RdfRepository implements AutoCloseable {
     @Override
     public void close() throws Exception {
         httpClient.stop();
-    }
-
-    /**
-     * Get max retries count.
-     * @return How many times we retry a failed HTTP call.
-     */
-    public int getMaxRetries() {
-        return maxRetries;
-    }
-
-    /**
-     * Set how many times we retry a failed HTTP call.
-     * @return this
-     */
-    public RdfRepository setMaxRetries(int maxRetries) {
-        this.maxRetries = maxRetries;
-        return this;
-    }
-
-    /**
-     * Get retry delay.
-     * @return How long to delay after failing first HTTP call, in milliseconds.
-     */
-    public int getDelay() {
-        return delay;
-    }
-
-    /**
-     * Set retry delay.
-     * Specifies how long to delay after failing first HTTP call, in milliseconds.
-     * Next retries would be slower by 2x, 3x, 4x etc. until maxRetries is exhausted.
-     * @return The repository object
-     */
-    public RdfRepository setDelay(int delay) {
-        this.delay = delay;
-        return this;
     }
 
     /**
