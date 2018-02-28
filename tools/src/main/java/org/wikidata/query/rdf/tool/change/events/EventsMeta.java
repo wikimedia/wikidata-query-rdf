@@ -17,7 +17,7 @@ public class EventsMeta {
     private final String id;
     private final String domain;
 
-    public static final String INPUT_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssX";
+    public static final String INPUT_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssXXX";
 
     @JsonCreator
     public EventsMeta(
