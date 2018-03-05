@@ -7,6 +7,7 @@ import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.OUTPUT_DAT
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.Security;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -46,6 +47,12 @@ public final class Update {
 
     private Update() {
         // this class should never be instantiated
+    }
+
+    static {
+        // Set negative cache to 5s, should be enough to catch immediate fails
+        // but not too long to make one-time failure stick.
+        Security.setProperty("networkaddress.cache.negative.ttl", "5");
     }
 
     /**
