@@ -102,6 +102,9 @@ public final class OptionsUtils {
      * @return Split options list
      */
     public static List<String> splitByComma(List<String> options) {
+        if (options == null) {
+            return null;
+        }
         List<String> newOptions = new LinkedList<String>();
         for (String option: options) {
             if (option.contains(",")) {

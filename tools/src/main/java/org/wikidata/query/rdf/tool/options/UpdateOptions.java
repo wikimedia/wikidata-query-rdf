@@ -51,6 +51,9 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     @Option(defaultToNull = true, shortName = "K", longName = "kafka", description = "If set, use Kafka polling with the argument as the broker server")
     String kafkaBroker();
 
+    @Option(defaultToNull = true, shortName = "C", longName = "consumer", description = "Set consumer ID for Kafka poller")
+    String consumerId();
+
     @Option(defaultToNull = true, shortName = "c", longName = "clusters", description = "Kafka cluster prefixes (e.g. eqiad, codfw), comma or space separated")
     List<String> clusters();
 

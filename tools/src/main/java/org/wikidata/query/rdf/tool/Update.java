@@ -161,7 +161,7 @@ public final class Update {
             return buildIdListChangeSource(options.ids(), options.batchSize());
         }
         if (options.kafkaBroker() != null) {
-            return KafkaPoller.buildKafkaPoller(options.kafkaBroker(),
+            return KafkaPoller.buildKafkaPoller(options.kafkaBroker(), options.consumerId(),
                     OptionsUtils.splitByComma(options.clusters()), wikibaseRepository.getUris(),
                     options.batchSize(),
                     getStartTime(options.start(), rdfRepository, options.init()));

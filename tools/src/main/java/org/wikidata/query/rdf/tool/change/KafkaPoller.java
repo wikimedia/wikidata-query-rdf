@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.Map.Entry;
 
 import javax.annotation.Nonnull;
@@ -274,12 +273,14 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
 
     // Suppressing resource warnings so Java doesn't complain about KafkaConsumer not being closed
     @SuppressWarnings("resource")
-    public static KafkaConsumer<String, ChangeEvent> buildKafkaConsumer(String servers, Map<String, Class<? extends ChangeEvent>> topicToClass, int batchSize) {
+    public static KafkaConsumer<String, ChangeEvent> buildKafkaConsumer(
+            String servers, String consumerId,
+            Map<String, Class<? extends ChangeEvent>> topicToClass,
+            int batchSize) {
         // See http://kafka.apache.org/documentation.html#consumerconfigs
         Properties props = new Properties();
         props.put("bootstrap.servers", servers);
-        // Random group ID because we don't want to be grouped with anybody else.
-        props.put("group.id", UUID.randomUUID().toString());
+        props.put("group.id", consumerId);
         // This is an interval between polls after which the broker decides the client is dead.
         // 5 mins seems to be good enough.
         props.put("max.poll.interval.ms", "600000");
@@ -294,19 +295,22 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         props.put("max.poll.records", System.getProperty(MAX_POLL_PROPERTY, String.valueOf(batchSize)));
         // This is about one batch of messages since message sizes in event queue are about 1k
         props.put("max.partition.fetch.bytes", System.getProperty(MAX_FETCH_PROPERTY, String.valueOf(batchSize * 1024)));
-
+        log.info("Creating consumer {}", consumerId);
         return new KafkaConsumer<>(props, new StringDeserializer(), new JsonDeserializer<>(topicToClass));
     }
 
     @Nonnull
     public static KafkaPoller buildKafkaPoller(
-            String kafkaServers, Collection<String> clusterNames,
+            String kafkaServers, String consumerId, Collection<String> clusterNames,
             Uris uris, int batchSize, Instant startTime) {
+        if (consumerId == null) {
+            throw new IllegalArgumentException("Consumer ID (--consumer) must be set");
+        }
         Map<String, Class<? extends ChangeEvent>> topicsToClass = clusterNamesAwareTopics(clusterNames);
         ImmutableSet<String> topics = ImmutableSet.copyOf(topicsToClass.keySet());
 
-        return new KafkaPoller(buildKafkaConsumer(kafkaServers, topicsToClass, batchSize),
-                uris, startTime, batchSize, topics);
+        return new KafkaPoller(buildKafkaConsumer(kafkaServers, consumerId,
+                topicsToClass, batchSize), uris, startTime, batchSize, topics);
     }
 
     @Override

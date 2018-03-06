@@ -162,16 +162,20 @@ public class KafkaPollerIntegrationTest {
         }
     }
 
+    private String randomConsumer() {
+        return "acme.test" + Instant.now().toEpochMilli() + Math.round(Math.random() * 1000);
+    }
+
     private KafkaPoller createPoller() {
         String servers = "localhost:" + kafkaRule.helper().kafkaPort();
         WikibaseRepository.Uris uris = new WikibaseRepository.Uris("https", "acme.test");
-        return KafkaPoller.buildKafkaPoller(servers, emptyList(), uris, 5, Instant.now());
+        return KafkaPoller.buildKafkaPoller(servers, randomConsumer(), emptyList(), uris, 5, Instant.now());
     }
 
     private KafkaPoller createPoller(Collection<String> clusterNames) {
         String servers = "localhost:" + kafkaRule.helper().kafkaPort();
         WikibaseRepository.Uris uris = new WikibaseRepository.Uris("https", "acme.test");
-        return KafkaPoller.buildKafkaPoller(servers, clusterNames, uris, 5, Instant.now());
+        return KafkaPoller.buildKafkaPoller(servers, randomConsumer(), clusterNames, uris, 5, Instant.now());
     }
 
 
