@@ -25,7 +25,7 @@ LOG_CONFIG=${LOG_CONFIG:-""}
 NAMESPACE=wdq
 UPDATER_OPTS=${UPDATER_OPTS:-""}
 
-while getopts h:c:n:l:t:s option
+while getopts h:c:n:l:t:sN option
 do
   case "${option}"
   in
@@ -35,6 +35,7 @@ do
     l) LANGS=${OPTARG};;
     t) TMO=${OPTARG};;
     s) SKIPSITE=1;;
+	N) NOEXTRA=1;;
   esac
 done
 
@@ -65,6 +66,11 @@ fi
 LOG_OPTIONS=""
 if [ ! -z "$LOG_CONFIG" ]; then
     LOG_OPTIONS="-Dlogback.configurationFile=${LOG_CONFIG}"
+fi
+# No extra options - for running secondary updaters, etc.
+if [ ! -z "$NOEXTRA" ]; then
+	EXTRA_JVM_OPTS=""
+	GC_LOGS=""
 fi
 
 CP=lib/wikidata-query-tools-*-jar-with-dependencies.jar
