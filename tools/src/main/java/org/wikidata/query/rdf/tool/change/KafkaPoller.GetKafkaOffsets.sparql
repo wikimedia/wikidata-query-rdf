@@ -1,0 +1,3 @@
+SELECT ?topic ?offset WHERE {
+	%root% wikibase:kafka (?topic ?offset)
+}

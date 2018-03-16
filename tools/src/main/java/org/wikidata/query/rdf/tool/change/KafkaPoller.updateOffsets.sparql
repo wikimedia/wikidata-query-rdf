@@ -1,0 +1,14 @@
+DELETE {
+  ?z rdf:first ?head ; rdf:rest ?tail .
+}
+WHERE {
+  [] wikibase:kafka ?list .
+  ?list rdf:rest* ?z .
+  ?z rdf:first ?head ; rdf:rest ?tail .
+} ;
+DELETE WHERE {
+  %root% wikibase:kafka ?o .
+};
+INSERT DATA {
+  %data%
+}

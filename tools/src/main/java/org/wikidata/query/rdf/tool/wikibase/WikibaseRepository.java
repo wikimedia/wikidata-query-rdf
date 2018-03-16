@@ -525,8 +525,9 @@ public class WikibaseRepository implements Closeable {
         }
 
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "minor enough")
-        public void setEntityNamespaces(long[] entityNamespaces) {
+        public Uris setEntityNamespaces(long[] entityNamespaces) {
             this.entityNamespaces = entityNamespaces;
+            return this;
         }
 
         /**

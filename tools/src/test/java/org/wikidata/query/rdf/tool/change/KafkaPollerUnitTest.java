@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.junit.Assert.assertThat;
@@ -22,10 +23,14 @@ import static org.wikidata.query.rdf.tool.change.ChangeMatchers.hasRevision;
 import static org.wikidata.query.rdf.tool.change.ChangeMatchers.hasTitleRevision;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -46,9 +51,11 @@ import org.wikidata.query.rdf.tool.change.events.EventsMeta;
 import org.wikidata.query.rdf.tool.change.events.PageDeleteEvent;
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
+import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
 
 @SuppressWarnings("unchecked")
@@ -56,7 +63,6 @@ public class KafkaPollerUnitTest {
 
     @Mock
     private KafkaConsumer<String, ChangeEvent> consumer;
-    @Mock
     private Uris uris;
 
     private static final long BEGIN_DATE = 1518207153000L;
@@ -65,11 +71,15 @@ public class KafkaPollerUnitTest {
             new ConsumerRecords<>(Collections.emptyMap());
     private static final int BATCH_SIZE = 5;
 
-    private KafkaPoller makePoller() {
+    private KafkaPoller makePoller(RdfRepository repo) {
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest");
 
-        return new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics);
+        return new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, repo);
+    }
+
+    private KafkaPoller makePoller() {
+        return makePoller(null);
     }
 
     /**
@@ -325,21 +335,50 @@ public class KafkaPollerUnitTest {
         assertThat(batch.leftOffDate(), equalTo(Instant.ofEpochMilli(BEGIN_DATE + 122000L)));
     }
 
-    private PartitionInfo makePartitionInfo(int id) {
-        PartitionInfo pi = mock(PartitionInfo.class);
-        when(pi.partition()).thenReturn(id);
-        return pi;
+    private PartitionInfo makePartitionInfo(String name, int id) {
+        return new PartitionInfo(name, id, null, null, null);
+    }
+
+    /**
+     * Mock partitionsFor invocation for a number of partitions per topic.
+     * @param count
+     * @param partitionArgs
+     */
+    private void createTopicPartitions(int count, ArgumentCaptor<String> partitionArgs) {
+        when(consumer.partitionsFor(partitionArgs.capture())).thenAnswer(inv -> {
+            String pName = inv.getArgumentAt(0, String.class);
+            List<PartitionInfo> pl = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                pl.add(i, makePartitionInfo(pName, i));
+            }
+            return pl;
+        });
+    }
+
+    /**
+     * Mock partitionsFor invocation for a number of partitions per topic.
+     * @param count
+     * @param partitionArgs
+     */
+    private void createTopicPartitions(int count) {
+        when(consumer.partitionsFor(any())).thenAnswer(inv -> {
+            String pName = inv.getArgumentAt(0, String.class);
+            List<PartitionInfo> pl = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                pl.add(i, makePartitionInfo(pName, i));
+            }
+            return pl;
+        });
     }
 
     @Test
     public void topicSubscribe() throws RetryableException {
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest", "othertopic");
-
-        ImmutableList<PartitionInfo> twoParts = ImmutableList.of(makePartitionInfo(0), makePartitionInfo(1));
+        // Each topic gets 2 partitions
         ArgumentCaptor<String> partitionArgs = ArgumentCaptor.forClass(String.class);
-        when(consumer.partitionsFor(partitionArgs.capture())).thenReturn(twoParts);
-
+        createTopicPartitions(2, partitionArgs);
+        // Capture args for assign
         ArgumentCaptor<Collection<TopicPartition>> assignArgs = ArgumentCaptor.forClass((Class)Collection.class);
         doNothing().when(consumer).assign(assignArgs.capture());
 
@@ -355,7 +394,7 @@ public class KafkaPollerUnitTest {
             // Using forEach here because collect() can't handle nulls
             return out;
         });
-
+        // capture args for seek
         ArgumentCaptor<TopicPartition> seekArgs = ArgumentCaptor.forClass(TopicPartition.class);
         doNothing().when(consumer).seek(seekArgs.capture(), eq(1000L));
 
@@ -364,7 +403,7 @@ public class KafkaPollerUnitTest {
 
         when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
 
-        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics);
+        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, null);
         Batch batch = poller.firstBatch();
 
         // We get partitions for both topics
@@ -405,11 +444,148 @@ public class KafkaPollerUnitTest {
         verify(consumer, times(1)).offsetsForTimes(any());
     }
 
+    private void repoResults(RdfRepository rdfRepo, ImmutableSetMultimap<String, String> results) {
+        when(rdfRepo.selectToMap(any(), eq("topic"), eq("offset"))).thenReturn(results);
+    }
+
+    private void repoNoResults(RdfRepository rdfRepo) {
+        repoResults(rdfRepo, ImmutableSetMultimap.of());
+    }
+
+    @Test
+    public void storedOffsetsFromStorage() throws RetryableException {
+        // Scenario where all offsets are loaded from storage
+        Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
+        Collection<String> topics = ImmutableList.of("topictest", "othertopic");
+        RdfRepository rdfRepo = mock(RdfRepository.class);
+
+        createTopicPartitions(2);
+        // capture args for assign
+        ArgumentCaptor<Collection<TopicPartition>> assignArgs = ArgumentCaptor.forClass((Class)Collection.class);
+        doNothing().when(consumer).assign(assignArgs.capture());
+        // capture args for seek
+        ArgumentCaptor<TopicPartition> seekTopics = ArgumentCaptor.forClass(TopicPartition.class);
+        ArgumentCaptor<Long> seekOffsets = ArgumentCaptor.forClass(Long.class);
+        doNothing().when(consumer).seek(seekTopics.capture(), seekOffsets.capture());
+
+        ImmutableSetMultimap<String, String> offsetMap = ImmutableSetMultimap.of(
+                "topictest:0", "1",
+                "topictest:1", "2",
+                "othertopic:0", "3",
+                "othertopic:1", "4"
+        );
+        repoResults(rdfRepo, offsetMap);
+
+        when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
+
+        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, rdfRepo);
+
+        Batch batch = poller.firstBatch();
+        // should not call offsetsForTimes, since all offsets are in store
+        verify(consumer, times(0)).offsetsForTimes(any());
+        // We assign to 4 topics - 2 topics x 2 partitions
+        verify(consumer, times(1)).assign(any());
+        assertThat(assignArgs.getValue(), hasSize(4));
+        // Verify topics and offsets
+        Set<String> capturedTopics = seekTopics.getAllValues().stream()
+                .map(tp -> tp.topic() + ":" + tp.partition())
+                .collect(Collectors.toSet());
+        assertThat(capturedTopics, containsInAnyOrder(offsetMap.keySet().toArray()));
+        Set<String> capturedOffsets = seekOffsets.getAllValues().stream()
+                .map(off -> off.toString())
+                .collect(Collectors.toSet());
+        assertThat(capturedOffsets, containsInAnyOrder(offsetMap.values().toArray()));
+    }
+
+    @Test
+    public void storedOffsetsFromBoth() throws RetryableException {
+        // Scenario where all offsets are loaded from both storage and timestamp
+        Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
+        Collection<String> topics = ImmutableList.of("topictest", "othertopic", "thirdtopic");
+        RdfRepository rdfRepo = mock(RdfRepository.class);
+
+        createTopicPartitions(1);
+        // capture args for assign
+        ArgumentCaptor<Collection<TopicPartition>> assignArgs = ArgumentCaptor.forClass((Class)Collection.class);
+        doNothing().when(consumer).assign(assignArgs.capture());
+        // capture args for seek
+        ArgumentCaptor<TopicPartition> seekTopics = ArgumentCaptor.forClass(TopicPartition.class);
+        ArgumentCaptor<Long> seekOffsets = ArgumentCaptor.forClass(Long.class);
+        doNothing().when(consumer).seek(seekTopics.capture(), seekOffsets.capture());
+        // Stored offsets
+        ImmutableSetMultimap<String, String> offsetMap = ImmutableSetMultimap.of(
+                "topictest:0", "1",
+                "othertopic:0", "3"
+        );
+        repoResults(rdfRepo, offsetMap);
+
+        // Timestamp-driven offsets
+        when(consumer.offsetsForTimes(any())).thenAnswer(i -> {
+            Map<TopicPartition, Long> map = i.getArgumentAt(0, Map.class);
+            // Check that timestamps are OK
+            map.forEach((k, v) -> assertThat(v, equalTo(BEGIN_DATE)));
+            // All offsets are 500
+            return map.entrySet().stream().collect(Collectors.toMap(
+                    Entry::getKey, l -> new OffsetAndTimestamp(500L, l.getValue())));
+        });
+
+        when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
+
+        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, rdfRepo);
+
+        Batch batch = poller.firstBatch();
+        // should not call offsetsForTimes, since all offsets are in store
+        verify(consumer, times(1)).offsetsForTimes(any());
+        // We assign to 3 topics
+        verify(consumer, times(1)).assign(any());
+        assertThat(assignArgs.getValue(), hasSize(topics.size()));
+
+        List<Long> capturedOffsets = seekOffsets.getAllValues();
+        assertThat(capturedOffsets, hasSize(topics.size()));
+        // This offset is from timestamp
+        assertThat(capturedOffsets.get(1), equalTo(Long.valueOf(500L)));
+    }
+
+    @Test
+    public void writeOffsets() throws RetryableException {
+        // Scenario where all offsets are loaded from both storage and timestamp
+        Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
+        Collection<String> topics = ImmutableList.of("topictest", "othertopic", "thirdtopic");
+        RdfRepository rdfRepo = mock(RdfRepository.class);
+
+        createTopicPartitions(1);
+        repoNoResults(rdfRepo);
+
+        when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
+
+        ArgumentCaptor<TopicPartition> positionArgs = ArgumentCaptor.forClass(TopicPartition.class);
+        when(consumer.position(positionArgs.capture())).thenReturn(1L, 2L, 3L);
+
+        ArgumentCaptor<String> updateQuery = ArgumentCaptor.forClass(String.class);
+        when(rdfRepo.updateQuery(updateQuery.capture())).thenReturn(1);
+
+        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, rdfRepo);
+
+        Batch batch = poller.firstBatch();
+        batch = poller.nextBatch(batch);
+
+        Set<String> capturedTopics = positionArgs.getAllValues().stream()
+                .map(tp -> tp.topic() + ":" + tp.partition())
+                .collect(Collectors.toSet());
+        assertThat(capturedTopics, containsInAnyOrder("topictest:0",
+                "othertopic:0", "thirdtopic:0"));
+        // Should be one update query
+        verify(rdfRepo, times(1)).updateQuery(any());
+        assertThat(updateQuery.getValue(), containsString("wikibase:kafka ( \"topictest:0\" 1 )"));
+        assertThat(updateQuery.getValue(), containsString("wikibase:kafka ( \"othertopic:0\" 2 )"));
+        assertThat(updateQuery.getValue(), containsString("wikibase:kafka ( \"thirdtopic:0\" 3 )"));
+    }
+
     @Before
     public void setupMocks() {
         MockitoAnnotations.initMocks(this);
-        when(uris.isEntityNamespace(0)).thenReturn(true);
-        when(uris.getHost()).thenReturn(DOMAIN);
+        uris = Uris.fromString("https://" + DOMAIN);
+        uris.setEntityNamespaces(new long[] {0});
     }
 
 }

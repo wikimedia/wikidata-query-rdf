@@ -49,6 +49,14 @@ public class UpdateBuilder {
     }
 
     /**
+     * Bind a URI to a name.
+     */
+    public UpdateBuilder bindUri(String from, java.net.URI to) {
+        bind(from, '<' + to.toString() + '>');
+        return this;
+    }
+
+    /**
      * Bind some statements to a string.
      */
     public UpdateBuilder bindStatements(String from, Collection<Statement> statements) {

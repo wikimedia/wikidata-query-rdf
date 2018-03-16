@@ -117,14 +117,14 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
     /**
      * Clear repository before tests.
      */
-    private void before() {
+    public void before() {
         clear();
     }
 
     /**
      * Clear and close repository after test.
      */
-    private void after() throws Exception {
+    public void after() throws Exception {
         clear();
         rdfClient.httpClient.stop();
     }

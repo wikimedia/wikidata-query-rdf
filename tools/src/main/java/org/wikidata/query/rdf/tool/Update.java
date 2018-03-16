@@ -222,7 +222,7 @@ public final class Update {
             return KafkaPoller.buildKafkaPoller(options.kafkaBroker(), options.consumerId(),
                     OptionsUtils.splitByComma(options.clusters()), wikibaseRepository.getUris(),
                     options.batchSize(),
-                    getStartTime(options.start(), rdfRepository, options.init()));
+                    getStartTime(options.start(), rdfRepository, options.init()), rdfRepository);
         }
         return buildRecentChangePollerChangeSource(
                 rdfRepository, wikibaseRepository,

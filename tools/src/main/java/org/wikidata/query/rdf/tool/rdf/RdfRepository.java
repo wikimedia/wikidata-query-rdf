@@ -1,10 +1,7 @@
 package org.wikidata.query.rdf.tool.rdf;
 
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
-import static com.google.common.io.Resources.getResource;
 
-import java.io.IOException;
-import java.net.URL;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,14 +25,13 @@ import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.io.Resources;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -110,12 +106,7 @@ public class RdfRepository {
      * @throws FatalException if there is an error loading the file
      */
     private static String loadBody(String name) {
-        URL url = getResource(RdfRepository.class, "RdfRepository." + name + ".sparql");
-        try {
-            return Resources.toString(url, Charsets.UTF_8);
-        } catch (IOException e) {
-            throw new FatalException("Can't load " + url, e);
-        }
+        return Utils.loadBody(name, RdfRepository.class);
     }
 
     /**
@@ -149,7 +140,7 @@ public class RdfRepository {
      * @param valueBinding Binding name to serve as values
      * @return Collection of strings resulting from the query.
      */
-    private ImmutableSetMultimap<String, String> resultToMap(TupleQueryResult result, String keyBinding, String valueBinding) {
+    public ImmutableSetMultimap<String, String> resultToMap(TupleQueryResult result, String keyBinding, String valueBinding) {
         ImmutableSetMultimap.Builder<String, String> values = ImmutableSetMultimap.builder();
         try {
             while (result.hasNext()) {
@@ -166,6 +157,18 @@ public class RdfRepository {
         }
         return values.build();
     }
+
+    /**
+     * Perform a SPARQL query and return the result as a map.
+     * @param query SPARQL query, should be SELECT
+     * @param keyBinding Binding name to serve as key
+     * @param valueBinding Binding name to serve as values
+     * @return Collection of strings resulting from the query.
+     */
+    public ImmutableSetMultimap<String, String> selectToMap(String query, String keyBinding, String valueBinding) {
+        return resultToMap(rdfClient.query(query), keyBinding, valueBinding);
+    }
+
 
     /**
      * Get list of value subjects connected to entity. The connection is either
@@ -454,12 +457,9 @@ public class RdfRepository {
      */
     @SuppressFBWarnings(value = "VA_FORMAT_STRING_USES_NEWLINE", justification = "we want to be platform independent here.")
     public boolean hasRevision(String entityId, long revision) {
-        // TODO building queries with strings sucks because escaping....
-        StringBuilder prefixes = new StringBuilder();
-        prefixes.append("PREFIX schema: <").append(SchemaDotOrg.NAMESPACE).append(">\n");
-        prefixes.append("PREFIX entity: <").append(uris.entity()).append(">\n");
-        return rdfClient.ask(String.format(Locale.ROOT, "%sASK {\n  entity:%s schema:version ?v .\n  FILTER (?v >= %s)\n}",
-                prefixes, entityId, revision));
+        return rdfClient.ask(String.format(Locale.ROOT,
+                "ASK {\n wd:%s schema:version ?v .\n  FILTER (?v >= %s)\n}",
+                entityId, revision));
     }
 
     /**
@@ -524,4 +524,12 @@ public class RdfRepository {
         }
     }
 
+    /**
+     * Generic update method.
+     * @param sparql SPARQL UPDATE query
+     * @return How many triples were mutated.
+     */
+    public Integer updateQuery(String sparql) {
+        return rdfClient.update(sparql);
+    }
 }

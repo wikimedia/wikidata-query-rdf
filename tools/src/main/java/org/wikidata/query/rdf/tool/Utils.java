@@ -1,5 +1,15 @@
 package org.wikidata.query.rdf.tool;
 
+import static com.google.common.io.Resources.getResource;
+
+import java.io.IOException;
+import java.net.URL;
+
+import org.wikidata.query.rdf.tool.exception.FatalException;
+
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
+
 /**
  * Generic utilities.
  */
@@ -16,6 +26,25 @@ public final class Utils {
         }
         return a.compareTo(b) >= 0 ? a : b;
     }
+
+    /**
+     * Loads some sparql related to a class.
+     *
+     * @param name name of the sparql file to load - the actual file loaded is
+     *             %klass%.%name%.sparql.
+     * @param klass Class to which this data is related - used to find the file.
+     * @return contents of the sparql file
+     * @throws FatalException if there is an error loading the file
+     */
+    public static <T> String loadBody(String name, Class<T> klass) {
+        URL url = getResource(klass, klass.getSimpleName() + "." + name + ".sparql");
+        try {
+            return Resources.toString(url, Charsets.UTF_8);
+        } catch (IOException e) {
+            throw new FatalException("Can't load " + url, e);
+        }
+    }
+
 
     private Utils() {}
 }
