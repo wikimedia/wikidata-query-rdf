@@ -40,6 +40,7 @@ import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.options.MungeOptions;
+import org.wikidata.query.rdf.tool.options.OptionsUtils;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
@@ -64,7 +65,7 @@ public class Munge implements Runnable {
     @SuppressWarnings("checkstyle:illegalcatch")
     public static void main(String[] args) {
         MungeOptions options = handleOptions(MungeOptions.class, args);
-        WikibaseUris uris = new WikibaseUris(options.wikibaseHost());
+        WikibaseUris uris = OptionsUtils.makeWikibaseUris(options);
         Munger munger = mungerFromOptions(options);
 
         int port = parsePort(options.to());

@@ -28,7 +28,7 @@ public class AbstractUpdaterIntegrationTestBase extends RandomizedTest {
      * Wikibase test against.
      */
     @Rule
-    public final CloseableRule<WikibaseRepository> wikibaseRepository = autoClose(new WikibaseRepository("https", "www.wikidata.org"));
+    public final CloseableRule<WikibaseRepository> wikibaseRepository = autoClose(new WikibaseRepository("https://www.wikidata.org"));
     /**
      * Munger to test against.
      */
@@ -48,7 +48,7 @@ public class AbstractUpdaterIntegrationTestBase extends RandomizedTest {
     @SuppressWarnings("checkstyle:IllegalCatch")
     public void update(int from, int to) {
         ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-        WikibaseUris uris = new WikibaseUris("www.wikidata.org");
+        WikibaseUris uris = WikibaseUris.forHost("www.wikidata.org");
         try (
             Change.Source<?> source = IdRangeChangeSource.forItems(from, to, 30);
             Updater<?> updater = new Updater<>(source, wikibaseRepository.get(), rdfRepository, munger, executorService, 0, uris, false)

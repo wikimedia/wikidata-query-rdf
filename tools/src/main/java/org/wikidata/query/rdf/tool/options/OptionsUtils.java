@@ -2,6 +2,8 @@ package org.wikidata.query.rdf.tool.options;
 
 import static com.google.common.io.Resources.getResource;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -68,6 +70,9 @@ public final class OptionsUtils {
     public interface WikibaseOptions {
         @Option(shortName = "w", defaultValue = "www.wikidata.org", description = "Wikibase host")
         String wikibaseHost();
+
+        @Option(shortName = "U", defaultToNull = true, description = "Wikibase concept URI for RDF entities")
+        String conceptUri();
     }
 
     /**
@@ -116,11 +121,23 @@ public final class OptionsUtils {
         return newOptions;
     }
 
+    public static WikibaseUris makeWikibaseUris(WikibaseOptions options) {
+        String conceptUri = options.conceptUri();
+        if (conceptUri != null) {
+            try {
+                return new WikibaseUris(new URI(conceptUri));
+            } catch (URISyntaxException e) {
+                throw new RuntimeException("Bad URI: " + conceptUri, e);
+            }
+        }
+        return WikibaseUris.forHost(options.wikibaseHost());
+    }
+
     /**
      * Build a munger from a MungerOptions instance.
      */
     public static Munger mungerFromOptions(MungerOptions options) {
-        Munger munger = new Munger(new WikibaseUris(options.wikibaseHost()));
+        Munger munger = new Munger(makeWikibaseUris(options));
         if (options.skipSiteLinks()) {
             munger = munger.removeSiteLinks();
         }

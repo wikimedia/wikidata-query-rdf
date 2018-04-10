@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.common.uri;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -7,7 +9,9 @@ import java.util.stream.Stream;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
- * Uris wikibase uses that are relative to the wikibase instance.
+ * URI scheme for Wikibase RDF representation.
+ * See the documentation for Wikidata implementation here:
+ * https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format
  */
 @SuppressFBWarnings(
         value = "FCBL_FIELD_COULD_BE_LOCAL",
@@ -16,12 +20,17 @@ public class WikibaseUris {
     /**
      * A WikibaseUris instance for wikidata.org.
      */
-    public static final WikibaseUris WIKIDATA = new WikibaseUris("www.wikidata.org");
+    public static final WikibaseUris WIKIDATA = WikibaseUris.forHost("www.wikidata.org");
 
     /**
      * Configuration for wikibase host.
      */
     public static final String WIKIBASE_HOST_PROPERTY = "wikibaseHost";
+
+    /**
+     * Configuration for wikibase host.
+     */
+    public static final String WIKIBASE_CONCEPT_URI = "wikibaseConceptUri";
 
     /**
      * Current URI system. This is static since each instance has only one URI
@@ -159,11 +168,6 @@ public class WikibaseUris {
      */
     private final String root;
     /**
-     * The root of the wikibase uris with https prefix -
-     * https://www.wikidata.org for Wikidata.
-     */
-    private final String rootHttps;
-    /**
      * Uri prefix wikibase uses to describe exports. The Munge process removes
      * uris with this prefix.
      */
@@ -200,20 +204,29 @@ public class WikibaseUris {
      */
     private final String prop;
 
-    /**
-     * Build for a specific wikibase host. See the WIKIDATA constant for how you
-     * can use this.
-     */
-    public WikibaseUris(String host) {
-        root = "http://" + host;
-        rootHttps = "https://" + host;
+    public WikibaseUris(URI conceptUrl) {
+        root = conceptUrl.toString().replaceAll("/+$", "");
         entityData = root + "/wiki/Special:EntityData/";
-        entityDataHttps = rootHttps + "/wiki/Special:EntityData/";
+        entityDataHttps = otherScheme(conceptUrl) + "/wiki/Special:EntityData/";
         entity = root + "/entity/";
         statement = entity + "statement/";
         value = root + "/value/";
         reference = root + "/reference/";
         prop = root + "/prop/";
+    }
+
+    /**
+     * Return the representation of URI in different scheme.
+     * https <-> http
+     * @param uri
+     * @return URL string in other scheme
+     */
+    private String otherScheme(URI uri) {
+        if (uri.getScheme().equals("http")) {
+            return uri.toString().replace("http:", "https:").replaceAll("/+$", "");
+        } else {
+            return uri.toString().replace("https:", "http:").replaceAll("/+$", "");
+        }
     }
 
     /**
@@ -308,15 +321,38 @@ public class WikibaseUris {
      */
     public static WikibaseUris getURISystem() {
         if (uriSystem == null) {
+            String wikibaseUriProperty = System.getProperty(WIKIBASE_CONCEPT_URI);
+            if (wikibaseUriProperty != null) {
+                try {
+                    uriSystem = new WikibaseUris(new URI(wikibaseUriProperty));
+                } catch (URISyntaxException e) {
+                    throw new RuntimeException("Bad URI host: " + wikibaseUriProperty, e);
+                }
+                return uriSystem;
+            }
             String wikibaseHostProperty = System.getProperty(WIKIBASE_HOST_PROPERTY);
             if (wikibaseHostProperty != null) {
-                uriSystem = new WikibaseUris(
-                        wikibaseHostProperty);
+                uriSystem = forHost(wikibaseHostProperty);
             } else {
                 uriSystem = WIKIDATA;
             }
         }
         return uriSystem;
+    }
+
+    /**
+     * Build for a specific wikibase host. See the WIKIDATA constant for how you
+     * can use this.
+     */
+    public static WikibaseUris forHost(String host) {
+        try {
+            if (host == null) {
+                return WIKIDATA;
+            }
+            return new WikibaseUris(new URI("http://" + host));
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Bad URI host: " + host, e);
+        }
     }
 
 }

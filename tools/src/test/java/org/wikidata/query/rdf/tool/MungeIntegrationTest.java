@@ -55,7 +55,7 @@ public class MungeIntegrationTest extends RandomizedTest {
     /**
      * Wikibase uris to test with.
      */
-    private final WikibaseUris uris = new WikibaseUris("test.wikidata.org");
+    private final WikibaseUris uris = WikibaseUris.forHost("test.wikidata.org");
 
 
     @Rule

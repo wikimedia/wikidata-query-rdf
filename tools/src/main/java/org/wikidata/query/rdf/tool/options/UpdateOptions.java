@@ -12,6 +12,9 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     @Option(defaultValue = "https", description = "Wikidata url scheme")
     String wikibaseScheme();
 
+    @Option(shortName = "W", defaultToNull = true, description = "Wikibase instance base URL")
+    String wikibaseUrl();
+
     @Option(shortName = "s", defaultToNull = true, description = "Start time in 2015-02-11T17:11:08Z or 20150211170100 format.")
     String start();
 

@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -160,16 +159,17 @@ public class WikibaseRepository implements Closeable {
      */
     private final ObjectMapper mapper = getObjectMapper();
 
-    public WikibaseRepository(String scheme, String host) {
-        uris = new Uris(scheme, host);
+    public WikibaseRepository(URI baseUrl) {
+        uris = new Uris(baseUrl);
     }
 
-    public WikibaseRepository(String scheme, String host, int port) {
-        uris = new Uris(scheme, host, port);
+    public WikibaseRepository(String baseUrl) {
+        uris = Uris.fromString(baseUrl);
     }
 
-    public WikibaseRepository(String scheme, String host, int port, long[] entityNamespaces) {
-        uris = new Uris(scheme, host, port, entityNamespaces);
+    public WikibaseRepository(URI baseUrl, long[] entityNamespaces) {
+        uris = new Uris(baseUrl);
+        uris.setEntityNamespaces(entityNamespaces);
     }
 
     /**
@@ -483,39 +483,36 @@ public class WikibaseRepository implements Closeable {
      */
     public static class Uris {
         /**
-         * Uri scheme for wikibase.
+         * URL which should be used to retrieve Entity data.
          */
-        private final String scheme;
+        private static final String ENTITY_DATA_URL = "/wiki/Special:EntityData/";
         /**
-         * Host for wikibase.
+         * URL of the API endpoint.
          */
-        private final String host;
-        /**
-         * Port to connect to.
-         */
-        private final int port;
+        private static final String API_URL = "/w/api.php";
         /**
          * Item and Property namespaces.
          */
         private long[] entityNamespaces = {0, 120};
+        /**
+         * Base URL for Wikibase.
+         */
+        private URI baseUrl;
 
-        public Uris(String scheme, String host) {
-            this.scheme = scheme;
-            this.host = host;
-            this.port = 0;
+        public Uris(URI baseUrl) {
+            this.baseUrl = baseUrl;
         }
 
-        public Uris(String scheme, String host, int port) {
-            this.scheme = scheme;
-            this.host = host;
-            this.port = port;
+        public static Uris fromString(String url) {
+            try {
+                return new Uris(new URI(url));
+            } catch (URISyntaxException e) {
+                throw new FatalException("Bad URL: " + url, e);
+            }
         }
 
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "minor enough")
-        public Uris(String scheme, String host, int port, long[] entityNamespaces) {
-            this.scheme = scheme;
-            this.host = host;
-            this.port = port;
+        public void setEntityNamespaces(long[] entityNamespaces) {
             this.entityNamespaces = entityNamespaces;
         }
 
@@ -553,9 +550,9 @@ public class WikibaseRepository implements Closeable {
             /*
              * Note that we could use /entity/%s.ttl for production Wikidata but
              * not all Wikibase instances have the rewrite rule set up. I'm
-             * looking at you test.
+             * looking at you test.wikidata.org
              */
-            builder.setPath(String.format(Locale.ROOT, "/wiki/Special:EntityData/%s.ttl", entityId));
+            builder.setPath(baseUrl.getPath() + ENTITY_DATA_URL + entityId + ".ttl");
             // Cache is not our friend, try to work around it
             builder.addParameter("nocache", String.valueOf(Instant.now().toEpochMilli()));
             builder.addParameter("flavor", "dump");
@@ -625,7 +622,7 @@ public class WikibaseRepository implements Closeable {
          */
         private URIBuilder apiBuilder() {
             URIBuilder builder = builder();
-            builder.setPath("/w/api.php");
+            builder.setPath(baseUrl.getPath() + API_URL);
             builder.addParameter("format", "json");
             return builder;
         }
@@ -634,13 +631,7 @@ public class WikibaseRepository implements Closeable {
          * Build a URIBuilder for wikibase requests.
          */
         public URIBuilder builder() {
-            URIBuilder builder = new URIBuilder();
-            builder.setHost(host);
-            builder.setScheme(scheme);
-            if (port != 0) {
-                builder.setPort(port);
-            }
-            return builder;
+            return new URIBuilder(baseUrl);
         }
 
         /**
@@ -659,14 +650,7 @@ public class WikibaseRepository implements Closeable {
          * The wikibase host.
          */
         public String getHost() {
-            return host;
-        }
-
-        /**
-         * The uri scheme for the wikibase instance.
-         */
-        public String getScheme() {
-            return scheme;
+            return baseUrl.getHost();
         }
 
         /**

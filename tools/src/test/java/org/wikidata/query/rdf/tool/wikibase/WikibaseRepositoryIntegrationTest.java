@@ -6,6 +6,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.wikidata.query.rdf.test.CloseableRule.autoClose;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -31,9 +33,9 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
 public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     private static final String HOST = "test.wikidata.org";
     @Rule
-    public final CloseableRule<WikibaseRepository> repo = autoClose(new WikibaseRepository("https", HOST));
-    private final CloseableRule<WikibaseRepository> proxyRepo = autoClose(new WikibaseRepository("http", "localhost", 8812));
-    private final WikibaseUris uris = new WikibaseUris(HOST);
+    public final CloseableRule<WikibaseRepository> repo = autoClose(new WikibaseRepository("https://" + HOST));
+    private final CloseableRule<WikibaseRepository> proxyRepo = autoClose(new WikibaseRepository("http://localhost:8812"));
+    private final WikibaseUris uris = WikibaseUris.forHost(HOST);
 
     @Test
     @SuppressWarnings("unchecked")
@@ -131,9 +133,9 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     }
 
     @Test
-    public void fetchIsNormalized() throws RetryableException, ContainedException, IOException {
+    public void fetchIsNormalized() throws RetryableException, ContainedException, IOException, URISyntaxException {
         long now = System.currentTimeMillis();
-        try (WikibaseRepository proxyRepo = new WikibaseRepository("http", "localhost", 8812)) {
+        try (WikibaseRepository proxyRepo = new WikibaseRepository(new URI("http://localhost:8812"))) {
             String entityId = repo.get().firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
             repo.get().setLabel(entityId, "item", "QueryTestItem" + now, "en");
             Collection<Statement> statements = proxyRepo.fetchRdfForEntity(entityId);

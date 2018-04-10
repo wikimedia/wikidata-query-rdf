@@ -34,7 +34,7 @@ public class WikibaseRepositoryWireIntegrationTest {
 
     @Before
     public void createWikibaseRepository() {
-        repository = new WikibaseRepository("http", "localhost", wireMockRule.port());
+        repository = new WikibaseRepository("http://localhost:" + wireMockRule.port());
     }
 
     @After

@@ -1,6 +1,7 @@
 0.3.1
 -----
 Add Kafka poller
+Introduce --wikibaseUrl and --conceptUri options
 
 0.3.0
 -----

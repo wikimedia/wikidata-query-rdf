@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
@@ -29,6 +30,7 @@ import org.wikidata.query.rdf.tool.change.IdListChangeSource;
 import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
 import org.wikidata.query.rdf.tool.change.KafkaPoller;
 import org.wikidata.query.rdf.tool.change.RecentChangesPoller;
+import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.options.OptionsUtils;
 import org.wikidata.query.rdf.tool.options.UpdateOptions;
 import org.wikidata.query.rdf.tool.rdf.Munger;
@@ -71,7 +73,7 @@ public final class Update {
             UpdateOptions options = handleOptions(UpdateOptions.class, args);
             wikibaseRepository = buildWikibaseRepository(options);
             URI sparqlUri = sparqlUri(options);
-            WikibaseUris uris = new WikibaseUris(options.wikibaseHost());
+            WikibaseUris uris = OptionsUtils.makeWikibaseUris(options);
             rdfRepository = new RdfRepository(sparqlUri, uris);
             Change.Source<? extends Change.Batch> changeSource = buildChangeSource(
                     options, rdfRepository, wikibaseRepository);
@@ -265,6 +267,28 @@ public final class Update {
     }
 
     /**
+     * Produce base Wikibase URL from options.
+     * @param options
+     */
+    private static URI getWikibaseUrl(UpdateOptions options) {
+        if (options.wikibaseUrl() != null) {
+            try {
+                return new URI(options.wikibaseUrl());
+            } catch (URISyntaxException e) {
+                throw new FatalException("Unable to build Wikibase url", e);
+            }
+        }
+        URIBuilder baseUrl = new URIBuilder();
+        baseUrl.setHost(options.wikibaseHost());
+        baseUrl.setScheme(options.wikibaseScheme());
+        try {
+            return baseUrl.build();
+        } catch (URISyntaxException e) {
+            throw new FatalException("Unable to build Wikibase url", e);
+        }
+    }
+
+    /**
      * Build WikibaseRepository object.
      *
      * @return null if non can be built - its ok to just exit - errors have been
@@ -272,19 +296,13 @@ public final class Update {
      */
     private static WikibaseRepository buildWikibaseRepository(UpdateOptions options) {
         if (options.entityNamespaces() == null) {
-            return new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost());
+            return new WikibaseRepository(getWikibaseUrl(options));
         }
 
-        String[] strEntityNamespaces = options.entityNamespaces().split(","); // FIXME use OptionsUtils.splitByComma(options.entityNamespaces())
-        long[] longEntityNamespaces = new long[strEntityNamespaces.length];
-        try {
-            for (int i = 0; i < strEntityNamespaces.length; i++) {
-                longEntityNamespaces[i] = Long.parseLong(strEntityNamespaces[i]);
-            }
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid value for --entityNamespaces. Namespace index should be an integer.", e);
-        }
-        return new WikibaseRepository(options.wikibaseScheme(), options.wikibaseHost(), 0, longEntityNamespaces);
+        long[] longEntityNamespaces = OptionsUtils.splitByComma(Arrays.asList(options.entityNamespaces())).stream().
+                mapToLong(option -> Long.parseLong(option)).toArray();
+
+        return new WikibaseRepository(getWikibaseUrl(options), longEntityNamespaces);
     }
 
  }

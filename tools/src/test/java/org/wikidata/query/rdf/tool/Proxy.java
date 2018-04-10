@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.tool.options.OptionsUtils;
 import org.wikidata.query.rdf.tool.options.OptionsUtils.BasicOptions;
-import org.wikidata.query.rdf.tool.options.OptionsUtils.WikibaseOptions;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.lexicalscope.jewel.cli.Option;
@@ -41,7 +40,7 @@ public class Proxy extends NanoHTTPD {
      * Options for this proxy for parsing with JewelCLI.
      */
     @SuppressWarnings("checkstyle:javadocmethod")
-    public interface ProxyOptions extends BasicOptions, WikibaseOptions {
+    public interface ProxyOptions extends BasicOptions {
         @Option(shortName = "p", description = "Port")
         int port();
 
@@ -51,21 +50,22 @@ public class Proxy extends NanoHTTPD {
         @Option(shortName = "m", description = "Error thrown every m requests")
         int errorMod();
 
-        @Option(defaultValue = "https", description = "Wikidata url scheme")
-        String wikibaseScheme();
-
         @Option(description = "Immediately return and leave the server running in a thread")
         boolean embedded();
+
+        @Option(shortName = "W", defaultValue = "https://www.wikidata.org", description = "Wikibase instance base URL")
+        String wikibaseUrl();
     }
 
     /**
      * Run from the CLI.
      *
      * @throws IOException if one is thrown trying to get the port
+     * @throws URISyntaxException
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, URISyntaxException {
         ProxyOptions options = OptionsUtils.handleOptions(ProxyOptions.class, args);
-        WikibaseRepository.Uris wikibase = new WikibaseRepository.Uris(options.wikibaseScheme(), options.wikibaseHost());
+        WikibaseRepository.Uris wikibase = new WikibaseRepository.Uris(new URI(options.wikibaseUrl()));
         // Create status objects for errors
         IStatus[] statuses = options.error().stream().map(Proxy::buildErrorStatus)
                 .toArray(IStatus[]::new);
