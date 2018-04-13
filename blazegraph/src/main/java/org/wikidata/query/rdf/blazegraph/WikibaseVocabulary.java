@@ -65,7 +65,6 @@ public class WikibaseVocabulary {
 
         /**
          * Get list of suffixes to use for property predicates.
-         * @return
          */
         protected List<String> getSuffixes() {
             return PropertyType.suffixes(PropertyType.V001());
@@ -102,7 +101,6 @@ public class WikibaseVocabulary {
 
         /**
          * Get list of suffixes to use for property predicates.
-         * @return
          */
         protected List<String> getSuffixes() {
             return PropertyType.suffixes(PropertyType.V001());

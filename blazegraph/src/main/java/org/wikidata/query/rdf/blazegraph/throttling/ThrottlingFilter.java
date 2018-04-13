@@ -245,13 +245,6 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
 
     /**
      * Create Callable to initialize throttling state.
-     *
-     * @param timeBucketCapacityInSeconds
-     * @param timeBucketRefillAmountInSeconds
-     * @param timeBucketRefillPeriodInMinutes
-     * @param errorBucketCapacity
-     * @param errorBucketRefillAmount
-     * @param errorBucketRefillPeriodInMinutes
      */
     public static Callable<ThrottlingState> createThrottlingState(
             int timeBucketCapacityInSeconds,

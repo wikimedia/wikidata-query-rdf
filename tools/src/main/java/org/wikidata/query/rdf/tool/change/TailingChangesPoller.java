@@ -65,8 +65,6 @@ public class TailingChangesPoller extends Thread {
 
     /**
      * Is this timestamp old enough?
-     * @param timestamp
-     * @return
      */
     public boolean isOldEnough(Instant timestamp) {
         return timestamp.isBefore(Instant.now().minusSeconds(tailSeconds));

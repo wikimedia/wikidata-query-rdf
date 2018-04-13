@@ -794,6 +794,7 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <configuration>
+                        <failOnError>true</failOnError>
                         <excludePackageNames>com.bigdata.rdf.internal</excludePackageNames>
                     </configuration>
                 </plugin>

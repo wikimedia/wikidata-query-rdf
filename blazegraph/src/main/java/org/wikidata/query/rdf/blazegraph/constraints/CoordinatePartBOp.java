@@ -53,7 +53,7 @@ public class CoordinatePartBOp extends IVValueExpression<IV> implements INeedsMa
      * Main ctor.
      * @param coord Coordinate
      * @param part Which part we need to get
-     * @param globals
+     * @param globals The global annotations, including the lexicon namespace
      */
     @SuppressWarnings("rawtypes")
     public CoordinatePartBOp(final IValueExpression<? extends IV> coord,
@@ -64,7 +64,7 @@ public class CoordinatePartBOp extends IVValueExpression<IV> implements INeedsMa
     }
 
     /**
-     * Constructor required for {@link com.bigdata.bop.BOpUtility#deepCopy(FilterNode)}.
+     * Constructor required for {@link com.bigdata.bop.BOpUtility#deepCopy(BOp)}.
      */
     public CoordinatePartBOp(final CoordinatePartBOp op) {
         super(op);

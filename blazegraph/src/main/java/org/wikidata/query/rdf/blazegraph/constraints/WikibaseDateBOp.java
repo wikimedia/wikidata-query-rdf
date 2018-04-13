@@ -23,7 +23,7 @@ import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 
 /**
  * A date expression involving a left IValueExpression operand.
- * The operation to be applied to the operands is specified by the {@link Annotations#OP}
+ * The operation to be applied to the operands is specified by the {@link Annotations}
  * annotation.
  * @see com.bigdata.rdf.internal.constraints.DateBOp
  * We are not extending com.bigdata.rdf.internal.constraints since get() is final there.
@@ -57,7 +57,7 @@ public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMate
      *
      * @param args
      *            The operands.
-     * @param op
+     * @param anns
      *            The operation.
      */
     public WikibaseDateBOp(final BOp[] args, Map<String, Object> anns) {
@@ -73,9 +73,7 @@ public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMate
     }
 
     /**
-     * Constructor required for {@link com.bigdata.bop.BOpUtility#deepCopy(FilterNode)}.
-     *
-     * @param op
+     * Constructor required for {@link com.bigdata.bop.BOpUtility#deepCopy(BOp)}.
      */
     public WikibaseDateBOp(final WikibaseDateBOp op) {
 
@@ -146,7 +144,6 @@ public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMate
 
     /**
      * Get left operand.
-     * @return
      */
     public IValueExpression<? extends IV> left() {
         return get(0);
@@ -154,7 +151,6 @@ public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMate
 
     /**
      * Get annotated operation.
-     * @return
      */
     public DateOp op() {
         return (DateOp) getRequiredProperty(DateBOp.Annotations.OP);

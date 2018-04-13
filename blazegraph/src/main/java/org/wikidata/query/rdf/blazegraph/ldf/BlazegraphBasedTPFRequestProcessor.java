@@ -100,10 +100,6 @@ public class BlazegraphBasedTPFRequestProcessor extends
 
         /**
          * Create filter based on triple request.
-         * @param s
-         * @param p
-         * @param o
-         * @return
          */
         @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
         public VariablesBasedFilter createFilterIfNeeded(
@@ -154,10 +150,8 @@ public class BlazegraphBasedTPFRequestProcessor extends
 
         /**
          * Create the fragment.
+         *
          * @param ap Access path
-         * @param offset Offset
-         * @param limit Limit
-         * @return
          */
         protected ITriplePatternFragment createTriplePatternFragment(
                 final IAccessPath<ISPO> ap, final long offset,
@@ -178,7 +172,7 @@ public class BlazegraphBasedTPFRequestProcessor extends
 
     /**
      * Convert element to IV if it's constant.
-     * @param tpe
+     *
      * @return IV or null if not constant.
      */
     @SuppressWarnings("rawtypes")

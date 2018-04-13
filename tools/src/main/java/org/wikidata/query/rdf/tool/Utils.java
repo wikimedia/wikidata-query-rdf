@@ -5,10 +5,7 @@ package org.wikidata.query.rdf.tool;
  */
 public final class Utils {
     /**
-     * Find the max of two comparables.
-     * @param a
-     * @param b
-     * @return
+     * Find the max of two {@link Comparable}.
      */
     public static <T extends Comparable<? super T>> T max(T a, T b) {
         if (a == null) {

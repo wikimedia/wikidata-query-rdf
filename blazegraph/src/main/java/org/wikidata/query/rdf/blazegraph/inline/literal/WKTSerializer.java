@@ -82,8 +82,6 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
     /**
      * Cut off prefix for the coordinate system URI.
      * E.g. http://www.wikidata.org/entity/Q
-     * @param uri
-     * @return
      */
     public String trimCoordURI(String uri) {
         if (!uri.startsWith(URL_PREFIX)) {

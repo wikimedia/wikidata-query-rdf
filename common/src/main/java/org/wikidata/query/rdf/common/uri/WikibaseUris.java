@@ -51,39 +51,39 @@ public class WikibaseUris {
          */
         DIRECT_NORMALIZED("wdtn", "direct-normalized/"),
         /**
-         * Statement->Value (wdv:xxx).
+         * Statement - Value (wdv:xxx).
          */
         STATEMENT_VALUE("psv", "statement/value/"),
         /**
-         * Statement->Normalized Value (wdv:xxx).
+         * Statement - Normalized Value (wdv:xxx).
          */
         STATEMENT_VALUE_NORMALIZED("psn", "statement/value-normalized/"),
         /**
-         * Statement-> Simple Value.
+         * Statement -  Simple Value.
          */
         STATEMENT("ps", "statement/"),
         /**
-         * Statement->Qualifier Value (wdv:xxx).
+         * Statement - Qualifier Value (wdv:xxx).
          */
         QUALIFIER_VALUE("pqv", "qualifier/value/"),
         /**
-         * Statement->Qualifier Normalized Value (wdv:xxx).
+         * Statement - Qualifier Normalized Value (wdv:xxx).
          */
         QUALIFIER_VALUE_NORMALIZED("pqn", "qualifier/value-normalized/"),
         /**
-         * Statement-> Simple Qualifier Value.
+         * Statement - Simple Qualifier Value.
          */
         QUALIFIER("pq", "qualifier/"),
         /**
-         * Reference->Value (wdv:xxx).
+         * Reference - Value (wdv:xxx).
          */
         REFERENCE_VALUE("prv", "reference/value/"),
         /**
-         * Reference->Normalized Value (wdv:xxx).
+         * Reference - Normalized Value (wdv:xxx).
          */
         REFERENCE_VALUE_NORMALIZED("prn", "reference/value-normalized/"),
         /**
-         * Reference->Simple Value.
+         * Reference - Simple Value.
          */
         REFERENCE("pr", "reference/"),
         /**
@@ -91,7 +91,7 @@ public class WikibaseUris {
          */
         NOVALUE("wdno", "novalue/"),
         /**
-         * Entity->Statement.
+         * Entity - Statement.
          */
         CLAIM("p", "");
 
@@ -120,7 +120,6 @@ public class WikibaseUris {
          * Get suffix. Protected since outside classes should not use it, they
          * should go through WikibaseUris.property().
          *
-         * @return suffix
          */
         protected String suffix() {
             return suffix;
@@ -128,7 +127,6 @@ public class WikibaseUris {
 
         /**
          * Get the list of property suffixes as list of strings.
-         * @return
          */
         public static List<String> suffixes() {
             return suffixes(values());
@@ -136,7 +134,6 @@ public class WikibaseUris {
 
         /**
          * Get the list of property suffixes as list of strings.
-         * @return
          */
         public static List<String> suffixes(PropertyType[] values) {
             return Stream.of(values).map(v -> v.suffix)
@@ -146,7 +143,6 @@ public class WikibaseUris {
         /**
          * Types list as it was in V001 dictionary.
          * Used for BC. V002 has the same set, but V003 is different.
-         * @return
          */
         public static PropertyType[] V001() {
             return new PropertyType[] {

@@ -476,7 +476,6 @@ public class WikibaseDate {
 
     /**
      * Add Duration to time value.
-     * @param d
      */
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public WikibaseDate addDuration(Duration d) {

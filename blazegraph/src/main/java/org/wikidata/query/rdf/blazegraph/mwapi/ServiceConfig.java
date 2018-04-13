@@ -51,8 +51,6 @@ public final class ServiceConfig {
 
     /**
      * Load list of endpoints.
-     * @param node
-     * @return
      */
     private static List<String> loadEndpoints(JsonNode node) {
         requireNonNull(node, "Must have endpoints node");
@@ -66,8 +64,6 @@ public final class ServiceConfig {
 
     /**
      * Get service template by name.
-     * @param templateName
-     * @return
      */
     public ApiTemplate getService(String templateName) {
         Preconditions.checkArgument(serviceMap.containsKey(templateName),
@@ -77,8 +73,6 @@ public final class ServiceConfig {
 
     /**
      * Check if endpoint is allowed.
-     * @param endpointHost
-     * @return
      */
     public boolean validEndpoint(String endpointHost) {
         for (String allowedEndpoint: endpoints) {
@@ -91,7 +85,6 @@ public final class ServiceConfig {
 
     /**
      * Get number of services.
-     * @return
      */
     public int size() {
         return serviceMap.size();

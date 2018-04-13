@@ -165,9 +165,6 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
 
     /**
      * Get parameter string from binding.
-     *
-     * @param binding
-     * @return
      */
     public Map<String, String> getRequestParams(IBindingSet binding) {
         final Map<String, String> params = new HashMap<>();
@@ -232,7 +229,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     /**
      * Extract all continue variables from response.
      * Only api/continue is supported for now.
-     * @param doc
+     *
      * @return Map with continue variables, or null if no continue.
      */
     @Nullable

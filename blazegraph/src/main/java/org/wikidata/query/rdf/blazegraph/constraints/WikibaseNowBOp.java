@@ -21,15 +21,8 @@ import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
  */
 public class WikibaseNowBOp extends IVValueExpression<IV> implements INeedsMaterialization {
 
-    /**
-	 *
-	 */
     private static final long serialVersionUID = 9136864442064392445L;
 
-    /**
-     * Ctor.
-     * @param globals
-     */
     public WikibaseNowBOp(final GlobalAnnotations globals) {
 
         this(BOp.NOARGS, anns(globals));
@@ -41,7 +34,7 @@ public class WikibaseNowBOp extends IVValueExpression<IV> implements INeedsMater
      *
      * @param args
      *            The operands.
-     * @param op
+     * @param anns
      *            The operation.
      */
     public WikibaseNowBOp(final BOp[] args, Map<String, Object> anns) {
@@ -51,9 +44,7 @@ public class WikibaseNowBOp extends IVValueExpression<IV> implements INeedsMater
     }
 
     /**
-     * Constructor required for {@link com.bigdata.bop.BOpUtility#deepCopy(FilterNode)}.
-     *
-     * @param op
+     * Constructor required for {@link com.bigdata.bop.BOpUtility#deepCopy(BOp)}.
      */
     public WikibaseNowBOp(final WikibaseNowBOp op) {
 

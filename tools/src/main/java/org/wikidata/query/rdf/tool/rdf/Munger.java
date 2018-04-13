@@ -94,7 +94,6 @@ public class Munger {
     public interface FormatHandler {
         /**
          * Transform statement to current latest format.
-         * @param statement
          * @return Transformed statement or null if it needs to be deleted.
          */
         Statement handle(Statement statement);
@@ -128,8 +127,6 @@ public class Munger {
 
     /**
      * Set the keep types parameter.
-     * @param keep
-     * @return
      */
     public Munger keepTypes(boolean keep) {
         keepTypes = keep;
@@ -181,7 +178,6 @@ public class Munger {
 
     /**
      * Set format version.
-     * @param version
      */
     public void setFormatVersion(String version) {
         this.dumpFormatVersion = version;

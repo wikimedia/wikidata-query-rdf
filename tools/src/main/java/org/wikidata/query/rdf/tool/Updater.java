@@ -164,7 +164,6 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
 
     /**
      * Record that we reached certain date in permanent storage.
-     * @param newDate
      */
     protected void syncDate(Instant newDate) {
         rdfRepository.updateLeftOffTime(newDate);

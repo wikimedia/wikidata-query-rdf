@@ -245,7 +245,6 @@ public class Change implements Comparable<Change> {
 
     /**
      * Set statements collection.
-     * @return
      */
     public Collection<Statement> getStatements() {
         return statements;
@@ -253,7 +252,6 @@ public class Change implements Comparable<Change> {
 
     /**
      * Return statements collection.
-     * @return
      */
     public void setStatements(Collection<Statement> statements) {
         this.statements = statements;
@@ -261,7 +259,6 @@ public class Change implements Comparable<Change> {
 
     /**
      * Set cleanup list.
-     * @return
      */
     public Collection<String> getCleanupList() {
         return cleanupList;
@@ -269,7 +266,6 @@ public class Change implements Comparable<Change> {
 
     /**
      * Return cleanup list.
-     * @param cleanupList
      */
     public void setCleanupList(Collection<String> cleanupList) {
         this.cleanupList = cleanupList;

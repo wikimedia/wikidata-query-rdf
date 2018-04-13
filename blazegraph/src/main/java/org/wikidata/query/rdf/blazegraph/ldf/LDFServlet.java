@@ -25,7 +25,7 @@ public class LDFServlet extends BigdataRDFServlet {
      */
     private LinkedDataFragmentServlet ldfDelegate;
     /**
-     * Overridden to create and initialize the delegate {@link Servlet}
+     * Overridden to create and initialize the delegate {@link javax.servlet.Servlet}
      * instances.
      */
     @Override

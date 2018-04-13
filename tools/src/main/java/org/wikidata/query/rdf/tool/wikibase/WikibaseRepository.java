@@ -10,6 +10,7 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -179,7 +180,6 @@ public class WikibaseRepository implements Closeable {
      * @param max Maximum number of retries.
      * @param interval Interval between retries, ms.
      * @see DefaultServiceUnavailableRetryStrategy
-     * @return
      */
     private static ServiceUnavailableRetryStrategy getRetryStrategy(final int max, final int interval) {
         // This is the same as DefaultServiceUnavailableRetryStrategy but also handles 429
@@ -202,7 +202,6 @@ public class WikibaseRepository implements Closeable {
      * Create retry handler.
      * Note: this is for retrying I/O exceptions.
      * @param max Maximum retries number.
-     * @return
      */
     private static HttpRequestRetryHandler getRetryHandler(final int max) {
         return (exception, executionCount, context) -> {
@@ -384,7 +383,6 @@ public class WikibaseRepository implements Closeable {
 
     /**
      * Delete entity from repository.
-     * @param entityId
      * @throws RetryableException thrown if there is an error communicating with
      *             wikibase
      */
@@ -458,7 +456,6 @@ public class WikibaseRepository implements Closeable {
      * Check that a namespace is valid wikibase entity namespace.
      *
      * @param namespace the namespace index
-     * @return
      */
     public boolean isEntityNamespace(long namespace) {
         return uris.isEntityNamespace(namespace);
@@ -466,8 +463,6 @@ public class WikibaseRepository implements Closeable {
 
     /**
      * Check if the entity ID is a valid entity ID.
-     * @param name
-     * @return
      */
     public boolean isValidEntity(String name) {
         return name.matches("^[A-Za-z0-9:]+$");
@@ -657,7 +652,6 @@ public class WikibaseRepository implements Closeable {
          * Check that a namespace is valid wikibase entity namespace.
          *
          * @param namespace the namespace index
-         * @return
          */
         public boolean isEntityNamespace(long namespace) {
             return ArrayUtils.contains(entityNamespaces, namespace);
@@ -674,12 +668,11 @@ public class WikibaseRepository implements Closeable {
 
     /**
      * Extract timestamp from continue JSON object.
-     * @param nextContinue
      * @return Timestamp as date
-     * @throws java.text.ParseException When data is in is wrong format
+     * @throws ParseException When data is in is wrong format
      */
     @SuppressFBWarnings(value = "STT_STRING_PARSING_A_FIELD", justification = "low priority to fix")
-    public Change getChangeFromContinue(Continue nextContinue) {
+    public Change getChangeFromContinue(Continue nextContinue) throws ParseException {
         if (nextContinue == null) {
             return null;
         }
@@ -689,7 +682,6 @@ public class WikibaseRepository implements Closeable {
 
     /**
      * Get repository URI setup.
-     * @return
      */
     public Uris getUris() {
         return uris;

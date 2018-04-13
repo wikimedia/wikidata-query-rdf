@@ -33,7 +33,7 @@ public final class GeoUtils {
 
     /**
      * Get point as a Literal.
-     * @param point
+     *
      * @return Point as a literal.
      */
     public static Literal pointLiteral(String point) {
@@ -42,9 +42,6 @@ public final class GeoUtils {
 
     /**
      * Create WikibasePoint from IV literal.
-     *
-     * @param iv
-     * @return
      */
     public static WikibasePoint pointFromIV(IV iv) {
         return new WikibasePoint(asLiteral(iv).stringValue());
@@ -52,9 +49,6 @@ public final class GeoUtils {
 
     /**
      * Create CoordinateDD from WikibasePoint.
-     *
-     * @param point
-     * @return
      */
     public static CoordinateDD getCoordinate(WikibasePoint point) {
         return new CoordinateDD(Double.parseDouble(point.getLatitude()),
@@ -63,9 +57,6 @@ public final class GeoUtils {
 
     /**
      * Create CoordinateDD from IV literal.
-     *
-     * @param iv
-     * @return
      */
     public static CoordinateDD getCoordinate(IV iv) {
         return getCoordinate(pointFromIV(iv));

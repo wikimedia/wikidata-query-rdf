@@ -198,8 +198,6 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
     /**
      * Get service params from Service Node.
      * FIXME: copypaste from ServiceParams.java, should be integrated there
-     * @param serviceNode
-     * @return
      */
     public ServiceParams serviceParamsFromNode(final ServiceNode serviceNode) {
         requireNonNull(serviceNode, "Service node is null?");
@@ -234,8 +232,6 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
 
     /**
      * Create predicate parameter URI from name.
-     * @param name
-     * @return
      */
     public static URI paramNameToURI(String name) {
         return new URIImpl(MWAPI_NAMESPACE + name);

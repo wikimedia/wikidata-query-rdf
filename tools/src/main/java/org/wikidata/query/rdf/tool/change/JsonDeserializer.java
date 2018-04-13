@@ -15,7 +15,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Deserializer for Kafka stream objects from JSON.
  * This class allows to deserialize a family of related classes.
- * @param <T>
+ *
+ * @param <T> Type to be deserialized into.
  */
 public class JsonDeserializer<T> implements Deserializer<T> {
 

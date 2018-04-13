@@ -230,7 +230,6 @@ public class RdfRepository implements AutoCloseable {
 
     /**
      * Close the repository.
-     * @throws Exception
      */
     @Override
     public void close() throws Exception {
@@ -343,7 +342,6 @@ public class RdfRepository implements AutoCloseable {
      * Get list of value subjects connected to entity. The connection is either
      * via statement or via reference or via qualifier.
      *
-     * @param entityIds
      * @return Set of value subjects
      */
     public ImmutableSetMultimap<String, String> getValues(Collection<String> entityIds) {
@@ -359,7 +357,6 @@ public class RdfRepository implements AutoCloseable {
     /**
      * Get list of reference subjects connected to entity.
      *
-     * @param entityIds
      * @return Set of references
      */
     public ImmutableSetMultimap<String, String> getRefs(Collection<String> entityIds) {
@@ -582,7 +579,8 @@ public class RdfRepository implements AutoCloseable {
 
     /**
      * Synchronizes the RDF repository's representation.
-     * See also: sync(String, Collection<Statement>, Collection<String>)
+     *
+     * @see #sync(String, Collection, Collection)
      * @param entityId id of the entity to sync
      * @param statements all known statements about the entity
      * @return the number of statements modified

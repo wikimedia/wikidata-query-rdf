@@ -113,14 +113,12 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
     /**
      * Whether to use backoff.
-     * @param useBackoff
      */
     public void setBackoff(boolean useBackoff) {
         this.useBackoff = useBackoff;
     }
     /**
      * Create map of seen IDs.
-     * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private static Map<Long, Boolean> createSeenMap() {
@@ -251,8 +249,6 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
         /**
          * Merge this batch with another batch.
-         * @param another
-         * @return
          */
         @SuppressFBWarnings(value = "OCP_OVERLY_CONCRETE_PARAMETER", justification = "Type seems semantically correct")
         public Batch merge(Batch another) {
@@ -265,7 +261,6 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
 
         /**
          * Get continue object.
-         * @return
          */
         public Continue getLastContinue() {
             return lastContinue;
@@ -275,8 +270,6 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
     /**
      * Check whether change is very recent.
      * If it is we need to backoff to allow capturing unsettled DB changes.
-     * @param nextStartTime
-     * @return
      */
     private boolean changeIsRecent(Instant nextStartTime) {
         return nextStartTime.isAfter(Instant.now().minus(BACKOFF_THRESHOLD));
@@ -286,9 +279,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      * Fetch recent changes from Wikibase.
      * If we're close to current time, we back off a bit from last timestamp,
      * and fetch by timestamp. If it's back in the past, we fetch by continuation.
-     * @param lastNextStartTime
-     * @param lastBatch
-     * @return
+     *
      * @throws RetryableException on fetch failure
      */
     private RecentChangeResponse fetchRecentChanges(Instant lastNextStartTime, Batch lastBatch) throws RetryableException {

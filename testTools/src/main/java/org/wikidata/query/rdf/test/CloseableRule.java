@@ -12,7 +12,7 @@ import org.junit.runners.model.Statement;
  * close. It makes most sense when a test instantiate multiple {@link
  * AutoCloseable} resources.
  *
- * @param <T>
+ * @param <T> The type of the object managed by this rule.
  */
 public final class CloseableRule<T extends AutoCloseable> implements TestRule {
 

@@ -58,7 +58,7 @@ public class WikibaseCornerBOp extends IVValueExpression<IV> implements INeedsMa
      * @param left Eastern corner of the box
      * @param right Wester corner of the box
      * @param corner Which corner we want as the result
-     * @param globals
+     * @param globals  The global annotations, including the lexicon namespace
      */
     @SuppressWarnings("rawtypes")
     public WikibaseCornerBOp(final IValueExpression<? extends IV> left,
@@ -70,7 +70,7 @@ public class WikibaseCornerBOp extends IVValueExpression<IV> implements INeedsMa
     }
 
     /**
-     * Constructor required for {@link com.bigdata.bop.BOpUtility#deepCopy(FilterNode)}.
+     * Constructor required for {@link com.bigdata.bop.BOpUtility#deepCopy(BOp)})}.
      */
     public WikibaseCornerBOp(final WikibaseCornerBOp op) {
         super(op);
@@ -86,7 +86,7 @@ public class WikibaseCornerBOp extends IVValueExpression<IV> implements INeedsMa
 
     /**
      * Get coordinate from WikibasePoint value.
-     * @param iv
+     *
      * @return Coordinate
      */
     protected CoordinateDD getCoordinateFromWP(WikibasePoint point) {

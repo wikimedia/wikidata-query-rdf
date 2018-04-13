@@ -20,7 +20,7 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
  * It does not write anything into the store but instead just logs the entities that
  * should be updated.
  *
- * @param <B>
+ * @param <B> type of update batch
  */
 public class TestUpdater<B extends Change.Batch> extends Updater<B> {
     private static final Logger log = LoggerFactory.getLogger(TestUpdater.class);

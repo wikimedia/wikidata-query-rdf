@@ -11,6 +11,8 @@ import com.bigdata.rdf.sparql.ast.service.storedquery.SimpleStoredQueryService;
 
 /**
  * Stored query for categories:
+ * <pre>
+ * {@code
  * SELECT ?out ?depth WHERE {
  *  SERVICE mediawiki:categoryTree {
  *      bd:serviceParam mediawiki:start <https://en.wikipedia.org/wiki/Category:Ducks> .
@@ -18,6 +20,8 @@ import com.bigdata.rdf.sparql.ast.service.storedquery.SimpleStoredQueryService;
  *      bd:serviceParam mediawiki:depth 5 .
  *  }
  * } ORDER BY ASC(?depth)
+ * }
+ * </pre>
  *
  * Directions are:
  * - Forward: get parent category tree

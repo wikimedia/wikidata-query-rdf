@@ -78,10 +78,6 @@ public abstract class GeoService extends AbstractServiceFactory {
 
     /**
      * Get service parameter by name.
-     *
-     * @param serviceParams
-     * @param paramName
-     * @return
      */
     protected TermNode getParam(ServiceParams serviceParams, URI paramName) {
         TermNode node = serviceParams.get(paramName, null);
@@ -94,18 +90,12 @@ public abstract class GeoService extends AbstractServiceFactory {
 
     /**
      * Create service parameters for delegate service call.
-     * @param params
-     * @param serviceParams
-     * @return
      */
     protected abstract JoinGroupNode buildServiceNode(ServiceCallCreateParams params,
             ServiceParams serviceParams);
 
     /**
      * Create globe node with appropriate value for coordSystem.
-     * @param vf
-     * @param serviceParams
-     * @return
      */
     protected TermNode getGlobeNode(BigdataValueFactory vf, ServiceParams serviceParams) {
         final TermNode globeNode = serviceParams.get(GLOBE_PARAM, null);
@@ -135,8 +125,6 @@ public abstract class GeoService extends AbstractServiceFactory {
      * Pattern node looks like:
      *  ?place wdt:P625 ?location .
      * Both variables would be bound by the service.
-     * @param params
-     * @return
      */
     protected StatementPatternNode getPatternNode(ServiceCallCreateParams params) {
         ServiceNode serviceNode = params.getServiceNode();
@@ -198,9 +186,6 @@ public abstract class GeoService extends AbstractServiceFactory {
 
     /**
      * Returns the statement patterns contained in the service node.
-     *
-     * @param serviceNode
-     * @return
      */
     @SuppressFBWarnings(value = "OCP_OVERLY_CONCRETE_PARAMETER", justification = "ServiceNode is a good representation of the intent")
     protected List<StatementPatternNode> getStatementPatterns(final ServiceNode serviceNode) {

@@ -51,7 +51,7 @@ public class WikibaseDistanceBOp extends IVValueExpression<IV> implements INeeds
     }
 
     /**
-     * Constructor required for {@link com.bigdata.bop.BOpUtility#deepCopy(FilterNode)}.
+     * Constructor required for {@link com.bigdata.bop.BOpUtility#deepCopy(BOp)}.
      */
     public WikibaseDistanceBOp(final WikibaseDistanceBOp op) {
         super(op);
@@ -91,8 +91,7 @@ public class WikibaseDistanceBOp extends IVValueExpression<IV> implements INeeds
      * can be considered zero.
      * Current CoordinateDD.distance does not work well with small distances,
      * so we take a shortcut here in order not to get the NaN.
-     * @param p1
-     * @param p2
+     *
      * @return Whether the points are very close.
      */
     protected boolean veryClose(CoordinateDD p1, CoordinateDD p2) {
@@ -103,7 +102,7 @@ public class WikibaseDistanceBOp extends IVValueExpression<IV> implements INeeds
 
     /**
      * Get coordinate from IV value.
-     * @param iv
+     *
      * @return Coordinate
      */
     @SuppressFBWarnings(value = "LEST_LOST_EXCEPTION_STACK_TRACE", justification = "Converting to SPARQL exception")

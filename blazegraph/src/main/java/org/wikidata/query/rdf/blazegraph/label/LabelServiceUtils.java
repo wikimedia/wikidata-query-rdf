@@ -20,9 +20,7 @@ public final class LabelServiceUtils {
 
     /**
      * Get label service nodes in given join group.
-     * @param join
-     * @return
-     */
+d     */
     public static Stream<ServiceNode> getLabelServiceNodes(JoinGroupNode join) {
         return join.getServiceNodes().stream().filter(node -> {
             final BigdataValue serviceRef = node.getServiceRef().getValue();

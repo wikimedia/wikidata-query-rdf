@@ -80,8 +80,6 @@ public class WikibasePoint {
 
     /**
      * Create point from WKT literal.
-     * @param literalString
-     * @param coordOrder
      */
     public WikibasePoint(String literalString, CoordinateOrder coordOrder) {
         if (literalString.charAt(0) == '<') {
@@ -121,9 +119,6 @@ public class WikibasePoint {
 
     /**
      * Create point from array of strings.
-     * @param components
-     * @param globe
-     * @param order
      */
     @SuppressFBWarnings(value = "CLI_CONSTANT_LIST_INDEX", justification = "array used as a pair")
     public WikibasePoint(String[] components, String globe, CoordinateOrder order) {
@@ -158,7 +153,6 @@ public class WikibasePoint {
 
     /**
      * String representation in given coordinate order.
-     * @param order
      * @return String representation.
      */
     public String toOrder(CoordinateOrder order) {

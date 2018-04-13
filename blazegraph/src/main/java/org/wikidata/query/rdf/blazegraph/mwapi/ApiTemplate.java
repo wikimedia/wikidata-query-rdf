@@ -61,7 +61,7 @@ public class ApiTemplate {
     /**
      * Hidden ctor.
      * Use fromJSON() to create the object.
-       */
+     */
     protected ApiTemplate(Map<String, String> fixedParams,
             Set<String> inputVars, Map<String, String> defaults,
             Map<String, String> outputVars, String items) {
@@ -75,8 +75,6 @@ public class ApiTemplate {
 
     /**
      * Create API template from JSON configuration.
-     * @param json
-     * @return
      */
     public static ApiTemplate fromJSON(JsonNode json) {
         Map<String, String> fixedParams = new HashMap<>();
@@ -130,7 +128,6 @@ public class ApiTemplate {
 
     /**
      * Get items XPath.
-     * @return
      */
     public String getItemsPath() {
         return items;
@@ -138,8 +135,6 @@ public class ApiTemplate {
 
     /**
      * Check if parameter is required.
-     * @param name
-     * @return
      */
     public boolean isRequiredParameter(String name) {
         return inputVars.contains(name);
@@ -147,7 +142,6 @@ public class ApiTemplate {
 
     /**
      * Get call fixed parameters.
-     * @return
      */
     public Map<String, String> getFixedParams() {
         return fixedParams;
@@ -155,7 +149,7 @@ public class ApiTemplate {
 
     /**
      * Find default for this parameter.
-     * @param name
+     *
      * @return Default value or null.
      */
     public String getInputDefault(String name) {
@@ -341,7 +335,6 @@ public class ApiTemplate {
 
         /**
          * Get associated variable.
-         * @return
          */
         public IVariable getVar() {
             return var;
@@ -349,7 +342,6 @@ public class ApiTemplate {
 
         /**
          * Get path to this variable.
-         * @return
          */
         public String getPath() {
             return path;
@@ -357,7 +349,6 @@ public class ApiTemplate {
 
         /**
          * Get associated variable name.
-         * @return
          */
         public String getName() {
             return var.getName();
@@ -370,7 +361,6 @@ public class ApiTemplate {
 
         /**
          * Is it the ordinal value?
-         * @return
          */
         public boolean isOrdinal() {
             return type == Type.ORDINAL;
@@ -378,7 +368,6 @@ public class ApiTemplate {
 
         /**
          * Would this variable produce an URI?
-         * @return
          */
         public boolean isURI() {
             return type != Type.STRING && type != Type.ORDINAL;
@@ -386,8 +375,6 @@ public class ApiTemplate {
 
         /**
          * Get URI value matching variable type.
-         * @param value
-         * @return
          */
         public URI getURI(String value) {
             switch (type) {

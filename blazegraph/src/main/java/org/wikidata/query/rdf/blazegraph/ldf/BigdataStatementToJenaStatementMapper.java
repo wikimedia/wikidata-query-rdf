@@ -36,7 +36,6 @@ public class BigdataStatementToJenaStatementMapper implements
 
     /**
      * Get singleton instance.
-     * @return
      */
     public static BigdataStatementToJenaStatementMapper getInstance() {
         if (instance == null) {
@@ -56,7 +55,7 @@ public class BigdataStatementToJenaStatementMapper implements
 
     /**
      * Convert Bigdata resource to Jena resource.
-     * @param r
+     *
      * @return Jena resource.
      */
     public Resource convertToJenaResource(final BigdataResource r) {
@@ -65,7 +64,7 @@ public class BigdataStatementToJenaStatementMapper implements
 
     /**
      * Convert Bigdata resource to Jena property.
-     * @param r
+     *
      * @return Jena property.
      */
     public Property convertToJenaProperty(final BigdataResource r) {
@@ -74,7 +73,7 @@ public class BigdataStatementToJenaStatementMapper implements
 
     /**
      * Convert Bigdata value to Jena RDF Node.
-     * @param v
+     *
      * @return Jena RDF node.
      */
     public RDFNode convertToJenaRDFNode(final BigdataValue v) {

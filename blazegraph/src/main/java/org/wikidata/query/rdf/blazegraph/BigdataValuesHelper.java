@@ -30,10 +30,6 @@ public final class BigdataValuesHelper {
 
     /**
      * Create IV from constant and type.
-     * @param vf
-     * @param value
-     * @param type
-     * @return
      */
     public static IV makeIV(BigdataValueFactory vf, String value, URI type) {
         return makeIV(vf, vf.createLiteral(value, type));
@@ -41,9 +37,6 @@ public final class BigdataValuesHelper {
 
     /**
      * Make IV from a literal.
-     * @param vf
-     * @param literal
-     * @return
      */
     public static IV makeIV(BigdataValueFactory vf, Literal literal) {
         return makeIV(vf, literal, VTE.LITERAL);
@@ -51,9 +44,6 @@ public final class BigdataValuesHelper {
 
     /**
      * Make IV for URI.
-     * @param vf
-     * @param literal
-     * @return
      */
     public static IV makeIV(BigdataValueFactory vf, URI uriString) {
         return makeIV(vf, vf.createURI(uriString.stringValue()), VTE.URI);
@@ -61,10 +51,7 @@ public final class BigdataValuesHelper {
 
     /**
      * Make IV from a value.
-     * @param vf
-     * @param value
      * @param type Value type.
-     * @return
      */
     public static IV makeIV(BigdataValueFactory vf, Value value, VTE type) {
         final BigdataValue l = vf.asValue(value);
@@ -76,9 +63,6 @@ public final class BigdataValuesHelper {
 
     /**
      * Create IV from string constant.
-     * @param vf
-     * @param value
-     * @return
      */
     public static IV makeIV(BigdataValueFactory vf, String value) {
         return makeIV(vf, vf.createLiteral(value));
@@ -86,9 +70,6 @@ public final class BigdataValuesHelper {
 
     /**
      * Create Constant from string.
-     * @param vf
-     * @param value
-     * @return
      */
     public static IConstant makeConstant(BigdataValueFactory vf, String value) {
         return new Constant(makeIV(vf, value));
@@ -96,9 +77,6 @@ public final class BigdataValuesHelper {
 
     /**
      * Create Constant from URI.
-     * @param vf
-     * @param value
-     * @return
      */
     public static IConstant makeConstant(BigdataValueFactory vf, URI value) {
         return new Constant(makeIV(vf, value));
@@ -106,9 +84,6 @@ public final class BigdataValuesHelper {
 
     /**
      * Create Constant from string and type.
-     * @param vf
-     * @param value
-     * @return
      */
     public static IConstant makeConstant(BigdataValueFactory vf, String value, URI type) {
         return new Constant(makeIV(vf, value, type));
@@ -116,9 +91,6 @@ public final class BigdataValuesHelper {
 
     /**
      * Create constant from int.
-     * @param vf
-     * @param value
-     * @return
      */
     @SuppressFBWarnings(value = "UP_UNUSED_PARAMETER", justification = "Don't need BigdataValueFactory, but leave it to have uniform API")
     public static IConstant makeConstant(BigdataValueFactory vf, int value) {
@@ -127,9 +99,6 @@ public final class BigdataValuesHelper {
 
     /**
      * Create constant from double.
-     * @param vf
-     * @param value
-     * @return
      */
     @SuppressFBWarnings(value = "UP_UNUSED_PARAMETER", justification = "Don't need BigdataValueFactory, but leave it to have uniform API")
     public static IConstant makeConstant(BigdataValueFactory vf, double value) {
@@ -138,8 +107,6 @@ public final class BigdataValuesHelper {
 
     /**
      * Create new variable with given name.
-     * @param varName
-     * @return
      */
     public static IVariable makeVariable(String varName) {
         return Var.var(varName);
