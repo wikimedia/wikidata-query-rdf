@@ -28,14 +28,14 @@ import org.wikidata.query.rdf.blazegraph.mwapi.ApiTemplate.OutputVariable;
 import org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceCall.ResultWithContinue;
 import org.xml.sax.SAXException;
 
-import com.beust.jcommander.internal.Lists;
-import com.beust.jcommander.internal.Maps;
 import com.bigdata.bop.IBindingSet;
 import com.bigdata.bop.IVariableOrConstant;
 import com.bigdata.bop.bindingSet.HashBindingSet;
 import com.bigdata.rdf.model.BigdataValueFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBase {
     private ApiTemplate template;

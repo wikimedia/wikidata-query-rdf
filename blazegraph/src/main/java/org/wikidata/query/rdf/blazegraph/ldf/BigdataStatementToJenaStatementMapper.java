@@ -1,19 +1,21 @@
 package org.wikidata.query.rdf.blazegraph.ldf;
 
+import java.util.function.Function;
+
+import org.apache.jena.datatypes.RDFDatatype;
+import org.apache.jena.datatypes.TypeMapper;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.util.iterator.Map1;
 import org.openrdf.model.URI;
 
 import com.bigdata.rdf.model.BigdataLiteral;
 import com.bigdata.rdf.model.BigdataResource;
 import com.bigdata.rdf.model.BigdataStatement;
 import com.bigdata.rdf.model.BigdataValue;
-import com.hp.hpl.jena.datatypes.RDFDatatype;
-import com.hp.hpl.jena.datatypes.TypeMapper;
-import com.hp.hpl.jena.rdf.model.Property;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.ResourceFactory;
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.util.iterator.Map1;
 
 /**
  * Implementation of {@link Map1} that transforms {@link BigdataStatement}s to
@@ -23,7 +25,7 @@ import com.hp.hpl.jena.util.iterator.Map1;
  */
 @SuppressWarnings("all")
 public class BigdataStatementToJenaStatementMapper implements
-            Map1<BigdataStatement, Statement> {
+            Function<BigdataStatement, Statement> {
     /**
      * Jenna type mapper.
      */
@@ -45,7 +47,7 @@ public class BigdataStatementToJenaStatementMapper implements
     }
 
     @Override
-    public Statement map1(final BigdataStatement blzgStmt) {
+    public Statement apply(final BigdataStatement blzgStmt) {
         final Resource s = convertToJenaResource(blzgStmt.getSubject());
         final Property p = convertToJenaProperty(blzgStmt.getPredicate());
         final RDFNode o = convertToJenaRDFNode(blzgStmt.getObject());
