@@ -45,6 +45,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimap;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -203,6 +204,7 @@ public class Munger {
      */
     public void munge(String entityId, Collection<Statement> statements, Collection<String> existingValues,
             Collection<String> existingRefs, Change sourceChange) {
+
         if (statements.isEmpty()) {
             // Empty collection is a delete.
             return;
@@ -215,6 +217,34 @@ public class Munger {
         // remove all values that we have seen as they are used by statements
         existingValues.removeAll(op.extraValidSubjects);
         existingRefs.removeAll(op.extraValidSubjects);
+    }
+
+    /**
+     * Adds and removes entries from the statements collection to munge Wikibase
+     * RDF exports into a more queryable form.
+     *
+     * This variant also extracts value and reference nodes from multimap
+     * collected by Updater and the ones that will be left in the container
+     * at the end of the operation are unused by this change and have to be
+     * cleaned up.
+     *
+     * @param statements statements to munge
+     * @param repoValues multimap of all value nodes, keyed by entity ID
+     * @param repoValues multimap of all reference nodes, keyed by entity ID
+     * @param valuesContainer Value nodes container
+     * @param refsContainer Reference nodes container
+     * @param sourceChange Change that originated the operation
+     */
+    public void mungeWithValues(String entityId,
+            Collection<Statement> statements,
+            Multimap<String, String> repoValues,
+            Multimap<String, String> repoRefs,
+            Collection<String> valuesContainer,
+            Collection<String> refsContainer,
+            Change sourceChange) {
+        valuesContainer.addAll(repoValues.get(uris.entity() + entityId));
+        refsContainer.addAll(repoRefs.get(uris.entity() + entityId));
+        munge(entityId, statements, valuesContainer, refsContainer, sourceChange);
     }
 
     /**

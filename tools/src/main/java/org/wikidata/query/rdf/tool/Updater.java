@@ -307,9 +307,9 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
     private void handleChange(Change change) throws RetryableException {
         log.debug("Processing data for {}", change);
         Collection<Statement> statements = wikibase.fetchRdfForEntity(change.entityId());
-        Set<String> values = new HashSet<>(repoValues.get(change.entityId()));
-        Set<String> refs = new HashSet<>(repoRefs.get(change.entityId()));
-        munger.munge(change.entityId(), statements, values, refs, change);
+        Set<String> values = new HashSet<>();
+        Set<String> refs = new HashSet<>();
+        munger.mungeWithValues(change.entityId(), statements, repoValues, repoRefs, values, refs, change);
         List<String> cleanupList = new ArrayList<>();
         cleanupList.addAll(values);
         cleanupList.addAll(refs);

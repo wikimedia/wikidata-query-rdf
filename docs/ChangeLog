@@ -2,6 +2,8 @@
 -----
 Add Kafka poller
 Introduce --wikibaseUrl and --conceptUri options
+Updgrade LDF server to 0.2.2
+Updated values cleanup to also clean normalized values
 
 0.3.0
 -----

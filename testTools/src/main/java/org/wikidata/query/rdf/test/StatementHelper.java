@@ -18,6 +18,8 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.XMLSchema;
+import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
@@ -148,4 +150,105 @@ public final class StatementHelper {
     private StatementHelper() {
         // Uncallable entity constructor
     }
+
+    /**
+     * Helper class for building more complex statements.
+     * Allows building complex statements for certain entity.
+     * See https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format
+     * for the docs about how complex statements are built. Note that since
+     * it is a test facility, the data is only skeletal.
+     */
+    public static class StatementBuilder {
+        /**
+         * Current list of statements.
+         */
+        private List<Statement> statements;
+        /**
+         * Entity ID for statement collection.
+         */
+        private final String entityId;
+        /**
+         * Statement we're working with now.
+         */
+        private String currentStatement;
+        /**
+         * Property ID for tatement we're working with now.
+         */
+        private String currentProperty;
+        /**
+         * URI system.
+         */
+        private final WikibaseUris uris = WikibaseUris.getURISystem();
+
+        public StatementBuilder(String entityId) {
+            this.entityId = entityId;
+            statements = new ArrayList<>();
+        }
+
+        public StatementBuilder withStatement(String propertyId, String statementUri) {
+            statement(statements, entityId, propertyId, statementUri);
+            currentStatement = statementUri;
+            currentProperty = propertyId;
+            return this;
+        }
+
+        public StatementBuilder withStatementValue(String valueUri) {
+            statement(statements, currentStatement, uris.property(PropertyType.STATEMENT_VALUE) + currentProperty, valueUri);
+            return this;
+        }
+
+        public StatementBuilder withStatementValueNormalized(String valueUri) {
+            statement(statements, currentStatement, uris.property(PropertyType.STATEMENT_VALUE_NORMALIZED) + currentProperty, valueUri);
+            return this;
+        }
+
+        public StatementBuilder withTimeValue(String valueUri, String timeValue) {
+            statement(statements, valueUri, Ontology.Time.VALUE, new LiteralImpl(timeValue));
+            return this;
+        }
+
+        public StatementBuilder withQuanitityValue(String valueUri, String value) {
+            statement(statements, valueUri, Ontology.Quantity.AMOUNT, new LiteralImpl(value));
+            return this;
+        }
+
+        public StatementBuilder withQuanitityValueNormalized(String valueUri,
+                String value, String normalizedUri,
+                String normalizedValue) {
+            statement(statements, valueUri, Ontology.Quantity.AMOUNT, new LiteralImpl(value));
+            statement(statements, normalizedUri, Ontology.Quantity.AMOUNT, new LiteralImpl(normalizedValue));
+            statement(statements, valueUri, Ontology.Quantity.NORMALIZED, normalizedUri);
+            statement(statements, normalizedUri, Ontology.Quantity.NORMALIZED, normalizedUri);
+            return this;
+        }
+
+        public StatementBuilder withTimeCalendarValue(String valueUri, String timeValue, String calendar) {
+            withTimeValue(valueUri, timeValue);
+            statement(statements, valueUri, Ontology.Time.CALENDAR_MODEL, new LiteralImpl(calendar));
+            return this;
+        }
+
+        public StatementBuilder withReference(String referenceUri, String propertyId, String value) {
+            statement(statements, currentStatement, Provenance.WAS_DERIVED_FROM, referenceUri);
+            statement(statements, referenceUri, uris.property(PropertyType.REFERENCE) + propertyId, value);
+            return this;
+        }
+
+        public StatementBuilder withReferenceValue(String referenceUri, String propertyId, String value) {
+            statement(statements, currentStatement, Provenance.WAS_DERIVED_FROM, referenceUri);
+            statement(statements, referenceUri, uris.property(PropertyType.REFERENCE_VALUE) + propertyId, value);
+            return this;
+        }
+
+        public StatementBuilder withEntityData(String version, String lastModified) {
+            statement(statements, uris.entityData() + entityId, SchemaDotOrg.VERSION, new LiteralImpl(version));
+            statement(statements, uris.entityData() + entityId, SchemaDotOrg.DATE_MODIFIED, new LiteralImpl(lastModified));
+            return this;
+        }
+
+        public List<Statement> build() {
+            return statements;
+        }
+    }
+
 }

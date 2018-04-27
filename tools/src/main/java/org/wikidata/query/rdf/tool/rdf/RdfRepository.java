@@ -399,6 +399,7 @@ public class RdfRepository implements AutoCloseable {
         if (valueList != null && !valueList.isEmpty()) {
             UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
             cleanup.bindUris("values", valueList);
+            cleanup.bindUri("wikibase:quantityNormalized", Ontology.Quantity.NORMALIZED);
             b.bind("cleanupQuery", cleanup.toString());
         }  else {
             b.bind("cleanupQuery", "");
@@ -487,6 +488,7 @@ public class RdfRepository implements AutoCloseable {
         if (!valueSet.isEmpty()) {
             UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
             cleanup.bindUris("values", valueSet);
+            cleanup.bindUri("wikibase:quantityNormalized", Ontology.Quantity.NORMALIZED);
             b.bind("cleanupQuery", cleanup.toString());
         }  else {
             b.bind("cleanupQuery", "");
