@@ -19,6 +19,15 @@ Tools for Querying Wikibase instances with RDF.  The modules:
 
 See more in the [User Manual](https://www.mediawiki.org/wiki/Wikidata_query_service/User_Manual).
 
+Logging
+-------
+Mapped Diagnostic Context contains some information depending on the context:
+
+* remote-query: a query sent to mediawiki
+* a few request related context, see `ch.qos.logback.classic.helpers.MDCInsertingServletFilter` for details)
+
+See also `org.wikidata.query.rdf.common.LoggingNames`.
+
 Development Notes
 -----------------
 ### Eclipse

@@ -1,7 +1,9 @@
 package org.wikidata.query.rdf.blazegraph.mwapi;
 
 import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeConstant;
+import static org.wikidata.query.rdf.common.LoggingNames.MW_API_REQUEST;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -34,6 +36,7 @@ import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -50,6 +53,7 @@ import com.bigdata.rdf.lexicon.LexiconRelation;
 import com.bigdata.rdf.sparql.ast.service.BigdataServiceCall;
 import com.bigdata.rdf.sparql.ast.service.IServiceOptions;
 import com.bigdata.rdf.sparql.ast.service.MockIVReturningServiceCall;
+import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
@@ -118,10 +122,12 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
      */
     private final ThreadLocal<XPath> xpath;
 
+    private final Timer requestTimer;
+
     MWApiServiceCall(ApiTemplate template, String endpoint,
-            Map<String, IVariableOrConstant> inputVars,
-            List<OutputVariable> outputVars, HttpClient client,
-            LexiconRelation lexiconRelation)
+                     Map<String, IVariableOrConstant> inputVars,
+                     List<OutputVariable> outputVars, HttpClient client,
+                     LexiconRelation lexiconRelation, Timer requestTimer)
             throws MalformedURLException {
         this.template = template;
         this.endpoint = new URL("https", endpoint, "/w/api.php").toExternalForm();
@@ -129,6 +135,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         this.outputVars = outputVars;
         this.client = client;
         this.lexiconRelation = lexiconRelation;
+        this.requestTimer = requestTimer;
         this.requestTimeout = Integer.parseInt(System.getProperty(TIMEOUT_PROPERTY, TIMEOUT_MILLIS));
         this.maxContinue = Integer.parseInt(System.getProperty(MAX_CONTINUE_CONFIG, "10000"));
         this.docBuilder = new ThreadLocal<DocumentBuilder>() {
@@ -460,21 +467,22 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
             if (lastResult != null && lastResult.getContinue() != null) {
                 lastResult.getContinue().forEach((key, value) -> req.param(key, value));
             }
-            log.debug("MWAPI REQUEST: {}", req.getQuery());
-            final Response response;
-            InputStreamResponseListener listener = new InputStreamResponseListener();
-            try {
-                req.send(listener);
-                response = listener.get(requestTimeout, TimeUnit.MILLISECONDS);
+            try (Closeable mdc = MDC.putCloseable(MW_API_REQUEST, req.getQuery())) {
+                log.debug("MWAPI REQUEST: {}", req.getQuery());
+                final Response response;
+                InputStreamResponseListener listener = new InputStreamResponseListener();
+
+                try (Timer.Context context = requestTimer.time()) {
+                    req.send(listener);
+                    response = listener.get(requestTimeout, TimeUnit.MILLISECONDS);
+                }
+
+                if (response.getStatus() != HttpStatus.OK_200) {
+                    throw new RuntimeException("Bad response status: " + response.getStatus());
+                }
+                return parseResponse(listener.getInputStream(), bindings);
             } catch (ExecutionException | TimeoutException | InterruptedException e) {
                 throw new RuntimeException("MWAPI request failed", e);
-            }
-            if (response.getStatus() != HttpStatus.OK_200) {
-                throw new RuntimeException("Bad response status: " + response.getStatus());
-            }
-
-            try {
-                return parseResponse(listener.getInputStream(), bindings);
             } catch (SAXException | IOException | XPathExpressionException e) {
                 throw new RuntimeException("Failed to parse response", e);
             }

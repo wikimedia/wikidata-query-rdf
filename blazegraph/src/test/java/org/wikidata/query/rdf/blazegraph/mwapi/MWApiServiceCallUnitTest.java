@@ -32,6 +32,7 @@ import com.bigdata.bop.IBindingSet;
 import com.bigdata.bop.IVariableOrConstant;
 import com.bigdata.bop.bindingSet.HashBindingSet;
 import com.bigdata.rdf.model.BigdataValueFactory;
+import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -234,8 +235,9 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
             Map<String, IVariableOrConstant> inputVars,
             List<OutputVariable> outputVars) throws Exception {
         HttpClient mockClient = mock(HttpClient.class);
+        Timer requestTimer = mock(Timer.class);
         return new MWApiServiceCall(template, "acme.test", inputVars,
-                outputVars, mockClient, store().getLexiconRelation());
+                outputVars, mockClient, store().getLexiconRelation(), requestTimer);
     }
 
 }
