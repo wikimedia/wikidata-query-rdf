@@ -82,9 +82,6 @@
    <param-value>com.bigdata.blueprints.webapp.BlueprintsServlet</param-value>
   </context-param>
   <listener>
-    <listener-class>org.wikidata.query.rdf.blazegraph.metrics.RdfMetrics</listener-class>
-  </listener>
-  <listener>
    <listener-class>org.wikidata.query.rdf.blazegraph.WikibaseContextListener</listener-class>
   </listener>
   <filter>

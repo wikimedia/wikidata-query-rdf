@@ -2,7 +2,6 @@ package org.wikidata.query.rdf.blazegraph.mwapi;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static java.util.Objects.requireNonNull;
-import static org.wikidata.query.rdf.common.LoggingNames.MW_API_REQUEST;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -19,7 +18,6 @@ import org.openrdf.model.Value;
 import org.openrdf.model.impl.URIImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.blazegraph.metrics.RdfMetrics;
 import org.wikidata.query.rdf.common.uri.Mediawiki;
 import org.wikidata.query.rdf.common.uri.Ontology;
 
@@ -38,7 +36,6 @@ import com.bigdata.rdf.sparql.ast.service.ServiceCallCreateParams;
 import com.bigdata.rdf.sparql.ast.service.ServiceNode;
 import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
 import com.bigdata.rdf.store.BD;
-import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableSet;
 
@@ -102,12 +99,11 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
     private final ServiceConfig config;
     private final Timer requestTimer;
 
-    public MWApiServiceFactory() throws IOException {
+    public MWApiServiceFactory(Timer requestTimer) throws IOException {
         log.info("Loading MWAPI service configuration from {}", CONFIG_FILE);
         this.config = new ServiceConfig(Files.newBufferedReader(Paths.get(CONFIG_FILE), StandardCharsets.UTF_8));
         log.info("Registered {} services.", config.size());
-        MetricRegistry metrics = RdfMetrics.METRICS_REGISTRY;
-        requestTimer = metrics.timer(name(MWApiServiceCall.class, MW_API_REQUEST));
+        this.requestTimer = requestTimer;
     }
 
     @Override
@@ -117,11 +113,12 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
 
     /**
      * Register the service so it is recognized by Blazegraph.
+     * @param requestTimer
      */
-    public static void register() {
+    public static void register(Timer requestTimer) {
         ServiceRegistry reg = ServiceRegistry.getInstance();
         try {
-            reg.add(SERVICE_KEY, new MWApiServiceFactory());
+            reg.add(SERVICE_KEY, new MWApiServiceFactory(requestTimer));
         } catch (IOException e) {
             // Do not add to whitelist if init failed.
             log.warn("MW Service registration failed.", e);
