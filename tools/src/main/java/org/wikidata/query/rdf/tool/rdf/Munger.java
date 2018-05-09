@@ -673,14 +673,39 @@ public class Munger {
         }
 
         /**
+         * Whether this triple links reference and value.
+         * @param object Statement object as String.
+         * @return Is it ref->value?
+         */
+        private boolean tripleRefValue(String object) {
+            if (!inNamespace(object, uris.value())) {
+                return false;
+            }
+            if (inNamespace(predicate, uris.property(PropertyType.REFERENCE_VALUE)) ||
+                    inNamespace(predicate, uris.property(PropertyType.REFERENCE_VALUE_NORMALIZED))) {
+                return true;
+            }
+            return false;
+        }
+
+        /**
          * Process a statement who's subject is in the entity reference prefix.
          *
          * @return true to keep the statement, false to remove it
          */
         private boolean entityReferenceStatement() {
+            String object = statement.getObject().stringValue();
             if (existingRefs.contains(subject)) {
+                if (tripleRefValue(object) && !existingValues.contains(object)) {
+                    /* Something is wrong here: we know this ref but somehow don't know its value.
+                     * We should recover it.
+                     */
+                    registerExtraValidSubject(object);
+                    log.info("Weird reference {}: unknown value {} for {}", subject, object, entityUri);
+                }
+
                 /*
-                 * We already have this ref, so no need to import it again aince
+                 * We already have this ref, so no need to import it again since
                  * refs are IDed by content, we know it is the same
                  */
                 return false;
@@ -710,8 +735,7 @@ public class Munger {
                 unknownSubjects.put(subject, statement);
                 return false;
             }
-            String object = statement.getObject().stringValue();
-            if (inNamespace(predicate, uris.property(PropertyType.REFERENCE_VALUE)) && inNamespace(object, uris.value())) {
+            if (tripleRefValue(object)) {
                 registerExtraValidSubject(object);
             }
             return true;

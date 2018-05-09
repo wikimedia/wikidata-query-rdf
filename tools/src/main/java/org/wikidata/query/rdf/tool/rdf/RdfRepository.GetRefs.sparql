@@ -6,4 +6,5 @@ WHERE {
   ?entity ?statementPred ?statement .
   FILTER( STRSTARTS(STR(?statement), "%uris.statement%") ) .
   ?statement %prov:wasDerivedFrom% ?s .
+  FILTER EXISTS { ?s ?p [] }
 }

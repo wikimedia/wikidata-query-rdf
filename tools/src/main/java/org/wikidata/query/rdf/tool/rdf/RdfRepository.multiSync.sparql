@@ -52,4 +52,5 @@ WHERE {
 INSERT {
   %insertStatements%
 } WHERE {};
-%cleanupQuery%
+%refCleanupQuery%
+%valueCleanupQuery%
