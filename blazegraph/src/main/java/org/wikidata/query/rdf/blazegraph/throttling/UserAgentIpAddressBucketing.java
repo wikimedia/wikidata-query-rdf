@@ -7,11 +7,11 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * Segmentation of requests by user-agent and IP address.
  */
-public class UserAgentIpAddressBucketing implements Bucketing<UserAgentIpAddressBucketing.Bucket> {
+public class UserAgentIpAddressBucketing implements Bucketing {
 
     /** {@inheritDoc} */
     @Override
-    public Bucket bucket(HttpServletRequest request) {
+    public Object bucket(HttpServletRequest request) {
         return new Bucket(request.getRemoteAddr(), request.getHeader("User-Agent"));
     }
 
