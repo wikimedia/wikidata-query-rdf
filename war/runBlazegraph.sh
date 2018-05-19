@@ -3,7 +3,8 @@
 DIR=${DIR:-`dirname $0`}
 cd $DIR/..
 if [ "$1x" = "-dx" -o "$1x" = "--debugx" ]; then
-	mvnDebug -pl tools jetty:run
+	shift
+	mvnDebug -pl tools jetty:run "$@"
 else
-	mvn -pl tools jetty:run
+	mvn -pl tools jetty:run "$@"
 fi

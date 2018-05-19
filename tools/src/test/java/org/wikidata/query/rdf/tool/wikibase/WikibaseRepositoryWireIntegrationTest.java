@@ -4,6 +4,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.io.Resources.getResource;
@@ -14,11 +15,13 @@ import static org.hamcrest.Matchers.hasSize;
 import java.io.IOException;
 import java.text.ParseException;
 import java.time.Instant;
+import java.util.Collection;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -79,5 +82,24 @@ public class WikibaseRepositoryWireIntegrationTest {
     private String load(String name) throws IOException {
         String prefix = this.getClass().getPackage().getName().replace(".", "/");
         return Resources.toString(getResource(prefix + "/" + name), UTF_8);
+    }
+
+    @Test
+    public void noContentResponse() throws RetryableException {
+        stubFor(get(anyUrl())
+                .willReturn(aResponse().withStatus(204).withBody("")));
+        Collection<Statement> response = repository.fetchRdfForEntity("Q1");
+        assertThat(response, hasSize(0));
+    }
+
+    @Test
+    public void rdfAndConstraints() throws RetryableException {
+        repository.setCollectConstraints(true);
+        stubFor(get(urlMatching("/wiki/Special:EntityData/Q2.ttl[?]nocache=[0-9]+&flavor=dump"))
+                .willReturn(aResponse().withBody("<a> <b> <c> .")));
+        stubFor(get(urlMatching("/wiki/Q2[?]action=constraintsrdf&nocache=[0-9]+"))
+                .willReturn(aResponse().withBody("<d> <e> <f> .")));
+        Collection<Statement> response = repository.fetchRdfForEntity("Q2");
+        assertThat(response, hasSize(2));
     }
 }

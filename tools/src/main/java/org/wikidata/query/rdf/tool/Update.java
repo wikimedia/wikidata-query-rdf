@@ -351,14 +351,17 @@ public final class Update {
      *         logged to the user
      */
     private static WikibaseRepository buildWikibaseRepository(UpdateOptions options) {
+        WikibaseRepository repo;
         if (options.entityNamespaces() == null) {
-            return new WikibaseRepository(getWikibaseUrl(options));
-        }
-
-        long[] longEntityNamespaces = OptionsUtils.splitByComma(Arrays.asList(options.entityNamespaces())).stream().
+            repo = new WikibaseRepository(getWikibaseUrl(options));
+        } else {
+            long[] longEntityNamespaces = OptionsUtils.splitByComma(Arrays.asList(options.entityNamespaces())).stream().
                 mapToLong(option -> Long.parseLong(option)).toArray();
 
-        return new WikibaseRepository(getWikibaseUrl(options), longEntityNamespaces);
+            repo = new WikibaseRepository(getWikibaseUrl(options), longEntityNamespaces);
+        }
+        repo.setCollectConstraints(options.constraints());
+        return repo;
     }
 
     public static RdfClient buildRdfClient(URI uri, HttpClient httpClient) {

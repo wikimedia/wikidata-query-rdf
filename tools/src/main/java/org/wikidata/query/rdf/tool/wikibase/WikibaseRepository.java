@@ -18,7 +18,6 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import javax.net.ssl.SSLException;
@@ -152,6 +151,11 @@ public class WikibaseRepository implements Closeable {
      * Builds uris to get stuff from wikibase.
      */
     private final Uris uris;
+
+    /**
+     * Should we also collect constraints?
+     */
+    private boolean collectConstraints;
 
     /**
      * Object mapper used to deserialize JSON messages from Wikidata.
@@ -288,26 +292,24 @@ public class WikibaseRepository implements Closeable {
     }
 
     /**
-     * Fetch the RDF for some entity.
-     *
-     * @throws RetryableException thrown if there is an error communicating with
-     *             wikibase
+     * Collect TTL statements from single URL.
+     * @throws RetryableException
      */
-    public Collection<Statement> fetchRdfForEntity(String entityId) throws RetryableException {
-        // TODO handle ?flavor=dump or whatever parameters we need
-        URI uri = uris.rdf(entityId);
-        long start = System.currentTimeMillis();
-        log.debug("Fetching rdf from {}", uri);
+    private void collectStatementsFromUrl(URI uri, StatementCollector collector) throws RetryableException {
         RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
-        StatementCollector collector = new StatementCollector();
         parser.setRDFHandler(new NormalizingRdfHandler(collector));
         HttpGet request = new HttpGet(uri);
         request.setConfig(configWithTimeout);
+        log.debug("Fetching rdf from {}", uri);
         try {
             try (CloseableHttpResponse response = client.execute(request)) {
                 if (response.getStatusLine().getStatusCode() == 404) {
                     // A delete/nonexistent page
-                    return Collections.emptyList();
+                    return;
+                }
+                if (response.getStatusLine().getStatusCode() == 204) {
+                    // No content, it's OK
+                    return;
                 }
                 if (response.getStatusLine().getStatusCode() >= 300) {
                     throw new ContainedException("Unexpected status code fetching RDF for " + uri + ":  "
@@ -322,6 +324,22 @@ public class WikibaseRepository implements Closeable {
             throw new RetryableException("Error fetching RDF for " + uri, e);
         } catch (RDFParseException | RDFHandlerException e) {
             throw new ContainedException("RDF parsing error for " + uri, e);
+        }
+    }
+
+    /**
+     * Fetch the RDF for some entity.
+     *
+     * @throws RetryableException thrown if there is an error communicating with
+     *             wikibase
+     */
+    public Collection<Statement> fetchRdfForEntity(String entityId) throws RetryableException {
+        // TODO handle ?flavor=dump or whatever parameters we need
+        long start = System.currentTimeMillis();
+        StatementCollector collector = new StatementCollector();
+        collectStatementsFromUrl(uris.rdf(entityId), collector);
+        if (collectConstraints) {
+            collectStatementsFromUrl(uris.constraints(entityId), collector);
         }
         log.debug("Done in {} ms", System.currentTimeMillis() - start);
         return collector.getStatements();
@@ -555,6 +573,18 @@ public class WikibaseRepository implements Closeable {
         }
 
         /**
+         * Uri to get the rdf for constraints status of an entity.
+         */
+        public URI constraints(String entityId) {
+            URIBuilder builder = builder();
+            builder.setPath(baseUrl.getPath() + "/wiki/" + entityId);
+            builder.addParameter("action", "constraintsrdf");
+            // Cache is not our friend, try to work around it
+            builder.addParameter("nocache", String.valueOf(Instant.now().toEpochMilli()));
+            return build(builder);
+        }
+
+        /**
          * Uri to fetch a csrf token.
          */
         public URI csrfToken() {
@@ -685,5 +715,12 @@ public class WikibaseRepository implements Closeable {
      */
     public Uris getUris() {
         return uris;
+    }
+
+    /**
+     * Should we collect constraints?
+     */
+    public void setCollectConstraints(boolean collectConstraints) {
+        this.collectConstraints = collectConstraints;
     }
 }
