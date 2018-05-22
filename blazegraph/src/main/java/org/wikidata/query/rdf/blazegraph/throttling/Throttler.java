@@ -19,21 +19,18 @@ import com.google.common.cache.Cache;
  *
  * @see ThrottlingFilter for a more complete description of how throttling
  * works.
- * @param <B> type of the bucket used to differentiate clients
  */
-public class Throttler<B> {
+public class Throttler {
 
     private static final Logger log = LoggerFactory.getLogger(Throttler.class);
 
-    /** How to associate a request with a specific bucket. */
-    private final Bucketing<B> bucketing;
     /**
      * Stores the throttling state by buckets.
      *
      * This is a slight abuse of Guava {@link Cache}, but makes it easy to have
      * an LRU map with an automatic cleanup mechanism.
      */
-    private final Cache<B, ThrottlingState> state;
+    private final Cache<Object, ThrottlingState> state;
     /** Requests longer than this will trigger tracking resource consumption. */
     private final Duration requestTimeThreshold;
     /** How to create the initial throttling state when we start tracking a specific client. */
@@ -64,7 +61,6 @@ public class Throttler<B> {
      *
      * @param requestTimeThreshold requests longer than this will trigger
      *                             tracking resource consumption
-     * @param bucketing how to associate a request with a specific bucket
      * @param createThrottlingState how to create the initial throttling state
      *                              when we start tracking a specific client
      * @param stateStore the cache in which we store the per client state of
@@ -74,13 +70,11 @@ public class Throttler<B> {
      */
     public Throttler(
             Duration requestTimeThreshold,
-            Bucketing<B> bucketing,
             Callable<ThrottlingState> createThrottlingState,
-            Cache<B, ThrottlingState> stateStore,
+            Cache<Object, ThrottlingState> stateStore,
             String enableThrottlingIfHeader,
             String alwaysThrottleParam) {
         this.requestTimeThreshold = requestTimeThreshold;
-        this.bucketing = bucketing;
         this.state = stateStore;
         this.createThrottlingState = createThrottlingState;
         this.enableThrottlingIfHeader = emptyToNull(enableThrottlingIfHeader);
@@ -101,14 +95,15 @@ public class Throttler<B> {
     /**
      * Should this request be throttled.
      *
+     * @param bucket the bucket to which this request belongs
      * @param request the request to check
      * @return true if the request should be throttled
      */
-    public boolean isThrottled(HttpServletRequest request) {
+    public boolean isThrottled(Object bucket, HttpServletRequest request) {
         if (alwaysThrottle(request)) return true;
         if (shouldBypassThrottling(request)) return false;
 
-        ThrottlingState throttlingState = state.getIfPresent(bucketing.bucket(request));
+        ThrottlingState throttlingState = state.getIfPresent(bucket);
         if (throttlingState == null) return false;
 
         return throttlingState.isThrottled();
@@ -134,15 +129,15 @@ public class Throttler<B> {
     /**
      * Notify this throttler that a request has been completed successfully.
      *
+     * @param bucket the bucket to which this request belongs
      * @param request the request
      * @param elapsed how long that request took
      */
-    public void success(HttpServletRequest request, Duration elapsed) {
+    public void success(Object bucket, HttpServletRequest request, Duration elapsed) {
         if (shouldBypassThrottling(request)) {
             return;
         }
         try {
-            B bucket = bucketing.bucket(request);
             ThrottlingState throttlingState;
             // only start to keep track of time usage if requests are expensive
             if (elapsed.compareTo(requestTimeThreshold) > 0) {
@@ -161,15 +156,16 @@ public class Throttler<B> {
     /**
      * Notify this throttler that a request has completed in error.
      *
+     * @param bucket the bucket to which this request belongs
      * @param request the request
      * @param elapsed how long that request took
      */
-    public void failure(HttpServletRequest request, Duration elapsed) {
+    public void failure(Object bucket, HttpServletRequest request, Duration elapsed) {
         if (shouldBypassThrottling(request)) {
             return;
         }
         try {
-            ThrottlingState throttlingState = state.get(bucketing.bucket(request), createThrottlingState);
+            ThrottlingState throttlingState = state.get(bucket, createThrottlingState);
 
             throttlingState.consumeError();
             throttlingState.consumeTime(elapsed);
@@ -181,11 +177,12 @@ public class Throttler<B> {
     /**
      * How long should this client wait before his next request.
      *
+     * @param bucket the bucket to which this request belongs
      * @param request the request
      * @return 0 if no throttling, the backoff delay otherwise
      */
-    public Duration getBackoffDelay(HttpServletRequest request) {
-        ThrottlingState throttlingState = state.getIfPresent(bucketing.bucket(request));
+    public Duration getBackoffDelay(Object bucket, HttpServletRequest request) {
+        ThrottlingState throttlingState = state.getIfPresent(bucket);
         if (throttlingState == null) return Duration.of(0, MILLIS);
 
         return throttlingState.getBackoffDelay();

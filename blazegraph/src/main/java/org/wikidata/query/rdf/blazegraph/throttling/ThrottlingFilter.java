@@ -36,7 +36,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.isomorphism.util.TokenBuckets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.blazegraph.throttling.UserAgentIpAddressBucketing.Bucket;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
@@ -102,8 +101,12 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
 
     /** Is throttling enabled. */
     private boolean enabled;
+
+    /** Mapping of requests to bucket. */
+    private final Bucketing bucketing = new UserAgentIpAddressBucketing();
+
     /** To delegate throttling logic. */
-    private Throttler<Bucket> throttler;
+    private Throttler throttler;
 
     /** Keeps track of the number of requests being throttled. */
     private final AtomicLong nbThrottledRequests = new AtomicLong();
@@ -120,7 +123,7 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
      * @param filterConfig {@inheritDoc}
      */
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
+    public void init(FilterConfig filterConfig) {
         int requestDurationThresholdInMillis = loadIntParam("request-duration-threshold-in-millis", filterConfig, 0);
         int timeBucketCapacityInSeconds = loadIntParam("time-bucket-capacity-in-seconds", filterConfig, 120);
         int timeBucketRefillAmountInSeconds = loadIntParam("time-bucket-refill-amount-in-seconds", filterConfig, 60);
@@ -135,9 +138,8 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
         String alwaysThrottleParam = loadStringParam("always-throttle-param", filterConfig, "throttleMe");
 
         this.enabled = loadBooleanParam("enabled", filterConfig, true);
-        throttler = new Throttler<>(
+        throttler = new Throttler(
                 Duration.of(requestDurationThresholdInMillis, MILLIS),
-                new UserAgentIpAddressBucketing(),
                 createThrottlingState(
                         timeBucketCapacityInSeconds,
                         timeBucketRefillAmountInSeconds,
@@ -282,12 +284,13 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
+        Object bucket = bucketing.bucket(httpRequest);
 
-        if (throttler.isThrottled(httpRequest)) {
+        if (throttler.isThrottled(bucket, httpRequest)) {
             log.info("A request is being throttled.");
             if (enabled) {
                 nbThrottledRequests.incrementAndGet();
-                notifyUser(httpResponse, throttler.getBackoffDelay(httpRequest));
+                notifyUser(httpResponse, throttler.getBackoffDelay(bucket, httpRequest));
                 return;
             }
         }
@@ -298,13 +301,13 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
             // for throttling purpose, consider all 1xx and 2xx status codes as
             // success, 4xx and 5xx as failure
             if (httpResponse.getStatus() < 400) {
-                throttler.success(httpRequest, stopwatch.elapsed());
+                throttler.success(bucket, httpRequest, stopwatch.elapsed());
             } else {
-                throttler.failure(httpRequest, stopwatch.elapsed());
+                throttler.failure(bucket, httpRequest, stopwatch.elapsed());
             }
         } catch (IOException | ServletException e) {
             // an exception processing the request is treated as a failure
-            throttler.failure(httpRequest, stopwatch.elapsed());
+            throttler.failure(bucket, httpRequest, stopwatch.elapsed());
             throw e;
         }
     }
