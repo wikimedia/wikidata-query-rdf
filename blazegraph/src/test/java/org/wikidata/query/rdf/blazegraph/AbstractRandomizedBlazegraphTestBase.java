@@ -31,6 +31,8 @@ import com.bigdata.rdf.sparql.ast.eval.ASTEvalHelper;
  * queries.
  */
 public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlazegraphStorageTestCase {
+    private static WikibaseContextListener wikibaseContextListener;
+    private static String astOptimizerClassBackup;
     /**
      * Which uris this test uses.
      */
@@ -117,12 +119,14 @@ public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlaz
         throw new RuntimeException("No idea how to convert " + o + " to a value.  Its a " + o.getClass() + ".");
     }
 
-    /*
+    /**
      * Initialize the Wikibase services including shutting off remote SERVICE
      * calls and turning on label service calls.
      */
     static {
-        WikibaseContextListener.initializeServices();
+        wikibaseContextListener = new WikibaseContextListener();
+        wikibaseContextListener.initializeServices();
+        astOptimizerClassBackup = System.getProperty("ASTOptimizerClass");
         System.setProperty("ASTOptimizerClass", WikibaseOptimizers.class.getName());
     }
 

@@ -1,6 +1,9 @@
 package org.wikidata.query.rdf.blazegraph;
 
 import static com.bigdata.rdf.sparql.ast.FunctionRegistry.checkArgs;
+import static com.codahale.metrics.MetricRegistry.name;
+import static com.google.common.collect.Lists.reverse;
+import static org.wikidata.query.rdf.common.LoggingNames.MW_API_REQUEST;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.servlet.ServletContextEvent;
 
@@ -25,6 +29,7 @@ import org.wikidata.query.rdf.blazegraph.constraints.WikibaseDistanceBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseNowBOp;
 import org.wikidata.query.rdf.blazegraph.geo.GeoService;
 import org.wikidata.query.rdf.blazegraph.label.LabelService;
+import org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceCall;
 import org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory;
 import org.wikidata.query.rdf.common.uri.GeoSparql;
 import org.wikidata.query.rdf.common.uri.Mediawiki;
@@ -36,7 +41,6 @@ import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
-import com.bigdata.bop.BOpContextBase;
 import com.bigdata.bop.IValueExpression;
 import com.bigdata.rdf.graph.impl.bd.GASService;
 import com.bigdata.rdf.internal.IV;
@@ -45,7 +49,6 @@ import com.bigdata.rdf.sail.sparql.PrefixDeclProcessor;
 import com.bigdata.rdf.sail.webapp.BigdataRDFServletContextListener;
 import com.bigdata.rdf.sparql.ast.FunctionRegistry;
 import com.bigdata.rdf.sparql.ast.FunctionRegistry.Factory;
-import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 import com.bigdata.rdf.sparql.ast.ValueExpressionNode;
 import com.bigdata.rdf.sparql.ast.eval.AST2BOpUtility;
 import com.bigdata.rdf.sparql.ast.eval.AbstractServiceFactoryBase;
@@ -61,6 +64,9 @@ import com.bigdata.rdf.sparql.ast.service.ServiceCallCreateParams;
 import com.bigdata.rdf.sparql.ast.service.ServiceFactory;
 import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
 import com.bigdata.rdf.store.BDS;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.jmx.JmxReporter;
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * Context listener to enact configurations we need on initialization.
@@ -81,16 +87,28 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     public static final String WHITELIST = System.getProperty("wikibaseServiceWhitelist", WHITELIST_DEFAULT);
 
     /**
+     * Hooks that need to be run on shutdown.
+     *
+     * Stored in a thread safe list since the shutdown is not garanteed to run
+     * in the same thread as the startup. And safe publication is just more cumbersome.
+     */
+    private final List<Runnable> shutdownHooks = new CopyOnWriteArrayList<>();
+
+    /**
      * Initializes BG service setup to allow whitelisted services.
      * Also add additional custom services and functions.
      */
-    public static void initializeServices() {
+    @VisibleForTesting
+    public void initializeServices() {
+
+        MetricRegistry metricRegistry = createMetricRegistry();
+
         // Enable service whitelisting
         final ServiceRegistry reg = ServiceRegistry.getInstance();
         reg.setWhitelistEnabled(true);
         LabelService.register();
         GeoService.register();
-        MWApiServiceFactory.register();
+        MWApiServiceFactory.register(metricRegistry.timer(name(MWApiServiceCall.class, MW_API_REQUEST)));
         CategoriesStoredQuery.register();
 
         // Whitelist services we like by default
@@ -125,15 +143,12 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         FunctionRegistry.add(FunctionRegistry.SECONDS, getWikibaseDateBOpFactory(DateOp.SECONDS));
 
         FunctionRegistry.remove(FunctionRegistry.NOW);
-        FunctionRegistry.add(FunctionRegistry.NOW, new Factory() {
-            public IValueExpression<? extends IV> create(final BOpContextBase context, final GlobalAnnotations globals,
-                    Map<String, Object> scalarValues, final ValueExpressionNode... args) {
+        FunctionRegistry.add(FunctionRegistry.NOW, (context, globals, scalarValues, args) -> {
 
-                if (args != null && args.length > 0)
-                    throw new IllegalArgumentException("no args for NOW()");
+            if (args != null && args.length > 0)
+                throw new IllegalArgumentException("no args for NOW()");
 
-                return new WikibaseNowBOp(globals);
-            }
+            return new WikibaseNowBOp(globals);
         });
 
         // Geospatial distance function
@@ -210,10 +225,33 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         defaultDecls.put("gas", GASService.Options.NAMESPACE);
     }
 
+    private MetricRegistry createMetricRegistry() {
+        MetricRegistry registry = new MetricRegistry();
+        JmxReporter jmxReporter = JmxReporter.forRegistry(registry).build();
+        jmxReporter.start();
+        shutdownHooks.add(() -> jmxReporter.stop());
+        return registry;
+    }
+
+
     @Override
-    public void contextInitialized(final ServletContextEvent e) {
-        super.contextInitialized(e);
+    public void contextInitialized(final ServletContextEvent sce) {
+        super.contextInitialized(sce);
         initializeServices();
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent e) {
+        shutdown();
+        super.contextDestroyed(e);
+    }
+
+    @VisibleForTesting
+    public void shutdown() {
+        // execute shutdownHooks in reverse order to ensure dependencies are respected.
+        for (Runnable hook : reverse(shutdownHooks)) {
+            hook.run();
+        }
     }
 
     /**
@@ -222,18 +260,14 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      * @return Factory object to create WikibaseDateBOp
      */
     private static Factory getWikibaseDateBOpFactory(final DateOp dateop) {
-        return new Factory() {
-            @Override
-            public IValueExpression<? extends IV> create(final BOpContextBase context,
-                    final GlobalAnnotations globals, Map<String, Object> scalarValues, final ValueExpressionNode... args) {
+        return (context, globals, scalarValues, args) -> {
 
-                checkArgs(args, ValueExpressionNode.class);
+            checkArgs(args, ValueExpressionNode.class);
 
-                final IValueExpression<? extends IV> left =
-                    AST2BOpUtility.toVE(context, globals, args[0]);
+            final IValueExpression<? extends IV> left =
+                AST2BOpUtility.toVE(context, globals, args[0]);
 
-                return new WikibaseDateBOp(left, dateop, globals);
-            }
+            return new WikibaseDateBOp(left, dateop, globals);
         };
     }
 
@@ -242,21 +276,17 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      * @return Factory to create WikibaseDistanceBOp
      */
     private static Factory getDistanceBOPFactory() {
-        return new Factory() {
-            @Override
-            public IValueExpression<? extends IV> create(final BOpContextBase context, final GlobalAnnotations globals,
-                    Map<String, Object> scalarValues, final ValueExpressionNode... args) {
+        return (context, globals, scalarValues, args) -> {
 
-                checkArgs(args, ValueExpressionNode.class, ValueExpressionNode.class);
+            checkArgs(args, ValueExpressionNode.class, ValueExpressionNode.class);
 
-                final IValueExpression<? extends IV> left = AST2BOpUtility.toVE(context,
-                        globals, args[0]);
+            final IValueExpression<? extends IV> left = AST2BOpUtility.toVE(context,
+                    globals, args[0]);
 
-                final IValueExpression<? extends IV> right = AST2BOpUtility
-                            .toVE(context, globals, args[1]);
+            final IValueExpression<? extends IV> right = AST2BOpUtility
+                        .toVE(context, globals, args[1]);
 
-                return new WikibaseDistanceBOp(left, right, globals);
-            }
+            return new WikibaseDistanceBOp(left, right, globals);
         };
     }
 
