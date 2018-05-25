@@ -329,11 +329,9 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
             repoRefs = this.repoRefs;
         }
         munger.mungeWithValues(change.entityId(), statements, repoValues, repoRefs, values, refs, change);
-        List<String> cleanupList = new ArrayList<>();
-        cleanupList.addAll(values);
-        cleanupList.addAll(refs);
+        change.setRefCleanupList(refs);
+        change.setValueCleanupList(values);
         change.setStatements(statements);
-        change.setCleanupList(cleanupList);
     }
 
     /**

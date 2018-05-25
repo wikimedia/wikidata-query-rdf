@@ -44,7 +44,11 @@ public class Change implements Comparable<Change> {
     /**
      * Cleanup list for the change.
      */
-    private Collection<String> cleanupList;
+    private Collection<String> refCleanupList;
+    /**
+     * Cleanup list for the change.
+     */
+    private Collection<String> valueCleanupList;
 
     /**
      * rcid of the change.
@@ -258,16 +262,30 @@ public class Change implements Comparable<Change> {
     }
 
     /**
-     * Set cleanup list.
+     * Return value cleanup list.
      */
-    public Collection<String> getCleanupList() {
-        return cleanupList;
+    public Collection<String> getValueCleanupList() {
+        return valueCleanupList;
     }
 
     /**
-     * Return cleanup list.
+     * Return reference cleanup list.
      */
-    public void setCleanupList(Collection<String> cleanupList) {
-        this.cleanupList = cleanupList;
+    public Collection<String> getRefCleanupList() {
+        return refCleanupList;
+    }
+
+    /**
+     * Set reference cleanup list.
+     */
+    public void setRefCleanupList(Collection<String> cleanupList) {
+        this.refCleanupList = cleanupList;
+    }
+
+    /**
+     * Set value cleanup list.
+     */
+    public void setValueCleanupList(Collection<String> cleanupList) {
+        this.valueCleanupList = cleanupList;
     }
 }

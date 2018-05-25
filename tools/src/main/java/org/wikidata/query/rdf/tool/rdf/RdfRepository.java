@@ -340,7 +340,7 @@ public class RdfRepository implements AutoCloseable {
      * @param valueList list of used values, for cleanup
      * @return the number of statements modified
      */
-    public String getSyncQuery(String entityId, Collection<Statement> statements, Collection<String> valueList) {
+    private String getSyncQuery(String entityId, Collection<Statement> statements, Collection<String> valueList) {
         // TODO this is becoming a mess too
         log.debug("Generating update for {}", entityId);
         UpdateBuilder b = new UpdateBuilder(syncBody);
@@ -404,6 +404,15 @@ public class RdfRepository implements AutoCloseable {
 
     /**
      * Sync repository from changes list.
+     *
+     * Synchronizes the RDF repository's representation of an entity to be
+     * exactly the provided statements. You can think of the RDF managed for an
+     * entity as a tree rooted at the entity. The managed tree ends where the
+     * next entity's managed tree starts. For example Q23 from wikidata includes
+     * all statements about George Washington but not those about Martha
+     * (Q191789) even though she is linked by the spouse attribute. On the other
+     * hand the qualifiers on statements about George are included in George.
+     *
      * @param changes List of changes.
      * @return Number of triples modified.
      */
@@ -424,6 +433,7 @@ public class RdfRepository implements AutoCloseable {
         List<Statement> statementStatements = new ArrayList<>();
         Set<Statement> aboutStatements = new HashSet<>();
         Set<String> valueSet = new HashSet<>();
+        Set<String> refSet = new HashSet<>();
 
         for (final Change change : changes) {
             if (change.getStatements() == null) {
@@ -433,7 +443,8 @@ public class RdfRepository implements AutoCloseable {
             entityIds.add(change.entityId());
             insertStatements.addAll(change.getStatements());
             classifyStatements(change.getStatements(), change.entityId(), entityStatements, statementStatements, aboutStatements);
-            valueSet.addAll(change.getCleanupList());
+            valueSet.addAll(change.getValueCleanupList());
+            refSet.addAll(change.getRefCleanupList());
         }
 
         if (entityIds.isEmpty()) {
@@ -449,13 +460,23 @@ public class RdfRepository implements AutoCloseable {
         b.bindValues("statementStatements", statementStatements);
         b.bindValues("aboutStatements", aboutStatements);
 
+        if (!refSet.isEmpty()) {
+            UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
+            cleanup.bindUris("values", refSet);
+            // This is not necessary but easier than having separate templates
+            cleanup.bindUri("wikibase:quantityNormalized", Ontology.Quantity.NORMALIZED);
+            b.bind("refCleanupQuery", cleanup.toString());
+        }  else {
+            b.bind("refCleanupQuery", "");
+        }
+
         if (!valueSet.isEmpty()) {
             UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
             cleanup.bindUris("values", valueSet);
             cleanup.bindUri("wikibase:quantityNormalized", Ontology.Quantity.NORMALIZED);
-            b.bind("cleanupQuery", cleanup.toString());
+            b.bind("valueCleanupQuery", cleanup.toString());
         }  else {
-            b.bind("cleanupQuery", "");
+            b.bind("valueCleanupQuery", "");
         }
 
         long start = System.currentTimeMillis();
@@ -514,6 +535,9 @@ public class RdfRepository implements AutoCloseable {
      * (Q191789) even though she is linked by the spouse attribute. On the other
      * hand the qualifiers on statements about George are included in George.
      *
+     * This method is not used for actual updates but is used for tests.
+     * TODO: switch tests to use same method as actual updates do
+     *
      * @param entityId id of the entity to sync
      * @param statements all known statements about the entity
      * @param valueList list of used values, for cleanup
@@ -528,23 +552,10 @@ public class RdfRepository implements AutoCloseable {
     }
 
     /**
-     * Synchronizes the RDF repository's representation of an entity to be
-     * exactly the provided statements.
-     *
-     * @param query Query text
-     * @return the number of statements modified
-     */
-    public int syncQuery(String query) {
-        long start = System.currentTimeMillis();
-        int modified = execute("update", UPDATE_COUNT_RESPONSE, query);
-        log.debug("Update query took {} millis and modified {} statements",
-                System.currentTimeMillis() - start, modified);
-        return modified;
-
-    }
-
-    /**
      * Synchronizes the RDF repository's representation.
+     *
+     * This method is not used for actual updates but is used for tests.
+     * TODO: switch tests to use same method as actual updates do
      *
      * @see #sync(String, Collection, Collection)
      * @param entityId id of the entity to sync

@@ -11,4 +11,5 @@ WHERE {
     ?statement ?somePred ?s .
   }
   FILTER( STRSTARTS(STR(?s), "%uris.value%") ) .
+  FILTER EXISTS { ?s ?p [] }
 }
