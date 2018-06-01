@@ -17,4 +17,9 @@ public interface ThrottlingMXBean {
      */
     long getNumberOfThrottledRequests();
 
+    /**
+     * Monotonic increasing counter of the the number of requests that have been banned.
+     */
+    long getNumberOfBannedRequests();
+
 }

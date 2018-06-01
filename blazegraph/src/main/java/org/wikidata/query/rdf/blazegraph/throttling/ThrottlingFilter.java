@@ -4,7 +4,10 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
+import static java.time.Instant.now;
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Locale.ENGLISH;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -12,9 +15,11 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 import javax.annotation.Nullable;
 import javax.management.InstanceAlreadyExistsException;
@@ -38,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 /**
@@ -87,6 +93,10 @@ import com.google.common.cache.CacheBuilder;
  * is presented with a <code>Retry-After</code> HTTP header giving a backoff
  * time in seconds.
  *
+ * Further more, if a client does not back off when being sent HTTP 429, and it
+ * looks abusive, it is completely banned for a period of time, and will
+ * receive HTTP 403 (Forbidden) during the duration of the ban.
+ *
  * The clients are segmented in different buckets and resource consumption is
  * tracked individually for each of those buckets. The segmentation is done by
  * [IP address, User Agent], but could be extended to support more complex
@@ -95,6 +105,7 @@ import com.google.common.cache.CacheBuilder;
  *
  * All state is limited to a single JVM, this filter is not cluster aware.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity") // complexity is mainly due to parsing of filterConfig
 public class ThrottlingFilter implements Filter, ThrottlingMXBean {
 
     private static final Logger log = LoggerFactory.getLogger(ThrottlingFilter.class);
@@ -106,16 +117,64 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
     private final Bucketing bucketing = new UserAgentIpAddressBucketing();
 
     /** To delegate throttling logic. */
-    private Throttler throttler;
+    private TimeAndErrorsThrottler<ThrottlingState> timeAndErrorsThrottler;
 
-    /** Keeps track of the number of requests being throttled. */
-    private final AtomicLong nbThrottledRequests = new AtomicLong();
+    /** To delegate banning logic. */
+    private BanThrottler<ThrottlingState> banThrottler;
+
+    /** Keeps track of the number of requests that have been throttled. */
+    private final LongAdder nbThrottledRequests = new LongAdder();
+
+    /** Keeps track of the number of requests that have been banned. */
+    private final LongAdder nbBannedRequests = new LongAdder();
 
     /** The object name under which the stats for this filter are exposed through JMX. */
     @Nullable  private ObjectName objectName;
+    private Cache<Object, ThrottlingState> stateStore;
 
     /**
      * Initialise the filter.
+     *
+     * The following parameters are available (see
+     * {@link org.isomorphism.util.TokenBucket} for the details on bucket
+     * configuration, see implementation for the default values):
+     * <ul>
+     *     <li>{@code request-duration-threshold-in-millis}: requests longer
+     *     than this threshold will start the tracking for this user</li>
+
+     *     <li>{@code time-bucket-capacity-in-seconds},
+     *     {@code time-bucket-refill-amount-in-seconds},
+     *     {@code time-bucket-refill-period-in-minutes}: configuration of the
+     *     bucket tracking request durations</li>
+
+     *     <li>{@code error-bucket-capacity},
+     *     {@code error-bucket-refill-amount},
+     *     {@code error-bucket-refill-period-in-minutes}: configuration of the
+     *     bucket tracking errors</li>
+
+     *     <li>{@code throttle-bucket-capacity},
+     *     {@code throttle-bucket-refill-amount},
+     *     {@code throttle-bucket-refill-period-in-minutes}: configuration of
+     *     the bucket tracking throttling</li>
+     *
+     *     <li>{@code ban-duration-in-minutes}: how long should a user be
+     *     banned when a ban is triggered</li>
+
+     *     <li>{@code max-state-size}: how many users to track</li>
+     *     <li>{@code state-expiration-in-minutes}: tracking of a user expires
+     *     after this duration</li>
+
+
+     *     <li>{@code enable-throttling-if-header}: enable the filter on the
+     *     requests which have this header set</li>
+     *     <li>{@code always-throttle-param}: always throttle requests where
+     *     this parameter is set (useful for testing)</li>
+     *     <li>{@code always-ban-param}: always ban requests where this
+     *     parameter is set (useful for testing)</li>
+
+     *     <li>{@code enabled}: entirely disable this filter if set to
+     *     false</li>
+     * </ul>
      *
      * See {@link ThrottlingFilter#loadStringParam(String, FilterConfig)} for
      * the details of where the configuration is loaded from.
@@ -125,34 +184,60 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
     @Override
     public void init(FilterConfig filterConfig) {
         int requestDurationThresholdInMillis = loadIntParam("request-duration-threshold-in-millis", filterConfig, 0);
+
         int timeBucketCapacityInSeconds = loadIntParam("time-bucket-capacity-in-seconds", filterConfig, 120);
         int timeBucketRefillAmountInSeconds = loadIntParam("time-bucket-refill-amount-in-seconds", filterConfig, 60);
         int timeBucketRefillPeriodInMinutes = loadIntParam("time-bucket-refill-period-in-minutes", filterConfig, 1);
+
         int errorBucketCapacity = loadIntParam("error-bucket-capacity", filterConfig, 60);
         int errorBucketRefillAmount = loadIntParam("error-bucket-refill-amount", filterConfig, 30);
         int errorBucketRefillPeriodInMinutes = loadIntParam("error-bucket-refill-period-in-minutes", filterConfig, 1);
-        int maxStateSize = loadIntParam("max-state-size", filterConfig, 10000);
+
+        int throttleBucketCapacity = loadIntParam("throttle-bucket-capacity", filterConfig, 200);
+        int throttleBucketRefillAmount = loadIntParam("throttle-bucket-refill-amount", filterConfig, 200);
+        int throttleBucketRefillPeriodInMinutes = loadIntParam("throttle-bucket-refill-period-in-minutes", filterConfig, 20);
+        int banDurationInMinutes = loadIntParam("ban-duration-in-minutes", filterConfig, 60*24);
+
+        int maxStateSize = loadIntParam("max-state-size", filterConfig, 10_000);
         int stateExpirationInMinutes = loadIntParam("state-expiration-in-minutes", filterConfig, 15);
+
 
         String enableThrottlingIfHeader = loadStringParam("enable-throttling-if-header", filterConfig);
         String alwaysThrottleParam = loadStringParam("always-throttle-param", filterConfig, "throttleMe");
+        String alwaysBanParam = loadStringParam("always-ban-param", filterConfig, "banMe");
 
         this.enabled = loadBooleanParam("enabled", filterConfig, true);
-        throttler = new Throttler(
+
+
+        stateStore = CacheBuilder.newBuilder()
+                .maximumSize(maxStateSize)
+                .expireAfterAccess(stateExpirationInMinutes, TimeUnit.MINUTES)
+                .build();
+
+        Callable<ThrottlingState> stateInitializer = createThrottlingState(
+                timeBucketCapacityInSeconds,
+                timeBucketRefillAmountInSeconds,
+                timeBucketRefillPeriodInMinutes,
+                errorBucketCapacity,
+                errorBucketRefillAmount,
+                errorBucketRefillPeriodInMinutes,
+                throttleBucketCapacity,
+                throttleBucketRefillAmount,
+                throttleBucketRefillPeriodInMinutes,
+                Duration.of(banDurationInMinutes, ChronoUnit.MINUTES));
+
+        timeAndErrorsThrottler = new TimeAndErrorsThrottler(
                 Duration.of(requestDurationThresholdInMillis, MILLIS),
-                createThrottlingState(
-                        timeBucketCapacityInSeconds,
-                        timeBucketRefillAmountInSeconds,
-                        timeBucketRefillPeriodInMinutes,
-                        errorBucketCapacity,
-                        errorBucketRefillAmount,
-                        errorBucketRefillPeriodInMinutes),
-                CacheBuilder.newBuilder()
-                        .maximumSize(maxStateSize)
-                        .expireAfterAccess(stateExpirationInMinutes, TimeUnit.MINUTES)
-                        .build(),
+                stateInitializer,
+                stateStore,
                 enableThrottlingIfHeader,
                 alwaysThrottleParam);
+
+        banThrottler = new BanThrottler(
+                stateInitializer,
+                stateStore,
+                enableThrottlingIfHeader,
+                alwaysBanParam);
 
         registerMBean(filterConfig.getFilterName());
     }
@@ -254,7 +339,11 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
             int timeBucketRefillPeriodInMinutes,
             int errorBucketCapacity,
             int errorBucketRefillAmount,
-            int errorBucketRefillPeriodInMinutes) {
+            int errorBucketRefillPeriodInMinutes,
+            int throttleBucketCapacity,
+            int throttleBucketRefillAmount,
+            int throttleBucketRefillPeriodInMinutes,
+            Duration banDuration) {
         return () -> new ThrottlingState(
                 TokenBuckets.builder()
                         .withCapacity(
@@ -268,7 +357,14 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
                         .withFixedIntervalRefillStrategy(
                                 errorBucketRefillAmount,
                                 errorBucketRefillPeriodInMinutes, MINUTES)
-                        .build());
+                        .build(),
+                TokenBuckets.builder()
+                        .withCapacity(throttleBucketCapacity)
+                        .withFixedIntervalRefillStrategy(
+                                throttleBucketRefillAmount,
+                                throttleBucketRefillPeriodInMinutes, MINUTES)
+                        .build(),
+                banDuration);
     }
 
     /**
@@ -286,11 +382,24 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         Object bucket = bucketing.bucket(httpRequest);
 
-        if (throttler.isThrottled(bucket, httpRequest)) {
+        Instant now = now();
+        Instant bannedUntil = banThrottler.throttledUntil(bucket, httpRequest);
+        if (bannedUntil.isAfter(now)) {
+            log.info("A request is being banned.");
+            if (enabled) {
+                nbBannedRequests.increment();
+                notifyUserBanned(httpResponse, bannedUntil);
+                return;
+            }
+        }
+
+        Instant throttledUntil = timeAndErrorsThrottler.throttledUntil(bucket, httpRequest);
+        if (throttledUntil.isAfter(now)) {
             log.info("A request is being throttled.");
             if (enabled) {
-                nbThrottledRequests.incrementAndGet();
-                notifyUser(httpResponse, throttler.getBackoffDelay(bucket, httpRequest));
+                nbThrottledRequests.increment();
+                notifyUserThrottled(httpResponse, throttledUntil);
+                banThrottler.throttled(bucket, httpRequest);
                 return;
             }
         }
@@ -301,26 +410,43 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
             // for throttling purpose, consider all 1xx and 2xx status codes as
             // success, 4xx and 5xx as failure
             if (httpResponse.getStatus() < 400) {
-                throttler.success(bucket, httpRequest, stopwatch.elapsed());
+                timeAndErrorsThrottler.success(bucket, httpRequest, stopwatch.elapsed());
             } else {
-                throttler.failure(bucket, httpRequest, stopwatch.elapsed());
+                timeAndErrorsThrottler.failure(bucket, httpRequest, stopwatch.elapsed());
             }
         } catch (IOException | ServletException e) {
             // an exception processing the request is treated as a failure
-            throttler.failure(bucket, httpRequest, stopwatch.elapsed());
+            timeAndErrorsThrottler.failure(bucket, httpRequest, stopwatch.elapsed());
             throw e;
         }
+    }
+
+    /**
+     * Notify the user that he is being banned.
+     *
+     * @param response the response
+     * @param bannedUntil time until which the user is banned
+     * @throws IOException if the response cannot be written
+     */
+    private void notifyUserBanned(HttpServletResponse response, Instant bannedUntil) throws IOException {
+        String banEndTime = ISO_OFFSET_DATE_TIME.format(bannedUntil);
+        String message = format(
+                ENGLISH,
+                "You have been banned until %s, please respect throttling and retry-after headers.",
+                banEndTime
+        );
+        response.sendError(403, message);
     }
 
     /**
      * Notify the user that he is being throttled.
      *
      * @param response the response
-     * @param backoffDelay the backoff delay
+     * @param until end of the throttling period
      * @throws IOException if the response cannot be written
      */
-    private void notifyUser(HttpServletResponse response, Duration backoffDelay) throws IOException {
-        String retryAfter = Long.toString(backoffDelay.getSeconds());
+    private void notifyUserThrottled(HttpServletResponse response, Instant until) throws IOException {
+        String retryAfter = Long.toString(SECONDS.between(now(), until));
         response.setHeader("Retry-After", retryAfter);
         response.sendError(429, format(ENGLISH, "Too Many Requests - Please retry in %s seconds.", retryAfter));
     }
@@ -343,16 +469,18 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
         }
     }
 
-    /** {@inheritDoc} */
     @Override
     public long getStateSize() {
-        return throttler.getStateSize();
+        return stateStore.size();
     }
 
-    /** {@inheritDoc} */
     @Override
     public long getNumberOfThrottledRequests() {
-        return nbThrottledRequests.get();
+        return nbThrottledRequests.longValue();
     }
 
+    @Override
+    public long getNumberOfBannedRequests() {
+        return nbBannedRequests.longValue();
+    }
 }
