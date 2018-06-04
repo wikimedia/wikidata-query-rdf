@@ -705,10 +705,12 @@ public class Munger {
                 }
 
                 /*
+                 * TODO: we temporarily keep all the ref data because of the issues
+                 * in https://phabricator.wikimedia.org/T194325
                  * We already have this ref, so no need to import it again since
                  * refs are IDed by content, we know it is the same
                  */
-                return false;
+                return true;
             }
             switch (predicate) {
             case RDF.TYPE:
