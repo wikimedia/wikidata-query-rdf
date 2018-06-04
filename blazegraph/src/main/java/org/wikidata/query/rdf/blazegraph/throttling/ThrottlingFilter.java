@@ -1,24 +1,17 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.time.Instant.now;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-import static java.time.temporal.ChronoUnit.MILLIS;
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Locale.ENGLISH;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
 import javax.annotation.Nullable;
@@ -105,7 +98,7 @@ import com.google.common.cache.CacheBuilder;
  *
  * All state is limited to a single JVM, this filter is not cluster aware.
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity") // complexity is mainly due to parsing of filterConfig
+@SuppressWarnings("checkstyle:classfanoutcomplexity") // We should externalize MXBean related code
 public class ThrottlingFilter implements Filter, ThrottlingMXBean {
 
     private static final Logger log = LoggerFactory.getLogger(ThrottlingFilter.class);
@@ -177,69 +170,48 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
      *     false</li>
      * </ul>
      *
-     * See {@link ThrottlingFilter#loadStringParam(String, FilterConfig)} for
+     * See {@link ThrottlingFilterConfig#loadStringParam(String, FilterConfig)} for
      * the details of where the configuration is loaded from.
      *
      * @param filterConfig {@inheritDoc}
      */
     @Override
     public void init(FilterConfig filterConfig) {
-        int requestDurationThresholdInMillis = loadIntParam("request-duration-threshold-in-millis", filterConfig, 0);
+        ThrottlingFilterConfig config = new ThrottlingFilterConfig(filterConfig);
 
-        int timeBucketCapacityInSeconds = loadIntParam("time-bucket-capacity-in-seconds", filterConfig, 120);
-        int timeBucketRefillAmountInSeconds = loadIntParam("time-bucket-refill-amount-in-seconds", filterConfig, 60);
-        int timeBucketRefillPeriodInMinutes = loadIntParam("time-bucket-refill-period-in-minutes", filterConfig, 1);
-
-        int errorBucketCapacity = loadIntParam("error-bucket-capacity", filterConfig, 60);
-        int errorBucketRefillAmount = loadIntParam("error-bucket-refill-amount", filterConfig, 30);
-        int errorBucketRefillPeriodInMinutes = loadIntParam("error-bucket-refill-period-in-minutes", filterConfig, 1);
-
-        int throttleBucketCapacity = loadIntParam("throttle-bucket-capacity", filterConfig, 200);
-        int throttleBucketRefillAmount = loadIntParam("throttle-bucket-refill-amount", filterConfig, 200);
-        int throttleBucketRefillPeriodInMinutes = loadIntParam("throttle-bucket-refill-period-in-minutes", filterConfig, 20);
-        int banDurationInMinutes = loadIntParam("ban-duration-in-minutes", filterConfig, 60*24);
-
-        int maxStateSize = loadIntParam("max-state-size", filterConfig, 10_000);
-        int stateExpirationInMinutes = loadIntParam("state-expiration-in-minutes", filterConfig, 15);
-
-
-        String enableThrottlingIfHeader = loadStringParam("enable-throttling-if-header", filterConfig);
-        String enableBanIfHeader = loadStringParam("enable-ban-if-header", filterConfig);
-        String alwaysThrottleParam = loadStringParam("always-throttle-param", filterConfig, "throttleMe");
-        String alwaysBanParam = loadStringParam("always-ban-param", filterConfig, "banMe");
-
-        this.enabled = loadBooleanParam("enabled", filterConfig, true);
-
+        this.enabled = config.isFilterEnabled();
 
         stateStore = CacheBuilder.newBuilder()
-                .maximumSize(maxStateSize)
-                .expireAfterAccess(stateExpirationInMinutes, TimeUnit.MINUTES)
+                .maximumSize(config.getMaxStateSize())
+                .expireAfterAccess(config.getStateExpiration().toMillis(), MILLISECONDS)
                 .build();
 
         Callable<ThrottlingState> stateInitializer = createThrottlingState(
-                timeBucketCapacityInSeconds,
-                timeBucketRefillAmountInSeconds,
-                timeBucketRefillPeriodInMinutes,
-                errorBucketCapacity,
-                errorBucketRefillAmount,
-                errorBucketRefillPeriodInMinutes,
-                throttleBucketCapacity,
-                throttleBucketRefillAmount,
-                throttleBucketRefillPeriodInMinutes,
-                Duration.of(banDurationInMinutes, ChronoUnit.MINUTES));
+                config.getTimeBucketCapacity(),
+                config.getTimeBucketRefillAmount(),
+                config.getTimeBucketRefillPeriod(),
+                config.getErrorBucketCapacity(),
+                config.getErrorBucketRefillAmount(),
+                config.getErrorBucketRefillPeriod(),
+                config.getThrottleBucketCapacity(),
+                config.getThrottleBucketRefillAmount(),
+                config.getThrottleBucketRefillPeriod(),
+                config.getBanDuration());
 
         timeAndErrorsThrottler = new TimeAndErrorsThrottler(
-                Duration.of(requestDurationThresholdInMillis, MILLIS),
+                config.getRequestDurationThreshold(),
                 stateInitializer,
                 stateStore,
-                enableThrottlingIfHeader,
-                alwaysThrottleParam);
+                config.getEnableThrottlingIfHeader(),
+                config.getAlwaysThrottleParam(),
+                Clock.systemUTC());
 
         banThrottler = new BanThrottler(
                 stateInitializer,
                 stateStore,
-                enableBanIfHeader,
-                alwaysBanParam);
+                config.getEnableBanIfHeader(),
+                config.getAlwaysBanParam(),
+                Clock.systemUTC());
 
         registerMBean(filterConfig.getFilterName());
     }
@@ -269,102 +241,37 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
     }
 
     /**
-     * See {@link ThrottlingFilter#loadStringParam(String, FilterConfig)}.
-     *
-     * @param name
-     * @param filterConfig
-     * @param defaultValue
-     * @return
-     */
-    private int loadIntParam(String name, FilterConfig filterConfig, int defaultValue) {
-        String result = loadStringParam(name, filterConfig);
-        return result != null ? parseInt(result) : defaultValue;
-    }
-
-    /**
-     * See {@link ThrottlingFilter#loadStringParam(String, FilterConfig)}.
-     *
-     * @param name
-     * @param filterConfig
-     * @param defaultValue
-     * @return
-     */
-    private boolean loadBooleanParam(String name, FilterConfig filterConfig, boolean defaultValue) {
-        String result = loadStringParam(name, filterConfig);
-        return result != null ? parseBoolean(result) : defaultValue;
-    }
-
-    /**
-     * Load a parameter from multiple locations.
-     *
-     * System properties have the highest priority, filter config is used if no
-     * system property is found.
-     *
-     * The system property used is <code>wdqs.&lt;filter-name&gt;.&lt;name&gt;</code>.
-     *
-     * @param name name of the property
-     * @param filterConfig used to get the filter config
-     * @return the value of the parameter
-     */
-    private String loadStringParam(String name, FilterConfig filterConfig) {
-        String result = null;
-        String fParam = filterConfig.getInitParameter(name);
-        if (fParam != null) {
-            result = fParam;
-        }
-        String sParam = System.getProperty("wdqs." + filterConfig.getFilterName() + "." + name);
-        if (sParam != null) {
-            result = sParam;
-        }
-        return result;
-    }
-
-    /**
-     * Load a parameter from multiple locations, with a default value.
-     *
-     * @see ThrottlingFilter#loadStringParam(String, FilterConfig)
-     * @param name
-     * @param filterConfig
-     * @param defaultValue
-     * @return the parameter's value
-     */
-    private String loadStringParam(String name, FilterConfig filterConfig, String defaultValue) {
-        return firstNonNull(loadStringParam(name, filterConfig), defaultValue);
-    }
-
-    /**
      * Create Callable to initialize throttling state.
      */
     public static Callable<ThrottlingState> createThrottlingState(
-            int timeBucketCapacityInSeconds,
-            int timeBucketRefillAmountInSeconds,
-            int timeBucketRefillPeriodInMinutes,
+            Duration timeBucketCapacity,
+            Duration timeBucketRefillAmount,
+            Duration timeBucketRefillPeriod,
             int errorBucketCapacity,
             int errorBucketRefillAmount,
-            int errorBucketRefillPeriodInMinutes,
+            Duration errorBucketRefillPeriod,
             int throttleBucketCapacity,
             int throttleBucketRefillAmount,
-            int throttleBucketRefillPeriodInMinutes,
+            Duration throttleBucketRefillPeriod,
             Duration banDuration) {
         return () -> new ThrottlingState(
                 TokenBuckets.builder()
-                        .withCapacity(
-                                MILLISECONDS.convert(timeBucketCapacityInSeconds, TimeUnit.SECONDS))
+                        .withCapacity(timeBucketCapacity.toMillis())
                         .withFixedIntervalRefillStrategy(
-                                MILLISECONDS.convert(timeBucketRefillAmountInSeconds, TimeUnit.SECONDS),
-                                timeBucketRefillPeriodInMinutes, MINUTES)
+                                timeBucketRefillAmount.toMillis(),
+                                timeBucketRefillPeriod.toMillis(), MILLISECONDS)
                         .build(),
                 TokenBuckets.builder()
                         .withCapacity(errorBucketCapacity)
                         .withFixedIntervalRefillStrategy(
                                 errorBucketRefillAmount,
-                                errorBucketRefillPeriodInMinutes, MINUTES)
+                                errorBucketRefillPeriod.toMillis(), MILLISECONDS)
                         .build(),
                 TokenBuckets.builder()
                         .withCapacity(throttleBucketCapacity)
                         .withFixedIntervalRefillStrategy(
                                 throttleBucketRefillAmount,
-                                throttleBucketRefillPeriodInMinutes, MINUTES)
+                                throttleBucketRefillPeriod.toMillis(), MILLISECONDS)
                         .build(),
                 banDuration);
     }
@@ -384,9 +291,8 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         Object bucket = bucketing.bucket(httpRequest);
 
-        Instant now = now();
         Instant bannedUntil = banThrottler.throttledUntil(bucket, httpRequest);
-        if (bannedUntil.isAfter(now)) {
+        if (bannedUntil.isAfter(now())) {
             log.info("A request is being banned.");
             if (enabled) {
                 nbBannedRequests.increment();
@@ -395,12 +301,12 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
             }
         }
 
-        Instant throttledUntil = timeAndErrorsThrottler.throttledUntil(bucket, httpRequest);
-        if (throttledUntil.isAfter(now)) {
+        Duration throttledDuration = timeAndErrorsThrottler.throttledDuration(bucket, httpRequest);
+        if (!throttledDuration.isNegative()) {
             log.info("A request is being throttled.");
             if (enabled) {
                 nbThrottledRequests.increment();
-                notifyUserThrottled(httpResponse, throttledUntil);
+                notifyUserThrottled(httpResponse, throttledDuration);
                 banThrottler.throttled(bucket, httpRequest);
                 return;
             }
@@ -444,11 +350,11 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
      * Notify the user that he is being throttled.
      *
      * @param response the response
-     * @param until end of the throttling period
+     * @param duration how long the user will be throttled
      * @throws IOException if the response cannot be written
      */
-    private void notifyUserThrottled(HttpServletResponse response, Instant until) throws IOException {
-        String retryAfter = Long.toString(SECONDS.between(now(), until));
+    private void notifyUserThrottled(HttpServletResponse response, Duration duration) throws IOException {
+        String retryAfter = Long.toString(duration.getSeconds());
         response.setHeader("Retry-After", retryAfter);
         response.sendError(429, format(ENGLISH, "Too Many Requests - Please retry in %s seconds.", retryAfter));
     }

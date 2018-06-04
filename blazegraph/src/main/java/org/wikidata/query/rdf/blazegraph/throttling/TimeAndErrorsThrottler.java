@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.Callable;
@@ -42,8 +43,9 @@ public class TimeAndErrorsThrottler<S extends TimeAndErrorsState> extends Thrott
             Callable<S> createThrottlingState,
             Cache<Object, S> stateStore,
             String enableThrottlingIfHeader,
-            String alwaysThrottleParam) {
-        super(createThrottlingState, stateStore, enableThrottlingIfHeader, alwaysThrottleParam);
+            String alwaysThrottleParam,
+            Clock clock) {
+        super(createThrottlingState, stateStore, enableThrottlingIfHeader, alwaysThrottleParam, clock);
 
         this.requestTimeThreshold = requestTimeThreshold;
     }
