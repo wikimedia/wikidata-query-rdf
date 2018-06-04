@@ -141,17 +141,17 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
      * <ul>
      *     <li>{@code request-duration-threshold-in-millis}: requests longer
      *     than this threshold will start the tracking for this user</li>
-
+     *
      *     <li>{@code time-bucket-capacity-in-seconds},
      *     {@code time-bucket-refill-amount-in-seconds},
      *     {@code time-bucket-refill-period-in-minutes}: configuration of the
      *     bucket tracking request durations</li>
-
+     *
      *     <li>{@code error-bucket-capacity},
      *     {@code error-bucket-refill-amount},
      *     {@code error-bucket-refill-period-in-minutes}: configuration of the
      *     bucket tracking errors</li>
-
+     *
      *     <li>{@code throttle-bucket-capacity},
      *     {@code throttle-bucket-refill-amount},
      *     {@code throttle-bucket-refill-period-in-minutes}: configuration of
@@ -159,19 +159,20 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
      *
      *     <li>{@code ban-duration-in-minutes}: how long should a user be
      *     banned when a ban is triggered</li>
-
+     *
      *     <li>{@code max-state-size}: how many users to track</li>
      *     <li>{@code state-expiration-in-minutes}: tracking of a user expires
      *     after this duration</li>
-
-
-     *     <li>{@code enable-throttling-if-header}: enable the filter on the
-     *     requests which have this header set</li>
+     *
+     *     <li>{@code enable-throttling-if-header}: enable the throttling on
+     *     the requests which have this header set</li>
+     *     <li>{@code enable-ban-if-header}: enable the banning on the requests
+     *     which have this header set</li>
      *     <li>{@code always-throttle-param}: always throttle requests where
      *     this parameter is set (useful for testing)</li>
      *     <li>{@code always-ban-param}: always ban requests where this
      *     parameter is set (useful for testing)</li>
-
+     *
      *     <li>{@code enabled}: entirely disable this filter if set to
      *     false</li>
      * </ul>
@@ -203,6 +204,7 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
 
 
         String enableThrottlingIfHeader = loadStringParam("enable-throttling-if-header", filterConfig);
+        String enableBanIfHeader = loadStringParam("enable-ban-if-header", filterConfig);
         String alwaysThrottleParam = loadStringParam("always-throttle-param", filterConfig, "throttleMe");
         String alwaysBanParam = loadStringParam("always-ban-param", filterConfig, "banMe");
 
@@ -236,7 +238,7 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
         banThrottler = new BanThrottler(
                 stateInitializer,
                 stateStore,
-                enableThrottlingIfHeader,
+                enableBanIfHeader,
                 alwaysBanParam);
 
         registerMBean(filterConfig.getFilterName());
