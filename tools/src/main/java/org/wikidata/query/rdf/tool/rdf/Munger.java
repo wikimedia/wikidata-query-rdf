@@ -710,7 +710,7 @@ public class Munger {
                  * We already have this ref, so no need to import it again since
                  * refs are IDed by content, we know it is the same
                  */
-                return true;
+                // return false;
             }
             switch (predicate) {
             case RDF.TYPE:
