@@ -506,8 +506,7 @@ public class RdfRepositoryIntegrationTest extends RandomizedTest {
         }
         rdfRepository.sync("Q80", statements);
         assertEquals(0, rdfRepository.sync("Q80", statements));
-        TupleQueryResult r = rdfRepository
-                .query("PREFIX wd: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?s) as ?sc) WHERE {?s ?p wd:Q80}");
+        TupleQueryResult r = rdfRepository.query("PREFIX wd: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?s) as ?sc) WHERE {?s ?p wd:Q80}");
         assertTrue(r.hasNext());
         assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(10))));
         assertFalse(r.hasNext());
@@ -530,8 +529,7 @@ public class RdfRepositoryIntegrationTest extends RandomizedTest {
         }
         rdfRepository.sync("Q80", statements);
         assertEquals(0, rdfRepository.sync("Q80", statements));
-        TupleQueryResult r = rdfRepository
-                .query("PREFIX wd: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?p) as ?sc) WHERE {wd:Q80 ?p ?o}");
+        TupleQueryResult r = rdfRepository.query("PREFIX wd: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?p) as ?sc) WHERE {wd:Q80 ?p ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(10))));
         assertFalse(r.hasNext());
@@ -611,8 +609,7 @@ public class RdfRepositoryIntegrationTest extends RandomizedTest {
 
         rdfRepository.sync("Q23", newdata, makeCleanupList("Q23", newdata));
 
-        assertTrue(rdfRepository
-                .ask("ASK { wd:Q23 p:P509 [ psv:P509 wdv:changeduuid ] }"));
+        assertTrue(rdfRepository.ask("ASK { wd:Q23 p:P509 [ psv:P509 wdv:changeduuid ] }"));
         assertTrue(rdfRepository.ask(
                 "ASK { wd:Q23 p:P509 [ psv:P509 [ wikibase:timeValue \"dog\" ] ] }"));
         // Old one must be deleted

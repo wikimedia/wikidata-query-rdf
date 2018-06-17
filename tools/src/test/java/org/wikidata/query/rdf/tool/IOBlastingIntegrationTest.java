@@ -126,7 +126,7 @@ public class IOBlastingIntegrationTest extends RandomizedTest {
          * Query for everything in the triple store, and set up matchers for the
          * expected statements.
          */
-        private static IOBlasterResults queryForAllMatches(RdfRepository rdfRepository, List<Statement> statements) throws QueryEvaluationException {
+        private IOBlasterResults queryForAllMatches(List<Statement> statements) throws QueryEvaluationException {
             TupleQueryResult tupleQueryResult = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
             Iterable<BindingSet> results = toIterable(tupleQueryResult);
             Matcher<BindingSet>[] matchers = subjectPredicateObjectMatchers(statements);
@@ -146,7 +146,7 @@ public class IOBlastingIntegrationTest extends RandomizedTest {
             }
             rdfRepository.createNamespace();
             List<Statement> statements = generateAndInsert(rdfRepository);
-            IOBlasterResults results = queryForAllMatches(rdfRepository, statements);
+            IOBlasterResults results = queryForAllMatches(statements);
             return results;
         }
     }

@@ -2,9 +2,7 @@ package org.wikidata.query.rdf.tool.rdf;
 
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static com.google.common.io.Resources.getResource;
-import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -16,12 +14,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
@@ -29,22 +24,13 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.ProxyConfiguration;
 import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.client.util.FormContentProvider;
-import org.eclipse.jetty.http.HttpMethod;
-import org.eclipse.jetty.http.HttpStatus;
-import org.eclipse.jetty.util.Fields;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.QueryResultHandlerException;
 import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.impl.TupleQueryResultBuilder;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.query.resultio.binary.BinaryQueryResultParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Ontology;
@@ -52,21 +38,15 @@ import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.change.Change;
-import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.rholder.retry.Attempt;
-import com.github.rholder.retry.RetryException;
 import com.github.rholder.retry.RetryListener;
 import com.github.rholder.retry.Retryer;
 import com.github.rholder.retry.RetryerBuilder;
 import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.io.Resources;
@@ -81,25 +61,17 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED", justification = "spotbug limitation: https://github.com/spotbugs/spotbugs/issues/463")
 public class RdfRepository implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(RdfRepository.class);
-    /**
-     * UTC timezone.
-     */
-    private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+
     /**
      * Http connection pool for the rdf repository.
      */
     private final HttpClient httpClient;
 
     /**
-     * URI for the wikibase rdf repository.
-     */
-    private final URI uri;
-    /**
      * Uris for wikibase.
      */
     private final WikibaseUris uris;
 
-    // SPARQL queries
     /**
      * SPARQL for a portion of the update.
      */
@@ -158,18 +130,10 @@ public class RdfRepository implements AutoCloseable {
      */
     public static final String TIMEOUT_PROPERTY = RdfRepository.class + ".timeout";
 
-    /**
-     * Request timeout.
-     */
-    private final int timeout;
-
-    /**
-     * Retryer for fetching data from RDF store.
-     */
-    private final Retryer<ContentResponse> retryer;
+    @VisibleForTesting
+    public final RdfClient rdfClient;
 
     public RdfRepository(URI uri, WikibaseUris uris) {
-        this.uri = uri;
         this.uris = uris;
         msyncBody = loadBody("multiSync");
         syncBody = loadBody("sync");
@@ -180,11 +144,11 @@ public class RdfRepository implements AutoCloseable {
         getRevisions = loadBody("GetRevisions");
         verify = loadBody("verify");
 
-        timeout = Integer.parseInt(System.getProperty(TIMEOUT_PROPERTY, "-1"));
+        int timeout = Integer.parseInt(System.getProperty(TIMEOUT_PROPERTY, "-1"));
         httpClient = new HttpClient(new SslContextFactory(true/* trustAll */));
-        setupHttpClient();
+        setupHttpClient(httpClient);
 
-        retryer = RetryerBuilder.<ContentResponse>newBuilder()
+        Retryer<ContentResponse> retryer = RetryerBuilder.<ContentResponse>newBuilder()
                 .retryIfExceptionOfType(TimeoutException.class)
                 .retryIfExceptionOfType(ExecutionException.class)
                 .retryIfExceptionOfType(IOException.class)
@@ -203,13 +167,15 @@ public class RdfRepository implements AutoCloseable {
                     }
                 })
                 .build();
+        rdfClient = new RdfClient(this.httpClient, uri, timeout, retryer);
     }
 
     /**
      * Setup HTTP client settings.
+     * @param httpClient
      */
     @SuppressWarnings("checkstyle:illegalcatch")
-    private void setupHttpClient() {
+    private void setupHttpClient(HttpClient httpClient) {
         if (System.getProperty(HTTP_PROXY) != null
                 && System.getProperty(HTTP_PROXY_PORT) != null) {
             final ProxyConfiguration proxyConfig = httpClient.getProxyConfiguration();
@@ -315,7 +281,7 @@ public class RdfRepository implements AutoCloseable {
         b.bind("uris.statement", uris.statement());
         b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
 
-        return resultToMap(query(b.toString()), "entity", "s");
+        return resultToMap(rdfClient.query(b.toString()), "entity", "s");
     }
 
     /**
@@ -329,7 +295,7 @@ public class RdfRepository implements AutoCloseable {
         b.bind("uris.statement", uris.statement());
         b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
 
-        return resultToMap(query(b.toString()), "entity", "s");
+        return resultToMap(rdfClient.query(b.toString()), "entity", "s");
     }
 
     /**
@@ -480,7 +446,7 @@ public class RdfRepository implements AutoCloseable {
         }
 
         long start = System.currentTimeMillis();
-        int modified = execute("update", UPDATE_COUNT_RESPONSE, b.toString());
+        int modified = rdfClient.update(b.toString());
         log.debug("Update query took {} millis and modified {} statements",
                 System.currentTimeMillis() - start, modified);
 
@@ -510,7 +476,7 @@ public class RdfRepository implements AutoCloseable {
         bv.bind("uris.statement", uris.statement());
         bv.bindUris("entityList", entityIds, uris.entity());
         bv.bindValues("allStatements", statements);
-        TupleQueryResult result = query(bv.toString());
+        TupleQueryResult result = rdfClient.query(bv.toString());
         if (result.hasNext()) {
             log.error("Update failed, we have extra data!");
             while (result.hasNext()) {
@@ -545,7 +511,7 @@ public class RdfRepository implements AutoCloseable {
      */
     public int sync(String entityId, Collection<Statement> statements, Collection<String> valueList) {
         long start = System.currentTimeMillis();
-        int modified = execute("update", UPDATE_COUNT_RESPONSE, getSyncQuery(entityId, statements, valueList));
+        int modified = rdfClient.update(getSyncQuery(entityId, statements, valueList));
         log.debug("Updating {} took {} millis and modified {} statements", entityId,
                 System.currentTimeMillis() - start, modified);
         return modified;
@@ -581,7 +547,7 @@ public class RdfRepository implements AutoCloseable {
         }
         b.bind("values", values.toString());
         b.bindUri("schema:version", SchemaDotOrg.VERSION);
-        return resultToSet(query(b.toString()), "s");
+        return resultToSet(rdfClient.query(b.toString()), "s");
     }
 
     /**
@@ -593,7 +559,7 @@ public class RdfRepository implements AutoCloseable {
         StringBuilder prefixes = new StringBuilder();
         prefixes.append("PREFIX schema: <").append(SchemaDotOrg.NAMESPACE).append(">\n");
         prefixes.append("PREFIX entity: <").append(uris.entity()).append(">\n");
-        return ask(String.format(Locale.ROOT, "%sASK {\n  entity:%s schema:version ?v .\n  FILTER (?v >= %s)\n}",
+        return rdfClient.ask(String.format(Locale.ROOT, "%sASK {\n  entity:%s schema:version ?v .\n  FILTER (?v >= %s)\n}",
                 prefixes, entityId, revision));
     }
 
@@ -629,84 +595,7 @@ public class RdfRepository implements AutoCloseable {
         b.bindUri("root", uris.root());
         b.bindUri("dateModified", SchemaDotOrg.DATE_MODIFIED);
         b.bindValue("date", leftOffTime);
-        execute("update", UPDATE_COUNT_RESPONSE, b.toString());
-    }
-
-    /**
-     * Execute a SPARQL ask and parse the boolean result.
-     */
-    public boolean ask(String sparql) {
-        return execute("query", ASK_QUERY_RESPONSE, sparql);
-    }
-
-    /**
-     * Execute some SPARQL which returns a results table.
-     */
-    public TupleQueryResult query(String sparql) {
-        return execute("query", TUPLE_QUERY_RESPONSE, sparql);
-    }
-
-    /**
-     * Create HTTP request.
-     * @param type Request type
-     * @param sparql SPARQL code
-     * @param accept Accept header (can be null)
-     * @return Request object
-     */
-    private Request makeRequest(String type, String sparql, String accept) {
-        Request post = httpClient.newRequest(uri);
-        post.method(HttpMethod.POST);
-        if (timeout > 0) {
-            post.timeout(timeout, TimeUnit.SECONDS);
-        }
-        // Note that Blazegraph totally ignores the Accept header for SPARQL
-        // updates so the response is just html in that case...
-        if (accept != null) {
-            post.header("Accept", accept);
-        }
-
-        final Fields fields = new Fields();
-        fields.add(type, sparql);
-        final FormContentProvider form = new FormContentProvider(fields, Charsets.UTF_8);
-        post.content(form);
-        return post;
-    }
-
-    /**
-     * Execute some raw SPARQL.
-     *
-     * @param type name of the parameter in which to send sparql
-     * @return results string from the server
-     */
-    protected <T> T execute(String type, ResponseHandler<T> responseHandler, String sparql) {
-        log.trace("Running SPARQL: {}", sparql);
-        long startQuery = System.currentTimeMillis();
-        // TODO we might want to look into Blazegraph's incremental update
-        // reporting.....
-        final ContentResponse response;
-        try {
-            response = retryer.call(()
-                -> makeRequest(type, sparql, responseHandler.acceptHeader()).send());
-
-            if (response.getStatus() != HttpStatus.OK_200) {
-                throw new ContainedException("Non-200 response from triple store:  " + response
-                                + " body=\n" + responseBodyAsString(response));
-            }
-
-            log.debug("Completed in {} ms", System.currentTimeMillis() - startQuery);
-            return responseHandler.parse(response);
-        } catch (ExecutionException | RetryException | IOException e) {
-            throw new FatalException("Error updating triple store", e);
-        }
-    }
-
-    /**
-     * Fetch the body of the response as a string.
-     *
-     * @throws IOException if there is an error reading the response
-     */
-    protected String responseBodyAsString(ContentResponse response) throws IOException {
-        return response.getContentAsString();
+        rdfClient.update(b.toString());
     }
 
     /**
@@ -714,7 +603,7 @@ public class RdfRepository implements AutoCloseable {
      * result.
      */
     private Instant dateFromQuery(String query) {
-        TupleQueryResult result = query(query);
+        TupleQueryResult result = rdfClient.query(query);
         try {
             if (!result.hasNext()) {
                 return null;
@@ -733,180 +622,6 @@ public class RdfRepository implements AutoCloseable {
             return calendar.getTime().toInstant();
         } catch (QueryEvaluationException e) {
             throw new FatalException("Error evaluating query", e);
-        }
-    }
-
-    /**
-     * Passed to execute to setup the accept header and parse the response. Its
-     * super ultra mega important to parse the response in execute because
-     * execute manages closing the http response object. If execute return the
-     * input stream after closing the response then everything would
-     * <strong>mostly</strong> work but things would blow up with strange socket
-     * closed errors.
-     *
-     * @param <T> the type of response parsed
-     */
-    private interface ResponseHandler<T> {
-        /**
-         * The contents of the accept header sent to the rdf repository.
-         */
-        String acceptHeader();
-
-        /**
-         * Parse the response.
-         *
-         * @throws IOException if there is an error reading the response
-         */
-        T parse(ContentResponse entity) throws IOException;
-    }
-
-    /**
-     * Count and log the number of updates.
-     */
-    protected static final ResponseHandler<Integer> UPDATE_COUNT_RESPONSE = new UpdateCountResponse();
-    /**
-     * Parse the response from a regular query into a TupleQueryResult.
-     */
-    protected static final ResponseHandler<TupleQueryResult> TUPLE_QUERY_RESPONSE = new TupleQueryResponse();
-    /**
-     * Parse the response from an ask query into a boolean.
-     */
-    protected static final ResponseHandler<Boolean> ASK_QUERY_RESPONSE = new AskQueryResponse();
-
-    /**
-     * Attempts to log update response information but very likely only works
-     * for Blazegraph.
-     */
-    protected static class UpdateCountResponse implements ResponseHandler<Integer> {
-        /**
-         * The pattern for the response for an update.
-         */
-        private static final Pattern ELAPSED_LINE = Pattern.compile("><p>totalElapsed=[^ ]+ elapsed=([^<]+)</p");
-        /**
-         * The pattern for the response for an update, with extended times for clauses.
-         */
-        private static final Pattern ELAPSED_LINE_CLAUSES =
-                Pattern.compile("><p>totalElapsed=([^ ]+) elapsed=([^ ]+) whereClause=([^ ]+) deleteClause=([^ ]+) insertClause=([^ <]+)</p");
-        /**
-         * The pattern for the response for an update, with extended times for clauses and flush.
-         */
-        private static final Pattern ELAPSED_LINE_FLUSH =
-                Pattern.compile("><p>totalElapsed=([^ ]+) elapsed=([^ ]+) connFlush=([^ ]+) " +
-                        "batchResolve=([^ ]+) whereClause=([^ ]+) deleteClause=([^ ]+) insertClause=([^ <]+)</p");
-        /**
-         * The pattern for the response for a commit.
-         */
-        private static final Pattern COMMIT_LINE = Pattern
-                .compile("><hr><p>COMMIT: totalElapsed=([^ ]+) commitTime=[^ ]+ mutationCount=([^<]+)</p");
-        /**
-         * The pattern for the response from a bulk update.
-         */
-        private static final Pattern BULK_UPDATE_LINE = Pattern
-                .compile("<\\?xml version=\"1.0\"\\?><data modified=\"(\\d+)\" milliseconds=\"(\\d+)\"/>");
-
-        @Override
-        public String acceptHeader() {
-            return null;
-        }
-
-        @Override
-        @SuppressFBWarnings(value = "PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS", justification = "more readable with 2 calls")
-        public Integer parse(ContentResponse entity) throws IOException {
-            Integer mutationCount = null;
-            for (String line : entity.getContentAsString().split("\\r?\\n")) {
-                Matcher m;
-                m = ELAPSED_LINE_FLUSH.matcher(line);
-                if (m.matches()) {
-                    log.debug("total = {} elapsed = {} flush = {} batch = {} where = {} delete = {} insert = {}",
-                            m.group(1), m.group(2), m.group(3), m.group(4),
-                            m.group(5), m.group(6), m.group(7));
-                    continue;
-                }
-                m = ELAPSED_LINE_CLAUSES.matcher(line);
-                if (m.matches()) {
-                    log.debug("total = {} elapsed = {} where = {} delete = {} insert = {}",
-                            m.group(1), m.group(2), m.group(3), m.group(4),
-                            m.group(5));
-                    continue;
-                }
-                m = ELAPSED_LINE.matcher(line);
-                if (m.matches()) {
-                    log.debug("elapsed = {}", m.group(1));
-                    continue;
-                }
-                m = COMMIT_LINE.matcher(line);
-                if (m.matches()) {
-                    log.debug("total = {} mutation count = {} ", m.group(1),
-                            m.group(2));
-                    mutationCount = Integer.valueOf(m.group(2));
-                    continue;
-                }
-                m = BULK_UPDATE_LINE.matcher(line);
-                if (m.matches()) {
-                    log.debug("bulk updated {} items in {} millis", m.group(1),
-                            m.group(2));
-                    mutationCount = Integer.valueOf(m.group(1));
-                    continue;
-                }
-            }
-            if (mutationCount == null) {
-                throw new IOException("Couldn't find the mutation count!");
-            }
-            return mutationCount;
-        }
-    }
-
-    /**
-     * Parses responses to regular queries into TupleQueryResults.
-     */
-    private static class TupleQueryResponse implements ResponseHandler<TupleQueryResult> {
-        @Override
-        public String acceptHeader() {
-            return "application/x-binary-rdf-results-table";
-        }
-
-        @Override
-        public TupleQueryResult parse(ContentResponse entity) throws IOException {
-            BinaryQueryResultParser p = new BinaryQueryResultParser();
-            TupleQueryResultBuilder collector = new TupleQueryResultBuilder();
-            p.setQueryResultHandler(collector);
-            try {
-                p.parseQueryResult(new ByteArrayInputStream(entity.getContent()));
-            } catch (QueryResultParseException | QueryResultHandlerException | IllegalStateException e) {
-                throw new RuntimeException("Error parsing query", e);
-            }
-            return collector.getQueryResult();
-        }
-    }
-
-    /**
-     * Parses responses to ask queries into booleans.
-     */
-    private static class AskQueryResponse implements ResponseHandler<Boolean> {
-
-        private final ObjectMapper mapper = getObjectMapper();
-
-        @Override
-        public String acceptHeader() {
-            return "application/json";
-        }
-
-        @Override
-        public Boolean parse(ContentResponse entity) throws IOException {
-            try {
-                return mapper.readValue(entity.getContentAsString(), Resp.class).aBoolean;
-            } catch (JsonParseException | JsonMappingException e) {
-                throw new IOException("Error parsing response", e);
-            }
-        }
-
-        public static class Resp {
-            private final Boolean aBoolean;
-
-            @JsonCreator
-            Resp(@JsonProperty("boolean") Boolean aBoolean) {
-                this.aBoolean = aBoolean;
-            }
         }
     }
 
