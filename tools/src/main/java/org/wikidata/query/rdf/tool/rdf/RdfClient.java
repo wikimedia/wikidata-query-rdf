@@ -56,7 +56,8 @@ public class RdfClient {
     private static final ResponseHandler<Boolean> ASK_QUERY_RESPONSE = new AskQueryResponse();
 
     /** Http connection pool for the rdf repository. */
-    private final HttpClient httpClient;
+    @VisibleForTesting
+    public final HttpClient httpClient;
     /** URI for the wikibase rdf repository. */
     private final URI uri;
     /** Request timeout. */

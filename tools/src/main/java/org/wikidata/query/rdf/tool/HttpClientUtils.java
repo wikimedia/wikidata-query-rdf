@@ -8,6 +8,11 @@ import org.apache.http.client.methods.HttpRequestBase;
  * Utilities for dealing with HttpClient.
  */
 public final class HttpClientUtils {
+
+    private HttpClientUtils() {
+        // Uncallable utility constructor
+    }
+
     /**
      * Configure request to ignore cookies.
      */
@@ -16,7 +21,4 @@ public final class HttpClientUtils {
         request.setConfig(noCookiesConfig);
     }
 
-    private HttpClientUtils() {
-        // Uncallable utility constructor
-    }
 }

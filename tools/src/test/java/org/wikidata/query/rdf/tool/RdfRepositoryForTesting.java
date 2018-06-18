@@ -1,5 +1,10 @@
 package org.wikidata.query.rdf.tool;
 
+import static org.wikidata.query.rdf.tool.Update.buildHttpClient;
+import static org.wikidata.query.rdf.tool.Update.buildRdfClient;
+import static org.wikidata.query.rdf.tool.Update.getHttpProxyHost;
+import static org.wikidata.query.rdf.tool.Update.getHttpProxyPort;
+
 import java.net.URI;
 
 import org.junit.rules.TestRule;
@@ -23,7 +28,14 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
     private final String namespace;
 
     public RdfRepositoryForTesting(String namespace) {
-        super(url("/namespace/" + namespace + "/sparql"), WikibaseUris.WIKIDATA);
+        super(
+                WikibaseUris.WIKIDATA,
+                buildRdfClient(
+                        url("/namespace/" + namespace + "/sparql"),
+                        buildHttpClient(getHttpProxyHost(), getHttpProxyPort()
+                        )
+                )
+        );
         this.namespace = namespace;
     }
 
@@ -114,7 +126,7 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
      */
     private void after() throws Exception {
         clear();
-        close();
+        rdfClient.httpClient.stop();
     }
 
     /**
