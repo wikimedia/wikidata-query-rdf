@@ -78,6 +78,10 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
      */
     public static final URI ENDPOINT_KEY = new URIImpl(Ontology.NAMESPACE + "endpoint");
     /**
+     * Parameter setting global limit across continuations.
+     */
+    public static final URI LIMIT_KEY = new URIImpl(Ontology.NAMESPACE + "limit");
+    /**
      * Namespace for MWAPI parameters.
      */
     public static final String MWAPI_NAMESPACE = Mediawiki.NAMESPACE + "API/";
@@ -142,7 +146,8 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
                     template.getOutputVars(serviceNode),
                     params.getClientConnectionManager(),
                     params.getTripleStore().getLexiconRelation(),
-                    requestTimer);
+                    requestTimer,
+                    getLimit(serviceParams));
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("Bad endpoint URL", e);
         }
@@ -170,7 +175,10 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
         TermNode hostNode = serviceParams.get(ENDPOINT_KEY, null);
         requireNonNull(hostNode, "Service name (wikibase:endpoint) should be supplied");
         // TODO: allow variable endpoints
-        requireNonNull(hostNode.isConstant(), "Endpoint name should be a constant");
+        if (!hostNode.isConstant()) {
+            throw new IllegalArgumentException(
+                    "Endpoint name should be a constant");
+        }
 
         serviceParams.clear(ENDPOINT_KEY);
         Value v = hostNode.getValue();
@@ -184,6 +192,23 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
             throw new IllegalArgumentException("Host " + endpointHost + " is not allowed");
         }
         return endpointHost;
+    }
+
+    /**
+     * Get limit configuration from service node params.
+     * @return Limit (0 if none specified, -1 if it's no continuations)
+     */
+    private int getLimit(final ServiceParams serviceParams) {
+        TermNode limitNode = serviceParams.get(LIMIT_KEY, null);
+        if (limitNode == null) {
+            return 0;
+        }
+        serviceParams.clear(LIMIT_KEY);
+        Value v = limitNode.getValue();
+        if (v.stringValue().equals("once")) {
+            return -1;
+        }
+        return Integer.parseInt(v.stringValue());
     }
 
     @Override
