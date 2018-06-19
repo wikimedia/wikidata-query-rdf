@@ -268,12 +268,13 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
      *
      * @param responseStream Response body as stream
      * @param binding Current binding set.
+     * @param recordsCount Count of records processed up to this batch
      * @return Set of resulting bindings, or null if none found.
      * @throws SAXException on error
      * @throws IOException on error
      * @throws XPathExpressionException on error
      */
-    public ResultWithContinue parseResponse(InputStream responseStream, IBindingSet binding)
+    public ResultWithContinue parseResponse(InputStream responseStream, IBindingSet binding, int recordsCount)
             throws SAXException, IOException, XPathExpressionException {
         if (outputVars.isEmpty()) {
             return null;
@@ -304,7 +305,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
             for (Map.Entry<OutputVariable, XPathExpression> var : compiledVars.entrySet()) {
                 final IConstant constant;
                 if (var.getKey().isOrdinal()) {
-                    constant = makeConstant(lexiconRelation.getValueFactory(), i);
+                    constant = makeConstant(lexiconRelation.getValueFactory(), i + recordsCount);
                     results[i].set(var.getKey().getVar(), constant);
                     continue;
                 }
@@ -454,7 +455,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
 
         ContinueIterator(IBindingSet binding) {
             this.bindings = binding;
-            lastResult = doSearchRequest();
+            lastResult = doSearchRequest(0);
         }
 
         /**
@@ -462,7 +463,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
          * This can be called several times if continue is present.
          * @return Query results with continue structure.
          */
-        private ResultWithContinue doSearchRequest() {
+        private ResultWithContinue doSearchRequest(int recordsCount) {
             final Request req = getHttpRequest(bindings);
             if (lastResult != null && lastResult.getContinue() != null) {
                 lastResult.getContinue().forEach((key, value) -> req.param(key, value));
@@ -480,7 +481,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                 if (response.getStatus() != HttpStatus.OK_200) {
                     throw new RuntimeException("Bad response status: " + response.getStatus());
                 }
-                return parseResponse(listener.getInputStream(), bindings);
+                return parseResponse(listener.getInputStream(), bindings, recordsCount);
             } catch (ExecutionException | TimeoutException | InterruptedException e) {
                 throw new RuntimeException("MWAPI request failed", e);
             } catch (SAXException | IOException | XPathExpressionException e) {
@@ -510,7 +511,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
             }
             // If we can continue, do the continue
             if (lastResult.getContinue() != null) {
-                lastResult = doSearchRequest();
+                lastResult = doSearchRequest(recordsCount);
             }
             if (closed || lastResult == null) {
                 return null;
