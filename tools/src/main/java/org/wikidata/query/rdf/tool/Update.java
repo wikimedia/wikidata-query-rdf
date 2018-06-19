@@ -44,7 +44,7 @@ import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.options.OptionsUtils;
 import org.wikidata.query.rdf.tool.options.UpdateOptions;
 import org.wikidata.query.rdf.tool.rdf.Munger;
-import org.wikidata.query.rdf.tool.rdf.RdfClient;
+import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 

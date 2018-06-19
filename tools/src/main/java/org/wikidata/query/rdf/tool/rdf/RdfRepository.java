@@ -30,6 +30,7 @@ import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.FatalException;
+import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
