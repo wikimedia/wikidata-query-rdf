@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 import com.bigdata.bop.IBindingSet;
 import com.bigdata.bop.IVariableOrConstant;
 import com.bigdata.bop.bindingSet.HashBindingSet;
+import com.bigdata.rdf.internal.impl.literal.XSDNumericIV;
 import com.bigdata.rdf.model.BigdataValueFactory;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
@@ -123,7 +124,7 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
     public void testEmptyVars() throws Exception {
         List<OutputVariable> outputVars = Lists.newArrayList();
         InputStream responseStream = new ByteArrayInputStream("not even xml".getBytes("UTF-8"));
-        Object results = createCall(outputVars).parseResponse(responseStream, binding);
+        Object results = createCall(outputVars).parseResponse(responseStream, binding, 0);
         assertNull(results);
     }
 
@@ -133,7 +134,7 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
                 .of(new OutputVariable(makeVariable("var"), "@test"));
         InputStream responseStream = new ByteArrayInputStream("<result></result>".getBytes("UTF-8"));
         when(template.getItemsPath()).thenReturn("/api/result");
-        Object results = createCall(outputVars).parseResponse(responseStream, binding);
+        Object results = createCall(outputVars).parseResponse(responseStream, binding, 0);
         assertNull(results);
     }
 
@@ -142,22 +143,25 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
         List<OutputVariable> outputVars = ImmutableList.of(
                 new OutputVariable(makeVariable("var"), "@name"),
                 new OutputVariable(makeVariable("header"), "/api/header/@value"),
-                new OutputVariable(OutputVariable.Type.ITEM, makeVariable("item"), "@id")
+                new OutputVariable(OutputVariable.Type.ITEM, makeVariable("item"), "@id"),
+                new OutputVariable(OutputVariable.Type.ORDINAL, makeVariable("num"), "@id")
                 );
         when(template.getItemsPath()).thenReturn("/api/result");
         InputStream responseStream = new ByteArrayInputStream(
                 "<api><header value=\"heading\"></header><result name=\"result1\" id=\"Q1\"></result><result name=\"result2\"></result></api>"
                         .getBytes("UTF-8"));
 
-        Iterator<IBindingSet> results = createCall(outputVars).parseResponse(responseStream, binding).getResultIterator();
+        Iterator<IBindingSet> results = createCall(outputVars).parseResponse(responseStream, binding, 3).getResultIterator();
         assertTrue(results.hasNext());
         IBindingSet result = results.next();
         assertThat(result, binds("var", "result1"));
         assertThat(result, binds("header", "heading"));
         assertThat(result, bindsItem("item", "Q1"));
+        assertThat(result, binds("num", new XSDNumericIV<>(3)));
         result = results.next();
         assertThat(result, binds("var", "result2"));
         assertThat(result, binds("header", "heading"));
+        assertThat(result, binds("num", new XSDNumericIV<>(4)));
         assertFalse(results.hasNext());
     }
 
@@ -167,7 +171,7 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
                 .of(new OutputVariable(makeVariable("var"), "@test"));
         InputStream responseStream = new ByteArrayInputStream("Fatal error: I am a teapot".getBytes("UTF-8"));
         when(template.getItemsPath()).thenReturn("/api/result");
-        Object results = createCall(outputVars).parseResponse(responseStream, binding);
+        Object results = createCall(outputVars).parseResponse(responseStream, binding, 0);
     }
 
     @Test
@@ -181,7 +185,7 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
                 "<api><header value=\"heading\"></header><result name=\"result1\">datadata</result><result>we need moar data</result></api>"
                         .getBytes("UTF-8"));
 
-        Iterator<IBindingSet> results = createCall(outputVars).parseResponse(responseStream, binding).getResultIterator();
+        Iterator<IBindingSet> results = createCall(outputVars).parseResponse(responseStream, binding, 0).getResultIterator();
         assertTrue(results.hasNext());
         IBindingSet result = results.next();
         assertThat(result, binds("var", "result1"));
@@ -201,7 +205,7 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
         InputStream responseStream = new ByteArrayInputStream(
                 "<api><header value=\"heading\"></header><result name=\"result1\">datadata</result></api>"
                         .getBytes("UTF-8"));
-         ResultWithContinue results = createCall(outputVars).parseResponse(responseStream, binding);
+         ResultWithContinue results = createCall(outputVars).parseResponse(responseStream, binding, 0);
          assertNull(results.getContinue());
     }
 
@@ -212,7 +216,7 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
         InputStream responseStream = new ByteArrayInputStream(
                 "<api><continue sroffset=\"5\" continue=\"-||\"></continue><header value=\"heading\"></header><result name=\"result1\">datadata</result></api>"
                         .getBytes("UTF-8"));
-         ResultWithContinue results = createCall(outputVars).parseResponse(responseStream, binding);
+         ResultWithContinue results = createCall(outputVars).parseResponse(responseStream, binding, 0);
          Map<String, String> continueMap = results.getContinue();
          assertThat(continueMap.keySet(), containsInAnyOrder("sroffset", "continue"));
          assertThat(continueMap, hasEntry("sroffset", "5"));

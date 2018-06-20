@@ -9,11 +9,13 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
+import org.openrdf.model.Value;
 import org.openrdf.model.impl.LiteralImpl;
 
 import com.bigdata.bop.IBindingSet;
 import com.bigdata.bop.IConstant;
 import com.bigdata.rdf.internal.IV;
+import com.bigdata.rdf.internal.impl.literal.NumericIV;
 
 /**
  * A set of matchers to match Blazegraph bindings.
@@ -27,6 +29,16 @@ public final class Matchers {
      */
     public static Matcher<IBindingSet> binds(String name, String value) {
         return new BindingMatcher<Literal>(name, equalTo(new LiteralImpl(value)));
+    }
+
+    /**
+     * Match binding with certain variable name and value.
+     * @param name
+     * @param value
+     * @return
+     */
+    public static Matcher<IBindingSet> binds(String name, Value value) {
+        return new BindingMatcher<Value>(name, equalTo(value));
     }
 
     /**
@@ -74,6 +86,14 @@ public final class Matchers {
                     .appendDescriptionOf(valueMatcher);
         }
 
+        private Object extractValue(IConstant<IV> value) {
+            IV inside = value.get();
+            if (inside instanceof NumericIV) {
+                return inside;
+            }
+            return inside.getValue();
+        }
+
         @Override
         protected void describeMismatchSafely(IBindingSet bindings, Description mismatchDescription) {
             IConstant<IV> value = bindings.get(makeVariable(name));
@@ -81,7 +101,7 @@ public final class Matchers {
                 mismatchDescription.appendText("but did not contain such a binding");
                 return;
             }
-            mismatchDescription.appendText("instead it was bound to").appendValue(value.get().getValue());
+            mismatchDescription.appendText("instead it was bound to").appendValue(extractValue(value));
         }
 
         @Override
@@ -90,7 +110,7 @@ public final class Matchers {
             if (value == null) {
                 return false;
             }
-            return valueMatcher.matches(value.get().getValue());
+            return valueMatcher.matches(extractValue(value));
         }
 
     }
