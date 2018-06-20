@@ -4,7 +4,6 @@ import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static com.google.common.io.Resources.getResource;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -14,17 +13,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.HttpProxy;
-import org.eclipse.jetty.client.ProxyConfiguration;
-import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.query.Binding;
@@ -40,12 +31,6 @@ import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 
-import com.github.rholder.retry.Attempt;
-import com.github.rholder.retry.RetryListener;
-import com.github.rholder.retry.Retryer;
-import com.github.rholder.retry.RetryerBuilder;
-import com.github.rholder.retry.StopStrategies;
-import com.github.rholder.retry.WaitStrategies;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSetMultimap;
@@ -56,16 +41,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 /**
  * Wrapper for communicating with the RDF repository.
  */
-// TODO fan out complexity
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
 @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED", justification = "spotbug limitation: https://github.com/spotbugs/spotbugs/issues/463")
-public class RdfRepository implements AutoCloseable {
+public class RdfRepository {
     private static final Logger log = LoggerFactory.getLogger(RdfRepository.class);
-
-    /**
-     * Http connection pool for the rdf repository.
-     */
-    private final HttpClient httpClient;
 
     /**
      * Uris for wikibase.
@@ -105,36 +83,13 @@ public class RdfRepository implements AutoCloseable {
      */
     private final String verify;
 
-    /**
-     * How many times we retry a failed HTTP call.
-     */
-    private final int MAX_RETRIES = 6;
-    /**
-     * How long to delay after failing first HTTP call, in milliseconds.
-     * Next retries would be slower exponentially by 2x until MAX_RETRIES is exhausted.
-     * Note that the first retry is 2x DELAY due to the way Retryer is implemented.
-     */
-    private final int DELAY = 1000;
-
-    /**
-     * Configuration name for proxy host.
-     */
-    private static final String HTTP_PROXY = "http.proxyHost";
-    /**
-     * Configuration name for proxy port.
-     */
-    private static final String HTTP_PROXY_PORT = "http.proxyPort";
-
-    /**
-     * Request timeout property.
-     */
-    public static final String TIMEOUT_PROPERTY = RdfRepository.class + ".timeout";
-
     @VisibleForTesting
-    public final RdfClient rdfClient;
+    protected final RdfClient rdfClient;
 
-    public RdfRepository(URI uri, WikibaseUris uris) {
+    public RdfRepository(WikibaseUris uris, RdfClient rdfClient) {
         this.uris = uris;
+        this.rdfClient = rdfClient;
+
         msyncBody = loadBody("multiSync");
         syncBody = loadBody("sync");
         updateLeftOffTimeBody = loadBody("updateLeftOffTime");
@@ -143,63 +98,6 @@ public class RdfRepository implements AutoCloseable {
         cleanUnused = loadBody("CleanUnused");
         getRevisions = loadBody("GetRevisions");
         verify = loadBody("verify");
-
-        int timeout = Integer.parseInt(System.getProperty(TIMEOUT_PROPERTY, "-1"));
-        httpClient = new HttpClient(new SslContextFactory(true/* trustAll */));
-        setupHttpClient(httpClient);
-
-        Retryer<ContentResponse> retryer = RetryerBuilder.<ContentResponse>newBuilder()
-                .retryIfExceptionOfType(TimeoutException.class)
-                .retryIfExceptionOfType(ExecutionException.class)
-                .retryIfExceptionOfType(IOException.class)
-                .retryIfRuntimeException()
-                .withWaitStrategy(WaitStrategies.exponentialWait(DELAY, 10, TimeUnit.SECONDS))
-                .withStopStrategy(StopStrategies.stopAfterAttempt(MAX_RETRIES))
-                .withRetryListener(new RetryListener() {
-                    @Override
-                    public <V> void onRetry(Attempt<V> attempt) {
-                        if (attempt.hasException()) {
-                            log.info("HTTP request failed: {}, attempt {}, will {}",
-                                    attempt.getExceptionCause(),
-                                    attempt.getAttemptNumber(),
-                                    attempt.getAttemptNumber() < MAX_RETRIES ? "retry" : "fail");
-                        }
-                    }
-                })
-                .build();
-        rdfClient = new RdfClient(this.httpClient, uri, timeout, retryer);
-    }
-
-    /**
-     * Setup HTTP client settings.
-     * @param httpClient
-     */
-    @SuppressWarnings("checkstyle:illegalcatch")
-    private void setupHttpClient(HttpClient httpClient) {
-        if (System.getProperty(HTTP_PROXY) != null
-                && System.getProperty(HTTP_PROXY_PORT) != null) {
-            final ProxyConfiguration proxyConfig = httpClient.getProxyConfiguration();
-            final HttpProxy proxy = new HttpProxy(
-                    System.getProperty(HTTP_PROXY),
-                    Integer.parseInt(System.getProperty(HTTP_PROXY_PORT)));
-            proxy.getExcludedAddresses().add("localhost");
-            proxy.getExcludedAddresses().add("127.0.0.1");
-            proxyConfig.getProxies().add(proxy);
-        }
-        try {
-            httpClient.start();
-        // Who would think declaring it as throws Exception is a good idea?
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to start HttpClient", e);
-        }
-    }
-
-    /**
-     * Close the repository.
-     */
-    @Override
-    public void close() throws Exception {
-        httpClient.stop();
     }
 
     /**
