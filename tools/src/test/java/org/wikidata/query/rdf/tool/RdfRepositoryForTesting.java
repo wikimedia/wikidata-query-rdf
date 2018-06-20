@@ -5,8 +5,11 @@ import java.net.URI;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.openrdf.query.TupleQueryResult;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
+
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * RdfRepository extension used for testing. We don't want to anyone to
@@ -36,7 +39,7 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
      * Clear's the whole repository.
      */
     public void clear() {
-        execute("update", RdfRepository.UPDATE_COUNT_RESPONSE, "CLEAR ALL");
+        rdfClient.update("CLEAR ALL");
     }
 
     /**
@@ -44,14 +47,14 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
      * uri's feature.
      */
     public int loadUrl(String uri) {
-        return execute("uri", RdfRepository.UPDATE_COUNT_RESPONSE, uri);
+        return rdfClient.loadUrl(uri);
     }
 
     /**
      * Updates the repository.
      */
     public int update(String query) {
-        return execute("update", RdfRepository.UPDATE_COUNT_RESPONSE, query);
+        return rdfClient.update(query);
     }
 
     /**
@@ -112,5 +115,23 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
     private void after() throws Exception {
         clear();
         close();
+    }
+
+    /**
+     * @deprecated tests should be refactored to test RdfClient directly
+     */
+    @Deprecated
+    @VisibleForTesting
+    public TupleQueryResult query(String sparql) {
+        return rdfClient.query(sparql);
+    }
+
+    /**
+     * @deprecated tests should be refactored to test RdfClient directly
+     */
+    @Deprecated
+    @VisibleForTesting
+    public boolean ask(String sparql) {
+        return rdfClient.ask(sparql);
     }
 }
