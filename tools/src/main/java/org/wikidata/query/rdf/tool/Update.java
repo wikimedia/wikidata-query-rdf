@@ -1,6 +1,9 @@
 package org.wikidata.query.rdf.tool;
 
+import static com.github.rholder.retry.StopStrategies.stopAfterAttempt;
+import static com.github.rholder.retry.WaitStrategies.exponentialWait;
 import static java.lang.Integer.parseInt;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.handleOptions;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.mungerFromOptions;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.INPUT_DATE_FORMATTER;
@@ -10,6 +13,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Security;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -44,16 +48,14 @@ import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.options.OptionsUtils;
 import org.wikidata.query.rdf.tool.options.UpdateOptions;
 import org.wikidata.query.rdf.tool.rdf.Munger;
-import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
+import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.github.rholder.retry.Attempt;
 import com.github.rholder.retry.RetryListener;
 import com.github.rholder.retry.Retryer;
 import com.github.rholder.retry.RetryerBuilder;
-import com.github.rholder.retry.StopStrategies;
-import com.github.rholder.retry.WaitStrategies;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
@@ -361,7 +363,8 @@ public final class Update {
 
     public static RdfClient buildRdfClient(URI uri, HttpClient httpClient) {
         int timeout = parseInt(System.getProperty(TIMEOUT_PROPERTY, "-1"));
-        return new RdfClient(httpClient, uri, timeout, buildHttpClientRetryer());
+        Duration timeoutDuration = Duration.of(timeout, SECONDS);
+        return new RdfClient(httpClient, uri, buildHttpClientRetryer(), timeoutDuration);
     }
 
     @SuppressWarnings("checkstyle:IllegalCatch") // Exception is part of Jetty's HttpClient contract
@@ -389,8 +392,8 @@ public final class Update {
                     .retryIfExceptionOfType(ExecutionException.class)
                     .retryIfExceptionOfType(IOException.class)
                     .retryIfRuntimeException()
-                    .withWaitStrategy(WaitStrategies.exponentialWait(HTTP_RETRY_DELAY, 10, TimeUnit.SECONDS))
-                    .withStopStrategy(StopStrategies.stopAfterAttempt(MAX_RETRIES))
+                    .withWaitStrategy(exponentialWait(HTTP_RETRY_DELAY, 10, TimeUnit.SECONDS))
+                    .withStopStrategy(stopAfterAttempt(MAX_RETRIES))
                     .withRetryListener(new RetryListener() {
                         @Override
                         public <V> void onRetry(Attempt<V> attempt) {
