@@ -223,6 +223,11 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
          assertThat(continueMap, hasEntry("continue", "-||"));
     }
 
+    @Test
+    public void testResultsLimit() throws Exception {
+        assertEquals(createCall(Maps.newHashMap(), Lists.newArrayList(), 1).getLimit(), 1);
+    }
+
     private MWApiServiceCall createCall() throws Exception {
         return createCall(Maps.newHashMap(), Lists.newArrayList());
     }
@@ -241,7 +246,15 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
         HttpClient mockClient = mock(HttpClient.class);
         Timer requestTimer = mock(Timer.class);
         return new MWApiServiceCall(template, "acme.test", inputVars,
-                outputVars, mockClient, store().getLexiconRelation(), requestTimer);
+                outputVars, mockClient, store().getLexiconRelation(), requestTimer, 0);
     }
 
+    private MWApiServiceCall createCall(
+            Map<String, IVariableOrConstant> inputVars,
+            List<OutputVariable> outputVars, int limit) throws Exception {
+        HttpClient mockClient = mock(HttpClient.class);
+        Timer requestTimer = mock(Timer.class);
+        return new MWApiServiceCall(template, "acme.test", inputVars,
+                outputVars, mockClient, store().getLexiconRelation(), requestTimer, limit);
+    }
 }

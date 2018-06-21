@@ -64,7 +64,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 /**
  * Instance of API service call.
  */
-@SuppressWarnings({"rawtypes", "unchecked", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"rawtypes", "unchecked", "checkstyle:classfanoutcomplexity", "checkstyle:npathcomplexity"})
 @SuppressFBWarnings(value = "DMC_DUBIOUS_MAP_COLLECTION", justification = "while inputVars could be implemented as a list, the maps makes semantic sense.")
 public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServiceCall {
     private static final Logger log = LoggerFactory.getLogger(MWApiServiceCall.class);
@@ -114,6 +114,10 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
      */
     private final int maxContinue;
     /**
+     * If false, no continuations will be performed after first request.
+     */
+    private final boolean allowContinue;
+    /**
      * Thread-safe document builder.
      */
     private final ThreadLocal<DocumentBuilder> docBuilder;
@@ -127,7 +131,9 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     MWApiServiceCall(ApiTemplate template, String endpoint,
                      Map<String, IVariableOrConstant> inputVars,
                      List<OutputVariable> outputVars, HttpClient client,
-                     LexiconRelation lexiconRelation, Timer requestTimer)
+                     LexiconRelation lexiconRelation, Timer requestTimer,
+                     int limit
+                     )
             throws MalformedURLException {
         this.template = template;
         this.endpoint = new URL("https", endpoint, "/w/api.php").toExternalForm();
@@ -137,7 +143,8 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         this.lexiconRelation = lexiconRelation;
         this.requestTimer = requestTimer;
         this.requestTimeout = Integer.parseInt(System.getProperty(TIMEOUT_PROPERTY, TIMEOUT_MILLIS));
-        this.maxContinue = Integer.parseInt(System.getProperty(MAX_CONTINUE_CONFIG, "10000"));
+        this.maxContinue = getMaxFromLimit(limit);
+        this.allowContinue = (limit >= 0);
         this.docBuilder = new ThreadLocal<DocumentBuilder>() {
             @Override protected DocumentBuilder initialValue() {
                 DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -160,6 +167,19 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         };
     }
 
+    /**
+     * Extract effective max records limit.
+     * @param limit Limit from service call.
+     * @return
+     */
+    private int getMaxFromLimit(int limit) {
+        int maxContinue = Integer.parseInt(System.getProperty(MAX_CONTINUE_CONFIG, "10000"));
+        if (limit > 0 && limit < maxContinue) {
+            return limit;
+        }
+        return maxContinue;
+    }
+
     @Override
     public IServiceOptions getServiceOptions() {
         return MWApiServiceFactory.SERVICE_OPTIONS;
@@ -168,6 +188,14 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     @Override
     public ICloseableIterator<IBindingSet> call(IBindingSet[] bindingSets) throws Exception {
         return new MultiSearchIterator(bindingSets);
+    }
+
+    /**
+     * Get continuation limit.
+     * @return How many records it could return.
+     */
+    public int getLimit() {
+        return maxContinue;
     }
 
     /**
@@ -494,6 +522,9 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
             if (closed || lastResult == null) {
                 return false;
             }
+            if (recordsCount >= maxContinue) {
+                return false;
+            }
             return lastResult.getResultIterator().hasNext() || lastResult.searchContinue != null;
         }
 
@@ -510,7 +541,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                 return lastResult.getResultIterator().next();
             }
             // If we can continue, do the continue
-            if (lastResult.getContinue() != null) {
+            if (allowContinue && lastResult.getContinue() != null) {
                 lastResult = doSearchRequest(recordsCount);
             }
             if (closed || lastResult == null) {
