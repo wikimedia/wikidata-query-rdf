@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.wikidata.query.rdf.blazegraph.throttling.ThrottlingTestUtils.createRequest;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
@@ -64,7 +65,7 @@ public class ThrottlerTest {
         }
 
         ThrottlerImpl(Cache<Object, Object> stateStore, String enableThrottlingIfHeader, String alwaysThrottleParam) {
-            super(Object::new, stateStore, enableThrottlingIfHeader, alwaysThrottleParam);
+            super(Object::new, stateStore, enableThrottlingIfHeader, alwaysThrottleParam, Clock.systemUTC());
         }
 
         @Override

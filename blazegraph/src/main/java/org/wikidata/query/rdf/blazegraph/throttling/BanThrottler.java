@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -31,8 +32,9 @@ public class BanThrottler <S extends BanState> extends Throttler<S> {
             Callable<S> createThrottlingState,
             Cache<Object, S> stateStore,
             String enableThrottlingIfHeader,
-            String alwaysBanParam) {
-        super(createThrottlingState, stateStore, enableThrottlingIfHeader, alwaysBanParam);
+            String alwaysBanParam,
+            Clock clock) {
+        super(createThrottlingState, stateStore, enableThrottlingIfHeader, alwaysBanParam, clock);
     }
 
     @Override

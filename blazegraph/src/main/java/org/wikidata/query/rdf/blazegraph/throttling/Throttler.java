@@ -1,11 +1,15 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
 import static com.google.common.base.Strings.emptyToNull;
+import static java.time.Instant.now;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.servlet.http.HttpServletRequest;
@@ -54,6 +58,9 @@ public abstract class Throttler<S> {
     @Nullable
     public final String alwaysThrottleParam;
 
+    @Nonnull
+    private final Clock clock;
+
     /**
      * Constructor.
      *
@@ -64,16 +71,18 @@ public abstract class Throttler<S> {
      *                   throttling
      * @param enableThrottlingIfHeader throttling is only enabled if this header is present
      * @param alwaysThrottleParam this query parameter will cause throttling no matter what
+     * @param clock
      */
     public Throttler(
             Callable<S> createThrottlingState,
             Cache<Object, S> stateStore,
             String enableThrottlingIfHeader,
-            String alwaysThrottleParam) {
+            String alwaysThrottleParam, @Nonnull Clock clock) {
         this.state = stateStore;
         this.createThrottlingState = createThrottlingState;
         this.enableThrottlingIfHeader = emptyToNull(enableThrottlingIfHeader);
         this.alwaysThrottleParam = emptyToNull(alwaysThrottleParam);
+        this.clock = clock;
     }
 
     protected S getState(Object bucket) throws ExecutionException {
@@ -111,6 +120,11 @@ public abstract class Throttler<S> {
         if (shouldBypassThrottling(request)) return Instant.MIN;
 
         return internalThrottledUntil(bucket, request);
+    }
+
+    public Duration throttledDuration(Object bucket, HttpServletRequest request) {
+        Instant throttledUntil = throttledUntil(bucket, request);
+        return Duration.between(now(clock), throttledUntil);
     }
 
     /**

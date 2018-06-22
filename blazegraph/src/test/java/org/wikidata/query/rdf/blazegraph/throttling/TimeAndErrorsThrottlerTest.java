@@ -12,6 +12,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.wikidata.query.rdf.blazegraph.throttling.ThrottlingTestUtils.createRequest;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Callable;
@@ -45,7 +46,8 @@ public class TimeAndErrorsThrottlerTest {
                 createThrottlingState(),
                 stateStore,
                 null,
-                null);
+                null,
+                Clock.systemUTC());
     }
 
     private Callable<ThrottlingState> createThrottlingState() {
