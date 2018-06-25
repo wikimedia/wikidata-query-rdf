@@ -9,6 +9,8 @@
 
     <logger name="org.wikidata.query.rdf" level="info"/>
     <logger name="org.wikidata.query.rdf.tool.wikibase" level="debug"/>
+    <!-- WireMock has an aggressive shutdown, https://github.com/tomakehurst/wiremock/issues/563 -->
+    <logger name="org.eclipse.jetty.util.thread.QueuedThreadPool" level="error" />
 
     <root level="warn">
         <appender-ref ref="STDOUT"/>

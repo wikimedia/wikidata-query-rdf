@@ -2,6 +2,9 @@ package org.wikidata.query.rdf.tool.rdf.client;
 
 import java.io.IOException;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import org.eclipse.jetty.client.api.ContentResponse;
 
 /**
@@ -18,6 +21,7 @@ interface ResponseHandler<T> {
     /**
      * The contents of the accept header sent to the rdf repository.
      */
+    @Nullable
     String acceptHeader();
 
     /**
@@ -25,5 +29,6 @@ interface ResponseHandler<T> {
      *
      * @throws IOException if there is an error reading the response
      */
+    @Nonnull
     T parse(ContentResponse entity) throws IOException;
 }

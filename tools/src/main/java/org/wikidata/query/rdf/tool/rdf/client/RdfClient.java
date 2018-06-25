@@ -1,16 +1,22 @@
 package org.wikidata.query.rdf.tool.rdf.client;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.eclipse.jetty.http.HttpMethod.POST;
+import static org.eclipse.jetty.http.HttpStatus.OK_200;
+
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.FormContentProvider;
-import org.eclipse.jetty.http.HttpMethod;
-import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.Fields;
 import org.openrdf.query.TupleQueryResult;
 import org.slf4j.Logger;
@@ -21,7 +27,6 @@ import org.wikidata.query.rdf.tool.exception.FatalException;
 import com.github.rholder.retry.RetryException;
 import com.github.rholder.retry.Retryer;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Charsets;
 
 /**
  * Low level API to Blazegraph.
@@ -45,11 +50,11 @@ public class RdfClient {
     /** URI for the wikibase rdf repository. */
     private final URI uri;
     /** Request timeout. */
-    private final int timeout;
+    private final Duration timeout;
     /** Retryer for fetching data from RDF store. */
     private final Retryer<ContentResponse> retryer;
 
-    public RdfClient(HttpClient httpClient, URI uri, int timeout, Retryer<ContentResponse> retryer) {
+    public RdfClient(HttpClient httpClient, URI uri, Retryer<ContentResponse> retryer, Duration timeout) {
         this.httpClient = httpClient;
         this.uri = uri;
         this.timeout = timeout;
@@ -103,7 +108,7 @@ public class RdfClient {
             response = retryer.call(()
                 -> makeRequest(type, sparql, responseHandler.acceptHeader()).send());
 
-            if (response.getStatus() != HttpStatus.OK_200) {
+            if (response.getStatus() != OK_200) {
                 throw new ContainedException("Non-200 response from triple store:  " + response
                                 + " body=\n" + response.getContentAsString());
             }
@@ -111,7 +116,7 @@ public class RdfClient {
             log.debug("Completed in {} ms", System.currentTimeMillis() - startQuery);
             return responseHandler.parse(response);
         } catch (ExecutionException | RetryException | IOException e) {
-            throw new FatalException("Error updating triple store", e);
+            throw new FatalException("Error accessing triple store", e);
         }
     }
 
@@ -122,11 +127,11 @@ public class RdfClient {
      * @param accept Accept header (can be null)
      * @return Request object
      */
-    private Request makeRequest(String type, String sparql, String accept) {
+    private Request makeRequest(@Nonnull String type, @Nonnull String sparql, @Nullable String accept) {
         Request post = httpClient.newRequest(uri);
-        post.method(HttpMethod.POST);
-        if (timeout > 0) {
-            post.timeout(timeout, TimeUnit.SECONDS);
+        post.method(POST);
+        if (!timeout.isNegative()) {
+            post.timeout(timeout.toMillis(), MILLISECONDS);
         }
         // Note that Blazegraph totally ignores the Accept header for SPARQL
         // updates so the response is just html in that case...
@@ -136,7 +141,7 @@ public class RdfClient {
 
         final Fields fields = new Fields();
         fields.add(type, sparql);
-        final FormContentProvider form = new FormContentProvider(fields, Charsets.UTF_8);
+        final FormContentProvider form = new FormContentProvider(fields, UTF_8);
         post.content(form);
         return post;
     }
