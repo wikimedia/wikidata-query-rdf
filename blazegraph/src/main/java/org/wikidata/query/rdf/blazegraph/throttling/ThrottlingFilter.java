@@ -2,7 +2,7 @@ package org.wikidata.query.rdf.blazegraph.throttling;
 
 import static java.lang.String.format;
 import static java.time.Instant.now;
-import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Locale.ENGLISH;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -35,6 +35,7 @@ import org.isomorphism.util.TokenBuckets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -337,13 +338,17 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
      * @throws IOException if the response cannot be written
      */
     private void notifyUserBanned(HttpServletResponse response, Instant bannedUntil) throws IOException {
-        String banEndTime = ISO_OFFSET_DATE_TIME.format(bannedUntil);
-        String message = format(
+        response.sendError(403, formattedBanMessage(bannedUntil));
+    }
+
+    @VisibleForTesting
+    static String formattedBanMessage(Instant bannedUntil) {
+        String banEndTime = ISO_INSTANT.format(bannedUntil);
+        return format(
                 ENGLISH,
                 "You have been banned until %s, please respect throttling and retry-after headers.",
                 banEndTime
         );
-        response.sendError(403, message);
     }
 
     /**
