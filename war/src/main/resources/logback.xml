@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration>
+<configuration packagingData="false">
+    <evaluator name="SYNTAX_ERROR">
+      <expression>
+      throwable != null &amp;&amp; throwable.getCause() != null &amp;&amp;
+      throwable instanceof java.util.concurrent.ExecutionException &amp;&amp;
+      throwable.getCause() instanceof org.openrdf.query.MalformedQueryException</expression>
+    </evaluator>
+    <evaluator name="QUERY_TIMEOUT">
+      <expression>
+      throwable != null &amp;&amp; throwable instanceof java.util.concurrent.TimeoutException
+      </expression>
+    </evaluator>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} IP:%X{req.remoteHost} UA:%X{req.userAgent} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} IP:%X{req.remoteHost} UA:%X{req.userAgent} - %msg%n%rEx{1,QUERY_TIMEOUT,SYNTAX_ERROR}</pattern>
             <outputPatternAsHeader>true</outputPatternAsHeader>
         </encoder>
     </appender>
