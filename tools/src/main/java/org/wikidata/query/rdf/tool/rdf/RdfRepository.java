@@ -30,7 +30,6 @@ import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSetMultimap;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -38,7 +37,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 /**
  * Wrapper for communicating with the RDF repository.
  */
-@SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED", justification = "spotbug limitation: https://github.com/spotbugs/spotbugs/issues/463")
 public class RdfRepository {
     private static final Logger log = LoggerFactory.getLogger(RdfRepository.class);
 
@@ -80,7 +78,6 @@ public class RdfRepository {
      */
     private final String verify;
 
-    @VisibleForTesting
     protected final RdfClient rdfClient;
 
     public RdfRepository(WikibaseUris uris, RdfClient rdfClient) {
@@ -132,43 +129,6 @@ public class RdfRepository {
         return values;
     }
 
-    /**
-     * Collect results of the query into a multimap by first parameter.
-     *
-     * @param result Result object
-     * @param keyBinding Binding name to serve as key
-     * @param valueBinding Binding name to serve as values
-     * @return Collection of strings resulting from the query.
-     */
-    public ImmutableSetMultimap<String, String> resultToMap(TupleQueryResult result, String keyBinding, String valueBinding) {
-        ImmutableSetMultimap.Builder<String, String> values = ImmutableSetMultimap.builder();
-        try {
-            while (result.hasNext()) {
-                BindingSet bindings = result.next();
-                Binding value = bindings.getBinding(valueBinding);
-                Binding key = bindings.getBinding(keyBinding);
-                if (value == null || key == null) {
-                    continue;
-                }
-                values.put(key.getValue().stringValue(), value.getValue().stringValue());
-            }
-        } catch (QueryEvaluationException e) {
-            throw new FatalException("Can't load results: " + e, e);
-        }
-        return values.build();
-    }
-
-    /**
-     * Perform a SPARQL query and return the result as a map.
-     * @param query SPARQL query, should be SELECT
-     * @param keyBinding Binding name to serve as key
-     * @param valueBinding Binding name to serve as values
-     * @return Collection of strings resulting from the query.
-     */
-    public ImmutableSetMultimap<String, String> selectToMap(String query, String keyBinding, String valueBinding) {
-        return resultToMap(rdfClient.query(query), keyBinding, valueBinding);
-    }
-
 
     /**
      * Get list of value subjects connected to entity. The connection is either
@@ -183,7 +143,7 @@ public class RdfRepository {
         b.bind("uris.statement", uris.statement());
         b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
 
-        return resultToMap(rdfClient.query(b.toString()), "entity", "s");
+        return rdfClient.selectToMap(b.toString(), "entity", "s");
     }
 
     /**
@@ -197,7 +157,7 @@ public class RdfRepository {
         b.bind("uris.statement", uris.statement());
         b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
 
-        return resultToMap(rdfClient.query(b.toString()), "entity", "s");
+        return rdfClient.selectToMap(b.toString(), "entity", "s");
     }
 
     /**
@@ -522,14 +482,5 @@ public class RdfRepository {
         } catch (QueryEvaluationException e) {
             throw new FatalException("Error evaluating query", e);
         }
-    }
-
-    /**
-     * Generic update method.
-     * @param sparql SPARQL UPDATE query
-     * @return How many triples were mutated.
-     */
-    public Integer updateQuery(String sparql) {
-        return rdfClient.update(sparql);
     }
 }

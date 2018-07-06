@@ -18,6 +18,9 @@ import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
+import org.openrdf.query.Binding;
+import org.openrdf.query.BindingSet;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +30,9 @@ import org.wikidata.query.rdf.tool.exception.FatalException;
 import com.github.rholder.retry.RetryException;
 import com.github.rholder.retry.Retryer;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableSetMultimap;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Low level API to Blazegraph.
@@ -146,4 +152,41 @@ public class RdfClient {
         return post;
     }
 
+    /**
+     * Perform a SPARQL query and return the result as a map.
+     * @param query SPARQL query, should be SELECT
+     * @param keyBinding Binding name to serve as key
+     * @param valueBinding Binding name to serve as values
+     * @return Collection of strings resulting from the query.
+     */
+    public ImmutableSetMultimap<String, String> selectToMap(String query, String keyBinding, String valueBinding) {
+        return resultToMap(query(query), keyBinding, valueBinding);
+    }
+
+    /**
+     * Collect results of the query into a multimap by first parameter.
+     *
+     * @param result Result object
+     * @param keyBinding Binding name to serve as key
+     * @param valueBinding Binding name to serve as values
+     * @return Collection of strings resulting from the query.
+     */
+    @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED", justification = "spotbug limitation: https://github.com/spotbugs/spotbugs/issues/463")
+    private ImmutableSetMultimap<String, String> resultToMap(TupleQueryResult result, String keyBinding, String valueBinding) {
+        ImmutableSetMultimap.Builder<String, String> values = ImmutableSetMultimap.builder();
+        try {
+            while (result.hasNext()) {
+                BindingSet bindings = result.next();
+                Binding value = bindings.getBinding(valueBinding);
+                Binding key = bindings.getBinding(keyBinding);
+                if (value == null || key == null) {
+                    continue;
+                }
+                values.put(key.getValue().stringValue(), value.getValue().stringValue());
+            }
+        } catch (QueryEvaluationException e) {
+            throw new FatalException("Can't load results: " + e, e);
+        }
+        return values.build();
+    }
 }

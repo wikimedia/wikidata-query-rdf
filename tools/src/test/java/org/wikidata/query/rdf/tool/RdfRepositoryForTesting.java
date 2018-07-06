@@ -25,10 +25,8 @@ import com.google.common.annotations.VisibleForTesting;
 public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
 
     /**
-     * The namespace of the local RDF repository, e.g. "kb" or "wdq".
+     * @param namespace The namespace of the local RDF repository, e.g. "kb" or "wdq".
      */
-    private final String namespace;
-
     public RdfRepositoryForTesting(String namespace) {
         super(
                 WikibaseUris.WIKIDATA,
@@ -38,14 +36,13 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
                         getRdfClientTimeout()
                 )
         );
-        this.namespace = namespace;
     }
 
     /**
      * Take a relative path and create a URL with the full path to Blazegraph on
      * localhost.
      */
-    private static URI url(String path) {
+    public static URI url(String path) {
         return URI.create("http://localhost:9999/bigdata" + path);
     }
 

@@ -22,6 +22,7 @@ import static org.wikidata.query.rdf.tool.change.ChangeMatchers.hasTitle;
 import static org.wikidata.query.rdf.tool.change.ChangeMatchers.hasRevision;
 import static org.wikidata.query.rdf.tool.change.ChangeMatchers.hasTitleRevision;
 
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,7 +52,7 @@ import org.wikidata.query.rdf.tool.change.events.EventsMeta;
 import org.wikidata.query.rdf.tool.change.events.PageDeleteEvent;
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
-import org.wikidata.query.rdf.tool.rdf.RdfRepository;
+import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris;
 
 import com.google.common.collect.ImmutableList;
@@ -71,14 +72,14 @@ public class KafkaPollerUnitTest {
             new ConsumerRecords<>(Collections.emptyMap());
     private static final int BATCH_SIZE = 5;
 
-    private KafkaPoller makePoller(RdfRepository repo) {
+    private KafkaPoller makePoller(RdfClient rdfClient) throws URISyntaxException {
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest");
 
-        return new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, repo, true);
+        return new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, new KafkaOffsetsRepository(uris.builder().build(), rdfClient), true);
     }
 
-    private KafkaPoller makePoller() {
+    private KafkaPoller makePoller() throws URISyntaxException {
         return makePoller(null);
     }
 
@@ -137,7 +138,7 @@ public class KafkaPollerUnitTest {
         )));
     }
 
-    private Batch getBatchFromRecords(ConsumerRecords<String, ChangeEvent> records) throws RetryableException {
+    private Batch getBatchFromRecords(ConsumerRecords<String, ChangeEvent> records) throws RetryableException, URISyntaxException {
         KafkaPoller poller = makePoller();
         when(consumer.poll(anyLong())).thenReturn(records, EMPTY_CHANGES);
 
@@ -145,7 +146,7 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void noChanges() throws RetryableException {
+    public void noChanges() throws RetryableException, URISyntaxException {
         KafkaPoller poller = makePoller();
         when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
         Batch batch = poller.firstBatch();
@@ -154,7 +155,7 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void changesFromTopics() throws RetryableException {
+    public void changesFromTopics() throws RetryableException, URISyntaxException {
         ConsumerRecords<String, ChangeEvent> rs = makeRecords(
                 makeRecord(makeRCEvent(20, 1, "Q123"), "topictest", 20),
                 makeRecord(makeRCEvent(21, 1, "Q234"), "othertopic", 21),
@@ -169,7 +170,7 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void changesOrder() throws RetryableException {
+    public void changesOrder() throws RetryableException, URISyntaxException {
         ConsumerRecords<String, ChangeEvent> rs = makeRecords(
                 makeRecord(makeRCEvent(20, 5, "Q123"), "topictest", 20),
                 makeRecord(makeRCEvent(30, 2, "Q123"), "othertopic", 21),
@@ -184,7 +185,7 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void filterOtherChanges() throws RetryableException {
+    public void filterOtherChanges() throws RetryableException, URISyntaxException {
         ConsumerRecords<String, ChangeEvent> rs = makeRecords(
                 makeRecord(makeRCEvent(20, 5, "Q123"), "topictest", 20),
                 makeRecord(makeRCEvent(30, 2, "Q666", 1, DOMAIN), "othertopic", 21),
@@ -198,7 +199,7 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void multiPolls() throws RetryableException {
+    public void multiPolls() throws RetryableException, URISyntaxException {
         KafkaPoller poller = makePoller();
 
         ConsumerRecords<String, ChangeEvent> rs1 = makeRecords(
@@ -232,7 +233,7 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void multiPolls2() throws RetryableException {
+    public void multiPolls2() throws RetryableException, URISyntaxException {
         KafkaPoller poller = makePoller();
 
         ConsumerRecords<String, ChangeEvent> rs1 = makeRecords(
@@ -263,7 +264,7 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void batchSize() throws RetryableException {
+    public void batchSize() throws RetryableException, URISyntaxException {
         KafkaPoller poller = makePoller();
 
         ConsumerRecords<String, ChangeEvent> rs1 = makeRecords(
@@ -308,7 +309,7 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void deleteRevision() throws RetryableException {
+    public void deleteRevision() throws RetryableException, URISyntaxException {
         ConsumerRecords<String, ChangeEvent> rs = makeRecords(
                 makeRecord(makeRCEvent(20, 1, "Q123"), "topictest", 20),
                 makeRecord(makeDeleteEvent(21, "Q123"), "othertopic", 21),
@@ -321,7 +322,7 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void advanceTimestamp() throws RetryableException {
+    public void advanceTimestamp() throws RetryableException, URISyntaxException {
         ConsumerRecords<String, ChangeEvent> rs = makeRecords(
                 makeRecord(makeRCEvent(20, 1, "Q123"), "topictest", 120000),
                 makeRecord(makeRCEvent(30, 2, "Q234"), "topictest", 122000),
@@ -357,8 +358,6 @@ public class KafkaPollerUnitTest {
 
     /**
      * Mock partitionsFor invocation for a number of partitions per topic.
-     * @param count
-     * @param partitionArgs
      */
     private void createTopicPartitions(int count) {
         when(consumer.partitionsFor(any())).thenAnswer(inv -> {
@@ -372,7 +371,7 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void topicSubscribe() throws RetryableException {
+    public void topicSubscribe() throws RetryableException, URISyntaxException {
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest", "othertopic");
         // Each topic gets 2 partitions
@@ -403,7 +402,7 @@ public class KafkaPollerUnitTest {
 
         when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
 
-        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, null, true);
+        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, new KafkaOffsetsRepository(uris.builder().build(), null), true);
         Batch batch = poller.firstBatch();
 
         // We get partitions for both topics
@@ -444,20 +443,20 @@ public class KafkaPollerUnitTest {
         verify(consumer, times(1)).offsetsForTimes(any());
     }
 
-    private void repoResults(RdfRepository rdfRepo, ImmutableSetMultimap<String, String> results) {
-        when(rdfRepo.selectToMap(any(), eq("topic"), eq("offset"))).thenReturn(results);
+    private void repoResults(ImmutableSetMultimap<String, String> results, RdfClient rdfClient) {
+        when(rdfClient.selectToMap(any(), eq("topic"), eq("offset"))).thenReturn(results);
     }
 
-    private void repoNoResults(RdfRepository rdfRepo) {
-        repoResults(rdfRepo, ImmutableSetMultimap.of());
+    private void repoNoResults(RdfClient rdfClient) {
+        repoResults(ImmutableSetMultimap.of(), rdfClient);
     }
 
     @Test
-    public void storedOffsetsFromStorage() throws RetryableException {
+    public void storedOffsetsFromStorage() throws RetryableException, URISyntaxException {
         // Scenario where all offsets are loaded from storage
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest", "othertopic");
-        RdfRepository rdfRepo = mock(RdfRepository.class);
+        RdfClient rdfClient = mock(RdfClient.class);
 
         createTopicPartitions(2);
         // capture args for assign
@@ -474,11 +473,14 @@ public class KafkaPollerUnitTest {
                 "othertopic:0", "3",
                 "othertopic:1", "4"
         );
-        repoResults(rdfRepo, offsetMap);
+        repoResults(offsetMap, rdfClient);
 
         when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
 
-        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, rdfRepo, false);
+        KafkaPoller poller = new KafkaPoller(
+                consumer, uris, startTime, BATCH_SIZE, topics,
+                new KafkaOffsetsRepository(uris.builder().build(), rdfClient),
+                false);
 
         Batch batch = poller.firstBatch();
         // should not call offsetsForTimes, since all offsets are in store
@@ -498,11 +500,11 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void storedOffsetsFromBoth() throws RetryableException {
+    public void storedOffsetsFromBoth() throws RetryableException, URISyntaxException {
         // Scenario where all offsets are loaded from both storage and timestamp
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest", "othertopic", "thirdtopic");
-        RdfRepository rdfRepo = mock(RdfRepository.class);
+        RdfClient rdfClient = mock(RdfClient.class);
 
         createTopicPartitions(1);
         // capture args for assign
@@ -517,7 +519,7 @@ public class KafkaPollerUnitTest {
                 "topictest:0", "1",
                 "othertopic:0", "3"
         );
-        repoResults(rdfRepo, offsetMap);
+        repoResults(offsetMap, rdfClient);
 
         // Timestamp-driven offsets
         when(consumer.offsetsForTimes(any())).thenAnswer(i -> {
@@ -531,7 +533,10 @@ public class KafkaPollerUnitTest {
 
         when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
 
-        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, rdfRepo, false);
+        KafkaPoller poller = new KafkaPoller(
+                consumer, uris, startTime, BATCH_SIZE, topics,
+                new KafkaOffsetsRepository(uris.builder().build(), rdfClient),
+                false);
 
         Batch batch = poller.firstBatch();
         // should not call offsetsForTimes, since all offsets are in store
@@ -547,14 +552,14 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void writeOffsets() throws RetryableException {
+    public void writeOffsets() throws RetryableException, URISyntaxException {
         // Scenario where all offsets are loaded from both storage and timestamp
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest", "othertopic", "thirdtopic");
-        RdfRepository rdfRepo = mock(RdfRepository.class);
+        RdfClient rdfClient = mock(RdfClient.class);
 
         createTopicPartitions(1);
-        repoNoResults(rdfRepo);
+        repoNoResults(rdfClient);
 
         when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
 
@@ -562,9 +567,12 @@ public class KafkaPollerUnitTest {
         when(consumer.position(positionArgs.capture())).thenReturn(1L, 2L, 3L);
 
         ArgumentCaptor<String> updateQuery = ArgumentCaptor.forClass(String.class);
-        when(rdfRepo.updateQuery(updateQuery.capture())).thenReturn(1);
+        when(rdfClient.update(updateQuery.capture())).thenReturn(1);
 
-        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, rdfRepo, true);
+        KafkaPoller poller = new KafkaPoller(
+                consumer, uris, startTime, BATCH_SIZE, topics,
+                new KafkaOffsetsRepository(uris.builder().build(), rdfClient),
+                true);
 
         Batch batch = poller.firstBatch();
         batch = poller.nextBatch(batch);
@@ -575,7 +583,7 @@ public class KafkaPollerUnitTest {
         assertThat(capturedTopics, containsInAnyOrder("topictest:0",
                 "othertopic:0", "thirdtopic:0"));
         // Should be one update query
-        verify(rdfRepo, times(1)).updateQuery(any());
+        verify(rdfClient, times(1)).update(any());
         assertThat(updateQuery.getValue(), containsString("wikibase:kafka ( \"topictest:0\" 1 )"));
         assertThat(updateQuery.getValue(), containsString("wikibase:kafka ( \"othertopic:0\" 2 )"));
         assertThat(updateQuery.getValue(), containsString("wikibase:kafka ( \"thirdtopic:0\" 3 )"));

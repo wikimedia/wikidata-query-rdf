@@ -6,13 +6,17 @@ import static org.wikidata.query.rdf.tool.HttpClientUtils.buildHttpClientRetryer
 import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyHost;
 import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyPort;
 import static org.wikidata.query.rdf.tool.change.ChangeSourceContext.buildChangeSource;
+import static org.wikidata.query.rdf.tool.change.ChangeSourceContext.getStartTime;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.handleOptions;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.mungerFromOptions;
+import static org.wikidata.query.rdf.tool.options.UpdateOptions.startInstant;
 
 import java.io.Closeable;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.Security;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -25,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.change.Change;
-import org.wikidata.query.rdf.tool.options.OptionsUtils;
+import org.wikidata.query.rdf.tool.options.OptionsUtils.WikibaseOptions;
 import org.wikidata.query.rdf.tool.options.UpdateOptions;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
@@ -80,14 +84,15 @@ public final class Update {
     @SuppressFBWarnings(
             value = "RV_RETURN_VALUE_IGNORED",
             justification = "Spotbugs does not yet understand @CanIgnoreReturnValue")
-    private static Updater<? extends Change.Batch> initialize(String[] args, Closer closer) {
+    private static Updater<? extends Change.Batch> initialize(String[] args, Closer closer) throws URISyntaxException {
         try {
             UpdateOptions options = handleOptions(UpdateOptions.class, args);
 
             WikibaseRepository wikibaseRepository = new WikibaseRepository(UpdateOptions.uris(options), options.constraints());
             closer.register(wikibaseRepository);
 
-            WikibaseUris wikibaseUris = OptionsUtils.WikibaseOptions.wikibaseUris(options);
+            WikibaseUris wikibaseUris = WikibaseOptions.wikibaseUris(options);
+            URI root = wikibaseRepository.getUris().builder().build();
 
             URI sparqlUri = UpdateOptions.sparqlUri(options);
 
@@ -101,7 +106,9 @@ public final class Update {
 
             RdfRepository rdfRepository = new RdfRepository(wikibaseUris, rdfClient);
 
-            Change.Source<? extends Change.Batch> changeSource = buildChangeSource(options, rdfRepository, wikibaseRepository);
+            Instant startTime = getStartTime(startInstant(options), rdfRepository, options.init());
+
+            Change.Source<? extends Change.Batch> changeSource = buildChangeSource(options, startTime, wikibaseRepository, rdfClient, root);
 
             Munger munger = mungerFromOptions(options);
 

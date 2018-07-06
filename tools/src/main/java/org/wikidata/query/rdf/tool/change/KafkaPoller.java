@@ -1,21 +1,18 @@
 package org.wikidata.query.rdf.tool.change;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
+import static java.util.stream.Collectors.toMap;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
-import java.util.Map.Entry;
 
 import javax.annotation.Nonnull;
 
@@ -36,19 +33,12 @@ import org.wikidata.query.rdf.tool.change.events.PageDeleteEvent;
 import org.wikidata.query.rdf.tool.change.events.PropertiesChangeEvent;
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
-import org.wikidata.query.rdf.tool.rdf.RdfRepository;
-import org.wikidata.query.rdf.tool.rdf.UpdateBuilder;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris;
 
-import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-
-import edu.umd.cs.findbugs.annotations.Nullable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * This poller will connect to Kafka event source and get changes from
@@ -56,7 +46,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  *
  * After each block of changes is processed, we store current offsets in the DB as:
  * {@code
- * <https://www.wikidata.org> wikibase:kafka ( "topic:0" 1234 )
+ * <http://www.wikidata.org> wikibase:kafka ( "topic:0" 1234 )
  * }
  *
  * When the poller is started, the offsets are initialized from two things:
@@ -64,38 +54,17 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * b) if not, use the given timestamp to initialize
  *
  * This also means if the Kafka offset is ever reset, the old offsets need to be manually
- * cleaned up. See UPDATE_OFFSETS query for how to do it.
+ * cleaned up. See KafkaOffsetsRepository.UPDATE_OFFSETS query for how to do it.
  *
  * See https://wikitech.wikimedia.org/wiki/EventBus for more docs on events in Kafka.
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
-@SuppressFBWarnings(value = "VA_FORMAT_STRING_USES_NEWLINE", justification = "we want to be platform independent here.")
 public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaPoller.class);
 
     private static final String MAX_POLL_PROPERTY = KafkaPoller.class.getName() + ".maxPoll";
     private static final String MAX_FETCH_PROPERTY = KafkaPoller.class.getName() + ".maxFetch";
-    /**
-     * Offsets fetch query.
-     */
-    private static final String GET_OFFSETS = Utils.loadBody("GetKafkaOffsets", KafkaPoller.class);
-    /**
-     * Offsets update query.
-     */
-    private static final String UPDATE_OFFSETS = Utils.loadBody("updateOffsets", KafkaPoller.class);
-    /**
-     * The first start time to poll.
-     */
-    private final Instant firstStartTime;
-    /**
-     * Size of the batches to poll against wikibase.
-     */
-    private final int batchSize;
-    /**
-     * Kafka consumer.
-     */
-    private final Consumer<String, ChangeEvent> consumer;
+
     /**
      * List of topics to listen to.
      * mediawiki.revision-create
@@ -115,55 +84,119 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
             "mediawiki.page-undelete", RevisionCreateEvent.class,
             "mediawiki.page-properties-change", PropertiesChangeEvent.class
     );
+
+    /**
+     * The first start time to poll.
+     */
+    private final Instant firstStartTime;
+    /**
+     * Size of the batches to poll against wikibase.
+     */
+    private final int batchSize;
+    /**
+     * Kafka consumer.
+     */
+    private final Consumer<String, ChangeEvent> consumer;
     /**
      * List of actual topic names, with cluster names prepended.
      */
     private final Collection<String> topics;
     /**
+     * Used to store and retrieve Kafka Offsets.
+     */
+    private final KafkaOffsetsRepository kafkaOffsetsRepository;
+    /**
      * Wikibase URIs setup.
      */
     private Uris uris;
     /**
-     * RDF repository client.
-     * Null if we won't be storing Kafka offsets in RDF repository.
-     */
-    @Nullable
-    private final RdfRepository rdfRepo;
-
-    /**
      * List of topics/partitions we're listening to.
      */
+    @Nonnull
     private final ImmutableList<TopicPartition> topicPartitions;
-
-    /**
-     * Root of the URI hierarchy.
-     * Used for storing Kafka metadata in RDF store.
-     */
-    private final URI root;
-
     /**
      * Should we ignore stored offsets?
      */
     private final boolean ignoreStoredOffsets;
 
     public KafkaPoller(Consumer<String, ChangeEvent> consumer, Uris uris,
-            Instant firstStartTime, int batchSize, Collection<String> topics,
-            RdfRepository rdfRepo, boolean ignoreStoredOffsets) {
+                       Instant firstStartTime, int batchSize, Collection<String> topics,
+                       KafkaOffsetsRepository kafkaOffsetsRepository,
+                       boolean ignoreStoredOffsets) {
         this.consumer = consumer;
         this.uris = uris;
         this.firstStartTime = firstStartTime;
         this.batchSize = batchSize;
         this.topics = topics;
-        this.rdfRepo = rdfRepo;
+        this.topicPartitions = topicsToPartitions(topics, consumer);
+        this.kafkaOffsetsRepository = kafkaOffsetsRepository;
         this.ignoreStoredOffsets = ignoreStoredOffsets;
-        try {
-            this.root = uris.builder().build();
-        } catch (URISyntaxException e) {
-            // There's no reason for this to ever happen, but if it somehow does,
-            // we should fail and let the human sort it out.
-            throw new RuntimeException(e);
+    }
+
+    /**
+     * Create list of topics with cluster names.
+     * @param clusterNames Cluster names (if empty, original list is returned)
+     * @return List of topics with cluster names as: %cluster%.%topic%
+     */
+    private static Map<String, Class<? extends ChangeEvent>> clusterNamesAwareTopics(Collection<String> clusterNames) {
+        if (clusterNames == null || clusterNames.isEmpty()) {
+            // No cluster - use topic names as is
+            return defaultTopics;
+        } else {
+            return defaultTopics.entrySet().stream().flatMap(entry ->
+                // Prepend cluster names to keys, e.g.:
+                // page.revision => eqiad.page.revision
+                clusterNames.stream().map(
+                    cluster -> Maps.immutableEntry(cluster + "." + entry.getKey(), entry.getValue())
+                )
+            ).collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
         }
-        this.topicPartitions = topicsToPartitions();
+    }
+
+    // Suppressing resource warnings so Java doesn't complain about KafkaConsumer not being closed
+    @SuppressWarnings("resource")
+    private static KafkaConsumer<String, ChangeEvent> buildKafkaConsumer(
+            String servers, String consumerId,
+            Map<String, Class<? extends ChangeEvent>> topicToClass,
+            int batchSize) {
+        // See http://kafka.apache.org/documentation.html#consumerconfigs
+        Properties props = new Properties();
+        props.put("bootstrap.servers", servers);
+        props.put("group.id", consumerId);
+        // This is an interval between polls after which the broker decides the client is dead.
+        // 5 mins seems to be good enough.
+        props.put("max.poll.interval.ms", "600000");
+        // We will manually commit after the batch is processed
+        props.put("enable.auto.commit", "false");
+        // See https://cwiki.apache.org/confluence/display/KAFKA/KIP-41%3A+KafkaConsumer+Max+Records
+        // Basically it works this way: Kafka fetches N records from each partition, where N is max.poll.records
+        // Or if there isn't as much, it polls as many as possible.
+        // Then it returns them to poll() in a round-robin fashion. Next poll is not initiated unless
+        // the prefetch data dips below N.
+        // TODO: Should we set it to half batch size, so in each batch we will have several topics?
+        props.put("max.poll.records", System.getProperty(MAX_POLL_PROPERTY, String.valueOf(batchSize)));
+        // This is about one batch of messages since message sizes in event queue are about 1k
+        props.put("max.partition.fetch.bytes", System.getProperty(MAX_FETCH_PROPERTY, String.valueOf(batchSize * 1024)));
+        log.info("Creating consumer {}", consumerId);
+        return new KafkaConsumer<>(props, new StringDeserializer(), new JsonDeserializer<>(topicToClass));
+    }
+
+    @Nonnull
+    public static KafkaPoller buildKafkaPoller(
+            String kafkaServers, String consumerId, Collection<String> clusterNames,
+            Uris uris, int batchSize, Instant startTime,
+            boolean ignoreStoredOffsets, KafkaOffsetsRepository kafkaOffsetsRepository) {
+        if (consumerId == null) {
+            throw new IllegalArgumentException("Consumer ID (--consumer) must be set");
+        }
+        Map<String, Class<? extends ChangeEvent>> topicsToClass = clusterNamesAwareTopics(clusterNames);
+        ImmutableSet<String> topics = ImmutableSet.copyOf(topicsToClass.keySet());
+
+        return new KafkaPoller(
+                buildKafkaConsumer(kafkaServers, consumerId, topicsToClass, batchSize),
+                uris, startTime, batchSize, topics,
+                kafkaOffsetsRepository,
+                ignoreStoredOffsets);
     }
 
     @Override
@@ -200,14 +233,12 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         if (ignoreStoredOffsets) {
             storedOffsets = new HashMap<>();
         } else {
-            storedOffsets = fetchOffsetsFromStorage();
+            storedOffsets = kafkaOffsetsRepository.load(firstStartTime);
         }
         // Make a map (topic, partition) -> timestamp for those not in loaded map
         Map<TopicPartition, Long> topicParts = topicPartitions.stream()
                 .filter(tp -> !storedOffsets.containsKey(tp))
-                .collect(Collectors.toMap(Functions.identity(),
-                        Functions.constant(firstStartTime.toEpochMilli())
-                ));
+                .collect(toMap(o -> o, o -> firstStartTime.toEpochMilli()));
         // Fill up missing offsets from timestamp
         if (topicParts.size() > 0) {
             storedOffsets.putAll(consumer.offsetsForTimes(topicParts));
@@ -216,58 +247,15 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         return storedOffsets;
     }
 
-    /**
-     * Load Kafka offsets from storage.
-     * @return Mutable map that contains offsets per TopicPartition. Can be empty.
-     */
-    public Map<TopicPartition, OffsetAndTimestamp> fetchOffsetsFromStorage() {
-        if (rdfRepo == null) {
-            // For tests, we may ignore RDF repo and pass null here.
-            return new HashMap<>();
-        }
-        UpdateBuilder ub = new UpdateBuilder(GET_OFFSETS);
-        ub.bindUri("root", root);
-        Multimap<String, String> result = rdfRepo.selectToMap(ub.toString(), "topic", "offset");
-
-        // Create a map of offsets from storage
-        return result.entries()
-                .stream().collect(Collectors.toMap(
-                        e -> {
-                            String[] parts = e.getKey().split(":", 2);
-                            return new TopicPartition(parts[0], Integer.parseInt(parts[1]));
-                        },
-                        e -> new OffsetAndTimestamp(Integer.parseInt(e.getValue()), firstStartTime.toEpochMilli())
-                ));
-    }
-
-    /**
-     * Write Kafka offsets to RDF storage.
-     */
-    public void writeOffsetsToStorage() {
-        if (rdfRepo == null) {
-            return;
-        }
-        if (topicPartitions == null) {
-           log.error("Somehow got to writeOffsets without initializing topicPartitions. This is a bug!");
-           return;
-        }
-        UpdateBuilder ub = new UpdateBuilder(UPDATE_OFFSETS);
-        StringBuilder sb = new StringBuilder();
-        topicPartitions.forEach(tp -> {
-            // <https://www.wikidata.org> wikibase:kafka ( "topic:0" 1234 ) .
-            sb.append(String.format(Locale.ROOT,
-                    "<%s> wikibase:kafka ( \"%s:%d\" %d ) .\n",
-                    root, tp.topic(), tp.partition(), consumer.position(tp)));
-        });
-        ub.bindUri("root", root);
-        ub.bind("data", sb.toString());
-        rdfRepo.updateQuery(ub.toString());
+    public ImmutableMap<TopicPartition, Long> currentOffsets() {
+        return topicPartitions.stream()
+                    .collect(toImmutableMap(p -> p, p -> consumer.position(p)));
     }
 
     @Override
     public Batch nextBatch(Batch lastBatch) throws RetryableException {
         consumer.commitSync();
-        writeOffsetsToStorage();
+        kafkaOffsetsRepository.store(currentOffsets());
         return fetch(lastBatch.leftOffDate());
     }
 
@@ -373,7 +361,9 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
     /**
      * Set up the list of partitions for topics we're interested in.
      */
-    private ImmutableList<TopicPartition> topicsToPartitions() {
+    private static ImmutableList<TopicPartition> topicsToPartitions(
+            Collection<String> topics,
+            Consumer<String, ChangeEvent> consumer) {
         return topics.stream()
                 // Get partitions
                 .flatMap((String topic) -> consumer.partitionsFor(topic).stream())
@@ -402,67 +392,6 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         public Instant leftOffDate() {
             return leftOffDate;
         }
-    }
-
-    @Nonnull
-    public static KafkaPoller buildKafkaPoller(
-            String kafkaServers, String consumerId, Collection<String> clusterNames,
-            Uris uris, int batchSize, Instant startTime, RdfRepository rdfRepo, boolean ignoreStoredOffsets) {
-        if (consumerId == null) {
-            throw new IllegalArgumentException("Consumer ID (--consumer) must be set");
-        }
-        Map<String, Class<? extends ChangeEvent>> topicsToClass = clusterNamesAwareTopics(clusterNames);
-        ImmutableSet<String> topics = ImmutableSet.copyOf(topicsToClass.keySet());
-
-        return new KafkaPoller(buildKafkaConsumer(kafkaServers, consumerId,
-                topicsToClass, batchSize), uris, startTime, batchSize, topics, rdfRepo, ignoreStoredOffsets);
-    }
-
-    /**
-     * Create list of topics with cluster names.
-     * @param clusterNames Cluster names (if empty, original list is returned)
-     * @return List of topics with cluster names as: %cluster%.%topic%
-     */
-    private static Map<String, Class<? extends ChangeEvent>> clusterNamesAwareTopics(Collection<String> clusterNames) {
-        if (clusterNames == null || clusterNames.isEmpty()) {
-            // No cluster - use topic names as is
-            return defaultTopics;
-        } else {
-            return defaultTopics.entrySet().stream().flatMap(entry ->
-                    // Prepend cluster names to keys, e.g.:
-                    // page.revision => eqiad.page.revision
-                    clusterNames.stream().map(
-                            cluster -> Maps.immutableEntry(cluster + "." + entry.getKey(), entry.getValue())
-                    )
-            ).collect(ImmutableMap.toImmutableMap(Entry::getKey, Entry::getValue));
-        }
-    }
-
-    @SuppressWarnings("resource") // so Java doesn't complain about KafkaConsumer not being closed
-    private static KafkaConsumer<String, ChangeEvent> buildKafkaConsumer(
-            String servers, String consumerId,
-            Map<String, Class<? extends ChangeEvent>> topicToClass,
-            int batchSize) {
-        // See http://kafka.apache.org/documentation.html#consumerconfigs
-        Properties props = new Properties();
-        props.put("bootstrap.servers", servers);
-        props.put("group.id", consumerId);
-        // This is an interval between polls after which the broker decides the client is dead.
-        // 5 mins seems to be good enough.
-        props.put("max.poll.interval.ms", "600000");
-        // We will manually commit after the batch is processed
-        props.put("enable.auto.commit", "false");
-        // See https://cwiki.apache.org/confluence/display/KAFKA/KIP-41%3A+KafkaConsumer+Max+Records
-        // Basically it works this way: Kafka fetches N records from each partition, where N is max.poll.records
-        // Or if there isn't as much, it polls as many as possible.
-        // Then it returns them to poll() in a round-robin fashion. Next poll is not initiated unless
-        // the prefetch data dips below N.
-        // We set it to half batch size, so in each batch we will have several topics.
-        props.put("max.poll.records", System.getProperty(MAX_POLL_PROPERTY, String.valueOf(batchSize)));
-        // This is about one batch of messages since message sizes in event queue are about 1k
-        props.put("max.partition.fetch.bytes", System.getProperty(MAX_FETCH_PROPERTY, String.valueOf(batchSize * 1024)));
-        log.info("Creating consumer {}", consumerId);
-        return new KafkaConsumer<>(props, new StringDeserializer(), new JsonDeserializer<>(topicToClass));
     }
 
     @Override

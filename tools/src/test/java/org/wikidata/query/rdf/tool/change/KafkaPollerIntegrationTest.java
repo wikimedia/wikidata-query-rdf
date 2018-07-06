@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool.change;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.io.Resources.getResource;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -9,9 +10,18 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.wikidata.query.rdf.tool.HttpClientUtils.buildHttpClient;
+import static org.wikidata.query.rdf.tool.HttpClientUtils.buildHttpClientRetryer;
+import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyHost;
+import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyPort;
+import static org.wikidata.query.rdf.tool.RdfRepositoryForTesting.url;
+import static org.wikidata.query.rdf.tool.change.KafkaPoller.buildKafkaPoller;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.ParseException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -23,13 +33,14 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.eclipse.jetty.client.HttpClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.wikidata.query.rdf.tool.RdfRepositoryForTesting;
 import org.wikidata.query.rdf.tool.change.events.ChangeEvent;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
+import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris;
 
 import com.github.charithe.kafka.EphemeralKafkaBroker;
@@ -53,7 +64,7 @@ public class KafkaPollerIntegrationTest {
     private KafkaPoller poller;
 
     @Before
-    public void setupPoller() {
+    public void setupPoller() throws URISyntaxException {
         poller = createPoller();
     }
 
@@ -131,7 +142,7 @@ public class KafkaPollerIntegrationTest {
     }
 
     @Test
-    public void receiveClusteredEvents() throws RetryableException, IOException, ParseException {
+    public void receiveClusteredEvents() throws RetryableException, IOException, URISyntaxException {
         cleanupPoller();
         poller = createPoller(ImmutableList.of("north", "south"));
         sendEvent("north." + CREATE_TOPIC, "create-event-full.json");
@@ -179,16 +190,17 @@ public class KafkaPollerIntegrationTest {
         return DOMAIN + Instant.now().toEpochMilli() + Math.round(Math.random() * 1000);
     }
 
-    private KafkaPoller createPoller() {
-        String servers = "localhost:" + kafkaRule.helper().kafkaPort();
-        Uris uris = Uris.fromString("https://acme.test");
-        return KafkaPoller.buildKafkaPoller(servers, randomConsumer(), emptyList(), uris, 5, Instant.now(), null, true);
+    private KafkaPoller createPoller() throws URISyntaxException {
+        return createPoller(emptyList());
     }
 
-    private KafkaPoller createPoller(Collection<String> clusterNames) {
+    private KafkaPoller createPoller(Collection<String> clusterNames) throws URISyntaxException {
         String servers = "localhost:" + kafkaRule.helper().kafkaPort();
         Uris uris = Uris.fromString("https://acme.test");
-        return KafkaPoller.buildKafkaPoller(servers, randomConsumer(), clusterNames, uris, 5, Instant.now(), null, true);
+        URI root = uris.builder().build();
+        KafkaOffsetsRepository kafkaOffsetsRepository = new KafkaOffsetsRepository(root, null);
+        return buildKafkaPoller(servers, randomConsumer(), clusterNames,
+                uris, 5, Instant.now(), true, kafkaOffsetsRepository);
     }
 
 
@@ -211,25 +223,33 @@ public class KafkaPollerIntegrationTest {
             return ImmutableList.of(pi);
         });
 
-        RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq");
+        HttpClient httpClient = buildHttpClient(getHttpProxyHost(), getHttpProxyPort());
+        RdfClient rdfClient = new RdfClient(httpClient,
+                url("/namespace/wdq/sparql"),
+                buildHttpClientRetryer(),
+                Duration.of(-1, SECONDS)
+        );
+
         try {
-            rdfRepository.before();
+            rdfClient.update("CLEAR ALL");
             cleanupPoller();
-            poller = new KafkaPoller(consumer, uris, startTime, 5, topics, rdfRepository, true);
+            KafkaOffsetsRepository kafkaOffsetsRepository = new KafkaOffsetsRepository(uris.builder().build(), rdfClient);
+            poller = new KafkaPoller(consumer, uris, startTime, 5, topics, kafkaOffsetsRepository, true);
 
             when(consumer.position(any())).thenReturn(1L, 2L, 3L, 4L);
-            poller.writeOffsetsToStorage();
+            kafkaOffsetsRepository.store(poller.currentOffsets());
 
-            Map<TopicPartition, OffsetAndTimestamp> offsets = poller.fetchOffsetsFromStorage();
+            Map<TopicPartition, OffsetAndTimestamp> offsets = kafkaOffsetsRepository.load(startTime);
             assertThat(offsets.get(new TopicPartition("topictest", 0)).offset(), is(1L));
             assertThat(offsets.get(new TopicPartition("othertopic", 0)).offset(), is(2L));
 
-            poller.writeOffsetsToStorage();
-            offsets = poller.fetchOffsetsFromStorage();
+            kafkaOffsetsRepository.store(poller.currentOffsets());
+            offsets = kafkaOffsetsRepository.load(startTime);
             assertThat(offsets.get(new TopicPartition("topictest", 0)).offset(), is(3L));
             assertThat(offsets.get(new TopicPartition("othertopic", 0)).offset(), is(4L));
         } finally {
-            rdfRepository.after();
+            rdfClient.update("CLEAR ALL");
+            httpClient.stop();
             if (poller != null) {
                 poller.close();
             }

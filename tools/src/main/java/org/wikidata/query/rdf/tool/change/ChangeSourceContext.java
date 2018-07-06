@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool.change;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
+import java.net.URI;
 import java.time.Instant;
 
 import javax.annotation.Nonnull;
@@ -10,9 +11,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.tool.options.UpdateOptions;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
+import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
-/** Provides methods to initialize change sources. */
+/**
+ * Provides methods to initialize change sources.
+ * Depends on options provided on the command line for the choice of source.
+ * @see UpdateOptions
+ */
 public final class ChangeSourceContext {
     private static final Logger log = LoggerFactory.getLogger(ChangeSourceContext.class);
 
@@ -27,11 +33,12 @@ public final class ChangeSourceContext {
      *
      * @return the change source
      * @throws IllegalArgumentException if the options are invalid
-     * @throws IllegalStateException if the left of date is too ancient
+     * @throws IllegalStateException if the left off date is too ancient
      */
     @Nonnull
-    public static Change.Source<? extends Change.Batch> buildChangeSource(UpdateOptions options, RdfRepository rdfRepository,
-                                                                          WikibaseRepository wikibaseRepository) {
+    public static Change.Source<? extends Change.Batch> buildChangeSource(
+            UpdateOptions options, Instant startTime,
+            WikibaseRepository wikibaseRepository, RdfClient rdfClient, URI root) {
         if (options.idrange() != null) {
             return buildIdRangeChangeSource(options.idrange(), options.batchSize());
         }
@@ -39,9 +46,8 @@ public final class ChangeSourceContext {
             return new IdListChangeSource(UpdateOptions.parsedIds(options), options.batchSize());
         }
 
-        Instant startTime = getStartTime(UpdateOptions.startInstant(options), rdfRepository, options.init());
-
         if (options.kafkaBroker() != null) {
+            KafkaOffsetsRepository kafkaOffsetsRepository = new KafkaOffsetsRepository(root, rdfClient);
             return KafkaPoller.buildKafkaPoller(
                     options.kafkaBroker(),
                     options.consumerId(),
@@ -49,8 +55,8 @@ public final class ChangeSourceContext {
                     wikibaseRepository.getUris(),
                     options.batchSize(),
                     startTime,
-                    rdfRepository,
-                    UpdateOptions.ignoreStoredOffsets(options));
+                    UpdateOptions.ignoreStoredOffsets(options),
+                    kafkaOffsetsRepository);
         }
         return new RecentChangesPoller(
                 wikibaseRepository,
@@ -60,7 +66,15 @@ public final class ChangeSourceContext {
         );
     }
 
-    private static Instant getStartTime(Instant startInstant, RdfRepository rdfRepository, boolean init) {
+    /**
+     * Determine instant from which to start polling.
+     * @param startInstant Instant passed from command-line
+     * @param rdfRepository RDF repository that may contain the timestamp we left off last time
+     * @param init Should we record the initial instant to the repository?
+     * @return Instant with which to start polling
+     */
+    @Nonnull
+    public static Instant getStartTime(Instant startInstant, RdfRepository rdfRepository, boolean init) {
         if (startInstant != null) {
             if (init) {
                 // Initialize left off time to start time
@@ -86,7 +100,9 @@ public final class ChangeSourceContext {
         return startInstant;
     }
 
-    /** Builds a change source based on a range of IDs. */
+    /**
+     * Builds a change source based on a range of IDs.
+     */
     private static Change.Source<? extends Change.Batch> buildIdRangeChangeSource(String idrange, int batchSize) {
         String[] ids = idrange.split("-");
         long start;
