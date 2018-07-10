@@ -16,7 +16,7 @@ public interface MungeOptions extends OptionsUtils.BasicOptions, OptionsUtils.Mu
     String to();
 
     @Option(defaultValue = "0", description = "Chunk size in entities. If specified then the \"to\" option must be a java "
-            + "format string containing a single format identifier which is replaced with the chunk number port:<port_numer>. "
+            + "format string containing a single format identifier which is replaced with the chunk number. "
             + "%08d.ttl is a pretty good choice for format string. If \"to\" is in port form then every http request will "
             + "get the next chunk. Must be greater than 0 and less than " + Integer.MAX_VALUE + ".")
     int chunkSize();

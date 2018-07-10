@@ -4,8 +4,10 @@ import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
+import java.io.PushbackInputStream;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -25,6 +27,7 @@ import javax.net.ssl.SSLHandshakeException;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.Consts;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -292,9 +295,28 @@ public class WikibaseRepository implements Closeable {
     }
 
     /**
+     * Get input stream for entity, if it exists and not empty.
+     * We need this because our proxy can convert 204 responses
+     * to 200 responses with empty body.
+     */
+    private InputStream getInputStream(HttpResponse response) throws IOException {
+        HttpEntity entity = response.getEntity();
+        if (entity != null) {
+            PushbackInputStream in = new PushbackInputStream(entity.getContent());
+            int firstByte = in.read();
+            if (firstByte != -1) {
+                in.unread(firstByte);
+                return in;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Collect TTL statements from single URL.
      * @throws RetryableException
      */
+    @SuppressFBWarnings("CC_CYCLOMATIC_COMPLEXITY")
     private void collectStatementsFromUrl(URI uri, StatementCollector collector) throws RetryableException {
         RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
         parser.setRDFHandler(new NormalizingRdfHandler(collector));
@@ -309,13 +331,21 @@ public class WikibaseRepository implements Closeable {
                 }
                 if (response.getStatusLine().getStatusCode() == 204) {
                     // No content, it's OK
+                    log.debug("No content, we're done");
                     return;
                 }
                 if (response.getStatusLine().getStatusCode() >= 300) {
                     throw new ContainedException("Unexpected status code fetching RDF for " + uri + ":  "
                             + response.getStatusLine().getStatusCode());
                 }
-                parser.parse(new InputStreamReader(response.getEntity().getContent(), Charsets.UTF_8), uri.toString());
+                try (InputStream in = getInputStream(response)) {
+                    if (in == null) {
+                        // No proper response
+                        log.debug("Empty response, we're done");
+                        return;
+                    }
+                    parser.parse(new InputStreamReader(in, Charsets.UTF_8), uri.toString());
+                }
             }
         } catch (UnknownHostException | SocketException | SSLHandshakeException e) {
             // We want to bail on this, since it happens to be sticky for some reason
@@ -339,7 +369,14 @@ public class WikibaseRepository implements Closeable {
         StatementCollector collector = new StatementCollector();
         collectStatementsFromUrl(uris.rdf(entityId), collector);
         if (collectConstraints) {
-            collectStatementsFromUrl(uris.constraints(entityId), collector);
+            try {
+                collectStatementsFromUrl(uris.constraints(entityId), collector);
+            } catch (ContainedException ex) {
+                // TODO: add RetryableException here?
+                // Skip loading constraints on fail, it's not the reason to give up
+                // on the whole item.
+                log.info("Failed to load constraints: {}", ex.getMessage());
+            }
         }
         log.debug("Done in {} ms", System.currentTimeMillis() - start);
         return collector.getStatements();
