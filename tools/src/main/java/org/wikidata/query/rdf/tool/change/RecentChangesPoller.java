@@ -170,6 +170,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                     batchSize, seenIDs, -1);
             poller.setBackoff(false);
             tailPoller = new TailingChangesPoller(poller, queue, tailSeconds);
+            tailPoller.setDaemon(true);
             tailPoller.start();
         } else {
             tailPoller.setPollerTs(lastBatch.leftOffDate());
