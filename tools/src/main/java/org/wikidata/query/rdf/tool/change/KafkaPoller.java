@@ -141,14 +141,21 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
      */
     private final URI root;
 
+    /**
+     * Should we ignore stored offsets?
+     */
+    private final boolean ignoreStoredOffsets;
+
     public KafkaPoller(Consumer<String, ChangeEvent> consumer, Uris uris,
-            Instant firstStartTime, int batchSize, Collection<String> topics, RdfRepository rdfRepo) {
+            Instant firstStartTime, int batchSize, Collection<String> topics,
+            RdfRepository rdfRepo, boolean ignoreStoredOffsets) {
         this.consumer = consumer;
         this.uris = uris;
         this.firstStartTime = firstStartTime;
         this.batchSize = batchSize;
         this.topics = topics;
         this.rdfRepo = rdfRepo;
+        this.ignoreStoredOffsets = ignoreStoredOffsets;
         try {
             this.root = uris.builder().build();
         } catch (URISyntaxException e) {
@@ -189,7 +196,12 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
      */
     private Map<TopicPartition, OffsetAndTimestamp> fetchOffsets() {
         // Create a map of offsets from storage
-        Map<TopicPartition, OffsetAndTimestamp> storedOffsets = fetchOffsetsFromStorage();
+        Map<TopicPartition, OffsetAndTimestamp> storedOffsets;
+        if (ignoreStoredOffsets) {
+            storedOffsets = new HashMap<>();
+        } else {
+            storedOffsets = fetchOffsetsFromStorage();
+        }
         // Make a map (topic, partition) -> timestamp for those not in loaded map
         Map<TopicPartition, Long> topicParts = topicPartitions.stream()
                 .filter(tp -> !storedOffsets.containsKey(tp))
@@ -443,7 +455,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
     @Nonnull
     public static KafkaPoller buildKafkaPoller(
             String kafkaServers, String consumerId, Collection<String> clusterNames,
-            Uris uris, int batchSize, Instant startTime, RdfRepository rdfRepo) {
+            Uris uris, int batchSize, Instant startTime, RdfRepository rdfRepo, boolean ignoreStoredOffsets) {
         if (consumerId == null) {
             throw new IllegalArgumentException("Consumer ID (--consumer) must be set");
         }
@@ -451,7 +463,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         ImmutableSet<String> topics = ImmutableSet.copyOf(topicsToClass.keySet());
 
         return new KafkaPoller(buildKafkaConsumer(kafkaServers, consumerId,
-                topicsToClass, batchSize), uris, startTime, batchSize, topics, rdfRepo);
+                topicsToClass, batchSize), uris, startTime, batchSize, topics, rdfRepo, ignoreStoredOffsets);
     }
 
     @Override

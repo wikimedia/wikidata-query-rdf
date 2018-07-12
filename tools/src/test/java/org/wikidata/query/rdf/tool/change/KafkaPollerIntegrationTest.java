@@ -182,13 +182,13 @@ public class KafkaPollerIntegrationTest {
     private KafkaPoller createPoller() {
         String servers = "localhost:" + kafkaRule.helper().kafkaPort();
         Uris uris = Uris.fromString("https://acme.test");
-        return KafkaPoller.buildKafkaPoller(servers, randomConsumer(), emptyList(), uris, 5, Instant.now(), null);
+        return KafkaPoller.buildKafkaPoller(servers, randomConsumer(), emptyList(), uris, 5, Instant.now(), null, true);
     }
 
     private KafkaPoller createPoller(Collection<String> clusterNames) {
         String servers = "localhost:" + kafkaRule.helper().kafkaPort();
         Uris uris = Uris.fromString("https://acme.test");
-        return KafkaPoller.buildKafkaPoller(servers, randomConsumer(), clusterNames, uris, 5, Instant.now(), null);
+        return KafkaPoller.buildKafkaPoller(servers, randomConsumer(), clusterNames, uris, 5, Instant.now(), null, true);
     }
 
 
@@ -215,7 +215,7 @@ public class KafkaPollerIntegrationTest {
         try {
             rdfRepository.before();
             cleanupPoller();
-            poller = new KafkaPoller(consumer, uris, startTime, 5, topics, rdfRepository);
+            poller = new KafkaPoller(consumer, uris, startTime, 5, topics, rdfRepository, true);
 
             when(consumer.position(any())).thenReturn(1L, 2L, 3L, 4L);
             poller.writeOffsetsToStorage();

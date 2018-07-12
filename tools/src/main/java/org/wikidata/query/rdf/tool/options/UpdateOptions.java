@@ -65,4 +65,7 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
 
     @Option(description = "Load Wikibase constraints data")
     boolean constraints();
+
+    @Option(description = "Reset Kafka offsets")
+    boolean resetKafka();
 }
