@@ -219,10 +219,13 @@ public final class Update {
             return buildIdListChangeSource(options.ids(), options.batchSize());
         }
         if (options.kafkaBroker() != null) {
+            // If we have explicit start time, we ignore kafka offsets
+            boolean ignoreStoredOffset = (options.start() != null || options.resetKafka());
             return KafkaPoller.buildKafkaPoller(options.kafkaBroker(), options.consumerId(),
                     OptionsUtils.splitByComma(options.clusters()), wikibaseRepository.getUris(),
                     options.batchSize(),
-                    getStartTime(options.start(), rdfRepository, options.init()), rdfRepository);
+                    getStartTime(options.start(), rdfRepository, options.init()),
+                    rdfRepository, ignoreStoredOffset);
         }
         return buildRecentChangePollerChangeSource(
                 rdfRepository, wikibaseRepository,

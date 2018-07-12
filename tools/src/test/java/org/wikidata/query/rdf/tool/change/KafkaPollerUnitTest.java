@@ -75,7 +75,7 @@ public class KafkaPollerUnitTest {
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest");
 
-        return new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, repo);
+        return new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, repo, true);
     }
 
     private KafkaPoller makePoller() {
@@ -403,7 +403,7 @@ public class KafkaPollerUnitTest {
 
         when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
 
-        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, null);
+        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, null, true);
         Batch batch = poller.firstBatch();
 
         // We get partitions for both topics
@@ -478,7 +478,7 @@ public class KafkaPollerUnitTest {
 
         when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
 
-        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, rdfRepo);
+        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, rdfRepo, false);
 
         Batch batch = poller.firstBatch();
         // should not call offsetsForTimes, since all offsets are in store
@@ -531,7 +531,7 @@ public class KafkaPollerUnitTest {
 
         when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
 
-        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, rdfRepo);
+        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, rdfRepo, false);
 
         Batch batch = poller.firstBatch();
         // should not call offsetsForTimes, since all offsets are in store
@@ -564,7 +564,7 @@ public class KafkaPollerUnitTest {
         ArgumentCaptor<String> updateQuery = ArgumentCaptor.forClass(String.class);
         when(rdfRepo.updateQuery(updateQuery.capture())).thenReturn(1);
 
-        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, rdfRepo);
+        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, rdfRepo, true);
 
         Batch batch = poller.firstBatch();
         batch = poller.nextBatch(batch);
