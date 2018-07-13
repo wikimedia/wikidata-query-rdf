@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.tool.change;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.OUTPUT_DATE_FORMATTER;
 
+import java.io.Closeable;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -123,7 +124,7 @@ public class Change implements Comparable<Change> {
      * Detects changes. Implementations should store all state in subclasses of
      * Change.Batch.
      */
-    public interface Source<B extends Change.Batch> extends AutoCloseable {
+    public interface Source<B extends Change.Batch> extends Closeable {
         /**
          * Fetch the first batch.
          *

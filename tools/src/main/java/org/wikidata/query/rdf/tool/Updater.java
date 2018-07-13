@@ -2,6 +2,8 @@ package org.wikidata.query.rdf.tool;
 
 import static java.lang.Thread.currentThread;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,7 +42,7 @@ import com.google.common.collect.ImmutableSetMultimap;
  */
 // TODO fan out complexity
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable {
+public class Updater<B extends Change.Batch> implements Runnable, Closeable {
     private static final Logger log = LoggerFactory.getLogger(Updater.class);
 
     /**
@@ -171,7 +173,7 @@ public class Updater<B extends Change.Batch> implements Runnable, AutoCloseable 
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         executor.shutdown();
         changeSource.close();
     }

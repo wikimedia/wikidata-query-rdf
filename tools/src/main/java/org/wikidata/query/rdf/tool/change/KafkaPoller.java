@@ -404,6 +404,20 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         }
     }
 
+    @Nonnull
+    public static KafkaPoller buildKafkaPoller(
+            String kafkaServers, String consumerId, Collection<String> clusterNames,
+            Uris uris, int batchSize, Instant startTime, RdfRepository rdfRepo, boolean ignoreStoredOffsets) {
+        if (consumerId == null) {
+            throw new IllegalArgumentException("Consumer ID (--consumer) must be set");
+        }
+        Map<String, Class<? extends ChangeEvent>> topicsToClass = clusterNamesAwareTopics(clusterNames);
+        ImmutableSet<String> topics = ImmutableSet.copyOf(topicsToClass.keySet());
+
+        return new KafkaPoller(buildKafkaConsumer(kafkaServers, consumerId,
+                topicsToClass, batchSize), uris, startTime, batchSize, topics, rdfRepo, ignoreStoredOffsets);
+    }
+
     /**
      * Create list of topics with cluster names.
      * @param clusterNames Cluster names (if empty, original list is returned)
@@ -415,17 +429,16 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
             return defaultTopics;
         } else {
             return defaultTopics.entrySet().stream().flatMap(entry ->
-                // Prepend cluster names to keys, e.g.:
-                // page.revision => eqiad.page.revision
-                clusterNames.stream().map(
-                    cluster -> Maps.immutableEntry(cluster + "." + entry.getKey(), entry.getValue())
-                )
+                    // Prepend cluster names to keys, e.g.:
+                    // page.revision => eqiad.page.revision
+                    clusterNames.stream().map(
+                            cluster -> Maps.immutableEntry(cluster + "." + entry.getKey(), entry.getValue())
+                    )
             ).collect(ImmutableMap.toImmutableMap(Entry::getKey, Entry::getValue));
         }
     }
 
-    // Suppressing resource warnings so Java doesn't complain about KafkaConsumer not being closed
-    @SuppressWarnings("resource")
+    @SuppressWarnings("resource") // so Java doesn't complain about KafkaConsumer not being closed
     private static KafkaConsumer<String, ChangeEvent> buildKafkaConsumer(
             String servers, String consumerId,
             Map<String, Class<? extends ChangeEvent>> topicToClass,
@@ -450,20 +463,6 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         props.put("max.partition.fetch.bytes", System.getProperty(MAX_FETCH_PROPERTY, String.valueOf(batchSize * 1024)));
         log.info("Creating consumer {}", consumerId);
         return new KafkaConsumer<>(props, new StringDeserializer(), new JsonDeserializer<>(topicToClass));
-    }
-
-    @Nonnull
-    public static KafkaPoller buildKafkaPoller(
-            String kafkaServers, String consumerId, Collection<String> clusterNames,
-            Uris uris, int batchSize, Instant startTime, RdfRepository rdfRepo, boolean ignoreStoredOffsets) {
-        if (consumerId == null) {
-            throw new IllegalArgumentException("Consumer ID (--consumer) must be set");
-        }
-        Map<String, Class<? extends ChangeEvent>> topicsToClass = clusterNamesAwareTopics(clusterNames);
-        ImmutableSet<String> topics = ImmutableSet.copyOf(topicsToClass.keySet());
-
-        return new KafkaPoller(buildKafkaConsumer(kafkaServers, consumerId,
-                topicsToClass, batchSize), uris, startTime, batchSize, topics, rdfRepo, ignoreStoredOffsets);
     }
 
     @Override

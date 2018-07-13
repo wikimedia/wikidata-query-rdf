@@ -387,7 +387,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         // TODO: Do we need to do anything here?
     }
 }

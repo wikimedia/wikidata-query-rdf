@@ -101,7 +101,7 @@ public class IdRangeChangeSource implements Change.Source<IdRangeChangeSource.Ba
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         // Nothing to do
     }
 }

@@ -8,7 +8,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static org.wikidata.query.rdf.tool.Update.buildHttpClientRetryer;
+import static org.wikidata.query.rdf.tool.HttpClientUtils.buildHttpClientRetryer;
 
 import java.net.URI;
 import java.time.Duration;

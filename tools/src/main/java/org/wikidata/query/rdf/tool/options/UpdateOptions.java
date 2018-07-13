@@ -1,6 +1,22 @@
 package org.wikidata.query.rdf.tool.options;
 
+import static org.wikidata.query.rdf.tool.options.OptionsUtils.splitByComma;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.INPUT_DATE_FORMATTER;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.OUTPUT_DATE_FORMATTER;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris.DEFAULT_ENTITY_NAMESPACES;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.List;
+
+import javax.annotation.Nullable;
+
+import org.apache.http.client.utils.URIBuilder;
+import org.wikidata.query.rdf.tool.exception.FatalException;
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.lexicalscope.jewel.cli.Option;
 
@@ -9,6 +25,7 @@ import com.lexicalscope.jewel.cli.Option;
  */
 @SuppressWarnings("checkstyle:javadocmethod")
 public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.MungerOptions, OptionsUtils.WikibaseOptions {
+
     @Option(shortName = "s", defaultToNull = true, description = "Start time in 2015-02-11T17:11:08Z or 20150211170100 format.")
     String start();
 
@@ -68,4 +85,90 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
 
     @Option(description = "Reset Kafka offsets")
     boolean resetKafka();
+
+    default long[] longEntityNamespaces() {
+        if (entityNamespaces() == null) return DEFAULT_ENTITY_NAMESPACES;
+        return splitByComma(Arrays.asList(entityNamespaces())).stream().
+                mapToLong(option -> Long.parseLong(option))
+                .toArray();
+    }
+
+    /**
+     * Produce base Wikibase URL from options.
+     */
+    default URI getWikibaseUrl() {
+        if (wikibaseUrl() != null) {
+            try {
+                return new URI(wikibaseUrl());
+            } catch (URISyntaxException e) {
+                throw new FatalException("Unable to build Wikibase url", e);
+            }
+        }
+        URIBuilder baseUrl = new URIBuilder();
+        baseUrl.setHost(wikibaseHost());
+        baseUrl.setScheme(wikibaseScheme());
+        try {
+            return baseUrl.build();
+        } catch (URISyntaxException e) {
+            throw new FatalException("Unable to build Wikibase url", e);
+        }
+    }
+
+    /**
+     * Create the sparql URI from the given configuration.
+     *
+     * @return a newly created sparql URI
+     */
+    default URI sparqlUri() {
+        URI sparqlUri;
+        try {
+            sparqlUri = new URI(sparqlUrl());
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid url:  " + sparqlUrl(), e);
+        }
+        return sparqlUri;
+    }
+
+    @Nullable
+    default Instant startInstant() {
+        if (start() == null) return null;
+        return parseDate(start());
+    }
+
+    @Nullable
+    default String[] parsedIds() {
+        List<String> split = splitByComma(ids());
+        if (split == null) return null;
+        return split.toArray(new String[split.size()]);
+    }
+
+    default boolean ignoreStoredOffsets() {
+        // If we have explicit start time, we ignore kafka offsets
+        return start() != null || resetKafka();
+    }
+
+    default WikibaseRepository.Uris uris() {
+        return new WikibaseRepository.Uris(getWikibaseUrl(), longEntityNamespaces());
+    }
+
+    default List<String> clusterNames() {
+        return splitByComma(clusters());
+    }
+
+    /**
+     * Parse a string to a date, trying output format or the input format.
+     *
+     * @throws IllegalArgumentException if the date cannot be parsed with either format.
+     */
+    static Instant parseDate(String dateStr) {
+        try {
+            return OUTPUT_DATE_FORMATTER.parse(dateStr, Instant::from);
+        } catch (DateTimeParseException e) {
+            try {
+                return INPUT_DATE_FORMATTER.parse(dateStr, Instant::from);
+            } catch (DateTimeParseException e2) {
+                throw  new IllegalArgumentException("Invalid date: " + dateStr, e2);
+            }
+        }
+    }
 }

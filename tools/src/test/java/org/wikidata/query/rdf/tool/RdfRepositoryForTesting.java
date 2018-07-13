@@ -1,9 +1,10 @@
 package org.wikidata.query.rdf.tool;
 
-import static org.wikidata.query.rdf.tool.Update.buildHttpClient;
-import static org.wikidata.query.rdf.tool.Update.buildRdfClient;
-import static org.wikidata.query.rdf.tool.Update.getHttpProxyHost;
-import static org.wikidata.query.rdf.tool.Update.getHttpProxyPort;
+import static org.wikidata.query.rdf.tool.HttpClientUtils.buildHttpClient;
+import static org.wikidata.query.rdf.tool.HttpClientUtils.buildHttpClientRetryer;
+import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyHost;
+import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyPort;
+import static org.wikidata.query.rdf.tool.Update.getRdfClientTimeout;
 
 import java.net.URI;
 
@@ -13,6 +14,7 @@ import org.junit.runners.model.Statement;
 import org.openrdf.query.TupleQueryResult;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
+import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -30,10 +32,10 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
     public RdfRepositoryForTesting(String namespace) {
         super(
                 WikibaseUris.WIKIDATA,
-                buildRdfClient(
-                        url("/namespace/" + namespace + "/sparql"),
-                        buildHttpClient(getHttpProxyHost(), getHttpProxyPort()
-                        )
+                new RdfClient(
+                        buildHttpClient(getHttpProxyHost(), getHttpProxyPort()), url("/namespace/" + namespace + "/sparql"),
+                        buildHttpClientRetryer(),
+                        getRdfClientTimeout()
                 )
         );
         this.namespace = namespace;

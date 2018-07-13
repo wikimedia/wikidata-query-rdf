@@ -168,16 +168,21 @@ public class WikibaseRepository implements Closeable {
     private final ObjectMapper mapper = getObjectMapper();
 
     public WikibaseRepository(URI baseUrl) {
-        uris = new Uris(baseUrl);
+        this(new Uris(baseUrl), false);
     }
 
     public WikibaseRepository(String baseUrl) {
-        uris = Uris.fromString(baseUrl);
+        this(Uris.fromString(baseUrl), false);
     }
 
     public WikibaseRepository(URI baseUrl, long[] entityNamespaces) {
         uris = new Uris(baseUrl);
         uris.setEntityNamespaces(entityNamespaces);
+    }
+
+    public WikibaseRepository(Uris uris, boolean collectConstraints) {
+        this.uris = uris;
+        this.collectConstraints = collectConstraints;
     }
 
     /**
@@ -531,6 +536,7 @@ public class WikibaseRepository implements Closeable {
     /**
      * URIs used for accessing wikibase.
      */
+    @SuppressFBWarnings(value = {"EI_EXPOSE_REP2", "MS_MUTABLE_ARRAY"}, justification = "minor enough")
     public static class Uris {
         /**
          * URL which should be used to retrieve Entity data.
@@ -540,17 +546,23 @@ public class WikibaseRepository implements Closeable {
          * URL of the API endpoint.
          */
         private static final String API_URL = "/w/api.php";
+        public static final long[] DEFAULT_ENTITY_NAMESPACES = {0, 120};
         /**
          * Item and Property namespaces.
          */
-        private long[] entityNamespaces = {0, 120};
+        private long[] entityNamespaces = DEFAULT_ENTITY_NAMESPACES;
         /**
          * Base URL for Wikibase.
          */
         private URI baseUrl;
 
         public Uris(URI baseUrl) {
+            this(baseUrl, DEFAULT_ENTITY_NAMESPACES);
+        }
+
+        public Uris(URI baseUrl, long[] entityNamespaces) {
             this.baseUrl = baseUrl;
+            this.entityNamespaces = entityNamespaces;
         }
 
         public static Uris fromString(String url) {
@@ -561,7 +573,6 @@ public class WikibaseRepository implements Closeable {
             }
         }
 
-        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "minor enough")
         public Uris setEntityNamespaces(long[] entityNamespaces) {
             this.entityNamespaces = entityNamespaces;
             return this;

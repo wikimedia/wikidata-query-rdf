@@ -93,7 +93,7 @@ public class IdListChangeSource implements Change.Source<IdListChangeSource.Batc
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         // Nothing to do
     }
 }
