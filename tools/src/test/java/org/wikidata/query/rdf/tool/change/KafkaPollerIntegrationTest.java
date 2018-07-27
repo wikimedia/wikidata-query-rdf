@@ -198,7 +198,7 @@ public class KafkaPollerIntegrationTest {
         String servers = "localhost:" + kafkaRule.helper().kafkaPort();
         Uris uris = Uris.fromString("https://acme.test");
         URI root = uris.builder().build();
-        KafkaOffsetsRepository kafkaOffsetsRepository = new KafkaOffsetsRepository(root, null);
+        KafkaOffsetsRepository kafkaOffsetsRepository = new RdfKafkaOffsetsRepository(root, null);
         return buildKafkaPoller(servers, randomConsumer(), clusterNames,
                 uris, 5, Instant.now(), true, kafkaOffsetsRepository);
     }
@@ -233,7 +233,7 @@ public class KafkaPollerIntegrationTest {
         try {
             rdfClient.update("CLEAR ALL");
             cleanupPoller();
-            KafkaOffsetsRepository kafkaOffsetsRepository = new KafkaOffsetsRepository(uris.builder().build(), rdfClient);
+            KafkaOffsetsRepository kafkaOffsetsRepository = new RdfKafkaOffsetsRepository(uris.builder().build(), rdfClient);
             poller = new KafkaPoller(consumer, uris, startTime, 5, topics, kafkaOffsetsRepository, true);
 
             when(consumer.position(any())).thenReturn(1L, 2L, 3L, 4L);

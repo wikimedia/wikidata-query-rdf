@@ -47,7 +47,7 @@ public final class ChangeSourceContext {
         }
 
         if (options.kafkaBroker() != null) {
-            KafkaOffsetsRepository kafkaOffsetsRepository = new KafkaOffsetsRepository(root, rdfClient);
+            KafkaOffsetsRepository kafkaOffsetsRepository = new RdfKafkaOffsetsRepository(root, rdfClient);
             return KafkaPoller.buildKafkaPoller(
                     options.kafkaBroker(),
                     options.consumerId(),

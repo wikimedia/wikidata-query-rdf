@@ -231,7 +231,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         // Create a map of offsets from storage
         Map<TopicPartition, OffsetAndTimestamp> storedOffsets;
         if (ignoreStoredOffsets) {
-            storedOffsets = new HashMap<>();
+            storedOffsets = ImmutableMap.of();
         } else {
             storedOffsets = kafkaOffsetsRepository.load(firstStartTime);
         }
@@ -239,12 +239,15 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         Map<TopicPartition, Long> topicParts = topicPartitions.stream()
                 .filter(tp -> !storedOffsets.containsKey(tp))
                 .collect(toMap(o -> o, o -> firstStartTime.toEpochMilli()));
+
+        Map<TopicPartition, OffsetAndTimestamp> results = new HashMap<>();
+        results.putAll(storedOffsets);
         // Fill up missing offsets from timestamp
         if (topicParts.size() > 0) {
-            storedOffsets.putAll(consumer.offsetsForTimes(topicParts));
+            results.putAll(consumer.offsetsForTimes(topicParts));
         }
 
-        return storedOffsets;
+        return results;
     }
 
     public ImmutableMap<TopicPartition, Long> currentOffsets() {

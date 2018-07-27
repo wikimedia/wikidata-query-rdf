@@ -1,25 +1,25 @@
 package org.wikidata.query.rdf.tool.change;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertFalse;
-import static org.mockito.Matchers.anyLong;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.doNothing;
-import static org.wikidata.query.rdf.tool.change.ChangeMatchers.hasTitle;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.wikidata.query.rdf.tool.change.ChangeMatchers.hasRevision;
+import static org.wikidata.query.rdf.tool.change.ChangeMatchers.hasTitle;
 import static org.wikidata.query.rdf.tool.change.ChangeMatchers.hasTitleRevision;
 
 import java.net.URISyntaxException;
@@ -44,8 +44,8 @@ import org.apache.kafka.common.record.TimestampType;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.wikidata.query.rdf.tool.change.KafkaPoller.Batch;
 import org.wikidata.query.rdf.tool.change.events.ChangeEvent;
 import org.wikidata.query.rdf.tool.change.events.EventsMeta;
@@ -72,15 +72,11 @@ public class KafkaPollerUnitTest {
             new ConsumerRecords<>(Collections.emptyMap());
     private static final int BATCH_SIZE = 5;
 
-    private KafkaPoller makePoller(RdfClient rdfClient) throws URISyntaxException {
+    private KafkaPoller makePoller() {
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest");
 
-        return new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, new KafkaOffsetsRepository(uris.builder().build(), rdfClient), true);
-    }
-
-    private KafkaPoller makePoller() throws URISyntaxException {
-        return makePoller(null);
+        return new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, new DummyKafkaOffsetsRepository(), true);
     }
 
     /**
@@ -371,7 +367,7 @@ public class KafkaPollerUnitTest {
     }
 
     @Test
-    public void topicSubscribe() throws RetryableException, URISyntaxException {
+    public void topicSubscribe() throws RetryableException {
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest", "othertopic");
         // Each topic gets 2 partitions
@@ -402,7 +398,7 @@ public class KafkaPollerUnitTest {
 
         when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
 
-        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, new KafkaOffsetsRepository(uris.builder().build(), null), true);
+        KafkaPoller poller = new KafkaPoller(consumer, uris, startTime, BATCH_SIZE, topics, new DummyKafkaOffsetsRepository(), true);
         Batch batch = poller.firstBatch();
 
         // We get partitions for both topics
@@ -479,7 +475,7 @@ public class KafkaPollerUnitTest {
 
         KafkaPoller poller = new KafkaPoller(
                 consumer, uris, startTime, BATCH_SIZE, topics,
-                new KafkaOffsetsRepository(uris.builder().build(), rdfClient),
+                new RdfKafkaOffsetsRepository(uris.builder().build(), rdfClient),
                 false);
 
         Batch batch = poller.firstBatch();
@@ -535,7 +531,7 @@ public class KafkaPollerUnitTest {
 
         KafkaPoller poller = new KafkaPoller(
                 consumer, uris, startTime, BATCH_SIZE, topics,
-                new KafkaOffsetsRepository(uris.builder().build(), rdfClient),
+                new RdfKafkaOffsetsRepository(uris.builder().build(), rdfClient),
                 false);
 
         Batch batch = poller.firstBatch();
@@ -548,7 +544,7 @@ public class KafkaPollerUnitTest {
         List<Long> capturedOffsets = seekOffsets.getAllValues();
         assertThat(capturedOffsets, hasSize(topics.size()));
         // This offset is from timestamp
-        assertThat(capturedOffsets.get(1), equalTo(Long.valueOf(500L)));
+        assertThat(capturedOffsets, hasItem(500L));
     }
 
     @Test
@@ -571,7 +567,7 @@ public class KafkaPollerUnitTest {
 
         KafkaPoller poller = new KafkaPoller(
                 consumer, uris, startTime, BATCH_SIZE, topics,
-                new KafkaOffsetsRepository(uris.builder().build(), rdfClient),
+                new RdfKafkaOffsetsRepository(uris.builder().build(), rdfClient),
                 true);
 
         Batch batch = poller.firstBatch();
