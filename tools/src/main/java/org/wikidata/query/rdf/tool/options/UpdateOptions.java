@@ -86,9 +86,9 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     @Option(description = "Reset Kafka offsets")
     boolean resetKafka();
 
-    default long[] longEntityNamespaces() {
-        if (entityNamespaces() == null) return DEFAULT_ENTITY_NAMESPACES;
-        return splitByComma(Arrays.asList(entityNamespaces())).stream().
+    static long[] longEntityNamespaces(UpdateOptions updateOptions) {
+        if (updateOptions.entityNamespaces() == null) return DEFAULT_ENTITY_NAMESPACES;
+        return splitByComma(Arrays.asList(updateOptions.entityNamespaces())).stream().
                 mapToLong(option -> Long.parseLong(option))
                 .toArray();
     }
@@ -96,17 +96,17 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     /**
      * Produce base Wikibase URL from options.
      */
-    default URI getWikibaseUrl() {
-        if (wikibaseUrl() != null) {
+    static URI getWikibaseUrl(UpdateOptions updateOptions) {
+        if (updateOptions.wikibaseUrl() != null) {
             try {
-                return new URI(wikibaseUrl());
+                return new URI(updateOptions.wikibaseUrl());
             } catch (URISyntaxException e) {
                 throw new FatalException("Unable to build Wikibase url", e);
             }
         }
         URIBuilder baseUrl = new URIBuilder();
-        baseUrl.setHost(wikibaseHost());
-        baseUrl.setScheme(wikibaseScheme());
+        baseUrl.setHost(updateOptions.wikibaseHost());
+        baseUrl.setScheme(updateOptions.wikibaseScheme());
         try {
             return baseUrl.build();
         } catch (URISyntaxException e) {
@@ -119,40 +119,40 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
      *
      * @return a newly created sparql URI
      */
-    default URI sparqlUri() {
+    static URI sparqlUri(UpdateOptions updateOptions) {
         URI sparqlUri;
         try {
-            sparqlUri = new URI(sparqlUrl());
+            sparqlUri = new URI(updateOptions.sparqlUrl());
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid url:  " + sparqlUrl(), e);
+            throw new IllegalArgumentException("Invalid url:  " + updateOptions.sparqlUrl(), e);
         }
         return sparqlUri;
     }
 
     @Nullable
-    default Instant startInstant() {
-        if (start() == null) return null;
-        return parseDate(start());
+    static Instant startInstant(UpdateOptions updateOptions) {
+        if (updateOptions.start() == null) return null;
+        return parseDate(updateOptions.start());
     }
 
     @Nullable
-    default String[] parsedIds() {
-        List<String> split = splitByComma(ids());
+    static String[] parsedIds(UpdateOptions updateOptions) {
+        List<String> split = splitByComma(updateOptions.ids());
         if (split == null) return null;
         return split.toArray(new String[split.size()]);
     }
 
-    default boolean ignoreStoredOffsets() {
+    static boolean ignoreStoredOffsets(UpdateOptions updateOptions) {
         // If we have explicit start time, we ignore kafka offsets
-        return start() != null || resetKafka();
+        return updateOptions.start() != null || updateOptions.resetKafka();
     }
 
-    default WikibaseRepository.Uris uris() {
-        return new WikibaseRepository.Uris(getWikibaseUrl(), longEntityNamespaces());
+    static WikibaseRepository.Uris uris(UpdateOptions updateOptions) {
+        return new WikibaseRepository.Uris(getWikibaseUrl(updateOptions), UpdateOptions.longEntityNamespaces(updateOptions));
     }
 
-    default List<String> clusterNames() {
-        return splitByComma(clusters());
+    static List<String> clusterNames(UpdateOptions updateOptions) {
+        return splitByComma(updateOptions.clusters());
     }
 
     /**

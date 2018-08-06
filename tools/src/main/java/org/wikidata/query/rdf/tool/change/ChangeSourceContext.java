@@ -36,21 +36,21 @@ public final class ChangeSourceContext {
             return buildIdRangeChangeSource(options.idrange(), options.batchSize());
         }
         if (options.ids() != null) {
-            return new IdListChangeSource(options.parsedIds(), options.batchSize());
+            return new IdListChangeSource(UpdateOptions.parsedIds(options), options.batchSize());
         }
 
-        Instant startTime = getStartTime(options.startInstant(), rdfRepository, options.init());
+        Instant startTime = getStartTime(UpdateOptions.startInstant(options), rdfRepository, options.init());
 
         if (options.kafkaBroker() != null) {
             return KafkaPoller.buildKafkaPoller(
                     options.kafkaBroker(),
                     options.consumerId(),
-                    options.clusterNames(),
+                    UpdateOptions.clusterNames(options),
                     wikibaseRepository.getUris(),
                     options.batchSize(),
                     startTime,
                     rdfRepository,
-                    options.ignoreStoredOffsets());
+                    UpdateOptions.ignoreStoredOffsets(options));
         }
         return new RecentChangesPoller(
                 wikibaseRepository,

@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.change.Change;
+import org.wikidata.query.rdf.tool.options.OptionsUtils;
 import org.wikidata.query.rdf.tool.options.UpdateOptions;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
@@ -83,12 +84,12 @@ public final class Update {
         try {
             UpdateOptions options = handleOptions(UpdateOptions.class, args);
 
-            WikibaseRepository wikibaseRepository = new WikibaseRepository(options.uris(), options.constraints());
+            WikibaseRepository wikibaseRepository = new WikibaseRepository(UpdateOptions.uris(options), options.constraints());
             closer.register(wikibaseRepository);
 
-            WikibaseUris wikibaseUris = options.wikibaseUris();
+            WikibaseUris wikibaseUris = OptionsUtils.WikibaseOptions.wikibaseUris(options);
 
-            URI sparqlUri = options.sparqlUri();
+            URI sparqlUri = UpdateOptions.sparqlUri(options);
 
             HttpClient httpClient = buildHttpClient(getHttpProxyHost(), getHttpProxyPort());
             closer.register(wrapHttpClient(httpClient));

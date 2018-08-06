@@ -74,8 +74,8 @@ public final class OptionsUtils {
         @Option(shortName = "U", defaultToNull = true, description = "Wikibase concept URI for RDF entities")
         String conceptUri();
 
-        default WikibaseUris wikibaseUris() {
-            String conceptUri = conceptUri();
+        static WikibaseUris wikibaseUris(WikibaseOptions wikibaseOptions) {
+            String conceptUri = wikibaseOptions.conceptUri();
             if (conceptUri != null) {
                 try {
                     return new WikibaseUris(new URI(conceptUri));
@@ -83,8 +83,9 @@ public final class OptionsUtils {
                     throw new RuntimeException("Bad URI: " + conceptUri, e);
                 }
             }
-            return WikibaseUris.forHost(wikibaseHost());
+            return WikibaseUris.forHost(wikibaseOptions.wikibaseHost());
         }
+
     }
 
     /**
@@ -137,7 +138,7 @@ public final class OptionsUtils {
      * Build a munger from a MungerOptions instance.
      */
     public static Munger mungerFromOptions(MungerOptions options) {
-        Munger munger = new Munger(options.wikibaseUris());
+        Munger munger = new Munger(WikibaseOptions.wikibaseUris(options));
         if (options.skipSiteLinks()) {
             munger = munger.removeSiteLinks();
         }
