@@ -85,7 +85,9 @@ public final class Update {
         try {
             UpdateOptions options = handleOptions(UpdateOptions.class, args);
 
-            WikibaseRepository wikibaseRepository = new WikibaseRepository(UpdateOptions.uris(options), options.constraints());
+            MetricRegistry metricRegistry = createMetricRegistry(closer);
+
+            WikibaseRepository wikibaseRepository = new WikibaseRepository(UpdateOptions.uris(options), options.constraints(), metricRegistry);
             closer.register(wikibaseRepository);
 
             WikibaseUris wikibaseUris = WikibaseOptions.wikibaseUris(options);
@@ -104,8 +106,6 @@ public final class Update {
             RdfRepository rdfRepository = new RdfRepository(wikibaseUris, rdfClient);
 
             Instant startTime = getStartTime(startInstant(options), rdfRepository, options.init());
-
-            MetricRegistry metricRegistry = createMetricRegistry(closer);
 
             Change.Source<? extends Change.Batch> changeSource = buildChangeSource(
                     options, startTime, wikibaseRepository, rdfClient, root,

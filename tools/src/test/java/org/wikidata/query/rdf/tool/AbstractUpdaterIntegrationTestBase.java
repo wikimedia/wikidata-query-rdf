@@ -29,7 +29,7 @@ public class AbstractUpdaterIntegrationTestBase extends RandomizedTest {
      * Wikibase test against.
      */
     @Rule
-    public final CloseableRule<WikibaseRepository> wikibaseRepository = autoClose(new WikibaseRepository("https://www.wikidata.org"));
+    public final CloseableRule<WikibaseRepository> wikibaseRepository = autoClose(new WikibaseRepository("https://www.wikidata.org", new MetricRegistry()));
     /**
      * Munger to test against.
      */

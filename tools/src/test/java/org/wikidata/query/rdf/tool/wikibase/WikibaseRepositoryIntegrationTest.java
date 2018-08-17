@@ -25,6 +25,7 @@ import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse.RecentChange;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.codahale.metrics.MetricRegistry;
 
 /**
  * Tests WikibaseRepository using the beta instance of Wikidata. Note that we
@@ -33,8 +34,8 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
 public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     private static final String HOST = "test.wikidata.org";
     @Rule
-    public final CloseableRule<WikibaseRepository> repo = autoClose(new WikibaseRepository("https://" + HOST));
-    private final CloseableRule<WikibaseRepository> proxyRepo = autoClose(new WikibaseRepository("http://localhost:8812"));
+    public final CloseableRule<WikibaseRepository> repo = autoClose(new WikibaseRepository("https://" + HOST, new MetricRegistry()));
+    private final CloseableRule<WikibaseRepository> proxyRepo = autoClose(new WikibaseRepository("http://localhost:8812", new MetricRegistry()));
     private final WikibaseUris uris = WikibaseUris.forHost(HOST);
 
     @Test
@@ -135,7 +136,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
     @Test
     public void fetchIsNormalized() throws RetryableException, ContainedException, IOException, URISyntaxException {
         long now = System.currentTimeMillis();
-        try (WikibaseRepository proxyRepo = new WikibaseRepository(new URI("http://localhost:8812"))) {
+        try (WikibaseRepository proxyRepo = new WikibaseRepository(new URI("http://localhost:8812"), new MetricRegistry())) {
             String entityId = repo.get().firstEntityIdForLabelStartingWith("QueryTestItem", "en", "item");
             repo.get().setLabel(entityId, "item", "QueryTestItem" + now, "en");
             Collection<Statement> statements = proxyRepo.fetchRdfForEntity(entityId);

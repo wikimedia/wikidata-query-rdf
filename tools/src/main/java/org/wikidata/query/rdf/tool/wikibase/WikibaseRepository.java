@@ -66,6 +66,8 @@ import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
 import org.wikidata.query.rdf.tool.wikibase.EditRequest.Label;
 import org.wikidata.query.rdf.tool.wikibase.SearchResponse.SearchResult;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -167,22 +169,38 @@ public class WikibaseRepository implements Closeable {
      */
     private final ObjectMapper mapper = getObjectMapper();
 
-    public WikibaseRepository(URI baseUrl) {
-        this(new Uris(baseUrl), false);
+    /**
+     * Collects the time spent collecting RDF statements from Wikibase.
+     */
+    private final Timer rdfFetchTimer;
+    /**
+     * Collects the time spent collecting entity data from Wikibase.
+     */
+    private final Timer entityFetchTimer;
+    /**
+     * Collects the time spent collecting constraints data from Wikibase.
+     */
+    private final Timer constraintFetchTimer;
+
+    public WikibaseRepository(URI baseUrl, MetricRegistry metricRegistry) {
+        this(new Uris(baseUrl), false, metricRegistry);
     }
 
-    public WikibaseRepository(String baseUrl) {
-        this(Uris.fromString(baseUrl), false);
+    public WikibaseRepository(String baseUrl, MetricRegistry metricRegistry) {
+        this(Uris.fromString(baseUrl), false, metricRegistry);
     }
 
-    public WikibaseRepository(URI baseUrl, long[] entityNamespaces) {
-        uris = new Uris(baseUrl);
+    public WikibaseRepository(URI baseUrl, long[] entityNamespaces, MetricRegistry metricRegistry) {
+        this(new Uris(baseUrl), false, metricRegistry);
         uris.setEntityNamespaces(entityNamespaces);
     }
 
-    public WikibaseRepository(Uris uris, boolean collectConstraints) {
+    public WikibaseRepository(Uris uris, boolean collectConstraints, MetricRegistry metricRegistry) {
         this.uris = uris;
         this.collectConstraints = collectConstraints;
+        this.rdfFetchTimer = metricRegistry.timer("rdf-fetch-timer");
+        this.entityFetchTimer = metricRegistry.timer("entity-fetch-timer");
+        this.constraintFetchTimer = metricRegistry.timer("constraint-fetch-timer");
     }
 
     /**
@@ -322,13 +340,13 @@ public class WikibaseRepository implements Closeable {
      * @throws RetryableException
      */
     @SuppressFBWarnings("CC_CYCLOMATIC_COMPLEXITY")
-    private void collectStatementsFromUrl(URI uri, StatementCollector collector) throws RetryableException {
+    private void collectStatementsFromUrl(URI uri, StatementCollector collector, Timer timer) throws RetryableException {
         RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
         parser.setRDFHandler(new NormalizingRdfHandler(collector));
         HttpGet request = new HttpGet(uri);
         request.setConfig(configWithTimeout);
         log.debug("Fetching rdf from {}", uri);
-        try {
+        try (Timer.Context timerContext = timer.time()) {
             try (CloseableHttpResponse response = client.execute(request)) {
                 if (response.getStatusLine().getStatusCode() == 404) {
                     // A delete/nonexistent page
@@ -368,14 +386,14 @@ public class WikibaseRepository implements Closeable {
      * @throws RetryableException thrown if there is an error communicating with
      *             wikibase
      */
+    @SuppressWarnings("resource") // stop() and close() are the same
     public Collection<Statement> fetchRdfForEntity(String entityId) throws RetryableException {
-        // TODO handle ?flavor=dump or whatever parameters we need
-        long start = System.currentTimeMillis();
+        Timer.Context timerContext = rdfFetchTimer.time();
         StatementCollector collector = new StatementCollector();
-        collectStatementsFromUrl(uris.rdf(entityId), collector);
+        collectStatementsFromUrl(uris.rdf(entityId), collector, entityFetchTimer);
         if (collectConstraints) {
             try {
-                collectStatementsFromUrl(uris.constraints(entityId), collector);
+                collectStatementsFromUrl(uris.constraints(entityId), collector, constraintFetchTimer);
             } catch (ContainedException ex) {
                 // TODO: add RetryableException here?
                 // Skip loading constraints on fail, it's not the reason to give up
@@ -383,7 +401,7 @@ public class WikibaseRepository implements Closeable {
                 log.info("Failed to load constraints: {}", ex.getMessage());
             }
         }
-        log.debug("Done in {} ms", System.currentTimeMillis() - start);
+        log.debug("Done in {} ms", timerContext.stop() / 1000);
         return collector.getStatements();
     }
 

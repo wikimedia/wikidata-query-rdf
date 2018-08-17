@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
+import com.codahale.metrics.MetricRegistry;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.io.Resources;
 
@@ -37,7 +38,7 @@ public class WikibaseRepositoryWireIntegrationTest {
 
     @Before
     public void createWikibaseRepository() {
-        repository = new WikibaseRepository("http://localhost:" + wireMockRule.port());
+        repository = new WikibaseRepository("http://localhost:" + wireMockRule.port(), new MetricRegistry());
     }
 
     @After
