@@ -18,6 +18,7 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.codahale.metrics.MetricRegistry;
 
 /**
  * Superclass for tests that need to run a full update.
@@ -51,7 +52,9 @@ public class AbstractUpdaterIntegrationTestBase extends RandomizedTest {
         WikibaseUris uris = WikibaseUris.forHost("www.wikidata.org");
         try (
             Change.Source<?> source = IdRangeChangeSource.forItems(from, to, 30);
-            Updater<?> updater = new Updater<>(source, wikibaseRepository.get(), rdfRepository, munger, executorService, 0, uris, false)
+            Updater<?> updater = new Updater<>(
+                    source, wikibaseRepository.get(), rdfRepository, munger, executorService, 0,
+                    uris, false, new MetricRegistry())
         ) {
             updater.run();
         } catch (Exception e) {

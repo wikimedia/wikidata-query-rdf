@@ -3,7 +3,6 @@ package org.wikidata.query.rdf.tool;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
@@ -14,6 +13,8 @@ import org.wikidata.query.rdf.tool.change.Change.Source;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
+
+import com.codahale.metrics.MetricRegistry;
 
 /**
  * Class for testing update.
@@ -28,15 +29,15 @@ public class TestUpdater<B extends Change.Batch> extends Updater<B> {
     private Map<String, Long> updates = new HashMap<>();
 
     public TestUpdater(Source<B> changeSource, WikibaseRepository wikibase,
-            RdfRepository rdfRepository, Munger munger,
-            ExecutorService executor, int pollDelay, WikibaseUris uris,
-            boolean verify) {
+                       RdfRepository rdfRepository, Munger munger,
+                       ExecutorService executor, int pollDelay, WikibaseUris uris,
+                       boolean verify, MetricRegistry metricRegistry) {
         super(changeSource, wikibase, rdfRepository, munger, executor, pollDelay, uris,
-                verify);
+                verify, metricRegistry);
     }
 
     @Override
-    protected void handleChanges(Iterable<Change> changes) throws InterruptedException, ExecutionException {
+    protected void handleChanges(Iterable<Change> changes) {
         for (Change change: changes) {
             log.info("C: {} {}", change.entityId(), change);
             Long old = updates.put(change.entityId(), change.revision());

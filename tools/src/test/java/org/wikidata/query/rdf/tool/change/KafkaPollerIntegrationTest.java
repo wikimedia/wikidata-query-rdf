@@ -43,6 +43,7 @@ import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris;
 
+import com.codahale.metrics.MetricRegistry;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import com.github.charithe.kafka.KafkaJunitRule;
 import com.google.common.collect.ImmutableList;
@@ -200,7 +201,8 @@ public class KafkaPollerIntegrationTest {
         URI root = uris.builder().build();
         KafkaOffsetsRepository kafkaOffsetsRepository = new RdfKafkaOffsetsRepository(root, null);
         return buildKafkaPoller(servers, randomConsumer(), clusterNames,
-                uris, 5, Instant.now(), true, kafkaOffsetsRepository);
+                uris, 5, Instant.now(), true, kafkaOffsetsRepository,
+                new MetricRegistry());
     }
 
 
@@ -234,7 +236,8 @@ public class KafkaPollerIntegrationTest {
             rdfClient.update("CLEAR ALL");
             cleanupPoller();
             KafkaOffsetsRepository kafkaOffsetsRepository = new RdfKafkaOffsetsRepository(uris.builder().build(), rdfClient);
-            poller = new KafkaPoller(consumer, uris, startTime, 5, topics, kafkaOffsetsRepository, true);
+            poller = new KafkaPoller(consumer, uris, startTime, 5, topics, kafkaOffsetsRepository,
+                    true, new MetricRegistry());
 
             when(consumer.position(any())).thenReturn(1L, 2L, 3L, 4L);
             kafkaOffsetsRepository.store(poller.currentOffsets());

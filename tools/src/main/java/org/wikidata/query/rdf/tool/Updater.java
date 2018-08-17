@@ -30,7 +30,6 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.jmx.JmxReporter;
 import com.google.common.collect.ImmutableSetMultimap;
 
 /**
@@ -46,22 +45,14 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
     private static final Logger log = LoggerFactory.getLogger(Updater.class);
 
     /**
-     * Metric registry.
-     */
-    private final MetricRegistry metrics = new MetricRegistry();
-    /**
      * Meter for the raw number of updates synced.
      */
-    private final Meter updateMeter = metrics.meter("updates");
+    private final Meter updatesMeter;
     /**
      * Meter measuring in a batch specific unit. For the RecentChangesPoller its
      * milliseconds, for the IdChangeSource its ids.
      */
-    private final Meter batchAdvanced = metrics.meter("batch-progress");
-    /**
-     * JMX interface for metrics counters.
-     */
-    private final JmxReporter reporter = JmxReporter.forRegistry(metrics).build();
+    private final Meter batchAdvanced;
     /**
      * Source of change batches.
      */
@@ -107,7 +98,8 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
     private final boolean verify;
 
     public Updater(Change.Source<B> changeSource, WikibaseRepository wikibase, RdfRepository rdfRepository,
-                   Munger munger, ExecutorService executor, int pollDelay, WikibaseUris uris, boolean verify) {
+                   Munger munger, ExecutorService executor, int pollDelay, WikibaseUris uris, boolean verify,
+                   MetricRegistry metricRegistry) {
         this.changeSource = changeSource;
         this.wikibase = wikibase;
         this.rdfRepository = rdfRepository;
@@ -116,7 +108,8 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
         this.pollDelay = pollDelay;
         this.uris = uris;
         this.verify = verify;
-        reporter.start();
+        this.updatesMeter = metricRegistry.meter("updates");
+        this.batchAdvanced = metricRegistry.meter("batch-progress");
     }
 
     @Override
@@ -151,7 +144,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 // TODO wrap all retry-able exceptions in a special exception
                 batchAdvanced.mark(batch.advanced());
                 log.info("Polled up to {} at {} updates per second and {} {} per second", batch.leftOffHuman(),
-                        meterReport(updateMeter), meterReport(batchAdvanced), batch.advancedUnits());
+                        meterReport(updatesMeter), meterReport(batchAdvanced), batch.advancedUnits());
                 if (batch.last()) {
                     return;
                 }
@@ -218,7 +211,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
 
         log.debug("Preparing update data took {} ms, have {} changes", System.currentTimeMillis() - start, processedChanges.size());
         rdfRepository.syncFromChanges(processedChanges, verify);
-        updateMeter.mark(processedChanges.size());
+        updatesMeter.mark(processedChanges.size());
     }
 
     /**

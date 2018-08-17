@@ -14,6 +14,8 @@ import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
+import com.codahale.metrics.MetricRegistry;
+
 /**
  * Provides methods to initialize change sources.
  * Depends on options provided on the command line for the choice of source.
@@ -38,7 +40,8 @@ public final class ChangeSourceContext {
     @Nonnull
     public static Change.Source<? extends Change.Batch> buildChangeSource(
             UpdateOptions options, Instant startTime,
-            WikibaseRepository wikibaseRepository, RdfClient rdfClient, URI root) {
+            WikibaseRepository wikibaseRepository, RdfClient rdfClient, URI root,
+            MetricRegistry metricRegistry) {
         if (options.idrange() != null) {
             return buildIdRangeChangeSource(options.idrange(), options.batchSize());
         }
@@ -56,14 +59,15 @@ public final class ChangeSourceContext {
                     options.batchSize(),
                     startTime,
                     UpdateOptions.ignoreStoredOffsets(options),
-                    kafkaOffsetsRepository);
+                    kafkaOffsetsRepository,
+                    metricRegistry);
         }
         return new RecentChangesPoller(
                 wikibaseRepository,
                 startTime,
                 options.batchSize(),
-                options.tailPollerOffset()
-        );
+                options.tailPollerOffset(),
+                metricRegistry);
     }
 
     /**

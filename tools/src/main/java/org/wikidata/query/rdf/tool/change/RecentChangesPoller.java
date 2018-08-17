@@ -21,6 +21,10 @@ import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse;
 import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse.RecentChange;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.codahale.metrics.Timer.Context;
 import com.google.common.collect.ImmutableList;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -32,6 +36,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * second after the last first start time.
  */
 @SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
+@SuppressWarnings("checkstyle:classfanoutcomplexity") // TODO: refactoring required!
 public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Batch> {
     private static final Logger log = LoggerFactory.getLogger(RecentChangesPoller.class);
 
@@ -94,21 +99,41 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      */
     private boolean useBackoff = true;
 
-    public RecentChangesPoller(WikibaseRepository wikibase, Instant firstStartTime,
-            int batchSize, Map<Long, Boolean> seenIDs, int tailSeconds) {
+    /**
+     * Timer counting the time to taken by each fetch of recent changes.
+     */
+    private final Timer recentChangesTimer;
+
+    /**
+     * Counts the number of changes fetched.
+     */
+    private final Counter recentChangesCounter;
+
+    public RecentChangesPoller(
+            WikibaseRepository wikibase, Instant firstStartTime,
+            int batchSize, Map<Long, Boolean> seenIDs, int tailSeconds,
+            Timer recentChangesTimer, Counter recentChangesCounter) {
         this.wikibase = wikibase;
         this.firstStartTime = firstStartTime;
         this.batchSize = batchSize;
         this.seenIDs = seenIDs;
         this.tailSeconds = tailSeconds;
+        this.recentChangesTimer = recentChangesTimer;
+        this.recentChangesCounter = recentChangesCounter;
     }
 
-    public RecentChangesPoller(WikibaseRepository wikibase, Instant firstStartTime, int batchSize) {
-        this(wikibase, firstStartTime, batchSize, createSeenMap(), -1);
+    public RecentChangesPoller(
+            WikibaseRepository wikibase, Instant firstStartTime, int batchSize,
+            MetricRegistry metricRegistry) {
+        this(wikibase, firstStartTime, batchSize, createSeenMap(), -1,
+                metricRegistry.timer("recent-changes-timer"), metricRegistry.counter("recent-changes-counter"));
     }
 
-    public RecentChangesPoller(WikibaseRepository wikibase, Instant firstStartTime, int batchSize, int tailSeconds) {
-        this(wikibase, firstStartTime, batchSize, createSeenMap(), tailSeconds);
+    public RecentChangesPoller(
+            WikibaseRepository wikibase, Instant firstStartTime, int batchSize,
+            int tailSeconds, MetricRegistry metricRegistry) {
+        this(wikibase, firstStartTime, batchSize, createSeenMap(), tailSeconds,
+                metricRegistry.timer("recent-changes-timer"), metricRegistry.counter("recent-changes-counter"));
     }
 
     /**
@@ -167,7 +192,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             // Create new poller starting back tailSeconds and same IDs map.
             final RecentChangesPoller poller = new RecentChangesPoller(wikibase,
                     Instant.now().minusSeconds(tailSeconds),
-                    batchSize, seenIDs, -1);
+                    batchSize, seenIDs, -1, recentChangesTimer, recentChangesCounter);
             poller.setBackoff(false);
             tailPoller = new TailingChangesPoller(poller, queue, tailSeconds);
             tailPoller.setDaemon(true);
@@ -284,6 +309,14 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
      * @throws RetryableException on fetch failure
      */
     private RecentChangeResponse fetchRecentChanges(Instant lastNextStartTime, Batch lastBatch) throws RetryableException {
+        try (Context timerContext = recentChangesTimer.time()) {
+            RecentChangeResponse recentChanges = doFetchRecentChanges(lastNextStartTime, lastBatch);
+            recentChangesCounter.inc(recentChanges.getQuery().getRecentChanges().size());
+            return recentChanges;
+        }
+    }
+
+    private RecentChangeResponse doFetchRecentChanges(Instant lastNextStartTime, Batch lastBatch) throws RetryableException {
         if (useBackoff && changeIsRecent(lastNextStartTime)) {
             return wikibase.fetchRecentChangesByTime(
                     lastNextStartTime.minus(BACKOFF_TIME), batchSize);

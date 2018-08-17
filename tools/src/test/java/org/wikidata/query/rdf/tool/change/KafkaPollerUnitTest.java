@@ -44,6 +44,7 @@ import org.wikidata.query.rdf.tool.change.events.ChangeEvent;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -296,7 +297,7 @@ public class KafkaPollerUnitTest {
 
         when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
 
-        KafkaPoller poller = new KafkaPoller(consumer, uris, START_TIME, BATCH_SIZE, topics, new DummyKafkaOffsetsRepository(), true);
+        KafkaPoller poller = new KafkaPoller(consumer, uris, START_TIME, BATCH_SIZE, topics, new DummyKafkaOffsetsRepository(), true, new MetricRegistry());
         Batch batch = poller.firstBatch();
 
         // We get partitions for both topics
@@ -366,7 +367,7 @@ public class KafkaPollerUnitTest {
 
         KafkaPoller poller = new KafkaPoller(
                 consumer, uris, START_TIME, BATCH_SIZE, topics,
-                offsetsRepository, false);
+                offsetsRepository, false, new MetricRegistry());
 
         Batch batch = poller.firstBatch();
         // should not call offsetsForTimes, since all offsets are in store
@@ -423,7 +424,7 @@ public class KafkaPollerUnitTest {
 
         KafkaPoller poller = new KafkaPoller(
                 consumer, uris, START_TIME, BATCH_SIZE, topics,
-                offsetsRepository, false);
+                offsetsRepository, false, new MetricRegistry());
 
         Batch batch = poller.firstBatch();
         // should not call offsetsForTimes, since all offsets are in store
@@ -456,7 +457,7 @@ public class KafkaPollerUnitTest {
 
         KafkaPoller poller = new KafkaPoller(
                 consumer, uris, START_TIME, BATCH_SIZE, topics,
-                offsetsRepository, true);
+                offsetsRepository, true, new MetricRegistry());
 
         Batch batch = poller.firstBatch();
         batch = poller.nextBatch(batch);
@@ -495,7 +496,8 @@ public class KafkaPollerUnitTest {
     private KafkaPoller makePoller() {
         Collection<String> topics = ImmutableList.of("topictest");
 
-        return new KafkaPoller(consumer, uris, START_TIME, BATCH_SIZE, topics, new DummyKafkaOffsetsRepository(), true);
+        return new KafkaPoller(consumer, uris, START_TIME, BATCH_SIZE, topics,
+                new DummyKafkaOffsetsRepository(), true, new MetricRegistry());
     }
 
     /**

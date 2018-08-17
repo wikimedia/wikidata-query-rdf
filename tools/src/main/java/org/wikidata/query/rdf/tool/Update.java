@@ -36,6 +36,8 @@ import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.jmx.JmxReporter;
 import com.github.rholder.retry.Retryer;
 import com.google.common.io.Closer;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -44,7 +46,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  * Update tool.
  */
 @SuppressWarnings({
-        //"checkstyle:classfanoutcomplexity", // object initialization and wiring needs to be cleaned up
+        "checkstyle:classfanoutcomplexity", // object initialization and wiring needs to be cleaned up
         "checkstyle:IllegalCatch" // Catching exception is OK in a main exception handler, more so since the exception is rethrown
 })
 public final class Update {
@@ -103,7 +105,11 @@ public final class Update {
 
             Instant startTime = getStartTime(startInstant(options), rdfRepository, options.init());
 
-            Change.Source<? extends Change.Batch> changeSource = buildChangeSource(options, startTime, wikibaseRepository, rdfClient, root);
+            MetricRegistry metricRegistry = createMetricRegistry(closer);
+
+            Change.Source<? extends Change.Batch> changeSource = buildChangeSource(
+                    options, startTime, wikibaseRepository, rdfClient, root,
+                    metricRegistry);
 
             Munger munger = mungerFromOptions(options);
 
@@ -111,7 +117,9 @@ public final class Update {
 
             Updater<? extends Change.Batch> updater = createUpdater(
                     wikibaseRepository, wikibaseUris, rdfRepository, changeSource,
-                    munger, updaterExecutorService, options.pollDelay(), options.verify(), options.testMode());
+                    munger, updaterExecutorService,
+                    options.pollDelay(), options.verify(), options.testMode(),
+                    metricRegistry);
             closer.register(updater);
             return updater;
         } catch (Exception e) {
@@ -141,14 +149,15 @@ public final class Update {
             ExecutorService executor,
             int pollDelay,
             boolean verify,
-            boolean testMode) {
+            boolean testMode,
+            MetricRegistry metricRegistry) {
 
         if (testMode) {
             return new TestUpdater<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
-                    pollDelay, uris, verify);
+                    pollDelay, uris, verify, metricRegistry);
         }
         return new Updater<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
-                pollDelay, uris, verify);
+                pollDelay, uris, verify, metricRegistry);
     }
 
     private static ExecutorService createUpdaterExecutorService(int threadCount) {
@@ -181,4 +190,10 @@ public final class Update {
         };
     }
 
+    public static MetricRegistry createMetricRegistry(Closer closer) {
+        MetricRegistry metrics = new MetricRegistry();
+        JmxReporter reporter = closer.register(JmxReporter.forRegistry(metrics).build());
+        reporter.start();
+        return metrics;
+    }
 }
