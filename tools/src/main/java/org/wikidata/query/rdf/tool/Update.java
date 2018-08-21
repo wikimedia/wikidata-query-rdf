@@ -40,8 +40,6 @@ import com.github.rholder.retry.Retryer;
 import com.google.common.io.Closer;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 /**
  * Update tool.
  */
@@ -81,9 +79,6 @@ public final class Update {
         }
     }
 
-    @SuppressFBWarnings(
-            value = "RV_RETURN_VALUE_IGNORED",
-            justification = "Spotbugs does not yet understand @CanIgnoreReturnValue")
     private static Updater<? extends Change.Batch> initialize(String[] args, Closer closer) throws URISyntaxException {
         try {
             UpdateOptions options = handleOptions(UpdateOptions.class, args);

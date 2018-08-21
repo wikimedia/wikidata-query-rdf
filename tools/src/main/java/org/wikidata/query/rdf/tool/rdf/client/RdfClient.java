@@ -32,8 +32,6 @@ import com.github.rholder.retry.Retryer;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSetMultimap;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 /**
  * Low level API to Blazegraph.
  *
@@ -171,7 +169,6 @@ public class RdfClient {
      * @param valueBinding Binding name to serve as values
      * @return Collection of strings resulting from the query.
      */
-    @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED", justification = "spotbug limitation: https://github.com/spotbugs/spotbugs/issues/463")
     private ImmutableSetMultimap<String, String> resultToMap(TupleQueryResult result, String keyBinding, String valueBinding) {
         ImmutableSetMultimap.Builder<String, String> values = ImmutableSetMultimap.builder();
         try {
