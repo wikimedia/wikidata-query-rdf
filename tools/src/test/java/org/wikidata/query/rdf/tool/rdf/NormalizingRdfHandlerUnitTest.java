@@ -28,7 +28,7 @@ public class NormalizingRdfHandlerUnitTest {
     private void testHandleStatement(String suffix) throws RDFHandlerException {
         StatementChecker checkStatement = new StatementChecker();
         NormalizingRdfHandler handler = new NormalizingRdfHandler(checkStatement);
-        String testStr = "http://www.wikidata.org/ontology-" + suffix + "#Test";
+        String testStr = "http://wikiba.se/ontology-" + suffix + "#Test";
 
         Statement s = statement(testStr, RDF.TYPE, Ontology.ITEM);
         Statement p = statement("Q1", testStr, Ontology.ITEM);
@@ -51,8 +51,8 @@ public class NormalizingRdfHandlerUnitTest {
         NormalizingRdfHandler handler = new NormalizingRdfHandler(checkStatement);
 
         checkStatement.expectURI("http://wikiba.se/ontology#Test");
-        handler.handleNamespace("test", "http://www.wikidata.org/ontology-0.0.1#Test");
-        handler.handleNamespace("test", "http://www.wikidata.org/ontology-beta#Test");
+        handler.handleNamespace("test", "http://wikiba.se/ontology-0.0.1#Test");
+        handler.handleNamespace("test", "http://wikiba.se/ontology-beta#Test");
     }
 
     @Test

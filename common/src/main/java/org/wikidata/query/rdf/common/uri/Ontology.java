@@ -2,17 +2,13 @@ package org.wikidata.query.rdf.common.uri;
 
 /**
  * Marks the kinds of things (items or properties).
+ * These are matching wikibase: prefix.
  */
 public final class Ontology {
     /**
      * Common prefix of all ontology parts.
      */
     public static final String NAMESPACE = "http://wikiba.se/ontology#";
-    /**
-     * Old ontology prefix, for loading old dumps.
-     * TODO: remove this when ontology stabilizes.
-     */
-    public static final String OLD_NAMESPACE = "http://www.wikidata.org/ontology#";
 
     /**
      * Wikibase exports all items with an assertion that their RDF.TYPE is this
