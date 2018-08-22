@@ -12,7 +12,6 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
-import org.wikidata.query.rdf.common.uri.Ontology;
 
 /**
  * An RDFHandler that wraps another handler normalizing any of the (currently)
@@ -30,9 +29,6 @@ public class NormalizingRdfHandler extends DelegatingRdfHandler {
         }
         if (uri.contains("ontology-beta")) {
             uri = uri.replace("ontology-beta", "ontology");
-        }
-        if (uri.startsWith(Ontology.OLD_NAMESPACE)) {
-            uri = uri.replace(Ontology.OLD_NAMESPACE, Ontology.NAMESPACE);
         }
         super.handleNamespace(prefix, uri);
     }
@@ -124,9 +120,6 @@ public class NormalizingRdfHandler extends DelegatingRdfHandler {
         }
         if (r.stringValue().contains("ontology-beta")) {
             r = new URIImpl(r.stringValue().replace("ontology-beta", "ontology"));
-        }
-        if (r.stringValue().startsWith(Ontology.OLD_NAMESPACE)) {
-            r = new URIImpl(r.stringValue().replace(Ontology.OLD_NAMESPACE, Ontology.NAMESPACE));
         }
         // Temporary bugfix for dump URLs having bad characters in them
         String fixed = StringUtils.replaceEach(r.stringValue(),
