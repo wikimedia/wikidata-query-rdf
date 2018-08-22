@@ -35,6 +35,10 @@ import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.codahale.metrics.Timer.Context;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -58,6 +62,7 @@ import com.google.common.collect.Maps;
  *
  * See https://wikitech.wikimedia.org/wiki/EventBus for more docs on events in Kafka.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity") // TODO: refactoring required!
 public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaPoller.class);
@@ -119,15 +124,31 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
      */
     private final boolean ignoreStoredOffsets;
 
+    /**
+     * Counts the total number of changes polled from Kafka.
+     */
+    private final Counter changesCounter;
+
+    /**
+     * Counts the time spent polling Kafka.
+     *
+     * Note that this includes time spent waiting for a timeout if not enough
+     * changes are available in Kafka for a poll to complete immediately.
+     */
+    private final Timer pollingTimer;
+
     public KafkaPoller(Consumer<String, ChangeEvent> consumer, Uris uris,
                        Instant firstStartTime, int batchSize, Collection<String> topics,
                        KafkaOffsetsRepository kafkaOffsetsRepository,
-                       boolean ignoreStoredOffsets) {
+                       boolean ignoreStoredOffsets,
+                       MetricRegistry metricRegistry) {
         this.consumer = consumer;
         this.uris = uris;
         this.firstStartTime = firstStartTime;
         this.batchSize = batchSize;
         this.topics = topics;
+        this.changesCounter = metricRegistry.counter("kafka-changes-counter");
+        this.pollingTimer = metricRegistry.timer("kafka-changes-timer");
         this.topicPartitions = topicsToPartitions(topics, consumer);
         this.kafkaOffsetsRepository = kafkaOffsetsRepository;
         this.ignoreStoredOffsets = ignoreStoredOffsets;
@@ -185,7 +206,8 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
     public static KafkaPoller buildKafkaPoller(
             String kafkaServers, String consumerId, Collection<String> clusterNames,
             Uris uris, int batchSize, Instant startTime,
-            boolean ignoreStoredOffsets, KafkaOffsetsRepository kafkaOffsetsRepository) {
+            boolean ignoreStoredOffsets, KafkaOffsetsRepository kafkaOffsetsRepository,
+            MetricRegistry metricRegistry) {
         if (consumerId == null) {
             throw new IllegalArgumentException("Consumer ID (--consumer) must be set");
         }
@@ -196,7 +218,8 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
                 buildKafkaConsumer(kafkaServers, consumerId, topicsToClass, batchSize),
                 uris, startTime, batchSize, topics,
                 kafkaOffsetsRepository,
-                ignoreStoredOffsets);
+                ignoreStoredOffsets,
+                metricRegistry);
     }
 
     @Override
@@ -274,7 +297,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         ConsumerRecords<String, ChangeEvent> records;
         Map<String, Instant> timesByTopic = newHashMapWithExpectedSize(topics.size());
         while (true) {
-            try {
+            try (Context timerContext = pollingTimer.time()) {
                 // TODO: make timeout configurable? Wait for a bit so we catch bursts of messages?
                 records = consumer.poll(1000);
             } catch (InterruptException | WakeupException e) {
@@ -282,6 +305,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
             }
             int count = records.count();
             log.info("Fetched {} records from Kafka", count);
+            changesCounter.inc(count);
             if (count == 0) {
                 // If we got nothing from Kafka, get out of the loop and return what we have
                 break;

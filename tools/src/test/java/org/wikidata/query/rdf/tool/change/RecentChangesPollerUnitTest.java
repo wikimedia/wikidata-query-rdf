@@ -25,11 +25,13 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.wikidata.query.rdf.tool.change.RecentChangesPoller.Batch;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
-import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse;
 import org.wikidata.query.rdf.tool.wikibase.Continue;
+import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse;
 import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse.Query;
 import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse.RecentChange;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
+
+import com.codahale.metrics.MetricRegistry;
 
 @SuppressWarnings({"unchecked", "boxing"})
 public class RecentChangesPollerUnitTest {
@@ -75,7 +77,7 @@ public class RecentChangesPollerUnitTest {
         RecentChangeResponse result = new RecentChangeResponse(error, aContinue, query);
 
         firstBatchReturns(startTime, result);
-        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
+        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize, new MetricRegistry());
         Batch batch = poller.firstBatch();
 
         assertThat(batch.changes(), hasSize(10));
@@ -116,7 +118,7 @@ public class RecentChangesPollerUnitTest {
 
         firstBatchReturns(startTime, result);
 
-        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
+        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize, new MetricRegistry());
         Batch batch = poller.firstBatch();
         assertThat(batch.changes(), hasSize(2));
         assertEquals(7, batch.changes().get(1).rcid());
@@ -155,7 +157,7 @@ public class RecentChangesPollerUnitTest {
 
         firstBatchReturns(startTime, result);
 
-        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
+        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize, new MetricRegistry());
         Batch batch = poller.firstBatch();
         List<Change> changes = batch.changes();
         assertThat(changes, hasSize(1));
@@ -172,7 +174,7 @@ public class RecentChangesPollerUnitTest {
     @SuppressWarnings("unchecked")
     public void backoffTime() throws RetryableException {
         Instant startTime = Instant.now();
-        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
+        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize, new MetricRegistry());
 
         Instant nextStartTime = startTime.plusSeconds(20);
 
@@ -208,7 +210,7 @@ public class RecentChangesPollerUnitTest {
      */
     public void noBackoffForOld() throws RetryableException {
         Instant startTime = Instant.now().minus(1, ChronoUnit.DAYS);
-        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, 10);
+        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, 10, new MetricRegistry());
 
         String error = null;
         Continue aContinue = null;
@@ -233,7 +235,7 @@ public class RecentChangesPollerUnitTest {
     public void backoffOverflow() throws RetryableException {
         Instant startTime = Instant.now();
         batchSize = 1;
-        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize);
+        RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize, new MetricRegistry());
 
         String error = null;
         Continue aContinue = null;
