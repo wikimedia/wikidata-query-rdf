@@ -31,9 +31,11 @@ import org.wikidata.query.rdf.blazegraph.geo.GeoService;
 import org.wikidata.query.rdf.blazegraph.label.LabelService;
 import org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceCall;
 import org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory;
+import org.wikidata.query.rdf.common.uri.Dct;
 import org.wikidata.query.rdf.common.uri.GeoSparql;
 import org.wikidata.query.rdf.common.uri.Mediawiki;
 import org.wikidata.query.rdf.common.uri.OWL;
+import org.wikidata.query.rdf.common.uri.Ontolex;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SKOS;
@@ -223,6 +225,8 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         defaultDecls.put("mediawiki", Mediawiki.NAMESPACE);
         defaultDecls.put("mwapi", Mediawiki.API);
         defaultDecls.put("gas", GASService.Options.NAMESPACE);
+        defaultDecls.put("ontolex", Ontolex.NAMESPACE);
+        defaultDecls.put("dct", Dct.NAMESPACE);
     }
 
     private MetricRegistry createMetricRegistry() {

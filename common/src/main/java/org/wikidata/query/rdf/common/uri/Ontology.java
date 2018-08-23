@@ -89,6 +89,44 @@ public final class Ontology {
      * Sitelinks count.
      */
     public static final String SITELINKS = NAMESPACE + "sitelinks";
+    /**
+     * Constraint violation.
+     */
+    public static final String CONSTRAINT_VIOLATION = NAMESPACE + "hasViolationForConstraint";
+
+    /**
+     * Predicates and objects to describe WikibaseLexeme items.
+     */
+    public static final class Lexeme {
+        /**
+         * Lexeme class.
+         */
+        public static final String LEXEME = NAMESPACE + "Lexeme";
+        /**
+         * Form class.
+         */
+        public static final String FORM = NAMESPACE + "Form";
+        /**
+         * Sense class.
+         */
+        public static final String SENSE = NAMESPACE + "Sense";
+        /**
+         * Lemma predicate.
+         */
+        public static final String LEMMA = NAMESPACE + "lemma";
+        /**
+         * Lexical category predicate.
+         */
+        public static final String LEXICAL_CATEGORY = NAMESPACE + "lexicalCategory";
+        /**
+         * Grammatical feature predicate.
+         */
+        public static final String GRAMMATICAL_FEATURE = NAMESPACE + "grammaticalFeature";
+
+        private Lexeme() {
+            // Utility class.
+        }
+    }
 
     /**
      * Predicates used to describe a time.
