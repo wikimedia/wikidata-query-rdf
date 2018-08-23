@@ -57,10 +57,13 @@ public class Change implements Comparable<Change> {
     private final long rcid;
 
     public Change(String entityId, long revision, Instant timestamp, long rcid) {
+        // FIXME: this should not be hardcoded!
         if (entityId.startsWith("Property:")) {
             this.entityId = entityId.substring("Property:".length());
         } else if (entityId.startsWith("Item:")) {
             this.entityId = entityId.substring("Item:".length());
+        } else if (entityId.startsWith("Lexeme:")) {
+            this.entityId = entityId.substring("Lexeme:".length());
         } else {
             this.entityId = entityId;
         }

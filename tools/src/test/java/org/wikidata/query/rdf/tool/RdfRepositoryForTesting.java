@@ -145,4 +145,8 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
     public boolean ask(String sparql) {
         return rdfClient.ask(sparql);
     }
+
+    public RdfClient getClient() {
+        return rdfClient;
+    }
 }

@@ -29,7 +29,9 @@ import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.WikibasePoint;
 import org.wikidata.query.rdf.common.WikibasePoint.CoordinateOrder;
 import org.wikidata.query.rdf.common.uri.OWL;
+import org.wikidata.query.rdf.common.uri.Ontolex;
 import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.Ontology.Lexeme;
 import org.wikidata.query.rdf.common.uri.Ontology.Quantity;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
@@ -98,6 +100,12 @@ public class Munger {
          */
         Statement handle(Statement statement);
     }
+
+    /**
+     * Types that we will remove from data.
+     */
+    private static final Set<String> SKIPPED_TYPES = ImmutableSet
+            .of(Ontology.ITEM, Lexeme.LEXEME, Lexeme.FORM, Lexeme.SENSE);
 
     /**
      * Map of format handlers.
@@ -296,6 +304,10 @@ public class Munger {
          * in error.
          */
         private final List<Statement> restoredStatements = new ArrayList<>();
+        /**
+         * Sub-entities of this entity.
+         */
+        private final Set<String> subEntities = new HashSet<>();
         /**
          * Subjects of all sitelinks.
          */
@@ -586,7 +598,7 @@ public class Munger {
          */
         @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         private boolean entityStatement() {
-            if (!subject.equals(entityUri)) {
+            if (!subject.equals(entityUri) && !subEntities.contains(subject)) {
                 /*
                  * Some flavors of rdf dump information about other entities
                  * along side the main entity. We can't handle that properly and
@@ -603,19 +615,29 @@ public class Munger {
                  * We don't need wd:Q1 a ontology:Item because its super common
                  * and not super interesting.
                  */
-                return !statement.getObject().stringValue().equals(Ontology.ITEM);
+                return !SKIPPED_TYPES.contains(statement.getObject().stringValue());
             case SchemaDotOrg.NAME:
             case SKOS.PREF_LABEL:
                 // Q1 schema:name "foo" is a dupe of rdfs:label
                 // Q1 skos:prefLabel "foo" is a dupe of rdfs:label
                 return false;
             case RDFS.LABEL:
+                    if (subject.startsWith(uris.entity() + "L")
+                            || subEntities.contains(subject)) {
+                    // Skip labels for Lexeme & its sub-entities, e.g. Forms and Senses
+                    return false;
+                }
                 return limitLabelLanguage() && singleLabelMode(singleLabelModeWorkForLabel);
             case SchemaDotOrg.DESCRIPTION:
                 return limitLabelLanguage() && singleLabelMode(singleLabelModeWorkForDescription);
             case SKOS.ALT_LABEL:
                 return limitLabelLanguage();
             case OWL.SAME_AS:
+                return true;
+            case Ontolex.LEXICAL_FORM:
+            case Ontolex.SENSE_PREDICATE:
+                // Links to Form and Sense
+                subEntities.add(statement.getObject().stringValue());
                 return true;
             default:
                 return entityStatementWithUnrecognizedPredicate();

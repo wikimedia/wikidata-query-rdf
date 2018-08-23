@@ -1,0 +1,92 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://wikiba.se/ontology-beta#> .
+@prefix wds: <http://test.wikidata.org/entity/statement/> .
+@prefix wdata: <http://test.wikidata.org/wiki/Special:EntityData/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix wdref: <http://test.wikidata.org/reference/> .
+@prefix wdv: <http://test.wikidata.org/value/> .
+@prefix wd: <http://test.wikidata.org/entity/> .
+@prefix wdt: <http://test.wikidata.org/prop/direct/> .
+@prefix wdtn: <http://test.wikidata.org/prop/direct-normalized/> .
+@prefix p: <http://test.wikidata.org/prop/> .
+@prefix ps: <http://test.wikidata.org/prop/statement/> .
+@prefix psv: <http://test.wikidata.org/prop/statement/value/> .
+@prefix psn: <http://test.wikidata.org/prop/statement/value-normalized/> .
+@prefix pq: <http://test.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://test.wikidata.org/prop/qualifier/value/> .
+@prefix pqn: <http://test.wikidata.org/prop/qualifier/value-normalized/> .
+@prefix pr: <http://test.wikidata.org/prop/reference/> .
+@prefix prv: <http://test.wikidata.org/prop/reference/value/> .
+@prefix prn: <http://test.wikidata.org/prop/reference/value-normalized/> .
+@prefix wdno: <http://test.wikidata.org/prop/novalue/> .
+
+wikibase:Dump a schema:Dataset,
+		owl:Ontology ;
+	cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+	schema:softwareVersion "0.1.0" ;
+	schema:dateModified "2018-09-18T00:10:37Z"^^xsd:dateTime ;
+	owl:imports <http://wikiba.se/ontology-1.0.owl> .
+
+wdata:L2 a schema:Dataset ;
+	schema:about wd:L2 ;
+	schema:version "48"^^xsd:integer ;
+	schema:dateModified "2018-08-24T00:58:18Z"^^xsd:dateTime ;
+	wikibase:statements "2"^^xsd:integer .
+
+wd:L2 a wikibase:Lexeme,
+		ontolex:LexicalEntry ;
+	rdfs:label "duck"@en ;
+	wikibase:lemma "duck"@en ;
+	rdfs:label "quack"@en-gb ;
+	wikibase:lemma "quack"@en-gb ;
+	dct:language wd:Q6 ;
+	wikibase:lexicalCategory wd:Q7 ;
+	ontolex:lexicalForm wd:L2-F1,
+		wd:L2-F2 ;
+	wdt:P6 wd:Q2 ;
+	p:P6 wds:L2-4cb853a1-4949-e237-ce0f-e1dbe5ad06f3 .
+
+wds:L2-4cb853a1-4949-e237-ce0f-e1dbe5ad06f3 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6 wd:Q2 .
+
+wd:L2-F1 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "duck"@en ;
+	ontolex:representation "duck"@en ;
+	wikibase:grammaticalFeature wd:Q3 ;
+	wdt:P7 wd:Q3 ;
+	p:P7 wds:L2-F1-91ff8aae-4f68-982c-6645-1d886ca31832 .
+
+wds:L2-F1-91ff8aae-4f68-982c-6645-1d886ca31832 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P7 wd:Q3 .
+
+wd:L2-F2 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "ducks"@en ;
+	ontolex:representation "ducks"@en ;
+	wikibase:grammaticalFeature wd:Q2 .
+
+wdata:L3 a schema:Dataset ;
+	schema:about wd:L3 ;
+	schema:version "35"^^xsd:integer ;
+	schema:dateModified "2018-03-27T01:24:00Z"^^xsd:dateTime .
+
+wd:L3 a wikibase:Lexeme,
+		ontolex:LexicalEntry ;
+	rdfs:label "Test"@en ;
+	wikibase:lemma "Test"@en ;
+	dct:language wd:Q6 ;
+	wikibase:lexicalCategory wd:Q7 .

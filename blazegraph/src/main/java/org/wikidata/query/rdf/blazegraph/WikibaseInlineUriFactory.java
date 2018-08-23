@@ -42,6 +42,9 @@ public class WikibaseInlineUriFactory extends InlineURIFactory {
          */
         addHandler(new InlineUnsignedIntegerURIHandler(uris.entity() + "P"));
         addHandler(new InlineUnsignedIntegerURIHandler(uris.entity() + "Q"));
+        // Lexemes
+        // TODO: can't really do it because of Forms: L1-F1
+        // addHandler(new InlineUnsignedIntegerURIHandler(uris.entity() + "L"));
 
         // These aren't part of wikibase but are common in wikidata
         // TODO: add more prefixes?
