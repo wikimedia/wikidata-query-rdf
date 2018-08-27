@@ -36,4 +36,4 @@ if [ ! -s $DATA_DIR/$FILENAME ]; then
 	echo "Could not download $URL"
 	exit 1
 fi
-gunzip -dc $DATA_DIR/$FILENAME | curl -XPOST -H 'Content-type:application/sparql-update' --data-binary @- $HOST/$CONTEXT/namespace/$NAMESPACE/sparql
+gunzip -dc $DATA_DIR/$FILENAME | curl -s -XPOST -H 'Content-type:application/sparql-update' --data-binary @- $HOST/$CONTEXT/namespace/$NAMESPACE/sparql
