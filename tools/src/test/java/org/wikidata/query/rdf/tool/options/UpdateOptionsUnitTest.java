@@ -1,8 +1,6 @@
 package org.wikidata.query.rdf.tool.options;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.handleOptions;
 
 import java.net.URI;
@@ -21,6 +19,6 @@ public class UpdateOptionsUnitTest {
 
         URI wikibaseUrl = UpdateOptions.getWikibaseUrl(updateOptions);
 
-        assertThat(wikibaseUrl, is(equalTo(new URI("http://test.net/wikibase"))));
+        assertThat(wikibaseUrl).isEqualTo(new URI("http://test.net/wikibase"));
     }
 }
