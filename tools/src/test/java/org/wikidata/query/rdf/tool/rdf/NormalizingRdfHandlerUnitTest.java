@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.tool.rdf;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 import org.junit.Test;
@@ -124,20 +124,20 @@ public class NormalizingRdfHandlerUnitTest {
         @Override
         public void handleNamespace(String prefix, String uri) {
             if (expectURI != null) {
-                assertEquals(expectURI, uri);
+                assertThat(expectURI).isEqualTo(uri);
             }
         }
 
         @Override
         public void handleStatement(Statement st) {
             if (expectSubject != null) {
-                assertEquals(expectSubject, st.getSubject().stringValue());
+                assertThat(expectSubject).isEqualTo(st.getSubject().stringValue());
             }
             if (expectPredicate != null) {
-                assertEquals(expectPredicate, st.getPredicate().stringValue());
+                assertThat(expectPredicate).isEqualTo(st.getPredicate().stringValue());
             }
             if (expectObject != null) {
-                assertEquals(expectObject, st.getObject().stringValue());
+                assertThat(expectObject).isEqualTo(st.getObject().stringValue());
             }
         }
 

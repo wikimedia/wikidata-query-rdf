@@ -2,8 +2,7 @@ package org.wikidata.query.rdf.tool.rdf.client;
 
 import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -32,7 +31,7 @@ public class UpdateCountResponseUnitTest {
 
         Integer numberOfUpdates = responseHandler.parse(response);
 
-        assertThat(numberOfUpdates, equalTo(4));
+        assertThat(numberOfUpdates).isEqualTo(4);
     }
 
     private String loadResponseFromFile() throws IOException {

@@ -1,7 +1,6 @@
 package org.wikidata.query.rdf.tool.rdf;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.net.URL;
@@ -20,6 +19,6 @@ public class BlazegraphCanaryIntegrationTest {
     @Test
     public void canary() throws IOException {
         String fetched = Resources.asCharSource(new URL("http://localhost:9999/bigdata/status"), Charsets.UTF_8).read();
-        assertThat(fetched, containsString("queriesPerSecond"));
+        assertThat(fetched).contains("queriesPerSecond");
     }
 }

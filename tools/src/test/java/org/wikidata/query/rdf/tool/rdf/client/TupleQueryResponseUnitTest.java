@@ -1,12 +1,7 @@
 package org.wikidata.query.rdf.tool.rdf.client;
 
 import static com.google.common.io.Resources.getResource;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasSize;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -38,19 +33,19 @@ public class TupleQueryResponseUnitTest {
 
         TupleQueryResult parsed = responseHandler.parse(response);
 
-        assertThat(parsed, is(notNullValue()));
-        assertThat(parsed.getBindingNames(), hasSize(1));
-        assertThat(parsed.getBindingNames(), contains("cause"));
+        assertThat(parsed).isNotNull();
+        assertThat(parsed.getBindingNames()).hasSize(1);
+        assertThat(parsed.getBindingNames()).contains("cause");
 
         BindingSet binding = parsed.next();
         Binding cause = binding.getBinding("cause");
 
-        assertThat(cause.getValue().stringValue(), is(equalTo("http://www.wikidata.org/entity/Q1347065")));
+        assertThat(cause.getValue().stringValue()).isEqualTo("http://www.wikidata.org/entity/Q1347065");
 
         binding = parsed.next();
         cause = binding.getBinding("cause");
 
-        assertThat(cause.getValue().stringValue(), is(equalTo("http://www.wikidata.org/entity/Q3827083")));
+        assertThat(cause.getValue().stringValue()).isEqualTo("http://www.wikidata.org/entity/Q3827083");
     }
 
     @Test(expected = RuntimeException.class)
