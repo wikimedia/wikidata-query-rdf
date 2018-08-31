@@ -1,7 +1,6 @@
 package org.wikidata.query.rdf.tool.change;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.util.Map;
@@ -19,7 +18,7 @@ public class DummyKafkaOffsetsRepositoryUnitTest {
         DummyKafkaOffsetsRepository offsetsRepository = new DummyKafkaOffsetsRepository();
         Map<TopicPartition, OffsetAndTimestamp> offsets = offsetsRepository.load(Instant.now());
 
-        assertThat(offsets.entrySet(), empty());
+        assertThat(offsets.entrySet()).isEmpty();
     }
 
     @Test
@@ -30,7 +29,7 @@ public class DummyKafkaOffsetsRepositoryUnitTest {
         offsetsRepository.store(ImmutableMap.of(new TopicPartition("partition", 1), 2L));
 
         Map<TopicPartition, OffsetAndTimestamp> offsets = offsetsRepository.load(Instant.now());
-        assertThat(offsets.entrySet(), empty());
+        assertThat(offsets.entrySet()).isEmpty();
     }
 
 }

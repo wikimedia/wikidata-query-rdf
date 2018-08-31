@@ -1,12 +1,7 @@
 package org.wikidata.query.rdf.tool.change;
 
 import static java.util.Collections.emptyList;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.lessThan;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -80,12 +75,12 @@ public class RecentChangesPollerUnitTest {
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize, new MetricRegistry());
         Batch batch = poller.firstBatch();
 
-        assertThat(batch.changes(), hasSize(10));
+        assertThat(batch.changes()).hasSize(10);
         List<Change> changes = new ArrayList<>(batch.changes());
         Collections.sort(changes, Comparator.comparing(Change::entityId));
         for (int i = 0; i < 10; i++) {
-            assertEquals(changes.get(i).entityId(), "Q" + i);
-            assertEquals(changes.get(i).revision(), 2 * i + 1);
+            assertThat(changes.get(i).entityId()).isEqualTo("Q" + i);
+            assertThat(changes.get(i).revision()).isEqualTo(2 * i + 1);
         }
     }
 
@@ -120,10 +115,10 @@ public class RecentChangesPollerUnitTest {
 
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize, new MetricRegistry());
         Batch batch = poller.firstBatch();
-        assertThat(batch.changes(), hasSize(2));
-        assertEquals(7, batch.changes().get(1).rcid());
-        assertEquals(date, batch.leftOffDate().toString());
-        assertEquals(aContinue, batch.getLastContinue());
+        assertThat(batch.changes()).hasSize(2);
+        assertThat(batch.changes().get(1).rcid()).isEqualTo(7);
+        assertThat(batch.leftOffDate().toString()).isEqualTo(date);
+        assertThat(batch.getLastContinue()).isEqualTo(aContinue);
 
         ArgumentCaptor<Instant> argumentDate = ArgumentCaptor.forClass(Instant.class);
         ArgumentCaptor<Continue> continueCaptor = ArgumentCaptor.forClass(Continue.class);
@@ -132,9 +127,9 @@ public class RecentChangesPollerUnitTest {
         when(repository.fetchRecentChanges(argumentDate.capture(), continueCaptor.capture(), eq(batchSize))).thenReturn(result);
         // check that poller passes the continue object to the next batch
         batch = poller.nextBatch(batch);
-        assertThat(batch.changes(), hasSize(0));
-        assertEquals(date, argumentDate.getValue().toString());
-        assertEquals(aContinue, continueCaptor.getValue());
+        assertThat(batch.changes()).hasSize(0);
+        assertThat(argumentDate.getValue().toString()).isEqualTo(date);
+        assertThat(continueCaptor.getValue()).isEqualTo(aContinue);
     }
 
     /**
@@ -160,10 +155,10 @@ public class RecentChangesPollerUnitTest {
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize, new MetricRegistry());
         Batch batch = poller.firstBatch();
         List<Change> changes = batch.changes();
-        assertThat(changes, hasSize(1));
-        assertEquals(changes.get(0).entityId(), "Q424242");
-        assertEquals(changes.get(0).rcid(), 42L);
-        assertEquals(changes.get(0).revision(), -1L);
+        assertThat(changes).hasSize(1);
+        assertThat(changes.get(0).entityId()).isEqualTo("Q424242");
+        assertThat(changes.get(0).rcid()).isEqualTo(42L);
+        assertThat(changes.get(0).revision()).isEqualTo(-1L);
     }
 
     /**
@@ -193,14 +188,14 @@ public class RecentChangesPollerUnitTest {
         Batch batch = poller.firstBatch();
 
         // Ensure we backed off at least 7 seconds but no more than 20
-        assertThat(argument.getValue(), lessThan(startTime.minusSeconds(7)));
-        assertThat(argument.getValue(), greaterThan(startTime.minusSeconds(20)));
+        assertThat(argument.getValue()).isBefore(startTime.minusSeconds(7));
+        assertThat(argument.getValue()).isAfter(startTime.minusSeconds(20));
 
         // Verify that backoff still works on the second call
         batch = poller.nextBatch(batch);
-        assertNotNull(batch); // verify we're still using fetchRecentChangesByTime
-        assertThat(argument.getValue(), lessThan(nextStartTime.minusSeconds(7)));
-        assertThat(argument.getValue(), greaterThan(nextStartTime.minusSeconds(20)));
+        assertThat(batch).isNotNull(); // verify we're still using fetchRecentChangesByTime
+        assertThat(argument.getValue()).isBefore(nextStartTime.minusSeconds(7));
+        assertThat(argument.getValue()).isAfter(nextStartTime.minusSeconds(20));
 
     }
 
@@ -223,7 +218,7 @@ public class RecentChangesPollerUnitTest {
         when(repository.isValidEntity(any(String.class))).thenReturn(true);
         Batch batch = poller.firstBatch();
 
-        assertEquals(argument.getValue(), startTime);
+        assertThat(argument.getValue()).isEqualTo(startTime);
     }
 
     /**
@@ -246,13 +241,13 @@ public class RecentChangesPollerUnitTest {
 
         firstBatchReturns(startTime, result);
         Batch batch = poller.firstBatch();
-        assertThat(batch.changes(), hasSize(1));
-        assertEquals(startTime, batch.leftOffDate());
+        assertThat(batch.changes()).hasSize(1);
+        assertThat(batch.leftOffDate()).isEqualTo(startTime);
 
         batch = poller.nextBatch(batch);
-        assertThat(batch.changes(), hasSize(0));
-        assertThat(startTime, lessThan(batch.leftOffDate()));
-        assertEquals(startTime.plusSeconds(1), batch.leftOffDate());
+        assertThat(batch.changes()).hasSize(0);
+        assertThat(startTime).isBefore(batch.leftOffDate());
+        assertThat(startTime.plusSeconds(1)).isEqualTo(batch.leftOffDate());
     }
 
     @Before
