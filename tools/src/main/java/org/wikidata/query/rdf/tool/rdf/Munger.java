@@ -361,11 +361,19 @@ public class Munger {
          * The predicate of the statement being processed.
          */
         private String predicate;
-
         /**
          * Format handler for current format.
          */
         private FormatHandler formatHandler;
+        /**
+         * Set of statements that have no rank statement.
+         */
+        private Set<String> statementsWithoutRanks = new HashSet<>();
+        /**
+         * Set of statements that have rank statement.
+         */
+        private Set<String> statementsWithRanks = new HashSet<>();
+
 
         MungeOperation(String entityId, Collection<Statement> statements, Collection<String> existingValues,
                 Collection<String> existingRefs) {
@@ -620,6 +628,10 @@ public class Munger {
          */
         private boolean entityStatementWithUnrecognizedPredicate() {
             String object = statement.getObject().stringValue();
+            if (inNamespace(object, uris.statement())) {
+                // Register statement for rank checking
+                statementsWithoutRanks.add(object);
+            }
             if (inNamespace(predicate, uris.property(PropertyType.CLAIM)) && inNamespace(object, uris.statement())) {
                 registerExtraValidSubject(object);
             }
@@ -635,6 +647,8 @@ public class Munger {
         private boolean entityStatementStatement() {
             switch (predicate) {
             case RDF.TYPE:
+                // Haven't seen the rank yet
+                statementsWithoutRanks.add(subject);
                 if (keepTypes) {
                     return true;
                 }
@@ -652,6 +666,9 @@ public class Munger {
                     registerExtraValidSubject(object);
                 }
                 return true;
+            case Ontology.RANK:
+                statementsWithRanks.add(subject);
+                break;
             default:
             }
             if (!extraValidSubjects.contains(subject)) {
@@ -879,6 +896,15 @@ public class Munger {
                             "Unrecognized subjects: {} while processing {}.  Expected only sitelinks and subjects starting with {} and {}",
                             unknownSubjects.keySet(), entityUri, uris.entityData(), uris.entity());
                 }
+            }
+            statementsWithoutRanks.removeAll(statementsWithRanks);
+            if (!statementsWithoutRanks.isEmpty()) {
+                /**
+                 * We have some statements without ranks, this is very weird.
+                 */
+                log.error(
+                        "Found some statements without ranks while processing {}: {}",
+                        entityUri, statementsWithoutRanks);
             }
             if (revisionId == null) {
                 throw new ContainedException("Didn't get a revision id for " + statements);
