@@ -1,18 +1,26 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Instant.now;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Locale.ENGLISH;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 import javax.management.InstanceAlreadyExistsException;
@@ -109,6 +117,8 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
 
     /** Mapping of requests to bucket. */
     private final Bucketing bucketing = new UserAgentIpAddressBucketing();
+    /** Requests by regexp. */
+    private final RegexpBucketing regexBucket = new RegexpBucketing();
 
     /** To delegate throttling logic. */
     private TimeAndErrorsThrottler<ThrottlingState> timeAndErrorsThrottler;
@@ -181,6 +191,8 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
         ThrottlingFilterConfig config = new ThrottlingFilterConfig(filterConfig);
 
         this.enabled = config.isFilterEnabled();
+
+        this.regexBucket.setPatterns(loadRegexPatterns(config.getRegexPatternsFile()));
 
         stateStore = CacheBuilder.newBuilder()
                 .maximumSize(config.getMaxStateSize())
@@ -290,7 +302,10 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
-        Object bucket = bucketing.bucket(httpRequest);
+        Object bucket = regexBucket.bucket(httpRequest);
+        if (bucket == null) {
+            bucket = bucketing.bucket(httpRequest);
+        }
 
         Instant bannedUntil = banThrottler.throttledUntil(bucket, httpRequest);
         if (bannedUntil.isAfter(now())) {
@@ -396,4 +411,25 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
     public long getNumberOfBannedRequests() {
         return nbBannedRequests.longValue();
     }
+
+    private Collection<Pattern> loadRegexPatterns(String patternFilename) {
+        Collection<Pattern> patterns = new LinkedList<>();
+        try {
+            Path patternFile = Paths.get(patternFilename);
+            if (!Files.exists(patternFile)) {
+                return patterns;
+            }
+            Files.lines(patternFile, UTF_8)
+                    .forEach(line ->
+                        patterns.add(Pattern.compile(line, Pattern.DOTALL)));
+        } catch (FileNotFoundException e) {
+            // ignore file not found
+            log.info("Patterns file {} not found, ignoring.", patternFilename);
+        } catch (IOException e) {
+            log.warn("Failed reading from patterns file");
+        }
+        log.info("Loaded {} patterns from {}", patterns.size(), patternFilename);
+        return patterns;
+    }
+
 }
