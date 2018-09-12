@@ -15,6 +15,13 @@ import javax.servlet.FilterConfig;
 @ThreadSafe
 public class ThrottlingFilterConfig {
 
+    /**
+     * Default patterns list filename.
+     */
+    public static final String PATTERNS_DEFAULT = "patterns.txt";
+    /**
+     * Servlet filter config.
+     */
     private final FilterConfig filterConfig;
 
     public ThrottlingFilterConfig(FilterConfig filterConfig) {
@@ -156,4 +163,9 @@ public class ThrottlingFilterConfig {
     public boolean isFilterEnabled() {
         return loadBooleanParam("enabled", filterConfig, true);
     }
+
+    public String getRegexPatternsFile() {
+        return loadStringParam("pattern-file", filterConfig, PATTERNS_DEFAULT);
+    }
+
 }
