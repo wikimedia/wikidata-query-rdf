@@ -9,7 +9,7 @@ import java.time.Instant;
 
 import org.junit.Test;
 
-public class ManualClockTest {
+public class ManualClockUnitTest {
 
     @Test
     public void sleepForTheProperAmountOfTime() {

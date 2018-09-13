@@ -815,6 +815,46 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <!--
+                                The randomizedtesting plugin as configured in
+                                this project only runs test classes which name
+                                ends in "UnitTest" or "IntegrationTest".
+                                Classes named just "FooTest" are not run at
+                                all.
+                            -->
+                            <id>check-test-class-names</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <phase>validate</phase>
+                            <configuration>
+                                <rules>
+                                    <evaluateBeanshell>
+                                        <condition>
+                                            testsrc = new File("${project.basedir}");
+                                            testClasses = org.codehaus.plexus.util.FileUtils.getFileNames(testsrc, "**/src/test/java/**/*Test.java", null, false);
+                                            for (Iterator it = testClasses.iterator(); it.hasNext();) {
+                                                String file = it.next();
+                                                if (!(file.endsWith("UnitTest.java") || file.endsWith("IntegrationTest.java"))) {
+                                                    print("invalid file name: " + file);
+                                                } else {
+                                                    it.remove();
+                                                }
+                                            }
+                                            return testClasses.size() == 0;
+                                        </condition>
+                                    </evaluateBeanshell>
+                                </rules>
+                                <fail>true</fail>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <configuration>
                         <failOnError>true</failOnError>

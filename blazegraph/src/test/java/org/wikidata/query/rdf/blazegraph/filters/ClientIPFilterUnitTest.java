@@ -25,7 +25,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ClientIPFilterTest {
+public class ClientIPFilterUnitTest {
 
     private Filter filter = new ClientIPFilter();
     @Mock private HttpServletResponse response;

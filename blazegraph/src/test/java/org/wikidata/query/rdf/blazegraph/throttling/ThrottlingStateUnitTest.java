@@ -20,7 +20,7 @@ import org.isomorphism.util.TokenBuckets;
 import org.junit.Test;
 import org.wikidata.query.rdf.test.ManualClock;
 
-public class ThrottlingStateTest {
+public class ThrottlingStateUnitTest {
 
     private Duration banDuration = Duration.of(1, MINUTES);
 
