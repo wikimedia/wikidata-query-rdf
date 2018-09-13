@@ -27,7 +27,7 @@ import org.wikidata.query.rdf.test.ManualClock;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
-public class TimeAndErrorsThrottlerTest {
+public class TimeAndErrorsThrottlerUnitTest {
 
     private static final Object BUCKET_1 = new Object();
 

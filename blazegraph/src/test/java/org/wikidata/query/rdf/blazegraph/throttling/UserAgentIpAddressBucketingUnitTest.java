@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.junit.Before;
 import org.junit.Test;
 
-public class UserAgentIpAddressBucketingTest {
+public class UserAgentIpAddressBucketingUnitTest {
 
     private UserAgentIpAddressBucketing bucketting;
 

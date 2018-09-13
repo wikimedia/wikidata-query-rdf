@@ -17,7 +17,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
-public class ThrottlerTest {
+public class ThrottlerUnitTest {
 
     private Cache<Object, Object> cache;
 

@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 
-public class WikibaseResponseTest {
+public class WikibaseResponseUnitTest {
 
     private final ObjectMapper mapper = MapperUtils.getObjectMapper();
 
