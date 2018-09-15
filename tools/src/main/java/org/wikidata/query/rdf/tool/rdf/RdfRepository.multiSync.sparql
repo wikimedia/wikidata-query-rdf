@@ -52,5 +52,13 @@ WHERE {
 INSERT {
   %insertStatements%
 } WHERE {};
+# Add timestamps
+INSERT {
+  ?entity wikibase:timestamp %ts% .
+} WHERE {
+VALUES ?entity {
+       %entityList%
+  }
+};
 %refCleanupQuery%
 %valueCleanupQuery%

@@ -93,6 +93,10 @@ public final class Ontology {
      * Constraint violation.
      */
     public static final String CONSTRAINT_VIOLATION = NAMESPACE + "hasViolationForConstraint";
+    /**
+     * Timestamp for marking when entity was loaded.
+     */
+    public static final String TIMESTAMP = NAMESPACE + "timestamp";
 
     /**
      * Predicates and objects to describe WikibaseLexeme items.

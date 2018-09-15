@@ -7,6 +7,7 @@ import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 import java.math.BigInteger;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -550,7 +551,7 @@ public class RdfRepositoryIntegrationTest extends RandomizedTest {
 
     @Test
     public void updateLeftOffTimeFetch() {
-        Instant now = Instant.now();
+        Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
         rdfRepository.updateLeftOffTime(now);
         assertEquals(now, rdfRepository.fetchLeftOffTime());
     }

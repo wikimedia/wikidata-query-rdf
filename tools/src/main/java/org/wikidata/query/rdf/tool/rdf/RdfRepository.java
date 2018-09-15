@@ -287,6 +287,7 @@ public class RdfRepository {
 
         b.bindValues("statementStatements", statementStatements);
         b.bindValues("aboutStatements", aboutStatements);
+        b.bindValue("ts", Instant.now());
 
         if (!refSet.isEmpty()) {
             UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
