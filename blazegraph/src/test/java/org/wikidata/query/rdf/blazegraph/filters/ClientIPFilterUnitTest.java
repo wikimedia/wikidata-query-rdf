@@ -1,8 +1,6 @@
 package org.wikidata.query.rdf.blazegraph.filters;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -40,7 +38,7 @@ public class ClientIPFilterUnitTest {
         filter.doFilter(request, response, chain);
 
         verify(chain).doFilter(filteredRequest.capture(), any(ServletResponse.class));
-        assertThat(filteredRequest.getValue().getRemoteAddr(), equalTo("1.2.3.4"));
+        assertThat(filteredRequest.getValue().getRemoteAddr()).isEqualTo("1.2.3.4");
     }
 
     @Test
@@ -52,7 +50,7 @@ public class ClientIPFilterUnitTest {
         filter.doFilter(request, response, chain);
 
         verify(chain).doFilter(filteredRequest.capture(), any(ServletResponse.class));
-        assertThat(filteredRequest.getValue().getRemoteAddr(), equalTo("4.3.2.1"));
+        assertThat(filteredRequest.getValue().getRemoteAddr()).isEqualTo("4.3.2.1");
     }
 
     @Test
@@ -64,7 +62,7 @@ public class ClientIPFilterUnitTest {
         filter.doFilter(request, response, chain);
 
         verify(chain).doFilter(filteredRequest.capture(), any(ServletResponse.class));
-        assertThat(filteredRequest.getValue().getRemoteAddr(), equalTo("4.3.2.1"));
+        assertThat(filteredRequest.getValue().getRemoteAddr()).isEqualTo("4.3.2.1");
     }
 
     @Test
@@ -77,7 +75,7 @@ public class ClientIPFilterUnitTest {
 
         verify(chain).doFilter(filteredRequest.capture(), any(ServletResponse.class));
 
-        assertThat(filteredRequest.getValue(), sameInstance(request));
+        assertThat(filteredRequest.getValue()).isSameAs(request);
     }
 
 }
