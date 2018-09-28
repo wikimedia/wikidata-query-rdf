@@ -1,14 +1,11 @@
 package org.wikidata.query.rdf.common;
 
-import org.junit.runner.RunWith;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.Test;
 import org.wikidata.query.rdf.common.WikibasePoint.CoordinateOrder;
 
-import com.carrotsearch.randomizedtesting.RandomizedRunner;
-import com.carrotsearch.randomizedtesting.RandomizedTest;
-
-@RunWith(RandomizedRunner.class)
-public class WikibasePointUnitTest extends RandomizedTest {
+public class WikibasePointUnitTest {
 
     @Test
     public void fromStringDefault() {
@@ -67,16 +64,16 @@ public class WikibasePointUnitTest extends RandomizedTest {
 
     private void pointFromString(String s, String lat, String lon, String globe) {
         WikibasePoint p = new WikibasePoint(s);
-        assertEquals(p.getLatitude(), lat);
-        assertEquals(p.getLongitude(), lon);
-        assertEquals(p.getGlobe(), globe);
+        assertThat(p.getLatitude()).isEqualTo(lat);
+        assertThat(p.getLongitude()).isEqualTo(lon);
+        assertThat(p.getGlobe()).isEqualTo(globe);
     }
 
     private void pointFromStringOrder(String s, String lat, String lon, String globe, CoordinateOrder order) {
         WikibasePoint p = new WikibasePoint(s, order);
-        assertEquals(p.getLatitude(), lat);
-        assertEquals(p.getLongitude(), lon);
-        assertEquals(p.getGlobe(), globe);
+        assertThat(p.getLatitude()).isEqualTo(lat);
+        assertThat(p.getLongitude()).isEqualTo(lon);
+        assertThat(p.getGlobe()).isEqualTo(globe);
     }
 
     @Test
@@ -88,7 +85,7 @@ public class WikibasePointUnitTest extends RandomizedTest {
 
     private void roundtrip(String s) {
         WikibasePoint p = new WikibasePoint(s);
-        assertEquals(s, p.toString());
+        assertThat(s).isEqualTo(p.toString());
     }
 
     @Test
@@ -101,6 +98,6 @@ public class WikibasePointUnitTest extends RandomizedTest {
 
     private void pointFromCompsOrder(String s, String lat, String lon, String globe, CoordinateOrder order) {
         WikibasePoint p = new WikibasePoint(new String[] {lat, lon}, globe, CoordinateOrder.LAT_LONG);
-        assertEquals(s, p.toOrder(order));
+        assertThat(s).isEqualTo(p.toOrder(order));
     }
 }
