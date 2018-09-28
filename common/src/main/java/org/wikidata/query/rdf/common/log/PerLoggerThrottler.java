@@ -2,6 +2,8 @@ package org.wikidata.query.rdf.common.log;
 
 import static ch.qos.logback.core.spi.FilterReply.DENY;
 import static ch.qos.logback.core.spi.FilterReply.NEUTRAL;
+import static com.google.common.base.Ticker.systemTicker;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -14,6 +16,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -68,17 +72,25 @@ public class PerLoggerThrottler extends Filter<ILoggingEvent> {
     /**
      * Period over which to count messages.
      */
-    private long periodInMillis = Duration.of(1, MINUTES).toMillis();
+    private Duration period = Duration.of(1, MINUTES);
+
+    /**
+     * Ticker used by the cache holding the messagesCount.
+     *
+     * Only useful for testing.
+     */
+    private Ticker ticker = systemTicker();
 
     public PerLoggerThrottler() {
-        this.messagesCount = createMessagesCount(periodInMillis, cacheSize);
+        this.messagesCount = createMessagesCount(period, cacheSize, ticker);
     }
 
-    private LoadingCache<Key, AtomicLong> createMessagesCount(long periodInMillis, long cacheSize) {
+    private LoadingCache<Key, AtomicLong> createMessagesCount(Duration period, long cacheSize, Ticker ticker) {
         return CacheBuilder.newBuilder()
-                .expireAfterWrite(periodInMillis, MILLISECONDS)
+                .expireAfterWrite(period.toMillis(), MILLISECONDS)
                 .maximumSize(cacheSize)
                 .removalListener(this::onRemoval)
+                .ticker(ticker)
                 .build(new CacheLoader<Key, AtomicLong>() {
                     @Override
                     public AtomicLong load(Key key) {
@@ -126,7 +138,7 @@ public class PerLoggerThrottler extends Filter<ILoggingEvent> {
      */
     public void setCacheSize(long cacheSize) {
         this.cacheSize = cacheSize;
-        this.messagesCount = createMessagesCount(periodInMillis, cacheSize);
+        this.messagesCount = createMessagesCount(period, cacheSize, ticker);
     }
 
     /**
@@ -135,8 +147,8 @@ public class PerLoggerThrottler extends Filter<ILoggingEvent> {
      * Used by Joran to configure this filter.
      */
     public void setPeriodInMillis(long periodInMillis) {
-        this.periodInMillis = periodInMillis;
-        this.messagesCount = createMessagesCount(periodInMillis, cacheSize);
+        this.period = Duration.of(periodInMillis, MILLIS);
+        this.messagesCount = createMessagesCount(period, cacheSize, ticker);
     }
 
     /**
@@ -148,7 +160,18 @@ public class PerLoggerThrottler extends Filter<ILoggingEvent> {
         this.threshold = threshold;
     }
 
-    public static final class Key {
+    /**
+     * Ticker used by the cache holding the messagesCount.
+     *
+     * Only useful for testing.
+     */
+    @VisibleForTesting
+    void setTicker(Ticker ticker) {
+        this.ticker = ticker;
+        this.messagesCount = createMessagesCount(period, cacheSize, ticker);
+    }
+
+    private static final class Key {
         private final String loggerName;
         private final String messageTemplate;
 
