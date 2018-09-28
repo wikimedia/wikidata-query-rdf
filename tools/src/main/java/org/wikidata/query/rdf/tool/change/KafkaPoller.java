@@ -304,7 +304,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
                 throw new RetryableException("Error fetching recent changes", e);
             }
             int count = records.count();
-            log.info("Fetched {} records from Kafka", count);
+            log.debug("Fetched {} records from Kafka", count);
             changesCounter.inc(count);
             if (count == 0) {
                 // If we got nothing from Kafka, get out of the loop and return what we have
