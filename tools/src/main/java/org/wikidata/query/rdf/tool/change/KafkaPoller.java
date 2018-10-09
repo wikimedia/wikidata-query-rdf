@@ -2,7 +2,6 @@ package org.wikidata.query.rdf.tool.change;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static java.util.stream.Collectors.toMap;
 
 import java.time.Instant;
@@ -43,6 +42,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.AtomicLongMap;
 
 /**
  * This poller will connect to Kafka event source and get changes from
@@ -91,6 +91,12 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
     );
 
     /**
+     * Name of the topic which offset reporting will be based on.
+     * TODO: may want to make configurable.
+     */
+    private static final String reportingTopic =  "mediawiki.revision-create";
+
+    /**
      * The first start time to poll.
      */
     private final Instant firstStartTime;
@@ -102,10 +108,6 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
      * Kafka consumer.
      */
     private final Consumer<String, ChangeEvent> consumer;
-    /**
-     * List of actual topic names, with cluster names prepended.
-     */
-    private final Collection<String> topics;
     /**
      * Used to store and retrieve Kafka Offsets.
      */
@@ -146,7 +148,6 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         this.uris = uris;
         this.firstStartTime = firstStartTime;
         this.batchSize = batchSize;
-        this.topics = topics;
         this.changesCounter = metricRegistry.counter("kafka-changes-counter");
         this.pollingTimer = metricRegistry.timer("kafka-changes-timer");
         this.topicPartitions = topicsToPartitions(topics, consumer);
@@ -295,7 +296,8 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
     private Batch fetch(Instant lastNextStartTime) throws RetryableException {
         Map<String, Change> changesByTitle = new LinkedHashMap<>();
         ConsumerRecords<String, ChangeEvent> records;
-        Map<String, Instant> timesByTopic = newHashMapWithExpectedSize(topics.size());
+        Instant nextInstant = lastNextStartTime;
+        AtomicLongMap<String> topicCounts = AtomicLongMap.create();
         while (true) {
             try (Context timerContext = pollingTimer.time()) {
                 // TODO: make timeout configurable? Wait for a bit so we catch bursts of messages?
@@ -331,9 +333,11 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
                 }
                 // Now we have event that we want to process
                 foundSomething = true;
+                topicCounts.getAndIncrement(record.topic());
                 // Keep max time per topic
-                timesByTopic.put(topic, Utils.max(Instant.ofEpochMilli(record.timestamp()),
-                                timesByTopic.getOrDefault(topic, null)));
+                if (topic.endsWith(reportingTopic)) {
+                    nextInstant = Utils.max(nextInstant, Instant.ofEpochMilli(record.timestamp()));
+                }
                 // Using offset here as RC id since we do not have real RC id (this not being RC poller) but
                 // the offset serves the same function in Kafka and is also useful for debugging.
                 Change change = new Change(event.title(), event.revision(), event.timestamp(), record.offset());
@@ -366,19 +370,12 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
             // TODO: if we already have something and we've spent more than X seconds in the loop,
             // we probably should return without waiting for more
         }
-        // Here we are using min, not max, since some topics may be lagging behind
-        // and we should catch them up if we are restarted.
-        // Note that this means we could get repeated items from more advanced topics,
-        // but that's ok, since changes are checked by revid anyway.
-        // This is important only on updater restart, otherwise Kafka offsets should
-        // take care of tracking things.
-        Instant nextInstant = timesByTopic.values().stream().min(Instant::compareTo)
-                .orElse(lastNextStartTime);
-        // FIXME: Note that due to batching nature of Kafka this timestamp could actually jump
-        // back and forth. Not sure what to do about it.
 
         final ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
         log.info("Found {} changes", changes.size());
+        if (log.isDebugEnabled()) {
+            topicCounts.asMap().forEach((k, v) -> log.debug("Topic {}: {} records", k, v));
+        }
         long advanced = ChronoUnit.MILLIS.between(lastNextStartTime, nextInstant);
         // Show the user the polled time - one second because we can't
         // be sure we got the whole second

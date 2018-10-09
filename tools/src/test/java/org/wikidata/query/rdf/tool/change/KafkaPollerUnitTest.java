@@ -254,8 +254,8 @@ public class KafkaPollerUnitTest {
     @Test
     public void advanceTimestamp() throws RetryableException {
         ConsumerRecords<String, ChangeEvent> rs = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, "Q123"), "topictest", Duration.ofMillis(120000)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q234"), "topictest", Duration.ofMillis(122000)),
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, "Q123"), "mediawiki.revision-create", Duration.ofMillis(120000)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q234"), "mediawiki.revision-create", Duration.ofMillis(122000)),
                 makeRecord(makeDeleteEvent(Duration.ofMillis(21), "Q123"), "othertopic", Duration.ofMillis(121000)),
                 makeRecord(makeDeleteEvent(Duration.ofMillis(22), "Q234"), "othertopic", Duration.ofMillis(122000)),
                 makeRecord(makeDeleteEvent(Duration.ofMillis(31), "Q123"), "othertopic", Duration.ofMillis(123000))
