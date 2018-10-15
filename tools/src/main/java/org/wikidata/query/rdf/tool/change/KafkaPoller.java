@@ -8,10 +8,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.change.events.ChangeEvent;
 import org.wikidata.query.rdf.tool.change.events.PageDeleteEvent;
-import org.wikidata.query.rdf.tool.change.events.PropertiesChangeEvent;
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris;
@@ -86,8 +85,8 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
             "mediawiki.revision-create", RevisionCreateEvent.class,
             "mediawiki.page-delete", PageDeleteEvent.class,
             // Same class as revision-create since relevant data part looks the same
-            "mediawiki.page-undelete", RevisionCreateEvent.class,
-            "mediawiki.page-properties-change", PropertiesChangeEvent.class
+            "mediawiki.page-undelete", RevisionCreateEvent.class
+//            "mediawiki.page-properties-change", PropertiesChangeEvent.class
     );
 
     /**
@@ -259,13 +258,19 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         } else {
             storedOffsets = kafkaOffsetsRepository.load(firstStartTime);
         }
+
         // Make a map (topic, partition) -> timestamp for those not in loaded map
         Map<TopicPartition, Long> topicParts = topicPartitions.stream()
                 .filter(tp -> !storedOffsets.containsKey(tp))
                 .collect(toMap(o -> o, o -> firstStartTime.toEpochMilli()));
 
-        Map<TopicPartition, OffsetAndTimestamp> results = new HashMap<>();
-        results.putAll(storedOffsets);
+        // Remove topics that are not supported anymore
+        Map<TopicPartition, OffsetAndTimestamp> results = storedOffsets
+                .entrySet().stream()
+                .filter(e -> topicPartitions.contains(e.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        Map.Entry::getValue));
+
         // Fill up missing offsets from timestamp
         if (topicParts.size() > 0) {
             results.putAll(consumer.offsetsForTimes(topicParts));

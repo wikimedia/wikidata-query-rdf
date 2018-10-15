@@ -34,6 +34,7 @@ import org.eclipse.jetty.client.HttpClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.wikidata.query.rdf.tool.change.events.ChangeEvent;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
@@ -125,6 +126,7 @@ public class KafkaPollerIntegrationTest {
         assertThat(change.timestamp()).isEqualTo(Instant.parse("2018-01-21T09:30:46Z"));
     }
 
+    @Ignore("temporarily disabled prop-change for performance reasons")
     @Test
     public void receivePropChangeEvent() throws RetryableException, IOException {
         sendEvent(CHANGE_TOPIC, "prop-change.json");
