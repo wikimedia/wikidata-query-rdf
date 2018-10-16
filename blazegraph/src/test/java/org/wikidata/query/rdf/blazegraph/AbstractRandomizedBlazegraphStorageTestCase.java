@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.blazegraph;
 
-import static com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope.Scope.SUITE;
+import static com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope.Scope.NONE;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Properties;
@@ -38,7 +38,7 @@ import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
  * </ul>
  */
 @RunWith(RandomizedRunner.class)
-@ThreadLeakScope(SUITE)
+@ThreadLeakScope(NONE)
 public class AbstractRandomizedBlazegraphStorageTestCase extends RandomizedTest {
 
     /**

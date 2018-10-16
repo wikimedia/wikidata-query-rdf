@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import static com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope.Scope.NONE;
 import static org.hamcrest.Matchers.allOf;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.test.StatementHelper.siteLink;
@@ -39,12 +40,14 @@ import org.wikidata.query.rdf.tool.RdfRepositoryForTesting;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import com.google.common.collect.ImmutableList;
 
 /**
  * Tests RdfRepository against a live RDF repository.
  */
 @RunWith(RandomizedRunner.class)
+@ThreadLeakScope(NONE)
 public class RdfRepositoryIntegrationTest extends RandomizedTest {
     private Set<String> cleanupList = new HashSet<>();
 

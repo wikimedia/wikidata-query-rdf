@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool;
 
+import static com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope.Scope.NONE;
 import static org.wikidata.query.rdf.test.CloseableRule.autoClose;
 
 import java.util.concurrent.ExecutorService;
@@ -18,12 +19,14 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import com.codahale.metrics.MetricRegistry;
 
 /**
  * Superclass for tests that need to run a full update.
  */
 @RunWith(RandomizedRunner.class)
+@ThreadLeakScope(NONE)
 public class AbstractUpdaterIntegrationTestBase extends RandomizedTest {
     /**
      * Wikibase test against.
