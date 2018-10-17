@@ -5,6 +5,10 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.wikidata.query.rdf.test.Matchers.assertResult;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.test.Matchers.notBinds;
@@ -12,6 +16,7 @@ import static org.wikidata.query.rdf.test.Matchers.notBinds;
 import java.util.Locale;
 import java.util.Set;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.query.BindingSet;
@@ -24,6 +29,7 @@ import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.test.Randomizer;
 
 import com.bigdata.bop.IVariable;
 import com.bigdata.bop.Var;
@@ -35,6 +41,9 @@ import com.bigdata.rdf.store.BD;
 
 public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
     private static final Logger log = LoggerFactory.getLogger(LabelServiceUnitTest.class);
+
+    @Rule
+    public final Randomizer randomizer = new Randomizer();
 
     @Test
     public void labelOverConstant() throws QueryEvaluationException {
@@ -166,7 +175,7 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
             query.append(otherQuery).append("\n");
         }
         query.append("  SERVICE ontology:label {\n").append(languageParams(inLanguages));
-        if (subject.contains(":") || rarely()) {
+        if (subject.contains(":") || randomizer.rarely()) {
             // We rarely explicitly specify the labels to load
             for (String labelType : labelTypes) {
                 query.append("    ").append(subject).append(" ").append(labelType).append(" ?")

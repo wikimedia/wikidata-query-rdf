@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.blazegraph;
 
+import static org.junit.Assert.assertThat;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 
 import org.junit.Test;

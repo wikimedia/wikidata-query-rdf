@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasToString;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertThat;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

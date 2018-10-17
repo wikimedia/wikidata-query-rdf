@@ -1,7 +1,5 @@
 package org.wikidata.query.rdf.blazegraph;
 
-import static com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope.Scope.NONE;
-
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -9,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.runner.RunWith;
 import org.wikidata.query.rdf.blazegraph.inline.literal.WKTSerializer;
 import org.wikidata.query.rdf.common.uri.GeoSparql;
 
@@ -19,9 +16,6 @@ import com.bigdata.cache.SynchronizedHardReferenceQueueWithTimeout;
 import com.bigdata.journal.TemporaryStore;
 import com.bigdata.rdf.store.AbstractTripleStore;
 import com.bigdata.rdf.store.TempTripleStore;
-import com.carrotsearch.randomizedtesting.RandomizedRunner;
-import com.carrotsearch.randomizedtesting.RandomizedTest;
-import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 
 /**
  * Randomized test that creates a triple store.
@@ -37,9 +31,7 @@ import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
  * <li>Create a new triple store per test method (lazily)
  * </ul>
  */
-@RunWith(RandomizedRunner.class)
-@ThreadLeakScope(NONE)
-public class AbstractRandomizedBlazegraphStorageTestCase extends RandomizedTest {
+public class AbstractRandomizedBlazegraphStorageTestCase {
 
     /**
      * Holds all the triples stores. Initialized once per test class.

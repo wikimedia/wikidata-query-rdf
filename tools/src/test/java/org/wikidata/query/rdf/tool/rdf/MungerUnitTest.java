@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.tool.rdf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
 import static org.wikidata.query.rdf.test.StatementHelper.siteLink;
 import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
@@ -14,8 +15,8 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.BNodeImpl;
 import org.openrdf.model.impl.IntegerLiteralImpl;
@@ -33,17 +34,18 @@ import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
+import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.test.StatementHelper;
 import org.wikidata.query.rdf.tool.rdf.Munger.BadSubjectException;
-
-import com.carrotsearch.randomizedtesting.RandomizedRunner;
-import com.carrotsearch.randomizedtesting.RandomizedTest;
 
 /**
  * Tests Munger.
  */
-@RunWith(RandomizedRunner.class)
-public class MungerUnitTest extends RandomizedTest {
+public class MungerUnitTest {
+
+    @Rule
+    public final Randomizer randomizer = new Randomizer();
+
     private final WikibaseUris uris = WikibaseUris.getURISystem();
     private final String bogus = "http://example.com/bogus";
 
@@ -339,7 +341,7 @@ public class MungerUnitTest extends RandomizedTest {
     @Test
     public void skipSiteLinks() {
         entity("Q23") //
-                .remove(siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en", randomBoolean())) //
+                .remove(siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en", randomizer.randomBoolean())) //
                 .removeSiteLinks() //
                 .test();
     }

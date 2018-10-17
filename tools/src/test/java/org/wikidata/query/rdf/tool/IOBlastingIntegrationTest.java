@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool;
 
 import static org.hamcrest.Matchers.hasItems;
+import static org.junit.Assert.assertThat;
 import static org.wikidata.query.rdf.test.Matchers.subjectPredicateObjectMatchers;
 import static org.wikidata.query.rdf.test.StatementHelper.randomStatementsAbout;
 import static org.wikidata.query.rdf.tool.TupleQueryResultHelper.toIterable;
@@ -16,26 +17,27 @@ import java.util.concurrent.TimeUnit;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.openrdf.model.Statement;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
+import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 
-import com.carrotsearch.randomizedtesting.RandomizedRunner;
-import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * Does lots of simultaneous IO and state mutation on multiple namespaces.
  */
 @Ignore("temporarily disable")
-@RunWith(RandomizedRunner.class)
-public class IOBlastingIntegrationTest extends RandomizedTest {
+public class IOBlastingIntegrationTest {
+
+    @ClassRule
+    public static final Randomizer randomizer = new Randomizer();
 
     // works up to at least 10,000,000, albeit slowly (3min)
     private static final int MAX_STATEMENTS_PER_NAMESPACE = 100;
@@ -108,15 +110,15 @@ public class IOBlastingIntegrationTest extends RandomizedTest {
          * store.
          */
         private static List<Statement> generateAndInsert(RdfRepository rdfRepository) {
-            String s = "Q" + randomIntBetween(1, 65536);
-            int statementCount = randomIntBetween(1, MAX_STATEMENTS_PER_NAMESPACE);
+            String s = "Q" + randomizer.randomIntBetween(1, 65536);
+            int statementCount = randomizer.randomIntBetween(1, MAX_STATEMENTS_PER_NAMESPACE);
 
             // Make some noise
-            rdfRepository.sync(s, randomStatementsAbout(s, statementCount), null);
-            rdfRepository.sync(s, randomStatementsAbout(s, statementCount), null);
+            rdfRepository.sync(s, randomStatementsAbout(randomizer, s, statementCount), null);
+            rdfRepository.sync(s, randomStatementsAbout(randomizer, s, statementCount), null);
 
             // Now the *real* statements
-            List<Statement> statements = randomStatementsAbout(s, statementCount);
+            List<Statement> statements = randomStatementsAbout(randomizer, s, statementCount);
             rdfRepository.sync(s, statements, null);
 
             return statements;

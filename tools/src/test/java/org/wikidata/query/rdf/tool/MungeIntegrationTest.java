@@ -1,6 +1,10 @@
 package org.wikidata.query.rdf.tool;
 
 import static com.google.common.io.Resources.getResource;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.tool.StreamUtils.utf8;
 
@@ -23,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
@@ -40,8 +43,6 @@ import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
-import com.carrotsearch.randomizedtesting.RandomizedRunner;
-import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.google.common.io.Closer;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
@@ -49,8 +50,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  * Tests the munger that loads dumps.
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:illegalcatch"})
-@RunWith(RandomizedRunner.class)
-public class MungeIntegrationTest extends RandomizedTest {
+public class MungeIntegrationTest {
     private static final Logger log = LoggerFactory.getLogger(MungeIntegrationTest.class);
 
     /**

@@ -3,6 +3,12 @@ package org.wikidata.query.rdf.tool.wikibase;
 import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.wikidata.query.rdf.test.CloseableRule.autoClose;
 
 import java.io.IOException;
@@ -19,20 +25,22 @@ import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.test.CloseableRule;
+import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse.RecentChange;
 
-import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.codahale.metrics.MetricRegistry;
 
 /**
  * Tests WikibaseRepository using the beta instance of Wikidata. Note that we
  * can't delete or perform revision deletes so we can't test that part.
  */
-public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
+public class WikibaseRepositoryIntegrationTest {
     private static final String HOST = "test.wikidata.org";
+    @Rule
+    public final Randomizer randomizer = new Randomizer();
     @Rule
     public final CloseableRule<WikibaseRepository> repo = autoClose(new WikibaseRepository("https://" + HOST, new MetricRegistry()));
     private final CloseableRule<WikibaseRepository> proxyRepo = autoClose(new WikibaseRepository("http://localhost:8812", new MetricRegistry()));
@@ -45,7 +53,7 @@ public class WikibaseRepositoryIntegrationTest extends RandomizedTest {
          * This relies on there being lots of changes in the past 30 days. Which
          * is probably ok.
          */
-        int batchSize = randomIntBetween(3, 30);
+        int batchSize = randomizer.randomIntBetween(3, 30);
         RecentChangeResponse changes = repo.get().fetchRecentChanges(
                 Instant.now().minus(30, ChronoUnit.DAYS), null, batchSize);
         assertNotNull(changes.getContinue());
