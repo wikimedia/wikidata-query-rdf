@@ -440,7 +440,7 @@
             <dependency>
                 <groupId>org.linkeddatafragments</groupId>
                 <artifactId>ldfserver</artifactId>
-                <version>0.2.2-wmf</version>
+                <version>0.2.3-wmf</version>
                 <classifier>classes</classifier>
                 <exclusions>
                     <exclusion>
