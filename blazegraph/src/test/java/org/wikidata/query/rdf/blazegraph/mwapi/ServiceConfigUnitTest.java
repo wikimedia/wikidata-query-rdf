@@ -1,19 +1,20 @@
 package org.wikidata.query.rdf.blazegraph.mwapi;
 
 import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-import com.carrotsearch.randomizedtesting.RandomizedRunner;
-import com.carrotsearch.randomizedtesting.RandomizedTest;
-
-@RunWith(RandomizedRunner.class)
-public class ServiceConfigUnitTest extends RandomizedTest {
+public class ServiceConfigUnitTest {
 
     private ServiceConfig loadFromFile(String filename) throws IOException {
         return new ServiceConfig(

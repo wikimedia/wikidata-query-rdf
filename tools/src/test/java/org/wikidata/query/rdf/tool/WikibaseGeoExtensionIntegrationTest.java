@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.tool;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 
 import org.junit.Test;

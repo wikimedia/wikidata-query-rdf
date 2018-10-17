@@ -16,11 +16,13 @@ import javax.xml.datatype.Duration;
 import org.joda.time.chrono.GregorianChronology;
 import org.junit.Rule;
 import org.junit.Test;
+import org.wikidata.query.rdf.common.RepeatRule.Repeat;
 import org.wikidata.query.rdf.common.WikibaseDate.ToStringFormat;
 
-import com.carrotsearch.randomizedtesting.annotations.Repeat;
-
 public class WikibaseDateUnitTest {
+
+    @Rule
+    public RepeatRule repeatRule = new RepeatRule();
 
     @Rule
     public Randomizer randomizer = new Randomizer();
@@ -136,7 +138,7 @@ public class WikibaseDateUnitTest {
     }
 
     @Test
-    @Repeat(iterations = 100)
+    @Repeat(times = 100)
     public void randomDate() {
         // Build a valid random date
 

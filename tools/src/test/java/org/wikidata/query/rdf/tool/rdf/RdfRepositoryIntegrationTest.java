@@ -1,7 +1,11 @@
 package org.wikidata.query.rdf.tool.rdf;
 
-import static com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope.Scope.NONE;
 import static org.hamcrest.Matchers.allOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.test.StatementHelper.siteLink;
 import static org.wikidata.query.rdf.test.StatementHelper.statement;
@@ -20,7 +24,6 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.BNodeImpl;
@@ -35,20 +38,16 @@ import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
+import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.test.StatementHelper.StatementBuilder;
 import org.wikidata.query.rdf.tool.RdfRepositoryForTesting;
 
-import com.carrotsearch.randomizedtesting.RandomizedRunner;
-import com.carrotsearch.randomizedtesting.RandomizedTest;
-import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import com.google.common.collect.ImmutableList;
 
 /**
  * Tests RdfRepository against a live RDF repository.
  */
-@RunWith(RandomizedRunner.class)
-@ThreadLeakScope(NONE)
-public class RdfRepositoryIntegrationTest extends RandomizedTest {
+public class RdfRepositoryIntegrationTest {
     private Set<String> cleanupList = new HashSet<>();
 
     /**
@@ -59,6 +58,9 @@ public class RdfRepositoryIntegrationTest extends RandomizedTest {
 
     @Rule
     public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq");
+
+    @Rule
+    public final Randomizer randomizer = new Randomizer();
 
     @Before
     public void cleanList() {
@@ -600,7 +602,7 @@ public class RdfRepositoryIntegrationTest extends RandomizedTest {
      */
     @Test
     public void cleanupUnusedValue() throws QueryEvaluationException {
-        String statementUri = uris.statement() + randomAsciiOfLength(10);
+        String statementUri = uris.statement() + randomizer.randomAsciiOfLength(10);
         String valueUri = uris.value() + "changeduuid";
         expandedStatementWithExpandedValue();
 
@@ -625,7 +627,7 @@ public class RdfRepositoryIntegrationTest extends RandomizedTest {
      * @throws QueryEvaluationException
      */
     public void cleanupValueWithUsedByOld() throws QueryEvaluationException {
-        String statementUri = uris.statement() + randomAsciiOfLength(10);
+        String statementUri = uris.statement() + randomizer.randomAsciiOfLength(10);
         String oldValueUri = uris.value() + "someuuid";
         String valueUri = uris.value() + "changeduuid";
         cleanupList.add(valueUri);
@@ -657,7 +659,7 @@ public class RdfRepositoryIntegrationTest extends RandomizedTest {
      * @throws QueryEvaluationException
      */
     public void cleanupNormalizedValue() throws QueryEvaluationException {
-        String statementUri = uris.statement() + randomAsciiOfLength(10);
+        String statementUri = uris.statement() + randomizer.randomAsciiOfLength(10);
         String valueUri = uris.value() + "someuuid";
         String normValueUri = uris.value() + "normuuid";
 

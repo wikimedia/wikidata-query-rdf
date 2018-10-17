@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.tool;
 
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
@@ -9,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.LiteralImpl;
@@ -16,11 +19,16 @@ import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
+import org.wikidata.query.rdf.test.Randomizer;
 
 /**
  * Validates the WikibaseDateExtension over the Blazegraph API.
  */
 public class WikibaseDateExtensionIntegrationTest extends AbstractUpdaterIntegrationTestBase {
+
+    @Rule
+    public final Randomizer randomizer = new Randomizer();
+
     /**
      * Loads Q1 (universe) and validates that it can find it by searching for
      * things before some date very far in the past. Without our date extension
@@ -35,7 +43,7 @@ public class WikibaseDateExtensionIntegrationTest extends AbstractUpdaterIntegra
         query.append("SELECT * WHERE {\n");
         query.append("?s assert:P580 ?startTime .\n");
         query.append("FILTER (?startTime < \"-04540000000-01-01");
-        if (randomBoolean()) {
+        if (randomizer.randomBoolean()) {
             query.append("T00:00:00Z");
         }
         query.append("\"^^xsd:dateTime)\n");

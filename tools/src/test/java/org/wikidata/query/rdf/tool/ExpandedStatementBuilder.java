@@ -7,7 +7,6 @@ import static org.wikidata.query.rdf.test.StatementHelper.statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 import org.hamcrest.Matcher;
 import org.openrdf.model.Statement;
@@ -19,8 +18,7 @@ import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
-
-import com.carrotsearch.randomizedtesting.RandomizedTest;
+import org.wikidata.query.rdf.test.Randomizer;
 
 /**
  * Builds expanded statements in the style of Wikibase's dump flavored export or
@@ -34,10 +32,10 @@ public class ExpandedStatementBuilder {
      */
     private final List<ExtraInfo> extraInfo = new ArrayList<>();
     /**
-     * Random used to power and random decisions. Passed around so randomized
+     * Randomizer used to power and random decisions. Passed around so randomized
      * testing can always seed properly.
      */
-    private final Random random;
+    private final Randomizer randomizer;
     /**
      * Uris for the wikibase instance.
      */
@@ -115,8 +113,8 @@ public class ExpandedStatementBuilder {
     /**
      * Setup required configuration. Everything else can be configured.
      */
-    public ExpandedStatementBuilder(Random random, WikibaseUris uris, String entity, String property, Object value) {
-        this.random = random;
+    public ExpandedStatementBuilder(Randomizer randomizer, WikibaseUris uris, String entity, String property, Object value) {
+        this.randomizer = randomizer;
         this.uris = uris;
         this.entity = entity;
         this.property = property;
@@ -189,7 +187,7 @@ public class ExpandedStatementBuilder {
      */
     public List<Statement> wikibaseStyleShuffled() {
         List<Statement> wikibaseStyle = wikibaseStyle();
-        Collections.shuffle(wikibaseStyle, random);
+        Collections.shuffle(wikibaseStyle, randomizer.getRandom());
         return wikibaseStyle;
     }
 
@@ -311,7 +309,7 @@ public class ExpandedStatementBuilder {
      * Randomly make a statement or reference identifier.
      */
     private String randomId() {
-        return RandomizedTest.randomAsciiOfLength(10);
+        return randomizer.randomAsciiOfLength(10);
     }
 
     /**
