@@ -25,7 +25,7 @@ LOG_CONFIG=${LOG_CONFIG:-""}
 NAMESPACE=wdq
 UPDATER_OPTS=${UPDATER_OPTS:-""}
 
-while getopts h:c:n:l:t:sN option
+while getopts h:c:n:l:t:sS:Nv option
 do
   case "${option}"
   in
@@ -35,7 +35,9 @@ do
     l) LANGS=${OPTARG};;
     t) TMO=${OPTARG};;
     s) SKIPSITE=1;;
+    S) PROGRAM_NAME_SUFFIX=${OPTARG};;
 	N) NOEXTRA=1;;
+	v) VERBOSE_LOGGING="true";;
   esac
 done
 
@@ -44,7 +46,7 @@ shift $((OPTIND-1))
 
 if [ -z "$NAMESPACE" ]
 then
-  echo "Usage: $0 -n <namespace> [-h <host>] [-c <context>]"
+  echo "Usage: $0 -n <namespace> [-h <host>] [-c <context>] [-v]"
   exit 1
 fi
 
