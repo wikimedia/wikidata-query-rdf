@@ -8,6 +8,7 @@ import static org.eclipse.jetty.http.HttpStatus.OK_200;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nonnull;
@@ -30,6 +31,7 @@ import org.wikidata.query.rdf.tool.exception.FatalException;
 import com.github.rholder.retry.RetryException;
 import com.github.rholder.retry.Retryer;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
 
 /**
@@ -186,4 +188,44 @@ public class RdfClient {
         }
         return values.build();
     }
+
+    /**
+     * Perform a SPARQL query and return the result as list from one column.
+     * @param query SPARQL query, should be SELECT
+     * @param valueBinding Binding name to serve as values
+     * @param prefix If specified, remove this prefix from the result
+     * @return Collection of strings resulting from the query.
+     */
+    public List<String> selectToList(String query, String valueBinding, String prefix) {
+        return resultToList(query(query), valueBinding, prefix);
+    }
+
+    /**
+     * Convert result column to a list.
+     * @param result
+     * @param valueBinding
+     * @param prefix If specified, remove this prefix from the result
+     * @return List of strings resulting from the query.
+     */
+    private List<String> resultToList(TupleQueryResult result, String valueBinding, String prefix) {
+        ImmutableList.Builder<String> values = ImmutableList.builder();
+        try {
+            while (result.hasNext()) {
+                BindingSet bindings = result.next();
+                Binding value = bindings.getBinding(valueBinding);
+                if (value == null) {
+                    continue;
+                }
+                String strValue = value.getValue().stringValue();
+                if (prefix != null && strValue.startsWith(prefix)) {
+                    strValue = strValue.substring(prefix.length());
+                }
+                values.add(strValue);
+            }
+        } catch (QueryEvaluationException e) {
+            throw new FatalException("Can't load results: " + e, e);
+        }
+        return values.build();
+    }
+
 }

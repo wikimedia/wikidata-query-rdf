@@ -5,6 +5,7 @@ import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
@@ -77,6 +78,10 @@ public class RdfRepository {
      * SPARQL to verify update worked.
      */
     private final String verify;
+    /**
+     * SPARQL to get lexeme sub-ids.
+     */
+    private final String getLexemes;
 
     protected final RdfClient rdfClient;
 
@@ -92,6 +97,7 @@ public class RdfRepository {
         cleanUnused = loadBody("CleanUnused");
         getRevisions = loadBody("GetRevisions");
         verify = loadBody("verify");
+        getLexemes = loadBody("GetLexemes");
     }
 
     /**
@@ -179,6 +185,15 @@ public class RdfRepository {
         b.bind("uris.statement", uris.statement());
         b.bindStatements("insertStatements", statements);
 
+        if (entityId.startsWith("L")) {
+            // Lexeme ID
+            b.bindUris("lexemeIds",
+                    fetchLexemeSubIds(Collections.singleton(entityId)),
+                    uris.entity());
+        } else {
+            b.bind("lexemeIds", "");
+        }
+
         List<Statement> entityStatements = new ArrayList<>();
         List<Statement> statementStatements = new ArrayList<>();
         Set<Statement> aboutStatements = new HashSet<>();
@@ -224,6 +239,7 @@ public class RdfRepository {
                     && !s.startsWith(uris.statement())
                     && !s.startsWith(uris.value())
                     && !s.startsWith(uris.reference())
+                    && !s.startsWith(uris.entity() + entityId + "-")
             ) {
                 aboutStatements.add(statement);
             }
@@ -281,6 +297,8 @@ public class RdfRepository {
             return 0;
         }
 
+        b.bindUris("entityListTop", entityIds, uris.entity());
+        entityIds.addAll(fetchLexemeSubIds(entityIds));
         b.bindUris("entityList", entityIds, uris.entity());
         b.bindStatements("insertStatements", insertStatements);
         b.bindValues("entityStatements", entityStatements);
@@ -309,7 +327,7 @@ public class RdfRepository {
         }
 
         long start = System.currentTimeMillis();
-        int modified = rdfClient.update(b.toString());
+        Integer modified = rdfClient.update(b.toString());
         log.debug("Update query took {} millis and modified {} statements",
                 System.currentTimeMillis() - start, modified);
 
@@ -321,7 +339,14 @@ public class RdfRepository {
             }
         }
 
-        return modified;
+        return modified.intValue();
+    }
+
+    private List<String> fetchLexemeSubIds(Set<String> entityIds) {
+        // TODO Auto-generated method stub
+        UpdateBuilder b = new UpdateBuilder(getLexemes);
+        b.bindUris("entityList", entityIds, uris.entity());
+        return rdfClient.selectToList(b.toString(), "lex", uris.entity());
     }
 
     /**

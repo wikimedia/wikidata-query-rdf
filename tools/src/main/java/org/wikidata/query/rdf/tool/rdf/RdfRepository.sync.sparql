@@ -18,7 +18,10 @@ DELETE {
   ?s ?p ?o .
 }
 WHERE {
-  %entity:id% ?statementPred ?s .
+  VALUES ?entity {
+    %entity:id% %lexemeIds%
+  }
+  ?entity ?statementPred ?s .
   FILTER( STRSTARTS(STR(?s), "%uris.statement%") ) .
   ?s ?p ?o .
   MINUS {
@@ -29,10 +32,13 @@ WHERE {
 };
 # Clear out of date statements about the entity
 DELETE {
-  %entity:id% ?p ?o .
+  ?entity ?p ?o .
 }
 WHERE {
-  %entity:id% ?p ?o .
+  VALUES ?entity {
+    %entity:id% %lexemeIds%
+  }
+  ?entity ?p ?o .
   MINUS {
     VALUES ( ?s ?p ?o ) {
       %entityStatements%

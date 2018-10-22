@@ -4,7 +4,7 @@ DELETE {
 }
 WHERE {
   VALUES ?entity {
-     %entityList%
+     %entityListTop%
   }
   ?s %schema:about% ?entity .
   ?s ?p ?o .
@@ -57,7 +57,7 @@ INSERT {
   ?entity wikibase:timestamp %ts% .
 } WHERE {
 VALUES ?entity {
-       %entityList%
+       %entityListTop%
   }
 };
 %refCleanupQuery%

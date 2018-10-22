@@ -1,0 +1,7 @@
+# Get lexeme IDs
+SELECT ?lex WHERE {
+  VALUES ?entity {
+     %entityList%
+  }
+  ?entity (ontolex:lexicalForm|ontolex:sense) ?lex .
+}
