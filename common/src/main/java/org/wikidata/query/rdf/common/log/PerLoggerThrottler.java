@@ -13,7 +13,6 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -40,16 +39,11 @@ import ch.qos.logback.core.spi.FilterReply;
  * See <a href="https://logback.qos.ch/manual/filters.html">logback
  * documentation</a> for more details on filters.
  *
- * See <a href="https://github.com/vladimir-bukhtoyarov/bucket4j">bucket4j</a>
- * for more details on the token bucket implementation backing this filter.
- *
  * Note that instance variables of this class are not synchronized or final.
  * They are set only at filter initialization (via Joran) and are assumed to be
  * safely published.
  */
 public class PerLoggerThrottler extends Filter<ILoggingEvent> {
-
-    private static final Logger log = LoggerFactory.getLogger(PerLoggerThrottler.class);
 
     /**
      * Maps each logger/message to a counter.

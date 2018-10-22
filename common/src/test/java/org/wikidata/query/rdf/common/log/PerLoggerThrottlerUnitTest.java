@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.slf4j.Logger.ROOT_LOGGER_NAME;
+import static org.wikidata.query.rdf.common.log.LoggingFixtures.LOGGER_NAME;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -35,7 +36,7 @@ public class PerLoggerThrottlerUnitTest {
         PerLoggerThrottler throttler = createThrottler();
 
         for (int i = 0; i < THRESHOLD; i++) {
-            assertThat(throttler.decide(logEvent())).isEqualTo(NEUTRAL);
+            assertThat(throttler.decide(LoggingFixtures.logEvent())).isEqualTo(NEUTRAL);
         }
     }
 
@@ -44,10 +45,10 @@ public class PerLoggerThrottlerUnitTest {
         PerLoggerThrottler throttler = createThrottler();
 
         for (int i = 0; i < THRESHOLD; i++) {
-            throttler.decide(logEvent());
+            throttler.decide(LoggingFixtures.logEvent());
         }
 
-        assertThat(throttler.decide(logEvent())).isEqualTo(DENY);
+        assertThat(throttler.decide(LoggingFixtures.logEvent())).isEqualTo(DENY);
     }
 
     @Test
@@ -55,13 +56,13 @@ public class PerLoggerThrottlerUnitTest {
         PerLoggerThrottler throttler = createThrottler();
 
         for (int i = 0; i < THRESHOLD; i++) {
-            throttler.decide(logEvent());
+            throttler.decide(LoggingFixtures.logEvent());
         }
-        assertThat(throttler.decide(logEvent())).isEqualTo(DENY);
+        assertThat(throttler.decide(LoggingFixtures.logEvent())).isEqualTo(DENY);
 
         waitFor(DURATION);
 
-        assertThat(throttler.decide(logEvent())).isEqualTo(NEUTRAL);
+        assertThat(throttler.decide(LoggingFixtures.logEvent())).isEqualTo(NEUTRAL);
     }
 
     @Test
@@ -75,23 +76,23 @@ public class PerLoggerThrottlerUnitTest {
 
         // consume all event which can pass the filter
         for (int i = 0; i < THRESHOLD; i++) {
-            throttler.decide(logEvent());
+            throttler.decide(LoggingFixtures.logEvent());
         }
 
         // all those events should be DENIED
         for (int i = 0; i < 50; i++) {
-            throttler.decide(logEvent());
+            throttler.decide(LoggingFixtures.logEvent());
         }
 
         waitFor(DURATION);
 
         // this event should pass again
-        assertThat(throttler.decide(logEvent())).isEqualTo(NEUTRAL);
+        assertThat(throttler.decide(LoggingFixtures.logEvent())).isEqualTo(NEUTRAL);
 
         verify(appender).doAppend(eventCaptor.capture());
 
         LoggingEvent event = eventCaptor.getValue();
-        assertThat(event.getLoggerName()).isEqualTo("my.logger");
+        assertThat(event.getLoggerName()).isEqualTo(LOGGER_NAME);
         assertThat(event.getFormattedMessage()).isEqualTo("Message [my message] was duplicated 50 times.");
     }
 
@@ -107,13 +108,6 @@ public class PerLoggerThrottlerUnitTest {
             }
         });
         return throttler;
-    }
-
-    private LoggingEvent logEvent() {
-        LoggingEvent event = new LoggingEvent();
-        event.setLoggerName("my.logger");
-        event.setMessage("my message");
-        return event;
     }
 
     private void waitFor(Duration duration) {
