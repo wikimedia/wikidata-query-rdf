@@ -7,12 +7,16 @@ import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyPort;
 import static org.wikidata.query.rdf.tool.Update.getRdfClientTimeout;
 
 import java.net.URI;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.Collections;
 
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.openrdf.query.TupleQueryResult;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 
@@ -36,6 +40,15 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
                         getRdfClientTimeout()
                 )
         );
+    }
+
+    /**
+     * Should we use single-id or multi-change sync method.
+     */
+    private boolean useMultiSync;
+
+    public void setSyncMode(boolean useMultiSync) {
+        this.useMultiSync = useMultiSync;
     }
 
     /**
@@ -148,5 +161,44 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
 
     public RdfClient getClient() {
         return rdfClient;
+    }
+
+    /**
+     * Overridden sync method.
+     * Selects which sync to use - one-value or multi-value, to ensure both work the same.
+     */
+    public int syncWithMode(String entityId, Collection<org.openrdf.model.Statement> statements, Collection<String> valueList) {
+        if (useMultiSync) {
+            return multiSync(entityId, statements, valueList);
+        } else {
+            return sync(entityId, statements, valueList);
+        }
+    }
+
+    /**
+     * Overridden sync method.
+     * Selects which sync to use - one-value or multi-value, to ensure both work the same.
+     */
+    public int syncWithMode(String entityId, Collection<org.openrdf.model.Statement> statements) {
+        if (useMultiSync) {
+            return multiSync(entityId, statements, Collections.emptyList());
+        } else {
+            return sync(entityId, statements);
+        }
+    }
+
+    /**
+     * Run sync for single ID via multi-change API.
+     */
+    private int multiSync(String entityId, Collection<org.openrdf.model.Statement> statements, Collection<String> valueList) {
+        Change change = new Change(entityId, -1, Instant.now(), -1);
+        change.setStatements(statements);
+        change.setValueCleanupList(valueList);
+        change.setRefCleanupList(valueList);
+        int res = syncFromChanges(Collections.singleton(change), false);
+        // This is because many tests do not know about timestamps which are later addition.
+        // This is the easiest way to make them ignore timestamps without complicating syncFromChanges too much.
+        int ts = rdfClient.update("DELETE { ?x wikibase:timestamp ?y } WHERE { ?x wikibase:timestamp ?y }").intValue();
+        return res - ts;
     }
 }

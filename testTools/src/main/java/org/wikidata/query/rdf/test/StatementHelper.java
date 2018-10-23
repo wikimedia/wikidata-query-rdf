@@ -100,7 +100,7 @@ public final class StatementHelper {
      * Convert a string into a URI for testing.
      */
     public static URI uri(String r) {
-        if (r.startsWith("Q") || r.startsWith("P")) {
+        if (r.startsWith("Q") || r.startsWith("P") || r.startsWith("L")) {
             return new URIImpl(WikibaseUris.getURISystem().entity() + r);
         }
         return new URIImpl(r);
@@ -243,6 +243,14 @@ public final class StatementHelper {
         public StatementBuilder withEntityData(String version, String lastModified) {
             statement(statements, uris.entityData() + entityId, SchemaDotOrg.VERSION, new LiteralImpl(version));
             statement(statements, uris.entityData() + entityId, SchemaDotOrg.DATE_MODIFIED, new LiteralImpl(lastModified));
+            return this;
+        }
+
+        /**
+         * Add statement to entity itself.
+         */
+        public StatementBuilder withPredicateObject(String predicate, Object object) {
+            statement(statements, entityId, predicate, object);
             return this;
         }
 

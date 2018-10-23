@@ -17,6 +17,10 @@ public final class SKOS {
      * Wikibase dumps the aliases in this.
      */
     public static final String ALT_LABEL = NAMESPACE + "altLabel";
+    /**
+     * Used for Lexeme senses.
+     */
+    public static final String DEFINITION = NAMESPACE + "definition";
 
     /**
      * Adds the skos: prefix to the query.
