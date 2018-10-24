@@ -257,4 +257,17 @@ public class KafkaPollerIntegrationTest {
             }
         }
     }
+
+    @Test
+    public void receiveCreateEventWithMs() throws RetryableException, IOException {
+        sendEvent(CREATE_TOPIC, "create-event-ms.json");
+        List<Change> changes = poller.firstBatch().changes();
+
+        assertThat(changes).hasSize(1);
+        Change change = changes.get(0);
+
+        assertThat(change.entityId()).isEqualTo("Q123");
+        assertThat(change.revision()).isEqualTo(5L);
+        assertThat(change.timestamp()).isEqualTo(Instant.parse("2018-10-24T00:28:24.1623Z"));
+    }
 }
