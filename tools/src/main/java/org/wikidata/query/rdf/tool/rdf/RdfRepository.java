@@ -342,6 +342,12 @@ public class RdfRepository {
         return modified.intValue();
     }
 
+    /**
+     * Fetch sub-ids for given lexeme entity IDs.
+     * We need them because forms & senses have statements too.
+     * @param entityIds
+     * @return List of IDs for forms and senses.
+     */
     private List<String> fetchLexemeSubIds(Set<String> entityIds) {
         // TODO Auto-generated method stub
         UpdateBuilder b = new UpdateBuilder(getLexemes);

@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +25,9 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.BNodeImpl;
@@ -31,10 +35,12 @@ import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
+import org.wikidata.query.rdf.common.uri.Ontolex;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
+import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
@@ -47,6 +53,7 @@ import com.google.common.collect.ImmutableList;
 /**
  * Tests RdfRepository against a live RDF repository.
  */
+@RunWith(Parameterized.class)
 public class RdfRepositoryIntegrationTest {
     private Set<String> cleanupList = new HashSet<>();
 
@@ -57,19 +64,30 @@ public class RdfRepositoryIntegrationTest {
     private final Munger munger = new Munger(uris);
 
     @Rule
-    public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq");
+    public final Randomizer randomizer = new Randomizer();
 
     @Rule
-    public final Randomizer randomizer = new Randomizer();
+    public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq");
 
     @Before
     public void cleanList() {
         cleanupList = new HashSet<>();
     }
 
+    public RdfRepositoryIntegrationTest(boolean syncMode) {
+        rdfRepository.setSyncMode(syncMode);
+    }
+
+    @Parameters
+    public static Collection<Object[]> syncModes() {
+        return Arrays.asList(new Object[][] {
+            {false}, {true}
+        });
+    }
+
     @Test
     public void newSiteLink() throws QueryEvaluationException {
-        rdfRepository.sync("Q23", siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en"));
+        rdfRepository.syncWithMode("Q23", siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washington", "en"));
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s <http://schema.org/about> ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), allOf(//
@@ -81,7 +99,7 @@ public class RdfRepositoryIntegrationTest {
     @Test
     public void moveSiteLink() throws QueryEvaluationException {
         newSiteLink();
-        rdfRepository.sync("Q23", siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washingmoved", "en"));
+        rdfRepository.syncWithMode("Q23", siteLink("Q23", "http://en.wikipedia.org/wiki/George_Washingmoved", "en"));
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s <http://schema.org/about> ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), allOf(//
@@ -92,7 +110,7 @@ public class RdfRepositoryIntegrationTest {
 
     @Test
     public void newLabel() throws QueryEvaluationException {
-        rdfRepository.sync("Q23", ImmutableList.of(//
+        rdfRepository.syncWithMode("Q23", ImmutableList.of(//
                 statement("Q23", RDFS.LABEL, new LiteralImpl("George Washington", "en"))));
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         assertTrue(r.hasNext());
@@ -106,7 +124,7 @@ public class RdfRepositoryIntegrationTest {
     @Test
     public void changedLabel() throws QueryEvaluationException {
         newLabel();
-        rdfRepository.sync("Q23", ImmutableList.of(//
+        rdfRepository.syncWithMode("Q23", ImmutableList.of(//
                 statement("Q23", RDFS.LABEL, new LiteralImpl("George Washingmoved", "en"))));
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         assertTrue(r.hasNext());
@@ -119,7 +137,7 @@ public class RdfRepositoryIntegrationTest {
 
     @Test
     public void newLabelWithQuotes() throws QueryEvaluationException {
-        rdfRepository.sync("Q23", ImmutableList.of(//
+        rdfRepository.syncWithMode("Q23", ImmutableList.of(//
                 statement("Q23", RDFS.LABEL, new LiteralImpl("George \"Cherry Tree\" Washington", "en"))));
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         assertTrue(r.hasNext());
@@ -132,7 +150,7 @@ public class RdfRepositoryIntegrationTest {
 
     @Test
     public void statementWithBackslash() throws QueryEvaluationException {
-        rdfRepository.sync("Q42", ImmutableList.of(//
+        rdfRepository.syncWithMode("Q42", ImmutableList.of(//
                 statement("Q42", "P396", new LiteralImpl("IT\\ICCU\\RAVV\\034417"))));
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         assertTrue(r.hasNext());
@@ -148,13 +166,13 @@ public class RdfRepositoryIntegrationTest {
         Statement link = statement("Q23", "P26", "Q191789");
         Statement onGeorge = statement("Q23", "P20", "Q494413");
         Statement onMartha = statement("Q191789", "P20", "Q731635");
-        rdfRepository.sync("Q23", ImmutableList.of(link, onGeorge));
-        rdfRepository.sync("Q191789", ImmutableList.of(onMartha));
+        rdfRepository.syncWithMode("Q23", ImmutableList.of(link, onGeorge));
+        rdfRepository.syncWithMode("Q191789", ImmutableList.of(onMartha));
         assertTrue(rdfRepository.ask("ASK {wd:Q23 p:P20 wd:Q494413 }"));
         assertTrue(rdfRepository.ask("ASK {wd:Q23 p:P26 wd:Q191789 }"));
         assertTrue(rdfRepository.ask("ASK {wd:Q191789 p:P20 wd:Q731635 }"));
 
-        rdfRepository.sync("Q23", ImmutableList.of(onGeorge));
+        rdfRepository.syncWithMode("Q23", ImmutableList.of(onGeorge));
         assertTrue(rdfRepository.ask("ASK {wd:Q23 p:P20 wd:Q494413 }"));
         assertFalse(rdfRepository.ask("ASK {wd:Q23 p:P26 wd:Q191789 }"));
         assertTrue(rdfRepository.ask("ASK {wd:Q191789 p:P20 wd:Q731635 }"));
@@ -163,7 +181,7 @@ public class RdfRepositoryIntegrationTest {
     @Test
     public void newLabelLanguage() throws QueryEvaluationException {
         newLabel();
-        rdfRepository.sync("Q23", ImmutableList.of(//
+        rdfRepository.syncWithMode("Q23", ImmutableList.of(//
                 statement("Q23", RDFS.LABEL, new LiteralImpl("George Washington", "en")), //
                 statement("Q23", RDFS.LABEL, new LiteralImpl("George Washington", "de"))));
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o} ORDER BY ?o");
@@ -184,7 +202,7 @@ public class RdfRepositoryIntegrationTest {
     public void basicExpandedStatement() throws QueryEvaluationException {
         List<Statement> george = expandedStatement("ce976010-412f-637b-c687-9fd2d52dc140", "Q23", "P509", "Q356405",
                 Ontology.NORMAL_RANK);
-        rdfRepository.sync("Q23", george);
+        rdfRepository.syncWithMode("Q23", george);
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE { wd:Q23 p:P509 [ ps:P509 ?cause; wikibase:rank wikibase:NormalRank ] }");
         assertTrue(r.hasNext());
         assertThat(r.next(), binds("cause", "Q356405"));
@@ -197,7 +215,7 @@ public class RdfRepositoryIntegrationTest {
         List<Statement> george = expandedStatement("ce976010-412f-637b-c687-9fd2d52dc140", "Q23", "P509", "Q3736439",
                 Ontology.NORMAL_RANK);
         // Poor George Washington's cause of death is now duck
-        rdfRepository.sync("Q23", george);
+        rdfRepository.syncWithMode("Q23", george);
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE { wd:Q23 p:P509 [ ps:P509 ?cause; wikibase:rank wikibase:NormalRank ] }");
         assertTrue(r.hasNext());
         assertThat(r.next(), binds("cause", "Q3736439"));
@@ -209,7 +227,7 @@ public class RdfRepositoryIntegrationTest {
         basicExpandedStatement();
         List<Statement> george = expandedStatement("ce976010-412f-637b-c687-9fd2d52dc140", "Q23", "P509", "Q356405",
                 Ontology.DEPRECATED_RANK);
-        rdfRepository.sync("Q23", george);
+        rdfRepository.syncWithMode("Q23", george);
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE { wd:Q23 p:P509 [ ps:P509 ?cause; wikibase:rank wikibase:DeprecatedRank ] }");
         assertTrue(r.hasNext());
         assertThat(r.next(), binds("cause", "Q356405"));
@@ -227,7 +245,7 @@ public class RdfRepositoryIntegrationTest {
                 .withTimeCalendarValue(valueUri, "cat", "animals")
                 .build();
 
-        rdfRepository.sync("Q23", george);
+        rdfRepository.syncWithMode("Q23", george);
         assertTrue(rdfRepository.ask(
                 "ASK { wd:Q23 p:P509 [ psv:P509 [ wikibase:timeValue \"cat\" ] ] }"));
         assertTrue(rdfRepository.ask(
@@ -246,7 +264,7 @@ public class RdfRepositoryIntegrationTest {
                 .withTimeCalendarValue(valueUri, "dog", "animals")
                 .build();
 
-        rdfRepository.sync("Q23", george);
+        rdfRepository.syncWithMode("Q23", george);
         assertTrue(rdfRepository.ask(
                 "ASK { wd:Q23 p:P509 [ psv:P509 [ wikibase:timeValue \"dog\" ] ] }"));
         assertTrue(rdfRepository.ask(
@@ -269,10 +287,10 @@ public class RdfRepositoryIntegrationTest {
                 .withTimeCalendarValue(valueUri, "cat", "animals")
                 .build();
 
-        rdfRepository.sync("Q23", george);
+        rdfRepository.syncWithMode("Q23", george);
         List<Statement> enwiki = new ArrayList<>();
         statement(enwiki, "Q328", "P509", "Q328");
-        rdfRepository.sync("Q328", enwiki);
+        rdfRepository.syncWithMode("Q328", enwiki);
         assertTrue(rdfRepository.ask(
                 "ASK { wd:Q23 p:P509 [ prov:wasDerivedFrom [ prv:P509 [ wikibase:timeValue \"cat\" ] ] ] }"));
         assertTrue(rdfRepository.ask(
@@ -296,7 +314,7 @@ public class RdfRepositoryIntegrationTest {
                 .withTimeCalendarValue(valueUri, "dog", "animals")
                 .build();
 
-        rdfRepository.sync("Q23", george, cleanupList);
+        rdfRepository.syncWithMode("Q23", george, cleanupList);
         assertTrue(rdfRepository.ask(
                 "ASK { wd:Q23 p:P509 [ prov:wasDerivedFrom [ prv:P509 [ wikibase:timeValue \"dog\" ] ] ] }"));
         assertTrue(rdfRepository.ask(
@@ -316,7 +334,7 @@ public class RdfRepositoryIntegrationTest {
                 Ontology.NORMAL_RANK, referenceUri);
         statement(george, referenceUri, uris.property(PropertyType.REFERENCE) + "P854", "http://www.anb.org/articles/02/02-00332.html");
         cleanupList.add(referenceUri);
-        rdfRepository.sync("Q23", george, cleanupList);
+        rdfRepository.syncWithMode("Q23", george, cleanupList);
         TupleQueryResult r = rdfRepository.query(
                 "SELECT * WHERE { wd:Q23 p:P19 [ ps:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
         assertTrue(r.hasNext());
@@ -335,7 +353,7 @@ public class RdfRepositoryIntegrationTest {
                 Ontology.NORMAL_RANK, referenceUri);
         cleanupList.add(referenceUri);
         statement(george, referenceUri, uris.property(PropertyType.REFERENCE) + "P854", "http://example.com");
-        rdfRepository.sync("Q23", george, cleanupList);
+        rdfRepository.syncWithMode("Q23", george, cleanupList);
         TupleQueryResult r = rdfRepository.query(
                 "SELECT * WHERE { wd:Q23 p:P19 [ ps:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
         assertTrue(r.hasNext());
@@ -354,7 +372,7 @@ public class RdfRepositoryIntegrationTest {
                 Ontology.NORMAL_RANK, referenceUri);
         cleanupList.add(referenceUri);
         statement(george, referenceUri, uris.property(PropertyType.REFERENCE) + "P143", "http://www.anb.org/articles/02/02-00332.html");
-        rdfRepository.sync("Q23", george, cleanupList);
+        rdfRepository.syncWithMode("Q23", george, cleanupList);
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE { wd:Q23 p:P19 [ ps:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
         assertTrue(r.hasNext());
         assertThat(r.next(), allOf(//
@@ -373,11 +391,11 @@ public class RdfRepositoryIntegrationTest {
         cleanupList.add(referenceUri);
         Statement refDecl = statement(george, referenceUri, uris.property(PropertyType.REFERENCE) + "P854",
                 "http://www.anb.org/articles/02/02-00332.html");
-        rdfRepository.sync("Q23", george);
+        rdfRepository.syncWithMode("Q23", george);
         List<Statement> dummy = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q1234134", "P19", "Q494413",
                 Ontology.NORMAL_RANK, referenceUri);
         dummy.add(refDecl);
-        rdfRepository.sync("Q1234134", dummy, cleanupList);
+        rdfRepository.syncWithMode("Q1234134", dummy, cleanupList);
 
         // Now query and make sure you can find it
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE { wd:Q23 p:P19 [ ps:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
@@ -391,7 +409,7 @@ public class RdfRepositoryIntegrationTest {
         // Now remove the reference from just one place
         dummy = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q1234134", "P19", "Q494413",
                 Ontology.NORMAL_RANK);
-        rdfRepository.sync("Q1234134", dummy, cleanupList);
+        rdfRepository.syncWithMode("Q1234134", dummy, cleanupList);
 
         // Now query and find the reference still there because its shared!
         r = rdfRepository.query("SELECT * WHERE { wd:Q23 p:P19 [ ps:P19 ?placeOfBirth; prov:wasDerivedFrom [ ?provP ?provO ] ] }");
@@ -414,7 +432,7 @@ public class RdfRepositoryIntegrationTest {
         // Now remove it from its last place
         george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
                 Ontology.NORMAL_RANK);
-        rdfRepository.sync("Q23", george, cleanupList);
+        rdfRepository.syncWithMode("Q23", george, cleanupList);
 
         /*
          * Now query and find the reference now gone because it isn't used
@@ -442,10 +460,10 @@ public class RdfRepositoryIntegrationTest {
         statement(george, "Q23", uris.property(PropertyType.CLAIM) + "P129", otherStatementUri);
         statement(george, otherStatementUri, uris.property(PropertyType.STATEMENT) + "P129", new LiteralImpl("cat"));
         statement(george, otherStatementUri, Provenance.WAS_DERIVED_FROM, referenceUri);
-        rdfRepository.sync("Q23", george, cleanupList);
+        rdfRepository.syncWithMode("Q23", george, cleanupList);
         assertTrue(rdfRepository.ask("ASK {wdref:e36b7373814a0b74caa84a5fc2b1e3297060ab0f pr:P854 ?o }"));
 
-        rdfRepository.sync("Q23", georgeWithoutSecondReference, cleanupList);
+        rdfRepository.syncWithMode("Q23", georgeWithoutSecondReference, cleanupList);
         assertTrue(rdfRepository.ask("ASK {wdref:e36b7373814a0b74caa84a5fc2b1e3297060ab0f pr:P854 ?o }"));
     }
 
@@ -459,7 +477,7 @@ public class RdfRepositoryIntegrationTest {
         return statements;
     }
 
-    private List<Statement> expandedStatement(String statementId, String subject, String predicate, String value,
+    private List<Statement> expandedStatement(String statementId, String subject, String predicate, Object value,
             String rank) {
         List<Statement> statements = new ArrayList<>();
         String statementUri = uris.statement() + subject + "-" + statementId;
@@ -510,8 +528,8 @@ public class RdfRepositoryIntegrationTest {
             statements.add(statement(link, SchemaDotOrg.IN_LANGUAGE, new LiteralImpl(Integer.toString(i))));
             statements.add(statement(link, SchemaDotOrg.ABOUT, "Q80"));
         }
-        rdfRepository.sync("Q80", statements);
-        assertEquals(0, rdfRepository.sync("Q80", statements));
+        rdfRepository.syncWithMode("Q80", statements);
+        assertEquals(0, rdfRepository.syncWithMode("Q80", statements));
         TupleQueryResult r = rdfRepository.query("PREFIX wd: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?s) as ?sc) WHERE {?s ?p wd:Q80}");
         assertTrue(r.hasNext());
         assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(10))));
@@ -533,8 +551,8 @@ public class RdfRepositoryIntegrationTest {
         for (int i = 0; i < 10; i++) {
             statements.add(statement("Q80", "P" + i, new IntegerLiteralImpl(BigInteger.valueOf(i))));
         }
-        rdfRepository.sync("Q80", statements);
-        assertEquals(0, rdfRepository.sync("Q80", statements));
+        rdfRepository.syncWithMode("Q80", statements);
+        assertEquals(0, rdfRepository.syncWithMode("Q80", statements));
         TupleQueryResult r = rdfRepository.query("PREFIX wd: <http://www.wikidata.org/entity/>\nSELECT (COUNT(?p) as ?sc) WHERE {wd:Q80 ?p ?o}");
         assertTrue(r.hasNext());
         assertThat(r.next(), binds("sc", new IntegerLiteralImpl(BigInteger.valueOf(10))));
@@ -544,7 +562,7 @@ public class RdfRepositoryIntegrationTest {
     @Test
     public void delete() throws QueryEvaluationException {
         newSiteLink();
-        rdfRepository.sync("Q23", Collections.<Statement> emptyList());
+        rdfRepository.syncWithMode("Q23", Collections.<Statement> emptyList());
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         assertFalse(r.hasNext());
     }
@@ -564,12 +582,12 @@ public class RdfRepositoryIntegrationTest {
     private void syncJustVersion(String entityId, int version) {
         Statement statement = statement(entityId, SchemaDotOrg.VERSION,
                 new IntegerLiteralImpl(new BigInteger(Integer.toString(version))));
-        rdfRepository.sync(entityId, ImmutableList.of(statement));
+        rdfRepository.syncWithMode(entityId, ImmutableList.of(statement));
     }
 
     @Test
     public void statementWithBnode() throws QueryEvaluationException {
-        rdfRepository.sync("Q42", ImmutableList.of(//
+        rdfRepository.syncWithMode("Q42", ImmutableList.of(//
                 statement("Q42", "P396", new BNodeImpl("testBnode"))));
         TupleQueryResult r = rdfRepository.query("SELECT * WHERE {?s ?p ?o}");
         assertTrue(r.hasNext());
@@ -613,7 +631,7 @@ public class RdfRepositoryIntegrationTest {
                 .withEntityData("22", "today")
                 .build();
 
-        rdfRepository.sync("Q23", newdata, makeCleanupList("Q23", newdata));
+        rdfRepository.syncWithMode("Q23", newdata, makeCleanupList("Q23", newdata));
 
         assertTrue(rdfRepository.ask("ASK { wd:Q23 p:P509 [ psv:P509 wdv:changeduuid ] }"));
         assertTrue(rdfRepository.ask(
@@ -626,6 +644,7 @@ public class RdfRepositoryIntegrationTest {
      * Test cleanup when one value is still used by other data.
      * @throws QueryEvaluationException
      */
+    @Test
     public void cleanupValueWithUsedByOld() throws QueryEvaluationException {
         String statementUri = uris.statement() + randomizer.randomAsciiOfLength(10);
         String oldValueUri = uris.value() + "someuuid";
@@ -635,7 +654,7 @@ public class RdfRepositoryIntegrationTest {
         statement(olddata, statementUri,
                 uris.property(PropertyType.STATEMENT_VALUE) + "P222",
                 oldValueUri);
-        rdfRepository.sync("Q2", olddata);
+        rdfRepository.syncWithMode("Q2", olddata);
         expandedStatementWithExpandedValue();
 
         List<Statement> newdata = new StatementBuilder("Q23")
@@ -645,7 +664,7 @@ public class RdfRepositoryIntegrationTest {
                 .withEntityData("22", "today")
                 .build();
 
-        rdfRepository.sync("Q23", newdata, makeCleanupList("Q23", newdata));
+        rdfRepository.syncWithMode("Q23", newdata, makeCleanupList("Q23", newdata));
 
         // New values are present
         assertTrue(rdfRepository.ask("ASK { wd:Q23 p:P509 [ psv:P509 wdv:changeduuid ] }"));
@@ -658,6 +677,7 @@ public class RdfRepositoryIntegrationTest {
      * Test cleanup value which includes normalized component.
      * @throws QueryEvaluationException
      */
+    @Test
     public void cleanupNormalizedValue() throws QueryEvaluationException {
         String statementUri = uris.statement() + randomizer.randomAsciiOfLength(10);
         String valueUri = uris.value() + "someuuid";
@@ -665,31 +685,99 @@ public class RdfRepositoryIntegrationTest {
 
         List<Statement> olddata = new StatementBuilder("Q24")
                 .withStatement("P5", statementUri)
-                .withStatementValueNormalized(valueUri)
+                .withStatementValue(valueUri)
                 .withStatementValueNormalized(normValueUri)
                 .withQuanitityValueNormalized(valueUri, "42", normValueUri, "128")
                 .withEntityData("22", "today")
                 .build();
-        rdfRepository.sync("Q24", olddata);
+        rdfRepository.syncWithMode("Q24", olddata);
 
         valueUri = valueUri + "NEW";
         normValueUri = normValueUri + "NEW";
 
         List<Statement> newdata = new StatementBuilder("Q24")
                 .withStatement("P7", statementUri)
-                .withStatementValueNormalized(valueUri)
+                .withStatementValue(valueUri)
                 .withStatementValueNormalized(normValueUri)
                 .withQuanitityValueNormalized(valueUri, "24", normValueUri, "-5")
                 .withEntityData("23", "tomorrow")
                 .build();
-        rdfRepository.sync("Q24", olddata, makeCleanupList("Q24", newdata));
+        rdfRepository.syncWithMode("Q24", newdata, makeCleanupList("Q24", newdata));
 
         // New values are present
-        assertTrue(rdfRepository.ask("ASK { wd:Q24 p:P7 [ psv:P7 someuuidNEW ] }"));
-        assertTrue(rdfRepository.ask("ASK { wd:Q24 p:P7 [ psn:P7 normuuidNEW ] }"));
+        assertTrue(rdfRepository.ask("ASK { wd:Q24 p:P7 [ psv:P7 wdv:someuuidNEW ] }"));
+        assertTrue(rdfRepository.ask("ASK { wd:Q24 p:P7 [ psn:P7 wdv:normuuidNEW ] }"));
         assertTrue(rdfRepository.ask("ASK { wd:Q24 p:P7 [ psv:P7 [ wikibase:quantityAmount \"24\" ] ] }"));
         // Old value is deleted together with normalized part
         assertFalse(rdfRepository.ask("ASK { wdv:someuuid ?x ?y }"));
         assertFalse(rdfRepository.ask("ASK { wdv:normuuid ?x ?y }"));
+    }
+
+    private void formWithStatement(List<Statement> statements, String formId, String repr,
+            String statementUri, String propertyId, String value) {
+        statement(statements, formId, Ontolex.REPRESENTATION, new LiteralImpl(repr));
+        statements.addAll(expandedStatement(statementUri, formId, propertyId,
+                new LiteralImpl(value), Ontology.NORMAL_RANK));
+    }
+
+    private void senseWithStatement(List<Statement> statements, String formId, String repr,
+            String statementUri, String propertyId, String value) {
+        statement(statements, formId, SKOS.DEFINITION, new LiteralImpl(repr));
+        statements.addAll(expandedStatement(statementUri, formId, propertyId,
+                new LiteralImpl(value), Ontology.NORMAL_RANK));
+    }
+
+    /**
+     * Test lexemes updating & cleanup of old values.
+     */
+    @Test
+    public void lexemeUpdate() throws QueryEvaluationException {
+        String statementUri = uris.statement() + randomizer.randomAsciiOfLength(10);
+        String statementUri2 = uris.statement() + randomizer.randomAsciiOfLength(10);
+        String statementUri3 = uris.statement() + randomizer.randomAsciiOfLength(10);
+        String statementUri4 = uris.statement() + randomizer.randomAsciiOfLength(10);
+        String statementUri5 = uris.statement() + randomizer.randomAsciiOfLength(10);
+
+        List<Statement> olddata = new StatementBuilder("L123")
+                .withPredicateObject(Ontology.Lexeme.LEMMA, new LiteralImpl("testlemma"))
+                .withPredicateObject(Ontolex.LEXICAL_FORM, "L123-F1")
+                .withPredicateObject(Ontolex.LEXICAL_FORM, "L123-F2")
+                .withPredicateObject(Ontolex.SENSE_PREDICATE, "L123-S1")
+                .build();
+
+        formWithStatement(olddata, "L123-F1", "form1test", statementUri, "P12", "formvalue");
+        formWithStatement(olddata, "L123-F2", "form2test", statementUri2, "P23", "formvalue2");
+        senseWithStatement(olddata, "L123-S1", "sensetest", statementUri3, "P12", "sensevalue");
+
+        rdfRepository.syncWithMode("L123", olddata);
+
+        List<Statement> newdata = new StatementBuilder("L123")
+                .withPredicateObject(Ontology.Lexeme.LEMMA, new LiteralImpl("test2lemma"))
+                .withPredicateObject(Ontolex.LEXICAL_FORM, "L123-F1")
+                .withPredicateObject(Ontolex.SENSE_PREDICATE, "L123-S1")
+                .withPredicateObject(Ontolex.SENSE_PREDICATE, "L123-S2")
+                .build();
+
+        formWithStatement(newdata, "L123-F1", "form1new", statementUri5, "P12", "formnewvalue");
+        senseWithStatement(newdata, "L123-S1", "sense1new", statementUri3, "P34", "sensenewvalue");
+        senseWithStatement(newdata, "L123-S2", "sense2new", statementUri4, "P123", "sensenew2value");
+
+        rdfRepository.syncWithMode("L123", newdata);
+        // New data is here
+        assertTrue(rdfRepository.ask("ASK { wd:L123 wikibase:lemma \"test2lemma\" }"));
+        assertTrue(rdfRepository.ask("ASK { wd:L123 ontolex:lexicalForm/ontolex:representation \"form1new\" }"));
+        assertTrue(rdfRepository.ask("ASK { wd:L123 ontolex:lexicalForm/p:P12 [ ps:P12 \"formnewvalue\" ] }"));
+        assertTrue(rdfRepository.ask("ASK { wd:L123 ontolex:sense/skos:definition \"sense1new\" }"));
+        assertTrue(rdfRepository.ask("ASK { wd:L123 ontolex:sense/skos:definition \"sense2new\" }"));
+        assertTrue(rdfRepository.ask("ASK { wd:L123 ontolex:sense/p:P34 [ ps:P34 \"sensenewvalue\" ] }"));
+        assertTrue(rdfRepository.ask("ASK { wd:L123 ontolex:sense/p:P123 [ ps:P123 \"sensenew2value\" ] }"));
+        // Old data is not
+        assertFalse(rdfRepository.ask("ASK { wd:L123 wikibase:lemma \"testlemma\" }"));
+        assertFalse(rdfRepository.ask("ASK { wd:L123 ontolex:lexicalForm/ontolex:representation \"form1test\" }"));
+        assertFalse(rdfRepository.ask("ASK { wd:L123 ontolex:lexicalForm/ontolex:representation \"form2test\" }"));
+        assertFalse(rdfRepository.ask("ASK { wd:L123 ontolex:lexicalForm/p:P12 [ ps:P12 \"formvalue\" ] }"));
+        assertFalse(rdfRepository.ask("ASK { wd:L123 ontolex:lexicalForm/p:P23 [ ] }"));
+        assertFalse(rdfRepository.ask("ASK { wd:L123 ontolex:sense/skos:definition \"sensetest\" }"));
+        assertFalse(rdfRepository.ask("ASK { wd:L123 ontolex:sense/p:P12 [ ] }"));
     }
 }
