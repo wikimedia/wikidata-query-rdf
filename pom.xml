@@ -60,7 +60,7 @@
         <blazegraph.version>2.1.5-SNAPSHOT</blazegraph.version>
         <jackson.version>2.9.5</jackson.version>
         <!-- matching version used by Blazegraph here -->
-        <jetty.version>9.2.3.v20140905</jetty.version>
+        <jetty.version>9.2.26.v20180806</jetty.version>
         <logback.version>1.2.3</logback.version>
         <metrics.version>4.0.2</metrics.version>
         <!-- matching version used by Blazegraph here -->
