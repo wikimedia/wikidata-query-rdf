@@ -25,7 +25,7 @@ LOG_CONFIG=${LOG_CONFIG:-""}
 NAMESPACE=wdq
 UPDATER_OPTS=${UPDATER_OPTS:-""}
 
-while getopts h:c:n:l:t:sN option
+while getopts h:c:n:l:t:sSNv option
 do
   case "${option}"
   in
@@ -35,7 +35,9 @@ do
     l) LANGS=${OPTARG};;
     t) TMO=${OPTARG};;
     s) SKIPSITE=1;;
-	N) NOEXTRA=1;;
+    S) NO_SERVICE=1;;
+    N) NOEXTRA=1;;
+    v) VERBOSE_LOGGING="true";;
   esac
 done
 
@@ -44,7 +46,7 @@ shift $((OPTIND-1))
 
 if [ -z "$NAMESPACE" ]
 then
-  echo "Usage: $0 -n <namespace> [-h <host>] [-c <context>]"
+  echo "Usage: $0 -n <namespace> [-h <host>] [-c <context>] [-S] [-v]"
   exit 1
 fi
 
@@ -64,7 +66,13 @@ if [ ! -z "$SKIPSITE" ]; then
     ARGS="$ARGS --skipSiteLinks"
 fi
 LOG_OPTIONS=""
-if [ ! -z "$LOG_CONFIG" ]; then
+# if not running as a service, use the default log file
+if [ ! -z "$NO_SERVICE" ]; then
+    LOG_CONFIG=""
+fi
+if [ ! -z "$VERBOSE_LOGGING" ]; then
+    LOG_OPTIONS="-Dlogback.configurationFile=logback-verbose.xml"
+elif [ ! -z "$LOG_CONFIG" ]; then
     LOG_OPTIONS="-Dlogback.configurationFile=${LOG_CONFIG}"
 fi
 # No extra options - for running secondary updaters, etc.
