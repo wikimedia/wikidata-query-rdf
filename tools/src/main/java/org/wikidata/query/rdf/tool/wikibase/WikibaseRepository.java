@@ -412,7 +412,7 @@ public class WikibaseRepository implements Closeable {
                 log.info("Failed to load constraints: {}", ex.getMessage());
             }
         }
-        log.debug("Done in {} ms", timerContext.stop() / 1000);
+        log.debug("Done in {} ms", timerContext.stop() / 1000_000);
         return collector.getStatements();
     }
 
