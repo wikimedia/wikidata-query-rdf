@@ -68,6 +68,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
 
     private static final String MAX_POLL_PROPERTY = KafkaPoller.class.getName() + ".maxPoll";
     private static final String MAX_FETCH_PROPERTY = KafkaPoller.class.getName() + ".maxFetch";
+    private static final String REPORTING_TOPIC_PROP = KafkaPoller.class.getName() + ".reportingTopic";;
 
     /**
      * List of topics to listen to.
@@ -93,7 +94,12 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
      * Name of the topic which offset reporting will be based on.
      * TODO: may want to make configurable.
      */
-    private static final String reportingTopic =  "mediawiki.revision-create";
+    private static final String DEFAULT_REPORTING_TOPIC =  "mediawiki.revision-create";
+
+    /**
+     *
+     */
+    private final String reportingTopic;
 
     /**
      * The first start time to poll.
@@ -152,6 +158,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         this.topicPartitions = topicsToPartitions(topics, consumer);
         this.kafkaOffsetsRepository = kafkaOffsetsRepository;
         this.ignoreStoredOffsets = ignoreStoredOffsets;
+        this.reportingTopic = System.getProperty(REPORTING_TOPIC_PROP, DEFAULT_REPORTING_TOPIC);
     }
 
     /**
