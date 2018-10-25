@@ -314,7 +314,10 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      */
     private void handleChange(Change change) throws RetryableException {
         log.debug("Processing data for {}", change);
-        Collection<Statement> statements = wikibase.fetchRdfForEntity(change.entityId());
+        long revision = change.revision();
+        Collection<Statement> statements = wikibase.fetchRdfForEntity(
+                change.entityId(),
+                revision <= 0 ? null : String.valueOf(revision));
         Set<String> values = new HashSet<>();
         Set<String> refs = new HashSet<>();
         ImmutableSetMultimap<String, String> repoValues;

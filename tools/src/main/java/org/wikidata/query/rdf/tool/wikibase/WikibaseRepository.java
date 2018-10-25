@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
@@ -386,14 +387,24 @@ public class WikibaseRepository implements Closeable {
      * @throws RetryableException thrown if there is an error communicating with
      *             wikibase
      */
-    @SuppressWarnings("resource") // stop() and close() are the same
     public Collection<Statement> fetchRdfForEntity(String entityId) throws RetryableException {
+        return fetchRdfForEntity(entityId, null);
+    }
+
+    /**
+     * Fetch the RDF for some entity.
+     *
+     * @throws RetryableException thrown if there is an error communicating with
+     *             wikibase
+     */
+    @SuppressWarnings("resource") // stop() and close() are the same
+    public Collection<Statement> fetchRdfForEntity(String entityId, @Nullable String cacheMark) throws RetryableException {
         Timer.Context timerContext = rdfFetchTimer.time();
         StatementCollector collector = new StatementCollector();
-        collectStatementsFromUrl(uris.rdf(entityId), collector, entityFetchTimer);
+        collectStatementsFromUrl(uris.rdf(entityId, cacheMark), collector, entityFetchTimer);
         if (collectConstraints) {
             try {
-                collectStatementsFromUrl(uris.constraints(entityId), collector, constraintFetchTimer);
+                collectStatementsFromUrl(uris.constraints(entityId, cacheMark), collector, constraintFetchTimer);
             } catch (ContainedException ex) {
                 // TODO: add RetryableException here?
                 // Skip loading constraints on fail, it's not the reason to give up
@@ -625,7 +636,7 @@ public class WikibaseRepository implements Closeable {
         /**
          * Uri to get the rdf for an entity.
          */
-        public URI rdf(String entityId) {
+        public URI rdf(String entityId, @Nullable String cacheMark) {
             URIBuilder builder = builder();
             /*
              * Note that we could use /entity/%s.ttl for production Wikidata but
@@ -633,8 +644,11 @@ public class WikibaseRepository implements Closeable {
              * looking at you test.wikidata.org
              */
             builder.setPath(baseUrl.getPath() + ENTITY_DATA_URL + entityId + ".ttl");
-            // Cache is not our friend, try to work around it
-            builder.addParameter("nocache", String.valueOf(Instant.now().toEpochMilli()));
+            if (cacheMark == null) {
+                // Cache is not our friend, try to work around it
+                cacheMark = String.valueOf(Instant.now().toEpochMilli());
+            }
+            builder.addParameter("nocache", cacheMark);
             builder.addParameter("flavor", "dump");
             return build(builder);
         }
@@ -642,12 +656,15 @@ public class WikibaseRepository implements Closeable {
         /**
          * Uri to get the rdf for constraints status of an entity.
          */
-        public URI constraints(String entityId) {
+        public URI constraints(String entityId, @Nullable String cacheMark) {
             URIBuilder builder = builder();
             builder.setPath(baseUrl.getPath() + "/wiki/" + entityId);
             builder.addParameter("action", "constraintsrdf");
-            // Cache is not our friend, try to work around it
-            builder.addParameter("nocache", String.valueOf(Instant.now().toEpochMilli()));
+            if (cacheMark == null) {
+                // Cache is not our friend, try to work around it
+                cacheMark = String.valueOf(Instant.now().toEpochMilli());
+            }
+            builder.addParameter("nocache", cacheMark);
             return build(builder);
         }
 

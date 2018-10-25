@@ -321,7 +321,6 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
             for (ConsumerRecord<String, ChangeEvent> record: records) {
                 ChangeEvent event = record.value();
                 String topic = record.topic();
-                log.trace("Got event t:{} o:{}", record.topic(), record.offset());
                 if (!event.domain().equals(uris.getHost())) {
                     // wrong domain, ignore
                     continue;
@@ -336,6 +335,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
                     // This is a redundant event, we can skip it.
                     continue;
                 }
+                log.trace("Got event t:{} o:{} ts:{} i:{}", record.topic(), record.offset(), event.timestamp(), event.title());
                 // Now we have event that we want to process
                 foundSomething = true;
                 topicCounts.getAndIncrement(record.topic());
