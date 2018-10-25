@@ -35,11 +35,11 @@ DEBUG=-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n
 DEBUG=
 
 function usage() {
-  echo "Usage: $0 [-h <host>] [-d <dir>] [-c <context>] [-p <port>] [-o <blazegraph options>] [-f config.properties] [-S logging_suffix] [-v]"
+  echo "Usage: $0 [-h <host>] [-d <dir>] [-c <context>] [-p <port>] [-o <blazegraph options>] [-f config.properties]"
   exit 1
 }
 
-while getopts h:c:p:d:o:f:S:v? option
+while getopts h:c:p:d:o:f:? option
 do
   case "${option}"
   in
@@ -49,8 +49,6 @@ do
     d) DIR=${OPTARG};;
     o) BLAZEGRAPH_OPTS="${OPTARG}";;
     f) CONFIG_FILE=${OPTARG};;
-    S) PROGRAM_NAME_SUFFIX=${OPTARG};;
- 	v) VERBOSE_LOGGING="true";;
     ?) usage;;
   esac
 done
