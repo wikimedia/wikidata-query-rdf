@@ -68,6 +68,9 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
 
     private static final String MAX_POLL_PROPERTY = KafkaPoller.class.getName() + ".maxPoll";
     private static final String MAX_FETCH_PROPERTY = KafkaPoller.class.getName() + ".maxFetch";
+    /**
+     * Name of the topic which offset reporting will be based on.
+     */
     private static final String REPORTING_TOPIC_PROP = KafkaPoller.class.getName() + ".reportingTopic";;
 
     /**
@@ -91,8 +94,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
     );
 
     /**
-     * Name of the topic which offset reporting will be based on.
-     * TODO: may want to make configurable.
+     * Default name of the topic which offset reporting will be based on.
      */
     private static final String DEFAULT_REPORTING_TOPIC =  "mediawiki.revision-create";
 
@@ -308,7 +310,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
     private Batch fetch(Instant lastNextStartTime) throws RetryableException {
         Map<String, Change> changesByTitle = new LinkedHashMap<>();
         ConsumerRecords<String, ChangeEvent> records;
-        Instant nextInstant = lastNextStartTime;
+        Instant nextInstant = Instant.EPOCH;
         AtomicLongMap<String> topicCounts = AtomicLongMap.create();
         while (true) {
             try (Context timerContext = pollingTimer.time()) {
@@ -346,7 +348,10 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
                 // Now we have event that we want to process
                 foundSomething = true;
                 topicCounts.getAndIncrement(record.topic());
-                // Keep max time per topic
+                // Keep max time for the reporting topic
+                // We use only one topic (or set of topics) here because otherwise when catching up we
+                // could get messages from different topics with different times and the tracking becomes
+                // very chaotic, jumping back and forth.
                 if (topic.endsWith(reportingTopic)) {
                     nextInstant = Utils.max(nextInstant, Instant.ofEpochMilli(record.timestamp()));
                 }
@@ -381,6 +386,11 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
             }
             // TODO: if we already have something and we've spent more than X seconds in the loop,
             // we probably should return without waiting for more
+        }
+
+        // If we didn't get anything useful in the reporting topic, keep the old value
+        if (nextInstant.equals(Instant.EPOCH)) {
+            nextInstant = lastNextStartTime;
         }
 
         final ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
