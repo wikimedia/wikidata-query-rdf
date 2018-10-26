@@ -39,6 +39,7 @@ import com.google.common.collect.ImmutableSetMultimap;
  *
  * This provides transport and the ability to execute different kind of queries.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity") // This class seems simple enough as it is, but refactoring proposal are welcomed!
 public class RdfClient {
 
     private static final Logger log = LoggerFactory.getLogger(RdfClient.class);
