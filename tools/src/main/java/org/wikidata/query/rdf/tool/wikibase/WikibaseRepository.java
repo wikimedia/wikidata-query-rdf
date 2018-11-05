@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
 
 import java.io.Closeable;
@@ -133,6 +134,7 @@ public class WikibaseRepository implements Closeable {
      */
     private final CloseableHttpClient client = HttpClients.custom()
             .setMaxConnPerRoute(100).setMaxConnTotal(100)
+            .evictIdleConnections(59L, SECONDS)
             .setRetryHandler(getRetryHandler(RETRIES))
             .setServiceUnavailableRetryStrategy(getRetryStrategy(RETRIES, RETRY_INTERVAL))
             .disableCookieManagement()
