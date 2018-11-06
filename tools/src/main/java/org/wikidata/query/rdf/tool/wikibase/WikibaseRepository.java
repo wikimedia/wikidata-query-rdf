@@ -45,9 +45,11 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.IdleConnectionEvictor;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HttpContext;
 import org.openrdf.model.Statement;
@@ -69,6 +71,7 @@ import org.wikidata.query.rdf.tool.wikibase.SearchResponse.SearchResult;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.codahale.metrics.httpclient.InstrumentedHttpClientConnectionManager;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -132,14 +135,12 @@ public class WikibaseRepository implements Closeable {
     /**
      * HTTP client for wikibase.
      */
-    private final CloseableHttpClient client = HttpClients.custom()
-            .setMaxConnPerRoute(100).setMaxConnTotal(100)
-            .evictIdleConnections(59L, SECONDS)
-            .setRetryHandler(getRetryHandler(RETRIES))
-            .setServiceUnavailableRetryStrategy(getRetryStrategy(RETRIES, RETRY_INTERVAL))
-            .disableCookieManagement()
-            .setUserAgent("Wikidata Query Service Updater")
-            .build();
+    private final CloseableHttpClient client;
+
+    /**
+     * Connection manager for Wikibase.
+     */
+    private final HttpClientConnectionManager connectionManager;
 
     /**
      * Configured timeout for requests.
@@ -203,6 +204,8 @@ public class WikibaseRepository implements Closeable {
         this.rdfFetchTimer = metricRegistry.timer("rdf-fetch-timer");
         this.entityFetchTimer = metricRegistry.timer("entity-fetch-timer");
         this.constraintFetchTimer = metricRegistry.timer("constraint-fetch-timer");
+        connectionManager = createConnectionManager(metricRegistry);
+        client = createHttpClient(connectionManager);
     }
 
     /**
@@ -550,7 +553,30 @@ public class WikibaseRepository implements Closeable {
 
     @Override
     public void close() throws IOException {
-        client.close();
+        try {
+            client.close();
+        } finally {
+            connectionManager.shutdown();
+        }
+    }
+
+    private static CloseableHttpClient createHttpClient(HttpClientConnectionManager connectionManager) {
+        return HttpClients.custom()
+                .setConnectionManager(connectionManager)
+                .setRetryHandler(getRetryHandler(RETRIES))
+                .setServiceUnavailableRetryStrategy(getRetryStrategy(RETRIES, RETRY_INTERVAL))
+                .disableCookieManagement()
+                .setUserAgent("Wikidata Query Service Updater")
+                .build();
+    }
+
+    private static InstrumentedHttpClientConnectionManager createConnectionManager(MetricRegistry registry) {
+        InstrumentedHttpClientConnectionManager connectionManager = new InstrumentedHttpClientConnectionManager(registry);
+        connectionManager.setDefaultMaxPerRoute(100);
+        connectionManager.setMaxTotal(100);
+        IdleConnectionEvictor connectionEvictor = new IdleConnectionEvictor(connectionManager, 59L, SECONDS);
+        connectionEvictor.start();
+        return connectionManager;
     }
 
     /**
