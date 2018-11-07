@@ -4,6 +4,9 @@ Add Kafka poller
 Introduce --wikibaseUrl and --conceptUri options
 Updgrade LDF server to 0.2.2
 Updated values cleanup to also clean normalized values
+Upgrade Jetty to latest 9.2
+Introduce support for Lexemes
+Add throttling by query pattern
 
 0.3.0
 -----
