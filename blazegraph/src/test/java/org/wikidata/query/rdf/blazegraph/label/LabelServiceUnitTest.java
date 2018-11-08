@@ -18,7 +18,9 @@ import java.util.Set;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.openrdf.model.impl.BNodeImpl;
 import org.openrdf.model.impl.LiteralImpl;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
@@ -283,5 +285,66 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
                     binds("anotherLabel", "in en", "en")
                 )
         );
+    }
+
+    private void checkSpecialLabel(String binding, String resultLabel) throws QueryEvaluationException {
+        addSimpleLabels("Q123");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?item ?itemLabel WHERE {\n" +
+                "  BIND(" + binding + " AS ?item)\n" +
+                "  SERVICE ontology:label {\n" +
+                "    bd:serviceParam ontology:language \"en\".\n" +
+                "  }\n" +
+                "}");
+        TupleQueryResult result = query(query.toString());
+        assertTrue(result.hasNext());
+        BindingSet resultSet = result.next();
+        assertThat(resultSet, binds("itemLabel", resultLabel, null));
+    }
+
+    @Test
+    public void labelWhenMissing() throws QueryEvaluationException {
+        checkSpecialLabel("wd:Q3456", "Q3456");
+    }
+
+    @Test
+    public void labelFromOtherTypes() throws QueryEvaluationException {
+        checkSpecialLabel("STR(wd:Q3456)", "Q3456");
+        // TODO: We may want to verify that's what we want
+        checkSpecialLabel("STR(wd:Q123)", "Q123");
+        checkSpecialLabel("\"some string\"", "some string");
+        // TODO: do we want to strip language?
+        checkSpecialLabel("\"some string\"@ru", "some string");
+        checkSpecialLabel("123", "123");
+        checkSpecialLabel("IRI(\"http://www.wikidata.org/\")", "http://www.wikidata.org/");
+        checkSpecialLabel("\"2018-11-08T23:29:06Z\"^^xsd:dateTime", "2018-11-08T23:29:06Z");
+        checkSpecialLabel("bnode(\"test\")", "-bnode-func-test");
+    }
+
+    private void checkOtherType(Object o, String expectedResult) throws QueryEvaluationException {
+        add("wd:Q888", "p:P999", o);
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?item ?itemLabel WHERE {\n" +
+                " wd:Q888 p:P999 ?item .\n" +
+                "  SERVICE ontology:label {\n" +
+                "    bd:serviceParam ontology:language \"en\".\n" +
+                "  }\n" +
+                "}");
+        TupleQueryResult result = query(query.toString());
+        assertTrue(result.hasNext());
+        BindingSet resultSet = result.next();
+        assertThat(resultSet, binds("itemLabel", expectedResult, null));
+        closeStore();
+    }
+
+    @Test
+    public void labelFromOtherTypesQuery() throws QueryEvaluationException {
+        checkOtherType(new LiteralImpl(uris().entity() + "Q123"), "Q123");
+        checkOtherType(new LiteralImpl("Q123"), "Q123");
+        checkOtherType(new LiteralImpl("just testing", "ru"), "just testing");
+        checkOtherType(new LiteralImpl("http://www.wikidata.org/"), "http://www.wikidata.org/");
+        checkOtherType(new URIImpl(uris().entity() + "Q234"), "Q234");
+        checkOtherType(new URIImpl("http://www.wikidata.org/"), "http://www.wikidata.org/");
+        checkOtherType(new BNodeImpl("Q234"), "t1");
     }
 }
