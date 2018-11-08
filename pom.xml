@@ -844,6 +844,11 @@
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.0.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
                     <artifactId>properties-maven-plugin</artifactId>
                     <version>1.0.0</version>
                 </plugin>
@@ -888,6 +893,9 @@
                         To run the integration tests from your IDE, you'll need to downlad the
                         wiremock standalone jar and start a wiremock instance manually. See
                         http://wiremock.org/docs/running-standalone/ for details.
+
+                        The wiremock port needs to be available in the "wiremock.port" system
+                        property so that the test classes know where to connect.
                     -->
                     <groupId>uk.co.automatictester</groupId>
                     <artifactId>wiremock-maven-plugin</artifactId>
@@ -899,7 +907,7 @@
                                 <goal>stop</goal>
                             </goals>
                             <configuration>
-                                <params>--port=8089</params>
+                                <params>--port=${wiremock.port}</params>
                             </configuration>
                         </execution>
                     </executions>

@@ -29,16 +29,16 @@ import com.google.common.io.Resources;
 public class WikibaseRepositoryWireIntegrationTest {
 
     private WikibaseRepository repository;
-
+    private int wiremockPort = Integer.parseInt(System.getProperty("wiremock.port"));
 
     @Before
     public void configureWireMock() {
-        WireMock.configureFor("localhost", 8089);
+        WireMock.configureFor("localhost", wiremockPort);
     }
 
     @Before
     public void createWikibaseRepository() {
-        repository = new WikibaseRepository("http://localhost:" + 8089, new MetricRegistry());
+        repository = new WikibaseRepository("http://localhost:" + wiremockPort, new MetricRegistry());
     }
 
     @After

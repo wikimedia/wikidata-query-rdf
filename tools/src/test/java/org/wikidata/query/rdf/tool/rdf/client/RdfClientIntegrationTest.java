@@ -25,15 +25,16 @@ public class RdfClientIntegrationTest {
 
     private HttpClient httpClient;
     private RdfClient rdfClient;
+    private int wiremockPort = Integer.parseInt(System.getProperty("wiremock.port"));
 
     @Before
     public void configureWireMock() {
-        WireMock.configureFor("localhost", 8089);
+        WireMock.configureFor("localhost", wiremockPort);
     }
 
     @Before
     public void initializeClient() throws Exception {
-        URI uri = URI.create("http://localhost:" + 8089);
+        URI uri = URI.create("http://localhost:" + wiremockPort);
         httpClient = new HttpClient();
         httpClient.start();
         rdfClient = new RdfClient(httpClient, uri, buildHttpClientRetryer(), Duration.of(20, MILLIS));
