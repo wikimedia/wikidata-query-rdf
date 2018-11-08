@@ -164,7 +164,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <!-- ensure compatible version for wiremock -->
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlets</artifactId>
             <scope>test</scope>
@@ -310,6 +309,9 @@
                             <value>${project.basedir}/src/test/resources/blazegraph/services.json</value>
                         </systemProperty>
                     </systemProperties>
+                    <supportedPackagings>
+                      <supportedPackaging>jar</supportedPackaging>
+                    </supportedPackagings>
                 </configuration>
                 <executions>
                     <execution>
