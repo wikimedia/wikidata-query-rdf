@@ -928,6 +928,30 @@
                         </systemProperties>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <!--
+                        This starts wiremock standalone in pre-integration-test phase and stops it
+                        in post-integration-test phase.
+
+                        To run the integration tests from your IDE, you'll need to downlad the
+                        wiremock standalone jar and start a wiremock instance manually. See
+                        http://wiremock.org/docs/running-standalone/ for details.
+                    -->
+                    <groupId>uk.co.automatictester</groupId>
+                    <artifactId>wiremock-maven-plugin</artifactId>
+                    <version>4.0.0</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>run</goal>
+                                <goal>stop</goal>
+                            </goals>
+                            <configuration>
+                                <params>--port=8089</params>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>

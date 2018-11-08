@@ -6,7 +6,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.wikidata.query.rdf.tool.HttpClientUtils.buildHttpClientRetryer;
 
@@ -16,26 +15,25 @@ import java.time.Duration;
 import org.eclipse.jetty.client.HttpClient;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.client.WireMock;
 
-// FIXME: disabled due to wiremock-jetty 9.4 incompatibility, should be re-enabled
-@Ignore
-public class RdfClientUnitTest {
-
-    @Rule public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort().dynamicHttpsPort());
+public class RdfClientIntegrationTest {
 
     private HttpClient httpClient;
     private RdfClient rdfClient;
 
     @Before
+    public void configureWireMock() {
+        WireMock.configureFor("localhost", 8089);
+    }
+
+    @Before
     public void initializeClient() throws Exception {
-        URI uri = URI.create("http://localhost:" + wireMockRule.port());
+        URI uri = URI.create("http://localhost:" + 8089);
         httpClient = new HttpClient();
         httpClient.start();
         rdfClient = new RdfClient(httpClient, uri, buildHttpClientRetryer(), Duration.of(20, MILLIS));

@@ -5,7 +5,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.io.Resources.getResource;
 import static org.hamcrest.CoreMatchers.is;
@@ -19,29 +18,27 @@ import java.util.Collection;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
 import com.codahale.metrics.MetricRegistry;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.google.common.io.Resources;
 
-//FIXME: disabled due to wiremock-jetty 9.4 incompatibility, should be re-enabled
-@Ignore
 public class WikibaseRepositoryWireIntegrationTest {
 
-    @Rule public WireMockRule wireMockRule = new WireMockRule(wireMockConfig()
-            .dynamicPort()
-            .dynamicHttpsPort());
     private WikibaseRepository repository;
 
 
     @Before
+    public void configureWireMock() {
+        WireMock.configureFor("localhost", 8089);
+    }
+
+    @Before
     public void createWikibaseRepository() {
-        repository = new WikibaseRepository("http://localhost:" + wireMockRule.port(), new MetricRegistry());
+        repository = new WikibaseRepository("http://localhost:" + 8089, new MetricRegistry());
     }
 
     @After
