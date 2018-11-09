@@ -137,7 +137,7 @@ public class ThrottlingFilterConfig {
     }
 
     public int getMaxStateSize() {
-        return loadIntParam("max-state-size", filterConfig, 10_000);
+        return loadIntParam("max-state-size", filterConfig, 2000);
     }
 
     public Duration getStateExpiration() {
