@@ -4,11 +4,13 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -33,6 +35,12 @@ public class ServiceConfig {
         JsonNode mainNode = mapper.readTree(configReader);
         this.serviceMap = loadJSONConfig(mainNode.get("services"));
         this.endpoints = loadEndpoints(mainNode.get("endpoints"));
+    }
+
+    @VisibleForTesting
+    public ServiceConfig() {
+        this.serviceMap = Collections.emptyMap();
+        this.endpoints = Collections.emptyList();
     }
 
     /**

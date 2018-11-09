@@ -5,7 +5,6 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -142,8 +141,8 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
                 .of(new OutputVariable(makeVariable("var"), "@test"));
         InputStream responseStream = new ByteArrayInputStream("<result></result>".getBytes("UTF-8"));
         when(template.getItemsPath()).thenReturn("/api/result");
-        Object results = createCall(outputVars).parseResponse(responseStream, binding, 0);
-        assertNull(results);
+        Iterator<IBindingSet> results = createCall(outputVars).parseResponse(responseStream, binding, 0).getResultIterator();
+        assertFalse(results.hasNext());
     }
 
     @Test
@@ -231,11 +230,6 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
          assertThat(continueMap, hasEntry("continue", "-||"));
     }
 
-    @Test
-    public void testResultsLimit() throws Exception {
-        assertEquals(createCall(Maps.newHashMap(), Lists.newArrayList(), 1).getLimit(), 1);
-    }
-
     private MWApiServiceCall createCall() throws Exception {
         return createCall(Maps.newHashMap(), Lists.newArrayList());
     }
@@ -256,18 +250,15 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
     private MWApiServiceCall createCall(
             Map<String, IVariableOrConstant> inputVars,
             List<OutputVariable> outputVars) throws Exception {
-        HttpClient mockClient = mock(HttpClient.class);
-        Timer requestTimer = mock(Timer.class);
-        return new MWApiServiceCall(template, makeEndpoint("acme.test"), inputVars,
-                outputVars, mockClient, store().getLexiconRelation(), requestTimer, 0);
+        return createCall(inputVars, outputVars, new MWApiLimits(10000, 1000, 1000));
     }
 
     private MWApiServiceCall createCall(
             Map<String, IVariableOrConstant> inputVars,
-            List<OutputVariable> outputVars, int limit) throws Exception {
+            List<OutputVariable> outputVars, MWApiLimits limits) throws Exception {
         HttpClient mockClient = mock(HttpClient.class);
         Timer requestTimer = mock(Timer.class);
         return new MWApiServiceCall(template, makeEndpoint("acme.test"), inputVars,
-                outputVars, mockClient, store().getLexiconRelation(), requestTimer, limit);
+                outputVars, mockClient, store().getLexiconRelation(), requestTimer, limits);
     }
 }

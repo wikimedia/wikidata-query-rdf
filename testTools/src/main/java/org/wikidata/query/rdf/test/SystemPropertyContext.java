@@ -22,7 +22,7 @@ public final class SystemPropertyContext implements Closeable {
      */
     public static Closeable setProperty(String key, String value) {
         String currentValue = System.getProperty(key);
-        System.setProperty(key, value);
+        setOrClearProperty(key, value);
         return new SystemPropertyContext(key, currentValue);
     }
 
@@ -32,6 +32,10 @@ public final class SystemPropertyContext implements Closeable {
      */
     @Override
     public void close() {
+        setOrClearProperty(key, value);
+    }
+
+    private static void setOrClearProperty(String key, String value) {
         if (value == null) System.clearProperty(key);
         else System.setProperty(key, value);
     }

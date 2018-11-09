@@ -3,16 +3,15 @@ package org.wikidata.query.rdf.blazegraph.mwapi;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.model.URI;
-import org.openrdf.model.Value;
 import org.openrdf.model.impl.URIImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,9 +75,17 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
      */
     public static final URI ENDPOINT_KEY = new URIImpl(Ontology.NAMESPACE + "endpoint");
     /**
-     * Parameter setting global limit across continuations.
+     * Parameter setting global limit on results across continuations.
      */
-    public static final URI LIMIT_KEY = new URIImpl(Ontology.NAMESPACE + "limit");
+    public static final URI LIMIT_RESULTS_KEY = new URIImpl(Ontology.NAMESPACE + "limit");
+    /**
+     * Parameter setting limit on continuations.
+     */
+    public static final URI LIMIT_CONTINUATIONS_KEY = new URIImpl(Ontology.NAMESPACE + "limitContinuations");
+    /**
+     * Parameter setting limit on continuations with empty results.
+     */
+    public static final URI LIMIT_EMPTY_CONTINUATIONS_KEY = new URIImpl(Ontology.NAMESPACE + "limitEmptyContinuations");
     /**
      * Namespace for MWAPI parameters.
      */
@@ -96,16 +103,32 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
      */
     public static final String CONFIG_FILE = System.getProperty(CONFIG_NAME, CONFIG_DEFAULT);
     /**
+     * Config variable for changing maximum number of results.
+     */
+    public static final String CONFIG_MAX_RESULTS = MWApiServiceCall.class.getName() + ".maxContinue";
+    /**
+     * Config variable for changing maximum number of continuations.
+     */
+    public static final String CONFIG_MAX_CONTINUATIONS = MWApiServiceCall.class.getName() + ".maxContinuation";
+    /**
+     * Config variable for changing maximum number of empty continuations.
+     */
+    public static final String CONFIG_MAX_EMPTY_CONTINUATIONS = MWApiServiceCall.class.getName() + ".maxEmptyContinuation";
+    /**
      * Service config.
      */
     private final ServiceConfig config;
     private final Timer requestTimer;
+    private final int maxResults;
+    private final int maxContinuations;
+    private final int maxEmptyContinuations;
 
-    public MWApiServiceFactory(Timer requestTimer) throws IOException {
-        log.info("Loading MWAPI service configuration from {}", CONFIG_FILE);
-        this.config = new ServiceConfig(Files.newBufferedReader(Paths.get(CONFIG_FILE), StandardCharsets.UTF_8));
-        log.info("Registered {} services.", config.size());
+    public MWApiServiceFactory(ServiceConfig config, Timer requestTimer) {
+        this.config = config;
         this.requestTimer = requestTimer;
+        this.maxResults = Integer.parseInt(System.getProperty(CONFIG_MAX_RESULTS, "10000"));
+        this.maxContinuations = Integer.parseInt(System.getProperty(CONFIG_MAX_CONTINUATIONS, "1000"));
+        this.maxEmptyContinuations = Integer.parseInt(System.getProperty(CONFIG_MAX_EMPTY_CONTINUATIONS, "1000"));
     }
 
     @Override
@@ -115,12 +138,15 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
 
     /**
      * Register the service so it is recognized by Blazegraph.
-     * @param requestTimer
      */
     public static void register(Timer requestTimer) {
         ServiceRegistry reg = ServiceRegistry.getInstance();
         try {
-            reg.add(SERVICE_KEY, new MWApiServiceFactory(requestTimer));
+            log.info("Loading MWAPI service configuration from {}", CONFIG_FILE);
+            Reader configReader = Files.newBufferedReader(Paths.get(CONFIG_FILE), StandardCharsets.UTF_8);
+            final ServiceConfig config = new ServiceConfig(configReader);
+            reg.add(SERVICE_KEY, new MWApiServiceFactory(config, requestTimer));
+            log.info("Registered {} services.", config.size());
         } catch (IOException e) {
             // Do not add to whitelist if init failed.
             log.warn("MW Service registration failed.", e);
@@ -145,7 +171,7 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
                     params.getClientConnectionManager(),
                     params.getTripleStore().getLexiconRelation(),
                     requestTimer,
-                    getLimit(serviceParams));
+                    getLimitsFromParams(serviceParams));
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("Bad endpoint URL", e);
         }
@@ -153,7 +179,6 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
 
     /**
      * Extract service template name from params.
-     * @param serviceParams
      * @return Service template
      */
     private ApiTemplate getServiceTemplate(final ServiceParams serviceParams) {
@@ -177,19 +202,49 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
 
     /**
      * Get limit configuration from service node params.
-     * @return Limit (0 if none specified, -1 if it's no continuations)
+     * @return Limits object/tracker
      */
-    private int getLimit(final ServiceParams serviceParams) {
-        TermNode limitNode = serviceParams.get(LIMIT_KEY, null);
-        if (limitNode == null) {
-            return 0;
+    MWApiLimits getLimitsFromParams(final ServiceParams serviceParams) {
+        int limitResults = 0;
+        int limitContinuations = getSettingFromParams(serviceParams, LIMIT_CONTINUATIONS_KEY, 0);
+        int limitEmptyContinuations = getSettingFromParams(serviceParams, LIMIT_EMPTY_CONTINUATIONS_KEY, 25);
+
+        TermNode limitResultsNode = serviceParams.get(LIMIT_RESULTS_KEY, null);
+        if (limitResultsNode != null) {
+            serviceParams.clear(LIMIT_RESULTS_KEY);
+            String s = limitResultsNode.getValue().stringValue();
+            if (s.equals("once")) {
+                // backwards compatibility, there used to be just one limit
+                limitContinuations = 1;
+            } else {
+                limitResults = Integer.parseInt(s);
+            }
         }
-        serviceParams.clear(LIMIT_KEY);
-        Value v = limitNode.getValue();
-        if (v.stringValue().equals("once")) {
-            return -1;
+
+        return clampLimitsByConfig(limitResults, limitContinuations, limitEmptyContinuations);
+    }
+
+    private int getSettingFromParams(final ServiceParams serviceParams, URI name, int defaultValue) {
+        TermNode paramNode = serviceParams.get(name, null);
+        if (paramNode != null) {
+            serviceParams.clear(name);
+            return Integer.parseInt(paramNode.getValue().stringValue());
         }
-        return Integer.parseInt(v.stringValue());
+        return defaultValue;
+    }
+
+    private MWApiLimits clampLimitsByConfig(int limitResults, int limitContinuations, int limitEmptyContinuations) {
+        if (limitResults <= 0 || limitResults > maxResults) {
+            limitResults = maxResults;
+        }
+        if (limitContinuations <= 0 || limitContinuations > maxContinuations) {
+            limitContinuations = maxContinuations;
+        }
+        if (limitEmptyContinuations <= 0 || limitEmptyContinuations > maxEmptyContinuations) {
+            limitEmptyContinuations = maxEmptyContinuations;
+        }
+
+        return new MWApiLimits(limitResults, limitContinuations, limitEmptyContinuations);
     }
 
     @Override
@@ -210,18 +265,15 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
      * Get service params from Service Node.
      * FIXME: copypaste from ServiceParams.java, should be integrated there
      */
-    public ServiceParams serviceParamsFromNode(final ServiceNode serviceNode) {
+    private ServiceParams serviceParamsFromNode(final ServiceNode serviceNode) {
         requireNonNull(serviceNode, "Service node is null?");
 
         final GraphPatternGroup<IGroupMemberNode> group = serviceNode.getGraphPattern();
-        requireNonNull(serviceNode, "Group node is null?");
+        requireNonNull(group, "Group node is null?");
 
         final ServiceParams serviceParams = new ServiceParams();
-        final Iterator<IGroupMemberNode> it = group.iterator();
 
-        while (it.hasNext()) {
-            final IGroupMemberNode node = it.next();
-
+        for (IGroupMemberNode node : group) {
             if (node instanceof StatementPatternNode) {
                 final StatementPatternNode sp = (StatementPatternNode) node;
                 final TermNode s = sp.s();
@@ -229,7 +281,7 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
                 if (s.isConstant() && BD.SERVICE_PARAM.equals(s.getValue())) {
                     if (sp.p().isVariable()) {
                         throw new RuntimeException("not a valid service param triple pattern, "
-                                        + "predicate must be constant: " + sp);
+                                + "predicate must be constant: " + sp);
                     }
 
                     final URI param = (URI) sp.p().getValue();

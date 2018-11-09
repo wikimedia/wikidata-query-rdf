@@ -104,18 +104,9 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
      */
     private final int requestTimeout;
     /**
-     * Config variable for changing maximum continue value.
+     * Tracker of limits on results and continuation.
      */
-    private static final String MAX_CONTINUE_CONFIG = MWApiServiceCall.class.getName()
-            + ".maxContinue";
-    /**
-     * Max number of elements fetched in one continue chain.
-     */
-    private final int maxContinue;
-    /**
-     * If false, no continuations will be performed after first request.
-     */
-    private final boolean allowContinue;
+    private final MWApiLimits limits;
     /**
      * Thread-safe document builder.
      */
@@ -132,8 +123,8 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                      Map<String, IVariableOrConstant> inputVars,
                      List<OutputVariable> outputVars, HttpClient client,
                      LexiconRelation lexiconRelation, Timer requestTimer,
-                     int limit
-                     ) {
+                     MWApiLimits limits
+    ) {
         this.template = template;
         this.endpoint = endpoint;
         this.inputVars = inputVars;
@@ -142,8 +133,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         this.lexiconRelation = lexiconRelation;
         this.requestTimer = requestTimer;
         this.requestTimeout = Integer.parseInt(System.getProperty(TIMEOUT_PROPERTY, TIMEOUT_MILLIS));
-        this.maxContinue = getMaxFromLimit(limit);
-        this.allowContinue = (limit >= 0);
+        this.limits = limits;
         this.docBuilder = ThreadLocal.withInitial(() -> {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             try {
@@ -160,18 +150,6 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         this.xpath = ThreadLocal.withInitial(() -> XPathFactory.newInstance().newXPath());
     }
 
-    /**
-     * Extract effective max records limit.
-     * @param limit Limit from service call.
-     */
-    private int getMaxFromLimit(int limit) {
-        int maxContinueConfig = Integer.parseInt(System.getProperty(MAX_CONTINUE_CONFIG, "10000"));
-        if (limit > 0 && limit < maxContinueConfig) {
-            return limit;
-        }
-        return maxContinueConfig;
-    }
-
     @Override
     public IServiceOptions getServiceOptions() {
         return MWApiServiceFactory.SERVICE_OPTIONS;
@@ -180,14 +158,6 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     @Override
     public ICloseableIterator<IBindingSet> call(IBindingSet[] bindingSets) {
         return new MultiSearchIterator(bindingSets);
-    }
-
-    /**
-     * Get continuation limit.
-     * @return How many records it could return.
-     */
-    public int getLimit() {
-        return maxContinue;
     }
 
     /**
@@ -312,10 +282,10 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         // Note though that XPathExpression is not thread-safe. Maybe use ThreadLocal?
         XPathExpression itemsXPath = path.compile(template.getItemsPath());
         NodeList nodes = (NodeList) itemsXPath.evaluate(doc, XPathConstants.NODESET);
-        if (nodes.getLength() == 0) {
-            return null;
-        }
         IBindingSet[] results = new IBindingSet[nodes.getLength()];
+        if (results.length == 0) {
+            return new ResultWithContinue(results, searchContinue);
+        }
         final Map<OutputVariable, XPathExpression> compiledVars = new HashMap<>();
         // TODO: would be nice to convert it to stream expression, but xpath
         // throws, and lambdas do not work with checked exceptions.
@@ -526,32 +496,36 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
             if (closed || lastResult == null) {
                 return false;
             }
-            if (recordsCount >= maxContinue) {
+            if (!limits.allowResult()) {
                 return false;
             }
-            return lastResult.getResultIterator().hasNext() || lastResult.searchContinue != null;
+            return lastResult.getResultIterator().hasNext() ||
+                (limits.allowContinuation() && lastResult.searchContinue != null);
         }
 
         @Override
         public IBindingSet next() {
-            if (recordsCount >= maxContinue) {
+            if (!limits.allowResult()) {
                 close();
             }
             if (closed || lastResult == null) {
                 return null;
             }
             if (lastResult.getResultIterator().hasNext()) {
+                limits.haveResult();
                 recordsCount++;
                 return lastResult.getResultIterator().next();
             }
             // If we can continue, do the continue
-            if (allowContinue && lastResult.getContinue() != null) {
+            if (lastResult.getContinue() != null && limits.allowContinuation()) {
                 lastResult = doSearchRequest(recordsCount);
+                limits.haveContinuation();
             }
             if (closed || lastResult == null) {
                 return null;
             }
             if (lastResult.getResultIterator().hasNext()) {
+                limits.haveResult();
                 recordsCount++;
                 return lastResult.getResultIterator().next();
             }
