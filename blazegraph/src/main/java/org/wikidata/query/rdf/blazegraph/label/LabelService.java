@@ -553,7 +553,8 @@ public class LabelService extends AbstractServiceFactory {
                 // Everything else gets the empty string
                 return null;
             }
-            BigdataValue value = lexiconRelation.getTerm(resolvedSubject);
+            BigdataValue value = resolvedSubject.asValue(lexiconRelation);
+            //lexiconRelation.getTerm(resolvedSubject);
             String bestEffortLabel = value.stringValue();
             if (bestEffortLabel.startsWith(uris().entity())) {
                 bestEffortLabel = bestEffortLabel.substring(uris().entity().length());
