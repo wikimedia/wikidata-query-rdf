@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
+
 if [ -r /etc/wdqs/vars.sh ]; then
   . /etc/wdqs/vars.sh
 fi
@@ -22,7 +24,7 @@ fi
 
 if [ -z "$TS" ]; then
 	TSURL="$SOURCE/lastdump/$WIKI-daily.last"
-	TS=$(curl -s -f -XGET "$TSURL" | cut -c1-8)
+	TS=$(curl --silent --fail -XGET "$TSURL" | cut -c1-8)
 	if [ -z "$TS" ]; then
 		echo "Could not load timestamp from $TSURL"
 		exit 1
@@ -31,9 +33,9 @@ fi
 
 FILENAME="$PREFIX$WIKI-$TS-daily.sparql.gz"
 URL="$SOURCE/$TS/$FILENAME"
-curl -s -f -XGET "$URL" -o "$DATA_DIR/$FILENAME"
+curl --silent --fail -XGET "$URL" -o "$DATA_DIR/$FILENAME"
 if [ ! -s $DATA_DIR/$FILENAME ]; then
 	echo "Could not download $URL"
 	exit 1
 fi
-gunzip -dc $DATA_DIR/$FILENAME | curl -s -XPOST -H 'Content-type:application/sparql-update' --data-binary @- $HOST/$CONTEXT/namespace/$NAMESPACE/sparql
+gunzip -dc $DATA_DIR/$FILENAME | curl --silent --show-error -XPOST -H 'Content-type:application/sparql-update' --data-binary @- $HOST/$CONTEXT/namespace/$NAMESPACE/sparql

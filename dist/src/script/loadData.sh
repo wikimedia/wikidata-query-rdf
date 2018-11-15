@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 HOST=http://localhost:9999
 CONTEXT=bigdata
@@ -28,13 +29,13 @@ fi
 
 i=$START
 while [ $i -le $END ]; do
-        printf -v f $FORMAT $i
-	if [ ! -f "$LOCATION/$f" ]; then
-		echo File $f not found, terminating
-		exit 0
-	fi
-        echo Processing $f
-        curl -XPOST --data-binary update="LOAD <file://$LOCATION/$f>" $HOST/$CONTEXT/namespace/$NAMESPACE/sparql
-        let i++
-done
+  printf -v f $FORMAT $i
+  if [ ! -f "$LOCATION/$f" ]; then
+    echo File $f not found, terminating
+    exit 0
+  fi
 
+  echo Processing $f
+  curl --silent --show-error -XPOST --data-binary update="LOAD <file://$LOCATION/$f>" $HOST/$CONTEXT/namespace/$NAMESPACE/sparql
+  let i++
+done

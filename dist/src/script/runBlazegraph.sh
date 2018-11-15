@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 if [ -r /etc/default/wdqs-blazegraph ]; then
   . /etc/default/wdqs-blazegraph

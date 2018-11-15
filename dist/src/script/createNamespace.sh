@@ -1,4 +1,6 @@
 #/bin/bash
+set -e
+
 # This script can be used to create a new namespace on Blazegraph
 HOST="http://localhost:9999"
 URL="$HOST/bigdata/namespace"
@@ -9,5 +11,5 @@ trap "rm -f $PROPS" EXIT
 
 sed -e "s/{NAMESPACE}/$CATEGORY/" < default.properties > $PROPS
 cat $PROPS
-curl -s -XPOST $URL --data-binary @$PROPS -H 'Content-type: text/plain'
+curl --silent --show-error -XPOST $URL --data-binary @$PROPS  -H 'Content-type: text/plain'
 echo

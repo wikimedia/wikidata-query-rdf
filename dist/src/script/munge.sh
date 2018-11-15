@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 START=1
 END=100000
@@ -29,7 +30,7 @@ then
 fi
 if [ -z "$LANGS" ]; then
 	ARGS=
-else 
+else
 	ARGS="--labelLanguage $LANGS --singleLabel $LANGS"
 fi
 
@@ -40,4 +41,4 @@ fi
 CP=lib/wikidata-query-tools-*-jar-with-dependencies.jar
 MAIN=org.wikidata.query.rdf.tool.Munge
 java -cp $CP $MAIN --from $FROM --to $LOCATION/$FORMAT $ARGS --chunkSize $CHUNK "$@"
-	
+
