@@ -70,6 +70,11 @@
    <param-name>warmupThreadPoolSize</param-name>
    <param-value>20</param-value>
   </context-param>
+  <context-param>
+   <description>The maximum number of threads running in executor before service starts refusing new requests.</description>
+   <param-name>executorMaxThreads</param-name>
+   <param-value>2000</param-value>
+  </context-param>
   <!-- We can't use the builtin whitelist because it breaks label relation. But we enable our own whitelist so its all good. -->
    <!-- <context-param>
    <description>List of allowed services.</description>
