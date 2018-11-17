@@ -35,6 +35,11 @@
       <directory>${project.basedir}/../gui/build</directory>
     </fileSet>
 
+    <fileSet>
+      <outputDirectory>queries</outputDirectory>
+      <directory>${project.basedir}/../queries</directory>
+    </fileSet>
+
   </fileSets>
 
   <dependencySets>
