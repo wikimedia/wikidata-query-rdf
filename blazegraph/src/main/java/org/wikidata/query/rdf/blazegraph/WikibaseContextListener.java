@@ -79,6 +79,12 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(WikibaseContextListener.class);
 
     /**
+     * Enable whitelist configuration.
+     */
+    public static final boolean ENABLE_WHITELIST =
+            Boolean.parseBoolean(System.getProperty("wikibaseServiceEnableWhitelist", "true"));
+
+    /**
      * Default service whitelist filename.
      */
     public static final String WHITELIST_DEFAULT = "whitelist.txt";
@@ -107,7 +113,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
         // Enable service whitelisting
         final ServiceRegistry reg = ServiceRegistry.getInstance();
-        reg.setWhitelistEnabled(true);
+        reg.setWhitelistEnabled(ENABLE_WHITELIST);
         LabelService.register();
         GeoService.register();
         MWApiServiceFactory.register(metricRegistry.timer(name(MWApiServiceCall.class, MW_API_REQUEST)));
