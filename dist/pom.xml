@@ -25,11 +25,6 @@
             <artifactId>jetty-runner</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jolokia</groupId>
-            <artifactId>jolokia-jvm</artifactId>
-            <classifier>agent</classifier>
-        </dependency>
-        <dependency>
             <groupId>org.wikidata.query.rdf</groupId>
             <artifactId>blazegraph-service</artifactId>
             <type>war</type>

@@ -60,14 +60,6 @@
       <useProjectArtifact>false</useProjectArtifact>
     </dependencySet>
 
-    <dependencySet>
-      <outputDirectory>lib</outputDirectory>
-      <includes>
-        <include>org.jolokia:jolokia-jvm:jar:agent</include>
-      </includes>
-      <useProjectArtifact>false</useProjectArtifact>
-    </dependencySet>
-
   </dependencySets>
 
 </assembly>
