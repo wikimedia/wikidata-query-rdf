@@ -148,6 +148,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 if (batch.last()) {
                     return;
                 }
+                wikibase.batchDone();
                 batch = nextBatch(batch);
             } catch (InterruptedException e) {
                 currentThread().interrupt();

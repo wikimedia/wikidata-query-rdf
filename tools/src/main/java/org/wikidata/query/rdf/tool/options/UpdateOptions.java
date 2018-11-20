@@ -7,6 +7,9 @@ import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris.DEFAU
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
@@ -86,6 +89,9 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     @Option(description = "Reset Kafka offsets")
     boolean resetKafka();
 
+    @Option(description = "Set RDF dumping in this directory", defaultToNull = true)
+    String dumpDir();
+
     static long[] longEntityNamespaces(UpdateOptions updateOptions) {
         if (updateOptions.entityNamespaces() == null) return DEFAULT_ENTITY_NAMESPACES;
         return splitByComma(Arrays.asList(updateOptions.entityNamespaces())).stream().
@@ -153,6 +159,19 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
 
     static List<String> clusterNames(UpdateOptions updateOptions) {
         return splitByComma(updateOptions.clusters());
+    }
+
+    @Nullable
+    static Path dumpDirPath(UpdateOptions updateOptions) {
+        String dumpDir = updateOptions.dumpDir();
+        if (dumpDir == null) return null;
+        Path dumpDirPath = Paths.get(dumpDir);
+        if (!(Files.exists(dumpDirPath)
+                && Files.isDirectory(dumpDirPath)
+                && Files.isWritable(dumpDirPath))) {
+            throw new IllegalArgumentException("Bad dump directory: " + dumpDir);
+        }
+        return dumpDirPath;
     }
 
     /**
