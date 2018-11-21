@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
+import static com.google.common.base.Charsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
 
@@ -68,6 +69,8 @@ import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
 import org.wikidata.query.rdf.tool.wikibase.EditRequest.Label;
 import org.wikidata.query.rdf.tool.wikibase.SearchResponse.SearchResult;
+import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
+import org.wikidata.query.rdf.tool.utils.StreamDumper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -75,7 +78,6 @@ import com.codahale.metrics.httpclient.InstrumentedHttpClientConnectionManager;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Longs;
 
@@ -185,20 +187,25 @@ public class WikibaseRepository implements Closeable {
      */
     private final Timer constraintFetchTimer;
 
+    /**
+     * Used to dump HTTP responses to file.
+     */
+    private final StreamDumper streamDumper;
+
     public WikibaseRepository(URI baseUrl, MetricRegistry metricRegistry) {
-        this(new Uris(baseUrl), false, metricRegistry);
+        this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper());
     }
 
     public WikibaseRepository(String baseUrl, MetricRegistry metricRegistry) {
-        this(Uris.fromString(baseUrl), false, metricRegistry);
+        this(Uris.fromString(baseUrl), false, metricRegistry, new NullStreamDumper());
     }
 
     public WikibaseRepository(URI baseUrl, long[] entityNamespaces, MetricRegistry metricRegistry) {
-        this(new Uris(baseUrl), false, metricRegistry);
+        this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper());
         uris.setEntityNamespaces(entityNamespaces);
     }
 
-    public WikibaseRepository(Uris uris, boolean collectConstraints, MetricRegistry metricRegistry) {
+    public WikibaseRepository(Uris uris, boolean collectConstraints, MetricRegistry metricRegistry, StreamDumper streamDumper) {
         this.uris = uris;
         this.collectConstraints = collectConstraints;
         this.rdfFetchTimer = metricRegistry.timer("rdf-fetch-timer");
@@ -206,6 +213,7 @@ public class WikibaseRepository implements Closeable {
         this.constraintFetchTimer = metricRegistry.timer("constraint-fetch-timer");
         connectionManager = createConnectionManager(metricRegistry);
         client = createHttpClient(connectionManager);
+        this.streamDumper = streamDumper;
     }
 
     /**
@@ -366,13 +374,13 @@ public class WikibaseRepository implements Closeable {
                     throw new ContainedException("Unexpected status code fetching RDF for " + uri + ":  "
                             + response.getStatusLine().getStatusCode());
                 }
-                try (InputStream in = getInputStream(response)) {
+                try (InputStream in = streamDumper.wrap(getInputStream(response))) {
                     if (in == null) {
                         // No proper response
                         log.debug("Empty response, we're done");
                         return;
                     }
-                    parser.parse(new InputStreamReader(in, Charsets.UTF_8), uri.toString());
+                    parser.parse(new InputStreamReader(in, UTF_8), uri.toString());
                 }
             }
         } catch (UnknownHostException | SocketException | SSLHandshakeException e) {
@@ -817,5 +825,13 @@ public class WikibaseRepository implements Closeable {
      */
     public void setCollectConstraints(boolean collectConstraints) {
         this.collectConstraints = collectConstraints;
+    }
+
+    /**
+     * Notifies repository that a batch of changes has been processed.
+     * Used for dumper maintenance for now.
+     */
+    public void batchDone() {
+        streamDumper.rotate();
     }
 }

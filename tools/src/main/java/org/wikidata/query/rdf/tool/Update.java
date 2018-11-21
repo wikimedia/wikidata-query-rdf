@@ -9,11 +9,13 @@ import static org.wikidata.query.rdf.tool.change.ChangeSourceContext.buildChange
 import static org.wikidata.query.rdf.tool.change.ChangeSourceContext.getStartTime;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.handleOptions;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.mungerFromOptions;
+import static org.wikidata.query.rdf.tool.options.UpdateOptions.dumpDirPath;
 import static org.wikidata.query.rdf.tool.options.UpdateOptions.startInstant;
 
 import java.io.Closeable;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.security.Security;
 import java.time.Duration;
 import java.time.Instant;
@@ -35,6 +37,9 @@ import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
+import org.wikidata.query.rdf.tool.utils.FileStreamDumper;
+import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
+import org.wikidata.query.rdf.tool.utils.StreamDumper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.jmx.JmxReporter;
@@ -87,7 +92,10 @@ public final class Update {
 
             MetricRegistry metricRegistry = createMetricRegistry(closer);
 
-            WikibaseRepository wikibaseRepository = new WikibaseRepository(UpdateOptions.uris(options), options.constraints(), metricRegistry);
+            StreamDumper wikibaseStreamDumper = createStreamDumper(dumpDirPath(options));
+
+            WikibaseRepository wikibaseRepository = new WikibaseRepository(
+                    UpdateOptions.uris(options), options.constraints(), metricRegistry, wikibaseStreamDumper);
             closer.register(wikibaseRepository);
 
             WikibaseUris wikibaseUris = WikibaseOptions.wikibaseUris(options);
@@ -126,6 +134,11 @@ public final class Update {
             log.error("Error during initialization.", e);
             throw e;
         }
+    }
+
+    private static StreamDumper createStreamDumper(Path dumpDir) {
+        if (dumpDir == null) return new NullStreamDumper();
+        return new FileStreamDumper(dumpDir);
     }
 
     private static void run(Updater<? extends Change.Batch> updater) {
