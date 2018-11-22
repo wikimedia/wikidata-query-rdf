@@ -259,6 +259,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
+                    <!-- Needed to overcome URLClassLoader issue with Java update -->
+                    <useSystemClassLoader>false</useSystemClassLoader>
                     <systemPropertyVariables>
                         <wiremock.port>${wiremock.port}</wiremock.port>
                     </systemPropertyVariables>
