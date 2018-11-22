@@ -221,6 +221,14 @@ public class Munger {
             op.importFromChange(sourceChange);
         }
         op.munge();
+        if (sourceChange != null) {
+            final long sourceRev = sourceChange.revision();
+            final long fetchedRev = op.getRevisionId();
+            if (sourceRev > 0 && fetchedRev <  sourceRev) {
+                // Something weird happened - we've got stale revision!
+                log.warn("Stale revision on {}: change is {}, RDF is {}", entityId, sourceRev, fetchedRev);
+            }
+        }
         // remove all values that we have seen as they are used by statements
         existingValues.removeAll(op.extraValidSubjects);
         existingRefs.removeAll(op.extraValidSubjects);
@@ -423,6 +431,14 @@ public class Munger {
             if (sourceChange.timestamp() != null) {
                 this.lastModified = new LiteralImpl(sourceChange.timestamp().toString(), XMLSchema.DATETIME);
             }
+        }
+
+        /**
+         * Get revision ID for this change.
+         * @return
+         */
+        public long getRevisionId() {
+            return revisionId == null ? -1 : Long.parseLong(revisionId.stringValue());
         }
 
         /**
