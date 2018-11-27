@@ -10,7 +10,7 @@ pushd `dirname $0` > /dev/null
 SCRIPTPATH=`pwd`
 popd > /dev/null
 
-export NSS_DATALOAD_PROPERTIES="$SCRIPTPATH/RWStore.properties"
+export NSS_DATALOAD_PROPERTIES="${NSS_DATALOAD_PROPERTIES:-${SCRIPTPATH}/RWStore.properties}"
 
 while getopts h:c:n:d: option
 do
