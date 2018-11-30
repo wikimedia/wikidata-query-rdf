@@ -57,9 +57,9 @@ done
 pushd $DIR
 
 # Q-id of the default globe
-DEFAULT_GLOBE=2
+DEFAULT_GLOBE=${DEFAULT_GLOBE:-"2"}
 # Blazegraph HTTP User Agent for federation
-USER_AGENT="Wikidata Query Service; https://query.wikidata.org/";
+USER_AGENT=${USER_AGENT:-"Wikidata Query Service; https://query.wikidata.org/"}
 
 LOG_OPTIONS=""
 if [ ! -z "$LOG_CONFIG" ]; then
