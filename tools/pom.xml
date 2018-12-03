@@ -372,6 +372,16 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <configuration>
+                    <includeOnlyProperties>
+                        <includeOnlyProperty>git.commit.id.*</includeOnlyProperty>
+                        <includeOnlyProperty>git.build.version</includeOnlyProperty>
+                    </includeOnlyProperties>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>uk.co.automatictester</groupId>
                 <artifactId>wiremock-maven-plugin</artifactId>
             </plugin>

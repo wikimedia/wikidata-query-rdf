@@ -13,6 +13,8 @@ import static org.wikidata.query.rdf.tool.options.UpdateOptions.dumpDirPath;
 import static org.wikidata.query.rdf.tool.options.UpdateOptions.startInstant;
 
 import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -20,6 +22,7 @@ import java.security.Security;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -77,6 +80,10 @@ public final class Update {
     public static void main(String[] args) throws Exception {
         Closer closer = Closer.create();
         try {
+            Properties buildProps = loadBuildProperties();
+            log.info("Starting Updater {} ({})",
+                    buildProps.getProperty("git.build.version", "UNKNOWN"),
+                    buildProps.getProperty("git.commit.id", "UNKNOWN"));
             Updater<? extends Change.Batch> updater = initialize(args, closer);
             run(updater);
         } catch (Throwable t) {
@@ -84,6 +91,16 @@ public final class Update {
         } finally {
             closer.close();
         }
+    }
+
+    private static Properties loadBuildProperties() {
+        Properties prop = new Properties();
+        try (InputStream instream = Update.class.getClassLoader().getResourceAsStream("git.properties")) {
+            prop.load(instream);
+        } catch (IOException e) {
+            log.warn("Failed to load properties file");
+        }
+        return prop;
     }
 
     private static Updater<? extends Change.Batch> initialize(String[] args, Closer closer) throws URISyntaxException {
