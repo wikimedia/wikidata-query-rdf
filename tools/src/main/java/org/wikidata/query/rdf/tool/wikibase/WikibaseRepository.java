@@ -582,7 +582,7 @@ public class WikibaseRepository implements Closeable {
         InstrumentedHttpClientConnectionManager connectionManager = new InstrumentedHttpClientConnectionManager(registry);
         connectionManager.setDefaultMaxPerRoute(100);
         connectionManager.setMaxTotal(100);
-        IdleConnectionEvictor connectionEvictor = new IdleConnectionEvictor(connectionManager, 59L, SECONDS);
+        IdleConnectionEvictor connectionEvictor = new IdleConnectionEvictor(connectionManager, 1L, SECONDS);
         connectionEvictor.start();
         return connectionManager;
     }
