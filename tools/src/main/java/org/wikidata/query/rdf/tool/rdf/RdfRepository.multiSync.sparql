@@ -49,9 +49,9 @@ WHERE {
   }
 };
 # Insert new data
-INSERT {
+INSERT DATA {
   %insertStatements%
-} WHERE {};
+};
 # Add timestamps
 INSERT {
   ?entity wikibase:timestamp %ts% .
