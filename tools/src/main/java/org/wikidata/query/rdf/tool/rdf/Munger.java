@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -41,6 +42,7 @@ import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 import org.wikidata.query.rdf.tool.change.Change;
+import org.wikidata.query.rdf.tool.change.Change.DelayedChange;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -59,6 +61,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class Munger {
     private static final Logger log = LoggerFactory.getLogger(Munger.class);
+    /**
+     * For how long (seconds) we should defer a change in case we detect replication lag.
+     */
+    private static final long DEFERRAL_DELAY = 5;
 
     /**
      * Wikibase uris we're working with.
@@ -209,9 +215,12 @@ public class Munger {
      * @param existingRefs Existing reference statements
      * @param sourceChange Change that originated the operation
      */
-    public void munge(String entityId, Collection<Statement> statements, Collection<String> existingValues,
-            Collection<String> existingRefs, Change sourceChange) {
-
+    public void munge(String entityId,
+                      Collection<Statement> statements,
+                      Collection<String> existingValues,
+                      Collection<String> existingRefs,
+                      Change sourceChange,
+                      Queue<DelayedChange> deferralQueue) {
         if (statements.isEmpty()) {
             // Empty collection is a delete.
             return;
@@ -224,9 +233,12 @@ public class Munger {
         if (sourceChange != null) {
             final long sourceRev = sourceChange.revision();
             final long fetchedRev = op.getRevisionId();
-            if (sourceRev > 0 && fetchedRev <  sourceRev) {
+            if (sourceRev > 0 && fetchedRev != -1 && fetchedRev <  sourceRev) {
                 // Something weird happened - we've got stale revision!
                 log.warn("Stale revision on {}: change is {}, RDF is {}", entityId, sourceRev, fetchedRev);
+                if (deferralQueue != null) {
+                    sourceChange.delay(deferralQueue, DEFERRAL_DELAY);
+                }
             }
         }
         // remove all values that we have seen as they are used by statements
@@ -245,7 +257,7 @@ public class Munger {
      *
      * @param statements statements to munge
      * @param repoValues multimap of all value nodes, keyed by entity ID
-     * @param repoValues multimap of all reference nodes, keyed by entity ID
+     * @param repoRefs multimap of all reference nodes, keyed by entity ID
      * @param valuesContainer Value nodes container
      * @param refsContainer Reference nodes container
      * @param sourceChange Change that originated the operation
@@ -256,10 +268,11 @@ public class Munger {
             Multimap<String, String> repoRefs,
             Collection<String> valuesContainer,
             Collection<String> refsContainer,
-            Change sourceChange) {
+            Change sourceChange,
+            Queue<DelayedChange> deferralQueue) {
         valuesContainer.addAll(repoValues.get(uris.entity() + entityId));
         refsContainer.addAll(repoRefs.get(uris.entity() + entityId));
-        munge(entityId, statements, valuesContainer, refsContainer, sourceChange);
+        munge(entityId, statements, valuesContainer, refsContainer, sourceChange, deferralQueue);
     }
 
     /**
@@ -272,7 +285,7 @@ public class Munger {
      */
     public void munge(String entityId, Collection<Statement> statements, Collection<String> existingValues,
             Collection<String> existingRefs) {
-        munge(entityId, statements, existingValues, existingRefs, null);
+        munge(entityId, statements, existingValues, existingRefs, null, null);
     }
 
     /**
@@ -283,7 +296,7 @@ public class Munger {
      */
     @SuppressWarnings("unchecked")
     public void munge(String entityId, Collection<Statement> statements) {
-        munge(entityId, statements, Collections.EMPTY_SET, Collections.EMPTY_SET, null);
+        munge(entityId, statements, Collections.EMPTY_SET, Collections.EMPTY_SET, null, null);
     }
 
     /**
@@ -414,7 +427,6 @@ public class Munger {
 
         /**
          * Set current version of the format.
-         * @param version
          */
         private void setFormatVersion(String version) {
             this.formatHandler = formatHandlers.get(version);
@@ -422,7 +434,6 @@ public class Munger {
 
         /**
          * Import revision data from Change object.
-         * @param sourceChange
          */
         public void importFromChange(Change sourceChange) {
             if (sourceChange.revision() > 0) {
@@ -435,7 +446,6 @@ public class Munger {
 
         /**
          * Get revision ID for this change.
-         * @return
          */
         public long getRevisionId() {
             return revisionId == null ? -1 : Long.parseLong(revisionId.stringValue());
@@ -566,10 +576,7 @@ public class Munger {
                 return true;
             }
             // It's p:P2762 a owl:ObjectProperty, it's ok.
-            if (predicate.equals(RDF.TYPE)) {
-                return true;
-            }
-            return false;
+            return predicate.equals(RDF.TYPE);
         }
 
 

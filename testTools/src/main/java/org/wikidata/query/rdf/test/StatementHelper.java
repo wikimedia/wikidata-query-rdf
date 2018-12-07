@@ -106,11 +106,14 @@ public final class StatementHelper {
         return new URIImpl(r);
     }
 
+    public static List<Statement> basicEntity(WikibaseUris uris, String id) {
+        return basicEntity(uris, id, "a revision number I promise");
+    }
     /**
      * Construct statements about a basic entity.
      */
-    public static List<Statement> basicEntity(WikibaseUris uris, String id) {
-        Literal version = new LiteralImpl("a revision number I promise");
+    public static List<Statement> basicEntity(WikibaseUris uris, String id, String versionString) {
+        Literal version = new LiteralImpl(versionString);
         List<Statement> statements = new ArrayList<>();
         String entityDataUri = uris.entityData() + id;
         // EntityData is all munged onto Entity
