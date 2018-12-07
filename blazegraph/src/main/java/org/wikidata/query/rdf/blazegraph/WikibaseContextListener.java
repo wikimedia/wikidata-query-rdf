@@ -207,32 +207,44 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     }
 
     /**
-     * Add standard prefixes to the system.
+     * Add a prefix to the system only if the prefix has not been declared previously.
+     * @param decls prefix declarations so far
+     * @param prefix new prefix to check and add
+     * @param uri uri for the prefix
+     */
+    public static void addDeclIfNew(Map<String, String> decls, String prefix, String uri) {
+        if (!decls.containsKey(prefix)) {
+            decls.put(prefix, uri);
+        }
+    }
+
+    /**
+     * Add standard prefixes to the system, but only if they have not already been declared, e.g. in a prefixes.conf
      * @param uris Wikidata URIs to use
      */
     private static void addPrefixes(final WikibaseUris uris) {
         final Map<String, String> defaultDecls = PrefixDeclProcessor.defaultDecls;
         for (PropertyType p: PropertyType.values()) {
-            defaultDecls.put(p.prefix(), uris.property(p));
+            addDeclIfNew(defaultDecls, p.prefix(), uris.property(p));
         }
-        defaultDecls.put("wikibase", Ontology.NAMESPACE);
-        defaultDecls.put("wd", uris.entity());
-        defaultDecls.put("wds", uris.statement());
-        defaultDecls.put("wdv", uris.value());
-        defaultDecls.put("wdref", uris.reference());
-        defaultDecls.put("wdata", uris.entityData());
+        addDeclIfNew(defaultDecls, "wikibase", Ontology.NAMESPACE);
+        addDeclIfNew(defaultDecls, "wd", uris.entity());
+        addDeclIfNew(defaultDecls, "wds", uris.statement());
+        addDeclIfNew(defaultDecls, "wdv", uris.value());
+        addDeclIfNew(defaultDecls, "wdref", uris.reference());
+        addDeclIfNew(defaultDecls, "wdata", uris.entityData());
         // External schemata
-        defaultDecls.put("schema", SchemaDotOrg.NAMESPACE);
-        defaultDecls.put("prov", Provenance.NAMESPACE);
-        defaultDecls.put("skos", SKOS.NAMESPACE);
-        defaultDecls.put("owl", OWL.NAMESPACE);
-        defaultDecls.put("geo", GeoSparql.NAMESPACE);
-        defaultDecls.put("geof", GeoSparql.FUNCTION_NAMESPACE);
-        defaultDecls.put("mediawiki", Mediawiki.NAMESPACE);
-        defaultDecls.put("mwapi", Mediawiki.API);
-        defaultDecls.put("gas", GASService.Options.NAMESPACE);
-        defaultDecls.put("ontolex", Ontolex.NAMESPACE);
-        defaultDecls.put("dct", Dct.NAMESPACE);
+        addDeclIfNew(defaultDecls, "schema", SchemaDotOrg.NAMESPACE);
+        addDeclIfNew(defaultDecls, "prov", Provenance.NAMESPACE);
+        addDeclIfNew(defaultDecls, "skos", SKOS.NAMESPACE);
+        addDeclIfNew(defaultDecls, "owl", OWL.NAMESPACE);
+        addDeclIfNew(defaultDecls, "geo", GeoSparql.NAMESPACE);
+        addDeclIfNew(defaultDecls, "geof", GeoSparql.FUNCTION_NAMESPACE);
+        addDeclIfNew(defaultDecls, "mediawiki", Mediawiki.NAMESPACE);
+        addDeclIfNew(defaultDecls, "mwapi", Mediawiki.API);
+        addDeclIfNew(defaultDecls, "gas", GASService.Options.NAMESPACE);
+        addDeclIfNew(defaultDecls, "ontolex", Ontolex.NAMESPACE);
+        addDeclIfNew(defaultDecls, "dct", Dct.NAMESPACE);
     }
 
     private MetricRegistry createMetricRegistry() {
