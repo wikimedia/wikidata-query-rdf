@@ -142,6 +142,9 @@
                             <name>org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.config</name>
                             <value>${project.basedir}/../dist/src/script/services.json</value>
                         </systemProperty>
+			<systemProperty>
+				<name>com.bigdata.rdf.sparql.ast.QueryHints.analytic</name><value>true</value>
+                        </systemProperty>
                     </systemProperties>
                 </configuration>
             </plugin>
