@@ -7,6 +7,9 @@ import java.io.Closeable;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
 
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
@@ -46,6 +49,7 @@ public class Change implements Comparable<Change> {
      * Cleanup list for the change.
      */
     private Collection<String> refCleanupList;
+
     /**
      * Cleanup list for the change.
      */
@@ -291,5 +295,45 @@ public class Change implements Comparable<Change> {
      */
     public void setValueCleanupList(Collection<String> cleanupList) {
         this.valueCleanupList = cleanupList;
+    }
+
+    public class DelayedChange implements Delayed {
+        /**
+         * Delay for this change, if it needs to be retried.
+         */
+        private long delay;
+
+        DelayedChange(long timeout) {
+            this.delay = timeout;
+        }
+
+        @Override
+        public long getDelay(TimeUnit unit) {
+            return unit.convert(delay, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public int compareTo(Delayed o) {
+            DelayedChange other = (DelayedChange)o;
+            return Long.compare(delay, other.delay);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return (o instanceof DelayedChange) && getChange() == ((DelayedChange) o).getChange();
+        }
+
+        @Override
+        public int hashCode() {
+            return getChange().hashCode();
+        }
+
+        public Change getChange() {
+            return Change.this;
+        }
+    }
+
+    public void delay(Queue<DelayedChange> queue, long timeout) {
+        queue.add(new DelayedChange(timeout));
     }
 }
