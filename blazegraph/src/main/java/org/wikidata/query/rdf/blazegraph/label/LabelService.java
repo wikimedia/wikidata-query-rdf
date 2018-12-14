@@ -16,6 +16,7 @@ import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDFS;
 import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 
 import com.bigdata.bop.BOp;
@@ -390,6 +391,12 @@ public class LabelService extends AbstractServiceFactory {
          * cached.
          */
         private IV rdfsLabelIv;
+        /**
+         * The IV the represents schema:description. Its built lazily when needed and
+         * cached.
+         * TODO: if we get more than two, convert this to a map.
+         */
+        private IV descriptionIv;
 
         ResolutionContext(AbstractTripleStore tripleStore, Map<String, Integer> languageFallbacks) {
             this.tripleStore = tripleStore;
@@ -433,6 +440,7 @@ public class LabelService extends AbstractServiceFactory {
             try {
                 bestLabels.clear();
                 int bestLabelRank = Integer.MAX_VALUE;
+                boolean uniqueType = uniqueLabelType(resolvedLabelType);
                 while (lookup.hasNext()) {
                     ISPO spo = lookup.next();
                     IV o = spo.o();
@@ -465,10 +473,21 @@ public class LabelService extends AbstractServiceFactory {
                         bestLabels.clear();
                         bestLabels.add(o);
                     }
+                    if (languageOrdinal == 0 && uniqueType) {
+                        // If we found best possible label, for an unique type, we're done.
+                        break;
+                    }
                 }
             } finally {
                 lookup.close();
             }
+        }
+
+        /**
+         * Does this label type only allow one label?
+         */
+        private boolean uniqueLabelType(IV labeltype) {
+            return rdfsLabelIv().equals(labeltype) || descriptionIv().equals(labeltype);
         }
 
         /**
@@ -527,7 +546,7 @@ public class LabelService extends AbstractServiceFactory {
          * The IV the represents rdfs:label. Its built lazily when needed and
          * cached.
          */
-        public IV rdfsLabelIv() {
+        private IV rdfsLabelIv() {
             if (rdfsLabelIv == null) {
                 rdfsLabelIv = tripleStore.getVocabulary().get(RDFS.LABEL);
             }
@@ -535,10 +554,20 @@ public class LabelService extends AbstractServiceFactory {
         }
 
         /**
+         * The IV the represents rdfs:label. Its built lazily when needed and
+         * cached.
+         */
+        private IV descriptionIv() {
+            if (descriptionIv == null) {
+                descriptionIv = tripleStore.getVocabulary().get(new URIImpl(SchemaDotOrg.DESCRIPTION));
+            }
+            return descriptionIv;
+        }
+
+        /**
          * The WikibaseUris to use in this context.
          */
         private WikibaseUris uris() {
-            // TODO lookup wikibase host and default to wikidata
             return WikibaseUris.getURISystem();
         }
 
