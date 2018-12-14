@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool.rdf;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
@@ -421,7 +422,8 @@ public class MungerUnitTest {
         assertThat(queue, hasSize(1));
         DelayedChange delayed = queue.peek();
         assertNotNull(delayed);
-        assertThat(delayed.getDelay(TimeUnit.SECONDS), equalTo(5L));
+        // we assume the test won't take more than 4 seconds to get here...
+        assertThat(delayed.getDelay(TimeUnit.SECONDS), greaterThan(1L));
         assertThat(delayed.getChange(), equalTo(change));
     }
 
