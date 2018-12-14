@@ -189,10 +189,10 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                // which sounds plausible.
                continue;
            }
-            allChanges.add(deferred.getChange());
+           allChanges.add(deferred.getChange());
            deferrals++;
         }
-        log.info("Added {} deferred changes", deferrals);
+        log.info("Added {} deferred changes, {} still in the queue", deferrals, deferralQueue.size());
         return allChanges;
     }
 

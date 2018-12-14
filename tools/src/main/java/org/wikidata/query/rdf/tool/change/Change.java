@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.OUTPUT_DATE_FORMATTER;
 
 import java.io.Closeable;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -301,21 +302,21 @@ public class Change implements Comparable<Change> {
         /**
          * Delay for this change, if it needs to be retried.
          */
-        private long delay;
+        private final Instant expires;
 
-        DelayedChange(long timeout) {
-            this.delay = timeout;
+        DelayedChange(long delay) {
+            this.expires = Instant.now().plusSeconds(delay);
         }
 
         @Override
         public long getDelay(TimeUnit unit) {
-            return unit.convert(delay, TimeUnit.SECONDS);
+            return unit.convert(Duration.between(Instant.now(), expires).toNanos(), TimeUnit.NANOSECONDS);
         }
 
         @Override
         public int compareTo(Delayed o) {
             DelayedChange other = (DelayedChange)o;
-            return Long.compare(delay, other.delay);
+            return expires.compareTo(other.expires);
         }
 
         @Override
