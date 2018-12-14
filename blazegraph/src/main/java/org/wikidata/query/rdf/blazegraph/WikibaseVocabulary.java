@@ -34,7 +34,7 @@ public class WikibaseVocabulary {
         throw new UnsupportedOperationException();
     }
 
-    /**
+    /*
      * Vocabulary classes
      * V001: 1.5.x version
      * V002: 2.0 version, extends different class

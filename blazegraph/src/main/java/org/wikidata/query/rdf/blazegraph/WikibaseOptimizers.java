@@ -26,8 +26,8 @@ public class WikibaseOptimizers extends DefaultOptimizerList {
 
     /**
      * Add optimizer after optimizer of specified class.
-     * @param type
-     * @param opt
+     * @param type Optimizer class after which to insert
+     * @param opt Optimizer to insert
      */
     private void addAfter(Class<?> type, final IASTOptimizer opt) {
         for (int i = 0; i < size(); i++) {
@@ -41,8 +41,8 @@ public class WikibaseOptimizers extends DefaultOptimizerList {
 
     /**
      * Add optimizer before optimizer of specified class.
-     * @param type
-     * @param opt
+     * @param type Optimizer class before which to insert
+     * @param opt Optimizer to insert
      */
     private void addBefore(Class<?> type, final IASTOptimizer opt) {
         for (int i = 0; i < size(); i++) {
