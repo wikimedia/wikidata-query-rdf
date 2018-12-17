@@ -1,8 +1,6 @@
 package org.wikidata.query.rdf.blazegraph;
 
 import java.util.Collection;
-import java.util.Iterator;
-
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,15 +25,8 @@ public class WikibaseExtensionFactory extends DefaultExtensionFactory {
     protected void _init(IDatatypeURIResolver resolver, ILexiconConfiguration<BigdataValue> config,
             Collection<IExtension<? extends BigdataValue>> extensions) {
         if (config.isInlineDateTimes()) {
-            Iterator<IExtension<? extends BigdataValue>> extensionsItr = extensions.iterator();
-            while (extensionsItr.hasNext()) {
-                if (extensionsItr.next() instanceof DateTimeExtension) {
-                    extensionsItr.remove();
-                }
-            }
+            extensions.removeIf(iExtension -> iExtension instanceof DateTimeExtension);
             extensions.add(new WikibaseDateExtension<BigdataLiteral>(resolver));
         }
-        // extensions.add(new WikibaseGeoExtension<BigdataLiteral>(resolver));
-        // log.warn("Installed Wikidata date extensions");
     }
 }

@@ -81,18 +81,18 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     /**
      * Enable whitelist configuration.
      */
-    public static final boolean ENABLE_WHITELIST =
+    private static final boolean ENABLE_WHITELIST =
             Boolean.parseBoolean(System.getProperty("wikibaseServiceEnableWhitelist", "true"));
 
     /**
      * Default service whitelist filename.
      */
-    public static final String WHITELIST_DEFAULT = "whitelist.txt";
+    private static final String WHITELIST_DEFAULT = "whitelist.txt";
 
     /**
      * Whitelist configuration name.
      */
-    public static final String WHITELIST = System.getProperty("wikibaseServiceWhitelist", WHITELIST_DEFAULT);
+    private static final String WHITELIST = System.getProperty("wikibaseServiceWhitelist", WHITELIST_DEFAULT);
 
     /**
      * Hooks that need to be run on shutdown.
@@ -177,7 +177,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
     /**
      * Get default service factory, with proper options.
-     * @return
+     * @return Service factory
      */
     private static ServiceFactory getDefaultServiceFactory() {
         final RemoteServiceOptions options = new RemoteServiceOptions();
@@ -189,7 +189,6 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
     /**
      * Load whitelist from file.
-     * @param reg
      */
     private static void loadWhitelist(final ServiceRegistry reg) {
         try {
@@ -212,7 +211,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      * @param prefix new prefix to check and add
      * @param uri uri for the prefix
      */
-    public static void addDeclIfNew(Map<String, String> decls, String prefix, String uri) {
+    private static void addDeclIfNew(Map<String, String> decls, String prefix, String uri) {
         if (!decls.containsKey(prefix)) {
             decls.put(prefix, uri);
         }
@@ -251,7 +250,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         MetricRegistry registry = new MetricRegistry();
         JmxReporter jmxReporter = JmxReporter.forRegistry(registry).build();
         jmxReporter.start();
-        shutdownHooks.add(() -> jmxReporter.stop());
+        shutdownHooks.add(jmxReporter::stop);
         return registry;
     }
 
@@ -278,7 +277,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
     /**
      * Create factory for specific WikibaseDateOp operation.
-     * @param dateop
+     * @param dateop Parent DateOp object
      * @return Factory object to create WikibaseDateBOp
      */
     private static Factory getWikibaseDateBOpFactory(final DateOp dateop) {
@@ -335,6 +334,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      * Get DecodeUriBOp factory.
      * @return Factory to create DecodeUriBOp
      */
+    @SuppressWarnings("unchecked")
     private static Factory getDecodeUriBOpFactory() {
         return (context, globals, scalarValues, args) -> {
 
@@ -350,6 +350,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      * Get CoordinatePartBOp factory.
      * @return Factory to create CoordinatePartBOp
      */
+    @SuppressWarnings("unchecked")
     private static Factory getCoordinatePartBOpFactory(final CoordinatePartBOp.Parts part) {
         return (context, globals, scalarValues, args) -> {
 
