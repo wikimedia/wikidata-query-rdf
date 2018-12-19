@@ -63,6 +63,15 @@ public final class Update {
 
     private static final Logger log = LoggerFactory.getLogger(Update.class);
 
+    /**
+     * Max POST form content size.
+     * Should be in sync with Jetty org.eclipse.jetty.server.Request.maxFormContentSize setting.
+     * Production default is 200M, see runBlazegraph.sh file.
+     * If that setting is changed, this one should change too, otherwise we get POST errors on big updates.
+     * See: https://phabricator.wikimedia.org/T210235
+     */
+    private static final long MAX_FORM_CONTENT_SIZE = Long.getLong("RDFRepositoryMaxPostSize", 200_000_000);
+
     private Update() {
         // this class should never be instantiated
     }
@@ -126,7 +135,7 @@ public final class Update {
             Retryer<ContentResponse> retryer = buildHttpClientRetryer();
             Duration rdfClientTimeout = getRdfClientTimeout();
 
-            RdfClient rdfClient = new RdfClient(httpClient, sparqlUri, retryer, rdfClientTimeout);
+            RdfClient rdfClient = new RdfClient(httpClient, sparqlUri, retryer, rdfClientTimeout, MAX_FORM_CONTENT_SIZE);
 
             RdfRepository rdfRepository = new RdfRepository(wikibaseUris, rdfClient);
 

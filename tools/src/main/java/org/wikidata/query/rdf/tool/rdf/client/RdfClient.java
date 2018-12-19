@@ -18,6 +18,7 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.FormContentProvider;
+import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.util.Fields;
 import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
@@ -61,11 +62,29 @@ public class RdfClient {
     /** Retryer for fetching data from RDF store. */
     private final Retryer<ContentResponse> retryer;
 
-    public RdfClient(HttpClient httpClient, URI uri, Retryer<ContentResponse> retryer, Duration timeout) {
+    /**
+     * Max POST form content size.
+     * Should be in sync with Jetty org.eclipse.jetty.server.Request.maxFormContentSize setting.
+     * Production default is 200M, see runBlazegraph.sh file.
+     * If that setting is changed, this one should change too, otherwise we get POST errors on big updates.
+     * See: https://phabricator.wikimedia.org/T210235
+     */
+    private final long maxPostSize;
+
+    public RdfClient(HttpClient httpClient, URI uri, Retryer<ContentResponse> retryer, Duration timeout, long maxPostSize) {
         this.httpClient = httpClient;
         this.uri = uri;
         this.timeout = timeout;
         this.retryer = retryer;
+        this.maxPostSize = maxPostSize;
+    }
+
+    /**
+     * Get maximum supported post size.
+     * @return Max POST size, in bytes.
+     */
+    public long getMaxPostSize() {
+        return maxPostSize;
     }
 
     /**
@@ -106,7 +125,7 @@ public class RdfClient {
      * @return parsed results from the server
      */
     private <T> T execute(String type, ResponseHandler<T> responseHandler, String sparql) {
-        log.trace("Running SPARQL: {}", sparql);
+        log.trace("Running SPARQL: [{}] {}", sparql.length(), sparql);
         long startQuery = System.currentTimeMillis();
         // TODO we might want to look into Blazegraph's incremental update
         // reporting.....
@@ -146,10 +165,16 @@ public class RdfClient {
             post.header("Accept", accept);
         }
 
-        final Fields fields = new Fields();
-        fields.add(type, sparql);
-        final FormContentProvider form = new FormContentProvider(fields, UTF_8);
-        post.content(form);
+        if (type.equals("update")) {
+            // Optimization here - use direct POST with MIME type instead of URL encoding, to save some bandwidth
+            // and processing time.
+            post.content(new StringContentProvider("application/sparql-update", sparql, UTF_8));
+        } else {
+            final Fields fields = new Fields();
+            fields.add(type, sparql);
+            final FormContentProvider form = new FormContentProvider(fields, UTF_8);
+            post.content(form);
+        }
         return post;
     }
 
@@ -203,8 +228,8 @@ public class RdfClient {
 
     /**
      * Convert result column to a list.
-     * @param result
-     * @param valueBinding
+     * @param result Query result
+     * @param valueBinding Name of the result variable to fetch
      * @param prefix If specified, remove this prefix from the result
      * @return List of strings resulting from the query.
      */
