@@ -40,6 +40,19 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 public class RdfRepository {
     private static final Logger log = LoggerFactory.getLogger(RdfRepository.class);
+    /**
+     * How many statements we will send to RDF processor at once.
+     * We assume typical triple line size is under 200 bytes.
+     * Each statement appears twice in the output data. So that's how we derive the statement limit.
+     * TODO: maybe we can do fine with just one limit?
+     */
+    private final long maxStatementsPerBatch;
+
+    /**
+     * Max statement data size.
+     * Entity data repeats twice plus we're taking 1M safety buffer for other data.
+     */
+	private final long maxPostDataSize;
 
     /**
      * Uris for wikibase.
@@ -98,6 +111,9 @@ public class RdfRepository {
         getRevisions = loadBody("GetRevisions");
         verify = loadBody("verify");
         getLexemes = loadBody("GetLexemes");
+        long maxPostSize = rdfClient.getMaxPostSize();
+        maxStatementsPerBatch = maxPostSize / 400;
+        maxPostDataSize = (maxPostSize - 1024 * 1024) / 2;
     }
 
     /**
@@ -120,7 +136,7 @@ public class RdfRepository {
      * @return Collection of strings resulting from the query.
      */
     private Set<String> resultToSet(TupleQueryResult result, String binding) {
-        HashSet<String> values = new HashSet<String>();
+        HashSet<String> values = new HashSet<>();
         try {
             while (result.hasNext()) {
                 Binding value = result.next().getBinding(binding);
@@ -218,15 +234,17 @@ public class RdfRepository {
     /**
      * Sort statements into a set of specialized collections, by subject.
      * @param statements List of statements to process
-     * @param entityId
+     * @param entityId Entity identifier (e.g. Q-id)
      * @param entityStatements subject is entity
      * @param statementStatements subject is any statement
      * @param aboutStatements not entity, not statement, not value and not reference
+     * @return Size of all statements' data
      */
-    private void classifyStatements(Collection<Statement> statements,
+    private long classifyStatements(Collection<Statement> statements,
             String entityId, Collection<Statement> entityStatements,
             Collection<Statement> statementStatements,
             Collection<Statement> aboutStatements) {
+        long size = 0;
         for (Statement statement: statements) {
             String s = statement.getSubject().stringValue();
             if (s.equals(uris.entity() + entityId)) {
@@ -243,7 +261,9 @@ public class RdfRepository {
             ) {
                 aboutStatements.add(statement);
             }
+            size += s.length() + statement.getPredicate().stringValue().length() + statement.getObject().stringValue().length();
         }
+        return size;
     }
 
     /**
@@ -266,12 +286,14 @@ public class RdfRepository {
             return 0;
         }
         UpdateBuilder b = new UpdateBuilder(msyncBody);
+        // Pre-bind static elements of the template
         b.bindUri("schema:about", SchemaDotOrg.ABOUT);
         b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
         b.bind("uris.value", uris.value());
         b.bind("uris.statement", uris.statement());
-        Set<String> entityIds = newHashSetWithExpectedSize(changes.size());
+        b.bindValue("ts", Instant.now());
 
+        Set<String> entityIds = newHashSetWithExpectedSize(changes.size());
         List<Statement> insertStatements = new ArrayList<>();
         List<Statement> entityStatements = new ArrayList<>();
         List<Statement> statementStatements = new ArrayList<>();
@@ -279,6 +301,11 @@ public class RdfRepository {
         Set<String> valueSet = new HashSet<>();
         Set<String> refSet = new HashSet<>();
 
+        // Pre-filled query template to use in the batch loop below
+        final String queryTemplate = b.toString();
+
+        int modified = 0;
+        long dataSize = 0;
         for (final Change change : changes) {
             if (change.getStatements() == null) {
                 // broken change, probably failed retrieval
@@ -286,17 +313,50 @@ public class RdfRepository {
             }
             entityIds.add(change.entityId());
             insertStatements.addAll(change.getStatements());
-            classifyStatements(change.getStatements(), change.entityId(), entityStatements, statementStatements, aboutStatements);
+            dataSize += classifyStatements(change.getStatements(), change.entityId(), entityStatements, statementStatements, aboutStatements);
             valueSet.addAll(change.getValueCleanupList());
             refSet.addAll(change.getRefCleanupList());
+            // If current batch data has grown too big, we send it out and start the new one.
+            if (insertStatements.size() > maxStatementsPerBatch || dataSize > maxPostDataSize) {
+                // Send the batch out and clean up
+                // Logging as info for now because I want to know how many split batches we get. I don't want too many.
+                log.info("Too much data with {} bytes - sending batch out, last ID {}", dataSize, change.entityId());
+
+                modified += sendUpdateBatch(queryTemplate, entityIds,
+                                            insertStatements, entityStatements, aboutStatements, statementStatements,
+                                            refSet, valueSet, verifyResult);
+                entityIds.clear();
+                insertStatements.clear();
+                entityStatements.clear();
+                aboutStatements.clear();
+                statementStatements.clear();
+                valueSet.clear();
+                refSet.clear();
+                dataSize = 0;
+            }
         }
 
-        if (entityIds.isEmpty()) {
-            // If we've got no IDs, this means all change retrieval failed
-            log.debug("Got no valid changes, we're done");
-            return 0;
+        if (!entityIds.isEmpty()) {
+            modified += sendUpdateBatch(queryTemplate, entityIds,
+                                        insertStatements, entityStatements, aboutStatements, statementStatements,
+                                        refSet, valueSet, verifyResult);
         }
 
+        return modified;
+    }
+
+    private int sendUpdateBatch(String queryTemplate,
+        Set<String> entityIds,
+        List<Statement> insertStatements,
+        List<Statement> entityStatements,
+        Set<Statement> aboutStatements,
+        List<Statement> statementStatements,
+        Set<String> valueSet,
+        Set<String> refSet,
+        boolean verifyResult
+    ) {
+        log.debug("Processing {} IDs and {} statements", entityIds.size(), insertStatements.size());
+    	UpdateBuilder b = new UpdateBuilder(queryTemplate);
         b.bindUris("entityListTop", entityIds, uris.entity());
         entityIds.addAll(fetchLexemeSubIds(entityIds));
         b.bindUris("entityList", entityIds, uris.entity());
@@ -327,6 +387,7 @@ public class RdfRepository {
         }
 
         long start = System.currentTimeMillis();
+        log.debug("Sending query {} bytes", b.toString().length());
         Integer modified = rdfClient.update(b.toString());
         log.debug("Update query took {} millis and modified {} statements",
                 System.currentTimeMillis() - start, modified);
@@ -339,17 +400,16 @@ public class RdfRepository {
             }
         }
 
-        return modified.intValue();
+        return modified;
     }
 
     /**
      * Fetch sub-ids for given lexeme entity IDs.
      * We need them because forms & senses have statements too.
-     * @param entityIds
+     * @param entityIds Set of parent entity IDs.
      * @return List of IDs for forms and senses.
      */
     private List<String> fetchLexemeSubIds(Set<String> entityIds) {
-        // TODO Auto-generated method stub
         UpdateBuilder b = new UpdateBuilder(getLexemes);
         b.bindUris("entityList", entityIds, uris.entity());
         return rdfClient.selectToList(b.toString(), "lex", uris.entity());

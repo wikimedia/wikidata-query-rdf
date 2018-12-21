@@ -228,7 +228,8 @@ public class KafkaPollerIntegrationTest {
         RdfClient rdfClient = new RdfClient(httpClient,
                 url("/namespace/wdq/sparql"),
                 buildHttpClientRetryer(),
-                Duration.of(-1, SECONDS)
+                Duration.of(-1, SECONDS),
+                20_000_000
         );
 
         try {

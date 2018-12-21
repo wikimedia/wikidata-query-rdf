@@ -7,6 +7,7 @@ import java.io.Closeable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Delayed;
@@ -49,12 +50,12 @@ public class Change implements Comparable<Change> {
     /**
      * Cleanup list for the change.
      */
-    private Collection<String> refCleanupList;
+    private Collection<String> refCleanupList = Collections.emptyList();
 
     /**
      * Cleanup list for the change.
      */
-    private Collection<String> valueCleanupList;
+    private Collection<String> valueCleanupList = Collections.emptyList();
 
     /**
      * rcid of the change.

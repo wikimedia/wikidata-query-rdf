@@ -7,7 +7,7 @@ fi
 
 HOST=http://localhost:9999
 CONTEXT=bigdata
-HEAP_SIZE=${HEAP_SIZE:-"2g"}
+HEAP_SIZE=${HEAP_SIZE:-"3g"}
 MEMORY=${MEMORY:-"-Xmx${HEAP_SIZE}"}
 LOG_DIR=${LOG_DIR:-"/var/log/wdqs"}
 GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/wdqs-updater_jvm_gc.%p.log \
