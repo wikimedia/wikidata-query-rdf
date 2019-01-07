@@ -150,7 +150,7 @@ public class RdfClient {
         if (type.equals("update")) {
             // Optimization here - use direct POST with MIME type instead of URL encoding, to save some bandwidth
             // and processing time.
-            post.content(new StringContentProvider("application/sparql-update", sparql, UTF_8), "application/sparql-update; charset=UTF-8");
+            post.content(new StringContentProvider("application/sparql-update; charset=UTF-8", sparql, UTF_8));
         } else {
             final Fields fields = new Fields();
             fields.add(type, sparql);
