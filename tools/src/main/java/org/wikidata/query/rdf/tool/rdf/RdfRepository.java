@@ -216,14 +216,12 @@ public class RdfRepository {
             b.bind("lexemeIds", "");
         }
 
-        List<Statement> entityStatements = new ArrayList<>();
-        List<Statement> statementStatements = new ArrayList<>();
-        Set<Statement> aboutStatements = new HashSet<>();
-        classifyStatements(statements, entityId, entityStatements, statementStatements, aboutStatements);
+        ClassifiedStatements classifiedStatements = new ClassifiedStatements(uris);
+        classifiedStatements.classify(statements, entityId);
 
-        b.bindValues("entityStatements", entityStatements);
-        b.bindValues("statementStatements", statementStatements);
-        b.bindValues("aboutStatements", aboutStatements);
+        b.bindValues("entityStatements", classifiedStatements.entityStatements);
+        b.bindValues("statementStatements", classifiedStatements.statementStatements);
+        b.bindValues("aboutStatements", classifiedStatements.aboutStatements);
 
         if (valueList != null && !valueList.isEmpty()) {
             UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
@@ -235,41 +233,6 @@ public class RdfRepository {
         }
 
         return b.toString();
-    }
-
-    /**
-     * Sort statements into a set of specialized collections, by subject.
-     * @param statements List of statements to process
-     * @param entityId Entity identifier (e.g. Q-id)
-     * @param entityStatements subject is entity
-     * @param statementStatements subject is any statement
-     * @param aboutStatements not entity, not statement, not value and not reference
-     * @return Size of all statements' data
-     */
-    private long classifyStatements(Collection<Statement> statements,
-            String entityId, Collection<Statement> entityStatements,
-            Collection<Statement> statementStatements,
-            Collection<Statement> aboutStatements) {
-        long size = 0;
-        for (Statement statement: statements) {
-            String s = statement.getSubject().stringValue();
-            if (s.equals(uris.entity() + entityId)) {
-                entityStatements.add(statement);
-            }
-            if (s.startsWith(uris.statement())) {
-                statementStatements.add(statement);
-            }
-            if (!s.equals(uris.entity() + entityId)
-                    && !s.startsWith(uris.statement())
-                    && !s.startsWith(uris.value())
-                    && !s.startsWith(uris.reference())
-                    && !s.startsWith(uris.entity() + entityId + "-")
-            ) {
-                aboutStatements.add(statement);
-            }
-            size += s.length() + statement.getPredicate().stringValue().length() + statement.getObject().stringValue().length();
-        }
-        return size;
     }
 
     /**
@@ -301,9 +264,8 @@ public class RdfRepository {
 
         Set<String> entityIds = newHashSetWithExpectedSize(changes.size());
         List<Statement> insertStatements = new ArrayList<>();
-        List<Statement> entityStatements = new ArrayList<>();
-        List<Statement> statementStatements = new ArrayList<>();
-        Set<Statement> aboutStatements = new HashSet<>();
+        ClassifiedStatements classifiedStatements = new ClassifiedStatements(uris);
+
         Set<String> valueSet = new HashSet<>();
         Set<String> refSet = new HashSet<>();
 
@@ -311,7 +273,6 @@ public class RdfRepository {
         final String queryTemplate = b.toString();
 
         int modified = 0;
-        long dataSize = 0;
         for (final Change change : changes) {
             if (change.getStatements() == null) {
                 // broken change, probably failed retrieval
@@ -319,47 +280,41 @@ public class RdfRepository {
             }
             entityIds.add(change.entityId());
             insertStatements.addAll(change.getStatements());
-            dataSize += classifyStatements(change.getStatements(), change.entityId(), entityStatements, statementStatements, aboutStatements);
+            classifiedStatements.classify(change.getStatements(), change.entityId());
             valueSet.addAll(change.getValueCleanupList());
             refSet.addAll(change.getRefCleanupList());
             // If current batch data has grown too big, we send it out and start the new one.
-            if (insertStatements.size() > maxStatementsPerBatch || dataSize > maxPostDataSize) {
+            if (insertStatements.size() > maxStatementsPerBatch || classifiedStatements.getDataSize() > maxPostDataSize) {
                 // Send the batch out and clean up
                 // Logging as info for now because I want to know how many split batches we get. I don't want too many.
-                log.info("Too much data with {} bytes - sending batch out, last ID {}", dataSize, change.entityId());
+                log.info("Too much data with {} bytes - sending batch out, last ID {}", classifiedStatements.getDataSize(), change.entityId());
 
-                modified += sendUpdateBatch(queryTemplate, entityIds,
-                                            insertStatements, entityStatements, aboutStatements, statementStatements,
-                                            refSet, valueSet, verifyResult);
+                modified += sendUpdateBatch(queryTemplate, entityIds, insertStatements, classifiedStatements,
+                        refSet, valueSet, verifyResult);
                 entityIds.clear();
                 insertStatements.clear();
-                entityStatements.clear();
-                aboutStatements.clear();
-                statementStatements.clear();
+                classifiedStatements.clear();
                 valueSet.clear();
                 refSet.clear();
-                dataSize = 0;
             }
         }
 
         if (!entityIds.isEmpty()) {
             modified += sendUpdateBatch(queryTemplate, entityIds,
-                                        insertStatements, entityStatements, aboutStatements, statementStatements,
-                                        refSet, valueSet, verifyResult);
+                                        insertStatements, classifiedStatements,
+                    refSet, valueSet, verifyResult);
         }
 
         return modified;
     }
 
     private int sendUpdateBatch(String queryTemplate,
-        Set<String> entityIds,
-        List<Statement> insertStatements,
-        List<Statement> entityStatements,
-        Set<Statement> aboutStatements,
-        List<Statement> statementStatements,
-        Set<String> valueSet,
-        Set<String> refSet,
-        boolean verifyResult
+                                Set<String> entityIds,
+                                List<Statement> insertStatements,
+                                ClassifiedStatements classifiedStatements,
+                                Set<String> valueSet,
+                                Set<String> refSet,
+                                boolean verifyResult
     ) {
         log.debug("Processing {} IDs and {} statements", entityIds.size(), insertStatements.size());
     	UpdateBuilder b = new UpdateBuilder(queryTemplate);
@@ -367,10 +322,10 @@ public class RdfRepository {
         entityIds.addAll(fetchLexemeSubIds(entityIds));
         b.bindUris("entityList", entityIds, uris.entity());
         b.bindStatements("insertStatements", insertStatements);
-        b.bindValues("entityStatements", entityStatements);
+        b.bindValues("entityStatements", classifiedStatements.entityStatements);
 
-        b.bindValues("statementStatements", statementStatements);
-        b.bindValues("aboutStatements", aboutStatements);
+        b.bindValues("statementStatements", classifiedStatements.statementStatements);
+        b.bindValues("aboutStatements", classifiedStatements.aboutStatements);
         b.bindValue("ts", Instant.now());
 
         if (!refSet.isEmpty()) {
