@@ -37,10 +37,10 @@ public class RdfRepositoryUnitTest {
     public void batchUpdate() {
         RdfClient mockClient = mock(RdfClient.class);
         // 1.5M size means ~4k statements or 250K statement size max
-        when(mockClient.getMaxPostSize()).thenReturn(1572864L);
+        long maxPostSize = 1572864L;
         when(mockClient.update(any(String.class))).thenReturn(1);
 
-        RdfRepository repo = new RdfRepository(uris, mockClient);
+        RdfRepository repo = new RdfRepository(uris, mockClient, maxPostSize);
 
         // 6000 statements - should go over the limit
         Change change1 = new Change("Q1", 1, Instant.EPOCH, 1);

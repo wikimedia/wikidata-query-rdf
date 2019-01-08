@@ -98,7 +98,14 @@ public class RdfRepository {
 
     protected final RdfClient rdfClient;
 
-    public RdfRepository(WikibaseUris uris, RdfClient rdfClient) {
+    /**
+     * @param maxPostSize Max POST form content size.
+     *                    Should be in sync with Jetty org.eclipse.jetty.server.Request.maxFormContentSize setting.
+     *                    Production default is 200M, see runBlazegraph.sh file.
+     *                    If that setting is changed, this one should change too, otherwise we get POST errors on big updates.
+     *                    See: https://phabricator.wikimedia.org/T210235
+     */
+    public RdfRepository(WikibaseUris uris, RdfClient rdfClient, long maxPostSize) {
         this.uris = uris;
         this.rdfClient = rdfClient;
 
@@ -111,7 +118,6 @@ public class RdfRepository {
         getRevisions = loadBody("GetRevisions");
         verify = loadBody("verify");
         getLexemes = loadBody("GetLexemes");
-        long maxPostSize = rdfClient.getMaxPostSize();
         maxStatementsPerBatch = maxPostSize / 400;
         maxPostDataSize = (maxPostSize - 1024 * 1024) / 2;
     }

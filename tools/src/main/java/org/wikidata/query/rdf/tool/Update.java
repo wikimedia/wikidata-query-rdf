@@ -135,9 +135,9 @@ public final class Update {
             Retryer<ContentResponse> retryer = buildHttpClientRetryer();
             Duration rdfClientTimeout = getRdfClientTimeout();
 
-            RdfClient rdfClient = new RdfClient(httpClient, sparqlUri, retryer, rdfClientTimeout, MAX_FORM_CONTENT_SIZE);
+            RdfClient rdfClient = new RdfClient(httpClient, sparqlUri, retryer, rdfClientTimeout);
 
-            RdfRepository rdfRepository = new RdfRepository(wikibaseUris, rdfClient);
+            RdfRepository rdfRepository = new RdfRepository(wikibaseUris, rdfClient, MAX_FORM_CONTENT_SIZE);
 
             Instant startTime = getStartTime(startInstant(options), rdfRepository, options.init());
 

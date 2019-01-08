@@ -62,29 +62,11 @@ public class RdfClient {
     /** Retryer for fetching data from RDF store. */
     private final Retryer<ContentResponse> retryer;
 
-    /**
-     * Max POST form content size.
-     * Should be in sync with Jetty org.eclipse.jetty.server.Request.maxFormContentSize setting.
-     * Production default is 200M, see runBlazegraph.sh file.
-     * If that setting is changed, this one should change too, otherwise we get POST errors on big updates.
-     * See: https://phabricator.wikimedia.org/T210235
-     */
-    private final long maxPostSize;
-
-    public RdfClient(HttpClient httpClient, URI uri, Retryer<ContentResponse> retryer, Duration timeout, long maxPostSize) {
+    public RdfClient(HttpClient httpClient, URI uri, Retryer<ContentResponse> retryer, Duration timeout) {
         this.httpClient = httpClient;
         this.uri = uri;
         this.timeout = timeout;
         this.retryer = retryer;
-        this.maxPostSize = maxPostSize;
-    }
-
-    /**
-     * Get maximum supported post size.
-     * @return Max POST size, in bytes.
-     */
-    public long getMaxPostSize() {
-        return maxPostSize;
     }
 
     /**

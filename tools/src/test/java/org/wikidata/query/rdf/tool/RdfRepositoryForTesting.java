@@ -37,9 +37,9 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
                 new RdfClient(
                         buildHttpClient(getHttpProxyHost(), getHttpProxyPort()), url("/namespace/" + namespace + "/sparql"),
                         buildHttpClientRetryer(),
-                        getRdfClientTimeout(),
-                        20_000_000
-                )
+                        getRdfClientTimeout()
+                ),
+                20_000_000
         );
     }
 

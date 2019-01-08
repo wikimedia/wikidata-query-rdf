@@ -37,7 +37,7 @@ public class RdfClientIntegrationTest {
         URI uri = URI.create("http://localhost:" + wiremockPort);
         httpClient = new HttpClient();
         httpClient.start();
-        rdfClient = new RdfClient(httpClient, uri, buildHttpClientRetryer(), Duration.of(20, MILLIS), 20_000_000);
+        rdfClient = new RdfClient(httpClient, uri, buildHttpClientRetryer(), Duration.of(20, MILLIS));
     }
 
     @Test(expected = ContainedException.class)
