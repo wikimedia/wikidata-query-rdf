@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-if [ -r /etc/default/wdqs-blazegraph ]; then
-  . /etc/default/wdqs-blazegraph
+BLAZEGRAPH_CONFIG=${BLAZEGRAPH_CONFIG:-"/etc/default/wdqs-blazegraph"}
+if [ -r $BLAZEGRAPH_CONFIG ]; then
+  . $BLAZEGRAPH_CONFIG
 fi
 
 HOST=${HOST:-"localhost"}
