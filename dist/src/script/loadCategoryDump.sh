@@ -7,7 +7,7 @@ fi
 
 SOURCE=${SOURCE:-"https://dumps.wikimedia.org/other/categoriesrdf"}
 DATA_DIR=${DATA_DIR:-"/srv/wdqs"}
-HOST=http://localhost:9999
+HOST=${CATEGORY_ENDPOINT:-"http://localhost:9999"}
 CONTEXT=bigdata
 NAMESPACE=categories
 WIKI=$1
