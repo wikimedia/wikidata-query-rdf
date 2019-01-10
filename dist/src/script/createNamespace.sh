@@ -1,8 +1,12 @@
 #/bin/bash
 set -e
 
+if [ -r /etc/wdqs/vars.sh ]; then
+  . /etc/wdqs/vars.sh
+fi
+
 # This script can be used to create a new namespace on Blazegraph
-HOST="http://localhost:9999"
+HOST=${CATEGORY_ENDPOINT:-"http://localhost:9999"}
 URL="$HOST/bigdata/namespace"
 CATEGORY=$1
 

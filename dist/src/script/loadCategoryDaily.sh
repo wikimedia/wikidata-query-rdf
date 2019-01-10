@@ -10,7 +10,7 @@ fi
 
 SOURCE=${SOURCE:-"https://dumps.wikimedia.org/other/categoriesrdf/daily"}
 DATA_DIR=${DATA_DIR:-"/srv/wdqs"}
-HOST=http://localhost:9999
+HOST=${CATEGORY_ENDPOINT:-"http://localhost:9999"}
 CONTEXT=bigdata
 NAMESPACE=$(cat $ALIAS_FILE | grep categories | cut -d' ' -f2 | cut -d ';' -f1)
 WIKI=$1
