@@ -81,6 +81,7 @@ exec java \
      -Dorg.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.config=$DIR/mwservices.json \
      -Dcom.bigdata.rdf.sail.webapp.client.HttpClientConfigurator=org.wikidata.query.rdf.blazegraph.ProxiedHttpConnectionFactory \
      -Dhttp.userAgent="${USER_AGENT}" \
+     -Dorg.eclipse.jetty.annotations.AnnotationParser.LEVEL=OFF \
      ${BLAZEGRAPH_OPTS} \
      -jar jetty-runner*.jar \
      --host $HOST \
