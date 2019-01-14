@@ -13,8 +13,9 @@ DIR=${DIR:-`dirname $0`}
 HEAP_SIZE=${HEAP_SIZE:-"16g"}
 LOG_CONFIG=${LOG_CONFIG:-""}
 LOG_DIR=${LOG_DIR:-"/var/log/wdqs"}
+GC_LOG_FILE=${GC_LOG_FILE:-"wdqs-blazegraph_jvm_gc.%p-%t.log"}
 MEMORY=${MEMORY:-"-Xmx${HEAP_SIZE}"}
-GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/wdqs-blazegraph_jvm_gc.%p-%t.log \
+GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/${GC_LOG_FILE} \
          -XX:+PrintGCDetails \
          -XX:+PrintGCDateStamps \
          -XX:+PrintGCTimeStamps \
