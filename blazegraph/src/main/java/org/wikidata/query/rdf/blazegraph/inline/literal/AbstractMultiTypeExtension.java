@@ -1,9 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.inline.literal;
 
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +22,7 @@ import com.bigdata.rdf.model.BigdataURI;
 import com.bigdata.rdf.model.BigdataValue;
 import com.bigdata.rdf.model.BigdataValueFactory;
 import com.bigdata.util.InnerCause;
+import com.google.common.collect.ImmutableMap;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -49,12 +48,12 @@ public abstract class AbstractMultiTypeExtension<V extends BigdataValue> impleme
 
     public AbstractMultiTypeExtension(IDatatypeURIResolver resolver, Set<URI> supportedDataTypes) {
         @SuppressWarnings("rawtypes")
-        Map<IV, BigdataURI> dataTypes = new HashMap<>();
+        ImmutableMap.Builder<IV, BigdataURI> dataTypesBuilder = ImmutableMap.builder();
         for (URI uri : supportedDataTypes) {
             BigdataURI val = resolver.resolve(uri);
-            dataTypes.put(val.getIV(), val);
+            dataTypesBuilder.put(val.getIV(), val);
         }
-        this.dataTypes = unmodifiableMap(dataTypes);
+        this.dataTypes = dataTypesBuilder.build();
         dataTypesSet = unmodifiableSet(new HashSet<>(this.dataTypes.values()));
     }
 

@@ -541,7 +541,10 @@ public class Munge implements Runnable {
             try {
                 queue.put(toQueue);
                 return utf8(new PipedOutputStream(toQueue));
-            } catch (InterruptedException | IOException e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Error switching chunks", e);
+            } catch (IOException e) {
                 throw new RuntimeException("Error switching chunks", e);
             }
         }

@@ -33,7 +33,7 @@ public class WikibaseCornerBOp extends IVValueExpression<IV> implements INeedsMa
     /**
      * Corners supported by this op.
      */
-    public enum Corners { NE, SW };
+    public enum Corners { NE, SW }
 
     /**
      * Annotaion for specific corner.

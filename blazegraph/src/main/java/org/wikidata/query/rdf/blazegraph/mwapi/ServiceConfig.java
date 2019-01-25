@@ -58,7 +58,7 @@ public final class ServiceConfig {
 
         // Get immutable list of elements' text representations
         return Streams.stream(node.elements())
-                .map(endpoint -> endpoint.asText())
+                .map(JsonNode::asText)
                 .collect(ImmutableList.toImmutableList());
     }
 

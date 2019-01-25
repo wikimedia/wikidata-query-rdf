@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.openrdf.model.Literal;
@@ -135,7 +136,7 @@ public class LabelService extends AbstractServiceFactory {
     private Map<String, Integer> findLanguageFallbacks(final ServiceParams params) {
         List<TermNode> paramNodes = params.get(LANGUAGE_PARAM);
 
-        if (paramNodes.size() < 1) {
+        if (paramNodes.isEmpty()) {
             throw new IllegalArgumentException("You must provide the label service a list of languages.");
         }
 
@@ -268,6 +269,10 @@ public class LabelService extends AbstractServiceFactory {
 
             @Override
             public IBindingSet next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+
                 IBindingSet binding = bindingSets[i++];
                 context.binding(binding);
                 for (Resolution resolution : resolutions) {

@@ -52,9 +52,6 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
      */
     private static final URI WKT_LITERAL_URI = new URIImpl(GeoSparql.WKT_LITERAL);
 
-    public WKTSerializer() {
-    }
-
     @Override
     public String fromComponents(Object[] components) {
         if (components == null)

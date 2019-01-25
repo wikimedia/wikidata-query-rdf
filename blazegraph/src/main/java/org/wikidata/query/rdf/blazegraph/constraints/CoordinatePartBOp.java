@@ -29,7 +29,7 @@ public class CoordinatePartBOp extends IVValueExpression<IV> implements INeedsMa
     /**
      * Parts supported by this op.
      */
-    public enum Parts { GLOBE, LAT, LON };
+    public enum Parts { GLOBE, LAT, LON }
 
     /**
      * Annotation for specific part.
