@@ -12,6 +12,13 @@
     <version>0.3.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <name>Wikidata Query Service</name>
+
+    <description>
+        Wikidata Query Service is the Wikimedia implementation of SPARQL server, based on Blazegraph engine, to
+        service queries for Wikidata and other data sets.
+    </description>
+
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
