@@ -88,7 +88,7 @@ public class TailingChangesPoller extends Thread {
                     }
                 } while (false);
                 // Process the batch
-                if (lastBatch.changes().size() > 0) {
+                if (!lastBatch.changes().isEmpty()) {
                     log.info("Caught {} missing updates, adding to the queue", lastBatch.changes().size());
                     queue.put(lastBatch);
                 }

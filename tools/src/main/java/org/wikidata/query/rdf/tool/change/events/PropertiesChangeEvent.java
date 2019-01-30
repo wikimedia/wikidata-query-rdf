@@ -69,8 +69,6 @@ public class PropertiesChangeEvent extends EventWithMeta {
         // If we have additions but not removals, this means it's likely a new page.
         // In this case we will declare it redundant if it only sets wb- properties,
         // since those are already accounted for in the actual page content.
-        return added.entrySet().stream().anyMatch(entry -> {
-            return !entry.getKey().startsWith("wb-");
-        });
+        return added.entrySet().stream().anyMatch(entry -> !entry.getKey().startsWith("wb-"));
     }
 }

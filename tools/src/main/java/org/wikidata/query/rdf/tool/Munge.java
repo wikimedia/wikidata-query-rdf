@@ -559,7 +559,7 @@ public class Munge implements Runnable {
          * Map containing prefixes that have been written to any RDFHandler that
          * we then write to all the next handlers.
          */
-        private final Map<String, String> prefixes = new LinkedHashMap<String, String>();
+        private final Map<String, String> prefixes = new LinkedHashMap<>();
         /**
          * The output picker for the writers.
          */

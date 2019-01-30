@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static com.google.common.collect.ImmutableSet.copyOf;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
@@ -69,10 +69,10 @@ import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
-import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
-import org.wikidata.query.rdf.tool.utils.StreamDumper;
 import org.wikidata.query.rdf.tool.wikibase.EditRequest.Label;
 import org.wikidata.query.rdf.tool.wikibase.SearchResponse.SearchResult;
+import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
+import org.wikidata.query.rdf.tool.utils.StreamDumper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -592,6 +592,7 @@ public class WikibaseRepository implements Closeable {
     /**
      * URIs used for accessing wikibase.
      */
+    @SuppressFBWarnings(value = {"EI_EXPOSE_REP2", "MS_MUTABLE_ARRAY"}, justification = "minor enough")
     public static class Uris {
         /**
          * URL which should be used to retrieve Entity data.

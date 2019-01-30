@@ -5,8 +5,6 @@ package org.wikidata.query.rdf.tool.exception;
  * stopped.
  */
 public class FatalException extends RuntimeException {
-    private static final long serialVersionUID = 1384427696241404325L;
-
     public FatalException(String message, Throwable cause) {
         super(message, cause);
     }

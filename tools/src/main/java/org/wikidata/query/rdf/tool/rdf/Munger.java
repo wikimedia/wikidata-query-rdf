@@ -1,9 +1,10 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import static java.util.Collections.emptySet;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -296,7 +297,7 @@ public class Munger {
      */
     @SuppressWarnings("unchecked")
     public void munge(String entityId, Collection<Statement> statements) {
-        munge(entityId, statements, Collections.EMPTY_SET, Collections.EMPTY_SET, null, null);
+        munge(entityId, statements, emptySet(), emptySet(), null, null);
     }
 
     /**

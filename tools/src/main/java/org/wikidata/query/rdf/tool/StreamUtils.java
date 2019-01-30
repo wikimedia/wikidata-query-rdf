@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.tool;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;

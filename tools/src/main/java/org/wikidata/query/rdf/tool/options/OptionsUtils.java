@@ -80,7 +80,7 @@ public final class OptionsUtils {
                 try {
                     return new WikibaseUris(new URI(conceptUri));
                 } catch (URISyntaxException e) {
-                    throw new RuntimeException("Bad URI: " + conceptUri, e);
+                    throw new IllegalArgumentException("Bad URI: " + conceptUri, e);
                 }
             }
             return WikibaseUris.forHost(wikibaseOptions.wikibaseHost());
@@ -123,7 +123,7 @@ public final class OptionsUtils {
         if (options == null) {
             return null;
         }
-        List<String> newOptions = new LinkedList<String>();
+        List<String> newOptions = new LinkedList<>();
         for (String option: options) {
             if (option.contains(",")) {
                 newOptions.addAll(Splitter.on(",").splitToList(option));

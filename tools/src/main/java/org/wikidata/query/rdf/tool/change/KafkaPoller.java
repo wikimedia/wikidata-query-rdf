@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool.change;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
 import java.time.Instant;
@@ -71,7 +72,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
     /**
      * Name of the topic which offset reporting will be based on.
      */
-    private static final String REPORTING_TOPIC_PROP = KafkaPoller.class.getName() + ".reportingTopic";;
+    private static final String REPORTING_TOPIC_PROP = KafkaPoller.class.getName() + ".reportingTopic";
 
     /**
      * List of topics to listen to.
@@ -290,7 +291,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
 
     public ImmutableMap<TopicPartition, Long> currentOffsets() {
         return topicPartitions.stream()
-                    .collect(toImmutableMap(p -> p, p -> consumer.position(p)));
+                    .collect(toImmutableMap(identity(), consumer::position));
     }
 
     @Override

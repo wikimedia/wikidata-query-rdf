@@ -149,6 +149,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
     private static Map<Long, Boolean> createSeenMap() {
         // Create hash map with max size, evicting oldest ID
         final Map<Long, Boolean> map = new LinkedHashMap(MAX_SEEN_IDS, .75F, false) {
+            @Override
             protected boolean removeEldestEntry(Map.Entry eldest) {
                 return size() > MAX_SEEN_IDS;
             }
@@ -390,7 +391,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         // b. We got full batch of changes.
         // c. None of those were new changes.
         // In this case, sleeping and trying again is obviously useless.
-        final boolean backoffOverflow = useBackoff && changes.size() == 0 && result.size() >= batchSize;
+        final boolean backoffOverflow = useBackoff && changes.isEmpty() && result.size() >= batchSize;
         if (backoffOverflow) {
             // We have a problem here - due to backoff, we did not fetch any new items
             // Try to advance one second, even though we risk to lose a change - in hope
@@ -399,10 +400,10 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             log.info("Backoff overflow, advancing next time to {}", nextStartTime);
         }
 
-        if (changes.size() != 0) {
+        if (!changes.isEmpty()) {
             log.info("Got {} changes, from {} to {}", changes.size(),
-                    changes.get(0).toString(),
-                    changes.get(changes.size() - 1).toString());
+                    changes.get(0),
+                    changes.get(changes.size() - 1));
         } else {
             log.info("Got no real changes");
         }
