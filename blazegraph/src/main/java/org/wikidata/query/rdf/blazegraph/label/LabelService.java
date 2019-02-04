@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.blazegraph.label;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.wikidata.query.rdf.blazegraph.BigdataValuesHelper.makeIV;
 
 import java.util.ArrayList;
@@ -136,9 +137,8 @@ public class LabelService extends AbstractServiceFactory {
     private Map<String, Integer> findLanguageFallbacks(final ServiceParams params) {
         List<TermNode> paramNodes = params.get(LANGUAGE_PARAM);
 
-        if (paramNodes.isEmpty()) {
-            throw new IllegalArgumentException("You must provide the label service a list of languages.");
-        }
+        checkArgument(!paramNodes.isEmpty(), "You must provide the label service a list of languages.");
+
 
         // TODO there has to be a better data structure for this.
         /*
@@ -148,15 +148,11 @@ public class LabelService extends AbstractServiceFactory {
         Map<String, Integer> fallbacksMap = new HashMap<>();
         int cnt = 0;
         for (TermNode term: paramNodes) {
-            if (term.isVariable()) {
-                throw new IllegalArgumentException("not a constant");
-            }
+            checkArgument(!term.isVariable(), "not a constant");
 
             final Value v = term.getValue();
 
-            if (!(v instanceof Literal)) {
-                throw new IllegalArgumentException("not a literal");
-            }
+            checkArgument(v instanceof Literal, "not a literal");
 
             final String s = v.stringValue().trim();
             if (s.contains(",")) {

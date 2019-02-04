@@ -98,13 +98,9 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
      * @return
      */
     private boolean isWikibaseDateURI(URI lit) {
-        if (lit == null) {
-            return false;
-        }
-        if (SUPPORTED_DATA_TYPES.contains(lit)) {
-            return true;
-        }
-        return false;
+        if (lit == null) return false;
+
+        return SUPPORTED_DATA_TYPES.contains(lit);
     }
 
     @SuppressWarnings("rawtypes")

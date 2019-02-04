@@ -31,8 +31,7 @@ public class NormalizingInlineUriHandler extends InlineURIHandler {
 
     @Override
     public void init(Vocabulary vocab) {
- // Skip init() since we have no vocab entry for our namespace
-//     super.init(vocab);
+        // Skip init() since we have no vocab entry for our namespace
         next.init(vocab);
     }
 

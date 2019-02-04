@@ -46,7 +46,7 @@ public class WikibasePoint {
             LAT_LONG.other = LONG_LAT;
             LONG_LAT.other = LAT_LONG;
         }
-    };
+    }
 
     /**
      * Default coordinate order in the system.
