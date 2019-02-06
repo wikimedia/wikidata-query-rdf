@@ -282,7 +282,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
         }
         log.debug("Filtered batch contains {} changes", trueChanges.size());
 
-        if (trueChanges.size() > 0) {
+        if (!trueChanges.isEmpty()) {
             setValuesAndRefs(
                     rdfRepository.getValues(changeIds),
                     rdfRepository.getRefs(changeIds)

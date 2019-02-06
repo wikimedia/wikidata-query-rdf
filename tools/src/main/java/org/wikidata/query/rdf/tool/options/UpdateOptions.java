@@ -6,6 +6,7 @@ import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.INPUT_DATE
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.OUTPUT_DATE_FORMATTER;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris.DEFAULT_ENTITY_NAMESPACES;
 
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -169,8 +170,9 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
         String dumpDir = updateOptions.dumpDir();
         if (dumpDir == null) return null;
         Path dumpDirPath = Paths.get(dumpDir);
-        if (!(Files.exists(dumpDirPath)
-                && Files.isDirectory(dumpDirPath)
+        File dumpDirFile = dumpDirPath.toFile();
+        if (!(dumpDirFile.exists()
+                && dumpDirFile.isDirectory()
                 && Files.isWritable(dumpDirPath))) {
             throw new IllegalArgumentException("Bad dump directory: " + dumpDir);
         }

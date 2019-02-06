@@ -98,10 +98,12 @@ public final class CliUtils {
      * them.
      */
     @SuppressForbidden
-    public static class ForbiddenOk {
+    public static final class ForbiddenOk {
+        private ForbiddenOk() {
+            // Utility class should never be instantiated
+        }
         /**
          * Get System.in. CliTools should be allowed to use System.in/out/err.
-         * This is private because we only want them to be used by cli tools.
          */
         public static InputStream systemDotIn() {
             return System.in;
@@ -109,7 +111,6 @@ public final class CliUtils {
 
         /**
          * Get System.out. CliTools should be allowed to use System.in/out/err.
-         * This is private because we only want them to be used by cli tools.
          */
         public static PrintStream systemDotOut() {
             return System.out;
@@ -117,7 +118,6 @@ public final class CliUtils {
 
         /**
          * Get System.err. CliTools should be allowed to use System.in/out/err.
-         * This is private because we only want them to be used by cli tools.
          */
         public static PrintStream systemDotErr() {
             return System.err;

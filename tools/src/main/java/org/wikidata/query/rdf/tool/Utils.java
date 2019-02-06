@@ -1,13 +1,13 @@
 package org.wikidata.query.rdf.tool;
 
 import static com.google.common.io.Resources.getResource;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.net.URL;
 
 import org.wikidata.query.rdf.tool.exception.FatalException;
 
-import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 
 /**
@@ -39,7 +39,7 @@ public final class Utils {
     public static <T> String loadBody(String name, Class<T> klass) {
         URL url = getResource(klass, klass.getSimpleName() + "." + name + ".sparql");
         try {
-            return Resources.toString(url, Charsets.UTF_8);
+            return Resources.toString(url, UTF_8);
         } catch (IOException e) {
             throw new FatalException("Can't load " + url, e);
         }
