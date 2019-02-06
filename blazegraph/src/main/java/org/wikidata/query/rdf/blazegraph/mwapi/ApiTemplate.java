@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.mwapi;
 
 import static java.util.Objects.requireNonNull;
+import static org.wikidata.query.rdf.blazegraph.mwapi.ApiTemplate.OutputVariable.Type.ORDINAL;
 import static org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.paramNameToURI;
 
 import java.util.ArrayList;
@@ -236,7 +237,7 @@ public class ApiTemplate {
                     for (OutputVariable.Type varType : OutputVariable.Type.values()) {
                         if (varType.predicate.equals(sp.p().getValue())) {
                             IVariable var = (IVariable)sp.s().getValueExpression();
-                            if (varType == varType.ORDINAL) {
+                            if (varType == ORDINAL) {
                                 // Ordinal values ignore the object
                                 vars.add(new OutputVariable(varType, var, "."));
                                 break;
@@ -305,7 +306,7 @@ public class ApiTemplate {
                 return predicate.stringValue();
             }
 
-        };
+        }
         /**
          * Original Blazegraph var.
          */
@@ -363,14 +364,14 @@ public class ApiTemplate {
          * Is it the ordinal value?
          */
         public boolean isOrdinal() {
-            return type == Type.ORDINAL;
+            return type == ORDINAL;
         }
 
         /**
          * Would this variable produce an URI?
          */
         public boolean isURI() {
-            return type != Type.STRING && type != Type.ORDINAL;
+            return type != Type.STRING && type != ORDINAL;
         }
 
         /**

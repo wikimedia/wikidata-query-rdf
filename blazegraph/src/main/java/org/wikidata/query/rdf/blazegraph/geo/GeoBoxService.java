@@ -225,11 +225,10 @@ public class GeoBoxService extends GeoService {
      * @return
      */
     private TermNode getSubstituteVar(TermNode term) {
-        if (term.isVariable()) {
-            if (((IVariable<?>) term.getValueExpression()).isAnonymous()) {
-                throw new IllegalArgumentException(
-                        "Anonymous vars not supported as box corners");
-            }
+        if (term.isVariable()
+                && ((IVariable<?>) term.getValueExpression()).isAnonymous()) {
+            throw new IllegalArgumentException(
+                    "Anonymous vars not supported as box corners");
         }
         final VarNode newnode = VarNode.freshVarNode();
         term.setProperty(VAR_ANNOTATION, newnode);

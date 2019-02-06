@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.options;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.splitByComma;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.INPUT_DATE_FORMATTER;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.OUTPUT_DATE_FORMATTER;
@@ -14,6 +15,7 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
@@ -92,11 +94,12 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     @Option(description = "Set RDF dumping in this directory", defaultToNull = true)
     String dumpDir();
 
-    static long[] longEntityNamespaces(UpdateOptions updateOptions) {
+    static Set<Long> longEntityNamespaces(UpdateOptions updateOptions) {
         if (updateOptions.entityNamespaces() == null) return DEFAULT_ENTITY_NAMESPACES;
-        return splitByComma(Arrays.asList(updateOptions.entityNamespaces())).stream().
-                mapToLong(option -> Long.parseLong(option))
-                .toArray();
+        return splitByComma(Arrays.asList(updateOptions.entityNamespaces()))
+                .stream()
+                .map(Long::parseLong)
+                .collect(toImmutableSet());
     }
 
     /**

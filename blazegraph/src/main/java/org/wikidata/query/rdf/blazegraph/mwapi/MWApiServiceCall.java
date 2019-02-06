@@ -71,7 +71,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     /**
      * Request timeout property for MWAPI requests.
      */
-    private static final String TIMEOUT_PROPERTY = MWApiServiceCall.class.getName() + ".timeout";;
+    private static final String TIMEOUT_PROPERTY = MWApiServiceCall.class.getName() + ".timeout";
     /**
      * Default request timeout.
      */
@@ -145,26 +145,20 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         this.requestTimeout = Integer.parseInt(System.getProperty(TIMEOUT_PROPERTY, TIMEOUT_MILLIS));
         this.maxContinue = getMaxFromLimit(limit);
         this.allowContinue = (limit >= 0);
-        this.docBuilder = new ThreadLocal<DocumentBuilder>() {
-            @Override protected DocumentBuilder initialValue() {
-                DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-                try {
-                    dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                    dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
-                    dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-                    return dbf.newDocumentBuilder();
-                } catch (ParserConfigurationException e) {
-                    // Converting to runtime exception since anon classes + checked exceptions = :(
-                    log.error("Could not configure parser: {}", e);
-                    throw new IllegalStateException(e);
-                }
+        this.docBuilder = ThreadLocal.withInitial(() -> {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            try {
+                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+                dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+                dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+                return dbf.newDocumentBuilder();
+            } catch (ParserConfigurationException e) {
+                // Converting to runtime exception since anon classes + checked exceptions = :(
+                log.error("Could not configure parser: {}", e);
+                throw new IllegalStateException(e);
             }
-        };
-        this.xpath = new ThreadLocal<XPath>() {
-            @Override protected XPath initialValue() {
-                return XPathFactory.newInstance().newXPath();
-            }
-        };
+        });
+        this.xpath = ThreadLocal.withInitial(() -> XPathFactory.newInstance().newXPath());
     }
 
     /**
@@ -248,13 +242,13 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         // Using XML for now to use XPath on responses
         request.param("format", "xml");
         // Add request-specific parameters
-        getRequestParams(binding).forEach((key, value) -> request.param(key, value));
+        getRequestParams(binding).forEach(request::param);
         return request;
     }
 
     @Override
     public List<IVariable<IV>> getMockVariables() {
-        List<IVariable<IV>> externalVars = new LinkedList<IVariable<IV>>();
+        List<IVariable<IV>> externalVars = new LinkedList<>();
         for (OutputVariable v : outputVars) {
             externalVars.add(v.getVar());
         }
@@ -280,7 +274,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
             if (continueAttrs.getLength() == 0) {
                 return null;
             }
-            ImmutableMap.Builder<String, String> continueVars = new ImmutableMap.Builder<String, String>();
+            ImmutableMap.Builder<String, String> continueVars = new ImmutableMap.Builder<>();
             for (int i = 0; i < continueAttrs.getLength(); i++) {
                 final Node node = continueAttrs.item(i);
                 continueVars = continueVars.put(node.getNodeName(), node.getNodeValue());
@@ -494,7 +488,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         private ResultWithContinue doSearchRequest(int recordsCount) {
             final Request req = getHttpRequest(bindings);
             if (lastResult != null && lastResult.getContinue() != null) {
-                lastResult.getContinue().forEach((key, value) -> req.param(key, value));
+                lastResult.getContinue().forEach(req::param);
             }
             try (Closeable mdc = MDC.putCloseable(MW_API_REQUEST, req.getQuery())) {
                 log.debug("MWAPI REQUEST: {}", req.getQuery());
@@ -510,7 +504,10 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                     throw new RuntimeException("Bad response status: " + response.getStatus());
                 }
                 return parseResponse(listener.getInputStream(), bindings, recordsCount);
-            } catch (ExecutionException | TimeoutException | InterruptedException e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("MWAPI request failed", e);
+            } catch (ExecutionException | TimeoutException  e) {
                 throw new RuntimeException("MWAPI request failed", e);
             } catch (SAXException | IOException | XPathExpressionException e) {
                 throw new RuntimeException("Failed to parse response", e);

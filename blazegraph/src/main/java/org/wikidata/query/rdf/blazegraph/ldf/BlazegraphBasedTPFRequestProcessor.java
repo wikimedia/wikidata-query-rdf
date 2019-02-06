@@ -110,7 +110,7 @@ public class BlazegraphBasedTPFRequestProcessor extends
                     && !o.isSpecificVariable())
                 return null;
 
-            final Set<String> varNames = new HashSet<String>();
+            final Set<String> varNames = new HashSet<>();
 
             if (s.isNamedVariable()) {
                 varNames.add(s.asNamedVariable());

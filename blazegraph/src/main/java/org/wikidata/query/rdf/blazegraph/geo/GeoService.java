@@ -190,8 +190,7 @@ public abstract class GeoService extends AbstractServiceFactory {
     @SuppressFBWarnings(value = "OCP_OVERLY_CONCRETE_PARAMETER", justification = "ServiceNode is a good representation of the intent")
     protected List<StatementPatternNode> getStatementPatterns(final ServiceNode serviceNode) {
 
-        final List<StatementPatternNode> statementPatterns =
-                new ArrayList<StatementPatternNode>();
+        final List<StatementPatternNode> statementPatterns = new ArrayList<>();
 
         for (IGroupMemberNode child : serviceNode.getGraphPattern()) {
 
@@ -213,16 +212,16 @@ public abstract class GeoService extends AbstractServiceFactory {
          *
          * Those can be only in service parameters.
          */
-        final Set<IVariable<?>> requiredBound = new HashSet<IVariable<?>>();
+        final Set<IVariable<?>> requiredBound = new HashSet<>();
         for (StatementPatternNode sp : getStatementPatterns(serviceNode)) {
 
             final TermNode subj = sp.s();
             final IVariableOrConstant<?> object = sp.o().getValueExpression();
 
-            if (subj.isConstant() && BD.SERVICE_PARAM.equals(subj.getValue())) {
-                if (object instanceof IVariable<?>) {
-                    requiredBound.add((IVariable<?>)object); // the subject var is what we return
-                }
+            if (subj.isConstant()
+                    && BD.SERVICE_PARAM.equals(subj.getValue())
+                    && object instanceof IVariable<?>) {
+                requiredBound.add((IVariable<?>) object); // the subject var is what we return
             }
         }
 

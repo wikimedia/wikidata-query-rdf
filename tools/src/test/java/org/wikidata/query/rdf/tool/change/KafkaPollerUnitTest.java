@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.change;
 
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -64,7 +65,7 @@ public class KafkaPollerUnitTest {
     @Before
     public void setupUris() {
         uris = Uris.fromString("https://" + DOMAIN);
-        uris.setEntityNamespaces(new long[] {0});
+        uris.setEntityNamespaces(singleton(0L));
     }
 
     @Test

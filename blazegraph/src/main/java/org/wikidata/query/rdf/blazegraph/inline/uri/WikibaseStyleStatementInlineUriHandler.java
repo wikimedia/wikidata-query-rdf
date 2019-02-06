@@ -29,6 +29,7 @@ import com.bigdata.rdf.model.BigdataLiteral;
  * performance either.
  * @deprecated
  */
+@Deprecated
 public class WikibaseStyleStatementInlineUriHandler extends InlineURIHandler {
     private static final Logger log = LoggerFactory.getLogger(WikibaseStyleStatementInlineUriHandler.class);
 

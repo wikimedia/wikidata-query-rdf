@@ -4,6 +4,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.io.Resources.getResource;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -213,7 +214,7 @@ public class KafkaPollerIntegrationTest {
     @Test
     public void readWriteOffsets() throws Exception {
         KafkaConsumer<String, ChangeEvent> consumer = mock(KafkaConsumer.class);
-        Uris uris = Uris.fromString("https://acme.test").setEntityNamespaces(new long[]{0});
+        Uris uris = Uris.fromString("https://acme.test").setEntityNamespaces(singleton(0L));
 
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
         Collection<String> topics = ImmutableList.of("topictest", "othertopic");

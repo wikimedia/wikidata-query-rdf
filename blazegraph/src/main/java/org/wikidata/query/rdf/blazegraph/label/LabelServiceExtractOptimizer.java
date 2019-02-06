@@ -2,7 +2,6 @@ package org.wikidata.query.rdf.blazegraph.label;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 import com.bigdata.bop.BOp;
 import com.bigdata.bop.IBindingSet;
@@ -13,7 +12,6 @@ import com.bigdata.rdf.sparql.ast.StatementPatternNode;
 import com.bigdata.rdf.sparql.ast.StaticAnalysis;
 import com.bigdata.rdf.sparql.ast.eval.AST2BOpContext;
 import com.bigdata.rdf.sparql.ast.optimizers.AbstractJoinGroupOptimizer;
-import com.bigdata.rdf.sparql.ast.service.ServiceNode;
 import com.bigdata.rdf.store.BD;
 
 /**
@@ -37,27 +35,24 @@ public class LabelServiceExtractOptimizer extends AbstractJoinGroupOptimizer {
             return;
         }
 
-        LabelServiceUtils.getLabelServiceNodes(op).forEach(new Consumer<ServiceNode>() {
-            @Override
-            public void accept(ServiceNode service) {
-                JoinGroupNode g = (JoinGroupNode) service.getGraphPattern();
-                final List<StatementPatternNode> extractedNodes = new ArrayList<>();
-                for (BOp st : g.args()) {
-                    StatementPatternNode sn = (StatementPatternNode) st;
-                    if (sn.s().isConstant() && BD.SERVICE_PARAM.equals(sn.s().getValue())) {
-                        // skip parameters
-                        continue;
-                    }
-                    extractedNodes.add(sn);
+        LabelServiceUtils.getLabelServiceNodes(op).forEach(service -> {
+            JoinGroupNode g = (JoinGroupNode) service.getGraphPattern();
+            final List<StatementPatternNode> extractedNodes = new ArrayList<>();
+            for (BOp st : g.args()) {
+                StatementPatternNode sn = (StatementPatternNode) st;
+                if (sn.s().isConstant() && BD.SERVICE_PARAM.equals(sn.s().getValue())) {
+                    // skip parameters
+                    continue;
                 }
+                extractedNodes.add(sn);
+            }
 
-                for (BOp node : extractedNodes) {
-                    g.removeArg(node);
-                }
+            for (BOp node : extractedNodes) {
+                g.removeArg(node);
+            }
 
-                if (!extractedNodes.isEmpty()) {
-                    service.annotations().put(EXTRACTOR_ANNOTATION, extractedNodes);
-                }
+            if (!extractedNodes.isEmpty()) {
+                service.annotations().put(EXTRACTOR_ANNOTATION, extractedNodes);
             }
         });
     }

@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static com.google.common.collect.ImmutableSet.copyOf;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
 
@@ -14,20 +15,21 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.text.ParseException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -67,10 +69,10 @@ import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
-import org.wikidata.query.rdf.tool.wikibase.EditRequest.Label;
-import org.wikidata.query.rdf.tool.wikibase.SearchResponse.SearchResult;
 import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
 import org.wikidata.query.rdf.tool.utils.StreamDumper;
+import org.wikidata.query.rdf.tool.wikibase.EditRequest.Label;
+import org.wikidata.query.rdf.tool.wikibase.SearchResponse.SearchResult;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -79,7 +81,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.primitives.Longs;
+import com.google.common.collect.ImmutableSet;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -200,7 +202,7 @@ public class WikibaseRepository implements Closeable {
         this(Uris.fromString(baseUrl), false, metricRegistry, new NullStreamDumper());
     }
 
-    public WikibaseRepository(URI baseUrl, long[] entityNamespaces, MetricRegistry metricRegistry) {
+    public WikibaseRepository(URI baseUrl, Set<Long> entityNamespaces, MetricRegistry metricRegistry) {
         this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper());
         uris.setEntityNamespaces(entityNamespaces);
     }
@@ -590,7 +592,6 @@ public class WikibaseRepository implements Closeable {
     /**
      * URIs used for accessing wikibase.
      */
-    @SuppressFBWarnings(value = {"EI_EXPOSE_REP2", "MS_MUTABLE_ARRAY"}, justification = "minor enough")
     public static class Uris {
         /**
          * URL which should be used to retrieve Entity data.
@@ -600,11 +601,11 @@ public class WikibaseRepository implements Closeable {
          * URL of the API endpoint.
          */
         private static final String API_URL = "/w/api.php";
-        public static final long[] DEFAULT_ENTITY_NAMESPACES = {0, 120};
+        public static final Set<Long> DEFAULT_ENTITY_NAMESPACES = ImmutableSet.of(0L, 120L);
         /**
          * Item and Property namespaces.
          */
-        private long[] entityNamespaces = DEFAULT_ENTITY_NAMESPACES;
+        private Set<Long> entityNamespaces;
         /**
          * Base URL for Wikibase.
          */
@@ -614,9 +615,9 @@ public class WikibaseRepository implements Closeable {
             this(baseUrl, DEFAULT_ENTITY_NAMESPACES);
         }
 
-        public Uris(URI baseUrl, long[] entityNamespaces) {
+        public Uris(URI baseUrl, Set<Long> entityNamespaces) {
             this.baseUrl = baseUrl;
-            this.entityNamespaces = entityNamespaces;
+            this.entityNamespaces = copyOf(entityNamespaces);
         }
 
         public static Uris fromString(String url) {
@@ -627,8 +628,8 @@ public class WikibaseRepository implements Closeable {
             }
         }
 
-        public Uris setEntityNamespaces(long[] entityNamespaces) {
-            this.entityNamespaces = entityNamespaces;
+        public Uris setEntityNamespaces(Set<Long> entityNamespaces) {
+            this.entityNamespaces = copyOf(entityNamespaces);
             return this;
         }
 
@@ -787,14 +788,16 @@ public class WikibaseRepository implements Closeable {
          * @param namespace the namespace index
          */
         public boolean isEntityNamespace(long namespace) {
-            return ArrayUtils.contains(entityNamespaces, namespace);
+            return entityNamespaces.contains(namespace);
         }
 
         /**
          * The wikibase entity namespace indexes joined with a delimiter.
          */
         private String getEntityNamespacesString(String delimiter) {
-            return Longs.join(delimiter, entityNamespaces);
+            return entityNamespaces.stream()
+                    .map(Object::toString)
+                    .collect(Collectors.joining(delimiter));
         }
 
     }
@@ -802,10 +805,11 @@ public class WikibaseRepository implements Closeable {
     /**
      * Extract timestamp from continue JSON object.
      * @return Timestamp as date
-     * @throws ParseException When data is in is wrong format
+     * @throws DateTimeParseException When data is in the wrong format
+     * @throws NumberFormatException When data is in the wrong format
      */
     @SuppressFBWarnings(value = "STT_STRING_PARSING_A_FIELD", justification = "low priority to fix")
-    public Change getChangeFromContinue(Continue nextContinue) throws ParseException {
+    public Change getChangeFromContinue(Continue nextContinue) {
         if (nextContinue == null) {
             return null;
         }
