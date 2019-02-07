@@ -230,7 +230,7 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
                 config.getAlwaysBanParam(),
                 Clock.systemUTC());
 
-        registerMBean(filterConfig.getFilterName());
+        objectName = registerMBean(filterConfig.getFilterName());
     }
 
     /**
@@ -241,13 +241,13 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
      *
      * @param filterName
      */
-    private void registerMBean(String filterName) {
+    private ObjectName registerMBean(String filterName) {
+        ObjectName name = null;
         try {
-            ObjectName objectName = new ObjectName(ThrottlingFilter.class.getName(), "filterName", filterName);
+            name = new ObjectName(ThrottlingFilter.class.getName(), "filterName", filterName);
             MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
-            platformMBeanServer.registerMBean(this, objectName);
-            this.objectName = objectName;
-            log.info("ThrottlingFilter MBean registered as {}.", objectName);
+            platformMBeanServer.registerMBean(this, name);
+            log.info("ThrottlingFilter MBean registered as {}.", name);
         } catch (MalformedObjectNameException e) {
             log.error("filter name {} is invalid as an MBean property.", filterName, e);
         } catch (InstanceAlreadyExistsException e) {
@@ -255,6 +255,7 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
         } catch (NotCompliantMBeanException | MBeanRegistrationException e) {
             log.error("Could not register MBean for ThrottlingFilter.", e);
         }
+        return name;
     }
 
     /**
@@ -419,7 +420,7 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
     private Collection<Pattern> loadRegexPatterns(String patternFilename) {
         try {
             Path patternFile = Paths.get(patternFilename);
-            if (!Files.exists(patternFile)) {
+            if (!patternFile.toFile().exists()) {
                 log.info("Patterns file {} not found, ignoring.", patternFilename);
                 return ImmutableList.of();
             }

@@ -49,7 +49,7 @@ public class DecodeUriBOp extends IVValueExpression<IV> implements INeedsMateria
 
     @Override
     @SuppressFBWarnings(value = "LEST_LOST_EXCEPTION_STACK_TRACE", justification = "SparqlTypeErrorException does not allow setting a cause")
-    public IV get(final IBindingSet bs) throws SparqlTypeErrorException {
+    public IV get(final IBindingSet bs) {
         final Literal lit = getAndCheckLiteralValue(0, bs);
         try {
             final BigdataLiteral str = getValueFactory().createLiteral(URLDecoder.decode(lit.getLabel(), UTF_8.name()));

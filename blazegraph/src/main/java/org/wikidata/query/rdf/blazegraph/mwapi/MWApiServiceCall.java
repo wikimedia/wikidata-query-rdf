@@ -107,7 +107,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     /**
      * Config variable for changing maximum continue value.
      */
-    private final String MAX_CONTINUE_CONFIG = MWApiServiceCall.class.getName()
+    private static final String MAX_CONTINUE_CONFIG = MWApiServiceCall.class.getName()
             + ".maxContinue";
     /**
      * Max number of elements fetched in one continue chain.

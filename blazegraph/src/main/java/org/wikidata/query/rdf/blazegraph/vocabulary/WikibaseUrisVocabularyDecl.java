@@ -21,7 +21,7 @@ public class WikibaseUrisVocabularyDecl extends BaseVocabularyDecl {
      * @return
      */
     private static List<String> getUriList(WikibaseUris uris, Collection<String> prefixes) {
-        List<String> uriList = new LinkedList<String>();
+        List<String> uriList = new LinkedList<>();
         uriList.add(uris.entity());
         /*
          * Note that these next two lines are required to make

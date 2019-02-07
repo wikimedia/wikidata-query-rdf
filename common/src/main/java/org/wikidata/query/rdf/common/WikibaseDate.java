@@ -21,7 +21,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 @SuppressFBWarnings(value = "PL_PARALLEL_LISTS", justification = "SECONDS_PER_MONTH and SECONDS_PER_MONTH_CUMULATIVE make sense as separate arrays")
 public class WikibaseDate {
-//    private static final transient Logger log = LoggerFactory.getLogger(WikibaseDate.class);
+    // private static final Logger log = LoggerFactory.getLogger(WikibaseDate.class);
 
     /**
      * Pattern used to recognize dates sent from wikibase.

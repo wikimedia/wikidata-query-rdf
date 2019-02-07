@@ -13,6 +13,7 @@ public class NullStreamDumper implements StreamDumper {
 
     @Override
     public void rotate() {
+        // Null dumper does not dump and thus does not need to rotate any file.
     }
 
 }
