@@ -47,7 +47,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
@@ -100,7 +99,7 @@ public class WikibaseRepository implements Closeable {
     /**
      * Request timeout property.
      */
-    public static final String TIMEOUT_PROPERTY = WikibaseRepository.class.getName() + ".timeout";
+    private static final String TIMEOUT_PROPERTY = WikibaseRepository.class.getName() + ".timeout";
     /**
      * How many retries allowed on error.
      */
@@ -256,16 +255,12 @@ public class WikibaseRepository implements Closeable {
                 return false;
             }
             if (exception instanceof InterruptedIOException) {
-                // Timeout
+                // Timeout - also includes ConnectTimeoutException
                 return true;
             }
             if (exception instanceof UnknownHostException) {
                 // Unknown host
                 return false;
-            }
-            if (exception instanceof ConnectTimeoutException) {
-                // Connection refused
-                return true;
             }
             if (exception instanceof SSLException) {
                 // SSL handshake exception
@@ -274,13 +269,8 @@ public class WikibaseRepository implements Closeable {
 
             HttpClientContext clientContext = HttpClientContext.adapt(context);
             HttpRequest request = clientContext.getRequest();
-            boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
-            if (idempotent) {
-                // Retry if the request is considered idempotent
-                return true;
-            }
-
-            return false;
+            // Retry if the request is considered idempotent
+            return !(request instanceof HttpEntityEnclosingRequest);
         };
     }
 
@@ -352,7 +342,7 @@ public class WikibaseRepository implements Closeable {
 
     /**
      * Collect TTL statements from single URL.
-     * @throws RetryableException
+     * @throws RetryableException if there's a retryable error
      */
     @SuppressFBWarnings("CC_CYCLOMATIC_COMPLEXITY")
     private void collectStatementsFromUrl(URI uri, StatementCollector collector, Timer timer) throws RetryableException {
@@ -454,7 +444,6 @@ public class WikibaseRepository implements Closeable {
      * @throws RetryableException thrown if there is an error communicating with
      *             wikibase
      */
-    @SuppressWarnings("unchecked")
     public String setLabel(String entityId, String type, String label, String language) throws RetryableException {
         String datatype = type.equals("property") ? "string" : null;
 
