@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.common;
 
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
+import static java.lang.StrictMath.abs;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -362,8 +363,8 @@ public class WikibaseDate {
         DATE_TIME {
             @Override
             public String format(WikibaseDate date) {
-                return String.format(Locale.ROOT, "%04d-%02d-%02dT%02d:%02d:%02dZ", date.year, date.month, date.day,
-                        date.hour, date.minute, date.second);
+                return String.format(Locale.ROOT, "%s%04d-%02d-%02dT%02d:%02d:%02dZ", date.year < 0 ? "-" : "",
+                        abs(date.year), date.month, date.day, date.hour, date.minute, date.second);
             }
         },
         /**
@@ -372,7 +373,8 @@ public class WikibaseDate {
         DATE {
             @Override
             public String format(WikibaseDate date) {
-                return String.format(Locale.ROOT, "%04d-%02d-%02d", date.year, date.month, date.day);
+                return String.format(Locale.ROOT, "%s%04d-%02d-%02d", date.year < 0 ? "-" : "",
+                        abs(date.year), date.month, date.day);
             }
         };
 

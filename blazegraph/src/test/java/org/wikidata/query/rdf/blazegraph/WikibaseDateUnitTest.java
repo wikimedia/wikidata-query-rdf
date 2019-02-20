@@ -78,4 +78,13 @@ public class WikibaseDateUnitTest extends AbstractRandomizedBlazegraphTestBase {
         BindingSet result = results.next();
         assertThat(result, binds("answer", new LiteralImpl("true", XMLSchema.BOOLEAN)));
     }
+
+    @Test
+    public void smallNegative() throws QueryEvaluationException {
+        TupleQueryResult results = query("select (?date + \"P1D\"^^xsd:duration as ?date2) where {\n" +
+                "  BIND(\"-0099-01-01T00:00:00Z\"^^xsd:dateTime as ?date)\n" +
+                "}");
+        BindingSet result = results.next();
+        assertThat(result, binds("date2", new LiteralImpl("-0099-01-02T00:00:00Z", XMLSchema.DATETIME)));
+    }
 }

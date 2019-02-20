@@ -168,6 +168,18 @@ public class WikibaseDateUnitTest {
         assertThat(wdDate7days.secondsSinceEpoch()).isEqualTo(jodaSeconds(2016, 7, 29, 0, 0, 0));
     }
 
+    @Test
+    public void smallNegative() {
+        WikibaseDate wbDate = fromString("-0099-01-01T00:00:00Z");
+        checkRoundTrip(wbDate);
+        assertThat(wbDate.toString(DATE_TIME)).isEqualTo("-0099-01-01T00:00:00Z");
+        assertThat(wbDate.toString(DATE)).isEqualTo("-0099-01-01");
+        wbDate = fromString("-0009-01-01T00:00:00Z");
+        checkRoundTrip(wbDate);
+        assertThat(wbDate.toString(DATE_TIME)).isEqualTo("-0009-01-01T00:00:00Z");
+        assertThat(wbDate.toString(DATE)).isEqualTo("-0009-01-01");
+    }
+
     /**
      * Checks that the dates resolve the same way joda-time resolves dates and
      * that they round trip.
