@@ -131,66 +131,65 @@
         <url-pattern>/namespace/*</url-pattern>
     </filter-mapping>
     <servlet>
-        <servlet-name>REST API</servlet-name>
-        <display-name>REST API</display-name>
         <description>The REST API, including a SPARQL end point, as described at
             https://wiki.blazegraph.com/wiki/index.php/NanoSparqlServer
         </description>
+        <display-name>REST API</display-name>
+        <servlet-name>REST API</servlet-name>
         <servlet-class>com.bigdata.rdf.sail.webapp.RESTServlet</servlet-class>
         <load-on-startup>0</load-on-startup>
         <async-supported>true</async-supported>
     </servlet>
     <servlet>
-        <servlet-name>Multi-Tenancy API</servlet-name>
-        <display-name>Multi-Tenancy API</display-name>
         <description>The REST API for managing multiple KBs in a single Journal
             or Federation.
         </description>
+        <display-name>Multi-Tenancy API</display-name>
+        <servlet-name>Multi-Tenancy API</servlet-name>
         <servlet-class>com.bigdata.rdf.sail.webapp.MultiTenancyServlet</servlet-class>
         <async-supported>true</async-supported>
     </servlet>
     <servlet>
-        <servlet-name>DataLoader</servlet-name>
-        <display-name>DataLoader Servlet</display-name>
         <description>Servlet providing DataLoader functionality for bulk loading into
             a namespace.
         </description>
+        <display-name>DataLoader Servlet</display-name>
+        <servlet-name>DataLoader</servlet-name>
         <servlet-class>com.bigdata.rdf.sail.webapp.DataLoaderServlet</servlet-class>
         <async-supported>true</async-supported>
     </servlet>
     <servlet>
-        <servlet-name>Transaction Management API</servlet-name>
+        <description>The REST API for managing transactions for a Journal.</description>
         <display-name>Transaction Management API</display-name>
-        <description>The REST API for managing transactions for a Journal.
-        </description>
+        <servlet-name>Transaction Management API</servlet-name>
         <servlet-class>com.bigdata.rdf.sail.webapp.TxServlet</servlet-class>
         <async-supported>true</async-supported>
     </servlet>
     <servlet>
-        <servlet-name>Status</servlet-name>
-        <display-name>Status</display-name>
         <description>A status page.</description>
+        <display-name>Status</display-name>
+        <servlet-name>Status</servlet-name>
         <servlet-class>com.bigdata.rdf.sail.webapp.StatusServlet</servlet-class>
         <async-supported>true</async-supported>
     </servlet>
     <servlet>
-        <servlet-name>Counters</servlet-name>
-        <display-name>Performance counters</display-name>
         <description>Performance counters.</description>
+        <display-name>Performance counters</display-name>
+        <servlet-name>Counters</servlet-name>
         <servlet-class>com.bigdata.rdf.sail.webapp.CountersServlet</servlet-class>
         <async-supported>true</async-supported>
     </servlet>
     <servlet>
-        <servlet-name>LDF API</servlet-name>
-        <display-name>LDF API</display-name>
         <description>API implementing linked data fragments.</description>
+        <display-name>LDF API</display-name>
+        <servlet-name>LDF API</servlet-name>
         <servlet-class>org.wikidata.query.rdf.blazegraph.ldf.LDFServlet</servlet-class>
-        <async-supported>true</async-supported>
         <init-param>
             <description>Configuration file for the LDF server.</description>
             <param-name>configFile</param-name>
             <param-value>ldf-config.json</param-value>
         </init-param>
+        <async-supported>true</async-supported>
     </servlet>
     <servlet>
         <servlet-name>ldfassets</servlet-name>
