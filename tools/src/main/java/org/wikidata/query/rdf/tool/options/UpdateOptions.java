@@ -95,6 +95,9 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     @Option(description = "Set RDF dumping in this directory", defaultToNull = true)
     String dumpDir();
 
+    @Option(longName = "metricDomain", defaultValue = "wdqs-updater", description = "JMX metrics domain")
+    String metricDomain();
+
     static Set<Long> longEntityNamespaces(UpdateOptions updateOptions) {
         if (updateOptions.entityNamespaces() == null) return DEFAULT_ENTITY_NAMESPACES;
         return splitByComma(Arrays.asList(updateOptions.entityNamespaces()))

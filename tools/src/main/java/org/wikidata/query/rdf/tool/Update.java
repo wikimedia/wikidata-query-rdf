@@ -116,7 +116,7 @@ public final class Update {
         try {
             UpdateOptions options = handleOptions(UpdateOptions.class, args);
 
-            MetricRegistry metricRegistry = createMetricRegistry(closer);
+            MetricRegistry metricRegistry = createMetricRegistry(closer, options.metricDomain());
 
             StreamDumper wikibaseStreamDumper = createStreamDumper(dumpDirPath(options));
 
@@ -229,9 +229,9 @@ public final class Update {
         };
     }
 
-    public static MetricRegistry createMetricRegistry(Closer closer) {
+    public static MetricRegistry createMetricRegistry(Closer closer, String metricDomain) {
         MetricRegistry metrics = new MetricRegistry();
-        JmxReporter reporter = closer.register(JmxReporter.forRegistry(metrics).build());
+        JmxReporter reporter = closer.register(JmxReporter.forRegistry(metrics).inDomain(metricDomain).build());
         reporter.start();
         return metrics;
     }

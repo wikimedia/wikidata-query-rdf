@@ -95,6 +95,16 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     private static final String WHITELIST = System.getProperty("wikibaseServiceWhitelist", WHITELIST_DEFAULT);
 
     /**
+     * Default metrics domain.
+     */
+    private static final String METRICS_DOMAIN_DEFAULT = "wdqs-blazegraph";
+
+    /**
+     * Default metrics domain configuration.
+     */
+    private static final String METRICS_DOMAIN = System.getProperty("WDQSMetricDomain", METRICS_DOMAIN_DEFAULT);
+
+    /**
      * Hooks that need to be run on shutdown.
      *
      * Stored in a thread safe list since the shutdown is not garanteed to run
@@ -248,7 +258,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
     private MetricRegistry createMetricRegistry() {
         MetricRegistry registry = new MetricRegistry();
-        JmxReporter jmxReporter = JmxReporter.forRegistry(registry).build();
+        JmxReporter jmxReporter = JmxReporter.forRegistry(registry).inDomain(METRICS_DOMAIN).build();
         jmxReporter.start();
         shutdownHooks.add(jmxReporter::stop);
         return registry;
