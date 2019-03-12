@@ -2,17 +2,21 @@ package org.wikidata.query.rdf.tool.wikibase;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.io.Resources.getResource;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.text.ParseException;
 import java.time.Instant;
 import java.util.Collection;
 
@@ -20,6 +24,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.openrdf.model.Statement;
+import org.wikidata.query.rdf.test.SystemPropertyContext;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
 import com.codahale.metrics.MetricRegistry;
@@ -48,7 +53,7 @@ public class WikibaseRepositoryWireIntegrationTest {
 
     @SuppressWarnings("boxing")
     @Test
-    public void recentChangesAreParsed() throws IOException, RetryableException, ParseException {
+    public void recentChangesAreParsed() throws IOException, RetryableException {
         stubFor(get(anyUrl())
                 .willReturn(aResponse().withBody(load("recent_changes.json"))));
 
@@ -102,5 +107,31 @@ public class WikibaseRepositoryWireIntegrationTest {
                 .willReturn(aResponse().withBody("<d> <e> <f> .")));
         Collection<Statement> response = repository.fetchRdfForEntity("Q2");
         assertThat(response, hasSize(2));
+    }
+
+    @Test
+    public void defaultUserAgentIsSet() throws RetryableException {
+        stubFor(get(anyUrl())
+                .willReturn(ok("")));
+
+        repository.fetchRdfForEntity("Q1");
+
+        verify(getRequestedFor(anyUrl()).withHeader("User-Agent", containing("Wikidata Query Service Updater")));
+    }
+
+    @Test
+    public void userAgentIsSetFromSystemProperty() throws RetryableException, IOException {
+        try (Closeable propContext = SystemPropertyContext.setProperty("http.userAgent", "some-agent")) {
+
+            // recreate repository now that system prop is set
+            createWikibaseRepository();
+
+            stubFor(get(anyUrl())
+                    .willReturn(ok("")));
+
+            repository.fetchRdfForEntity("Q1");
+
+            verify(getRequestedFor(anyUrl()).withHeader("User-Agent", containing("some-agent")));
+        }
     }
 }

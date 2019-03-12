@@ -565,8 +565,12 @@ public class WikibaseRepository implements Closeable {
                 .setRetryHandler(getRetryHandler(RETRIES))
                 .setServiceUnavailableRetryStrategy(getRetryStrategy(RETRIES, RETRY_INTERVAL))
                 .disableCookieManagement()
-                .setUserAgent("Wikidata Query Service Updater")
+                .setUserAgent(getUserAgent())
                 .build();
+    }
+
+    private static String getUserAgent() {
+        return System.getProperty("http.userAgent", "Wikidata Query Service Updater");
     }
 
     private static InstrumentedHttpClientConnectionManager createConnectionManager(MetricRegistry registry) {
