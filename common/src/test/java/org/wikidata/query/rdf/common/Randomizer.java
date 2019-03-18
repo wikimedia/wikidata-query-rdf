@@ -5,7 +5,9 @@ import java.util.Random;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.junit.rules.ExternalResource;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,20 +18,43 @@ import org.slf4j.LoggerFactory;
  * Duplication is sadly necessary to avoid module cycles.
  */
 @NotThreadSafe
-public class Randomizer extends ExternalResource {
+public class Randomizer implements TestRule {
 
     private static final String SEED_PROPERTY = Randomizer.class.getName() + ".seed";
     private static final Logger log = LoggerFactory.getLogger(Randomizer.class);
     private Random random;
+    private int seed;
+
+    @Override
+    public Statement apply(Statement base, Description description) {
+        return new Statement() {
+            @Override
+            @SuppressWarnings("IllegalCatch") // we're rethrowing this Throwable immediately
+            public void evaluate() throws Throwable {
+                before();
+                try {
+                    base.evaluate();
+                } catch (Throwable t) {
+                    onError();
+                    throw t;
+                }
+            }
+        };
+    }
 
     /**
      * Initialize the random generator.
      */
-    @Override
-    protected void before() {
-        int seed = getSeed();
-        log.info("Ramdomizer initialized with: [{}], you can override it by setting the system property {}.", seed, SEED_PROPERTY);
+    private void before() {
+        seed = getSeed();
         random = new Random(seed);
+    }
+
+    /**
+     * Log seed on errors.
+     */
+    private void onError() {
+        log.info("Ramdomizer initialized with: [{}], you can override it by setting the system property {}.", seed, SEED_PROPERTY);
     }
 
     private int getSeed() {
