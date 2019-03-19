@@ -2,6 +2,7 @@
 -----
 Updgrade LDF server to 0.2.2
 Upgrade Jetty to latest 9.4
+Upgrade Blazegraph to 2.1.5 Release
 Introduce support for Lexemes
 Add Kafka poller
 Add loading constraints
