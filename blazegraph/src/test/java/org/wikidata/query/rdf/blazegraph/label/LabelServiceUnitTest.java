@@ -189,7 +189,6 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         if (log.isDebugEnabled()) {
             log.debug("Query:  " + query);
         }
-        log.warn("Running query: " + query.toString());
         return query(query.toString());
     }
 
