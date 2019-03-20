@@ -186,9 +186,7 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         }
         query.append("  }\n");
         query.append("}\n");
-        if (log.isDebugEnabled()) {
-            log.debug("Query:  " + query);
-        }
+        log.debug("Query: {}", query);
         return query(query.toString());
     }
 
