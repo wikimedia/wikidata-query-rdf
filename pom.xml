@@ -65,7 +65,7 @@
 
     <properties>
         <blazegraph.version>2.1.5-wmf.1</blazegraph.version>
-        <jackson.version>2.9.5</jackson.version>
+        <jackson.version>2.9.8</jackson.version>
         <!-- matching version used by Blazegraph here -->
         <jetty.version>9.4.12.v20180830</jetty.version>
         <logback.version>1.2.3</logback.version>
