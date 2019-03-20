@@ -7,6 +7,7 @@ fi
 
 SOURCE=${SOURCE:-"https://dumps.wikimedia.org/other/categoriesrdf"}
 DATA_DIR=${DATA_DIR:-"/srv/wdqs"}
+DUMPS_DIR="${DATA_DIR}/dumps"
 HOST=${CATEGORY_ENDPOINT:-"http://localhost:9999"}
 CONTEXT=bigdata
 NAMESPACE=categories
@@ -27,9 +28,9 @@ if [ -z "$TS" ]; then
 	exit 1
 fi
 FILENAME=$WIKI-$TS-categories.ttl.gz
-curl --silent --fail -XGET $SOURCE/$TS/$FILENAME -o $DATA_DIR/$FILENAME
-if [ ! -s $DATA_DIR/$FILENAME ]; then
+curl --silent --fail -XGET $SOURCE/$TS/$FILENAME -o $DUMPS_DIR/$FILENAME
+if [ ! -s $DUMPS_DIR/$FILENAME ]; then
 	echo "Could not download $FILENAME"
 	exit 1
 fi
-curl --silent --show-error -XPOST --data-binary update="LOAD <file://$DATA_DIR/$FILENAME>" $HOST/$CONTEXT/namespace/$NAMESPACE/sparql
+curl --silent --show-error -XPOST --data-binary update="LOAD <file://$DUMPS_DIR/$FILENAME>" $HOST/$CONTEXT/namespace/$NAMESPACE/sparql

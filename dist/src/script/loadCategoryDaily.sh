@@ -10,6 +10,7 @@ fi
 
 SOURCE=${SOURCE:-"https://dumps.wikimedia.org/other/categoriesrdf/daily"}
 DATA_DIR=${DATA_DIR:-"/srv/wdqs"}
+DUMPS_DIR="${DATA_DIR}/dumps"
 HOST=${CATEGORY_ENDPOINT:-"http://localhost:9999"}
 CONTEXT=bigdata
 NAMESPACE=$(cat $ALIAS_FILE | grep categories | cut -d' ' -f2 | cut -d ';' -f1)
@@ -33,9 +34,9 @@ fi
 
 FILENAME="$PREFIX$WIKI-$TS-daily.sparql.gz"
 URL="$SOURCE/$TS/$FILENAME"
-curl --silent --fail -XGET "$URL" -o "$DATA_DIR/$FILENAME"
+curl --silent --fail -XGET "$URL" -o "$DUMPS_DIR/$FILENAME"
 if [ ! -s $DATA_DIR/$FILENAME ]; then
 	echo "Could not download $URL"
 	exit 1
 fi
-gunzip -dc $DATA_DIR/$FILENAME | curl --silent --show-error -XPOST -H 'Content-type:application/sparql-update' --data-binary @- $HOST/$CONTEXT/namespace/$NAMESPACE/sparql
+gunzip -dc $DUMPS_DIR/$FILENAME | curl --silent --show-error -XPOST -H 'Content-type:application/sparql-update' --data-binary @- $HOST/$CONTEXT/namespace/$NAMESPACE/sparql
