@@ -295,7 +295,6 @@ public class Munger {
      *
      * @param statements statements to munge
      */
-    @SuppressWarnings("unchecked")
     public void munge(String entityId, Collection<Statement> statements) {
         munge(entityId, statements, emptySet(), emptySet(), null, null);
     }
@@ -608,7 +607,7 @@ public class Munger {
                     // Noop - fall out is ok as we just remove them.
             }
             if (knownPredicate) {
-                dataStatements.add(new ImmutablePair<URI, Literal>(
+                dataStatements.add(new ImmutablePair<>(
                         statement.getPredicate(), objectAsLiteral()));
             }
             // All EntityData statements are removed.
@@ -774,8 +773,7 @@ public class Munger {
                  */
                 // return false;
             }
-            switch (predicate) {
-            case RDF.TYPE:
+            if (RDF.TYPE.equals(predicate)) {
                 if (keepTypes) {
                     return true;
                 }
@@ -786,8 +784,6 @@ public class Munger {
                 if (statement.getObject().stringValue().equals(Ontology.REFERENCE)) {
                     return false;
                 }
-                break;
-            default:
             }
             if (!extraValidSubjects.contains(subject)) {
                 /*
@@ -919,7 +915,7 @@ public class Munger {
          * label if we're not in single label mode.
          */
         private boolean singleLabelMode(SingleLabelModeWork work) {
-            return work == null ? true : work.statement();
+            return work == null || work.statement();
         }
 
         /**
@@ -945,11 +941,8 @@ public class Munger {
             }
             statementsWithoutRanks.removeAll(statementsWithRanks);
             if (!statementsWithoutRanks.isEmpty()) {
-                /**
-                 * We have some statements without ranks, this is very weird.
-                 */
-                log.error(
-                        "Found some statements without ranks while processing {}: {}",
+                 // We have some statements without ranks, this is very weird.
+                log.error("Found some statements without ranks while processing {}: {}",
                         entityUri, statementsWithoutRanks);
             }
             if (revisionId == null) {

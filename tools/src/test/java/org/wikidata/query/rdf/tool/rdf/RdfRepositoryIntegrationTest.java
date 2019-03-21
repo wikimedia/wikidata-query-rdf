@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.allOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -605,8 +606,8 @@ public class RdfRepositoryIntegrationTest {
         Set<String> values = new HashSet<>();
         Set<String> refs = new HashSet<>();
         munger.mungeWithValues(entityId, data,
-                rdfRepository.getValues(Arrays.asList(uris.entity() + entityId)),
-                rdfRepository.getRefs(Arrays.asList(uris.entity() + entityId)),
+                rdfRepository.getValues(singletonList(uris.entity() + entityId)),
+                rdfRepository.getRefs(singletonList(uris.entity() + entityId)),
                 values, refs, null, null);
         List<String> changeList = new ArrayList<>();
         changeList.addAll(values);
@@ -675,10 +676,9 @@ public class RdfRepositoryIntegrationTest {
 
     /**
      * Test cleanup value which includes normalized component.
-     * @throws QueryEvaluationException
      */
     @Test
-    public void cleanupNormalizedValue() throws QueryEvaluationException {
+    public void cleanupNormalizedValue() {
         String statementUri = uris.statement() + randomizer.randomAsciiOfLength(10);
         String valueUri = uris.value() + "someuuid";
         String normValueUri = uris.value() + "normuuid";

@@ -59,7 +59,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 })
 public final class Update {
     /** Request timeout property. */
-    public static final String TIMEOUT_PROPERTY = RdfRepository.class + ".timeout";
+    private static final String TIMEOUT_PROPERTY = RdfRepository.class + ".timeout";
 
     private static final Logger log = LoggerFactory.getLogger(Update.class);
 
@@ -229,7 +229,7 @@ public final class Update {
         };
     }
 
-    public static MetricRegistry createMetricRegistry(Closer closer, String metricDomain) {
+    private static MetricRegistry createMetricRegistry(Closer closer, String metricDomain) {
         MetricRegistry metrics = new MetricRegistry();
         JmxReporter reporter = closer.register(JmxReporter.forRegistry(metrics).inDomain(metricDomain).build());
         reporter.start();

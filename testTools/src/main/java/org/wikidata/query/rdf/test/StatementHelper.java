@@ -125,7 +125,6 @@ public final class StatementHelper {
 
     /**
      * Construct a random date literal.
-     * @param randomizer
      */
     public static LiteralImpl randomDate(Randomizer randomizer) {
         StringBuilder sb = new StringBuilder();

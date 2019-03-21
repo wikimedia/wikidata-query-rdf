@@ -295,7 +295,7 @@ public class MungerUnitTest {
     }
 
     private void singleLabelModeTestCases(String predicate) {
-        List<Statement> toRemove = new ArrayList<Statement>();
+        List<Statement> toRemove = new ArrayList<>();
         Collections.addAll(toRemove, //
                 statement("Q23", predicate, new LiteralImpl("foo", "de")), //
                 statement("Q23", predicate, new LiteralImpl("foo", "it")), //
@@ -443,11 +443,11 @@ public class MungerUnitTest {
         /**
          * Statements we expect the munger to retain.
          */
-        private final List<Statement> toRetain = new ArrayList<Statement>();
+        private final List<Statement> toRetain = new ArrayList<>();
         /**
          * Statements we expect the munger to remove.
          */
-        private final List<Statement> toRemove = new ArrayList<Statement>();
+        private final List<Statement> toRemove = new ArrayList<>();
 
         /**
          * Our very own Munger instance so we don't conflict with external
