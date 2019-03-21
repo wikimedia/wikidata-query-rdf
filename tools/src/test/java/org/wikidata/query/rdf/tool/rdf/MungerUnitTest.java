@@ -1,11 +1,8 @@
 package org.wikidata.query.rdf.tool.rdf;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.wikidata.query.rdf.test.StatementHelper.siteLink;
 import static org.wikidata.query.rdf.test.StatementHelper.statement;
@@ -17,8 +14,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.DelayQueue;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Rule;
@@ -43,7 +38,6 @@ import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.test.StatementHelper;
 import org.wikidata.query.rdf.tool.change.Change;
-import org.wikidata.query.rdf.tool.change.Change.DelayedChange;
 import org.wikidata.query.rdf.tool.rdf.Munger.BadSubjectException;
 
 /**
@@ -413,18 +407,12 @@ public class MungerUnitTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void deferral() {
+    public void returnChange() {
         List<Statement> statements = StatementHelper.basicEntity(uris, "Q1234", "100", "2015-04-02T10:54:56Z");
         Change change = new Change("Q123", 105, Instant.EPOCH, 110);
         Munger munger = new Munger(uris);
-        DelayQueue<DelayedChange> queue = new DelayQueue<>();
-        munger.munge("Q1234", statements, Collections.EMPTY_SET, Collections.EMPTY_SET, change, queue);
-        assertThat(queue, hasSize(1));
-        DelayedChange delayed = queue.peek();
-        assertNotNull(delayed);
-        // we assume the test won't take more than 4 seconds to get here...
-        assertThat(delayed.getDelay(TimeUnit.SECONDS), greaterThan(1L));
-        assertThat(delayed.getChange(), equalTo(change));
+        Change loadedChange = munger.munge("Q1234", statements, Collections.EMPTY_SET, Collections.EMPTY_SET, change);
+        assertThat(loadedChange.revision(), equalTo(100L));
     }
 
     private Mungekin entity(String id) {
