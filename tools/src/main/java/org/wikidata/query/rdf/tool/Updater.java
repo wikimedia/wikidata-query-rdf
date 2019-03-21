@@ -59,6 +59,10 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      */
     private final Meter batchAdvanced;
     /**
+     * Measure how many updates skipped ahead of their change revisions.
+     */
+    private final Meter skipAheadMeter;
+    /**
      * Source of change batches.
      */
     private final Change.Source<B> changeSource;
@@ -121,6 +125,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
         this.verify = verify;
         this.updatesMeter = metricRegistry.meter("updates");
         this.batchAdvanced = metricRegistry.meter("batch-progress");
+        this.skipAheadMeter = metricRegistry.meter("updates-skip");
         this.deferralQueue = new DelayQueue<>();
     }
 
@@ -359,7 +364,11 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
             repoValues = this.repoValues;
             repoRefs = this.repoRefs;
         }
-        munger.mungeWithValues(change.entityId(), statements, repoValues, repoRefs, values, refs, change, deferralQueue);
+        Change loadedChange = munger.mungeWithValues(change.entityId(), statements, repoValues, repoRefs, values, refs, change, deferralQueue);
+        if (change.revision() > 0 && change.revision() < loadedChange.revision()) {
+            // We skipped some revisions, let's count it in meter
+            skipAheadMeter.mark();
+        }
         change.setRefCleanupList(refs);
         change.setValueCleanupList(values);
         change.setStatements(statements);

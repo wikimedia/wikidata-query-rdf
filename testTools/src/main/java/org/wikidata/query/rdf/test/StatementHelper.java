@@ -107,19 +107,19 @@ public final class StatementHelper {
     }
 
     public static List<Statement> basicEntity(WikibaseUris uris, String id) {
-        return basicEntity(uris, id, "a revision number I promise");
+        return basicEntity(uris, id, "a revision number I promise", "a date I promise");
     }
     /**
      * Construct statements about a basic entity.
      */
-    public static List<Statement> basicEntity(WikibaseUris uris, String id, String versionString) {
+    public static List<Statement> basicEntity(WikibaseUris uris, String id, String versionString, String dateString) {
         Literal version = new LiteralImpl(versionString);
         List<Statement> statements = new ArrayList<>();
         String entityDataUri = uris.entityData() + id;
         // EntityData is all munged onto Entity
         statement(statements, entityDataUri, SchemaDotOrg.ABOUT, id);
         statement(statements, entityDataUri, SchemaDotOrg.VERSION, version);
-        statement(statements, entityDataUri, SchemaDotOrg.DATE_MODIFIED, new LiteralImpl("a date I promise"));
+        statement(statements, entityDataUri, SchemaDotOrg.DATE_MODIFIED, new LiteralImpl(dateString));
         return statements;
     }
 

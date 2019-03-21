@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool.rdf;
 
 import static java.util.Collections.emptySet;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -215,8 +216,10 @@ public class Munger {
      * @param existingValues Existing value statements
      * @param existingRefs Existing reference statements
      * @param sourceChange Change that originated the operation
+     * @return the revision data from statements, as Change. At least revision ID and timestamp will
+     * be accurate.
      */
-    public void munge(String entityId,
+    public Change munge(String entityId,
                       Collection<Statement> statements,
                       Collection<String> existingValues,
                       Collection<String> existingRefs,
@@ -224,7 +227,7 @@ public class Munger {
                       Queue<DelayedChange> deferralQueue) {
         if (statements.isEmpty()) {
             // Empty collection is a delete.
-            return;
+            return sourceChange;
         }
         MungeOperation op = new MungeOperation(entityId, statements, existingValues, existingRefs);
         if (sourceChange != null) {
@@ -245,6 +248,7 @@ public class Munger {
         // remove all values that we have seen as they are used by statements
         existingValues.removeAll(op.extraValidSubjects);
         existingRefs.removeAll(op.extraValidSubjects);
+        return op.asChange();
     }
 
     /**
@@ -262,8 +266,10 @@ public class Munger {
      * @param valuesContainer Value nodes container
      * @param refsContainer Reference nodes container
      * @param sourceChange Change that originated the operation
+     * @return the revision data from statements, as Change. At least revision ID and timestamp will
+     * be accurate.
      */
-    public void mungeWithValues(String entityId,
+    public Change mungeWithValues(String entityId,
             Collection<Statement> statements,
             Multimap<String, String> repoValues,
             Multimap<String, String> repoRefs,
@@ -273,7 +279,7 @@ public class Munger {
             Queue<DelayedChange> deferralQueue) {
         valuesContainer.addAll(repoValues.get(uris.entity() + entityId));
         refsContainer.addAll(repoRefs.get(uris.entity() + entityId));
-        munge(entityId, statements, valuesContainer, refsContainer, sourceChange, deferralQueue);
+        return munge(entityId, statements, valuesContainer, refsContainer, sourceChange, deferralQueue);
     }
 
     /**
@@ -284,9 +290,9 @@ public class Munger {
      * @param existingValues Existing value statements
      * @param existingRefs Existing reference statements
      */
-    public void munge(String entityId, Collection<Statement> statements, Collection<String> existingValues,
+    public Change munge(String entityId, Collection<Statement> statements, Collection<String> existingValues,
             Collection<String> existingRefs) {
-        munge(entityId, statements, existingValues, existingRefs, null, null);
+        return munge(entityId, statements, existingValues, existingRefs, null, null);
     }
 
     /**
@@ -295,8 +301,8 @@ public class Munger {
      *
      * @param statements statements to munge
      */
-    public void munge(String entityId, Collection<Statement> statements) {
-        munge(entityId, statements, emptySet(), emptySet(), null, null);
+    public Change munge(String entityId, Collection<Statement> statements) {
+        return munge(entityId, statements, emptySet(), emptySet(), null, null);
     }
 
     /**
@@ -315,7 +321,6 @@ public class Munger {
          * The entity uri that we're working with.
          */
         private final Resource entityUriImpl;
-
         /*
          * These are modified during the pass over the statements and used to
          * modify the statements during cleanup
@@ -369,7 +374,6 @@ public class Munger {
          * We will transfer them to the item/property.
          */
         private final Set<Pair<URI, Literal>> dataStatements = new HashSet<>();
-
         // These are set by the entire munge operation
         /**
          * Revision id that we find while scanning the statements.
@@ -406,11 +410,16 @@ public class Munger {
          * Set of statements that have rank statement.
          */
         private Set<String> statementsWithRanks = new HashSet<>();
+        /**
+         * Entity ID.
+         */
+        private String entityId;
 
 
         MungeOperation(String entityId, Collection<Statement> statements, Collection<String> existingValues,
                 Collection<String> existingRefs) {
             this.statements = statements;
+            this.entityId = entityId;
             entityUri = uris.entity() + entityId;
             entityUriImpl = new URIImpl(entityUri);
             if (singleLabelModeLanguages != null) {
@@ -449,6 +458,10 @@ public class Munger {
          */
         public long getRevisionId() {
             return revisionId == null ? -1 : Long.parseLong(revisionId.stringValue());
+        }
+
+        public Instant getLastModified() {
+            return Instant.parse(lastModified.stringValue());
         }
 
         /**
@@ -1036,6 +1049,14 @@ public class Munger {
                     statements.add(bestStatement);
                 }
             }
+        }
+
+        /**
+         * Return parsed data as Change.
+         * @return Parsed data, at least revision ID and last modified are as in the data.
+         */
+        private Change asChange() {
+            return new Change(entityId, getRevisionId(), getLastModified(), 0);
         }
     }
 

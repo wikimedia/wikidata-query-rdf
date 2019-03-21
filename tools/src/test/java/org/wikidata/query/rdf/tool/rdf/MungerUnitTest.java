@@ -60,8 +60,8 @@ public class MungerUnitTest {
     @Test
     public void mungesEntityDataOntoEntity() {
         entity("Q23") //
-                .retain(statement("Q23", SchemaDotOrg.VERSION, new LiteralImpl("a revision number I promise")),
-                        statement("Q23", SchemaDotOrg.DATE_MODIFIED, new LiteralImpl("a date I promise")))
+                .retain(statement("Q23", SchemaDotOrg.VERSION, new LiteralImpl("833473046")),
+                        statement("Q23", SchemaDotOrg.DATE_MODIFIED, new LiteralImpl("2019-01-13T09:06:53Z")))
                 .test();
     }
 
@@ -414,7 +414,7 @@ public class MungerUnitTest {
     @Test
     @SuppressWarnings("unchecked")
     public void deferral() {
-        List<Statement> statements = StatementHelper.basicEntity(uris, "Q1234", "100");
+        List<Statement> statements = StatementHelper.basicEntity(uris, "Q1234", "100", "2015-04-02T10:54:56Z");
         Change change = new Change("Q123", 105, Instant.EPOCH, 110);
         Munger munger = new Munger(uris);
         DelayQueue<DelayedChange> queue = new DelayQueue<>();
@@ -458,7 +458,7 @@ public class MungerUnitTest {
         private Mungekin(WikibaseUris uris, String id) {
             this.id = id;
             munger = new Munger(uris);
-            statements = StatementHelper.basicEntity(uris, id);
+            statements = StatementHelper.basicEntity(uris, id, "1234", "2019-01-13T09:06:53Z");
         }
 
         private Mungekin retain(Statement... xs) {

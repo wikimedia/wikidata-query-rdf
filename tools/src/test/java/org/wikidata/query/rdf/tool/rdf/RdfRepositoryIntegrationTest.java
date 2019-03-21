@@ -629,7 +629,7 @@ public class RdfRepositoryIntegrationTest {
                 .withStatement("P509", statementUri)
                 .withStatementValue(valueUri)
                 .withTimeValue(valueUri, "dog")
-                .withEntityData("22", "today")
+                .withEntityData("22", "2016-01-08T00:00:00Z")
                 .build();
 
         rdfRepository.syncWithMode("Q23", newdata, makeCleanupList("Q23", newdata));
@@ -662,7 +662,7 @@ public class RdfRepositoryIntegrationTest {
                 .withStatement("P509", statementUri)
                 .withStatementValue(valueUri)
                 .withTimeValue(valueUri, "duck")
-                .withEntityData("22", "today")
+                .withEntityData("22", "2016-01-08T00:00:00Z")
                 .build();
 
         rdfRepository.syncWithMode("Q23", newdata, makeCleanupList("Q23", newdata));
@@ -688,7 +688,7 @@ public class RdfRepositoryIntegrationTest {
                 .withStatementValue(valueUri)
                 .withStatementValueNormalized(normValueUri)
                 .withQuanitityValueNormalized(valueUri, "42", normValueUri, "128")
-                .withEntityData("22", "today")
+                .withEntityData("22", "2016-01-08T00:00:00Z")
                 .build();
         rdfRepository.syncWithMode("Q24", olddata);
 
@@ -700,7 +700,7 @@ public class RdfRepositoryIntegrationTest {
                 .withStatementValue(valueUri)
                 .withStatementValueNormalized(normValueUri)
                 .withQuanitityValueNormalized(valueUri, "24", normValueUri, "-5")
-                .withEntityData("23", "tomorrow")
+                .withEntityData("23", "2018-11-08T23:29:06Z")
                 .build();
         rdfRepository.syncWithMode("Q24", newdata, makeCleanupList("Q24", newdata));
 
