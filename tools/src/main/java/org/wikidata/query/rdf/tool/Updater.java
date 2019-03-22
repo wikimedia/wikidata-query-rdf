@@ -50,6 +50,10 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
     private static final Logger log = LoggerFactory.getLogger(Updater.class);
 
     /**
+     * For how long (seconds) we should defer a change in case we detect replication lag.
+     */
+    private static final long DEFERRAL_DELAY = 5;
+    /**
      * Meter for the raw number of updates synced.
      */
     private final Meter updatesMeter;
@@ -364,10 +368,23 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
             repoValues = this.repoValues;
             repoRefs = this.repoRefs;
         }
-        Change loadedChange = munger.mungeWithValues(change.entityId(), statements, repoValues, repoRefs, values, refs, change, deferralQueue);
-        if (change.revision() > 0 && change.revision() < loadedChange.revision()) {
-            // We skipped some revisions, let's count it in meter
-            skipAheadMeter.mark();
+        Change loadedChange = munger.mungeWithValues(change.entityId(), statements, repoValues, repoRefs, values, refs, change);
+        if (!statements.isEmpty() && loadedChange != change) {
+            // If we've got no statements, we have no usable loaded data, so no point in checking
+            // Same if we just got back our own change - no point in checking against it
+            final long sourceRev = change.revision();
+            final long fetchedRev = loadedChange.revision();
+            if (sourceRev > 0 && fetchedRev > 0) {
+                if (fetchedRev < sourceRev) {
+                    // Something weird happened - we've got stale revision!
+                    log.warn("Stale revision on {}: change is {}, RDF is {}", change.entityId(), sourceRev, fetchedRev);
+                    change.delay(deferralQueue, DEFERRAL_DELAY);
+                }
+                if (sourceRev < fetchedRev) {
+                    // We skipped some revisions, let's count it in meter
+                    skipAheadMeter.mark();
+                }
+            }
         }
         change.setRefCleanupList(refs);
         change.setValueCleanupList(values);

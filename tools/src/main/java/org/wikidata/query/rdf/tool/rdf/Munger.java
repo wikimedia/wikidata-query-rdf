@@ -12,7 +12,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -44,7 +43,6 @@ import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 import org.wikidata.query.rdf.tool.change.Change;
-import org.wikidata.query.rdf.tool.change.Change.DelayedChange;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -63,11 +61,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class Munger {
     private static final Logger log = LoggerFactory.getLogger(Munger.class);
-    /**
-     * For how long (seconds) we should defer a change in case we detect replication lag.
-     */
-    private static final long DEFERRAL_DELAY = 5;
-
     /**
      * Wikibase uris we're working with.
      */
@@ -223,8 +216,7 @@ public class Munger {
                       Collection<Statement> statements,
                       Collection<String> existingValues,
                       Collection<String> existingRefs,
-                      Change sourceChange,
-                      Queue<DelayedChange> deferralQueue) {
+                      Change sourceChange) {
         if (statements.isEmpty()) {
             // Empty collection is a delete.
             return sourceChange;
@@ -234,17 +226,6 @@ public class Munger {
             op.importFromChange(sourceChange);
         }
         op.munge();
-        if (sourceChange != null) {
-            final long sourceRev = sourceChange.revision();
-            final long fetchedRev = op.getRevisionId();
-            if (sourceRev > 0 && fetchedRev != -1 && fetchedRev <  sourceRev) {
-                // Something weird happened - we've got stale revision!
-                log.warn("Stale revision on {}: change is {}, RDF is {}", entityId, sourceRev, fetchedRev);
-                if (deferralQueue != null) {
-                    sourceChange.delay(deferralQueue, DEFERRAL_DELAY);
-                }
-            }
-        }
         // remove all values that we have seen as they are used by statements
         existingValues.removeAll(op.extraValidSubjects);
         existingRefs.removeAll(op.extraValidSubjects);
@@ -275,11 +256,10 @@ public class Munger {
             Multimap<String, String> repoRefs,
             Collection<String> valuesContainer,
             Collection<String> refsContainer,
-            Change sourceChange,
-            Queue<DelayedChange> deferralQueue) {
+            Change sourceChange) {
         valuesContainer.addAll(repoValues.get(uris.entity() + entityId));
         refsContainer.addAll(repoRefs.get(uris.entity() + entityId));
-        return munge(entityId, statements, valuesContainer, refsContainer, sourceChange, deferralQueue);
+        return munge(entityId, statements, valuesContainer, refsContainer, sourceChange);
     }
 
     /**
@@ -292,7 +272,7 @@ public class Munger {
      */
     public Change munge(String entityId, Collection<Statement> statements, Collection<String> existingValues,
             Collection<String> existingRefs) {
-        return munge(entityId, statements, existingValues, existingRefs, null, null);
+        return munge(entityId, statements, existingValues, existingRefs, null);
     }
 
     /**
@@ -302,7 +282,7 @@ public class Munger {
      * @param statements statements to munge
      */
     public Change munge(String entityId, Collection<Statement> statements) {
-        return munge(entityId, statements, emptySet(), emptySet(), null, null);
+        return munge(entityId, statements, emptySet(), emptySet(), null);
     }
 
     /**

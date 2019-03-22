@@ -608,7 +608,7 @@ public class RdfRepositoryIntegrationTest {
         munger.mungeWithValues(entityId, data,
                 rdfRepository.getValues(singletonList(uris.entity() + entityId)),
                 rdfRepository.getRefs(singletonList(uris.entity() + entityId)),
-                values, refs, null, null);
+                values, refs, null);
         List<String> changeList = new ArrayList<>();
         changeList.addAll(values);
         changeList.addAll(refs);
