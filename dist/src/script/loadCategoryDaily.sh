@@ -35,7 +35,7 @@ fi
 FILENAME="$PREFIX$WIKI-$TS-daily.sparql.gz"
 URL="$SOURCE/$TS/$FILENAME"
 curl --silent --fail -XGET "$URL" -o "$DUMPS_DIR/$FILENAME"
-if [ ! -s $DATA_DIR/$FILENAME ]; then
+if [ ! -s $DUMPS_DIR/$FILENAME ]; then
 	echo "Could not download $URL"
 	exit 1
 fi
