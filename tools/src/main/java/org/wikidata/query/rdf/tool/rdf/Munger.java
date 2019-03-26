@@ -45,8 +45,10 @@ import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
@@ -59,7 +61,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 // TODO fan out complexity
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-public class Munger {
+public final class Munger {
     private static final Logger log = LoggerFactory.getLogger(Munger.class);
     /**
      * Wikibase uris we're working with.
@@ -84,23 +86,12 @@ public class Munger {
     /**
      * True if we want to keep types for Statement and Item.
      */
-    private boolean keepTypes;
+    private final boolean keepTypes;
 
     /**
      * Format version we're dealing with.
      */
     private String dumpFormatVersion;
-
-    /**
-     * Interface to handle format transformations.
-     */
-    public interface FormatHandler {
-        /**
-         * Transform statement to current latest format.
-         * @return Transformed statement or null if it needs to be deleted.
-         */
-        Statement handle(Statement statement);
-    }
 
     /**
      * Types that we will remove from data.
@@ -113,76 +104,14 @@ public class Munger {
      */
     private final Map<String, FormatHandler> formatHandlers;
 
-    public Munger(WikibaseUris uris) {
-        this(uris, null, null, false);
-    }
-
     private Munger(WikibaseUris uris, Set<String> limitLabelLanguages, List<String> singleLabelModeLanguages,
-            boolean removeSiteLinks) {
+                   boolean removeSiteLinks, boolean keepTypes, Map<String, FormatHandler> formatHandlers) {
         this.uris = uris;
         this.limitLabelLanguages = limitLabelLanguages;
         this.singleLabelModeLanguages = singleLabelModeLanguages;
         this.removeSiteLinks = removeSiteLinks;
-        this.formatHandlers = new HashMap<>();
-
-        // 0.0.1 has format lat-long, 0.0.2 has format long-lat
-        // Depending on which default we have now, we want to switch one of them
-        if (WikibasePoint.DEFAULT_ORDER == CoordinateOrder.LAT_LONG) {
-            addFormatHandler("0.0.2", new PointCoordinateSwitcher());
-        } else {
-            addFormatHandler("0.0.1", new PointCoordinateSwitcher());
-        }
-    }
-
-    /**
-     * Set the keep types parameter.
-     */
-    public Munger keepTypes(boolean keep) {
-        keepTypes = keep;
-        return this;
-    }
-
-    /**
-     * Build a Munger that only imports labels in some languages.
-     */
-    public Munger limitLabelLanguages(String... languages) {
-        return limitLabelLanguages(Arrays.asList(languages));
-    }
-
-    /**
-     * Build a Munger that only imports labels in some languages.
-     */
-    public Munger limitLabelLanguages(Collection<String> languages) {
-        return new Munger(uris, ImmutableSet.copyOf(languages), singleLabelModeLanguages, removeSiteLinks);
-    }
-
-    /**
-     * Build a munger that will load only a single label per entity. Note that
-     * if there isn't a label in one of the languages then there will be no
-     * label for the entity.
-     *
-     * @param languages a fallback chain of languages with the first one being
-     *            the most important
-     */
-    public Munger singleLabelMode(String... languages) {
-        return singleLabelMode(Arrays.asList(languages));
-    }
-
-    /**
-     * Build a munger that will load only a single label per entity.
-     *
-     * @param languages a fallback chain of languages with the first one being
-     *            the most important
-     */
-    public Munger singleLabelMode(Collection<String> languages) {
-        return new Munger(uris, limitLabelLanguages, ImmutableList.copyOf(languages).reverse(), removeSiteLinks);
-    }
-
-    /**
-     * Build a Munger that removes site links.
-     */
-    public Munger removeSiteLinks() {
-        return new Munger(uris, limitLabelLanguages, singleLabelModeLanguages, true);
+        this.keepTypes = keepTypes;
+        this.formatHandlers = formatHandlers;
     }
 
     /**
@@ -190,15 +119,6 @@ public class Munger {
      */
     public void setFormatVersion(String version) {
         this.dumpFormatVersion = version;
-    }
-
-    /**
-     * Add handler for specific non-default format.
-     * @param version Version to handle.
-     * @param handler Handler.
-     */
-    public final void addFormatHandler(String version, FormatHandler handler) {
-        formatHandlers.put(version, handler);
     }
 
     /**
@@ -267,22 +187,122 @@ public class Munger {
      * RDF exports into a more queryable form.
      *
      * @param statements statements to munge
-     * @param existingValues Existing value statements
-     * @param existingRefs Existing reference statements
-     */
-    public Change munge(String entityId, Collection<Statement> statements, Collection<String> existingValues,
-            Collection<String> existingRefs) {
-        return munge(entityId, statements, existingValues, existingRefs, null);
-    }
-
-    /**
-     * Adds and removes entries from the statements collection to munge Wikibase
-     * RDF exports into a more queryable form.
-     *
-     * @param statements statements to munge
      */
     public Change munge(String entityId, Collection<Statement> statements) {
         return munge(entityId, statements, emptySet(), emptySet(), null);
+    }
+
+    public static Builder builder(WikibaseUris uris) {
+        return new Builder(uris);
+    }
+
+    public static final class Builder {
+
+        private WikibaseUris uris;
+        private Collection<String> limitLabelLanguages;
+        private List<String> singleLabelModeLanguages;
+        private boolean removeSiteLinks;
+        private boolean keepTypes;
+        private Map<String, FormatHandler> formatHandlers = new HashMap<>();
+
+        Builder(WikibaseUris uris) {
+            this.uris = uris;
+
+            // 0.0.1 has format lat-long, 0.0.2 has format long-lat
+            // Depending on which default we have now, we want to switch one of them
+            if (WikibasePoint.DEFAULT_ORDER == CoordinateOrder.LAT_LONG) {
+                addFormatHandler("0.0.2", new PointCoordinateSwitcher());
+            } else {
+                addFormatHandler("0.0.1", new PointCoordinateSwitcher());
+            }
+        }
+
+        /**
+         * Build a Munger that removes site links.
+         */
+        public Builder removeSiteLinks() {
+            removeSiteLinks = true;
+            return this;
+        }
+
+        /**
+         * Build a Munger that only imports labels in some languages.
+         */
+        public Builder limitLabelLanguages(String... languages) {
+            return limitLabelLanguages(Arrays.asList(languages));
+        }
+
+        /**
+         * Build a Munger that only imports labels in some languages.
+         */
+        public Builder limitLabelLanguages(Collection<String> languages) {
+            limitLabelLanguages = languages;
+            return this;
+        }
+
+        /**
+         * Build a munger that will load only a single label per entity. Note that
+         * if there isn't a label in one of the languages then there will be no
+         * label for the entity.
+         *
+         * @param languages a fallback chain of languages with the first one being
+         *            the most important
+         */
+        public Builder singleLabelMode(String... languages) {
+            return singleLabelMode(Arrays.asList(languages));
+        }
+
+        /**
+         * Build a munger that will load only a single label per entity. Note that
+         * if there isn't a label in one of the languages then there will be no
+         * label for the entity.
+         *
+         * @param languages a fallback chain of languages with the first one being
+         *            the most important
+         */
+        public Builder singleLabelMode(List<String> languages) {
+            singleLabelModeLanguages = languages;
+            return this;
+        }
+
+        /**
+         * Set the keep types parameter.
+         */
+        public Builder keepTypes(boolean keep) {
+            keepTypes = keep;
+            return this;
+        }
+
+        /**
+         * Add handler for specific non-default format.
+         */
+        @VisibleForTesting
+        Builder addFormatHandler(String version, FormatHandler handler) {
+            formatHandlers.put(version, handler);
+            return this;
+        }
+
+        public Munger build() {
+            return new Munger(
+                    uris,
+                    limitLabelLanguages == null ? null : ImmutableSet.copyOf(limitLabelLanguages),
+                    singleLabelModeLanguages == null ? null : ImmutableList.copyOf(singleLabelModeLanguages).reverse(),
+                    removeSiteLinks,
+                    keepTypes,
+                    ImmutableMap.copyOf(formatHandlers));
+        }
+
+    }
+
+    /**
+     * Interface to handle format transformations.
+     */
+    public interface FormatHandler {
+        /**
+         * Transform statement to current latest format.
+         * @return Transformed statement or null if it needs to be deleted.
+         */
+        Statement handle(Statement statement);
     }
 
     /**

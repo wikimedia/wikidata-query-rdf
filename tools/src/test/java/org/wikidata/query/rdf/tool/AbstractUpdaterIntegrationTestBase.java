@@ -29,7 +29,9 @@ public class AbstractUpdaterIntegrationTestBase {
     /**
      * Munger to test against.
      */
-    private final Munger munger = new Munger(WikibaseUris.getURISystem()).removeSiteLinks();
+    private final Munger munger = Munger.builder(WikibaseUris.getURISystem())
+            .removeSiteLinks()
+            .build();
 
     /**
      * Repository to test with.

@@ -138,20 +138,20 @@ public final class OptionsUtils {
      * Build a munger from a MungerOptions instance.
      */
     public static Munger mungerFromOptions(MungerOptions options) {
-        Munger munger = new Munger(WikibaseOptions.wikibaseUris(options));
+        Munger.Builder builder = Munger.builder(WikibaseOptions.wikibaseUris(options));
         if (options.skipSiteLinks()) {
-            munger = munger.removeSiteLinks();
+            builder = builder.removeSiteLinks();
         }
         if (options.labelLanguages() != null) {
-            munger = munger.limitLabelLanguages(splitByComma(options.labelLanguages()));
+            builder = builder.limitLabelLanguages(splitByComma(options.labelLanguages()));
         }
         if (options.singleLabelLanguages() != null) {
-            munger = munger.singleLabelMode(splitByComma(options.singleLabelLanguages()));
+            builder = builder.singleLabelMode(splitByComma(options.singleLabelLanguages()));
         }
         if (options.keepTypes()) {
-            munger = munger.keepTypes(true);
+            builder = builder.keepTypes(true);
         }
-        return munger;
+        return builder.build();
     }
 
     /**

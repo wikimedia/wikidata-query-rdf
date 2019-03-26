@@ -8,7 +8,6 @@ import static org.junit.Assert.assertTrue;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.tool.StreamUtils.utf8;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
@@ -110,16 +109,16 @@ public class MungeIntegrationTest {
         BlockingQueue<InputStream> queue = new ArrayBlockingQueue<>(1);
         queue.put(toHttp);
         Munge.Httpd httpd = new Httpd(10999, queue);
-        closer.register((Closeable) () -> {
+        closer.register(() -> {
             try {
                 httpd.stop();
             } catch (Exception e) {
                 throw new RuntimeException("Could not close Httpd", e);
             }
         });
-        Munger munger = new Munger(uris).singleLabelMode("en");
+        Munger munger = Munger.builder(uris).singleLabelMode("en").build();
         ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Munge-IT-%d").build());
-        closer.register((Closeable) () -> {
+        closer.register(() -> {
             try {
                 executor.shutdown();
             } catch (Exception e) {

@@ -410,7 +410,7 @@ public class MungerUnitTest {
     public void returnChange() {
         List<Statement> statements = StatementHelper.basicEntity(uris, "Q1234", "100", "2015-04-02T10:54:56Z");
         Change change = new Change("Q123", 105, Instant.EPOCH, 110);
-        Munger munger = new Munger(uris);
+        Munger munger = Munger.builder(uris).build();
         Change loadedChange = munger.munge("Q1234", statements, Collections.EMPTY_SET, Collections.EMPTY_SET, change);
         assertThat(loadedChange.revision(), equalTo(100L));
     }
@@ -441,11 +441,11 @@ public class MungerUnitTest {
          * Our very own Munger instance so we don't conflict with external
          * references.
          */
-        private Munger munger;
+        private Munger.Builder mungerBuilder;
 
         private Mungekin(WikibaseUris uris, String id) {
             this.id = id;
-            munger = new Munger(uris);
+            mungerBuilder = Munger.builder(uris);
             statements = StatementHelper.basicEntity(uris, id, "1234", "2019-01-13T09:06:53Z");
         }
 
@@ -488,17 +488,17 @@ public class MungerUnitTest {
         }
 
         private Mungekin singleLabelMode(String... languages) {
-            munger = munger.singleLabelMode(languages);
+            mungerBuilder = mungerBuilder.singleLabelMode(languages);
             return this;
         }
 
         private Mungekin limitLabelLanguages(String... languages) {
-            munger = munger.limitLabelLanguages(languages);
+            mungerBuilder = mungerBuilder.limitLabelLanguages(languages);
             return this;
         }
 
         private Mungekin removeSiteLinks() {
-            munger = munger.removeSiteLinks();
+            mungerBuilder = mungerBuilder.removeSiteLinks();
             return this;
         }
 
@@ -508,7 +508,7 @@ public class MungerUnitTest {
         }
 
         private List<Statement> testWithoutShuffle() {
-            munger.munge(id, statements);
+            mungerBuilder.build().munge(id, statements);
             for (Statement x : toRetain) {
                 assertThat(statements, hasItem(x));
             }
@@ -520,7 +520,7 @@ public class MungerUnitTest {
 
         private Mungekin format(String version) {
             remove(statement(uris.entityData() + id, SchemaDotOrg.SOFTWARE_VERSION, new LiteralImpl(version)));
-            munger.addFormatHandler(version, new TestFormatHandler());
+            mungerBuilder.addFormatHandler(version, new TestFormatHandler());
             return this;
         }
     }

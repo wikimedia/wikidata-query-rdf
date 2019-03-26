@@ -62,7 +62,7 @@ public class RdfRepositoryIntegrationTest {
      * Wikibase uris to test with.
      */
     private final WikibaseUris uris = WikibaseUris.getURISystem();
-    private final Munger munger = new Munger(uris);
+    private final Munger munger = Munger.builder(uris).build();
 
     @Rule
     public final Randomizer randomizer = new Randomizer();
