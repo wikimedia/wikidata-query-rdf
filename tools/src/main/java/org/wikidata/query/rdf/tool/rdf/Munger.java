@@ -387,33 +387,21 @@ public final class Munger {
 
         // These are setup by munge and reset for every statement
         /**
-         * The current statement being processed.
-         */
-        private Statement statement;
-        /**
-         * The subject of the statement being processed.
-         */
-        private String subject;
-        /**
-         * The predicate of the statement being processed.
-         */
-        private String predicate;
-        /**
          * Format handler for current format.
          */
         private FormatHandler formatHandler;
         /**
          * Set of statements that have no rank statement.
          */
-        private Set<String> statementsWithoutRanks = new HashSet<>();
+        private final Set<String> statementsWithoutRanks = new HashSet<>();
         /**
          * Set of statements that have rank statement.
          */
-        private Set<String> statementsWithRanks = new HashSet<>();
+        private final Set<String> statementsWithRanks = new HashSet<>();
         /**
          * Entity ID.
          */
-        private String entityId;
+        private final String entityId;
 
 
         MungeOperation(String entityId, Collection<Statement> statements, Collection<String> existingValues,
@@ -470,7 +458,7 @@ public final class Munger {
         public void munge() {
             Iterator<Statement> itr = statements.iterator();
             while (itr.hasNext()) {
-                statement = itr.next();
+                Statement statement = itr.next();
                 if (formatHandler != null) {
                     Statement handled = formatHandler.handle(statement);
                     if (handled == null) {
@@ -482,7 +470,7 @@ public final class Munger {
                             // modified
                             itr.remove();
                             statement = handled;
-                            if (statement()) {
+                            if (statement(statement)) {
                                 // if we accept it in modified form, add back
                                 restoredStatements.add(statement);
                                 continue;
@@ -490,18 +478,17 @@ public final class Munger {
                         }
                     }
                 }
-                if (!statement()) {
+                if (!statement(statement)) {
                     itr.remove();
                 }
                 // Check object length, cut if needed.
-                final Statement shortStatement = checkObjectLength();
+                final Statement shortStatement = checkObjectLength(statement);
                 if (shortStatement != null) {
                     itr.remove();
                     restoredStatements.add(shortStatement);
                 }
             }
 
-            statement = null;
             finishSingleLabelMode();
             finishCommon();
         }
@@ -511,9 +498,9 @@ public final class Munger {
          * If so, create new statement that cuts object down to 32k.
          * @return New statement or null if not needed.
          */
-        private Statement checkObjectLength() {
+        private Statement checkObjectLength(Statement statement) {
             if (statement.getObject() instanceof Literal) {
-                final Literal value = (Literal)statement.getObject();
+                final Literal value = (Literal) statement.getObject();
                 if (value.stringValue().length() > Short.MAX_VALUE) {
                     final Literal newValue;
                     if (value.getDatatype().equals(org.openrdf.model.vocabulary.RDF.LANGSTRING)) {
@@ -534,30 +521,29 @@ public final class Munger {
          * @return true to keep the statement, false to remove it
          */
         @SuppressWarnings("checkstyle:npathcomplexity")
-        private boolean statement() {
-            subject = statement.getSubject().stringValue();
-            predicate = statement.getPredicate().stringValue();
+        private boolean statement(Statement statement) {
+            String subject = statement.getSubject().stringValue();
             if (subject.equals(Ontology.DUMP)) {
                 // temporary patch for T98405
                 return false;
             }
             if (inNamespace(subject, uris.entityData()) || inNamespace(subject, uris.entityDataHttps())) {
-                return entityDataStatement();
+                return entityDataStatement(statement);
             }
             if (inNamespace(subject, uris.statement())) {
-                return entityStatementStatement();
+                return entityStatementStatement(statement);
             }
             if (inNamespace(subject, uris.reference())) {
-                return entityReferenceStatement();
+                return entityReferenceStatement(statement);
             }
             if (inNamespace(subject, uris.value())) {
-                return entityValueStatement();
+                return entityValueStatement(statement);
             }
             if (inNamespace(subject, uris.entity())) {
-                return entityStatement();
+                return entityStatement(statement);
             }
             if (subject.startsWith(uris.property(PropertyType.CLAIM))) {
-                return propertyStatement();
+                return propertyStatement(statement);
             }
             /*
              *  Allow bnodes, they are not linked to specific entity
@@ -566,7 +552,7 @@ public final class Munger {
             if (statement.getSubject() instanceof BNode) {
                 return true;
             }
-            return unknownStatement();
+            return unknownStatement(statement);
         }
 
         /**
@@ -583,13 +569,13 @@ public final class Munger {
          * Process statement about property.
          * @return true to keep the statement, false to remove it
          */
-        private boolean propertyStatement() {
+        private boolean propertyStatement(Statement statement) {
             // This is wdno:P123 a owlClass, owl:complementOf _:blah - allow it
-            if (subject.startsWith(uris.property(PropertyType.NOVALUE))) {
+            if (statement.getSubject().stringValue().startsWith(uris.property(PropertyType.NOVALUE))) {
                 return true;
             }
             // It's p:P2762 a owl:ObjectProperty, it's ok.
-            return predicate.equals(RDF.TYPE);
+            return statement.getPredicate().stringValue().equals(RDF.TYPE);
         }
 
 
@@ -598,20 +584,21 @@ public final class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean entityDataStatement() {
+        private boolean entityDataStatement(Statement statement) {
             boolean knownPredicate = false;
             // Three specific ones are recorded for later re-application
+            String predicate = statement.getPredicate().stringValue();
             switch (predicate) {
             case SchemaDotOrg.VERSION:
                 knownPredicate = true;
-                revisionId = objectAsLiteral();
+                revisionId = objectAsLiteral(statement);
                 break;
             case SchemaDotOrg.DATE_MODIFIED:
                 knownPredicate = true;
-                lastModified = objectAsLiteral();
+                lastModified = objectAsLiteral(statement);
                 break;
             case SchemaDotOrg.SOFTWARE_VERSION:
-                setFormatVersion(objectAsLiteral().stringValue());
+                setFormatVersion(objectAsLiteral(statement).stringValue());
                 break;
             default:
                 if (predicate.startsWith(Ontology.NAMESPACE)) {
@@ -621,7 +608,7 @@ public final class Munger {
             }
             if (knownPredicate) {
                 dataStatements.add(new ImmutablePair<>(
-                        statement.getPredicate(), objectAsLiteral()));
+                        statement.getPredicate(), objectAsLiteral(statement)));
             }
             // All EntityData statements are removed.
             return false;
@@ -633,7 +620,8 @@ public final class Munger {
          * @return true to keep the statement, false to remove it
          */
         @SuppressWarnings("checkstyle:cyclomaticcomplexity")
-        private boolean entityStatement() {
+        private boolean entityStatement(Statement statement) {
+            String subject = statement.getSubject().stringValue();
             if (!subject.equals(entityUri) && !subEntities.contains(subject)) {
                 /*
                  * Some flavors of rdf dump information about other entities
@@ -642,7 +630,7 @@ public final class Munger {
                  */
                 return false;
             }
-            switch (predicate) {
+            switch (statement.getPredicate().stringValue()) {
             case RDF.TYPE:
                 if (keepTypes) {
                     return true;
@@ -663,11 +651,11 @@ public final class Munger {
                     // Skip labels for Lexeme & its sub-entities, e.g. Forms and Senses
                     return false;
                 }
-                return limitLabelLanguage() && singleLabelMode(singleLabelModeWorkForLabel);
+                return limitLabelLanguage(statement) && singleLabelMode(singleLabelModeWorkForLabel, statement);
             case SchemaDotOrg.DESCRIPTION:
-                return limitLabelLanguage() && singleLabelMode(singleLabelModeWorkForDescription);
+                return limitLabelLanguage(statement) && singleLabelMode(singleLabelModeWorkForDescription, statement);
             case SKOS.ALT_LABEL:
-                return limitLabelLanguage();
+                return limitLabelLanguage(statement);
             case OWL.SAME_AS:
                 return true;
             case Ontolex.LEXICAL_FORM:
@@ -676,7 +664,7 @@ public final class Munger {
                 subEntities.add(statement.getObject().stringValue());
                 return true;
             default:
-                return entityStatementWithUnrecognizedPredicate();
+                return entityStatementWithUnrecognizedPredicate(statement);
             }
         }
 
@@ -684,13 +672,13 @@ public final class Munger {
          * Process a statement about an entity who's predicate isn't explicitly
          * recognized.
          */
-        private boolean entityStatementWithUnrecognizedPredicate() {
+        private boolean entityStatementWithUnrecognizedPredicate(Statement statement) {
             String object = statement.getObject().stringValue();
             if (inNamespace(object, uris.statement())) {
                 // Register statement for rank checking
                 statementsWithoutRanks.add(object);
             }
-            if (inNamespace(predicate, uris.property(PropertyType.CLAIM)) && inNamespace(object, uris.statement())) {
+            if (inNamespace(statement.getPredicate().stringValue(), uris.property(PropertyType.CLAIM)) && inNamespace(object, uris.statement())) {
                 registerExtraValidSubject(object);
             }
             // Most statements should be kept.
@@ -702,8 +690,9 @@ public final class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean entityStatementStatement() {
-            switch (predicate) {
+        private boolean entityStatementStatement(Statement statement) {
+            String subject = statement.getSubject().stringValue();
+            switch (statement.getPredicate().stringValue()) {
             case RDF.TYPE:
                 // Haven't seen the rank yet
                 statementsWithoutRanks.add(subject);
@@ -748,10 +737,11 @@ public final class Munger {
 
         /**
          * Whether this triple links reference and value.
-         * @param object Statement object as String.
          * @return Is it ref->value?
          */
-        private boolean tripleRefValue(String object) {
+        private boolean tripleRefValue(Statement statement) {
+            String predicate = statement.getPredicate().stringValue();
+            String object = statement.getObject().stringValue();
             if (!inNamespace(object, uris.value())) {
                 return false;
             }
@@ -767,10 +757,11 @@ public final class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean entityReferenceStatement() {
+        private boolean entityReferenceStatement(Statement statement) {
             String object = statement.getObject().stringValue();
+            String subject = statement.getSubject().stringValue();
             if (existingRefs.contains(subject)) {
-                if (tripleRefValue(object) && !existingValues.contains(object)) {
+                if (tripleRefValue(statement) && !existingValues.contains(object)) {
                     /* Something is wrong here: we know this ref but somehow don't know its value.
                      * We should recover it.
                      */
@@ -786,7 +777,7 @@ public final class Munger {
                  */
                 // return false;
             }
-            if (RDF.TYPE.equals(predicate)) {
+            if (RDF.TYPE.equals(statement.getPredicate().stringValue())) {
                 if (keepTypes) {
                     return true;
                 }
@@ -808,7 +799,7 @@ public final class Munger {
                 unknownSubjects.put(subject, statement);
                 return false;
             }
-            if (tripleRefValue(object)) {
+            if (tripleRefValue(statement)) {
                 registerExtraValidSubject(object);
             }
             return true;
@@ -819,7 +810,8 @@ public final class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean entityValueStatement() {
+        private boolean entityValueStatement(Statement statement) {
+            String subject = statement.getSubject().stringValue();
             if (existingValues.contains(subject)) {
                 /*
                  * We already have this value, so no need to import it again
@@ -827,7 +819,7 @@ public final class Munger {
                  */
                 return false;
             }
-            switch (predicate) {
+            switch (statement.getPredicate().stringValue()) {
             case RDF.TYPE:
                 if (keepTypes) {
                     return true;
@@ -869,7 +861,9 @@ public final class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean unknownStatement() {
+        private boolean unknownStatement(Statement statement) {
+            String predicate = statement.getPredicate().stringValue();
+            String subject = statement.getSubject().stringValue();
             // This is <https://it.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
             if (predicate.equals(Ontology.WIKIGROUP)) {
                 return true;
@@ -914,11 +908,11 @@ public final class Munger {
          *
          * @return true to keep the statement, false to remove it
          */
-        private boolean limitLabelLanguage() {
+        private boolean limitLabelLanguage(Statement statement) {
             if (limitLabelLanguages == null) {
                 return true;
             }
-            Literal object = objectAsLiteral();
+            Literal object = objectAsLiteral(statement);
             String language = object.getLanguage();
             return language != null && limitLabelLanguages.contains(language);
         }
@@ -927,8 +921,8 @@ public final class Munger {
          * Handle a label or statement in single label mode or just keep the
          * label if we're not in single label mode.
          */
-        private boolean singleLabelMode(SingleLabelModeWork work) {
-            return work == null || work.statement();
+        private boolean singleLabelMode(SingleLabelModeWork work, Statement statement) {
+            return work == null || work.statement(statement);
         }
 
         /**
@@ -1001,7 +995,7 @@ public final class Munger {
          * Fetch the object from the current statement as a Literal.
          */
         @SuppressFBWarnings(value = "LEST_LOST_EXCEPTION_STACK_TRACE", justification = "Cause is really not needed here.")
-        private Literal objectAsLiteral() {
+        private Literal objectAsLiteral(Statement statement) {
             try {
                 return (Literal) statement.getObject();
             } catch (ClassCastException e) {
@@ -1029,8 +1023,8 @@ public final class Munger {
              * label. Single label mode is implemented by removing all labels
              * and adding the best back at the end of the munging process.
              */
-            public boolean statement() {
-                Literal object = objectAsLiteral();
+            public boolean statement(Statement statement) {
+                Literal object = objectAsLiteral(statement);
                 String language = object.getLanguage();
                 int index = singleLabelModeLanguages.indexOf(language);
                 if (index > bestIndex) {
