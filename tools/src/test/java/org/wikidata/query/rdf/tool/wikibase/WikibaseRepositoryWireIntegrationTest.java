@@ -17,7 +17,9 @@ import static org.hamcrest.Matchers.hasSize;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 
 import org.junit.After;
@@ -25,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.test.SystemPropertyContext;
+import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
 import com.codahale.metrics.MetricRegistry;
@@ -101,12 +104,42 @@ public class WikibaseRepositoryWireIntegrationTest {
     @Test
     public void rdfAndConstraints() throws RetryableException {
         repository.setCollectConstraints(true);
-        stubFor(get(urlMatching("/wiki/Special:EntityData/Q2.ttl[?]nocache=[0-9]+&flavor=dump"))
+        stubFor(get(urlMatching("/wiki/Special:EntityData/Q2.ttl[?]flavor=dump.*"))
                 .willReturn(aResponse().withBody("<a> <b> <c> .")));
         stubFor(get(urlMatching("/wiki/Q2[?]action=constraintsrdf&nocache=[0-9]+"))
                 .willReturn(aResponse().withBody("<d> <e> <f> .")));
         Collection<Statement> response = repository.fetchRdfForEntity("Q2");
         assertThat(response, hasSize(2));
+    }
+
+    @Test
+    public void rdfNewUsesRevisions() throws RetryableException {
+        repository.setCollectConstraints(false);
+        repository.setRevisionCutoff(Duration.of(3, ChronoUnit.HOURS));
+        stubFor(get(urlMatching("/wiki/Special:EntityData/Q2.ttl[?]flavor=dump&revision=1234"))
+                .willReturn(aResponse().withBody("<a> <b> <c> .")));
+        Collection<Statement> response = repository.fetchRdfForEntity(new Change("Q2", 1234, Instant.now().minus(5, ChronoUnit.MINUTES), 0));
+        assertThat(response, hasSize(1));
+    }
+
+    @Test
+    public void rdfNewWithoutCutoff() throws RetryableException {
+        repository.setCollectConstraints(false);
+        repository.setRevisionCutoff(Duration.ZERO);
+        stubFor(get(urlMatching("/wiki/Special:EntityData/Q2.ttl[?]flavor=dump&nocache=[0-9]+"))
+                .willReturn(aResponse().withBody("<a> <b> <c> .")));
+        Collection<Statement> response = repository.fetchRdfForEntity(new Change("Q2", 1234, Instant.now().minus(5, ChronoUnit.MINUTES), 0));
+        assertThat(response, hasSize(1));
+    }
+
+    @Test
+    public void rdfOldUsesNocache() throws RetryableException {
+        repository.setCollectConstraints(false);
+        repository.setRevisionCutoff(Duration.of(3, ChronoUnit.HOURS));
+        stubFor(get(urlMatching("/wiki/Special:EntityData/Q2.ttl[?]flavor=dump&nocache=[0-9]+"))
+                .willReturn(aResponse().withBody("<a> <b> <c> .")));
+        Collection<Statement> response = repository.fetchRdfForEntity(new Change("Q2", 1234, Instant.now().minus(5, ChronoUnit.DAYS), 0));
+        assertThat(response, hasSize(1));
     }
 
     @Test
