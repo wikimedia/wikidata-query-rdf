@@ -15,6 +15,7 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -79,6 +80,7 @@ import com.codahale.metrics.httpclient.InstrumentedHttpClientConnectionManager;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
@@ -169,6 +171,11 @@ public class WikibaseRepository implements Closeable {
     private boolean collectConstraints;
 
     /**
+     * How old (hours) revision should be to switch to lastest revision fetch.
+     */
+    private Duration revisionCutoff;
+
+    /**
      * Object mapper used to deserialize JSON messages from Wikidata.
      *
      * Note that this mapper is configured to ignore unknown properties.
@@ -194,19 +201,19 @@ public class WikibaseRepository implements Closeable {
     private final StreamDumper streamDumper;
 
     public WikibaseRepository(URI baseUrl, MetricRegistry metricRegistry) {
-        this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper());
+        this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper(), null);
     }
 
     public WikibaseRepository(String baseUrl, MetricRegistry metricRegistry) {
-        this(Uris.fromString(baseUrl), false, metricRegistry, new NullStreamDumper());
+        this(Uris.fromString(baseUrl), false, metricRegistry, new NullStreamDumper(), null);
     }
 
     public WikibaseRepository(URI baseUrl, Set<Long> entityNamespaces, MetricRegistry metricRegistry) {
-        this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper());
+        this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper(), null);
         uris.setEntityNamespaces(entityNamespaces);
     }
 
-    public WikibaseRepository(Uris uris, boolean collectConstraints, MetricRegistry metricRegistry, StreamDumper streamDumper) {
+    public WikibaseRepository(Uris uris, boolean collectConstraints, MetricRegistry metricRegistry, StreamDumper streamDumper, Duration revisionCutoff) {
         this.uris = uris;
         this.collectConstraints = collectConstraints;
         this.rdfFetchTimer = metricRegistry.timer("rdf-fetch-timer");
@@ -215,6 +222,7 @@ public class WikibaseRepository implements Closeable {
         connectionManager = createConnectionManager(metricRegistry);
         client = createHttpClient(connectionManager);
         this.streamDumper = streamDumper;
+        this.revisionCutoff = revisionCutoff;
     }
 
     /**
@@ -385,17 +393,56 @@ public class WikibaseRepository implements Closeable {
         }
     }
 
+    private boolean isChangeRecent(Change change) {
+        if (revisionCutoff == null || revisionCutoff.isZero()) {
+            // if revision cutoff is not set, we still use latest fetch
+            return false;
+        }
+        return change.timestamp() != null &&
+                change.timestamp().isAfter(Instant.now().minus(revisionCutoff));
+    }
+
+    /**
+     * Fetch the RDF for change in the entity.
+     *
+     * If the change is recent (set by revisionCutoff duration) then we fetch specific
+     * revision using revision=1234 in the URL. This allows us to use varnish cache.
+     * If the change is old, there's serious chance this revision is not the latest for
+     * the item, thus we're using cache-busting nocache=... URL to fetch the latest one.
+     * TODO: it might be better to use some syntax that allows fetching "this revision or later"
+     * to still benefit from some caching, or have some caching on the back end, but this
+     * is for further improvements.
+     * @throws RetryableException thrown if there is an error communicating with
+     *             wikibase
+     */
+    public Collection<Statement> fetchRdfForEntity(Change entityChange) throws RetryableException {
+        if (entityChange.revision() > 0 && isChangeRecent(entityChange)) {
+            return fetchRdfForEntity(entityChange.entityId(), entityChange.revision());
+        }
+        return fetchRdfForEntity(entityChange.entityId(), -1);
+    }
+
     /**
      * Fetch the RDF for some entity.
-     *
+     * @throws RetryableException thrown if there is an error communicating with
+     *             wikibase
+     */
+    @VisibleForTesting
+    public Collection<Statement> fetchRdfForEntity(String entityId) throws RetryableException {
+        return fetchRdfForEntity(entityId, -1);
+    }
+
+    /**
+     * Fetch the RDF for some entity.
+     * If revision is good (above 0) it will fetch by revision.
      * @throws RetryableException thrown if there is an error communicating with
      *             wikibase
      */
     @SuppressWarnings("resource") // stop() and close() are the same
-    public Collection<Statement> fetchRdfForEntity(String entityId) throws RetryableException {
+    public Collection<Statement> fetchRdfForEntity(String entityId, long revision) throws RetryableException {
         Timer.Context timerContext = rdfFetchTimer.time();
         StatementCollector collector = new StatementCollector();
-        collectStatementsFromUrl(uris.rdf(entityId), collector, entityFetchTimer);
+        collectStatementsFromUrl(uris.rdf(entityId, revision), collector, entityFetchTimer);
         if (collectConstraints) {
             try {
                 collectStatementsFromUrl(uris.constraints(entityId), collector, constraintFetchTimer);
@@ -444,6 +491,7 @@ public class WikibaseRepository implements Closeable {
      * @throws RetryableException thrown if there is an error communicating with
      *             wikibase
      */
+    @VisibleForTesting
     public String setLabel(String entityId, String type, String label, String language) throws RetryableException {
         String datatype = type.equals("property") ? "string" : null;
 
@@ -653,10 +701,7 @@ public class WikibaseRepository implements Closeable {
             return build(builder);
         }
 
-        /**
-         * Uri to get the rdf for an entity.
-         */
-        public URI rdf(String entityId) {
+        private URIBuilder entityURIBuilder(String entityId) {
             URIBuilder builder = builder();
             /*
              * Note that we could use /entity/%s.ttl for production Wikidata but
@@ -665,18 +710,53 @@ public class WikibaseRepository implements Closeable {
              */
             builder.setPath(baseUrl.getPath() + ENTITY_DATA_URL + entityId + ".ttl");
             // Cache is not our friend, try to work around it
-            builder.addParameter("nocache", String.valueOf(Instant.now().toEpochMilli()));
             builder.addParameter("flavor", "dump");
+            return builder;
+        }
+
+        /**
+         * Uri to get the rdf for an entity and revision.
+         * Checks whether revision is good for fetching.
+         */
+        public URI rdf(String entityId, long revision) {
+            if (revision > 0) {
+                return rdfRevision(entityId, revision);
+            }
+            return rdf(entityId);
+        }
+
+        /**
+         * Uri to get the rdf for an entity.
+         */
+        public URI rdf(String entityId) {
+            URIBuilder builder = entityURIBuilder(entityId);
+            // Cache is not our friend, try to work around it
+            builder.addParameter("nocache", String.valueOf(Instant.now().toEpochMilli()));
             return build(builder);
+        }
+
+        /**
+         * Uri to get the rdf for an entity and revision.
+         * This assumes revision is OK (i.e. positive).
+         */
+        public URI rdfRevision(String entityId, long revision) {
+            URIBuilder builder = entityURIBuilder(entityId);
+            builder.addParameter("revision", Long.toString(revision));
+            return build(builder);
+        }
+
+        private URIBuilder constraintsURIBuilder(String entityId) {
+            URIBuilder builder = builder();
+            builder.setPath(baseUrl.getPath() + "/wiki/" + entityId);
+            builder.addParameter("action", "constraintsrdf");
+            return builder;
         }
 
         /**
          * Uri to get the rdf for constraints status of an entity.
          */
         public URI constraints(String entityId) {
-            URIBuilder builder = builder();
-            builder.setPath(baseUrl.getPath() + "/wiki/" + entityId);
-            builder.addParameter("action", "constraintsrdf");
+            URIBuilder builder = constraintsURIBuilder(entityId);
             // Cache is not our friend, try to work around it
             builder.addParameter("nocache", String.valueOf(Instant.now().toEpochMilli()));
             return build(builder);
@@ -821,8 +901,17 @@ public class WikibaseRepository implements Closeable {
     /**
      * Should we collect constraints?
      */
+    @VisibleForTesting
     public void setCollectConstraints(boolean collectConstraints) {
         this.collectConstraints = collectConstraints;
+    }
+
+    /**
+     * How old shout revision be to use latest fetch?
+     */
+    @VisibleForTesting
+    public void setRevisionCutoff(Duration cutoff) {
+        this.revisionCutoff = cutoff;
     }
 
     /**

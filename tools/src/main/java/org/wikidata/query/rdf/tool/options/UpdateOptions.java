@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool.options;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static java.util.Collections.singletonList;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.splitByComma;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.INPUT_DATE_FORMATTER;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.OUTPUT_DATE_FORMATTER;
@@ -12,9 +13,10 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.Arrays;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 
@@ -98,9 +100,12 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     @Option(longName = "metricDomain", defaultValue = "wdqs-updater", description = "JMX metrics domain")
     String metricDomain();
 
+    @Option(defaultValue = "0", description = "How old (hours) should revision be to start using latest revision fetch")
+    int oldRevision();
+
     static Set<Long> longEntityNamespaces(UpdateOptions updateOptions) {
         if (updateOptions.entityNamespaces() == null) return DEFAULT_ENTITY_NAMESPACES;
-        return splitByComma(Arrays.asList(updateOptions.entityNamespaces()))
+        return splitByComma(singletonList(updateOptions.entityNamespaces()))
                 .stream()
                 .map(Long::parseLong)
                 .collect(toImmutableSet());
@@ -152,7 +157,7 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     static String[] parsedIds(UpdateOptions updateOptions) {
         List<String> split = splitByComma(updateOptions.ids());
         if (split == null) return null;
-        return split.toArray(new String[split.size()]);
+        return split.toArray(new String[0]);
     }
 
     static boolean ignoreStoredOffsets(UpdateOptions updateOptions) {
@@ -197,5 +202,13 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
                 throw  new IllegalArgumentException("Invalid date: " + dateStr, e2);
             }
         }
+    }
+
+    @Nullable
+    static Duration revisionDuration(UpdateOptions updateOptions) {
+        if (updateOptions.oldRevision() == 0) {
+            return null;
+        }
+        return Duration.of(updateOptions.oldRevision(), ChronoUnit.HOURS);
     }
 }

@@ -121,7 +121,8 @@ public final class Update {
             StreamDumper wikibaseStreamDumper = createStreamDumper(dumpDirPath(options));
 
             WikibaseRepository wikibaseRepository = new WikibaseRepository(
-                    UpdateOptions.uris(options), options.constraints(), metricRegistry, wikibaseStreamDumper);
+                    UpdateOptions.uris(options), options.constraints(), metricRegistry, wikibaseStreamDumper,
+                    UpdateOptions.revisionDuration(options));
             closer.register(wikibaseRepository);
 
             WikibaseUris wikibaseUris = WikibaseOptions.wikibaseUris(options);
