@@ -65,6 +65,7 @@ import org.openrdf.rio.helpers.StatementCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.tool.change.Change;
+import org.wikidata.query.rdf.tool.exception.BadParameterException;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
@@ -370,6 +371,9 @@ public class WikibaseRepository implements Closeable {
                     log.debug("No content, we're done");
                     return;
                 }
+                if (response.getStatusLine().getStatusCode() == 400) {
+                    throw new BadParameterException("Status code 400 for " + uri);
+                }
                 if (response.getStatusLine().getStatusCode() >= 300) {
                     throw new ContainedException("Unexpected status code fetching RDF for " + uri + ":  "
                             + response.getStatusLine().getStatusCode());
@@ -442,7 +446,17 @@ public class WikibaseRepository implements Closeable {
     public Collection<Statement> fetchRdfForEntity(String entityId, long revision) throws RetryableException {
         Timer.Context timerContext = rdfFetchTimer.time();
         StatementCollector collector = new StatementCollector();
-        collectStatementsFromUrl(uris.rdf(entityId, revision), collector, entityFetchTimer);
+        try {
+            collectStatementsFromUrl(uris.rdf(entityId, revision), collector, entityFetchTimer);
+        } catch (BadParameterException ex) {
+            if (revision >= 0) {
+                // If we tried with revision and got 400, it may mean it was a redirect
+                // Let's try without revision.
+                collectStatementsFromUrl(uris.rdf(entityId), collector, entityFetchTimer);
+            } else {
+                throw ex;
+            }
+        }
         if (collectConstraints) {
             try {
                 collectStatementsFromUrl(uris.constraints(entityId), collector, constraintFetchTimer);
