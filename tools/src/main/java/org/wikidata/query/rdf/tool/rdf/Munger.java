@@ -523,10 +523,6 @@ public final class Munger {
         @SuppressWarnings("checkstyle:npathcomplexity")
         private boolean statement(Statement statement) {
             String subject = statement.getSubject().stringValue();
-            if (subject.equals(Ontology.DUMP)) {
-                // temporary patch for T98405
-                return false;
-            }
             if (inNamespace(subject, uris.entityData()) || inNamespace(subject, uris.entityDataHttps())) {
                 return entityDataStatement(statement);
             }
@@ -725,7 +721,10 @@ public final class Munger {
                  * in unknownSubjects so we can restore them if they are later
                  * linked.
                  */
-                unknownSubjects.put(subject, statement);
+                if (!statement.getPredicate().stringValue().equals(Ontology.CONSTRAINT_VIOLATION)) {
+                    // We just ignore constraint violations for unknown statements
+                    unknownSubjects.put(subject, statement);
+                }
                 return false;
             }
             String object = statement.getObject().stringValue();
@@ -944,6 +943,16 @@ public final class Munger {
                     log.info(
                             "Unrecognized subjects: {} while processing {}.  Expected only sitelinks and subjects starting with {} and {}",
                             unknownSubjects.keySet(), entityUri, uris.entityData(), uris.entity());
+                    // Log statements we're about to drop, unless there are too many
+                    unknownSubjects.entries().stream()
+                            .limit(20)
+                            .forEach(
+                                    e -> log.info(
+                                            "Unrecognized statement: s:{} p:{} o:{}",
+                                            e.getValue().getSubject(), e.getValue().getPredicate(), e.getValue().getObject()));
+                    if (unknownSubjects.size() > 20) {
+                        log.info("More than 20 unrecognized statements, further statements not logged.");
+                    }
                 }
             }
             statementsWithoutRanks.removeAll(statementsWithRanks);
