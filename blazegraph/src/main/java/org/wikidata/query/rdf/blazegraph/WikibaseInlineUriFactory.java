@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.blazegraph;
 
+import org.wikidata.query.rdf.blazegraph.inline.uri.InlineFixedWidthHexIntegerURIHandler;
 import org.wikidata.query.rdf.blazegraph.inline.uri.UndecoratedUuidInlineUriHandler;
 import org.wikidata.query.rdf.common.uri.CommonValues;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
@@ -28,8 +29,9 @@ import com.bigdata.rdf.internal.TrailingSlashRemovingInlineUriHandler;
  * forbid them entirely.
  */
 public class WikibaseInlineUriFactory extends InlineURIFactory {
+    private static final WikibaseUris uris = WikibaseUris.getURISystem();
+
     public WikibaseInlineUriFactory() {
-        WikibaseUris uris = WikibaseUris.getURISystem();
         /*
          * Order matters here because some of these are prefixes of each other.
          */
@@ -74,6 +76,12 @@ public class WikibaseInlineUriFactory extends InlineURIFactory {
          * can't inline that without bloating either.
          */
         addHandler(new UndecoratedUuidInlineUriHandler(uris.value()));
-        // addHandler(new UndecoratedUuidInlineUriHandler(uris.reference()));
+    }
+
+    public static class V001 extends WikibaseInlineUriFactory {
+        public V001() {
+            super();
+            addHandler(new InlineFixedWidthHexIntegerURIHandler(uris.reference(), 40));
+        }
     }
 }

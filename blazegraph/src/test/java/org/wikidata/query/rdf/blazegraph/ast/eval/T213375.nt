@@ -1,0 +1,5 @@
+<http://www.wikidata.org/value/095dde070543a0e0115c8d5061fce6754bb82280> <x:prop1> <http://s1> .
+<http://www.wikidata.org/reference/d95dde070543a0e0115c8d5061fce6754bb82281> <x:prop1> <http://s2> .
+<http://www.wikidata.org/value/d95dde070543a0e0115c8d5061fce6754bb82282> <x:prop2> "test1".
+<http://www.wikidata.org/reference/d95dde070543a0e0115c8d5061fce6754bb82283> <x:prop2> "test2".
+<http://www.wikidata.org/value/d95dde070543a0e0115c8d5061fce6754bb82284> <x:prop3> <http://www.wikidata.org/reference/d95dde070543a0e0115c8d5061fce6754bb82281> .

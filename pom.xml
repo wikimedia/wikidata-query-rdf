@@ -146,6 +146,25 @@
             </dependency>
             <dependency>
                 <groupId>com.blazegraph</groupId>
+                <artifactId>bigdata-rdf-test</artifactId>
+                <version>${blazegraph.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.blazegraph</groupId>
                 <artifactId>bigdata-util</artifactId>
                 <version>${blazegraph.version}</version>
                 <exclusions>
@@ -816,6 +835,9 @@
                         <excludes>
                             <exclude>**/*IntegrationTest.class</exclude>
                         </excludes>
+                        <systemPropertyVariables>
+                            <ASTOptimizerClass>org.wikidata.query.rdf.blazegraph.WikibaseOptimizers</ASTOptimizerClass>
+                        </systemPropertyVariables>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -827,6 +849,10 @@
                 the following dependencies are problematic but non trivial to
                 clean, it will come in a second time...
               -->
+                            <dependency>
+                                <groupId>com.blazegraph</groupId>
+                                <artifactId>bigdata-rdf-test</artifactId>
+                            </dependency>
                             <dependency>
                                 <groupId>colt</groupId>
                                 <artifactId>colt</artifactId>
