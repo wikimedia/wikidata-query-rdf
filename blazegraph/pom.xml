@@ -178,6 +178,28 @@
 
     <build>
         <finalName>wikidata-query-blazegraph-${project.version}</finalName>
+        <resources>
+            <resource>
+                <directory>src/test/java</directory>
+                <includes>
+                    <include>**/*.n3</include>
+                    <include>**/*.nt</include>
+                    <include>**/*.nq</include>
+                    <include>**/*.owl</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.xml</include>
+                    <include>**/*.gz</include>
+                    <include>**/*.txt</include>
+                    <include>**/*.ttl</include>
+                    <include>**/*.ttlx</include>
+                    <include>**/*.rq</include>
+                    <include>**/*.rdf</include>
+                    <include>**/*.srx</include>
+                    <include>**/*.trig</include>
+                    <include>**/*.jsonld</include>
+                </includes>
+            </resource>
+        </resources>
         <testResources>
             <testResource>
                 <directory>${project.basedir}/src/test/resources</directory>

@@ -18,6 +18,7 @@ import java.util.Set;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.openrdf.model.URI;
 import org.openrdf.model.impl.BNodeImpl;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.URIImpl;
@@ -120,6 +121,47 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         query.append("  }\n");
         query.append("}\n");
         assertResult(query(query.toString()), binds("pLabel", "in en", "en"));
+    }
+
+    @Test
+    public void deeperServiceCall_T153353_simple() {
+        addSimpleLabels("Q153353");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?p\n");
+        query.append("WHERE {\n");
+        query.append("	{\n");
+        query.append("		SELECT ?p ?pLabel WHERE {\n");
+        query.append("			BIND(wd:Q153353 AS ?p)\n");
+        query.append("			SERVICE ontology:label { bd:serviceParam ontology:language \"en\" . }\n");
+        query.append("		}\n");
+        query.append("	}\n");
+        query.append("	FILTER(\"in en\"@en = ?pLabel) .\n");
+        query.append("}");
+        assertResult(query(query.toString()), binds("p", URI.class));
+    }
+
+    // @Test
+    // This test is disabled due to errors not directly related to Q153353,
+    // on some occasions, results are duplicated.
+    public void deeperServiceCall_T153353_nested() {
+        addSimpleLabels("Q153353_nested");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?p ?pLabel\n");
+        query.append("WHERE {\n");
+        query.append("	{\n");
+        query.append("		SELECT ?p ?pLabel WHERE {\n");
+        query.append("			{{\n");
+        query.append("			SERVICE ontology:label { bd:serviceParam ontology:language \"en\" . }\n");
+        query.append("			}\n");
+        query.append("			UNION");
+        query.append("			{\n");
+        query.append("			}}\n");
+        query.append("		}\n");
+        query.append("	}\n");
+        query.append("	FILTER(\"in en\"@en = ?pLabel) .\n");
+        query.append("}");
+        query.append("VALUES (?p) {(wd:Q153353_nested)}\n");
+        assertResult(query(query.toString()), binds("p", URI.class));
     }
 
     private void simpleLabelLookupTestCase(String extraQuery, String subjectInQuery) throws QueryEvaluationException {
