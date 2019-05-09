@@ -9,6 +9,7 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.util.iterator.Map1;
 import org.openrdf.model.URI;
 
 import com.bigdata.rdf.model.BigdataLiteral;
@@ -17,7 +18,7 @@ import com.bigdata.rdf.model.BigdataStatement;
 import com.bigdata.rdf.model.BigdataValue;
 
 /**
- * Implementation of Map1 that transforms {@link BigdataStatement}s to
+ * Implementation of {@link Map1} that transforms {@link BigdataStatement}s to
  * Jena {@link Statement}s.
  *
  * @author <a href="http://olafhartig.de">Olaf Hartig</a>
