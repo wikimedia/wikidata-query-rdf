@@ -10,7 +10,14 @@ CONTEXT=bigdata
 HEAP_SIZE=${HEAP_SIZE:-"3g"}
 MEMORY=${MEMORY:-"-Xmx${HEAP_SIZE}"}
 LOG_DIR=${LOG_DIR:-"/var/log/wdqs"}
-GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/wdqs-updater_jvm_gc.%p.log \
+if [[ "$JAVA_MAJOR_VERSION" -ge "9" ]] ; then
+    GC_LOGS=${GC_LOGS:-"-Xlog:gc:${LOG_DIR}/wdqs-updater_jvm_gc.%p.log \
+         -Xlog:gc* \
+         -XX:+UnlockExperimentalVMOptions \
+         -XX:G1NewSizePercent=20 \
+         -XX:+ParallelRefProcEnabled"}
+else
+    GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/wdqs-updater_jvm_gc.%p.log \
          -XX:+PrintGCDetails \
          -XX:+PrintGCDateStamps \
          -XX:+PrintGCTimeStamps \
@@ -22,6 +29,7 @@ GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/wdqs-updater_jvm_gc.%p.log \
          -XX:+UseGCLogFileRotation \
          -XX:NumberOfGCLogFiles=10 \
          -XX:GCLogFileSize=20M"}
+fi
 EXTRA_JVM_OPTS=${EXTRA_JVM_OPTS:-""}
 LOG_CONFIG=${LOG_CONFIG:-""}
 NAMESPACE=wdq

@@ -15,7 +15,15 @@ LOG_CONFIG=${LOG_CONFIG:-""}
 LOG_DIR=${LOG_DIR:-"/var/log/wdqs"}
 GC_LOG_FILE=${GC_LOG_FILE:-"wdqs-blazegraph_jvm_gc.%p-%t.log"}
 MEMORY=${MEMORY:-"-Xmx${HEAP_SIZE}"}
-GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/${GC_LOG_FILE} \
+JAVA_MAJOR_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
+if [[ "$JAVA_MAJOR_VERSION" -ge "9" ]] ; then
+    GC_LOGS=${GC_LOGS:-"-Xlog:gc:${LOG_DIR}/${GC_LOG_FILE} \
+         -Xlog:gc* \
+         -XX:+UnlockExperimentalVMOptions \
+         -XX:G1NewSizePercent=20 \
+         -XX:+ParallelRefProcEnabled"}
+else
+    GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/${GC_LOG_FILE} \
          -XX:+PrintGCDetails \
          -XX:+PrintGCDateStamps \
          -XX:+PrintGCTimeStamps \
@@ -30,6 +38,7 @@ GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/${GC_LOG_FILE} \
          -XX:+UseGCLogFileRotation \
          -XX:NumberOfGCLogFiles=10 \
          -XX:GCLogFileSize=20M"}
+fi
 EXTRA_JVM_OPTS=${EXTRA_JVM_OPTS:-""}
 BLAZEGRAPH_OPTS=${BLAZEGRAPH_OPTS:-""}
 CONFIG_FILE=${CONFIG_FILE:-"RWStore.properties"}
