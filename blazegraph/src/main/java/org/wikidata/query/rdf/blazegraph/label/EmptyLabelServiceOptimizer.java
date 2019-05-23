@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.label;
 
+import static org.wikidata.query.rdf.blazegraph.label.LabelServiceUtils.getLabelServiceNodes;
+
 import java.util.List;
 
 import org.openrdf.model.URI;
@@ -17,12 +19,15 @@ import com.bigdata.bop.IVariable;
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.sparql.ast.AssignmentNode;
 import com.bigdata.rdf.sparql.ast.ConstantNode;
+import com.bigdata.rdf.sparql.ast.IGroupMemberNode;
+import com.bigdata.rdf.sparql.ast.IGroupNode;
 import com.bigdata.rdf.sparql.ast.JoinGroupNode;
 import com.bigdata.rdf.sparql.ast.ProjectionNode;
 import com.bigdata.rdf.sparql.ast.QueryRoot;
 import com.bigdata.rdf.sparql.ast.QueryType;
 import com.bigdata.rdf.sparql.ast.StatementPatternNode;
 import com.bigdata.rdf.sparql.ast.StaticAnalysis;
+import com.bigdata.rdf.sparql.ast.SubqueryBase;
 import com.bigdata.rdf.sparql.ast.VarNode;
 import com.bigdata.rdf.sparql.ast.eval.AST2BOpContext;
 import com.bigdata.rdf.sparql.ast.optimizers.AbstractJoinGroupOptimizer;
@@ -44,13 +49,24 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
      */
     private static final URI DESCRIPTION = new URIImpl(SchemaDotOrg.DESCRIPTION);
 
+	private static final String LABEL_SERVICE_PROJECTION = "LabelService.projection";
+
     @Override
     protected void optimizeJoinGroup(AST2BOpContext ctx, StaticAnalysis sa, IBindingSet[] bSets, JoinGroupNode op) {
         final QueryRoot root = sa.getQueryRoot();
         if (root.getQueryType() == QueryType.ASK) {
             return;
         }
-        LabelServiceUtils.getLabelServiceNodes(op).forEach(service -> {
+        if (root.getWhereClause() == op) {
+            op.setProperty(LABEL_SERVICE_PROJECTION, root.getProjection());
+        }
+        op.getChildren(SubqueryBase.class).forEach(node -> {
+            if (node.getWhereClause() != null) {
+	            BOp whereClause = node.getWhereClause();
+                whereClause.setProperty(LABEL_SERVICE_PROJECTION, node.getProjection());
+            }
+        });
+        getLabelServiceNodes(op).forEach(service -> {
             JoinGroupNode g = (JoinGroupNode) service.getGraphPattern();
             boolean foundArg = false;
             for (BOp st : g.args()) {
@@ -62,21 +78,36 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
                 break;
             }
 
-            if (EmptyLabelServiceOptimizer.this.restoreExtracted(service)) {
+            if (restoreExtracted(service)) {
                 foundArg = true;
             }
 
             if (!foundArg) {
-                EmptyLabelServiceOptimizer.this.addResolutions(ctx, g, root.getProjection());
+                addResolutions(ctx, g, getProjectionNode(service));
             }
 
         });
     }
 
+    @SuppressFBWarnings(
+            value = "OCP_OVERLY_CONCRETE_PARAMETER",
+            justification = "We only process ServiceNode's so that's the appropriate type")
+    private ProjectionNode getProjectionNode(ServiceNode service) {
+        IGroupNode<IGroupMemberNode> parent = service.getParent();
+        while (parent != null) {
+            ProjectionNode projection = (ProjectionNode) parent.annotations().get(
+                    LABEL_SERVICE_PROJECTION
+            );
+            if (projection != null) {
+                return projection;
+            }
+        	parent = parent.getParent();
+        }
+        return null;
+    }
+
     /**
      * Restore extracted statement from label service node.
-     * @param service
-     * @return
      */
     @SuppressWarnings("unchecked")
     private boolean restoreExtracted(ServiceNode service) {

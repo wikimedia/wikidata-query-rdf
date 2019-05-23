@@ -99,9 +99,9 @@ public final class Matchers {
         try {
             int position = 0;
             for (Matcher<BindingSet> bindingMatcher : bindingMatchers) {
+                position++;
                 assertTrue("There should be at least " + position + " results", result.hasNext());
                 assertThat(result.next(), bindingMatcher);
-                position++;
             }
             assertFalse("There should be no more than " + position + " result", result.hasNext());
             result.close();
