@@ -4,6 +4,7 @@ import static com.bigdata.rdf.sparql.ast.FunctionRegistry.checkArgs;
 import static com.codahale.metrics.MetricRegistry.name;
 import static com.google.common.collect.Lists.reverse;
 import static org.wikidata.query.rdf.common.LoggingNames.MW_API_REQUEST;
+import static org.wikidata.query.rdf.common.LoggingNames.REMOTE_REQUEST;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -67,6 +68,7 @@ import com.bigdata.rdf.sparql.ast.service.ServiceFactory;
 import com.bigdata.rdf.sparql.ast.service.ServiceRegistry;
 import com.bigdata.rdf.store.BDS;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.codahale.metrics.jmx.JmxReporter;
 import com.google.common.annotations.VisibleForTesting;
 
@@ -138,7 +140,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         loadWhitelist(reg);
 
         // Initialize remote services
-        reg.setDefaultServiceFactory(getDefaultServiceFactory());
+        reg.setDefaultServiceFactory(getDefaultServiceFactory(metricRegistry.timer(name(RemoteServiceFactoryImpl.class, REMOTE_REQUEST))));
 
         // Override date functions so that we can handle them
         // via WikibaseDate
@@ -189,12 +191,12 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      * Get default service factory, with proper options.
      * @return Service factory
      */
-    private static ServiceFactory getDefaultServiceFactory() {
+    private static ServiceFactory getDefaultServiceFactory(Timer requestTimer) {
         final RemoteServiceOptions options = new RemoteServiceOptions();
         options.setSPARQLVersion(SPARQLVersion.SPARQL_11);
         options.setGET(true);
         options.setAcceptHeader(TupleQueryResultFormat.SPARQL.getDefaultMIMEType());
-        return new RemoteServiceFactoryImpl(options);
+        return new MeteringRemoteServiceFactory(requestTimer, options);
     }
 
     /**

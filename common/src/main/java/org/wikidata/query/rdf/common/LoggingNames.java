@@ -11,5 +11,7 @@ public final class LoggingNames {
 
     /** A query sent by Blazegraph to MediaWiki. */
     public static final String MW_API_REQUEST = "mw-api-request";
+    /** A query sent by Blazegraph to remote service. */
+    public static final String REMOTE_REQUEST = "remote-request";
 
 }
