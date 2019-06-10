@@ -20,8 +20,8 @@
     </licenses>
 
     <properties>
-        <!-- Blazegraph depends on an older version of sesame, but tools requires 2.8.1 -->
-        <sesame.version>2.8.1</sesame.version>
+        <!-- Blazegraph has to stay on older Jackson version, but tools will use newer one -->
+        <jackson.version>2.9.8</jackson.version>
     </properties>
 
     <dependencies>
@@ -36,6 +36,10 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

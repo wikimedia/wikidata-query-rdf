@@ -44,7 +44,6 @@
             <groupId>com.blazegraph</groupId>
             <artifactId>ctc-striterators</artifactId>
         </dependency>
-        <!-- Blazegraph needs http client to run services. -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
