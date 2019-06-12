@@ -1,6 +1,15 @@
+0.3.2
+-----
+Upgrade to Blazegraph version with Sesame 2.8.11
+Upgrade LDF server to 0.2.4
+Add metering of federation requests
+Add support for value URI inlining
+Change RDF fetching to not use cache-buster
+Fixed label service behavior in nested queries
+
 0.3.1
 -----
-Updgrade LDF server to 0.2.2
+Upgrade LDF server to 0.2.2
 Upgrade Jetty to latest 9.4
 Upgrade Blazegraph to 2.1.5 Release
 Introduce support for Lexemes
