@@ -101,6 +101,16 @@
         <listener-class>org.wikidata.query.rdf.blazegraph.WikibaseContextListener</listener-class>
     </listener>
     <filter>
+        <filter-name>user-agent-filter</filter-name>
+        <filter-class>org.wikidata.query.rdf.blazegraph.filters.RealAgentFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>user-agent-filter</filter-name>
+        <url-pattern>/sparql</url-pattern>
+        <url-pattern>/namespace</url-pattern>
+        <url-pattern>/namespace/*</url-pattern>
+    </filter-mapping>
+    <filter>
         <filter-name>real-ip-filter</filter-name>
         <filter-class>org.wikidata.query.rdf.blazegraph.filters.ClientIPFilter</filter-class>
     </filter>
