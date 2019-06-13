@@ -96,6 +96,31 @@ public class NormalizingRdfHandlerUnitTest {
         handler.handleStatement(s);
     }
 
+    @Test
+    public void testBadChars() throws RDFHandlerException {
+        testLiteral("test me", "test me");
+        testLiteral("test\u00ADme", "testme");
+        testLiteral("\u200Btest me\u200F", "test me");
+        testLiteral("\u200Atest\u2060me\u200F", "\u200Atestme");
+    }
+
+    private void testLiteral(String str, String expected) throws RDFHandlerException {
+        StatementChecker checkStatement = new StatementChecker();
+        NormalizingRdfHandler handler = new NormalizingRdfHandler(checkStatement);
+        handler.handleNamespace("xsd", XMLSchema.NAMESPACE);
+        Statement s = statement("Q1", "P1", new LiteralImpl(str));
+        checkStatement.expect(null, null, expected);
+        handler.handleStatement(s);
+        s = statement("Q1", "P1", new LiteralImpl(str, "en"));
+        checkStatement.expect(null, null, expected);
+        handler.handleStatement(s);
+        // Non-string ones are not touched for now
+        s = statement("Q1", "P1", new LiteralImpl(str, XMLSchema.DATE));
+        checkStatement.expect(null, null, str);
+        handler.handleStatement(s);
+    }
+
+
     private final class StatementChecker implements RDFHandler {
         private String expectSubject;
         private String expectPredicate;
