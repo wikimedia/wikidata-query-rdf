@@ -17,7 +17,7 @@ import com.google.common.collect.Streams;
 /**
  * MW API service configuration.
  */
-public final class ServiceConfig {
+public class ServiceConfig {
 
     /**
      * Map of services, keyed by name.

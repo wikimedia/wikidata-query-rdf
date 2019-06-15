@@ -1,11 +1,9 @@
 package org.wikidata.query.rdf.blazegraph.mwapi;
 
-import static com.codahale.metrics.MetricRegistry.name;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -167,31 +165,14 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
 
     /**
      * Get service host and check if it's valid.
-     * @param serviceParams
-     * @return Service endpoint hostname.
+     * @return Service endpoint.
      * @throws MalformedURLException on bad URL
      */
-    private String getServiceHost(final ServiceParams serviceParams) throws MalformedURLException {
+    private Endpoint getServiceHost(final ServiceParams serviceParams) throws MalformedURLException {
         TermNode hostNode = serviceParams.get(ENDPOINT_KEY, null);
         requireNonNull(hostNode, "Service name (wikibase:endpoint) should be supplied");
-        // TODO: allow variable endpoints
-        if (!hostNode.isConstant()) {
-            throw new IllegalArgumentException(
-                    "Endpoint name should be a constant");
-        }
-
         serviceParams.clear(ENDPOINT_KEY);
-        Value v = hostNode.getValue();
-        final String endpointHost;
-        if (v instanceof URI) {
-            endpointHost = new URL(v.stringValue()).getHost();
-        } else {
-            endpointHost = v.stringValue();
-        }
-        if (!config.validEndpoint(endpointHost)) {
-            throw new IllegalArgumentException("Host " + endpointHost + " is not allowed");
-        }
-        return endpointHost;
+        return Endpoint.create(hostNode.getValueExpression(), config);
     }
 
     /**
