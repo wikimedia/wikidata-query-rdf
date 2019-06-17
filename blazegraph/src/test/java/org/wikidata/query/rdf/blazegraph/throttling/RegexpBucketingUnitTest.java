@@ -14,28 +14,28 @@ import com.google.common.collect.ImmutableList;
 
 public class RegexpBucketingUnitTest {
 
-    public static final ImmutableList<Pattern> TEST_PATTERNS = ImmutableList.of(
+    private static final ImmutableList<Pattern> TEST_PATTERNS = ImmutableList.of(
             Pattern.compile("matchme\\d+", Pattern.DOTALL),
             Pattern.compile("also [a-zA-Z]+ match", Pattern.DOTALL)
     );
 
     @Test
     public void nullBucketWhenNoPatterns() {
-        Bucketing bucketing = new RegexpBucketing(ImmutableList.of());
+        Bucketing bucketing = new RegexpBucketing(ImmutableList.of(), r -> null);
 
         assertThat(bucketing.bucket(mockRequest("test 123"))).isNull();
     }
 
     @Test
     public void nullBucketWhenNoMatchingPattern() {
-        Bucketing bucketing = new RegexpBucketing(TEST_PATTERNS);
+        Bucketing bucketing = new RegexpBucketing(TEST_PATTERNS, r -> r.getParameter("query"));
 
         assertThat(bucketing.bucket(mockRequest("but this does not"))).isNull();
     }
 
     @Test
     public void nonNullBucketWhenMatchingPattern() {
-        Bucketing bucketing = new RegexpBucketing(TEST_PATTERNS);
+        Bucketing bucketing = new RegexpBucketing(TEST_PATTERNS, r -> r.getParameter("query"));
 
         assertThat(bucketing.bucket(mockRequest("test matchme123"))).isNotNull();
         assertThat(bucketing.bucket(mockRequest("also THis matches"))).isNotNull();
@@ -43,7 +43,7 @@ public class RegexpBucketingUnitTest {
 
     @Test
     public void queriesMatchingSamePatternAreInSameBucket() {
-        Bucketing bucketing = new RegexpBucketing(TEST_PATTERNS);
+        Bucketing bucketing = new RegexpBucketing(TEST_PATTERNS, r -> r.getParameter("query"));
 
         Object bucket1 = bucketing.bucket(mockRequest("test matchme678 and some"));
         Object bucket2 = bucketing.bucket(mockRequest("test matchme453"));

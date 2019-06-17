@@ -168,4 +168,7 @@ public class ThrottlingFilterConfig {
         return loadStringParam("pattern-file", filterConfig, PATTERNS_DEFAULT);
     }
 
+    public String getAgentPatternsFile() {
+        return loadStringParam("agent-file", filterConfig, "agents.txt");
+    }
 }

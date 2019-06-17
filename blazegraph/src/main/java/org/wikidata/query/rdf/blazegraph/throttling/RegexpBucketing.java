@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.blazegraph.throttling;
 import static com.google.common.collect.ImmutableList.copyOf;
 
 import java.util.Collection;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,21 +25,26 @@ public class RegexpBucketing implements Bucketing {
      * List of known patterns.
      */
     private final Collection<Pattern> patterns;
+    /**
+     * Function to extract necessary data from request.
+     */
+    private final Function<HttpServletRequest, String> requestExtract;
 
-    public RegexpBucketing(Collection<Pattern> patterns) {
+    public RegexpBucketing(Collection<Pattern> patterns, Function<HttpServletRequest, String> requestParameter) {
         this.patterns = copyOf(patterns);
+        this.requestExtract = requestParameter;
     }
 
     @Override
     public Object bucket(HttpServletRequest request) {
-        String query = request.getParameter("query");
-        if (query == null) {
+        String requestData = requestExtract.apply(request);
+        if (requestData == null) {
             return null;
         }
         for (Pattern p : patterns) {
-            Matcher m = p.matcher(query);
+            Matcher m = p.matcher(requestData);
             if (m.find()) {
-                log.debug("Matched pattern {} on {}", p, query);
+                log.debug("Matched pattern {} on {}", p, requestData);
                 return p;
             }
         }

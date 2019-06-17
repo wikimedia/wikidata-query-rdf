@@ -17,9 +17,11 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
@@ -118,8 +120,14 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
 
     /** Mapping of requests to bucket. */
     private Bucketing userAgentIpBucketing;
-    /** Requests by regexp. */
-    private RegexpBucketing regexBucketing;
+    /** Requests by regexp.
+     * This bucketing system groups all requests that match certain query pattern.
+     */
+    private Bucketing regexBucketing;
+    /** Requests by generic agent.
+     * This bucketing scheme maps all agents that use a generic user agent into this agent's bucket.
+     */
+    private Bucketing agentBucketing;
 
     /** To delegate throttling logic. */
     private TimeAndErrorsThrottler<ThrottlingState> timeAndErrorsThrottler;
@@ -195,8 +203,14 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
 
         this.userAgentIpBucketing = new UserAgentIpAddressBucketing();
 
-        Collection<Pattern> patterns = loadRegexPatterns(config.getRegexPatternsFile());
-        this.regexBucketing = new RegexpBucketing(patterns);
+        this.regexBucketing = new RegexpBucketing(
+                loadRegexPatterns(config.getRegexPatternsFile()),
+                r -> r.getParameter("query")
+        );
+        this.agentBucketing = new RegexpBucketing(
+                loadRegexPatterns(config.getAgentPatternsFile()),
+                r -> r.getHeader("User-Agent")
+        );
 
         stateStore = CacheBuilder.newBuilder()
                 .maximumSize(config.getMaxStateSize())
@@ -239,7 +253,6 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
      * On successful registration, the {@link ObjectName} used for registration
      * will be stored into the instance field {@link ThrottlingFilter#objectName}.
      *
-     * @param filterName
      */
     private ObjectName registerMBean(String filterName) {
         ObjectName name = null;
@@ -261,7 +274,7 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
     /**
      * Create Callable to initialize throttling state.
      */
-    public static Callable<ThrottlingState> createThrottlingState(
+    private static Callable<ThrottlingState> createThrottlingState(
             Duration timeBucketCapacity,
             Duration timeBucketRefillAmount,
             Duration timeBucketRefillPeriod,
@@ -308,6 +321,9 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         Object bucket = regexBucketing.bucket(httpRequest);
+        if (bucket == null) {
+            bucket = agentBucketing.bucket(httpRequest);
+        }
         if (bucket == null) {
             bucket = userAgentIpBucketing.bucket(httpRequest);
         }
@@ -417,6 +433,20 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
         return nbBannedRequests.longValue();
     }
 
+    /**
+     * Safely compile regex pattern.
+     * If there's an error, it returns null and logs.
+     * @return Pattern or null if compile failed.
+     */
+    private Pattern safeCompile(String line) {
+        try {
+            return Pattern.compile(line, Pattern.DOTALL);
+        } catch (PatternSyntaxException e) {
+            log.warn("Invalid pattern: {}", line);
+            return null;
+        }
+    }
+
     private Collection<Pattern> loadRegexPatterns(String patternFilename) {
         try {
             Path patternFile = Paths.get(patternFilename);
@@ -426,7 +456,8 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
             }
             try (Stream<String> lines = Files.lines(patternFile, UTF_8)) {
                 ImmutableList<Pattern> patterns = lines
-                        .map(line -> Pattern.compile(line, Pattern.DOTALL))
+                        .map(this::safeCompile)
+                        .filter(Objects::nonNull)
                         .collect(toImmutableList());
                 log.info("Loaded {} patterns from {}", patterns.size(), patternFilename);
                 return patterns;
