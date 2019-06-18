@@ -277,7 +277,7 @@ public class RdfRepositoryIntegrationTest {
     @Test
     public void referenceWithExpandedValue() throws QueryEvaluationException {
         String statementUri = uris.statement() + "someotheruuid";
-        String referenceUri = uris.reference() + "yetanotheruri";
+        String referenceUri = uris.reference() + "8e0adc764d952b70662076cd296bd391e6e65a67";
         String valueUri = uris.value() + "someuuid";
         cleanupList.add(valueUri);
         cleanupList.add(referenceUri);
@@ -305,7 +305,7 @@ public class RdfRepositoryIntegrationTest {
     public void referenceWithExpandedValueChanged() throws QueryEvaluationException {
         referenceWithExpandedValue();
         String statementUri = uris.statement() + "someotheruuid";
-        String referenceUri = uris.reference() + "andanotheruri";
+        String referenceUri = uris.reference() + "559909327f1a31f4657f2b6bea7e890cafb5ff93";
         String valueUri = uris.value() + "someuuid2";
         cleanupList.add(valueUri);
         cleanupList.add(referenceUri);
@@ -349,7 +349,7 @@ public class RdfRepositoryIntegrationTest {
     @Test
     public void referencesOnExpandedStatementsChangeValue() throws QueryEvaluationException {
         referencesOnExpandedStatements();
-        String referenceUri = uris.reference() + "new-e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
+        String referenceUri = uris.reference() + "e00b7373814a0b74caa84a5fc2b1e3297060ab0f";
         List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
                 Ontology.NORMAL_RANK, referenceUri);
         cleanupList.add(referenceUri);
@@ -368,7 +368,7 @@ public class RdfRepositoryIntegrationTest {
     @Test
     public void referencesOnExpandedStatementsChangePredicate() throws QueryEvaluationException {
         referencesOnExpandedStatements();
-        String referenceUri = uris.reference() + "new-e36b7373814a0b74caa84a5fc2b1e3297060ab0f";
+        String referenceUri = uris.reference() + "e00b7373814a0b74caa84a5fc2b1e3297060ab0f";
         List<Statement> george = expandedStatement("9D3713FF-7BCC-489F-9386-C7322C0AC284", "Q23", "P19", "Q494413",
                 Ontology.NORMAL_RANK, referenceUri);
         cleanupList.add(referenceUri);

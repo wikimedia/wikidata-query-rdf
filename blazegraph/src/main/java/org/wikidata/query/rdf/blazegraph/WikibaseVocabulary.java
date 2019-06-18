@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.wikidata.query.rdf.blazegraph.vocabulary.CommonValuesVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.CommonValuesVocabularyDecl2;
+import org.wikidata.query.rdf.blazegraph.vocabulary.CommonValuesVocabularyDecl3;
 import org.wikidata.query.rdf.blazegraph.vocabulary.GeoSparqlVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.MediawikiVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.OntologyVocabularyDecl;
@@ -27,7 +28,7 @@ public class WikibaseVocabulary {
     /**
      * Current vocabulary class, for tests.
      */
-    public static final Class VOCABULARY_CLASS = V003.class;
+    public static final Class VOCABULARY_CLASS = V004.class;
 
     protected WikibaseVocabulary() {
         // prevents calls from subclass
@@ -130,6 +131,21 @@ public class WikibaseVocabulary {
             addDecl(new SchemaDotOrgVocabularyDecl2());
             addDecl(new CommonValuesVocabularyDecl2());
             addDecl(new MediawikiVocabularyDecl());
+        }
+    }
+
+    public static class V004 extends V003 {
+        public V004() {
+        }
+
+        public V004(String namespace) {
+            super(namespace);
+        }
+
+        @Override
+        protected void addValues() {
+            super.addValues();
+            addDecl(new CommonValuesVocabularyDecl3());
         }
     }
 }
