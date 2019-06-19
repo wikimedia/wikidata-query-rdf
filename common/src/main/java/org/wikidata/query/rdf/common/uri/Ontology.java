@@ -90,6 +90,10 @@ public final class Ontology {
      */
     public static final String SITELINKS = NAMESPACE + "sitelinks";
     /**
+     * Sitelinks count.
+     */
+    public static final String IDENTIFIERS = NAMESPACE + "identifiers";
+    /**
      * Constraint violation.
      */
     public static final String CONSTRAINT_VIOLATION = NAMESPACE + "hasViolationForConstraint";

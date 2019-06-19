@@ -6,9 +6,12 @@ import org.wikidata.query.rdf.blazegraph.vocabulary.CommonValuesVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.CommonValuesVocabularyDecl2;
 import org.wikidata.query.rdf.blazegraph.vocabulary.CommonValuesVocabularyDecl3;
 import org.wikidata.query.rdf.blazegraph.vocabulary.GeoSparqlVocabularyDecl;
+import org.wikidata.query.rdf.blazegraph.vocabulary.LexemeVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.MediawikiVocabularyDecl;
+import org.wikidata.query.rdf.blazegraph.vocabulary.MediawikiVocabularyDecl2;
 import org.wikidata.query.rdf.blazegraph.vocabulary.OntologyVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.OntologyVocabularyDecl2;
+import org.wikidata.query.rdf.blazegraph.vocabulary.OntologyVocabularyDecl3;
 import org.wikidata.query.rdf.blazegraph.vocabulary.ProvenanceVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.SchemaDotOrgVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.SchemaDotOrgVocabularyDecl2;
@@ -40,6 +43,7 @@ public class WikibaseVocabulary {
      * V001: 1.5.x version
      * V002: 2.0 version, extends different class
      * V003: V002 with new normalized predicates and Mediawiki ones added
+     * V004: V003 plus new predicates & Lexeme support
      */
 
     /**
@@ -146,6 +150,9 @@ public class WikibaseVocabulary {
         protected void addValues() {
             super.addValues();
             addDecl(new CommonValuesVocabularyDecl3());
+            addDecl(new OntologyVocabularyDecl3());
+            addDecl(new MediawikiVocabularyDecl2());
+            addDecl(new LexemeVocabularyDecl());
         }
     }
 }

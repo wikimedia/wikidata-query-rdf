@@ -9,6 +9,7 @@ import com.bigdata.rdf.vocab.BaseVocabularyDecl;
  * Vocabulary containing the URIs from
  * {@linkplain org.wikidata.query.rdf.common.uri.Mediawiki} that are imported
  * into Blazegraph.
+ * @see MediawikiVocabularyDecl2
  */
 public class MediawikiVocabularyDecl extends BaseVocabularyDecl {
     public MediawikiVocabularyDecl() {
