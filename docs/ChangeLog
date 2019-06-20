@@ -4,8 +4,10 @@ Upgrade to Blazegraph version with Sesame 2.8.11
 Upgrade LDF server to 0.2.4
 Add metering of federation requests
 Add support for value URI inlining
+Add support for variable MWAPI endpoint
 Change RDF fetching to not use cache-buster
 Fixed label service behavior in nested queries
+Clients without User-Agent are not allowed anymore
 
 0.3.1
 -----
