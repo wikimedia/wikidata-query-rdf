@@ -20,6 +20,7 @@ import static org.wikidata.query.rdf.blazegraph.Matchers.notBinds;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -48,12 +49,14 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
     private ApiTemplate template;
     private IBindingSet binding;
     private BigdataValueFactory vf;
+    private ServiceConfig config;
 
     @Before
     public void createFixtures() {
         template = mock(ApiTemplate.class);
         binding = new HashBindingSet();
         vf = store().getValueFactory();
+        config = mock(ServiceConfig.class);
     }
 
     @Test
@@ -245,12 +248,17 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
         return createCall(Maps.newHashMap(), outputVars);
     }
 
+    private Endpoint makeEndpoint(String name) throws MalformedURLException {
+        when(config.validEndpoint(name)).thenReturn(true);
+        return Endpoint.create(makeConstant(vf, name), config);
+    }
+
     private MWApiServiceCall createCall(
             Map<String, IVariableOrConstant> inputVars,
             List<OutputVariable> outputVars) throws Exception {
         HttpClient mockClient = mock(HttpClient.class);
         Timer requestTimer = mock(Timer.class);
-        return new MWApiServiceCall(template, "acme.test", inputVars,
+        return new MWApiServiceCall(template, makeEndpoint("acme.test"), inputVars,
                 outputVars, mockClient, store().getLexiconRelation(), requestTimer, 0);
     }
 
@@ -259,7 +267,7 @@ public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBa
             List<OutputVariable> outputVars, int limit) throws Exception {
         HttpClient mockClient = mock(HttpClient.class);
         Timer requestTimer = mock(Timer.class);
-        return new MWApiServiceCall(template, "acme.test", inputVars,
+        return new MWApiServiceCall(template, makeEndpoint("acme.test"), inputVars,
                 outputVars, mockClient, store().getLexiconRelation(), requestTimer, limit);
     }
 }

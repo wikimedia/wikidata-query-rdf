@@ -7,7 +7,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -99,7 +98,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     /**
      * Call endpoint URL.
      */
-    private final String endpoint;
+    private final Endpoint endpoint;
     /**
      * Request timeout, in ms.
      */
@@ -123,20 +122,20 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     private final ThreadLocal<DocumentBuilder> docBuilder;
     /**
      * Thread-safe xpath object.
+     * We need a thread local one because XPath keeps state.
      */
     private final ThreadLocal<XPath> xpath;
 
     private final Timer requestTimer;
 
-    MWApiServiceCall(ApiTemplate template, String endpoint,
+    MWApiServiceCall(ApiTemplate template, Endpoint endpoint,
                      Map<String, IVariableOrConstant> inputVars,
                      List<OutputVariable> outputVars, HttpClient client,
                      LexiconRelation lexiconRelation, Timer requestTimer,
                      int limit
-                     )
-            throws MalformedURLException {
+                     ) {
         this.template = template;
-        this.endpoint = new URL("https", endpoint, "/w/api.php").toExternalForm();
+        this.endpoint = endpoint;
         this.inputVars = inputVars;
         this.outputVars = outputVars;
         this.client = client;
@@ -154,7 +153,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                 return dbf.newDocumentBuilder();
             } catch (ParserConfigurationException e) {
                 // Converting to runtime exception since anon classes + checked exceptions = :(
-                log.error("Could not configure parser: {}", e);
+                log.error("Could not configure parser", e);
                 throw new IllegalStateException(e);
             }
         });
@@ -164,14 +163,13 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     /**
      * Extract effective max records limit.
      * @param limit Limit from service call.
-     * @return
      */
     private int getMaxFromLimit(int limit) {
-        int maxContinue = Integer.parseInt(System.getProperty(MAX_CONTINUE_CONFIG, "10000"));
-        if (limit > 0 && limit < maxContinue) {
+        int maxContinueConfig = Integer.parseInt(System.getProperty(MAX_CONTINUE_CONFIG, "10000"));
+        if (limit > 0 && limit < maxContinueConfig) {
             return limit;
         }
-        return maxContinue;
+        return maxContinueConfig;
     }
 
     @Override
@@ -180,7 +178,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     }
 
     @Override
-    public ICloseableIterator<IBindingSet> call(IBindingSet[] bindingSets) throws Exception {
+    public ICloseableIterator<IBindingSet> call(IBindingSet[] bindingSets) {
         return new MultiSearchIterator(bindingSets);
     }
 
@@ -196,12 +194,11 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
      * Get parameter string from binding.
      */
     public Map<String, String> getRequestParams(IBindingSet binding) {
-        final Map<String, String> params = new HashMap<>();
         // Add fixed params
-        params.putAll(template.getFixedParams());
+        final Map<String, String> params = new HashMap<>(template.getFixedParams());
         // Resolve variable params
         for (Map.Entry<String, IVariableOrConstant> term : inputVars.entrySet()) {
-            String value = null;
+            String value;
             IV boundValue = null;
             if (term.getValue() != null) {
                 boundValue = (IV)term.getValue().get(binding);
@@ -232,12 +229,18 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
 
     /**
      * Get HTTP request for this particular query & binding.
-     *
-     * @param binding
-     * @return
      */
     private Request getHttpRequest(IBindingSet binding) {
-        Request request = client.newRequest(endpoint);
+        String endpointURL;
+        try {
+            endpointURL = endpoint.getEndpointURL(binding);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Bad endpoint URL", e);
+        }
+        if (endpointURL == null) {
+            return null;
+        }
+        Request request = client.newRequest(endpointURL);
         request.method(HttpMethod.GET);
         // Using XML for now to use XPath on responses
         request.param("format", "xml");
@@ -262,10 +265,10 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
      * @return Map with continue variables, or null if no continue.
      */
     @Nullable
-    public ImmutableMap<String, String> parseContinue(Document doc, XPath xpath) {
+    private ImmutableMap<String, String> parseContinue(Document doc, XPath xpathObject) {
         try {
             // TODO: support other options?
-            XPathExpression itemsXPath = xpath.compile("//api/continue");
+            XPathExpression itemsXPath = xpathObject.compile("//api/continue");
             Node continueNode = (Node) itemsXPath.evaluate(doc, XPathConstants.NODE);
             if (continueNode == null) {
                 return null;
@@ -483,10 +486,14 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         /**
          * This performs actual HTTP request to Mediawiki API.
          * This can be called several times if continue is present.
+         * @param currentRecordsCount Count of records processed up to this batch.
          * @return Query results with continue structure.
          */
-        private ResultWithContinue doSearchRequest(int recordsCount) {
+        private ResultWithContinue doSearchRequest(int currentRecordsCount) {
             final Request req = getHttpRequest(bindings);
+            if (req == null) {
+                return null;
+            }
             if (lastResult != null && lastResult.getContinue() != null) {
                 lastResult.getContinue().forEach(req::param);
             }
@@ -503,7 +510,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                 if (response.getStatus() != HttpStatus.OK_200) {
                     throw new RuntimeException("Bad response status: " + response.getStatus());
                 }
-                return parseResponse(listener.getInputStream(), bindings, recordsCount);
+                return parseResponse(listener.getInputStream(), bindings, currentRecordsCount);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException("MWAPI request failed", e);
