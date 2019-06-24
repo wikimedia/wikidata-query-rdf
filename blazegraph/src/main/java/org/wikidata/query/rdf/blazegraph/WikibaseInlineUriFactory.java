@@ -86,6 +86,8 @@ public class WikibaseInlineUriFactory extends InlineURIFactory {
                     new InlineUnsignedIntegerURIHandler(CommonValues.VIAF_HTTP));
             addHandler(viaf);
             addHandler(new NormalizingInlineUriHandler(viaf, CommonValues.VIAF));
+            // Entrez Gene ID
+            addHandler(new InlineUnsignedIntegerURIHandler(CommonValues.GENEID));
         }
     }
 }

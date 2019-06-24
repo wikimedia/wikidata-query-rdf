@@ -10,6 +10,6 @@ import com.bigdata.rdf.vocab.BaseVocabularyDecl;
  */
 public class CommonValuesVocabularyDecl3 extends BaseVocabularyDecl {
     public CommonValuesVocabularyDecl3() {
-        super(CommonValues.VIAF_HTTP);
+        super(CommonValues.VIAF_HTTP, CommonValues.GENEID);
     }
 }

@@ -13,9 +13,21 @@ public final class Mediawiki {
      */
     public static final String CATEGORY = NAMESPACE + "Category";
     /**
+     * Hidden Category class.
+     */
+    public static final String HIDDEN_CATEGORY = NAMESPACE + "HiddenCategory";
+    /**
      * mediawiki:isInCategory predicate.
      */
     public static final String IS_IN_CATEGORY = NAMESPACE + "isInCategory";
+    /**
+     * Pages count predicate.
+     */
+    public static final String PAGES = NAMESPACE + "pages";
+    /**
+     * Pages count predicate.
+     */
+    public static final String SUBCATEGORIES = NAMESPACE + "subcategories";
     /**
      * mwapi: Mediawiki API prefix.
      */

@@ -13,6 +13,7 @@ public final class CommonValues {
      * Most viaf links are declared insecure so we normalize them to their https
      * variants. We normalize to https rather than from it because we like https
      * better.
+     *  See: https://www.wikidata.org/wiki/Property:P214
      */
     public static final String VIAF_HTTP = "http://viaf.org/viaf/";
     /**
@@ -31,6 +32,13 @@ public final class CommonValues {
      * See: https://www.wikidata.org/wiki/Property:P661
      */
     public static final String CHEMSPIDER = "http://rdf.chemspider.com/";
+
+    /**
+     * Entrez Gene ID.
+     * See: https://www.wikidata.org/wiki/Property:P351
+     */
+    public static final String GENEID = "http://purl.uniprot.org/geneid/";
+
 
     private CommonValues() {
         // Utility uncallable constructor

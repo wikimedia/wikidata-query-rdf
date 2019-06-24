@@ -18,6 +18,7 @@ import com.bigdata.rdf.vocab.BaseVocabularyDecl;
  * {@linkplain org.wikidata.query.rdf.common.uri.Ontology} that are imported
  * into Blazegraph.
  * @see OntologyVocabularyDecl2
+ * @see OntologyVocabularyDecl3
  */
 public class OntologyVocabularyDecl extends BaseVocabularyDecl {
     public OntologyVocabularyDecl() {
