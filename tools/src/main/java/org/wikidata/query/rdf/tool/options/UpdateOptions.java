@@ -103,6 +103,9 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     @Option(defaultValue = "0", description = "How old (hours) should revision be to start using latest revision fetch")
     int oldRevision();
 
+    @Option(shortName = "m", longName = "updateMode", description = "Use merging updates", defaultValue = "NON_MERGING")
+    String updateMode();
+
     static Set<Long> longEntityNamespaces(UpdateOptions updateOptions) {
         if (updateOptions.entityNamespaces() == null) return DEFAULT_ENTITY_NAMESPACES;
         return splitByComma(singletonList(updateOptions.entityNamespaces()))

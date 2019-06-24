@@ -1,0 +1,34 @@
+SELECT * WHERE {
+  {
+    VALUES ( ?s ?p ?o ) {
+     %allStatements%
+    }
+  } UNION {
+      VALUES ( ?s ?p ) {
+       %bnodeStatements%
+      }
+  } MINUS {
+    SELECT ?s ?p ?o WHERE {
+      VALUES ?entity { %entityList% }
+      ?s %schema:about% ?entity .
+      ?s ?p ?o .
+    }
+  } MINUS {
+    SELECT (?entity as ?s) ?p ?o WHERE {
+      VALUES ?entity { %entityList% }
+      ?entity ?p ?o .
+    }
+  } MINUS {
+    SELECT ?s ?p ?o WHERE {
+      VALUES ?entity { %entityList% }
+      ?entity ?statementPred ?s .
+      FILTER( STRSTARTS(STR(?s), "%uris.statement%") ) .
+      ?s ?p ?o .
+    }
+  }
+  # For now, don't check wikigroups, values & references
+  # Since they are shared between items so it's complex to verify it
+  FILTER(?p != %wikibase:wikiGroup%)
+  FILTER( !STRSTARTS(STR(?s), "%uris.value%") )
+  FILTER( !STRSTARTS(STR(?s), "%uris.reference%") )
+}

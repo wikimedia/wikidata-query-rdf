@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThat;
 import static org.wikidata.query.rdf.test.Matchers.subjectPredicateObjectMatchers;
 import static org.wikidata.query.rdf.test.StatementHelper.randomStatementsAbout;
 import static org.wikidata.query.rdf.tool.TupleQueryResultHelper.toIterable;
+import static org.wikidata.query.rdf.tool.rdf.RdfRepository.UpdateMode.NON_MERGING;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,7 +103,7 @@ public class IOBlastingIntegrationTest {
         private final RdfRepositoryForTesting rdfRepository;
 
         IOBlaster(String namespace) {
-            rdfRepository = new RdfRepositoryForTesting(namespace);
+            rdfRepository = new RdfRepositoryForTesting(namespace, NON_MERGING);
         }
 
         /**

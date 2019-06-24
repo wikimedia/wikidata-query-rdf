@@ -6,8 +6,12 @@ import static org.eclipse.jetty.http.HttpMethod.POST;
 import static org.eclipse.jetty.http.HttpStatus.OK_200;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -19,12 +23,21 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.FormContentProvider;
+import org.eclipse.jetty.client.util.FutureResponseListener;
+import org.eclipse.jetty.client.util.MultiPartContentProvider;
+import org.eclipse.jetty.client.util.OutputStreamContentProvider;
 import org.eclipse.jetty.client.util.StringContentProvider;
+import org.eclipse.jetty.http.HttpFields;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.util.Fields;
+import org.openrdf.model.Statement;
 import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
+import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.turtle.TurtleWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
@@ -59,6 +72,10 @@ public class RdfClient {
     public final HttpClient httpClient;
     /** URI for the wikibase rdf repository. */
     private final URI uri;
+    /**
+     * Merging Updater endpoint.
+     */
+    private final URI mupdate;
     /** Request timeout. */
     private final Duration timeout;
     /** Retryer for fetching data from RDF store. */
@@ -67,6 +84,8 @@ public class RdfClient {
     public RdfClient(HttpClient httpClient, URI uri, Retryer<ContentResponse> retryer, Duration timeout) {
         this.httpClient = httpClient;
         this.uri = uri;
+        // TODO: unify with SPARQL endpoint?
+        this.mupdate = uri.resolve("../../mupdater");
         this.timeout = timeout;
         this.retryer = retryer;
     }
@@ -83,6 +102,83 @@ public class RdfClient {
      */
     public Integer update(String sparql) {
         return execute("update", UPDATE_COUNT_RESPONSE, sparql);
+    }
+
+    /**
+     * Executes a merging update and returns the number of changes.
+     */
+    public Integer mergingUpdate(Collection<Statement> insertStatements, Collection<String> valueSet, Collection<String> refSet) {
+        log.trace("Running Merging Update");
+        long startQuery = System.currentTimeMillis();
+        final ContentResponse response;
+        try {
+            ResponseHandler<Integer> responseHandler = UPDATE_COUNT_RESPONSE;
+            response = retryer.call(()
+                -> {
+                    OutputStreamContentProvider content = new OutputStreamContentProvider();
+                    Request request = makeMergingUpdateRequest(content, valueSet, refSet, responseHandler.acceptHeader());
+                    FutureResponseListener listener = new FutureResponseListener(request);
+                    try (OutputStream output = content.getOutputStream()) {
+                        request.send(listener);
+                        OutputStreamWriter sw = new OutputStreamWriter(output, StandardCharsets.UTF_8);
+                        TurtleWriter w = new TurtleWriter(sw);
+                        w.startRDF();
+                        for (Statement st: insertStatements) {
+                            w.handleStatement(st);
+                        }
+                        w.endRDF();
+                    } catch (RDFHandlerException e) {
+                        throw new RuntimeException("Error writing insertStatements", e);
+                    }
+                    return listener.get();
+                }
+            );
+
+            if (response.getStatus() != OK_200) {
+                throw new ContainedException("Non-200 response from triple store:  " + response
+                                + " body=\n" + response.getContentAsString());
+            }
+
+            log.debug("Completed in {} ms", System.currentTimeMillis() - startQuery);
+            return responseHandler.parse(response);
+        } catch (ExecutionException | RetryException | IOException e) {
+            throw new FatalException("Error accessing triple store", e);
+        }
+    }
+
+    /**
+     * Create HTTP request.
+     * @param content Provider of insertStatements part
+     * @param type Request type
+     * @param sparql SPARQL code
+     * @param accept Accept header (can be null)
+     * @return Request object
+     */
+    private Request makeMergingUpdateRequest(
+            OutputStreamContentProvider content,
+            Collection<String> valueSet,
+            Collection<String> refSet,
+            @Nullable String accept) {
+        Request post = httpClient.newRequest(mupdate);
+        post.method(POST);
+        if (!timeout.isNegative()) {
+            post.timeout(timeout.toMillis(), MILLISECONDS);
+        }
+        if (accept != null) {
+            post.header("Accept", accept);
+        }
+
+        MultiPartContentProvider multiPart = new MultiPartContentProvider();
+        multiPart.addFieldPart("valueSet", new StringContentProvider(String.join("\n", valueSet)), null);
+        multiPart.addFieldPart("refSet", new StringContentProvider(String.join("\n", refSet)), null);
+
+        HttpFields httpFields = new HttpFields();
+        httpFields.add(HttpHeader.CONTENT_TYPE, RDFFormat.TURTLE.getDefaultMIMEType());
+        multiPart.addFieldPart("insertStatements", content, httpFields);
+        multiPart.close();
+
+        post.content(multiPart);
+        return post;
     }
 
     /**
