@@ -7,6 +7,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.query.BindingSet;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
@@ -53,6 +54,37 @@ public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlaz
             ASTContainer astContainer = new Bigdata2ASTSPARQLParser().parseQuery2(query, null);
 
             return ASTEvalHelper.evaluateTupleQuery(store(), astContainer, new QueryBindingSet(), null);
+        } catch (MalformedQueryException | QueryEvaluationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Proxy Query Result class, which exposes ASTContainer to test framework so it might be logged in case of assertion failures
+    public static final class QueryResult {
+        final TupleQueryResult tqr;
+        final ASTContainer ast;
+        public QueryResult(TupleQueryResult tqr, ASTContainer astContainer) {
+            this.tqr = tqr;
+            this.ast = astContainer;
+        }
+        public ASTContainer ast() {
+            return ast;
+        }
+        public boolean hasNext() throws QueryEvaluationException {
+            return tqr.hasNext();
+        }
+        public BindingSet next() throws QueryEvaluationException {
+            return tqr.next();
+        }
+    }
+    /**
+     * Run a query, returning both TupleQueryResult and ASTContainer.
+     */
+    protected QueryResult queryWithAST(String query) {
+        try {
+            ASTContainer astContainer = new Bigdata2ASTSPARQLParser().parseQuery2(query, null);
+
+            return new QueryResult(ASTEvalHelper.evaluateTupleQuery(store(), astContainer, new QueryBindingSet(), null), astContainer);
         } catch (MalformedQueryException | QueryEvaluationException e) {
             throw new RuntimeException(e);
         }

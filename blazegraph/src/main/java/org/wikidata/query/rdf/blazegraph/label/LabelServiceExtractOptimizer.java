@@ -41,6 +41,10 @@ public class LabelServiceExtractOptimizer extends AbstractJoinGroupOptimizer {
             for (BOp st : g.args()) {
                 StatementPatternNode sn = (StatementPatternNode) st;
                 if (sn.s().isConstant() && BD.SERVICE_PARAM.equals(sn.s().getValue())) {
+                    if (LabelService.DISABLE_REORDERING.equals(sn.p().getValue())) {
+                        String flag = sn.o().getValue().stringValue();
+                        service.annotations().put(LabelService.DISABLE_REORDERING_ANNOTATION, Boolean.valueOf(flag));
+                    }
                     // skip parameters
                     continue;
                 }
