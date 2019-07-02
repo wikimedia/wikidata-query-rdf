@@ -19,6 +19,8 @@ import java.nio.file.Paths;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+
 import de.thetaphi.forbiddenapis.SuppressForbidden;
 
 /**
@@ -52,7 +54,10 @@ public final class CliUtils {
         }
         if (uri.endsWith(".gz")) {
             stream = new GZIPInputStream(stream);
+        } else if (uri.endsWith(".bz2")) {
+            stream = new BZip2CompressorInputStream(stream);
         }
+
         return stream;
     }
 
