@@ -49,7 +49,6 @@
         <module>war</module>
         <module>tools</module>
         <module>dist</module>
-        <module>gui</module>
     </modules>
 
     <scm>
@@ -1015,6 +1014,21 @@
                     </plugins>
                 </pluginManagement>
             </build>
+        </profile>
+        <profile>
+            <id>gui</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>testTools</module>
+                <module>common</module>
+                <module>blazegraph</module>
+                <module>war</module>
+                <module>tools</module>
+                <module>dist</module>
+                <module>gui</module>
+            </modules>
         </profile>
     </profiles>
 </project>
