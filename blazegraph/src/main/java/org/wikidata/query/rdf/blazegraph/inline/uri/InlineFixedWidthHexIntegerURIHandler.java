@@ -1,4 +1,4 @@
-/**
+/*
 
 Copyright (C) SYSTAP, LLC DBA Blazegraph 2006-2016.  All rights reserved.
 
@@ -86,7 +86,8 @@ public class InlineFixedWidthHexIntegerURIHandler extends
 		return toFixedWidthHexString(bigintVal);
 	}
 
-	@SuppressFBWarnings(value = "STT_STRING_PARSING_A_FIELD", justification = "Using String in this manner is exactly what we want")
+	@SuppressFBWarnings(value = {"STT_STRING_PARSING_A_FIELD", "PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS"},
+			justification = "Using String in this manner is exactly what we want")
 	private String toFixedWidthHexString(final BigInteger bigintVal) {
 		String localName = bigintVal.toString(16);
 		if (localName.length() < fixedWidth) {
