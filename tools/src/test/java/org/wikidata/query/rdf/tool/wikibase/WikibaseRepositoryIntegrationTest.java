@@ -102,7 +102,7 @@ public class WikibaseRepositoryIntegrationTest {
         ContainedException {
         // Add a bit of a wait to try and improve Jenkins test stability.
         try {
-            Thread.sleep(3000);
+            Thread.sleep(60000);
         } catch (InterruptedException e) {
             // nothing to do here, sorry. I know it looks bad.
         }
