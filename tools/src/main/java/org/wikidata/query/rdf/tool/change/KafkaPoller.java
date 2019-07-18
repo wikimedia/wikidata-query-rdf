@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.change.events.ChangeEvent;
+import org.wikidata.query.rdf.tool.change.events.EventWithChronology;
 import org.wikidata.query.rdf.tool.change.events.PageDeleteEvent;
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
@@ -358,7 +359,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
                 }
                 // Using offset here as RC id since we do not have real RC id (this not being RC poller) but
                 // the offset serves the same function in Kafka and is also useful for debugging.
-                Change change = new Change(event.title(), event.revision(), event.timestamp(), record.offset());
+                Change change = makeChange(event, record.offset());
                 Change dupe = changesByTitle.put(change.entityId(), change);
                 // If we have a duplicate - i.e. event with same title - we
                 // keep the newest one, by revision number, or in case of deletion, we keep
@@ -403,6 +404,17 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         // Show the user the polled time - one second because we can't
         // be sure we got the whole second
         return new Batch(changes, advanced, nextInstant.minusSeconds(1).toString(), nextInstant);
+    }
+
+    /**
+     * Create change object from event.
+     */
+    private Change makeChange(ChangeEvent event, long position) {
+        if (event instanceof EventWithChronology) {
+            return new Change(event.title(), event.revision(), event.timestamp(), position, ((EventWithChronology) event).chronologyId());
+        } else {
+            return new Change(event.title(), event.revision(), event.timestamp(), position);
+        }
     }
 
     /**

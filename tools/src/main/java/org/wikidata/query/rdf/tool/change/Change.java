@@ -41,6 +41,10 @@ public class Change implements Comparable<Change> {
      * Timestamp of the change.
      */
     private final Instant timestamp;
+    /**
+     * Chronology Id.
+     */
+    private final String chronologyId;
 
     /**
      * Set of processed statements for the change.
@@ -58,24 +62,32 @@ public class Change implements Comparable<Change> {
     private Collection<String> valueCleanupList = Collections.emptyList();
 
     /**
-     * rcid of the change.
+     * Offset of the change in the external stream.
      */
-    private final long rcid;
+    private final long offset;
 
-    public Change(String entityId, long revision, Instant timestamp, long rcid) {
-        // FIXME: this should not be hardcoded!
-        if (entityId.startsWith("Property:")) {
-            this.entityId = entityId.substring("Property:".length());
-        } else if (entityId.startsWith("Item:")) {
-            this.entityId = entityId.substring("Item:".length());
-        } else if (entityId.startsWith("Lexeme:")) {
-            this.entityId = entityId.substring("Lexeme:".length());
-        } else {
-            this.entityId = entityId;
-        }
+    public Change(String entityId, long revision, Instant timestamp, long offset) {
+        this(entityId, revision, timestamp, offset, null);
+    }
+
+    public Change(String entityId, long revision, Instant timestamp, long offset, String chronologyId) {
+        this.entityId = cleanEntityId(entityId);
         this.revision = revision;
         this.timestamp = timestamp;
-        this.rcid = rcid;
+        this.offset = offset;
+        this.chronologyId = chronologyId;
+    }
+
+    private String cleanEntityId(String entityIdWithPrefix) {
+        // FIXME: this should not be hardcoded
+        if (entityIdWithPrefix.startsWith("Property:")) {
+           return entityIdWithPrefix.substring("Property:".length());
+        } else if (entityIdWithPrefix.startsWith("Item:")) {
+            return entityIdWithPrefix.substring("Item:".length());
+        } else if (entityIdWithPrefix.startsWith("Lexeme:")) {
+            return entityIdWithPrefix.substring("Lexeme:".length());
+        }
+        return entityIdWithPrefix;
     }
 
     /**
@@ -95,12 +107,12 @@ public class Change implements Comparable<Change> {
     }
 
     /**
-     * The rcid of the change.
-     *
-     * @return the rcid number
+     * The offset of the change in the external stream.
+     * Note that not all changes may come from an external stream,
+     * and not all changes may come from the same stream.
      */
-    public long rcid() {
-        return rcid;
+    public long offset() {
+        return offset;
     }
 
     /**
@@ -110,6 +122,13 @@ public class Change implements Comparable<Change> {
      */
     public Instant timestamp() {
         return timestamp;
+    }
+
+    /**
+     * The entity that changed.
+     */
+    public String chronologyId() {
+        return chronologyId;
     }
 
     @Override
@@ -124,7 +143,7 @@ public class Change implements Comparable<Change> {
         }
         if (timestamp != null) {
             b.append('@').append(OUTPUT_DATE_FORMATTER.format(timestamp));
-            b.append('|').append(rcid);
+            b.append('|').append(offset);
         }
         return b.toString();
     }
@@ -251,10 +270,10 @@ public class Change implements Comparable<Change> {
     @SuppressFBWarnings(value = "EQ_COMPARETO_USE_OBJECT_EQUALS", justification = "This looks suspicious, but would need more investigation")
     // FIXME - since compareTo() is implemented, it would make sense to also implement equals() and hashCode(). But that
     // might lead to issues if the current code relies on Object.equals() in some places. It is probably simpler and
-    // safer to move to an external comparator and might better represent the fact that comparing changes by rcid is
+    // safer to move to an external comparator and might better represent the fact that comparing changes by offset is
     // only one of the way to compare them (e.g. natural ordering of Changes might also be by timestamp).
     public int compareTo(Change o) {
-        return (int)(rcid() - o.rcid());
+        return (int)(offset() - o.offset());
     }
 
     /**

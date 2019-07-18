@@ -138,6 +138,8 @@ public class WikibaseRepository implements Closeable {
             .toFormatter()
             .withZone(ZoneId.of("Z"));
 
+    public static final String CHRONOLOGY_ID_HEADER = "MediaWiki-Chronology-Client-Id";
+
     /**
      * HTTP client for wikibase.
      */
@@ -354,10 +356,13 @@ public class WikibaseRepository implements Closeable {
      * @throws RetryableException if there's a retryable error
      */
     @SuppressFBWarnings("CC_CYCLOMATIC_COMPLEXITY")
-    private void collectStatementsFromUrl(URI uri, StatementCollector collector, Timer timer) throws RetryableException {
+    private void collectStatementsFromUrl(URI uri, StatementCollector collector, Timer timer, String chronologyId) throws RetryableException {
         RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
         parser.setRDFHandler(new NormalizingRdfHandler(collector));
         HttpGet request = new HttpGet(uri);
+        if (chronologyId != null) {
+            request.addHeader(CHRONOLOGY_ID_HEADER, chronologyId);
+        }
         request.setConfig(configWithTimeout);
         log.debug("Fetching rdf from {}", uri);
         try (Timer.Context timerContext = timer.time()) {
@@ -421,9 +426,11 @@ public class WikibaseRepository implements Closeable {
      */
     public Collection<Statement> fetchRdfForEntity(Change entityChange) throws RetryableException {
         if (entityChange.revision() > 0 && isChangeRecent(entityChange)) {
-            return fetchRdfForEntity(entityChange.entityId(), entityChange.revision());
+            return fetchRdfForEntity(entityChange.entityId(), entityChange.revision(), entityChange.chronologyId());
         }
-        return fetchRdfForEntity(entityChange.entityId(), -1);
+        // Don't use chronology header for non-recent events since it's pointless - database should
+        // have caught up long before that.
+        return fetchRdfForEntity(entityChange.entityId(), -1, null);
     }
 
     /**
@@ -433,7 +440,7 @@ public class WikibaseRepository implements Closeable {
      */
     @VisibleForTesting
     public Collection<Statement> fetchRdfForEntity(String entityId) throws RetryableException {
-        return fetchRdfForEntity(entityId, -1);
+        return fetchRdfForEntity(entityId, -1, null);
     }
 
     /**
@@ -443,23 +450,23 @@ public class WikibaseRepository implements Closeable {
      *             wikibase
      */
     @SuppressWarnings("resource") // stop() and close() are the same
-    public Collection<Statement> fetchRdfForEntity(String entityId, long revision) throws RetryableException {
+    public Collection<Statement> fetchRdfForEntity(String entityId, long revision, String chronologyId) throws RetryableException {
         Timer.Context timerContext = rdfFetchTimer.time();
         StatementCollector collector = new StatementCollector();
         try {
-            collectStatementsFromUrl(uris.rdf(entityId, revision), collector, entityFetchTimer);
+            collectStatementsFromUrl(uris.rdf(entityId, revision), collector, entityFetchTimer, chronologyId);
         } catch (BadParameterException ex) {
             if (revision >= 0) {
                 // If we tried with revision and got 400, it may mean it was a redirect
                 // Let's try without revision.
-                collectStatementsFromUrl(uris.rdf(entityId), collector, entityFetchTimer);
+                collectStatementsFromUrl(uris.rdf(entityId), collector, entityFetchTimer, chronologyId);
             } else {
                 throw ex;
             }
         }
         if (collectConstraints) {
             try {
-                collectStatementsFromUrl(uris.constraints(entityId), collector, constraintFetchTimer);
+                collectStatementsFromUrl(uris.constraints(entityId), collector, constraintFetchTimer, chronologyId);
             } catch (ContainedException ex) {
                 // TODO: add RetryableException here?
                 // Skip loading constraints on fail, it's not the reason to give up

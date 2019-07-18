@@ -198,7 +198,7 @@ public class WikibaseRepositoryIntegrationTest {
         for (RecentChange rc: changes) {
             if (rc.getTitle().equals(entityId)) {
                 assertNotEquals("Found old edit after continue: revid", oldRevid, rc.getRevId());
-                assertNotEquals("Found old edit after continue: rcid", oldRcid, rc.getRcId());
+                assertNotEquals("Found old edit after continue: offset", oldRcid, rc.getRcId());
                 found = true;
             }
         }

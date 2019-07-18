@@ -116,7 +116,7 @@ public class RecentChangesPollerUnitTest {
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize, new MetricRegistry());
         Batch batch = poller.firstBatch();
         assertThat(batch.changes()).hasSize(2);
-        assertThat(batch.changes().get(1).rcid()).isEqualTo(7);
+        assertThat(batch.changes().get(1).offset()).isEqualTo(7);
         assertThat(batch.leftOffDate().toString()).isEqualTo(date);
         assertThat(batch.getLastContinue()).isEqualTo(aContinue);
 
@@ -157,7 +157,7 @@ public class RecentChangesPollerUnitTest {
         List<Change> changes = batch.changes();
         assertThat(changes).hasSize(1);
         assertThat(changes.get(0).entityId()).isEqualTo("Q424242");
-        assertThat(changes.get(0).rcid()).isEqualTo(42L);
+        assertThat(changes.get(0).offset()).isEqualTo(42L);
         assertThat(changes.get(0).revision()).isEqualTo(-1L);
     }
 

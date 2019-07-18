@@ -26,7 +26,7 @@ public final class ChangeEventFixtures {
     /**
      * Make valid RC event.
      *
-     * @param offset
+     * @param offset Duration from start time to event's time
      * @param revid Revision ID
      * @param qid Title (Q-id)
      */
@@ -36,26 +36,36 @@ public final class ChangeEventFixtures {
 
     /**
      * Make a delete RC event.
-     *
-     * @param offset
-     * @param qid
-     * @return
+     * @param offset Duration from start time to event's time
+     * @param qid Title (Q-id)
      */
     public static ChangeEvent makeDeleteEvent(Duration offset, String qid) {
         return new PageDeleteEvent(
                 new EventsMeta(START_TIME.plus(offset), "", DOMAIN),
-                qid, 0);
+                qid, 0, "");
     }
 
     /**
      * Make RC event with different namespace and domain.
-     *  @param offset
+     * @param offset Duration from start time to event's time
      * @param revid Revision ID
      * @param qid Title (Q-id)
      */
     public static ChangeEvent makeRCEvent(Duration offset, long revid, String qid, int ns, String domain) {
         return new RevisionCreateEvent(
                 new EventsMeta(START_TIME.plus(offset), "", domain),
-                revid, qid, ns);
+                revid, qid, ns, "");
+    }
+
+    /**
+     * Make RC event with different namespace and domain.
+     * @param offset Duration from start time to event's time
+     * @param revid Revision ID
+     * @param qid Title (Q-id)
+     */
+    public static ChangeEvent makeRCEvent(Duration offset, long revid, String qid, String chronologyId) {
+        return new RevisionCreateEvent(
+                new EventsMeta(START_TIME.plus(offset), "", DOMAIN),
+                revid, qid, 0, chronologyId);
     }
 }

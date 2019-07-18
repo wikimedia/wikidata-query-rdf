@@ -360,12 +360,8 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                 continue;
             }
             seenIDs.put(rc.getRcId(), TRUE);
-// Looks like we can not rely on changes appearing in order, so we have to take them all and let SPARQL
-// sort out the dupes.
-//                if (continueChange != null && rcid < continueChange.rcid()) {
-//                    // We've already seen this change, since it has older rcid - so skip it
-//                    continue;
-//                }
+            // Looks like we can not rely on changes appearing in order in RecentChanges,
+            // so we have to take them all and let SPARQL sort out the dupes.
             Change change;
             if (rc.getType().equals("log") && rc.getRevId() == 0) {
                 // Deletes should always be processed, so put negative revision

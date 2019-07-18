@@ -1,6 +1,7 @@
 {
   "comment": "/* wbsetreference-add:2| */ [[Property:P105]]",
   "database": "wikidatawiki",
+  "chronology_id": "tardis",
   "meta": {
     "domain": "acme.test",
     "dt": "2018-01-21T16:38:20+00:00",
