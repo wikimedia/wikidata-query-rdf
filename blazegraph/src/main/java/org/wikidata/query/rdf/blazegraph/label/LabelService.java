@@ -105,6 +105,26 @@ public class LabelService extends AbstractServiceFactory {
     public static final URIImpl LANGUAGE_PARAM = new URIImpl(Ontology.NAMESPACE + "language");
 
     /**
+     * Annotations for LabelService optimizers.
+     * Stores list of vars incoming (objects to be labeled) and outgoing (labels) for the service clause.
+     */
+    static final String LABEL_SERVICE_IN_VARS = "LabelService.inVars";
+    static final String LABEL_SERVICE_OUT_VARS = "LabelService.outVars";
+
+    /**
+     * URI for service optimizer hint parameter to disable reordering.
+     * Usage: inside service clause add:
+     * bd:serviceParam wikibase:disableReordering true.
+     */
+    public static final URIImpl DISABLE_REORDERING = new URIImpl(Ontology.NAMESPACE + "disableReordering");
+
+    /**
+     * Annotation to store optimizer hint for disabling reordering.
+     */
+    public static final String DISABLE_REORDERING_ANNOTATION = LabelService.class.getName() + ".disableReordering";
+
+
+    /**
      * Register the service so it is recognized by Blazegraph.
      */
     public static void register() {
@@ -178,14 +198,14 @@ public class LabelService extends AbstractServiceFactory {
     /**
      * Create the resolutions list from the service call parameters.
      */
-    private List<Resolution> findResolutions(ServiceCallCreateParams params) {
+    private static List<Resolution> findResolutions(ServiceCallCreateParams params) {
         return findResolutions(params.getServiceNode());
     }
 
     /**
      * Create the resolutions list from the service call parameters.
      */
-    private List<Resolution> findResolutions(final ServiceNode params) {
+    static List<Resolution> findResolutions(final ServiceNode params) {
         JoinGroupNode g = (JoinGroupNode) params.getGraphPattern();
         List<Resolution> resolutions = new ArrayList<>(g.args().size());
         for (BOp st : g.args()) {
@@ -202,7 +222,6 @@ public class LabelService extends AbstractServiceFactory {
     /**
      * Represents the call site in a particular SPARQL query.
      */
-    @SuppressWarnings("checkstyle:visibilitymodifier")
     private static class LabelServiceCall implements BigdataServiceCall {
         /*
          * Suppress VisibilityModifier check because members are package private
@@ -294,7 +313,7 @@ public class LabelService extends AbstractServiceFactory {
      * can resolve many such requests at once.
      */
     @SuppressWarnings("rawtypes")
-    private static final class Resolution {
+    static final class Resolution {
         /**
          * Subject of the service call.
          */

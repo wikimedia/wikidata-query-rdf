@@ -16,18 +16,23 @@ import static org.wikidata.query.rdf.test.Matchers.notBinds;
 import java.util.Locale;
 import java.util.Set;
 
+import org.hamcrest.Matcher;
 import org.junit.Rule;
 import org.junit.Test;
+import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.BNodeImpl;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.BindingSet;
+import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
+import org.openrdf.query.algebra.evaluation.QueryBindingSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.blazegraph.AbstractRandomizedBlazegraphTestBase;
+import org.wikidata.query.rdf.blazegraph.geo.GeoUtils;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
@@ -36,9 +41,12 @@ import org.wikidata.query.rdf.test.Randomizer;
 
 import com.bigdata.bop.IVariable;
 import com.bigdata.bop.Var;
+import com.bigdata.rdf.sail.sparql.Bigdata2ASTSPARQLParser;
+import com.bigdata.rdf.sparql.ast.ASTContainer;
 import com.bigdata.rdf.sparql.ast.JoinGroupNode;
 import com.bigdata.rdf.sparql.ast.StatementPatternNode;
 import com.bigdata.rdf.sparql.ast.VarNode;
+import com.bigdata.rdf.sparql.ast.eval.ASTEvalHelper;
 import com.bigdata.rdf.sparql.ast.service.ServiceNode;
 import com.bigdata.rdf.store.BD;
 
@@ -129,13 +137,13 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
         query.append("SELECT ?p\n");
         query.append("WHERE {\n");
-        query.append("	{\n");
-        query.append("		SELECT ?p ?pLabel WHERE {\n");
-        query.append("			BIND(wd:Q153353 AS ?p)\n");
-        query.append("			SERVICE ontology:label { bd:serviceParam ontology:language \"en\" . }\n");
-        query.append("		}\n");
-        query.append("	}\n");
-        query.append("	FILTER(\"in en\"@en = ?pLabel) .\n");
+        query.append("    {\n");
+        query.append("        SELECT ?p ?pLabel WHERE {\n");
+        query.append("            BIND(wd:Q153353 AS ?p)\n");
+        query.append("            SERVICE ontology:label { bd:serviceParam ontology:language \"en\" . }\n");
+        query.append("        }\n");
+        query.append("    }\n");
+        query.append("    FILTER(\"in en\"@en = ?pLabel) .\n");
         query.append("}");
         assertResult(query(query.toString()), binds("p", URI.class));
     }
@@ -148,20 +156,195 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
         query.append("SELECT ?p ?pLabel\n");
         query.append("WHERE {\n");
-        query.append("	{\n");
-        query.append("		SELECT ?p ?pLabel WHERE {\n");
-        query.append("			{{\n");
-        query.append("			SERVICE ontology:label { bd:serviceParam ontology:language \"en\" . }\n");
-        query.append("			}\n");
-        query.append("			UNION");
-        query.append("			{\n");
-        query.append("			}}\n");
-        query.append("		}\n");
-        query.append("	}\n");
-        query.append("	FILTER(\"in en\"@en = ?pLabel) .\n");
+        query.append("    {\n");
+        query.append("        SELECT ?p ?pLabel WHERE {\n");
+        query.append("            {{\n");
+        query.append("            SERVICE ontology:label { bd:serviceParam ontology:language \"en\" . }\n");
+        query.append("            }\n");
+        query.append("            UNION");
+        query.append("            {\n");
+        query.append("            }}\n");
+        query.append("        }\n");
+        query.append("    }\n");
+        query.append("    FILTER(\"in en\"@en = ?pLabel) .\n");
         query.append("}");
         query.append("VALUES (?p) {(wd:Q153353_nested)}\n");
         assertResult(query(query.toString()), binds("p", URI.class));
+    }
+
+    @SafeVarargs
+    private final void assertLabelQueryResult(String query, final Matcher<BindingSet>... bindingMatchers) {
+        ASTContainer astContainer = null;
+        try {
+            TupleQueryResult q;
+            try {
+                astContainer = new Bigdata2ASTSPARQLParser().parseQuery2(query, null);
+                q = ASTEvalHelper.evaluateTupleQuery(store(), astContainer, new QueryBindingSet(), null);
+            } catch (MalformedQueryException | QueryEvaluationException e) {
+                throw new RuntimeException(e);
+            }
+            assertResult(q, bindingMatchers);
+        } catch (AssertionError e) {
+            log.error("Error while checking results for " + astContainer);
+            throw e;
+        }
+    }
+
+    @Test
+    public void multipleServiceCall_T175840() {
+        addSimpleLabels("Q175840sc");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?p ?pLabelEn ?pLabelDe\n");
+        query.append("WHERE {\n");
+        query.append("        SERVICE ontology:label { bd:serviceParam ontology:language \"en\" . \n");
+        query.append("            ?p rdfs:label ?pLabelEn. }\n");
+        query.append("        SERVICE ontology:label { bd:serviceParam ontology:language \"de\" . \n");
+        query.append("            ?p rdfs:label ?pLabelDe. }\n");
+        query.append("}");
+        query.append("VALUES (?p) {(wd:Q175840sc)}\n");
+        assertLabelQueryResult(query.toString(),
+                both(binds("p", URI.class))
+                .and(binds("pLabelEn", Literal.class))
+                .and(binds("pLabelDe", Literal.class))
+        );
+    }
+
+    @Test
+    public void multipleServiceCall_T175840_with_optional() {
+        addSimpleLabels("Q175840o");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?p ?pLabel \n");
+        query.append("WHERE {\n");
+        query.append("        SERVICE ontology:label { bd:serviceParam ontology:language \"en\" . }\n");
+        query.append("        OPTIONAL { LET(?p:= wd:Q175840o) } \n");
+        query.append("}");
+        assertLabelQueryResult(query.toString(),
+                both(binds("p", URI.class))
+                .and(binds("pLabel", Literal.class))
+        );
+    }
+
+     @Test
+    public void multipleServiceCall_T175840_with_other_service() {
+        addSimpleLabels("Q175840s3");
+        add("wd:Q175840s1", "wdt:P625", GeoUtils.pointLiteral("Point(-180,-90)"));
+        add("wd:Q175840s2", "wdt:P625", GeoUtils.pointLiteral("Point(180,90)"));
+        add("wd:Q175840s3", "wdt:P625", GeoUtils.pointLiteral("Point(0,0)"));
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?item ?name ?coord \n");
+        query.append("WHERE {\n");
+        query.append("        wd:Q175840s1 wdt:P625 ?Firstloc .");
+        query.append("        wd:Q175840s2 wdt:P625 ?Secondloc .");
+        query.append("        SERVICE ontology:box { ?item wdt:P625 ?coord .\n");
+        query.append("            bd:serviceParam ontology:cornerSouthWest ?Firstloc .\n");
+        query.append("            bd:serviceParam ontology:cornerNorthEast ?Secondloc .\n");
+        query.append("         } \n");
+        query.append("        SERVICE ontology:label { \n");
+        query.append("            bd:serviceParam ontology:language \"en\" . \n");
+        query.append("            ?item rdfs:label ?name \n");
+        query.append("        } \n");
+        query.append("    FILTER(\"in en\"@en = ?name) .\n");
+        query.append("} ORDER BY ASC(?name)");
+        assertLabelQueryResult(query.toString(),
+                 both(binds("item", URI.class))
+                 .and(binds("name", Literal.class))
+        );
+    }
+
+     @Test
+    public void multipleServiceCall_T175840_with_filters() {
+        addSimpleLabels("PROP");
+        addSimpleLabels("PS");
+        addSimpleLabels("Q175840fv");
+        add("wd:Q175840f", "wdt:PROP", "wdt:Q175840fv");
+        add("wd:PS", "ontology:directClaim", "wdt:PROP");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?pLabel ?prop ?val ?valLabel WHERE { \n");
+        query.append(" wd:Q175840f ?prop ?val .");
+        query.append("        ?ps ontology:directClaim ?prop .");
+        query.append("        ?ps rdfs:label ?pLabel .");
+        query.append("        FILTER (?prop != wdt:P18) .\n");
+        query.append("         SERVICE ontology:label { \n");
+        query.append("            bd:serviceParam ontology:language \"en\" . \n");
+        // The testcase fails if variables are not explicitely defined in the service call
+        // due to FILTER clause could not see bound variable while ASTBottomUpOptimizer is running,
+        // so no proper joins are generated, but on the other hand, if projection vars
+        // are automatically added for service call before ASTBottomUpOptimizer,
+        // many other usecases fail due these vars expected to be projected,
+        // but there are no method to assign inbound vars for the service call except
+        // its statement patterns.
+        query.append("            ?p rdfs:label ?pLabel . \n");
+        query.append("            ?val rdfs:label ?valLabel . \n");
+        query.append("        } \n");
+        query.append("    FILTER(LANG(?valLabel) != 'fr') .\n");
+        query.append("}");
+        assertLabelQueryResult(query.toString(),
+                 both(binds("prop", URI.class))
+                    .and(binds("pLabel", Literal.class))
+                    .and(binds("val", URI.class))
+                    .and(binds("valLabel", Literal.class)),
+                 both(binds("prop", URI.class))
+                    .and(binds("pLabel", Literal.class))
+                    .and(binds("val", URI.class))
+                    .and(binds("valLabel", Literal.class)),
+                 both(binds("prop", URI.class))
+                    .and(binds("pLabel", Literal.class))
+                    .and(binds("val", URI.class))
+                    .and(binds("valLabel", Literal.class))
+
+         );
+    }
+
+    @Test
+    public void multipleServiceCall_T175840_subquery() {
+        addSimpleLabels("Q175840SUB");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?p ?pLabel WHERE { \n" +
+                "  { \n" +
+                "    SELECT ?p WHERE {\n" +
+                "      BIND(wd:Q175840SUB as ?p) \n" +
+                "    } \n" +
+                "  } \n" +
+                "  SERVICE ontology:label { bd:serviceParam ontology:language \"en\" } \n" +
+                "}");
+        assertLabelQueryResult(query.toString(),
+            both(binds("p", URI.class))
+            .and(binds("pLabel", Literal.class))
+        );
+    }
+
+    @Test
+    public void multipleServiceCall_T175840_named_subquery() {
+        addSimpleLabels("Q175840SUB");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?p ?pLabel WITH \n" +
+                "  { \n" +
+                "    SELECT ?p WHERE {\n" +
+                "      BIND(wd:Q175840SUB as ?p) \n" +
+                "    } \n" +
+                "  } as %result \n" +
+                "   WHERE { INCLUDE %result \n" +
+                "  SERVICE ontology:label { bd:serviceParam ontology:language \"en\" } \n" +
+                "}");
+        assertLabelQueryResult(query.toString(),
+            both(binds("p", URI.class))
+            .and(binds("pLabel", Literal.class))
+        );
+    }
+
+    @Test
+    public void multipleServiceCall_T175840_propertyPath() {
+        addSimpleLabels("Q175840PP1");
+        add("wd:Q175840PP2", "wdt:P31", "wd:Q175840PP1");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?p ?pLabel WHERE { \n" +
+                "  wd:Q175840PP2 wdt:P31+ ?p . \n" +
+                "  SERVICE ontology:label { bd:serviceParam ontology:language \"en\" } \n" +
+                "}");
+        assertLabelQueryResult(query.toString(),
+            both(binds("p", URI.class))
+            .and(binds("pLabel", Literal.class))
+        );
     }
 
     private void simpleLabelLookupTestCase(String extraQuery, String subjectInQuery) throws QueryEvaluationException {
@@ -315,15 +498,20 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
                 "  hint:Prior hint:runLast false .\n" +
                 "  BIND(?itemLabel as ?anotherLabel)\n" +
                 "}");
-        TupleQueryResult result = query(query.toString());
-        assertTrue(result.hasNext());
-        BindingSet resultSet = result.next();
-        assertThat(resultSet, both(
+        QueryResult result = queryWithAST(query.toString());
+        try {
+            assertTrue(result.hasNext());
+            BindingSet resultSet = result.next();
+            assertThat(resultSet, both(
                     binds("itemLabel", "in en", "en")
-                ).and(
-                    binds("anotherLabel", "in en", "en")
-                )
-        );
+                    ).and(
+                            binds("anotherLabel", "in en", "en")
+                    )
+            );
+        } catch (AssertionError e) {
+            log.error("Error while checking results for " + result.ast());
+            throw e;
+        }
     }
 
     private void checkSpecialLabel(String binding, String resultLabel) throws QueryEvaluationException {
@@ -335,10 +523,15 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
                 "    bd:serviceParam ontology:language \"en\".\n" +
                 "  }\n" +
                 "}");
-        TupleQueryResult result = query(query.toString());
-        assertTrue(result.hasNext());
-        BindingSet resultSet = result.next();
-        assertThat(resultSet, binds("itemLabel", resultLabel, null));
+        QueryResult result = queryWithAST(query.toString());
+        try {
+            assertTrue(result.hasNext());
+            BindingSet resultSet = result.next();
+            assertThat(resultSet, binds("itemLabel", resultLabel, null));
+        } catch (AssertionError e) {
+            log.error("Error while checking results for " + result.ast());
+            throw e;
+        }
     }
 
     @Test
