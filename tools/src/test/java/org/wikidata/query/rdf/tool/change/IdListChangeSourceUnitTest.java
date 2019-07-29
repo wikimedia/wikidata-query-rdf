@@ -5,6 +5,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.wikidata.query.rdf.tool.change.IdListChangeSource.forItems;
 
+import java.util.List;
+
 import org.junit.Test;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 
@@ -41,5 +43,18 @@ public class IdListChangeSourceUnitTest {
         assertEquals(1, batch.advanced());
         assertFalse(batch.last());
         assertEquals("0", batch.leftOffHuman());
+    }
+
+    @Test
+    public void withRevisions() throws RetryableException {
+        IdListChangeSource changeSource = forItems(new String[] {"test1@1234", "test2"}, 1);
+        IdListChangeSource.Batch batch = changeSource.firstBatch();
+        assertEquals(1, batch.advanced());
+        assertFalse(batch.last());
+        assertEquals("0", batch.leftOffHuman());
+        List<Change> changes = batch.changes();
+        assertEquals(1, changes.size());
+        assertEquals(1234, changes.get(0).revision());
+        assertEquals("test1", changes.get(0).entityId());
     }
 }

@@ -86,9 +86,25 @@ public class IdListChangeSource implements Change.Source<IdListChangeSource.Batc
         int batchStop = min(batchStart + batchSize, ids.length);
         ImmutableList.Builder<Change> changes = ImmutableList.builder();
         for (int id = batchStart; id < batchStop; id++) {
-            changes.add(new Change(ids[id], -1, null, id));
+            changes.add(changeFromId(ids[id], id));
         }
         return new Batch(changes.build(), batchStop - batchStart, batchStop);
+    }
+
+    /**
+     * Create change from string ID.
+     * String can contain revision: Q1234@12345
+     */
+    private Change changeFromId(String idString, int offset) {
+        long revision = -1;
+        Instant timestamp = null;
+        if (idString.contains("@")) {
+            String[] parts = idString.split("@");
+            idString = parts[0];
+            revision = Long.parseLong(parts[1]);
+            timestamp = Instant.now();
+        }
+        return new Change(idString, revision, timestamp, offset);
     }
 
     @Override
