@@ -40,6 +40,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * Base class for geospatial search wrappers.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressFBWarnings(value = "FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY", justification = "This should probably be fixed at some point")
 public abstract class GeoService extends AbstractServiceFactory {
 
     /**
