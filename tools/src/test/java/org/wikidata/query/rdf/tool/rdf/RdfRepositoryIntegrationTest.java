@@ -580,6 +580,25 @@ public class RdfRepositoryIntegrationTest {
         assertEquals(now, rdfRepository.fetchLeftOffTime());
     }
 
+    @Test
+    public void fetchLeftOffMultipleTimesDump() {
+        Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+        Instant earlier = now.minusSeconds(30);
+        Instant later = now.plusSeconds(30);
+        UpdateBuilder b = new UpdateBuilder("INSERT DATA {" +
+           "%dump% %dateModified% %ts1% . " +
+           "%dump% %dateModified% %ts2% . " +
+           "%dump% %dateModified% %ts3% . " +
+           "}");
+        b.bindValue("ts1", now);
+        b.bindValue("ts2", earlier);
+        b.bindValue("ts3", later);
+        b.bindUri("dump", Ontology.DUMP);
+        b.bindUri("dateModified", SchemaDotOrg.DATE_MODIFIED);
+        rdfRepository.update(b.toString());
+        assertEquals(earlier, rdfRepository.fetchLeftOffTime());
+    }
+
     private void syncJustVersion(String entityId, int version) {
         Statement statement = statement(entityId, SchemaDotOrg.VERSION,
                 new IntegerLiteralImpl(new BigInteger(Integer.toString(version))));

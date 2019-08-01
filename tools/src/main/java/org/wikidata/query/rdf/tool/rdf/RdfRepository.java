@@ -492,7 +492,8 @@ public class RdfRepository {
         }
         log.info("Checking for left off time from the dump");
         b = Ontology.prefix(SchemaDotOrg.prefix(new StringBuilder()));
-        b.append("SELECT * WHERE { ontology:Dump schema:dateModified ?date }");
+        // Only use the earliest TS from the dump since
+        b.append("SELECT * WHERE { ontology:Dump schema:dateModified ?date } ORDER BY ASC(?date) LIMIT 1");
         return dateFromQuery(b.toString());
     }
 
