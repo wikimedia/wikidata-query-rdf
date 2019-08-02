@@ -49,17 +49,17 @@ public class ClassifiedStatements {
     public void classify(Collection<Statement> statements, String entityId) {
         for (Statement statement: statements) {
             String subject = statement.getSubject().stringValue();
-            if (subject.equals(uris.entity() + entityId)) {
+            if (subject.equals(uris.entityIdToURI(entityId))) {
                 entityStatements.add(statement);
             }
             if (subject.startsWith(uris.statement())) {
                 statementStatements.add(statement);
             }
-            if (!subject.equals(uris.entity() + entityId)
+            if (!subject.equals(uris.entityIdToURI(entityId))
                     && !subject.startsWith(uris.statement())
                     && !subject.startsWith(uris.value())
                     && !subject.startsWith(uris.reference())
-                    && !subject.startsWith(uris.entity() + entityId + "-")
+                    && !subject.startsWith(uris.entityIdToURI(entityId) + "-")
             ) {
                 aboutStatements.add(statement);
             }

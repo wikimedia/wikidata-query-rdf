@@ -177,8 +177,8 @@ public final class Munger {
             Collection<String> valuesContainer,
             Collection<String> refsContainer,
             Change sourceChange) {
-        valuesContainer.addAll(repoValues.get(uris.entity() + entityId));
-        refsContainer.addAll(repoRefs.get(uris.entity() + entityId));
+        valuesContainer.addAll(repoValues.get(uris.entityIdToURI(entityId)));
+        refsContainer.addAll(repoRefs.get(uris.entityIdToURI(entityId)));
         return munge(entityId, statements, valuesContainer, refsContainer, sourceChange);
     }
 
@@ -408,7 +408,7 @@ public final class Munger {
                 Collection<String> existingRefs) {
             this.statements = statements;
             this.entityId = entityId;
-            entityUri = uris.entity() + entityId;
+            entityUri = uris.entityIdToURI(entityId);
             entityUriImpl = new URIImpl(entityUri);
             if (singleLabelModeLanguages != null) {
                 singleLabelModeWorkForLabel = new SingleLabelModeWork();
@@ -535,7 +535,7 @@ public final class Munger {
             if (inNamespace(subject, uris.value())) {
                 return entityValueStatement(statement);
             }
-            if (inNamespace(subject, uris.entity())) {
+            if (uris.isEntityURI(subject)) {
                 return entityStatement(statement);
             }
             if (subject.startsWith(uris.property(PropertyType.CLAIM))) {
@@ -642,7 +642,7 @@ public final class Munger {
                 // Q1 skos:prefLabel "foo" is a dupe of rdfs:label
                 return false;
             case RDFS.LABEL:
-                    if (subject.startsWith(uris.entity() + "L")
+                    if (uris.entityURItoId(subject).startsWith("L")
                             || subEntities.contains(subject)) {
                     // Skip labels for Lexeme & its sub-entities, e.g. Forms and Senses
                     return false;
@@ -942,7 +942,7 @@ public final class Munger {
                 } else {
                     log.info(
                             "Unrecognized subjects: {} while processing {}.  Expected only sitelinks and subjects starting with {} and {}",
-                            unknownSubjects.keySet(), entityUri, uris.entityData(), uris.entity());
+                            unknownSubjects.keySet(), entityUri, uris.entityData(), uris.entityURIs());
                     // Log statements we're about to drop, unless there are too many
                     unknownSubjects.entries().stream()
                             .limit(20)
@@ -1072,7 +1072,7 @@ public final class Munger {
         public BadSubjectException(Set<String> badSubjects, WikibaseUris uris) {
             super(String.format(Locale.ROOT,
                     "Unrecognized subjects:  %s.  Expected only sitelinks and subjects starting with %s and %s",
-                    badSubjects, uris.entityData(), uris.entity()));
+                    badSubjects, uris.entityData(), uris.entityURIs()));
         }
     }
 }

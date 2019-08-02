@@ -279,14 +279,14 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 }
             } else {
                 trueChanges.add(change);
-                changeIds.add(uris.entity() + change.entityId());
+                changeIds.add(uris.entityIdToURI(change.entityId()));
             }
         }
         if (candidateChanges.size() > 0) {
             for (String entityId: rdfRepository.hasRevisions(candidateChanges.values())) {
                 // Cut off the entity prefix from the resulting URI
                 changeIds.add(entityId);
-                trueChanges.add(candidateChanges.get(entityId.substring(uris.entity().length())));
+                trueChanges.add(candidateChanges.get(uris.entityURItoId(entityId)));
             }
         }
         log.debug("Filtered batch contains {} changes", trueChanges.size());

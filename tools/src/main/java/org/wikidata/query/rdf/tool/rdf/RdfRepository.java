@@ -200,7 +200,7 @@ public class RdfRepository {
         // TODO this is becoming a mess too
         log.debug("Generating update for {}", entityId);
         UpdateBuilder b = new UpdateBuilder(syncBody);
-        b.bindUri("entity:id", uris.entity() + entityId);
+        b.bindUri("entity:id", uris.entityIdToURI(entityId));
         b.bindUri("schema:about", SchemaDotOrg.ABOUT);
         b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
         b.bind("uris.value", uris.value());
@@ -209,9 +209,9 @@ public class RdfRepository {
 
         if (entityId.startsWith("L")) {
             // Lexeme ID
-            b.bindUris("lexemeIds",
+            b.bindEntityIds("lexemeIds",
                     fetchLexemeSubIds(Collections.singleton(entityId)),
-                    uris.entity());
+                    uris);
         } else {
             b.bind("lexemeIds", "");
         }
@@ -318,9 +318,9 @@ public class RdfRepository {
     ) {
         log.debug("Processing {} IDs and {} statements", entityIds.size(), insertStatements.size());
     	UpdateBuilder b = new UpdateBuilder(queryTemplate);
-        b.bindUris("entityListTop", entityIds, uris.entity());
+        b.bindEntityIds("entityListTop", entityIds, uris);
         entityIds.addAll(fetchLexemeSubIds(entityIds));
-        b.bindUris("entityList", entityIds, uris.entity());
+        b.bindEntityIds("entityList", entityIds, uris);
         b.bindStatements("insertStatements", insertStatements);
         b.bindValues("entityStatements", classifiedStatements.entityStatements);
 
@@ -372,8 +372,8 @@ public class RdfRepository {
      */
     private List<String> fetchLexemeSubIds(Set<String> entityIds) {
         UpdateBuilder b = new UpdateBuilder(getLexemes);
-        b.bindUris("entityList", entityIds, uris.entity());
-        return rdfClient.selectToList(b.toString(), "lex", uris.entity());
+        b.bindEntityIds("entityList", entityIds, uris);
+        return rdfClient.getEntityIds(b.toString(), "lex", uris);
     }
 
     /**
@@ -389,7 +389,7 @@ public class RdfRepository {
         UpdateBuilder bv = new UpdateBuilder(verify);
         bv.bindUri("schema:about", SchemaDotOrg.ABOUT);
         bv.bind("uris.statement", uris.statement());
-        bv.bindUris("entityList", entityIds, uris.entity());
+        bv.bindEntityIds("entityList", entityIds, uris);
         bv.bindValues("allStatements", statements);
         TupleQueryResult result = rdfClient.query(bv.toString());
         if (result.hasNext()) {
@@ -457,7 +457,7 @@ public class RdfRepository {
         UpdateBuilder b = new UpdateBuilder(getRevisions);
         StringBuilder values = new StringBuilder();
         for (Change entry: candidates) {
-            values.append("( <").append(uris.entity()).append(entry.entityId()).append("> ")
+            values.append("( <").append(uris.entityIdToURI(entry.entityId())).append("> ")
                     .append(entry.revision()).append(" )\n");
         }
         b.bind("values", values.toString());

@@ -200,8 +200,9 @@ public class ExpandedStatementBuilder {
             st.remove(entityDataAboutDecl);
             st.remove(entityDataVersionDecl);
             st.remove(entityDataDateModifiedDecl);
-            statement(st, uris.entity() + entity, SchemaDotOrg.VERSION, version);
-            statement(st, uris.entity() + entity, SchemaDotOrg.DATE_MODIFIED, dateModified);
+            String entityURI = uris.entityIdToURI(entity);
+            statement(st, entityURI, SchemaDotOrg.VERSION, version);
+            statement(st, entityURI, SchemaDotOrg.DATE_MODIFIED, dateModified);
         }
         st.remove(statementTypeDecl);
         for (ExtraInfo e : extraInfo) {
@@ -287,7 +288,7 @@ public class ExpandedStatementBuilder {
             statementUri = uris.statement() + entity + "-" + randomId();
         }
 
-        statement(statements, uris.entity() + entity, uris.entity() + property, statementUri);
+        statement(statements, uris.entityIdToURI(entity), uris.entityIdToURI(property), statementUri);
         statementTypeDecl = statement(statements, statementUri, RDF.TYPE, Ontology.STATEMENT);
         statement(statements, statementUri, uris.value() + property, value);
         statement(statements, statementUri, Ontology.RANK, rank);

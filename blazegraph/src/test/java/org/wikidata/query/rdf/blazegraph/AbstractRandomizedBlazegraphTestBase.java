@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.blazegraph;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -136,7 +137,9 @@ public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlaz
             String s = (String) o;
             s = s.replaceFirst("^ontology:", Ontology.NAMESPACE);
             s = s.replaceFirst("^wdata:", uris.entityData());
-            s = s.replaceFirst("^wd:", uris.entity());
+            for (Map.Entry<String, String> entry : uris.entityPrefixes().entrySet()) {
+                s = s.replaceFirst("^" + entry.getKey() + ":", entry.getValue());
+            }
             s = s.replaceFirst("^wds:", uris.statement());
             s = s.replaceFirst("^wdv:", uris.value());
             s = s.replaceFirst("^wdref:", uris.reference());

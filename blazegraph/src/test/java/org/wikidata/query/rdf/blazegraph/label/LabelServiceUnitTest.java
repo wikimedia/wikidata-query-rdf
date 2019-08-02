@@ -464,7 +464,7 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         ));
         // Fixed name
         patterns.addArg(new StatementPatternNode(
-                createURI(uris().entity() + "Q123"),
+                createURI(uris().entityIdToURI("Q123")),
                 createURI(RDFS.LABEL),
                 new VarNode("qLabel")
         ));
@@ -571,11 +571,11 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
 
     @Test
     public void labelFromOtherTypesQuery() throws QueryEvaluationException {
-        checkOtherType(new LiteralImpl(uris().entity() + "Q123"), "Q123");
+        checkOtherType(new LiteralImpl(uris().entityIdToURI("Q123")), "Q123");
         checkOtherType(new LiteralImpl("Q123"), "Q123");
         checkOtherType(new LiteralImpl("just testing", "ru"), "just testing");
         checkOtherType(new LiteralImpl("http://www.wikidata.org/"), "http://www.wikidata.org/");
-        checkOtherType(new URIImpl(uris().entity() + "Q234"), "Q234");
+        checkOtherType(new URIImpl(uris().entityIdToURI("Q234")), "Q234");
         checkOtherType(new URIImpl("http://www.wikidata.org/"), "http://www.wikidata.org/");
         checkOtherType(new BNodeImpl("Q234"), "t1");
     }

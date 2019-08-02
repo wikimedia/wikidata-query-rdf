@@ -33,7 +33,7 @@ public class WKTSerializer implements IGeoSpatialLiteralSerializer {
     /**
      * Prefix for globe URIs.
      */
-    private static final String URL_PREFIX = WikibaseUris.getURISystem().entity() + "Q";
+    private static final String URL_PREFIX = WikibaseUris.getURISystem().entityIdToURI("Q");
     // FIXME: we need a way to handle non-wikidata URIs
 
     /**

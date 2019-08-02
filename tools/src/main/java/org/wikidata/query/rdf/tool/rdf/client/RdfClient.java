@@ -10,6 +10,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,6 +27,7 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 
@@ -198,24 +200,24 @@ public class RdfClient {
     }
 
     /**
-     * Perform a SPARQL query and return the result as list from one column.
+     * Perform a SPARQL query and return the result as list of entity IDs from one column.
      * @param query SPARQL query, should be SELECT
      * @param valueBinding Binding name to serve as values
-     * @param prefix If specified, remove this prefix from the result
-     * @return Collection of strings resulting from the query.
+     * @param uris URI scheme
+     * @return Collection of entity ID strings resulting from the query.
      */
-    public List<String> selectToList(String query, String valueBinding, String prefix) {
-        return resultToList(query(query), valueBinding, prefix);
+    public List<String> getEntityIds(String query, String valueBinding, WikibaseUris uris) {
+        return resultToList(query(query), valueBinding, uris::entityURItoId);
     }
 
     /**
      * Convert result column to a list.
      * @param result Query result
      * @param valueBinding Name of the result variable to fetch
-     * @param prefix If specified, remove this prefix from the result
+     * @param transform Transformation to apply to the result string
      * @return List of strings resulting from the query.
      */
-    private List<String> resultToList(TupleQueryResult result, String valueBinding, String prefix) {
+    private List<String> resultToList(TupleQueryResult result, String valueBinding, Function<String, String> transform) {
         ImmutableList.Builder<String> values = ImmutableList.builder();
         try {
             while (result.hasNext()) {
@@ -224,11 +226,7 @@ public class RdfClient {
                 if (value == null) {
                     continue;
                 }
-                String strValue = value.getValue().stringValue();
-                if (prefix != null && strValue.startsWith(prefix)) {
-                    strValue = strValue.substring(prefix.length());
-                }
-                values.add(strValue);
+                values.add(transform.apply(value.getValue().stringValue()));
             }
         } catch (QueryEvaluationException e) {
             throw new FatalException("Can't load results: " + e, e);

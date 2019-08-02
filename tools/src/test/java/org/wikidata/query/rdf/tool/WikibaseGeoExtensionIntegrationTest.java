@@ -16,7 +16,7 @@ import org.wikidata.query.rdf.common.uri.WikibaseUris;
 
 public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdaterIntegrationTestBase {
 
-    private final String moonURI = WikibaseUris.getURISystem().entity() + "Q405";
+    private final String moonURI = WikibaseUris.getURISystem().entityIdToURI("Q405");
 
     private void insertPoints() {
         String query = "INSERT {\n"
