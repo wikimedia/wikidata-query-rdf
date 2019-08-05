@@ -9,6 +9,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
@@ -16,31 +19,22 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * See the documentation for Wikidata implementation here:
  * https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format
  */
-@SuppressFBWarnings(
-        value = "FCBL_FIELD_COULD_BE_LOCAL",
-        justification = "keeping `rootHttps` as an instance variable to be coherent with other fields")
 public class WikibaseUris {
     /**
-     * A WikibaseUris instance for wikidata.org.
+     * Prefix for entity URI.
      */
-    public static final WikibaseUris WIKIDATA = WikibaseUris.forHost("www.wikidata.org");
-
-    /**
-     * Configuration for wikibase host.
-     */
-    public static final String WIKIBASE_HOST_PROPERTY = "wikibaseHost";
-
-    /**
-     * Configuration for wikibase host.
-     */
-    public static final String WIKIBASE_CONCEPT_URI = "wikibaseConceptUri";
     public static final String ENTITY_PREFIX = "wd";
+    /**
+     * Prefix for entity data URI.
+     */
+    public static final String ENTITY_DATA_PREFIX = "wdata";
 
     /**
-     * Current URI system. This is static since each instance has only one URI
-     * system.
+     * Initial letters of supported Wikibase items.
+     * L is not included because L IDs can not be inlined due
+     * to conflict between Lexemes, Forms and Senses.
      */
-    private static WikibaseUris uriSystem;
+    private static final ImmutableList<String> WIKIBASE_INITIALS = ImmutableList.of("Q", "P");
 
     /**
      * Property types used in the ontology.
@@ -233,8 +227,9 @@ public class WikibaseUris {
      */
     @SuppressFBWarnings(value = "CBX_CUSTOM_BUILT_XML", justification = "false positive - not actually XML")
     public StringBuilder prefixes(StringBuilder query) {
-        query.append("PREFIX wdata: <").append(entityData).append(">\n");
-        query.append("PREFIX wd: <").append(entity).append(">\n");
+        entityPrefixes().forEach((k, v) -> {
+            query.append("PREFIX ").append(k).append(": <").append(v).append(">\n");
+        });
         query.append("PREFIX wds: <").append(statement).append(">\n");
         query.append("PREFIX wdv: <").append(value).append(">\n");
         query.append("PREFIX wdref: <").append(reference).append(">\n");
@@ -271,9 +266,8 @@ public class WikibaseUris {
     /**
      * Uri prefix wikibase uses for entities. The canonical place for the entity
      * itself.
-     * @deprecated Use specific entity functions below.
      */
-    private String entity() {
+    protected String entity() {
         return entity;
     }
 
@@ -311,8 +305,19 @@ public class WikibaseUris {
         return Collections.singletonList(entity);
     }
 
+    /**
+     * Map of RDF prefixes for entities to full URIs.
+     * E.g. wd: http://www.wikidata.org/entity/
+     */
     public Map<String, String> entityPrefixes() {
-        return Collections.singletonMap(ENTITY_PREFIX, entity);
+        return ImmutableMap.of(ENTITY_PREFIX, entity, ENTITY_DATA_PREFIX, entityData());
+    }
+
+    /**
+     * Get the list of letters that can start entities.
+     */
+    public Collection<String> entityInitials() {
+        return WIKIBASE_INITIALS;
     }
 
     /**
@@ -342,7 +347,7 @@ public class WikibaseUris {
      * Uri prefix wikibase uses for property types.
      */
     public String property(PropertyType p) {
-        return prop + p.suffix();
+        return property(p.suffix());
     }
 
     /**
@@ -353,39 +358,13 @@ public class WikibaseUris {
     }
 
     /**
-     * Return current URI system.
-     *
-     * @return Current URI system.
-     */
-    public static WikibaseUris getURISystem() {
-        if (uriSystem == null) {
-            String wikibaseUriProperty = System.getProperty(WIKIBASE_CONCEPT_URI);
-            if (wikibaseUriProperty != null) {
-                try {
-                    uriSystem = new WikibaseUris(new URI(wikibaseUriProperty));
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException("Bad URI host: " + wikibaseUriProperty, e);
-                }
-                return uriSystem;
-            }
-            String wikibaseHostProperty = System.getProperty(WIKIBASE_HOST_PROPERTY);
-            if (wikibaseHostProperty != null) {
-                uriSystem = forHost(wikibaseHostProperty);
-            } else {
-                uriSystem = WIKIDATA;
-            }
-        }
-        return uriSystem;
-    }
-
-    /**
      * Build for a specific wikibase host. See the WIKIDATA constant for how you
      * can use this.
      */
     public static WikibaseUris forHost(String host) {
         try {
             if (host == null) {
-                return WIKIDATA;
+                return UriSchemeFactory.WIKIDATA;
             }
             return new WikibaseUris(new URI("http://" + host));
         } catch (URISyntaxException e) {

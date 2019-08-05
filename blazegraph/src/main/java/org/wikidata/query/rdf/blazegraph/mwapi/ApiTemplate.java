@@ -15,7 +15,7 @@ import java.util.Set;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.wikidata.query.rdf.common.uri.Ontology;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 
 import com.bigdata.bop.IVariable;
 import com.bigdata.bop.IVariableOrConstant;
@@ -382,7 +382,7 @@ public class ApiTemplate {
             case URI:
                 return new URIImpl(value);
             case ITEM:
-                return new URIImpl(WikibaseUris.getURISystem().entityIdToURI(value.toUpperCase(Locale.ROOT)));
+                return new URIImpl(UriSchemeFactory.getURISystem().entityIdToURI(value.toUpperCase(Locale.ROOT)));
             default:
                 throw new IllegalArgumentException("Can not produce URI for non-URI type " + type);
             }

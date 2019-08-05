@@ -43,6 +43,7 @@ import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 import org.wikidata.query.rdf.test.Randomizer;
@@ -61,7 +62,7 @@ public class RdfRepositoryIntegrationTest {
     /**
      * Wikibase uris to test with.
      */
-    private final WikibaseUris uris = WikibaseUris.getURISystem();
+    private final WikibaseUris uris = UriSchemeFactory.getURISystem();
     private final Munger munger = Munger.builder(uris).build();
 
     @Rule

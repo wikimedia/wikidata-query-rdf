@@ -15,7 +15,7 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.openrdf.query.TupleQueryResult;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
@@ -33,7 +33,7 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
      */
     public RdfRepositoryForTesting(String namespace) {
         super(
-                WikibaseUris.WIKIDATA,
+                UriSchemeFactory.WIKIDATA,
                 new RdfClient(
                         buildHttpClient(getHttpProxyHost(), getHttpProxyPort()), url("/namespace/" + namespace + "/sparql"),
                         buildHttpClientRetryer(),

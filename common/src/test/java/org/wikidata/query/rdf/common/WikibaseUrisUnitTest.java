@@ -6,13 +6,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.junit.Test;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 
 public class WikibaseUrisUnitTest {
 
     @Test
     public void defaultUris() {
-        WikibaseUris uris = WikibaseUris.getURISystem();
+        WikibaseUris uris = UriSchemeFactory.getURISystem();
         assertThat(uris.entityURIs()).contains("http://www.wikidata.org/entity/");
         assertThat(uris.entityIdToURI("Q1")).isEqualTo("http://www.wikidata.org/entity/Q1");
         assertThat(uris.entityIdToURI("P1")).isEqualTo("http://www.wikidata.org/entity/P1");

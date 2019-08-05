@@ -22,7 +22,7 @@ import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 /**
@@ -34,7 +34,7 @@ public final class Matchers {
      */
     public static Matcher<BindingSet> binds(String name, String value) {
         if (value.startsWith("P")) {
-            value = WikibaseUris.getURISystem().property(PropertyType.CLAIM) + value;
+            value = UriSchemeFactory.getURISystem().property(PropertyType.CLAIM) + value;
         }
         return new BindsMatcher<URI>(name, equalTo(uri(value)));
     }

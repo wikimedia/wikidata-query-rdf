@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.blazegraph;
 import org.wikidata.query.rdf.blazegraph.inline.uri.InlineFixedWidthHexIntegerURIHandler;
 import org.wikidata.query.rdf.blazegraph.inline.uri.UndecoratedUuidInlineUriHandler;
 import org.wikidata.query.rdf.common.uri.CommonValues;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
@@ -29,7 +30,7 @@ import com.bigdata.rdf.internal.TrailingSlashRemovingInlineUriHandler;
  * forbid them entirely.
  */
 public class WikibaseInlineUriFactory extends InlineURIFactory {
-    private static final WikibaseUris uris = WikibaseUris.getURISystem();
+    private static final WikibaseUris uris = UriSchemeFactory.getURISystem();
 
     public WikibaseInlineUriFactory() {
         /*
@@ -38,16 +39,13 @@ public class WikibaseInlineUriFactory extends InlineURIFactory {
         for (PropertyType p: PropertyType.values()) {
             addHandler(new InlineUnsignedIntegerURIHandler(uris.property(p) + "P"));
         }
+        uris.entityInitials().forEach(s -> addHandler(new InlineUnsignedIntegerURIHandler(uris.entityIdToURI(s))));
+        // Lexemes TODO: can't really do it because of Forms: L1-F1
+
         /*
          * We don't use WikibaseStyleStatementInlineUriHandler because it makes
          * things worse!
          */
-        addHandler(new InlineUnsignedIntegerURIHandler(uris.entityIdToURI("P")));
-        addHandler(new InlineUnsignedIntegerURIHandler(uris.entityIdToURI("Q")));
-        // Lexemes
-        // TODO: can't really do it because of Forms: L1-F1
-        // addHandler(new InlineUnsignedIntegerURIHandler(uris.entityIdToURI("L")));
-
         // These aren't part of wikibase but are common in wikidata
         // TODO: add more prefixes?
         // VIAF ID

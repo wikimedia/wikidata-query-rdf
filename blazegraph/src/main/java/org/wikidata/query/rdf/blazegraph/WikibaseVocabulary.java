@@ -16,7 +16,7 @@ import org.wikidata.query.rdf.blazegraph.vocabulary.ProvenanceVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.SchemaDotOrgVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.SchemaDotOrgVocabularyDecl2;
 import org.wikidata.query.rdf.blazegraph.vocabulary.WikibaseUrisVocabularyDecl;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
 import com.bigdata.rdf.vocab.DefaultBigdataVocabulary;
@@ -60,7 +60,7 @@ public class WikibaseVocabulary {
 
         @Override
         protected void addValues() {
-            addDecl(new WikibaseUrisVocabularyDecl(WikibaseUris.getURISystem(), getSuffixes()));
+            addDecl(new WikibaseUrisVocabularyDecl(UriSchemeFactory.getURISystem(), getSuffixes()));
             addDecl(new OntologyVocabularyDecl());
             addDecl(new SchemaDotOrgVocabularyDecl2());
             addDecl(new ProvenanceVocabularyDecl());
@@ -95,7 +95,7 @@ public class WikibaseVocabulary {
         @Override
         protected void addValues() {
             // TODO lookup wikibase host and default to wikidata
-            addDecl(new WikibaseUrisVocabularyDecl(WikibaseUris.getURISystem(), getSuffixes()));
+            addDecl(new WikibaseUrisVocabularyDecl(UriSchemeFactory.getURISystem(), getSuffixes()));
             addDecl(new OntologyVocabularyDecl());
             addDecl(new SchemaDotOrgVocabularyDecl());
             addDecl(new ProvenanceVocabularyDecl());

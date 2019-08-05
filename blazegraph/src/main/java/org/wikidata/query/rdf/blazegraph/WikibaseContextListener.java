@@ -41,6 +41,7 @@ import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
@@ -182,7 +183,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         // wikibase:decodeUri
         FunctionRegistry.add(new URIImpl(Ontology.NAMESPACE + "decodeUri"), getDecodeUriBOpFactory());
 
-        addPrefixes(WikibaseUris.getURISystem());
+        addPrefixes(UriSchemeFactory.getURISystem());
 
         log.info("Wikibase services initialized.");
     }
@@ -240,10 +241,9 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         }
         addDeclIfNew(defaultDecls, "wikibase", Ontology.NAMESPACE);
         uris.entityPrefixes().forEach((key, value) -> addDeclIfNew(defaultDecls, key, value));
-            addDeclIfNew(defaultDecls, "wds", uris.statement());
+        addDeclIfNew(defaultDecls, "wds", uris.statement());
         addDeclIfNew(defaultDecls, "wdv", uris.value());
         addDeclIfNew(defaultDecls, "wdref", uris.reference());
-        addDeclIfNew(defaultDecls, "wdata", uris.entityData());
         // External schemata
         addDeclIfNew(defaultDecls, "schema", SchemaDotOrg.NAMESPACE);
         addDeclIfNew(defaultDecls, "prov", Provenance.NAMESPACE);

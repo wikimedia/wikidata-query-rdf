@@ -14,6 +14,7 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
 import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
 
@@ -38,7 +39,7 @@ public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlaz
     /**
      * Which uris this test uses.
      */
-    private WikibaseUris uris = WikibaseUris.getURISystem();
+    private WikibaseUris uris = UriSchemeFactory.getURISystem();
 
     /**
      * The uris this test uses.
@@ -136,7 +137,6 @@ public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlaz
         if (o instanceof String) {
             String s = (String) o;
             s = s.replaceFirst("^ontology:", Ontology.NAMESPACE);
-            s = s.replaceFirst("^wdata:", uris.entityData());
             for (Map.Entry<String, String> entry : uris.entityPrefixes().entrySet()) {
                 s = s.replaceFirst("^" + entry.getKey() + ":", entry.getValue());
             }

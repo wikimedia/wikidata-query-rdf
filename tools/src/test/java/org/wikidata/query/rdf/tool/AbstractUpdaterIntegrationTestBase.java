@@ -8,6 +8,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Rule;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.test.CloseableRule;
 import org.wikidata.query.rdf.tool.change.Change;
@@ -29,7 +30,7 @@ public class AbstractUpdaterIntegrationTestBase {
     /**
      * Munger to test against.
      */
-    private final Munger munger = Munger.builder(WikibaseUris.getURISystem())
+    private final Munger munger = Munger.builder(UriSchemeFactory.getURISystem())
             .removeSiteLinks()
             .build();
 

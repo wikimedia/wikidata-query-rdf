@@ -12,11 +12,11 @@ import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 
 public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdaterIntegrationTestBase {
 
-    private final String moonURI = WikibaseUris.getURISystem().entityIdToURI("Q405");
+    private final String moonURI = UriSchemeFactory.getURISystem().entityIdToURI("Q405");
 
     private void insertPoints() {
         String query = "INSERT {\n"

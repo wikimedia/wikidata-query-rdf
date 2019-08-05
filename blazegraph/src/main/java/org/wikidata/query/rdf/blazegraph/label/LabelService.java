@@ -19,6 +19,7 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDFS;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 
 import com.bigdata.bop.BOp;
@@ -610,7 +611,7 @@ public class LabelService extends AbstractServiceFactory {
          * The WikibaseUris to use in this context.
          */
         private WikibaseUris uris() {
-            return WikibaseUris.getURISystem();
+            return UriSchemeFactory.getURISystem();
         }
 
         /**
