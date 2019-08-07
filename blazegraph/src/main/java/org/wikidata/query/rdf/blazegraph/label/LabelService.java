@@ -123,6 +123,11 @@ public class LabelService extends AbstractServiceFactory {
      */
     public static final String DISABLE_REORDERING_ANNOTATION = LabelService.class.getName() + ".disableReordering";
 
+    /**
+     * Auto-language tag from the GUI.
+     * We will filter it out if it seeps into actual query.
+     */
+    private static final String AUTO_LANGUAGE = "[AUTO_LANGUAGE]";
 
     /**
      * Register the service so it is recognized by Blazegraph.
@@ -148,6 +153,16 @@ public class LabelService extends AbstractServiceFactory {
         // TODO this whole class just throws RuntimeException instead of ??
         return new LabelServiceCall(new ResolutionContext(params.getTripleStore(), findLanguageFallbacks(serviceParams)),
                 findResolutions(params));
+    }
+
+    /**
+     * Check whether language tag is bad.
+     */
+    private boolean isBadLanguage(String lang) {
+        if (lang.isEmpty()) {
+            return true;
+        }
+        return AUTO_LANGUAGE.equals(lang);
     }
 
     /**
@@ -179,13 +194,16 @@ public class LabelService extends AbstractServiceFactory {
                 // we also allow comma lists for convenience
                 for (String ls: s.split(",")) {
                     final String key = ls.trim();
+                    if (isBadLanguage(key)) {
+                        continue;
+                    }
                     if (!fallbacksMap.containsKey(key)) {
                         fallbacksMap.put(key, cnt);
                     }
                     ++cnt;
                 }
             } else {
-                if (!fallbacksMap.containsKey(s)) {
+                if (!isBadLanguage(s) && !fallbacksMap.containsKey(s)) {
                     fallbacksMap.put(s, cnt);
                 }
             }
@@ -454,11 +472,15 @@ public class LabelService extends AbstractServiceFactory {
          * method starts and returning an empty list means there are no good
          * labels.
          */
+        @SuppressWarnings("checkstyle:npathcomplexity")
         private void fillBestLabels() {
+            bestLabels.clear();
+            if (languageFallbacks.isEmpty()) {
+                return;
+            }
             IChunkedOrderedIterator<ISPO> lookup = tripleStore.getAccessPath(resolvedSubject, resolvedLabelType, null)
                     .iterator();
             try {
-                bestLabels.clear();
                 int bestLabelRank = Integer.MAX_VALUE;
                 boolean uniqueType = uniqueLabelType(resolvedLabelType);
                 while (lookup.hasNext()) {
