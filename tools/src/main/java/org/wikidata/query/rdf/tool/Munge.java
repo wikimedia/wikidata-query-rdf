@@ -194,7 +194,7 @@ public class Munge implements Runnable {
             EntityMungingRdfHandler handler = new EntityMungingRdfHandler(uris, munger, writer);
             parser.setRDFHandler(new NormalizingRdfHandler(handler));
             try {
-                parser.parse(from, uris.entity());
+                parser.parse(from, uris.root());
             } catch (RDFParseException | RDFHandlerException | IOException e) {
                 throw new RuntimeException(e);
             }

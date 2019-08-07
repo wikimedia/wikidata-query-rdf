@@ -25,9 +25,9 @@ public class WikibaseInlineUriFactoryUnitTest extends AbstractRandomizedBlazegra
     @Test
     public void entityAndTruthyAreInlined() {
         BigdataStatement statement = roundTrip("wd:Q23", "wdt:P509", "wd:Q356405");
-        assertThat(statement.getSubject().getIV(), uriIv(uris().entity() + "Q", "23"));
+        assertThat(statement.getSubject().getIV(), uriIv(uris().entityIdToURI("Q"), "23"));
         assertThat(statement.getPredicate().getIV(), uriIv(uris().property(PropertyType.DIRECT) + "P", "509"));
-        assertThat(statement.getObject().getIV(), uriIv(uris().entity() + "Q", "356405"));
+        assertThat(statement.getObject().getIV(), uriIv(uris().entityIdToURI("Q"), "356405"));
     }
 
     @Test

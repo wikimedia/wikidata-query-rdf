@@ -2,7 +2,10 @@ package org.wikidata.query.rdf.common.uri;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,6 +34,7 @@ public class WikibaseUris {
      * Configuration for wikibase host.
      */
     public static final String WIKIBASE_CONCEPT_URI = "wikibaseConceptUri";
+    public static final String ENTITY_PREFIX = "wd";
 
     /**
      * Current URI system. This is static since each instance has only one URI
@@ -214,7 +218,6 @@ public class WikibaseUris {
     /**
      * Return the representation of URI in different scheme.
      * https <-> http
-     * @param uri
      * @return URL string in other scheme
      */
     private String otherScheme(URI uri) {
@@ -268,9 +271,48 @@ public class WikibaseUris {
     /**
      * Uri prefix wikibase uses for entities. The canonical place for the entity
      * itself.
+     * @deprecated Use specific entity functions below.
      */
-    public String entity() {
+    private String entity() {
         return entity;
+    }
+
+    /**
+     * Convert entity ID to full URI.
+     * @return Full entity URI
+     */
+    public String entityIdToURI(String entityId) {
+        return entity + entityId;
+    }
+
+    /**
+     * Convert entity URI to entity ID.
+     * @return entity ID, or original string if it wasn't entity URI.
+     */
+    public String entityURItoId(String uri) {
+        if (uri.startsWith(entity)) {
+            return uri.substring(entity.length());
+        }
+        return uri;
+    }
+
+    /**
+     * Check whether the argument is an entity URI.
+     */
+    public boolean isEntityURI(String uri) {
+        return uri.startsWith(entity);
+    }
+
+    /**
+     * Get the list of all possible entity prefixes.
+     * For now it's just one but could be more.
+     */
+    public Collection<String> entityURIs() {
+        return Collections.singletonList(entity);
+    }
+
+    public Map<String, String> entityPrefixes() {
+        return Collections.singletonMap(ENTITY_PREFIX, entity);
     }
 
     /**

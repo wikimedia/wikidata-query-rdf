@@ -20,7 +20,7 @@ public class WikibasePrefixesUnitTest extends AbstractRandomizedBlazegraphTestBa
         assertResult(res, both(
                              binds("x", new URIImpl(Ontology.NAMESPACE + "dummy"))
                           ).and(
-                             binds("y", new URIImpl(uris().entity() + "Q123"))
+                             binds("y", new URIImpl(uris().entityIdToURI("Q123")))
                     ));
 
         TupleQueryResult res2 = query("SELECT * WHERE { ?x ?y wd:Q123 }");
@@ -31,7 +31,7 @@ public class WikibasePrefixesUnitTest extends AbstractRandomizedBlazegraphTestBa
     public void testPrefixesRFDSandSchema() {
         add("wd:Q123", SchemaDotOrg.ABOUT, SKOS.ALT_LABEL);
         TupleQueryResult res = query("SELECT * WHERE { ?x schema:about skos:altLabel }");
-        assertResult(res, binds("x", new URIImpl(uris().entity() + "Q123")));
+        assertResult(res, binds("x", new URIImpl(uris().entityIdToURI("Q123"))));
     }
 
 }

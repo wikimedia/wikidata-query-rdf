@@ -133,7 +133,7 @@ public class WikibaseRepositoryIntegrationTest {
         Collection<Statement> statements = repo.get().fetchRdfForEntity(entityId);
         found = false;
         for (Statement statement : statements) {
-            if (statement.getSubject().stringValue().equals(uris.entity() + entityId)) {
+            if (statement.getSubject().stringValue().equals(uris.entityIdToURI(entityId))) {
                 found = true;
                 break;
             }

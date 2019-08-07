@@ -22,15 +22,15 @@ public class WikibaseUrisVocabularyDecl extends BaseVocabularyDecl {
      */
     private static List<String> getUriList(WikibaseUris uris, Collection<String> prefixes) {
         List<String> uriList = new LinkedList<>();
-        uriList.add(uris.entity());
+        uriList.addAll(uris.entityURIs());
         /*
          * Note that these next two lines are required to make
          * WikibaseInlineUriFactory work with
          * IntegerSuffixInlineUriHandler which is required so we can
          * store entities as unsigned integers.
          */
-        uriList.add(uris.entity() + "P");
-        uriList.add(uris.entity() + "Q");
+        uriList.add(uris.entityIdToURI("P"));
+        uriList.add(uris.entityIdToURI("Q"));
         uriList.add(uris.statement());
         uriList.add(uris.reference());
         uriList.add(uris.value());

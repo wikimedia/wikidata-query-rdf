@@ -382,7 +382,7 @@ public class ApiTemplate {
             case URI:
                 return new URIImpl(value);
             case ITEM:
-                return new URIImpl(WikibaseUris.getURISystem().entity() + value.toUpperCase(Locale.ROOT));
+                return new URIImpl(WikibaseUris.getURISystem().entityIdToURI(value.toUpperCase(Locale.ROOT)));
             default:
                 throw new IllegalArgumentException("Can not produce URI for non-URI type " + type);
             }

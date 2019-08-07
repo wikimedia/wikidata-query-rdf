@@ -239,8 +239,8 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
             addDeclIfNew(defaultDecls, p.prefix(), uris.property(p));
         }
         addDeclIfNew(defaultDecls, "wikibase", Ontology.NAMESPACE);
-        addDeclIfNew(defaultDecls, "wd", uris.entity());
-        addDeclIfNew(defaultDecls, "wds", uris.statement());
+        uris.entityPrefixes().forEach((key, value) -> addDeclIfNew(defaultDecls, key, value));
+            addDeclIfNew(defaultDecls, "wds", uris.statement());
         addDeclIfNew(defaultDecls, "wdv", uris.value());
         addDeclIfNew(defaultDecls, "wdref", uris.reference());
         addDeclIfNew(defaultDecls, "wdata", uris.entityData());

@@ -36,7 +36,7 @@ public class WikibaseGeoUnitTest extends AbstractRandomizedBlazegraphTestBase {
 
     @Test
     public void geoExtensionGlobe() {
-        String point = "<" + uris().entity() + "Q1234> Point(5.6 7.8)";
+        String point = "<" + uris().entityIdToURI("Q1234") + "> Point(5.6 7.8)";
         BigdataStatement statement = roundTrip(Ontology.Geo.GLOBE, Ontology.Geo.LATITUDE,
                 pointLiteral(point));
         assertThat(statement.getObject().getIV(), instanceOf(LiteralExtensionIV.class));
@@ -54,7 +54,7 @@ public class WikibaseGeoUnitTest extends AbstractRandomizedBlazegraphTestBase {
         assertEquals(new XSDIntegerIV(new BigInteger("1008819921758573694187894119050371595694851885687493623808")), iv.getDelegate());
     }
 
-    private final String moonURI = uris().entity() + "Q405";
+    private final String moonURI = uris().entityIdToURI("Q405");
 
     private void insertPoints() {
         add("http://Berlin", "wdt:P625",

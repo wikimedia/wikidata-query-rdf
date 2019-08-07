@@ -624,9 +624,10 @@ public class RdfRepositoryIntegrationTest {
     private List<String> makeCleanupList(String entityId, List<Statement> data) {
         Set<String> values = new HashSet<>();
         Set<String> refs = new HashSet<>();
+        String entityURI = uris.entityIdToURI(entityId);
         munger.mungeWithValues(entityId, data,
-                rdfRepository.getValues(singletonList(uris.entity() + entityId)),
-                rdfRepository.getRefs(singletonList(uris.entity() + entityId)),
+                rdfRepository.getValues(singletonList(entityURI)),
+                rdfRepository.getRefs(singletonList(entityURI)),
                 values, refs, null);
         List<String> changeList = new ArrayList<>();
         changeList.addAll(values);

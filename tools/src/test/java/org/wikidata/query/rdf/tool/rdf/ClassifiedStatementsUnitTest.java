@@ -60,7 +60,7 @@ public class ClassifiedStatementsUnitTest {
     }
 
     private Statement entityStatement(String entityId) {
-        return statement(uris.entity() + entityId, "P1", 0);
+        return statement(uris.entityIdToURI(entityId), "P1", 0);
     }
 
     private Statement statementStatement() {

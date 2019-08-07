@@ -101,7 +101,7 @@ public final class StatementHelper {
      */
     public static URI uri(String r) {
         if (r.startsWith("Q") || r.startsWith("P") || r.startsWith("L")) {
-            return new URIImpl(WikibaseUris.getURISystem().entity() + r);
+            return new URIImpl(WikibaseUris.getURISystem().entityIdToURI(r));
         }
         return new URIImpl(r);
     }

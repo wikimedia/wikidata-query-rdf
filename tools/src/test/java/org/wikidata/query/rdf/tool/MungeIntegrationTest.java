@@ -185,7 +185,7 @@ public class MungeIntegrationTest {
         TupleQueryResult results = rdfClient.query(uris.prefixes(new StringBuilder())
                 .append("SELECT ?x WHERE { wd:L2 ontolex:lexicalForm/wdt:P7 ?x }").toString());
         assertTrue(results.hasNext());
-        assertThat(results.next(), binds("x", new URIImpl(uris.entity() + "Q3")));
+        assertThat(results.next(), binds("x", new URIImpl(uris.entityIdToURI("Q3"))));
         // TODO: senses
     }
 }
