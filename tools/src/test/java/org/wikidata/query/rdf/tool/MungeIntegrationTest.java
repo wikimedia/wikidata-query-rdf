@@ -34,7 +34,8 @@ import org.openrdf.query.TupleQueryResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Ontology;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.Munge.AlwaysOutputPicker;
 import org.wikidata.query.rdf.tool.Munge.Httpd;
 import org.wikidata.query.rdf.tool.Munge.OutputPicker;
@@ -55,7 +56,7 @@ public class MungeIntegrationTest {
     /**
      * Wikibase uris to test with.
      */
-    private final WikibaseUris uris = WikibaseUris.forHost("test.wikidata.org");
+    private final UrisScheme uris = UriSchemeFactory.forHost("test.wikidata.org");
 
     @Rule
     public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq");

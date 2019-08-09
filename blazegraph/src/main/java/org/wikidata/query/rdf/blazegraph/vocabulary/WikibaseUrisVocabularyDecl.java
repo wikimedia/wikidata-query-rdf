@@ -3,7 +3,7 @@ package org.wikidata.query.rdf.blazegraph.vocabulary;
 import java.util.Collection;
 import java.util.List;
 
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 import com.bigdata.rdf.vocab.BaseVocabularyDecl;
 import com.google.common.collect.ImmutableList;
@@ -19,7 +19,7 @@ public class WikibaseUrisVocabularyDecl extends BaseVocabularyDecl {
      * Get the list of URIs we will import.
      * @param uris Wikibase URIs handler
      */
-    private static List<String> getUriList(WikibaseUris uris, Collection<String> prefixes) {
+    private static List<String> getUriList(UrisScheme uris, Collection<String> prefixes) {
         ImmutableList.Builder<String> uriList = ImmutableList.<String>builder();
         uriList.addAll(uris.entityURIs());
         /*
@@ -38,7 +38,7 @@ public class WikibaseUrisVocabularyDecl extends BaseVocabularyDecl {
         return uriList.build();
     }
 
-    public WikibaseUrisVocabularyDecl(WikibaseUris uris, Collection<String> prefixes) {
+    public WikibaseUrisVocabularyDecl(UrisScheme uris, Collection<String> prefixes) {
         super(getUriList(uris, prefixes).toArray());
     }
 }

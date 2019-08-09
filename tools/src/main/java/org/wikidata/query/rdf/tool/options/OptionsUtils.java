@@ -8,7 +8,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.CliUtils.ForbiddenOk;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 
@@ -76,12 +76,12 @@ public final class OptionsUtils {
         @Option(defaultToNull = true, description = "Commons concept URI for RDF entities")
         String commonsUri();
 
-        static WikibaseUris wikibaseUris(WikibaseOptions wikibaseOptions) {
+        static UrisScheme wikibaseUris(WikibaseOptions wikibaseOptions) {
             String conceptUri = wikibaseOptions.conceptUri();
             if (conceptUri != null) {
                 return UriSchemeFactory.fromConceptUris(conceptUri, wikibaseOptions.commonsUri());
             }
-            return WikibaseUris.forHost(wikibaseOptions.wikibaseHost());
+            return UriSchemeFactory.forHost(wikibaseOptions.wikibaseHost());
         }
 
     }

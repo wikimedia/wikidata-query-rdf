@@ -1,11 +1,11 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.any;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.util.List;
@@ -16,7 +16,7 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.impl.LiteralImpl;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.test.StatementHelper.StatementBuilder;
 import org.wikidata.query.rdf.tool.change.Change;
@@ -32,7 +32,7 @@ public class RdfRepositoryUnitTest {
     @Rule
     public final Randomizer randomizer = new Randomizer();
 
-    private final WikibaseUris uris = UriSchemeFactory.getURISystem();
+    private final UrisScheme uris = UriSchemeFactory.getURISystem();
 
     @Test
     public void batchUpdate() {

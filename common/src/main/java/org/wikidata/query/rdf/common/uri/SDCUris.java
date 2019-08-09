@@ -36,11 +36,11 @@ public class SDCUris extends WikibaseUris {
     /**
      * Federated (Wikidata) URI scheme.
      */
-    private final WikibaseUris federatedUris;
+    private final UrisScheme federatedUris;
 
     public SDCUris(URI commonsUrl, URI wikidataUrl) {
-        super(commonsUrl);
-        federatedUris = new WikibaseUris(wikidataUrl);
+        super(commonsUrl, ENTITY_PREFIX, ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
+        federatedUris = new WikibaseUris(wikidataUrl, WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
     }
 
     @Override

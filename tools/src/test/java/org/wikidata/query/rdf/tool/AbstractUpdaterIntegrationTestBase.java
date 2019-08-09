@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Rule;
 import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.test.CloseableRule;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
@@ -48,7 +48,7 @@ public class AbstractUpdaterIntegrationTestBase {
     @SuppressWarnings("checkstyle:IllegalCatch")
     public void update(int from, int to) {
         ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-        WikibaseUris uris = WikibaseUris.forHost("www.wikidata.org");
+        UrisScheme uris = UriSchemeFactory.forHost("www.wikidata.org");
         try (
             Change.Source<?> source = IdRangeChangeSource.forItems(from, to, 30);
             Updater<?> updater = new Updater<>(

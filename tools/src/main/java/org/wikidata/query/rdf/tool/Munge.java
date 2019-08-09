@@ -1,9 +1,9 @@
 package org.wikidata.query.rdf.tool;
 
 import static java.lang.Boolean.FALSE;
+import static org.wikidata.query.rdf.tool.StreamUtils.utf8;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.handleOptions;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.mungerFromOptions;
-import static org.wikidata.query.rdf.tool.StreamUtils.utf8;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,9 +38,9 @@ import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.tool.options.MungeOptions;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
+import org.wikidata.query.rdf.tool.options.MungeOptions;
 import org.wikidata.query.rdf.tool.options.OptionsUtils;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
@@ -65,7 +65,7 @@ public class Munge implements Runnable {
     @SuppressWarnings("checkstyle:illegalcatch")
     public static void main(String[] args) {
         MungeOptions options = handleOptions(MungeOptions.class, args);
-        WikibaseUris uris = OptionsUtils.WikibaseOptions.wikibaseUris(options);
+        UrisScheme uris = OptionsUtils.WikibaseOptions.wikibaseUris(options);
         Munger munger = mungerFromOptions(options);
 
         int port = parsePort(options.to());
@@ -163,7 +163,7 @@ public class Munge implements Runnable {
     /**
      * Uris for this wikibase instance. Used to match the rdf as its read.
      */
-    private final WikibaseUris uris;
+    private final UrisScheme uris;
     /**
      * Munges the rdf.
      */
@@ -177,7 +177,7 @@ public class Munge implements Runnable {
      */
     private final OutputPicker<Writer> to;
 
-    public Munge(WikibaseUris uris, Munger munger, Reader from, OutputPicker<Writer> to) {
+    public Munge(UrisScheme uris, Munger munger, Reader from, OutputPicker<Writer> to) {
         this.uris = uris;
         this.munger = munger;
         this.from = from;
@@ -230,7 +230,7 @@ public class Munge implements Runnable {
         /**
          * Uris for this instance of wikibase. We match on these.
          */
-        private final WikibaseUris uris;
+        private final UrisScheme uris;
         /**
          * Actually munges the entities!
          */
@@ -264,7 +264,7 @@ public class Munge implements Runnable {
          */
         private Statement lastStatement;
 
-        EntityMungingRdfHandler(WikibaseUris uris, Munger munger, OutputPicker<RDFHandler> next) {
+        EntityMungingRdfHandler(UrisScheme uris, Munger munger, OutputPicker<RDFHandler> next) {
             this.uris = uris;
             this.munger = munger;
             this.next = next;

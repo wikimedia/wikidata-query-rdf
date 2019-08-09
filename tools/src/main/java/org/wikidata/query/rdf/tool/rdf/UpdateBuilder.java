@@ -11,7 +11,7 @@ import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.vocabulary.XMLSchema;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 /**
  * Quick and dirty update builder.
@@ -113,7 +113,7 @@ public class UpdateBuilder {
     /**
      * Bind some uris to a string.
      */
-    public UpdateBuilder bindEntityIds(String from, Collection<String> ids, WikibaseUris uris) {
+    public UpdateBuilder bindEntityIds(String from, Collection<String> ids, UrisScheme uris) {
         StringBuilder b = new StringBuilder(ids.size() * 80);
 
         ids.forEach(s -> b.append('<').append(uris.entityIdToURI(s)).append("> "));

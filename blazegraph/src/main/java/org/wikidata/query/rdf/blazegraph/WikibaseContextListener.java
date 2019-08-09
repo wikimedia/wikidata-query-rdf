@@ -38,12 +38,12 @@ import org.wikidata.query.rdf.common.uri.Mediawiki;
 import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontolex;
 import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 import com.bigdata.bop.IValueExpression;
 import com.bigdata.rdf.graph.impl.bd.GASService;
@@ -234,7 +234,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      * Add standard prefixes to the system, but only if they have not already been declared, e.g. in a prefixes.conf
      * @param uris Wikidata URIs to use
      */
-    private static void addPrefixes(final WikibaseUris uris) {
+    private static void addPrefixes(final UrisScheme uris) {
         final Map<String, String> defaultDecls = PrefixDeclProcessor.defaultDecls;
         for (PropertyType p: PropertyType.values()) {
             addDeclIfNew(defaultDecls, p.prefix(), uris.property(p));

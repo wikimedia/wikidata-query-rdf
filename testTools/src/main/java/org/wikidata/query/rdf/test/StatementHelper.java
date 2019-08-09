@@ -16,12 +16,12 @@ import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 import com.google.common.collect.ImmutableList;
 
@@ -107,13 +107,13 @@ public final class StatementHelper {
         return new URIImpl(r);
     }
 
-    public static List<Statement> basicEntity(WikibaseUris uris, String id) {
+    public static List<Statement> basicEntity(UrisScheme uris, String id) {
         return basicEntity(uris, id, "a revision number I promise", "a date I promise");
     }
     /**
      * Construct statements about a basic entity.
      */
-    public static List<Statement> basicEntity(WikibaseUris uris, String id, String versionString, String dateString) {
+    public static List<Statement> basicEntity(UrisScheme uris, String id, String versionString, String dateString) {
         Literal version = new LiteralImpl(versionString);
         List<Statement> statements = new ArrayList<>();
         String entityDataUri = uris.entityData() + id;
@@ -181,7 +181,7 @@ public final class StatementHelper {
         /**
          * URI system.
          */
-        private final WikibaseUris uris = UriSchemeFactory.getURISystem();
+        private final UrisScheme uris = UriSchemeFactory.getURISystem();
 
         public StatementBuilder(String entityId) {
             this.entityId = entityId;

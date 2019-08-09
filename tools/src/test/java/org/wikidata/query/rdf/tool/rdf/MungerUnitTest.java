@@ -28,14 +28,14 @@ import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.wikidata.query.rdf.common.uri.GeoSparql;
 import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.test.StatementHelper;
 import org.wikidata.query.rdf.tool.change.Change;
@@ -49,7 +49,7 @@ public class MungerUnitTest {
     @Rule
     public final Randomizer randomizer = new Randomizer();
 
-    private final WikibaseUris uris = UriSchemeFactory.getURISystem();
+    private final UrisScheme uris = UriSchemeFactory.getURISystem();
     private final String bogus = "http://example.com/bogus";
 
     @Test
@@ -444,7 +444,7 @@ public class MungerUnitTest {
          */
         private Munger.Builder mungerBuilder;
 
-        private Mungekin(WikibaseUris uris, String id) {
+        private Mungekin(UrisScheme uris, String id) {
             this.id = id;
             mungerBuilder = Munger.builder(uris);
             statements = StatementHelper.basicEntity(uris, id, "1234", "2019-01-13T09:06:53Z");

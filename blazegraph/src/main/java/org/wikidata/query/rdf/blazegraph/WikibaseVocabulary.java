@@ -17,7 +17,7 @@ import org.wikidata.query.rdf.blazegraph.vocabulary.SchemaDotOrgVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.SchemaDotOrgVocabularyDecl2;
 import org.wikidata.query.rdf.blazegraph.vocabulary.WikibaseUrisVocabularyDecl;
 import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
+import org.wikidata.query.rdf.common.uri.PropertyType;
 
 import com.bigdata.rdf.vocab.DefaultBigdataVocabulary;
 import com.bigdata.rdf.vocab.core.BigdataCoreVocabulary_v20160317;

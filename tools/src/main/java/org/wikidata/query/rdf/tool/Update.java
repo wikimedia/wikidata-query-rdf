@@ -32,17 +32,17 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.options.OptionsUtils.WikibaseOptions;
 import org.wikidata.query.rdf.tool.options.UpdateOptions;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
-import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 import org.wikidata.query.rdf.tool.utils.FileStreamDumper;
 import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
 import org.wikidata.query.rdf.tool.utils.StreamDumper;
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.jmx.JmxReporter;
@@ -125,7 +125,7 @@ public final class Update {
                     UpdateOptions.revisionDuration(options));
             closer.register(wikibaseRepository);
 
-            WikibaseUris wikibaseUris = WikibaseOptions.wikibaseUris(options);
+            UrisScheme wikibaseUris = WikibaseOptions.wikibaseUris(options);
             URI root = wikibaseRepository.getUris().builder().build();
 
             URI sparqlUri = UpdateOptions.sparqlUri(options);
@@ -182,7 +182,7 @@ public final class Update {
      */
     private static Updater<? extends Change.Batch> createUpdater(
             WikibaseRepository wikibaseRepository,
-            WikibaseUris uris,
+            UrisScheme uris,
             RdfRepository rdfRepository,
             Change.Source<? extends Change.Batch> changeSource,
             Munger munger,

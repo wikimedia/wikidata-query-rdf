@@ -13,11 +13,11 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.LiteralImpl;
 import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.test.Randomizer;
 
 /**
@@ -39,7 +39,7 @@ public class ExpandedStatementBuilder {
     /**
      * Uris for the wikibase instance.
      */
-    private final WikibaseUris uris;
+    private final UrisScheme uris;
     /**
      * Entity id that is the subject of the statement.
      */
@@ -113,7 +113,7 @@ public class ExpandedStatementBuilder {
     /**
      * Setup required configuration. Everything else can be configured.
      */
-    public ExpandedStatementBuilder(Randomizer randomizer, WikibaseUris uris, String entity, String property, Object value) {
+    public ExpandedStatementBuilder(Randomizer randomizer, UrisScheme uris, String entity, String property, Object value) {
         this.randomizer = randomizer;
         this.uris = uris;
         this.entity = entity;

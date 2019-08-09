@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.FatalException;
@@ -57,7 +57,7 @@ public class RdfRepository {
     /**
      * Uris for wikibase.
      */
-    private final WikibaseUris uris;
+    private final UrisScheme uris;
 
     /**
      * SPARQL for a portion of the update.
@@ -105,7 +105,7 @@ public class RdfRepository {
      *                    If that setting is changed, this one should change too, otherwise we get POST errors on big updates.
      *                    See: https://phabricator.wikimedia.org/T210235
      */
-    public RdfRepository(WikibaseUris uris, RdfClient rdfClient, long maxPostSize) {
+    public RdfRepository(UrisScheme uris, RdfClient rdfClient, long maxPostSize) {
         this.uris = uris;
         this.rdfClient = rdfClient;
 

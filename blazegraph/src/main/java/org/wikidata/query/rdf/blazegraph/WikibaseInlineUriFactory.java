@@ -3,9 +3,9 @@ package org.wikidata.query.rdf.blazegraph;
 import org.wikidata.query.rdf.blazegraph.inline.uri.InlineFixedWidthHexIntegerURIHandler;
 import org.wikidata.query.rdf.blazegraph.inline.uri.UndecoratedUuidInlineUriHandler;
 import org.wikidata.query.rdf.common.uri.CommonValues;
+import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 import com.bigdata.rdf.internal.InlineURIFactory;
 import com.bigdata.rdf.internal.InlineURIHandler;
@@ -30,7 +30,7 @@ import com.bigdata.rdf.internal.TrailingSlashRemovingInlineUriHandler;
  * forbid them entirely.
  */
 public class WikibaseInlineUriFactory extends InlineURIFactory {
-    private static final WikibaseUris uris = UriSchemeFactory.getURISystem();
+    private static final UrisScheme uris = UriSchemeFactory.getURISystem();
 
     public WikibaseInlineUriFactory() {
         /*

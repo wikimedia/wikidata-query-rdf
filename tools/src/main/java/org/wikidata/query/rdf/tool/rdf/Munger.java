@@ -35,13 +35,13 @@ import org.wikidata.query.rdf.common.uri.Ontolex;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.Ontology.Lexeme;
 import org.wikidata.query.rdf.common.uri.Ontology.Quantity;
+import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 
@@ -66,7 +66,7 @@ public final class Munger {
     /**
      * Wikibase uris we're working with.
      */
-    private final WikibaseUris uris;
+    private final UrisScheme uris;
     /**
      * Null if not in limit label languages mode and a set of allowed languages
      * if in it.
@@ -104,7 +104,7 @@ public final class Munger {
      */
     private final Map<String, FormatHandler> formatHandlers;
 
-    private Munger(WikibaseUris uris, Set<String> limitLabelLanguages, List<String> singleLabelModeLanguages,
+    private Munger(UrisScheme uris, Set<String> limitLabelLanguages, List<String> singleLabelModeLanguages,
                    boolean removeSiteLinks, boolean keepTypes, Map<String, FormatHandler> formatHandlers) {
         this.uris = uris;
         this.limitLabelLanguages = limitLabelLanguages;
@@ -192,20 +192,20 @@ public final class Munger {
         return munge(entityId, statements, emptySet(), emptySet(), null);
     }
 
-    public static Builder builder(WikibaseUris uris) {
+    public static Builder builder(UrisScheme uris) {
         return new Builder(uris);
     }
 
     public static final class Builder {
 
-        private WikibaseUris uris;
+        private UrisScheme uris;
         private Collection<String> limitLabelLanguages;
         private List<String> singleLabelModeLanguages;
         private boolean removeSiteLinks;
         private boolean keepTypes;
         private Map<String, FormatHandler> formatHandlers = new HashMap<>();
 
-        Builder(WikibaseUris uris) {
+        Builder(UrisScheme uris) {
             this.uris = uris;
 
             // 0.0.1 has format lat-long, 0.0.2 has format long-lat
@@ -1069,7 +1069,7 @@ public final class Munger {
     public static class BadSubjectException extends ContainedException {
         private static final long serialVersionUID = -4869053066714948939L;
 
-        public BadSubjectException(Set<String> badSubjects, WikibaseUris uris) {
+        public BadSubjectException(Set<String> badSubjects, UrisScheme uris) {
             super(String.format(Locale.ROOT,
                     "Unrecognized subjects:  %s.  Expected only sitelinks and subjects starting with %s and %s",
                     badSubjects, uris.entityData(), uris.entityURIs()));

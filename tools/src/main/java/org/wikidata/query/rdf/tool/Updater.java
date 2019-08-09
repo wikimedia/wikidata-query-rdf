@@ -22,7 +22,7 @@ import java.util.concurrent.Future;
 import org.openrdf.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.Change.DelayedChange;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
@@ -95,7 +95,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
     /**
      * Uris for wikibase.
      */
-    private final WikibaseUris uris;
+    private final UrisScheme uris;
     /**
      * Queue of delayed changes.
      * Change is delayed if RDF data produces lower revision than change - this means we're
@@ -117,8 +117,8 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
     private final boolean verify;
 
     Updater(Change.Source<B> changeSource, WikibaseRepository wikibase, RdfRepository rdfRepository,
-                   Munger munger, ExecutorService executor, int pollDelay, WikibaseUris uris, boolean verify,
-                   MetricRegistry metricRegistry) {
+            Munger munger, ExecutorService executor, int pollDelay, UrisScheme uris, boolean verify,
+            MetricRegistry metricRegistry) {
         this.changeSource = changeSource;
         this.wikibase = wikibase;
         this.rdfRepository = rdfRepository;

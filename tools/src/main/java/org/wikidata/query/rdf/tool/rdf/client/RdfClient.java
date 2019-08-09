@@ -27,7 +27,7 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 
@@ -206,7 +206,7 @@ public class RdfClient {
      * @param uris URI scheme
      * @return Collection of entity ID strings resulting from the query.
      */
-    public List<String> getEntityIds(String query, String valueBinding, WikibaseUris uris) {
+    public List<String> getEntityIds(String query, String valueBinding, UrisScheme uris) {
         return resultToList(query(query), valueBinding, uris::entityURItoId);
     }
 

@@ -1,5 +1,9 @@
 package org.wikidata.query.rdf.common.uri;
 
+import static org.wikidata.query.rdf.common.uri.WikibaseUris.WIKIBASE_ENTITY_DATA_PREFIX;
+import static org.wikidata.query.rdf.common.uri.WikibaseUris.WIKIBASE_ENTITY_PREFIX;
+import static org.wikidata.query.rdf.common.uri.WikibaseUris.WIKIBASE_INITIALS;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -11,7 +15,7 @@ public final class UriSchemeFactory {
     /**
      * A WikibaseUris instance for wikidata.org.
      */
-    public static final WikibaseUris WIKIDATA = WikibaseUris.forHost("www.wikidata.org");
+    public static final UrisScheme WIKIDATA = forHost("www.wikidata.org");
     /**
      * Configuration for wikibase host.
      */
@@ -29,7 +33,7 @@ public final class UriSchemeFactory {
      * system.
      * This URI system is used for Blazegraph and tests. Tools construct their own URI system.
      */
-    private static final WikibaseUris uriSystem = initializeURISystem();
+    private static final UrisScheme uriSystem = initializeURISystem();
 
     /**
      * Private ctor.
@@ -39,21 +43,19 @@ public final class UriSchemeFactory {
 
     /**
      * Return current URI system.
-     *
-     * @return Current URI system.
      */
-    public static WikibaseUris getURISystem() {
+    public static UrisScheme getURISystem() {
         return uriSystem;
     }
 
-    private static WikibaseUris initializeURISystem() {
+    private static UrisScheme initializeURISystem() {
         String wikibaseUriProperty = System.getProperty(WIKIBASE_CONCEPT_URI);
         if (wikibaseUriProperty != null) {
             return fromConceptUris(wikibaseUriProperty, System.getProperty(COMMONS_CONCEPT_URI));
         }
         String wikibaseHostProperty = System.getProperty(WIKIBASE_HOST_PROPERTY);
         if (wikibaseHostProperty != null) {
-            return WikibaseUris.forHost(wikibaseHostProperty);
+            return forHost(wikibaseHostProperty);
         } else {
             return WIKIDATA;
         }
@@ -70,11 +72,25 @@ public final class UriSchemeFactory {
             if (commonsConceptUri != null) {
                 return new SDCUris(new URI(commonsConceptUri), new URI(wikibaseConceptUri));
             } else {
-                return new WikibaseUris(new URI(wikibaseConceptUri));
+                return new WikibaseUris(new URI(wikibaseConceptUri), WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
             }
         } catch (URISyntaxException e) {
             throw new RuntimeException("Bad URI: " + wikibaseConceptUri + (commonsConceptUri != null ? ", " + commonsConceptUri : ""), e);
         }
     }
 
+    /**
+     * Build for a specific wikibase host. See the WIKIDATA constant for how you
+     * can use this.
+     */
+    public static UrisScheme forHost(String host) {
+        try {
+            if (host == null) {
+                return WIKIDATA;
+            }
+            return new WikibaseUris(new URI("http://" + host), WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Bad URI host: " + host, e);
+        }
+    }
 }

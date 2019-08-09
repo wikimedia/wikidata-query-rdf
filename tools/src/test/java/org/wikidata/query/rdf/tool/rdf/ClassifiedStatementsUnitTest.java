@@ -7,11 +7,11 @@ import static org.wikidata.query.rdf.test.StatementHelper.statement;
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 public class ClassifiedStatementsUnitTest {
 
-    private final WikibaseUris uris = UriSchemeFactory.getURISystem();
+    private final UrisScheme uris = UriSchemeFactory.getURISystem();
 
     @Test
     public void statementsAreClassified() {

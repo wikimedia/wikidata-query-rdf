@@ -38,14 +38,14 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 import org.wikidata.query.rdf.common.uri.Ontolex;
 import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
-import org.wikidata.query.rdf.common.uri.WikibaseUris.PropertyType;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.test.StatementHelper.StatementBuilder;
 import org.wikidata.query.rdf.tool.RdfRepositoryForTesting;
@@ -62,7 +62,7 @@ public class RdfRepositoryIntegrationTest {
     /**
      * Wikibase uris to test with.
      */
-    private final WikibaseUris uris = UriSchemeFactory.getURISystem();
+    private final UrisScheme uris = UriSchemeFactory.getURISystem();
     private final Munger munger = Munger.builder(uris).build();
 
     @Rule

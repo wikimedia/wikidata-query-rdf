@@ -8,10 +8,10 @@ import java.net.URISyntaxException;
 import org.junit.Before;
 import org.junit.Test;
 import org.wikidata.query.rdf.common.uri.SDCUris;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 public class SDCUrisUnitTest {
-    private WikibaseUris uris;
+    private UrisScheme uris;
 
     @Before
     public void initURIs() throws URISyntaxException {

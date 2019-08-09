@@ -9,7 +9,7 @@ import java.util.Set;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.openrdf.model.Statement;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 /**
  * Sort statements into a set of specialized collections, by subject.
@@ -25,11 +25,11 @@ public class ClassifiedStatements {
     public final List<Statement> entityStatements = new ArrayList<>();
     /** Not entity, not statement, not value and not reference. */
     public final Set<Statement> aboutStatements = new HashSet<>();
-    private final WikibaseUris uris;
+    private final UrisScheme uris;
 
     private long dataSize;
 
-    public ClassifiedStatements(WikibaseUris uris) {
+    public ClassifiedStatements(UrisScheme uris) {
         this.uris = uris;
     }
 

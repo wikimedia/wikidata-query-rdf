@@ -7,7 +7,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.Change.Source;
 import org.wikidata.query.rdf.tool.rdf.Munger;
@@ -30,7 +30,7 @@ public class TestUpdater<B extends Change.Batch> extends Updater<B> {
 
     public TestUpdater(Source<B> changeSource, WikibaseRepository wikibase,
                        RdfRepository rdfRepository, Munger munger,
-                       ExecutorService executor, int pollDelay, WikibaseUris uris,
+                       ExecutorService executor, int pollDelay, UrisScheme uris,
                        boolean verify, MetricRegistry metricRegistry) {
         super(changeSource, wikibase, rdfRepository, munger, executor, pollDelay, uris,
                 verify, metricRegistry);
