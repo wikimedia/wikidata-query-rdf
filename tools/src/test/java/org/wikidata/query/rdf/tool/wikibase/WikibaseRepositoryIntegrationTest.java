@@ -23,8 +23,8 @@ import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
 import org.openrdf.model.Statement;
-import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.test.CloseableRule;
 import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.tool.change.Change;
@@ -45,7 +45,7 @@ public class WikibaseRepositoryIntegrationTest {
     @Rule
     public final CloseableRule<WikibaseRepository> repo = autoClose(new WikibaseRepository("https://" + HOST, new MetricRegistry()));
     private final CloseableRule<WikibaseRepository> proxyRepo = autoClose(new WikibaseRepository("http://localhost:8812", new MetricRegistry()));
-    private final UrisScheme uris = UriSchemeFactory.forHost(HOST);
+    private final UrisScheme uris = UrisSchemeFactory.forHost(HOST);
 
     @Test
     @SuppressWarnings("unchecked")

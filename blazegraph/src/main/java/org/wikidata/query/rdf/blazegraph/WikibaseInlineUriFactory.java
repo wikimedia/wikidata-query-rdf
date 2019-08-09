@@ -4,7 +4,7 @@ import org.wikidata.query.rdf.blazegraph.inline.uri.InlineFixedWidthHexIntegerUR
 import org.wikidata.query.rdf.blazegraph.inline.uri.UndecoratedUuidInlineUriHandler;
 import org.wikidata.query.rdf.common.uri.CommonValues;
 import org.wikidata.query.rdf.common.uri.PropertyType;
-import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 import com.bigdata.rdf.internal.InlineURIFactory;
@@ -30,7 +30,7 @@ import com.bigdata.rdf.internal.TrailingSlashRemovingInlineUriHandler;
  * forbid them entirely.
  */
 public class WikibaseInlineUriFactory extends InlineURIFactory {
-    private static final UrisScheme uris = UriSchemeFactory.getURISystem();
+    private static final UrisScheme uris = UrisSchemeFactory.getURISystem();
 
     public WikibaseInlineUriFactory() {
         /*

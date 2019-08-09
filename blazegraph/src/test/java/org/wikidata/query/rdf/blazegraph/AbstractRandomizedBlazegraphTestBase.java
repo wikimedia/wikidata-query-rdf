@@ -14,7 +14,7 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
 import org.wikidata.query.rdf.common.uri.Ontology;
-import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.common.uri.PropertyType;
 
@@ -39,7 +39,7 @@ public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlaz
     /**
      * Which uris this test uses.
      */
-    private UrisScheme uris = UriSchemeFactory.getURISystem();
+    private UrisScheme uris = UrisSchemeFactory.getURISystem();
 
     /**
      * The uris this test uses.

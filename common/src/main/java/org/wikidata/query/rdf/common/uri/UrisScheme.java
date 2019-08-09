@@ -3,6 +3,9 @@ package org.wikidata.query.rdf.common.uri;
 import java.util.Collection;
 import java.util.Map;
 
+import javax.annotation.concurrent.Immutable;
+
+@Immutable
 public interface UrisScheme {
     /**
      * Add the prefixes for all related uris.
@@ -85,4 +88,8 @@ public interface UrisScheme {
      * Uri prefix wikibase uses for property types, from short suffix.
      */
     String property(String suffix);
+
+    boolean supportsUri(String uri);
+
+    boolean supportsInitial(String entityId);
 }

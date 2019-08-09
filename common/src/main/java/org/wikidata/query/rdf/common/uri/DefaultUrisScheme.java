@@ -1,11 +1,15 @@
 package org.wikidata.query.rdf.common.uri;
 
+import static com.google.common.collect.ImmutableList.copyOf;
+
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.ImmutableList;
+import javax.annotation.concurrent.Immutable;
+
 import com.google.common.collect.ImmutableMap;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -15,24 +19,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * See the documentation for Wikidata implementation here:
  * https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format
  */
-public class WikibaseUris implements UrisScheme {
+@Immutable
+public class DefaultUrisScheme implements UrisScheme {
 
-    /**
-     * Prefix for entity URI.
-     */
-    public static final String WIKIBASE_ENTITY_PREFIX = "wd";
-    /**
-     * Prefix for entity data URI.
-     */
-    public static final String WIKIBASE_ENTITY_DATA_PREFIX = "wdata";
-    /**
-     * Initial letters of supported Wikibase items.
-     * L is not included because L IDs can not be inlined due
-     * to conflict between Lexemes, Forms and Senses.
-     * The order is important here - for compatibility with existing vocabularies,
-     * it must be P then Q.
-     */
-    public static final Collection<String> WIKIBASE_INITIALS = ImmutableList.of("Q", "P");
     /**
      * The root of the wikibase uris - http://www.wikidata.org for Wikidata.
      */
@@ -76,9 +65,9 @@ public class WikibaseUris implements UrisScheme {
 
     private final String entityPrefix;
     private final String entityDataPrefix;
-    private final Collection<String> initials;
+    private final List<String> initials;
 
-    public WikibaseUris(URI conceptUrl, String entityPrefix, String entityDataPrefix, Collection<String> wikibaseInitials) {
+    public DefaultUrisScheme(URI conceptUrl, String entityPrefix, String entityDataPrefix, List<String> wikibaseInitials) {
         root = conceptUrl.toString().replaceAll("/+$", "");
         entityData = root + "/wiki/Special:EntityData/";
         entityDataHttps = otherScheme(conceptUrl) + "/wiki/Special:EntityData/";
@@ -89,7 +78,7 @@ public class WikibaseUris implements UrisScheme {
         prop = root + "/prop/";
         this.entityPrefix = entityPrefix;
         this.entityDataPrefix = entityDataPrefix;
-        initials = wikibaseInitials;
+        initials = copyOf(wikibaseInitials);
     }
 
     /**
@@ -136,6 +125,10 @@ public class WikibaseUris implements UrisScheme {
         return entityDataHttps;
     }
 
+    /**
+     * Uri prefix wikibase uses for entities. The canonical place for the entity
+     * itself.
+     */
     protected String entity() {
         return entity;
     }
@@ -169,7 +162,7 @@ public class WikibaseUris implements UrisScheme {
     }
 
     @Override
-    public Collection<String> entityInitials() {
+    public List<String> entityInitials() {
         return initials;
     }
 
@@ -196,6 +189,21 @@ public class WikibaseUris implements UrisScheme {
     @Override
     public String property(String suffix) {
         return prop + suffix;
+    }
+
+    @Override
+    public boolean supportsUri(String uri) {
+        return uri.startsWith(root());
+    }
+
+    @Override
+    public boolean supportsInitial(String entityId) {
+        for (String initial : entityInitials()) {
+            if (entityId.startsWith(initial)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

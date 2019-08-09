@@ -20,7 +20,7 @@ import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
-import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 import com.google.common.collect.ImmutableList;
@@ -46,7 +46,7 @@ public final class StatementHelper {
             throw new IllegalArgumentException("Illegal object:  " + o);
         }
         if (p.startsWith("P")) {
-            p = UriSchemeFactory.getURISystem().property(PropertyType.CLAIM) + p;
+            p = UrisSchemeFactory.getURISystem().property(PropertyType.CLAIM) + p;
         }
         return new StatementImpl(uri(s), uri(p), oValue);
     }
@@ -102,7 +102,7 @@ public final class StatementHelper {
      */
     public static URI uri(String r) {
         if (r.startsWith("Q") || r.startsWith("P") || r.startsWith("L") || r.startsWith("M")) {
-            return new URIImpl(UriSchemeFactory.getURISystem().entityIdToURI(r));
+            return new URIImpl(UrisSchemeFactory.getURISystem().entityIdToURI(r));
         }
         return new URIImpl(r);
     }
@@ -181,7 +181,7 @@ public final class StatementHelper {
         /**
          * URI system.
          */
-        private final UrisScheme uris = UriSchemeFactory.getURISystem();
+        private final UrisScheme uris = UrisSchemeFactory.getURISystem();
 
         public StatementBuilder(String entityId) {
             this.entityId = entityId;

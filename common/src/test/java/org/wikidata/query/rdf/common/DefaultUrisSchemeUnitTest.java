@@ -1,23 +1,23 @@
 package org.wikidata.query.rdf.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.wikidata.query.rdf.common.uri.WikibaseUris.WIKIBASE_ENTITY_DATA_PREFIX;
-import static org.wikidata.query.rdf.common.uri.WikibaseUris.WIKIBASE_ENTITY_PREFIX;
-import static org.wikidata.query.rdf.common.uri.WikibaseUris.WIKIBASE_INITIALS;
+import static org.wikidata.query.rdf.common.uri.UrisConstants.WIKIBASE_ENTITY_DATA_PREFIX;
+import static org.wikidata.query.rdf.common.uri.UrisConstants.WIKIBASE_ENTITY_PREFIX;
+import static org.wikidata.query.rdf.common.uri.UrisConstants.WIKIBASE_INITIALS;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.junit.Test;
-import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
-import org.wikidata.query.rdf.common.uri.WikibaseUris;
+import org.wikidata.query.rdf.common.uri.DefaultUrisScheme;
 
-public class WikibaseUrisUnitTest {
+public class DefaultUrisSchemeUnitTest {
 
     @Test
     public void defaultUris() {
-        UrisScheme uris = UriSchemeFactory.getURISystem();
+        UrisScheme uris = UrisSchemeFactory.getURISystem();
         assertThat(uris.entityURIs()).contains("http://www.wikidata.org/entity/");
         assertThat(uris.entityIdToURI("Q1")).isEqualTo("http://www.wikidata.org/entity/Q1");
         assertThat(uris.entityIdToURI("P1")).isEqualTo("http://www.wikidata.org/entity/P1");
@@ -27,7 +27,7 @@ public class WikibaseUrisUnitTest {
 
     @Test
     public void fromHost() {
-        UrisScheme uris = UriSchemeFactory.forHost("acme.test");
+        UrisScheme uris = UrisSchemeFactory.forHost("acme.test");
         assertThat(uris.entityURIs()).contains("http://acme.test/entity/");
         assertThat(uris.entityIdToURI("Q1")).isEqualTo("http://acme.test/entity/Q1");
         assertThat(uris.entityIdToURI("P1")).isEqualTo("http://acme.test/entity/P1");
@@ -37,7 +37,7 @@ public class WikibaseUrisUnitTest {
 
     @Test
     public void conceptUri() throws URISyntaxException {
-        UrisScheme uris = new WikibaseUris(new URI("http://acme.test/prefix"), WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
+        UrisScheme uris = new DefaultUrisScheme(new URI("http://acme.test/prefix"), WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
         assertThat(uris.entityURIs()).contains("http://acme.test/prefix/entity/");
         assertThat(uris.entityIdToURI("Q1")).isEqualTo("http://acme.test/prefix/entity/Q1");
         assertThat(uris.entityIdToURI("P1")).isEqualTo("http://acme.test/prefix/entity/P1");
@@ -47,7 +47,7 @@ public class WikibaseUrisUnitTest {
 
     @Test
     public void conceptUriHttps() throws URISyntaxException {
-        UrisScheme uris = new WikibaseUris(new URI("https://acme2.test"), WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
+        UrisScheme uris = new DefaultUrisScheme(new URI("https://acme2.test"), WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
         assertThat(uris.entityURIs()).contains("https://acme2.test/entity/");
         assertThat(uris.entityIdToURI("Q1")).isEqualTo("https://acme2.test/entity/Q1");
         assertThat(uris.entityIdToURI("P1")).isEqualTo("https://acme2.test/entity/P1");
@@ -57,7 +57,7 @@ public class WikibaseUrisUnitTest {
 
     @Test
     public void conceptUriSlash() throws URISyntaxException {
-        UrisScheme uris = new WikibaseUris(new URI("http://acme3.test/"), WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
+        UrisScheme uris = new DefaultUrisScheme(new URI("http://acme3.test/"), WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
         assertThat(uris.entityURIs()).contains("http://acme3.test/entity/");
         assertThat(uris.entityIdToURI("Q1")).isEqualTo("http://acme3.test/entity/Q1");
         assertThat(uris.entityIdToURI("P1")).isEqualTo("http://acme3.test/entity/P1");

@@ -15,7 +15,7 @@ import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.LiteralImpl;
 import org.wikidata.query.rdf.common.uri.RDFS;
-import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.test.StatementHelper.StatementBuilder;
@@ -32,7 +32,7 @@ public class RdfRepositoryUnitTest {
     @Rule
     public final Randomizer randomizer = new Randomizer();
 
-    private final UrisScheme uris = UriSchemeFactory.getURISystem();
+    private final UrisScheme uris = UrisSchemeFactory.getURISystem();
 
     @Test
     public void batchUpdate() {

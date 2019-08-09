@@ -6,12 +6,12 @@ import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 import org.junit.Test;
 import org.openrdf.model.Statement;
-import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 public class ClassifiedStatementsUnitTest {
 
-    private final UrisScheme uris = UriSchemeFactory.getURISystem();
+    private final UrisScheme uris = UrisSchemeFactory.getURISystem();
 
     @Test
     public void statementsAreClassified() {

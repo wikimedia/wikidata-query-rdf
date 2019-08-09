@@ -34,7 +34,7 @@ import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
-import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.test.StatementHelper;
@@ -49,7 +49,7 @@ public class MungerUnitTest {
     @Rule
     public final Randomizer randomizer = new Randomizer();
 
-    private final UrisScheme uris = UriSchemeFactory.getURISystem();
+    private final UrisScheme uris = UrisSchemeFactory.getURISystem();
     private final String bogus = "http://example.com/bogus";
 
     @Test

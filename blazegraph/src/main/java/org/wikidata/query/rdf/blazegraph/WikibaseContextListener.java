@@ -42,7 +42,7 @@ import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
-import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 import com.bigdata.bop.IValueExpression;
@@ -183,7 +183,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         // wikibase:decodeUri
         FunctionRegistry.add(new URIImpl(Ontology.NAMESPACE + "decodeUri"), getDecodeUriBOpFactory());
 
-        addPrefixes(UriSchemeFactory.getURISystem());
+        addPrefixes(UrisSchemeFactory.getURISystem());
 
         log.info("Wikibase services initialized.");
     }
