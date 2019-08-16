@@ -33,8 +33,10 @@ public class WikibaseUris {
      * Initial letters of supported Wikibase items.
      * L is not included because L IDs can not be inlined due
      * to conflict between Lexemes, Forms and Senses.
+     * The order is important here - for compatibility with existing vocabularies,
+     * it must be P then Q.
      */
-    private static final ImmutableList<String> WIKIBASE_INITIALS = ImmutableList.of("Q", "P");
+    private static final ImmutableList<String> WIKIBASE_INITIALS = ImmutableList.of("P", "Q");
 
     /**
      * Property types used in the ontology.
