@@ -9,7 +9,7 @@ CHUNK=100000
 SKIPSITE=
 LANGS=
 
-while getopts d:f:l:s option
+while getopts d:f:l:c:s option
 do
   case "${option}"
   in
@@ -17,6 +17,7 @@ do
 	f) FROM=${OPTARG};;
 	l) LANGS=${OPTARG};;
 	s) SKIPSITE=1;;
+	c) CHUNK=${OPTARG}
   esac
 done
 
@@ -25,7 +26,7 @@ shift $((OPTIND-1))
 
 if [ -z "$FROM" -o ! -f "$FROM" ]
 then
-  echo "Usage: $0 -f <dumpfile> [-d <directory>] [-l languages]"
+  echo "Usage: $0 -f <dumpfile> [-d <directory>] [-l languages] [-c CHUNK-SIZE]"
   exit 1
 fi
 if [ -z "$LANGS" ]; then
