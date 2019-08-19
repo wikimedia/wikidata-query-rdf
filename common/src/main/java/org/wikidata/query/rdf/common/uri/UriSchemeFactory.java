@@ -27,6 +27,7 @@ public final class UriSchemeFactory {
     /**
      * Current URI system. This is static since each instance has only one URI
      * system.
+     * This URI system is used for Blazegraph and tests. Tools construct their own URI system.
      */
     private static final WikibaseUris uriSystem = initializeURISystem();
 
@@ -48,16 +49,7 @@ public final class UriSchemeFactory {
     private static WikibaseUris initializeURISystem() {
         String wikibaseUriProperty = System.getProperty(WIKIBASE_CONCEPT_URI);
         if (wikibaseUriProperty != null) {
-            String commonsUriProperty = System.getProperty(COMMONS_CONCEPT_URI);
-            try {
-                if (commonsUriProperty != null) {
-                    return new SDCUris(new URI(commonsUriProperty), new URI(wikibaseUriProperty));
-                } else {
-                    return new WikibaseUris(new URI(wikibaseUriProperty));
-                }
-            } catch (URISyntaxException e) {
-                throw new RuntimeException("Bad URI: " + wikibaseUriProperty + (commonsUriProperty != null ? ", " + commonsUriProperty : ""), e);
-            }
+            return fromConceptUris(wikibaseUriProperty, System.getProperty(COMMONS_CONCEPT_URI));
         }
         String wikibaseHostProperty = System.getProperty(WIKIBASE_HOST_PROPERTY);
         if (wikibaseHostProperty != null) {
@@ -66,4 +58,23 @@ public final class UriSchemeFactory {
             return WIKIDATA;
         }
     }
+
+    /**
+     * Create URI scheme from pair of concept URIs.
+     * @param wikibaseConceptUri Wikibase URI
+     * @param commonsConceptUri Commons URI, can be NULL if we're not dealing with SDC
+     * @return URI scheme
+     */
+    public static WikibaseUris fromConceptUris(String wikibaseConceptUri, String commonsConceptUri) {
+        try {
+            if (commonsConceptUri != null) {
+                return new SDCUris(new URI(commonsConceptUri), new URI(wikibaseConceptUri));
+            } else {
+                return new WikibaseUris(new URI(wikibaseConceptUri));
+            }
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Bad URI: " + wikibaseConceptUri + (commonsConceptUri != null ? ", " + commonsConceptUri : ""), e);
+        }
+    }
+
 }

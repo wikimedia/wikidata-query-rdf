@@ -2,13 +2,12 @@ package org.wikidata.query.rdf.tool.options;
 
 import static com.google.common.io.Resources.getResource;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.uri.UriSchemeFactory;
 import org.wikidata.query.rdf.common.uri.WikibaseUris;
 import org.wikidata.query.rdf.tool.CliUtils.ForbiddenOk;
 import org.wikidata.query.rdf.tool.rdf.Munger;
@@ -74,14 +73,13 @@ public final class OptionsUtils {
         @Option(shortName = "U", defaultToNull = true, description = "Wikibase concept URI for RDF entities")
         String conceptUri();
 
+        @Option(defaultToNull = true, description = "Commons concept URI for RDF entities")
+        String commonsUri();
+
         static WikibaseUris wikibaseUris(WikibaseOptions wikibaseOptions) {
             String conceptUri = wikibaseOptions.conceptUri();
             if (conceptUri != null) {
-                try {
-                    return new WikibaseUris(new URI(conceptUri));
-                } catch (URISyntaxException e) {
-                    throw new IllegalArgumentException("Bad URI: " + conceptUri, e);
-                }
+                return UriSchemeFactory.fromConceptUris(conceptUri, wikibaseOptions.commonsUri());
             }
             return WikibaseUris.forHost(wikibaseOptions.wikibaseHost());
         }
