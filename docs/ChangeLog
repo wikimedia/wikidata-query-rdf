@@ -5,9 +5,14 @@ Upgrade LDF server to 0.2.4
 Add metering of federation requests
 Add support for value URI inlining
 Add support for variable MWAPI endpoint
+Add support for SDC MediaInfo URI scheme
+Add ability to specify revisions when updating by id
+Add Chronology Id support for change events
+Add throttling by user agent
 Change RDF fetching to not use cache-buster
 Fixed label service behavior in nested queries
 Clients without User-Agent are not allowed anymore
+Allow continuation across empty results
 
 0.3.1
 -----
