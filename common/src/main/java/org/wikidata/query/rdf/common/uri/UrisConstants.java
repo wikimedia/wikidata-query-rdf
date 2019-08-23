@@ -37,8 +37,9 @@ public final class UrisConstants {
      * Initial letters of supported Wikibase items.
      * L is not included because L IDs can not be inlined due
      * to conflict between Lexemes, Forms and Senses.
+     * The order must be: P, Q for BC. See https://phabricator.wikimedia.org/T230588
      */
-    public static final List<String> WIKIBASE_INITIALS = ImmutableList.of("Q", "P");
+    public static final List<String> WIKIBASE_INITIALS = ImmutableList.of("P", "Q");
     /**
      * Configuration for wikibase host.
      */

@@ -65,4 +65,11 @@ public class DefaultUrisSchemeUnitTest {
         assertThat(uris.entityDataHttps()).isEqualTo("https://acme3.test/wiki/Special:EntityData/");
     }
 
+    @Test
+    public void initialsOrder() throws URISyntaxException {
+        UrisScheme uris = new DefaultUrisScheme(new URI("https://acme2.test"), WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
+        // See https://phabricator.wikimedia.org/T230588 for reasons for this order
+        assertThat(uris.entityInitials()).containsExactly("P", "Q");
+    }
+
 }
