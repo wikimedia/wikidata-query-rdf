@@ -172,6 +172,9 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         assertResult(query(query.toString()), binds("p", URI.class));
     }
 
+    // Blazegraph throws RuntimeException wrapping various checked exceptions and it make it very useful
+    // to print the query plan for debugging if any test fails
+    @SuppressWarnings({"checkstyle:illegalcatch"})
     @SafeVarargs
     private final void assertLabelQueryResult(String query, final Matcher<BindingSet>... bindingMatchers) {
         ASTContainer astContainer = null;
@@ -184,8 +187,8 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
                 throw new RuntimeException(e);
             }
             assertResult(q, bindingMatchers);
-        } catch (AssertionError e) {
-            log.error("Error while checking results for " + astContainer);
+        } catch (AssertionError | RuntimeException e) {
+            log.error("Error while checking results for {}", astContainer);
             throw e;
         }
     }
@@ -344,6 +347,83 @@ public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
         assertLabelQueryResult(query.toString(),
             both(binds("p", URI.class))
             .and(binds("pLabel", Literal.class))
+        );
+    }
+
+    @Test
+    public void unionWithServiceCall_T159723_binds_union() {
+        // NotMaterializedException when one branch of UNION binds ?variable and other branch binds ?variableLabel and label service is used
+        // https://phabricator.wikimedia.org/T159723
+        addSimpleLabels("Q159723U");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?x ?xLabel WHERE {\n" +
+                "        { BIND(wd:Q159723U AS ?x). } UNION\n" +
+                "        { BIND(\"none\"@en AS ?xLabel). }\n" +
+                "        SERVICE ontology:label { bd:serviceParam ontology:language \"en\". }\n" +
+                "      }");
+        assertLabelQueryResult(query.toString(),
+            both(binds("xLabel", Literal.class))
+            .and(binds("x", URI.class)), // First solution contains both x bound by BIND and xLabel provided by the Service
+            both(binds("xLabel", Literal.class))
+            .and(notBinds("x")) // Second solution binds only xLabel bound by BIND and does not bind x
+        );
+    }
+
+    @Test
+    public void unionWithServiceCall_T159723_binds() {
+        // NotMaterializedException when one branch of UNION binds ?variable and other branch binds ?variableLabel and label service is used
+        // https://phabricator.wikimedia.org/T159723
+        addSimpleLabels("Q159723B");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?x ?xLabel WHERE {\n" +
+                "        BIND(wd:Q159723B AS ?x).\n" +
+                "        BIND(\"Douglas Adams\"@en AS ?xLabel).\n" +
+                "        SERVICE ontology:label { bd:serviceParam ontology:language \"en\". }\n" +
+                "      }");
+        assertLabelQueryResult(query.toString(),
+            both(binds("xLabel", Literal.class))
+            .and(binds("x", URI.class))
+        );
+    }
+
+      @Test
+      public void unionWithServiceCall_T159723_values() {
+          // NotMaterializedException when one branch of UNION binds ?variable and other branch binds ?variableLabel and label service is used
+          // https://phabricator.wikimedia.org/T159723
+          addSimpleLabels("Q159723V");
+          StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+          query.append("SELECT ?x ?xLabel WHERE {\n" +
+                  "        VALUES (?x ?xLabel) {\n" +
+                  "          (wd:Q159723V \"Douglas Adams\"@en)\n" +
+                  "        }\n" +
+                  "        SERVICE ontology:label { bd:serviceParam ontology:language \"en\". }\n" +
+                  "      }");
+          assertLabelQueryResult(query.toString(),
+                  both(binds("xLabel", Literal.class))
+                  .and(binds("x", URI.class))
+          );
+      }
+
+    @Test
+    public void sameVarAssignment_T170704() {
+        // NME when using label service and rdfs:label predicate with the same variable
+        // https://phabricator.wikimedia.org/T170704
+        addSimpleLabels("Q170704");
+        addSimpleLabels("Q170704P31");
+        add("wd:Q170704", "wdt:P31", "wd:Q170704P31");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?item ?itemLabel ?instance_of ?instance_ofLabel WHERE {\n" +
+                "            ?item wdt:P31 wd:Q170704P31.\n" +
+                "            SERVICE ontology:label { bd:serviceParam ontology:language \"en\". }\n" +
+                "            ?item wdt:P31 ?instance_of.\n" +
+                "            ?instance_of rdfs:label ?instance_ofLabel.\n" +
+                "            FILTER((LANG(?instance_ofLabel)) = \"en\")\n" +
+                "          }");
+        assertLabelQueryResult(query.toString(),
+            both(binds("item", URI.class))
+            .and(binds("itemLabel", Literal.class))
+            .and(binds("instance_of", URI.class))
+            .and(binds("instance_ofLabel", Literal.class))
         );
     }
 
