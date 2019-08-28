@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.blazegraph;
 import org.wikidata.query.rdf.blazegraph.label.EmptyLabelServiceOptimizer;
 import org.wikidata.query.rdf.blazegraph.label.LabelServiceExtractOptimizer;
 import org.wikidata.query.rdf.blazegraph.label.LabelServicePlacementOptimizer;
+import org.wikidata.query.rdf.blazegraph.mwapi.MWApiServicePlacementOptimizer;
 
 import com.bigdata.rdf.sparql.ast.optimizers.ASTJoinGroupOrderOptimizer;
 import com.bigdata.rdf.sparql.ast.optimizers.ASTRunFirstRunLastOptimizer;
@@ -21,7 +22,8 @@ public class WikibaseOptimizers extends DefaultOptimizerList {
         // then second sweep of LabelServicePlacementOptimizer will take into account actual projected variables
         // and place service call at the lates possible position to allow assignment and other
         // projection generation nodes see the variables bound be LabelServiceCall
-        addAfter(ASTRunFirstRunLastOptimizer.class, new LabelServicePlacementOptimizer());
+        addAfter(ASTRunFirstRunLastOptimizer.class, new MWApiServicePlacementOptimizer());
+        addAfter(MWApiServicePlacementOptimizer.class, new LabelServicePlacementOptimizer());
         addAfter(LabelServicePlacementOptimizer.class, new EmptyLabelServiceOptimizer());
         addAfter(EmptyLabelServiceOptimizer.class, new LabelServicePlacementOptimizer());
         // Needs to be after wildcard projection resolution,

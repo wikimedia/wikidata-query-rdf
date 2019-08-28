@@ -7,6 +7,7 @@ import java.io.Reader;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
@@ -142,8 +143,9 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
     public static void register(Timer requestTimer) {
         ServiceRegistry reg = ServiceRegistry.getInstance();
         try {
-            log.info("Loading MWAPI service configuration from {}", CONFIG_FILE);
-            Reader configReader = Files.newBufferedReader(Paths.get(CONFIG_FILE), StandardCharsets.UTF_8);
+            Path path = Paths.get(CONFIG_FILE);
+            log.info("Loading MWAPI service configuration from {}", path.toAbsolutePath());
+            Reader configReader = Files.newBufferedReader(path, StandardCharsets.UTF_8);
             final ServiceConfig config = new ServiceConfig(configReader);
             reg.add(SERVICE_KEY, new MWApiServiceFactory(config, requestTimer));
             log.info("Registered {} services.", config.size());

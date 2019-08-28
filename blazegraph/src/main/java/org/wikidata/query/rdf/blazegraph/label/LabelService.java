@@ -106,25 +106,6 @@ public class LabelService extends AbstractServiceFactory {
     public static final URIImpl LANGUAGE_PARAM = new URIImpl(Ontology.NAMESPACE + "language");
 
     /**
-     * Annotations for LabelService optimizers.
-     * Stores list of vars incoming (objects to be labeled) and outgoing (labels) for the service clause.
-     */
-    static final String LABEL_SERVICE_IN_VARS = "LabelService.inVars";
-    static final String LABEL_SERVICE_OUT_VARS = "LabelService.outVars";
-
-    /**
-     * URI for service optimizer hint parameter to disable reordering.
-     * Usage: inside service clause add:
-     * bd:serviceParam wikibase:disableReordering true.
-     */
-    public static final URIImpl DISABLE_REORDERING = new URIImpl(Ontology.NAMESPACE + "disableReordering");
-
-    /**
-     * Annotation to store optimizer hint for disabling reordering.
-     */
-    public static final String DISABLE_REORDERING_ANNOTATION = LabelService.class.getName() + ".disableReordering";
-
-    /**
      * Auto-language tag from the GUI.
      * We will filter it out if it seeps into actual query.
      */

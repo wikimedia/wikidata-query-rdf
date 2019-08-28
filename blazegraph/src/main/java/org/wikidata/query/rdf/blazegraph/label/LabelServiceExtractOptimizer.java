@@ -3,6 +3,8 @@ package org.wikidata.query.rdf.blazegraph.label;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.wikidata.query.rdf.blazegraph.WikidataServicePlacementOptimizer;
+
 import com.bigdata.bop.BOp;
 import com.bigdata.bop.IBindingSet;
 import com.bigdata.rdf.sparql.ast.JoinGroupNode;
@@ -41,9 +43,9 @@ public class LabelServiceExtractOptimizer extends AbstractJoinGroupOptimizer {
             for (BOp st : g.args()) {
                 StatementPatternNode sn = (StatementPatternNode) st;
                 if (sn.s().isConstant() && BD.SERVICE_PARAM.equals(sn.s().getValue())) {
-                    if (LabelService.DISABLE_REORDERING.equals(sn.p().getValue())) {
+                    if (WikidataServicePlacementOptimizer.DISABLE_REORDERING.equals(sn.p().getValue())) {
                         String flag = sn.o().getValue().stringValue();
-                        service.annotations().put(LabelService.DISABLE_REORDERING_ANNOTATION, Boolean.valueOf(flag));
+                        service.annotations().put(WikidataServicePlacementOptimizer.DISABLE_REORDERING_ANNOTATION, Boolean.valueOf(flag));
                     }
                     // skip parameters
                     continue;

@@ -159,6 +159,7 @@ public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlaz
      * calls and turning on label service calls.
      */
     static {
+        System.setProperty("org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.config", "src/test/resources/mwservices.json");
         wikibaseContextListener = new WikibaseContextListener();
         wikibaseContextListener.initializeServices();
         astOptimizerClassBackup = System.getProperty("ASTOptimizerClass");
