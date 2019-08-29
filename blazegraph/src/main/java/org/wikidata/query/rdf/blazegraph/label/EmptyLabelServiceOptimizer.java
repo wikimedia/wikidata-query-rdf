@@ -2,7 +2,9 @@ package org.wikidata.query.rdf.blazegraph.label;
 
 import static org.wikidata.query.rdf.blazegraph.label.LabelServiceUtils.getLabelServiceNodes;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
@@ -66,7 +68,14 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
                 whereClause.setProperty(LABEL_SERVICE_PROJECTION, node.getProjection());
             }
         });
+
+        // Prepare a set of vars, which might be bound both outside of the service and by LabelService
+        // Fix for the issue: https://phabricator.wikimedia.org/T159723
+        // See also patch for the com.bigdata.rdf.sparql.ast.eval.AST2BOpUtility.addServiceCall()
+        Set<IVariable<?>> uncertainVars = collectUncertainVars(sa, bSets, op);
+
         getLabelServiceNodes(op).forEach(service -> {
+            service.setUncertainVars(uncertainVars);
             JoinGroupNode g = (JoinGroupNode) service.getGraphPattern();
             boolean foundArg = false;
             for (BOp st : g.args()) {
@@ -87,6 +96,15 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
             }
 
         });
+    }
+
+    private Set<IVariable<?>> collectUncertainVars(StaticAnalysis sa, IBindingSet[] bSets, JoinGroupNode op) {
+        Set<IVariable<?>> uncertainVars = new HashSet<>();
+        sa.getMaybeProducedBindings(op, uncertainVars, /* recursive */ true);
+        for (IBindingSet bSet: bSets) {
+            bSet.vars().forEachRemaining(v -> uncertainVars.add(v));
+        }
+        return uncertainVars;
     }
 
     @SuppressFBWarnings(

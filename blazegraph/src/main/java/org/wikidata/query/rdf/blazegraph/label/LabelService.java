@@ -435,6 +435,12 @@ public class LabelService extends AbstractServiceFactory {
          * Resolve the target of the resolution in the current BindingSet.
          */
         public void resolve(Resolution resolution) {
+            // Do not overwrite already bound variables
+            // Ref: https://phabricator.wikimedia.org/T159723
+            // Ref: https://phabricator.wikimedia.org/T170704
+            if (binding.get(resolution.target()) != null) {
+                return;
+            }
             resolvedSubject = resolveToIvOrError(resolution.subject(), "subject");
             resolvedLabelType = resolveToIvOrError(resolution.labelType(), "label type");
             if (resolvedSubject == null || resolvedLabelType == null) {
