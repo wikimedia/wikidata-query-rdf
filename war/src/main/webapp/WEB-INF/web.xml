@@ -119,6 +119,19 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
     <filter>
+        <filter-name>event-sender-filter</filter-name>
+        <filter-class>org.wikidata.query.rdf.blazegraph.filters.QueryEventSenderFilter</filter-class>
+        <init-param>
+            <param-name>enable-event-sender-if-header</param-name>
+            <param-value>X-BIGDATA-READ-ONLY</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>event-sender-filter</filter-name>
+        <url-pattern>/sparql</url-pattern>
+        <url-pattern>/namespace/*/sparql</url-pattern>
+    </filter-mapping>
+    <filter>
         <filter-name>mdc-inserting-filter</filter-name>
         <filter-class>ch.qos.logback.classic.helpers.MDCInsertingServletFilter</filter-class>
     </filter>

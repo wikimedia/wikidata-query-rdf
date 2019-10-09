@@ -8,8 +8,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.wikidata.query.rdf.blazegraph.JacksonUtil;
+
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -31,8 +32,7 @@ public class ServiceConfig {
     private final List<String> endpoints;
 
     public ServiceConfig(Reader configReader) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode mainNode = mapper.readTree(configReader);
+        JsonNode mainNode = JacksonUtil.DEFAULT_OBJECT_READER.readTree(configReader);
         this.serviceMap = loadJSONConfig(mainNode.get("services"));
         this.endpoints = loadEndpoints(mainNode.get("endpoints"));
     }
