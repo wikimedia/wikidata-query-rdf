@@ -71,7 +71,6 @@ public abstract class Throttler<S> {
      *                   throttling
      * @param enableThrottlingIfHeader throttling is only enabled if this header is present
      * @param alwaysThrottleParam this query parameter will cause throttling no matter what
-     * @param clock
      */
     public Throttler(
             Callable<S> createThrottlingState,

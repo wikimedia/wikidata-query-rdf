@@ -1,13 +1,10 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-
 import java.time.Duration;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.servlet.FilterConfig;
+
+import org.wikidata.query.rdf.blazegraph.filters.FilterConfiguration;
 
 /**
  * Load and parses configuration for the {@link ThrottlingFilter}.
@@ -19,156 +16,89 @@ public class ThrottlingFilterConfig {
      * Default patterns list filename.
      */
     public static final String PATTERNS_DEFAULT = "patterns.txt";
-    /**
-     * Servlet filter config.
-     */
-    private final FilterConfig filterConfig;
+    private final FilterConfiguration filterConfig;
 
-    public ThrottlingFilterConfig(FilterConfig filterConfig) {
+    public ThrottlingFilterConfig(FilterConfiguration filterConfig) {
         this.filterConfig = filterConfig;
     }
 
-    /**
-     * Load a parameter from multiple locations.
-     *
-     * System properties have the highest priority, filter config is used if no
-     * system property is found.
-     *
-     * The system property used is {@code wdqs.<filter-name>.<name>}.
-     *
-     * @param name name of the property
-     * @param filterConfig used to get the filter config
-     * @return the value of the parameter
-     */
-    private String loadStringParam(String name, FilterConfig filterConfig) {
-        String result = null;
-        String fParam = filterConfig.getInitParameter(name);
-        if (fParam != null) {
-            result = fParam;
-        }
-        String sParam = System.getProperty("wdqs." + filterConfig.getFilterName() + "." + name);
-        if (sParam != null) {
-            result = sParam;
-        }
-        return result;
-    }
-
-    /**
-     * Load a parameter from multiple locations, with a default value.
-     *
-     * @see ThrottlingFilterConfig#loadStringParam(String, FilterConfig)
-     * @param name
-     * @param filterConfig
-     * @param defaultValue
-     * @return the parameter's value
-     */
-    private String loadStringParam(String name, FilterConfig filterConfig, String defaultValue) {
-        return firstNonNull(loadStringParam(name, filterConfig), defaultValue);
-    }
-
-    /**
-     * See {@link ThrottlingFilterConfig#loadStringParam(String, FilterConfig)}.
-     *
-     * @param name
-     * @param filterConfig
-     * @param defaultValue
-     * @return
-     */
-    private boolean loadBooleanParam(String name, FilterConfig filterConfig, boolean defaultValue) {
-        String result = loadStringParam(name, filterConfig);
-        return result != null ? parseBoolean(result) : defaultValue;
-    }
-
-    /**
-     * See {@link ThrottlingFilterConfig#loadStringParam(String, FilterConfig)}.
-     *
-     * @param name
-     * @param filterConfig
-     * @param defaultValue
-     * @return
-     */
-    private int loadIntParam(String name, FilterConfig filterConfig, int defaultValue) {
-        String result = loadStringParam(name, filterConfig);
-        return result != null ? parseInt(result) : defaultValue;
-    }
-
     public Duration getRequestDurationThreshold() {
-        return Duration.ofMillis(loadIntParam("request-duration-threshold-in-millis", filterConfig, 0));
+        return Duration.ofMillis(filterConfig.loadIntParam("request-duration-threshold-in-millis", 0));
     }
 
     public Duration getTimeBucketCapacity() {
-        return Duration.ofSeconds(loadIntParam("time-bucket-capacity-in-seconds", filterConfig, 120));
+        return Duration.ofSeconds(filterConfig.loadIntParam("time-bucket-capacity-in-seconds", 120));
     }
 
     public Duration getTimeBucketRefillAmount() {
-        return Duration.ofSeconds(loadIntParam("time-bucket-refill-amount-in-seconds", filterConfig, 60));
+        return Duration.ofSeconds(filterConfig.loadIntParam("time-bucket-refill-amount-in-seconds", 60));
     }
 
     public Duration getTimeBucketRefillPeriod() {
-        return Duration.ofMinutes(loadIntParam("time-bucket-refill-period-in-minutes", filterConfig, 1));
+        return Duration.ofMinutes(filterConfig.loadIntParam("time-bucket-refill-period-in-minutes", 1));
     }
 
     public int getErrorBucketCapacity() {
-        return loadIntParam("error-bucket-capacity", filterConfig, 60);
+        return filterConfig.loadIntParam("error-bucket-capacity", 60);
     }
 
     public int getErrorBucketRefillAmount() {
-        return loadIntParam("error-bucket-refill-amount", filterConfig, 30);
+        return filterConfig.loadIntParam("error-bucket-refill-amount", 30);
     }
 
     public Duration getErrorBucketRefillPeriod() {
-        return Duration.ofMinutes(loadIntParam("error-bucket-refill-period-in-minutes", filterConfig, 1));
+        return Duration.ofMinutes(filterConfig.loadIntParam("error-bucket-refill-period-in-minutes", 1));
     }
 
     public int getThrottleBucketCapacity() {
-        return loadIntParam("throttle-bucket-capacity", filterConfig, 200);
+        return filterConfig.loadIntParam("throttle-bucket-capacity", 200);
     }
 
     public int getThrottleBucketRefillAmount() {
-        return loadIntParam("throttle-bucket-refill-amount", filterConfig, 200);
+        return filterConfig.loadIntParam("throttle-bucket-refill-amount", 200);
     }
 
     public Duration getThrottleBucketRefillPeriod() {
-        return Duration.ofMinutes(loadIntParam("throttle-bucket-refill-period-in-minutes", filterConfig, 20));
+        return Duration.ofMinutes(filterConfig.loadIntParam("throttle-bucket-refill-period-in-minutes", 20));
     }
 
     public Duration getBanDuration() {
-        return Duration.ofMinutes(loadIntParam("ban-duration-in-minutes", filterConfig, 60*24));
+        return Duration.ofMinutes(filterConfig.loadIntParam("ban-duration-in-minutes", 60*24));
     }
 
     public int getMaxStateSize() {
-        return loadIntParam("max-state-size", filterConfig, 2000);
+        return filterConfig.loadIntParam("max-state-size", 2000);
     }
 
     public Duration getStateExpiration() {
-        return Duration.ofMinutes(loadIntParam("state-expiration-in-minutes", filterConfig, 15));
+        return Duration.ofMinutes(filterConfig.loadIntParam("state-expiration-in-minutes", 15));
     }
 
     public String getEnableThrottlingIfHeader() {
-        return loadStringParam("enable-throttling-if-header", filterConfig);
+        return filterConfig.loadStringParam("enable-throttling-if-header");
     }
 
     public String getEnableBanIfHeader() {
-        return loadStringParam("enable-ban-if-header", filterConfig);
+        return filterConfig.loadStringParam("enable-ban-if-header");
     }
 
     public String getAlwaysThrottleParam() {
-        return loadStringParam("always-throttle-param", filterConfig, "throttleMe");
+        return filterConfig.loadStringParam("always-throttle-param", "throttleMe");
     }
 
     public String getAlwaysBanParam() {
-        return loadStringParam("always-ban-param", filterConfig, "banMe");
+        return filterConfig.loadStringParam("always-ban-param", "banMe");
     }
 
     public boolean isFilterEnabled() {
-        return loadBooleanParam("enabled", filterConfig, true);
+        return filterConfig.loadBooleanParam("enabled", true);
     }
 
     public String getRegexPatternsFile() {
-        return loadStringParam("pattern-file", filterConfig, PATTERNS_DEFAULT);
+        return filterConfig.loadStringParam("pattern-file", PATTERNS_DEFAULT);
     }
 
     public String getAgentPatternsFile() {
-        return loadStringParam("agent-file", filterConfig, "agents.txt");
+        return filterConfig.loadStringParam("agent-file", "agents.txt");
     }
 }
