@@ -96,6 +96,7 @@ public final class Matchers {
 
         @Override
         protected void describeMismatchSafely(IBindingSet bindings, Description mismatchDescription) {
+            @SuppressWarnings("unchecked")
             IConstant<IV> value = bindings.get(makeVariable(name));
             if (value == null) {
                 mismatchDescription.appendText("but did not contain such a binding");
@@ -106,6 +107,7 @@ public final class Matchers {
 
         @Override
         protected boolean matchesSafely(IBindingSet bindings) {
+            @SuppressWarnings("unchecked")
             IConstant<IV> value = bindings.get(makeVariable(name));
             if (value == null) {
                 return false;
@@ -135,6 +137,7 @@ public final class Matchers {
 
         @Override
         protected void describeMismatchSafely(IBindingSet bindings, Description mismatchDescription) {
+            @SuppressWarnings("unchecked")
             IConstant<IV> binding = bindings.get(makeVariable(name));
             mismatchDescription.appendText("instead it was bound to").appendValue(binding.get().getValue());
         }
