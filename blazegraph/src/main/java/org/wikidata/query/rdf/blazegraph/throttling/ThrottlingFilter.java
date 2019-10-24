@@ -44,6 +44,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.isomorphism.util.TokenBuckets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.blazegraph.filters.FilterConfiguration;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
@@ -190,14 +191,14 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
      *     false</li>
      * </ul>
      *
-     * See {@link ThrottlingFilterConfig#loadStringParam(String, FilterConfig)} for
+     * See {@link FilterConfiguration#loadStringParam(String)} for
      * the details of where the configuration is loaded from.
      *
      * @param filterConfig {@inheritDoc}
      */
     @Override
     public void init(FilterConfig filterConfig) {
-        ThrottlingFilterConfig config = new ThrottlingFilterConfig(filterConfig);
+        ThrottlingFilterConfig config = new ThrottlingFilterConfig(new FilterConfiguration(filterConfig, FilterConfiguration.WDQS_CONFIG_PREFIX));
 
         this.enabled = config.isFilterEnabled();
 
