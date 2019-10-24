@@ -230,7 +230,7 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
                 config.getThrottleBucketRefillPeriod(),
                 config.getBanDuration());
 
-        timeAndErrorsThrottler = new TimeAndErrorsThrottler(
+        timeAndErrorsThrottler = new TimeAndErrorsThrottler<>(
                 config.getRequestDurationThreshold(),
                 stateInitializer,
                 stateStore,
@@ -238,7 +238,7 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
                 config.getAlwaysThrottleParam(),
                 Clock.systemUTC());
 
-        banThrottler = new BanThrottler(
+        banThrottler = new BanThrottler<>(
                 stateInitializer,
                 stateStore,
                 config.getEnableBanIfHeader(),
