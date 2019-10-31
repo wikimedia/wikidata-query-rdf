@@ -91,7 +91,7 @@ if [ ! -z "$NOEXTRA" ]; then
 	GC_LOGS=""
 fi
 
-CP=lib/wikidata-query-tools-*-jar-with-dependencies.jar
+CP=`dirname $BASH_SOURCE`/lib/wikidata-query-tools-*-jar-with-dependencies.jar
 MAIN=org.wikidata.query.rdf.tool.Update
 SPARQL_URL=$HOST/$CONTEXT/namespace/$NAMESPACE/sparql
 echo "Updating via $SPARQL_URL"
