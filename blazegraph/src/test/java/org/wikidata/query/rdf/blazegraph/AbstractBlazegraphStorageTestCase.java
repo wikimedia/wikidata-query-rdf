@@ -1,6 +1,5 @@
 package org.wikidata.query.rdf.blazegraph;
 
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -12,13 +11,12 @@ import org.wikidata.query.rdf.common.uri.GeoSparql;
 
 import com.bigdata.bop.engine.QueryEngine;
 import com.bigdata.bop.fed.QueryEngineFactory;
-import com.bigdata.cache.SynchronizedHardReferenceQueueWithTimeout;
 import com.bigdata.journal.TemporaryStore;
 import com.bigdata.rdf.store.AbstractTripleStore;
 import com.bigdata.rdf.store.TempTripleStore;
 
 /**
- * Randomized test that creates a triple store.
+ * Base class for tests that create a triple store.
  *
  * <p>
  * We have to take a number of actions to make RandomizedRunner compatible with
@@ -31,7 +29,7 @@ import com.bigdata.rdf.store.TempTripleStore;
  * <li>Create a new triple store per test method (lazily)
  * </ul>
  */
-public class AbstractRandomizedBlazegraphStorageTestCase {
+public class AbstractBlazegraphStorageTestCase {
 
     /**
      * Holds all the triples stores. Initialized once per test class.
@@ -49,14 +47,7 @@ public class AbstractRandomizedBlazegraphStorageTestCase {
         if (temporaryStore != null) {
             return temporaryStore;
         }
-        /*
-         * Initializing the temporary store replaces RandomizedRunner's
-         * painstakingly applied UncaughtExceptionHandler. That is bad so we
-         * replace it.
-         */
-        UncaughtExceptionHandler uncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
         temporaryStore = new TemporaryStore();
-        Thread.setDefaultUncaughtExceptionHandler(uncaughtExceptionHandler);
         return temporaryStore;
     }
 
@@ -116,7 +107,6 @@ public class AbstractRandomizedBlazegraphStorageTestCase {
         if (queryEngine != null) {
             queryEngine.shutdownNow();
         }
-        SynchronizedHardReferenceQueueWithTimeout.stopStaleReferenceCleaner();
         executorService.awaitTermination(20, TimeUnit.SECONDS);
         temporaryStore = null;
     }

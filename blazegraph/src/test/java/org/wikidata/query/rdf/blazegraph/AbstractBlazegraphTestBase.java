@@ -33,7 +33,7 @@ import com.bigdata.rdf.sparql.ast.eval.ASTEvalHelper;
  * has convenient utilities to help with things like adding data and running
  * queries.
  */
-public class AbstractRandomizedBlazegraphTestBase extends AbstractRandomizedBlazegraphStorageTestCase {
+public abstract class AbstractBlazegraphTestBase extends AbstractBlazegraphStorageTestCase {
     private static WikibaseContextListener wikibaseContextListener;
     private static String astOptimizerClassBackup;
     /**

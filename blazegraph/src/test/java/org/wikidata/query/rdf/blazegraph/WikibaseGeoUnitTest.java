@@ -24,7 +24,7 @@ import com.bigdata.rdf.internal.impl.literal.XSDIntegerIV;
 import com.bigdata.rdf.lexicon.LexiconRelation;
 import com.bigdata.rdf.model.BigdataStatement;
 
-public class WikibaseGeoUnitTest extends AbstractRandomizedBlazegraphTestBase {
+public class WikibaseGeoUnitTest extends AbstractBlazegraphTestBase {
     @Test
     public void geoExtension() {
         BigdataStatement statement = roundTrip(Ontology.Geo.GLOBE, Ontology.Geo.LATITUDE,

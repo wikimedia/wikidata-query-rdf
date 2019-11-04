@@ -6,13 +6,13 @@ import java.io.Closeable;
 import java.io.IOException;
 
 import org.junit.Test;
-import org.wikidata.query.rdf.blazegraph.AbstractRandomizedBlazegraphTestBase;
+import org.wikidata.query.rdf.blazegraph.AbstractBlazegraphTestBase;
 import org.wikidata.query.rdf.test.SystemPropertyContext;
 
 import com.bigdata.rdf.sparql.ast.eval.ServiceParams;
 import com.codahale.metrics.Timer;
 
-public class MWApiServiceFactoryUnitTest extends AbstractRandomizedBlazegraphTestBase {
+public class MWApiServiceFactoryUnitTest extends AbstractBlazegraphTestBase {
 
     @Test
     public void testGetLimitsFromParams_default() throws IOException {

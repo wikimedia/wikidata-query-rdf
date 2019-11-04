@@ -9,7 +9,7 @@ import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 
-public class WikibaseFunctionsUnitTest extends AbstractRandomizedBlazegraphTestBase {
+public class WikibaseFunctionsUnitTest extends AbstractBlazegraphTestBase {
 
     @Test
     public void urlDecodeQuery() throws QueryEvaluationException {

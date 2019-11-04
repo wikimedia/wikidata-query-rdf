@@ -14,7 +14,7 @@ import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.blazegraph.AbstractRandomizedBlazegraphTestBase;
+import org.wikidata.query.rdf.blazegraph.AbstractBlazegraphTestBase;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.test.Randomizer;
 
@@ -22,7 +22,7 @@ import com.bigdata.rdf.sail.sparql.Bigdata2ASTSPARQLParser;
 import com.bigdata.rdf.sparql.ast.ASTContainer;
 import com.bigdata.rdf.sparql.ast.eval.ASTEvalHelper;
 
-public class MWApiServiceQueryUnitTest extends AbstractRandomizedBlazegraphTestBase {
+public class MWApiServiceQueryUnitTest extends AbstractBlazegraphTestBase {
     private static final Logger log = LoggerFactory.getLogger(MWApiServiceQueryUnitTest.class);
 
     @Rule

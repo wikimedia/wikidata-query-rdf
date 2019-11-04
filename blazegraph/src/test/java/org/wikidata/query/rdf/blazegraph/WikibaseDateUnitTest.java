@@ -16,7 +16,7 @@ import org.wikidata.query.rdf.common.uri.Ontology;
 import com.bigdata.rdf.internal.impl.literal.LiteralExtensionIV;
 import com.bigdata.rdf.model.BigdataStatement;
 
-public class WikibaseDateUnitTest extends AbstractRandomizedBlazegraphTestBase {
+public class WikibaseDateUnitTest extends AbstractBlazegraphTestBase {
 
     @Test
     public void dateExtension() {

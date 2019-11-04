@@ -12,13 +12,13 @@ import java.net.MalformedURLException;
 import org.junit.Before;
 import org.junit.Test;
 import org.openrdf.model.impl.URIImpl;
-import org.wikidata.query.rdf.blazegraph.AbstractRandomizedBlazegraphTestBase;
+import org.wikidata.query.rdf.blazegraph.AbstractBlazegraphTestBase;
 
 import com.bigdata.bop.IBindingSet;
 import com.bigdata.bop.bindingSet.HashBindingSet;
 import com.bigdata.rdf.model.BigdataValueFactory;
 
-public class EndpointUnitTest extends AbstractRandomizedBlazegraphTestBase {
+public class EndpointUnitTest extends AbstractBlazegraphTestBase {
 
     private ServiceConfig config;
     private BigdataValueFactory vf;
