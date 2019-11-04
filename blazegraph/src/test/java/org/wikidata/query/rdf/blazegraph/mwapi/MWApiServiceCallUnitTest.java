@@ -28,7 +28,7 @@ import java.util.Map;
 import org.eclipse.jetty.client.HttpClient;
 import org.junit.Before;
 import org.junit.Test;
-import org.wikidata.query.rdf.blazegraph.AbstractRandomizedBlazegraphTestBase;
+import org.wikidata.query.rdf.blazegraph.AbstractBlazegraphTestBase;
 import org.wikidata.query.rdf.blazegraph.mwapi.ApiTemplate.OutputVariable;
 import org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceCall.ResultWithContinue;
 import org.xml.sax.SAXException;
@@ -44,7 +44,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-public class MWApiServiceCallUnitTest extends AbstractRandomizedBlazegraphTestBase {
+public class MWApiServiceCallUnitTest extends AbstractBlazegraphTestBase {
     private ApiTemplate template;
     private IBindingSet binding;
     private BigdataValueFactory vf;

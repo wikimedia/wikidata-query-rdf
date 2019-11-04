@@ -17,7 +17,7 @@ import java.util.Map;
 
 import org.junit.Test;
 import org.openrdf.model.URI;
-import org.wikidata.query.rdf.blazegraph.AbstractRandomizedBlazegraphTestBase;
+import org.wikidata.query.rdf.blazegraph.AbstractBlazegraphTestBase;
 import org.wikidata.query.rdf.blazegraph.mwapi.ApiTemplate.OutputVariable;
 
 import com.bigdata.bop.IVariableOrConstant;
@@ -30,7 +30,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class ApiTemplateUnitTest extends AbstractRandomizedBlazegraphTestBase {
+public class ApiTemplateUnitTest extends AbstractBlazegraphTestBase {
 
     private static final String JSON_CONFIG = "{\n" +
             "\"params\": {\n"

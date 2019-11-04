@@ -21,7 +21,7 @@ import com.bigdata.rdf.internal.impl.uri.URIExtensionIV;
 import com.bigdata.rdf.model.BigdataStatement;
 import com.bigdata.rdf.model.BigdataValue;
 
-public class WikibaseInlineUriFactoryUnitTest extends AbstractRandomizedBlazegraphTestBase {
+public class WikibaseInlineUriFactoryUnitTest extends AbstractBlazegraphTestBase {
     @Test
     public void entityAndTruthyAreInlined() {
         BigdataStatement statement = roundTrip("wd:Q23", "wdt:P509", "wd:Q356405");

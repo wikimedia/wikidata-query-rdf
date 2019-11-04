@@ -15,7 +15,7 @@ import com.bigdata.rdf.internal.impl.TermId;
 import com.bigdata.rdf.internal.impl.uri.VocabURIByteIV;
 import com.bigdata.rdf.model.BigdataStatement;
 
-public class WikibaseVocabularyUnitTest extends AbstractRandomizedBlazegraphTestBase {
+public class WikibaseVocabularyUnitTest extends AbstractBlazegraphTestBase {
     @Test
     public void ranksAreBytes() {
         BigdataStatement statement = roundTrip("s:Q23-uuidhere", Ontology.RANK, Ontology.BEST_RANK);

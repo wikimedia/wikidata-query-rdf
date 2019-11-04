@@ -11,7 +11,7 @@ import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 
-public class WikibasePrefixesUnitTest extends AbstractRandomizedBlazegraphTestBase {
+public class WikibasePrefixesUnitTest extends AbstractBlazegraphTestBase {
 
     @Test
     public void testWikibasePrefixes() {

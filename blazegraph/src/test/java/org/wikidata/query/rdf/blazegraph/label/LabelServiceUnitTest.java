@@ -31,7 +31,7 @@ import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.blazegraph.AbstractRandomizedBlazegraphTestBase;
+import org.wikidata.query.rdf.blazegraph.AbstractBlazegraphTestBase;
 import org.wikidata.query.rdf.blazegraph.geo.GeoUtils;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.RDFS;
@@ -50,7 +50,7 @@ import com.bigdata.rdf.sparql.ast.eval.ASTEvalHelper;
 import com.bigdata.rdf.sparql.ast.service.ServiceNode;
 import com.bigdata.rdf.store.BD;
 
-public class LabelServiceUnitTest extends AbstractRandomizedBlazegraphTestBase {
+public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
     private static final Logger log = LoggerFactory.getLogger(LabelServiceUnitTest.class);
 
     @Rule
