@@ -9,15 +9,13 @@
     </parent>
     <groupId>org.wikidata.query.rdf</groupId>
     <artifactId>parent</artifactId>
-    <version>0.3.4-SNAPSHOT</version>
+    <version>0.3.5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Wikidata Query Service</name>
 
-    <description>
-        Wikidata Query Service is the Wikimedia implementation of SPARQL server, based on Blazegraph engine, to
-        service queries for Wikidata and other data sets.
-    </description>
+    <description>Wikidata Query Service is the Wikimedia implementation of SPARQL server, based on Blazegraph engine, to
+        service queries for Wikidata and other data sets.</description>
 
     <licenses>
         <license>
@@ -54,6 +52,7 @@
     <scm>
         <connection>scm:git:https://gerrit.wikimedia.org/r/wikidata/query/rdf</connection>
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikidata/query/rdf</developerConnection>
+        <tag>parent-0.3.4</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/wikidata/query/rdf</url>
     </scm>
 
@@ -767,8 +766,7 @@
                             <configuration>
                                 <rules>
                                     <evaluateBeanshell>
-                                        <condition>
-                                            testsrc = new File("${project.basedir}");
+                                        <condition>testsrc = new File("${project.basedir}");
                                             testClasses = org.codehaus.plexus.util.FileUtils.getFileNames(testsrc, "**/src/test/java/**/*Test.java", null, false);
                                             for (Iterator it = testClasses.iterator(); it.hasNext();) {
                                                 String file = it.next();
@@ -778,8 +776,7 @@
                                                     it.remove();
                                                 }
                                             }
-                                            return testClasses.size() == 0;
-                                        </condition>
+                                            return testClasses.size() == 0;</condition>
                                     </evaluateBeanshell>
                                 </rules>
                                 <fail>true</fail>
