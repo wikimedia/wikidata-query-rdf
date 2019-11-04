@@ -107,6 +107,8 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      */
     private static final String METRICS_DOMAIN = System.getProperty("WDQSMetricDomain", METRICS_DOMAIN_DEFAULT);
 
+    public static final String BLAZEGRAPH_DEFAULT_NAMESPACE = "BLAZEGRAPH_DEFAULT_NAMESPACE";
+
     /**
      * Hooks that need to be run on shutdown.
      *
@@ -270,6 +272,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     @Override
     public void contextInitialized(final ServletContextEvent sce) {
         super.contextInitialized(sce);
+        sce.getServletContext().setAttribute(BLAZEGRAPH_DEFAULT_NAMESPACE, this.getBigdataRDFContext().getConfig().namespace);
         initializeServices();
     }
 
