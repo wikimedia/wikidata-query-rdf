@@ -66,8 +66,8 @@ public class QueryEventSenderFilter implements Filter {
         }
         int httpReadTimeout = config.loadIntParam("http-read-timeout", EventHttpSender.DEFAULT_READ_TIMEOUT);
         int httpConTimeout = config.loadIntParam("http-con-timeout", EventHttpSender.DEFAULT_CON_TIMEOUT);
-
-        this.queryEventGenerator = new QueryEventGenerator(() -> UUID.randomUUID().toString(), Clock.systemUTC(), wdqsHostname);
+        String streamName = config.loadStringParam("event-gate-sparql-query-stream", "blazegraph.sparql-query");
+        this.queryEventGenerator = new QueryEventGenerator(() -> UUID.randomUUID().toString(), Clock.systemUTC(), wdqsHostname, streamName);
         if (httpEndPoint == null) {
             sender = e -> true; // /dev/null
             return;

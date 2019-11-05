@@ -47,7 +47,7 @@ public class QueryEventGeneratorUnitTest {
         request.setRemoteAddr(clientIp);
         request.setServerName(hostname);
 
-        QueryEventGenerator generator = new QueryEventGenerator(uniqueIdGenerator, clock, hostname);
+        QueryEventGenerator generator = new QueryEventGenerator(uniqueIdGenerator, clock, hostname, "mystream.name");
         assertThat(generator.instant()).isEqualTo(Instant.EPOCH);
         QueryEvent event = generator.generateQueryEvent(request, statusCode, Duration.ofSeconds(1), Instant.EPOCH, defaultNS);
         assertThat(event.getBackendHost()).isEqualTo(hostname);
@@ -60,7 +60,7 @@ public class QueryEventGeneratorUnitTest {
         assertThat(event.getMetadata().getDt()).isEqualTo(Instant.EPOCH);
         assertThat(event.getMetadata().getId()).isEqualTo(someId);
         assertThat(event.getMetadata().getRequestId()).isEqualTo(requestId);
-        assertThat(event.getMetadata().getStream()).isEqualTo(QueryEventGenerator.STREAM_NAME);
+        assertThat(event.getMetadata().getStream()).isEqualTo("mystream.name");
 
         assertThat(event.getHttpMetadata().getClientIp()).isEqualTo(clientIp);
         assertThat(event.getHttpMetadata().getMethod()).isEqualTo(method);

@@ -31,11 +31,13 @@ public class QueryEventGenerator {
     private final Supplier<String> uniqueIdGenerator;
     private final Clock clock;
     private final String hostname;
+    private final String stream;
 
-    public QueryEventGenerator(Supplier<String> uniqueIdGenerator, Clock clock, String hostname) {
+    public QueryEventGenerator(Supplier<String> uniqueIdGenerator, Clock clock, String hostname, String stream) {
         this.uniqueIdGenerator = uniqueIdGenerator;
         this.clock = clock;
         this.hostname = hostname;
+        this.stream = stream;
     }
 
     public Instant instant() {
@@ -65,7 +67,7 @@ public class QueryEventGenerator {
         if (reqId == null) {
             reqId = uniqueIdGenerator.get();
         }
-        return new EventMetadata(reqId, id, queryStartTime, request.getServerName(), STREAM_NAME);
+        return new EventMetadata(reqId, id, queryStartTime, request.getServerName(), stream);
     }
 
     private EventHttpMetadata generateHttpMetadata(HttpServletRequest httpServletRequest, int responseStatusCode) {
