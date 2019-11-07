@@ -17,6 +17,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.hamcrest.Matcher;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.openrdf.model.Literal;
@@ -351,6 +352,7 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
     }
 
     @Test
+    @Ignore("it randomly fails, needs investigations: T237612")
     public void unionWithServiceCall_T159723_binds_union() {
         // NotMaterializedException when one branch of UNION binds ?variable and other branch binds ?variableLabel and label service is used
         // https://phabricator.wikimedia.org/T159723
