@@ -17,7 +17,8 @@ public class QueryEventGeneratorUnitTest {
     @Test
     public void testEventGeneration() {
         String namespace = "ns123";
-        String pathInfo = "/namespace/" + namespace + "/sparql";
+        String contextPath = "/bigdata";
+        String pathInfo = contextPath + "/namespace/" + namespace + "/sparql";
         String someId = "notunique";
         String requestId = "the_request_id";
         String hostname = "hostname.domain.local";
@@ -43,7 +44,8 @@ public class QueryEventGeneratorUnitTest {
         Clock clock = new ManualClock(Instant.EPOCH);
 
         request.setCookies(new Cookie[1]);
-        request.setPathInfo(pathInfo);
+        request.setRequestURI(pathInfo);
+        request.setContextPath(contextPath);
         request.setRemoteAddr(clientIp);
         request.setServerName(hostname);
 
@@ -69,8 +71,29 @@ public class QueryEventGeneratorUnitTest {
         assertThat(event.getHttpMetadata().hasCookies()).isTrue();
         assertThat(event.getHttpMetadata().getStatusCode()).isEqualTo(statusCode);
 
-        request.setPathInfo("/sparql");
+        request.setRequestURI(contextPath + "/sparql");
         QueryEvent eventDefaultNS = generator.generateQueryEvent(request, statusCode, Duration.ofSeconds(1), Instant.EPOCH, defaultNS);
         assertThat(eventDefaultNS.getNamespace()).isEqualTo(defaultNS);
+    }
+
+    @Test
+    public void testHasValidPath() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/ctx/namespace/ns/sparql");
+        request.setContextPath("/ctx");
+        QueryEventGenerator generator = new QueryEventGenerator(String::new, new ManualClock(), "hostname", "stream");
+        assertThat(generator.hasValidPath(request)).isTrue();
+
+        request.setRequestURI("/ctx/sparql");
+        request.setContextPath("/ctx");
+        assertThat(generator.hasValidPath(request)).isTrue();
+
+        request.setRequestURI("/ctx/something");
+        request.setContextPath("/ctx");
+        assertThat(generator.hasValidPath(request)).isFalse();
+
+        request.setRequestURI("/ctx/namespace/ns/something");
+        request.setContextPath("/ctx");
+        assertThat(generator.hasValidPath(request)).isFalse();
     }
 }
