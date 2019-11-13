@@ -9,7 +9,7 @@
     </parent>
     <groupId>org.wikidata.query.rdf</groupId>
     <artifactId>parent</artifactId>
-    <version>0.3.5-SNAPSHOT</version>
+    <version>0.3.6-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Wikidata Query Service</name>
