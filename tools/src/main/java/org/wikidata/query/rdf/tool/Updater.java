@@ -31,8 +31,10 @@ import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
+import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
@@ -102,6 +104,12 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      * affected by replication lag.
      */
     private final DelayQueue<DelayedChange> deferralQueue;
+    private final Timer wikibaseDataFetchTime;
+    private final Timer rdfRepositoryImportTime;
+    private final Timer rdfRepositoryFetchTime;
+    private final Counter importedChanged;
+    private final Counter noopedChangesByRevisionCheck;
+    private final Counter importedTriples;
 
     /**
      * Map entity->values list from repository.
@@ -130,6 +138,12 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
         this.updatesMeter = metricRegistry.meter("updates");
         this.batchAdvanced = metricRegistry.meter("batch-progress");
         this.skipAheadMeter = metricRegistry.meter("updates-skip");
+        this.wikibaseDataFetchTime = metricRegistry.timer("wikibase-data-fetch-time");
+        this.rdfRepositoryImportTime = metricRegistry.timer("rdf-repository-import-time");
+        this.rdfRepositoryFetchTime = metricRegistry.timer("rdf-repository-fetch-time");
+        this.noopedChangesByRevisionCheck = metricRegistry.counter("noop-by-revision-check");
+        this.importedChanged = metricRegistry.counter("rdf-repository-imported-changes");
+        this.importedTriples = metricRegistry.counter("rdf-repository-imported-triples");
         this.deferralQueue = new DelayQueue<>();
     }
 
@@ -224,39 +238,49 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      * @throws InterruptedException if the process is interrupted while waiting
      *             on changes to sync
      */
-    protected void handleChanges(Iterable<Change> changes) throws InterruptedException {
-        Set<Change> trueChanges = getRevisionUpdates(changes);
-        long start = System.currentTimeMillis();
-
-        List<Future<Change>> futureChanges = new ArrayList<>();
-        for (Change change : trueChanges) {
-            futureChanges.add(executor.submit(() -> {
-                while (true) {
-                    try {
-                        handleChange(change);
-                        return change;
-                    } catch (RetryableException e) {
-                        log.warn("Retryable error syncing.  Retrying.", e);
-                    } catch (ContainedException e) {
-                        log.warn("Contained error syncing.  Giving up on {}", change.entityId(), e);
-                        throw e;
-                    }
-                }
-            }));
+    protected void handleChanges(Collection<Change> changes) throws InterruptedException {
+        Set<Change> trueChanges;
+        try (Timer.Context ctx = rdfRepositoryFetchTime.time()) {
+            trueChanges = getRevisionUpdates(changes);
         }
+        noopedChangesByRevisionCheck.inc(changes.size() - trueChanges.size());
 
-        List<Change> processedChanges = new ArrayList<>();
-        for (Future<Change> f : futureChanges) {
-            try {
-                processedChanges.add(f.get());
-            } catch (ExecutionException ignore) {
-                // failure has already been logged
+        List<Change> processedChanges;
+        try (Timer.Context ctx = wikibaseDataFetchTime.time()) {
+            List<Future<Change>> futureChanges = new ArrayList<>();
+            for (Change change : trueChanges) {
+                futureChanges.add(executor.submit(() -> {
+                    while (true) {
+                        try {
+                            handleChange(change);
+                            return change;
+                        } catch (RetryableException e) {
+                            log.warn("Retryable error syncing.  Retrying.", e);
+                        } catch (ContainedException e) {
+                            log.warn("Contained error syncing.  Giving up on {}", change.entityId(), e);
+                            throw e;
+                        }
+                    }
+                }));
+            }
+
+            processedChanges = new ArrayList<>(futureChanges.size());
+            for (Future<Change> f : futureChanges) {
+                try {
+                    processedChanges.add(f.get());
+                } catch (ExecutionException ignore) {
+                    // failure has already been logged
+                }
             }
         }
 
-        log.debug("Preparing update data took {} ms, have {} changes", System.currentTimeMillis() - start, processedChanges.size());
-        rdfRepository.syncFromChanges(processedChanges, verify);
-        updatesMeter.mark(processedChanges.size());
+        int nbTriples;
+        try (Timer.Context ctx = rdfRepositoryImportTime.time()) {
+            nbTriples = rdfRepository.syncFromChanges(processedChanges, verify);
+            updatesMeter.mark(processedChanges.size());
+        }
+        importedChanged.inc(processedChanges.size());
+        importedTriples.inc(nbTriples);
     }
 
     /**

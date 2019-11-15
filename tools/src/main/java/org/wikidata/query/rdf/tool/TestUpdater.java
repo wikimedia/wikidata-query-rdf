@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -37,7 +38,7 @@ public class TestUpdater<B extends Change.Batch> extends Updater<B> {
     }
 
     @Override
-    protected void handleChanges(Iterable<Change> changes) {
+    protected void handleChanges(Collection<Change> changes) {
         for (Change change: changes) {
             log.info("C: {} {}", change.entityId(), change);
             Long old = updates.put(change.entityId(), change.revision());
