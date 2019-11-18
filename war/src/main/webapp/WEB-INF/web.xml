@@ -222,6 +222,13 @@
         <async-supported>true</async-supported>
     </servlet>
     <servlet>
+        <description>API implementing entities check.</description>
+        <display-name>Entities Data API</display-name>
+        <servlet-name>Entities Data API</servlet-name>
+        <servlet-class>org.wikidata.query.rdf.blazegraph.entitiesdata.EntitiesDataServlet</servlet-class>
+        <async-supported>true</async-supported>
+    </servlet>
+    <servlet>
         <servlet-name>ldfassets</servlet-name>
         <servlet-class>org.eclipse.jetty.servlet.DefaultServlet</servlet-class>
         <init-param>
@@ -275,6 +282,11 @@
     <servlet-mapping>
         <servlet-name>Merging Updater API</servlet-name>
         <url-pattern>/mupdater</url-pattern>
+    </servlet-mapping>
+    <!-- Mappings for the Entities Data Servlet API. -->
+    <servlet-mapping>
+        <servlet-name>Entities Data API</servlet-name>
+        <url-pattern>/entitiesdata</url-pattern>
     </servlet-mapping>
     <!-- Mappings for the TX API. -->
     <servlet-mapping>

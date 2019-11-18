@@ -1,4 +1,4 @@
-package org.wikidata.query.rdf.blazegraph.updater;
+package org.wikidata.query.rdf.blazegraph.entitiesdata;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,33 +21,33 @@ import com.bigdata.rdf.sail.webapp.BigdataRDFServletEx;
 import com.bigdata.rdf.sail.webapp.DatasetNotFoundException;
 
 /**
- * This class implements Merging Updater servlet.
- * The purpose of this API is to provide efficient updates, which would:
- *  - remove out of date site links
- *  - remove out of date statements about statements
- *  - remove out of date statements about the entity
- *  - insert new statements
- *  - insert timestamps
- *  - cleanup refs
- *  - cleanup values
+ * This class implements Entities Data servlet.
+ * The purpose of this API is to provide low level analysis,
+ * which would for a given list of entity IDs:
+ *  - collect all site links and references
+ *  - collect statements about statements
+ *  - collect statements about the entity
+ *  - return collected statements with corresponding IVs.
+ *
+ *  This servlet provides HTTP GET method to make it clear it does not apply
+ *  any changes to the data, but entity IDs might not fit in query params,
+ *  so GET request with body is used, which is OK as long we are using
+ *  this servlet internally (and most probably having local access to the server)
  *
  * @author <a href="mailto:igorkim78@gmail.com">Igor Kim</a>
  */
-public class MergingUpdaterServlet extends BigdataRDFServletEx {
+public class EntitiesDataServlet extends BigdataRDFServletEx {
 
-    private static final Logger log = LoggerFactory.getLogger(MergingUpdaterServlet.class);
+    private static final Logger log = LoggerFactory.getLogger(EntitiesDataServlet.class);
     private static final DiskFileItemFactory factory = new DiskFileItemFactory();
+    private static final String ENTITY_IDS_PARAM = "entityIds";
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (!isWritable(getServletContext(), req, resp)) {
-            // Service must be writable.
-            return;
-        }
 
         if (ServletFileUpload.isMultipartContent(req)) {
 
-            doUpdateWithBody(req, resp);
+            doEntitiesDataWithBody(req, resp);
 
         } else {
 
@@ -57,19 +57,15 @@ public class MergingUpdaterServlet extends BigdataRDFServletEx {
     }
 
     /**
-     * UPDATE request with a request body containing the statements to be
-     * removed and added as a multi-part mime request.
+     * Entities data request with a request body containing the entityIds to be
+     * checked (returned from the DB) as a multi-part mime request.
      */
-    private void doUpdateWithBody(final HttpServletRequest req,
+    private void doEntitiesDataWithBody(final HttpServletRequest req,
             final HttpServletResponse resp) throws IOException {
 
-        log.trace("Processing merging update");
+        log.trace("Processing entities check");
 
         final ServletFileUpload upload = new ServletFileUpload(factory);
-
-        FileItem insertStatements = null;
-        FileItem valueSet = null;
-        FileItem refSet = null;
 
         final List<FileItem> items;
         try {
@@ -83,25 +79,24 @@ public class MergingUpdaterServlet extends BigdataRDFServletEx {
         }
 
         try {
-            for (FileItem item : items) {
-                insertStatements = checkFileItem(item, insertStatements, "insertStatements");
-                valueSet = checkFileItem(item, valueSet, "valueSet");
-                refSet = checkFileItem(item, refSet, "refSet");
-            }
-
             final String baseURI = req.getRequestURL().toString();
+
+            FileItem entityIds = getEntityIds(items);
+            if (entityIds == null) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                        getErrorMessage(entityIds, baseURI));
+                return;
+            }
 
             final String namespace = getNamespace(req);
 
             try {
 
                 submitApiTask(
-                        new MergingUpdateWithBodyTask(req, resp, namespace,
+                        new EntitiesDataWithBodyTask(req, resp, namespace,
                                 ITx.UNISOLATED,
                                 baseURI,
-                                insertStatements,
-                                valueSet,
-                                refSet,
+                                entityIds,
                                 UrisSchemeFactory.getURISystem()
                                 )).get();
 
@@ -109,7 +104,7 @@ public class MergingUpdaterServlet extends BigdataRDFServletEx {
                 launderThrowable(
                         t,
                         resp,
-                        getErrorMessage(insertStatements,
+                        getErrorMessage(entityIds,
                                 baseURI));
             }
         } finally {
@@ -121,22 +116,21 @@ public class MergingUpdaterServlet extends BigdataRDFServletEx {
         }
     }
 
-    private FileItem checkFileItem(FileItem item, FileItem prevValue, String fieldName) {
-        if (prevValue != null) {
-            return prevValue;
-        }
-        if (fieldName.equals(item.getFieldName())) {
-            return item;
+    private FileItem getEntityIds(List<FileItem> items) {
+        for (FileItem item : items) {
+            if (ENTITY_IDS_PARAM.equals(item.getFieldName())) {
+                return item;
+            }
         }
         return null;
     }
 
-    private String getErrorMessage(FileItem insertStatements, final String baseURI) {
-        return "MERGING-UPDATE-WITH-BODY: baseURI="
+    private String getErrorMessage(FileItem entityIds, final String baseURI) {
+        return "ENTITIES-DATA-WITH-BODY: baseURI="
                 + baseURI
-                + (insertStatements == null ? " no insertStatements provided"
-                        : ", insertStatements="
-                                + insertStatements
+                + (entityIds == null ? " No entityIds provided"
+                        : ", entityIds="
+                                + entityIds
                   );
     }
 
