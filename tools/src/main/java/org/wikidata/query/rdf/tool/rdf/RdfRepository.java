@@ -42,6 +42,14 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 public class RdfRepository {
     private static final Logger log = LoggerFactory.getLogger(RdfRepository.class);
     /**
+     * A special logger to keep track on which Entity IDs were updated.
+     * It should be configured to write data to a separate log file,
+     * rotating by either day or amount of data (for example 10-100M)
+     * overwriting old files to prevent disk overflow, but space provisioned
+     * should provide storage for at least several days for issues analysis.
+     */
+    private static final Logger UPDATED_ENTITY_IDS_LOG = LoggerFactory.getLogger("UPDATED_ENTITY_IDS");
+    /**
      * How many statements we will send to RDF processor at once.
      * We assume typical triple line size is under 200 bytes.
      * Each statement appears twice in the output data. So that's how we derive the statement limit.
@@ -347,6 +355,7 @@ public class RdfRepository {
         log.debug("Processing {} IDs and {} statements", entityIds.size(), insertStatements.size());
         UpdateBuilder b = new UpdateBuilder(queryTemplate);
         b.bindEntityIds("entityListTop", entityIds, uris);
+        logUpdatedEntityIds(entityIds);
         entityIds.addAll(fetchLexemeSubIds(entityIds));
         b.bindEntityIds("entityList", entityIds, uris);
         b.bindStatements("insertStatements", insertStatements);
@@ -460,6 +469,7 @@ public class RdfRepository {
                                 boolean verifyResult
     ) {
         log.debug("Processing {} IDs and {} statements", entityIds.size(), insertStatements.size());
+        logUpdatedEntityIds(entityIds);
 
         long start = System.currentTimeMillis();
         Integer modified = rdfClient.mergingUpdate(insertStatements, valueSet, refSet);
@@ -475,6 +485,10 @@ public class RdfRepository {
         }
 
         return modified;
+    }
+
+    private void logUpdatedEntityIds(Set<String> entityIds) {
+        entityIds.forEach(entityId -> UPDATED_ENTITY_IDS_LOG.info(entityId));
     }
 
     /**

@@ -6,6 +6,23 @@
             <outputPatternAsHeader>true</outputPatternAsHeader>
         </encoder>
     </appender>
+    <appender name="UPDATED_ENTITY_IDS" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>updatedEntityIds.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- daily rollover -->
+            <fileNamePattern>updatedEntityIds.%d{yyyy-MM-dd}.gz</fileNamePattern>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- additivity=false ensures entityIds only go to the corresponding log -->
+    <logger name="UPDATED_ENTITY_IDS" level="INFO" additivity="false">
+        <appender-ref ref="UPDATED_ENTITY_IDS"/>
+    </logger>
 
     <logger name="org.wikidata.query.rdf" level="info"/>
 
