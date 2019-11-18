@@ -9,6 +9,8 @@ SELECT * WHERE {
     SELECT (?entity as ?s) ?p ?o WHERE {
       VALUES ?entity { %entityList% }
       ?entity ?p ?o .
+      # ignore entity timestamps
+      FILTER(?p != %wikibase:timestamp%)
     }
   } UNION {
     SELECT ?s ?p ?o WHERE {
@@ -20,6 +22,10 @@ SELECT * WHERE {
   } MINUS {
     VALUES ( ?s ?p ?o ) {
      %allStatements%
+    }
+  } MINUS {
+    VALUES ( ?s ?p ) {
+     %bnodeStatements%
     }
   }
 }
