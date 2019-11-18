@@ -25,7 +25,6 @@ public class QueryEventGenerator {
     public static final String QUERY_PARAM = "query";
     public static final String FORMAT_PARAM = "format";
     private static final Set<String> EXCLUDED_PARAMS = Collections.unmodifiableSet(new HashSet<>(asList(QUERY_PARAM, FORMAT_PARAM)));
-    public static final String STREAM_NAME = "sparql.query";
     private static final Pattern HEADER_VALUES_ESCAPE_PATTERN = Pattern.compile("([\\\\,])");
 
     private final Supplier<String> uniqueIdGenerator;
@@ -44,6 +43,16 @@ public class QueryEventGenerator {
         return clock.instant();
     }
 
+    private String extractPath(HttpServletRequest request) {
+        assert request.getRequestURI().startsWith(request.getContextPath());
+        return request.getRequestURI().substring(request.getContextPath().length());
+    }
+
+    public boolean hasValidPath(HttpServletRequest request) {
+        String path = this.extractPath(request);
+        return "/sparql".equals(path) || QueryEventGenerator.NS_EXTRACTER.matcher(path).matches();
+    }
+
     public QueryEvent generateQueryEvent(HttpServletRequest request, int responseStatus, Duration duration, Instant queryStartTime, String defaultNamespace) {
         Objects.requireNonNull(defaultNamespace, "defaultNamespace");
         EventMetadata metadata = generateEventMetadata(request, queryStartTime);
@@ -53,7 +62,7 @@ public class QueryEventGenerator {
         if (query == null) {
             throw new IllegalArgumentException("query parameter not found");
         }
-        String namespace = extractBlazegraphNamespace(request.getPathInfo());
+        String namespace = extractBlazegraphNamespace(extractPath(request));
         if (namespace == null) {
             namespace = defaultNamespace;
         }

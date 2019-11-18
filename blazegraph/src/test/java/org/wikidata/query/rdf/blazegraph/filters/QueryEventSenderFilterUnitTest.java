@@ -52,40 +52,10 @@ public class QueryEventSenderFilterUnitTest {
         HttpServletRequest request = mock(HttpServletRequest.class);
         ServletContext context = mock(ServletContext.class);
         when(context.getAttribute(eq(WikibaseContextListener.BLAZEGRAPH_DEFAULT_NAMESPACE))).thenReturn(defaultNS);
-        when(request.getPathInfo()).thenReturn("/namespace/ns/sparql");
         when(request.getParameter(eq(QueryEventGenerator.QUERY_PARAM))).thenReturn(SPARQL_QUERY);
         when(request.getHeader(eq(headerFlag))).thenReturn("yes");
         when(request.getServletContext()).thenReturn(context);
-        HttpServletResponse response = mock(HttpServletResponse.class);
-
-        when(eventGenerator.generateQueryEvent(eq(request), eq(200), eq(Duration.ofSeconds(1)), eq(Instant.EPOCH), eq(defaultNS)))
-                .thenReturn(generatedEvent);
-        FilterChain filterChain = mock(FilterChain.class);
-        when(response.getStatus()).thenReturn(200);
-        QueryEventSenderFilter filter = new QueryEventSenderFilter(receivedEvents::add, eventGenerator, headerFlag);
-        filter.doFilter(request, response, filterChain);
-        assertThat(receivedEvents).containsExactly(generatedEvent);
-        verify(filterChain, times(1)).doFilter(eq(request), eq(response));
-    }
-
-    @Test
-    public void testQueryEventOnDefaultNamespace() throws IOException, ServletException {
-        List<Event> receivedEvents = new ArrayList<>();
-        QueryEventGenerator eventGenerator = mock(QueryEventGenerator.class);
-        QueryEvent generatedEvent = mock(QueryEvent.class);
-        String headerFlag = "headerFlag";
-        String defaultNS = "defaultNS";
-
-        when(eventGenerator.instant())
-                .thenReturn(Instant.EPOCH)
-                .thenReturn(Instant.EPOCH.plus(1, SECONDS));
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        ServletContext context = mock(ServletContext.class);
-        when(context.getAttribute(eq(WikibaseContextListener.BLAZEGRAPH_DEFAULT_NAMESPACE))).thenReturn(defaultNS);
-        when(request.getPathInfo()).thenReturn("/sparql");
-        when(request.getParameter(eq(QueryEventGenerator.QUERY_PARAM))).thenReturn(SPARQL_QUERY);
-        when(request.getHeader(eq(headerFlag))).thenReturn("yes");
-        when(request.getServletContext()).thenReturn(context);
+        when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         HttpServletResponse response = mock(HttpServletResponse.class);
 
         when(eventGenerator.generateQueryEvent(eq(request), eq(200), eq(Duration.ofSeconds(1)), eq(Instant.EPOCH), eq(defaultNS)))
@@ -111,13 +81,14 @@ public class QueryEventSenderFilterUnitTest {
         ServletContext context = mock(ServletContext.class);
         when(context.getAttribute(eq(WikibaseContextListener.BLAZEGRAPH_DEFAULT_NAMESPACE))).thenReturn(defaultNS);
         HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getPathInfo()).thenReturn("/namespace/ns/sparql");
         when(request.getParameter(eq(QueryEventGenerator.QUERY_PARAM))).thenReturn(SPARQL_QUERY);
         when(request.getServletContext()).thenReturn(context);
+        when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         HttpServletResponse response = mock(HttpServletResponse.class);
 
         when(eventGenerator.generateQueryEvent(eq(request), eq(500), eq(Duration.ofSeconds(1)), eq(Instant.EPOCH), eq(defaultNS)))
                 .thenReturn(generatedEvent);
+        when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         FilterChain filterChain = mock(FilterChain.class);
         doThrow(new ServletException("failure")).when(filterChain).doFilter(eq(request), eq(response));
         QueryEventSenderFilter filter = new QueryEventSenderFilter(receivedEvents::add, eventGenerator, null);
@@ -135,8 +106,8 @@ public class QueryEventSenderFilterUnitTest {
         ServletContext context = mock(ServletContext.class);
         when(context.getAttribute(eq(WikibaseContextListener.BLAZEGRAPH_DEFAULT_NAMESPACE))).thenReturn(defaultNS);
         HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getPathInfo()).thenReturn("/namespace/ns/sparql");
         when(request.getServletContext()).thenReturn(context);
+        when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         HttpServletResponse response = mock(HttpServletResponse.class);
 
         FilterChain filterChain = mock(FilterChain.class);
@@ -148,12 +119,12 @@ public class QueryEventSenderFilterUnitTest {
     }
 
     @Test
-    public void testIgnoreOnBadQueryParam() throws IOException, ServletException {
+    public void testIgnoreOnBadRequestURI() throws IOException, ServletException {
         QueryEventGenerator eventGenerator = mock(QueryEventGenerator.class);
 
         HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getPathInfo()).thenReturn("/random/path");
         when(request.getParameter(eq(QueryEventGenerator.QUERY_PARAM))).thenReturn(SPARQL_QUERY);
+        when(eventGenerator.hasValidPath(eq(request))).thenReturn(false);
         HttpServletResponse response = mock(HttpServletResponse.class);
 
         FilterChain filterChain = mock(FilterChain.class);
@@ -170,9 +141,9 @@ public class QueryEventSenderFilterUnitTest {
         String headerFlag = "headerFlag";
 
         HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getPathInfo()).thenReturn("/namespace/ns/sparql");
         when(request.getParameter(eq(QueryEventGenerator.QUERY_PARAM))).thenReturn(SPARQL_QUERY);
         when(request.getHeader(eq(headerFlag))).thenReturn(null);
+        when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         HttpServletResponse response = mock(HttpServletResponse.class);
 
         FilterChain filterChain = mock(FilterChain.class);

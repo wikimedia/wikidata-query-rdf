@@ -112,14 +112,10 @@ public class QueryEventSenderFilter implements Filter {
         if (enableIfHeader != null && httpRequest.getHeader(enableIfHeader) == null) {
             return false;
         }
-        if (!hasValidPath(httpRequest.getPathInfo())) {
+        if (!queryEventGenerator.hasValidPath(httpRequest)) {
             return false;
         }
         return httpRequest.getParameter(QueryEventGenerator.QUERY_PARAM) != null;
-    }
-
-    private boolean hasValidPath(String path) {
-        return path != null && ("/sparql".equals(path) || QueryEventGenerator.NS_EXTRACTER.matcher(path).matches());
     }
 
     @Override
