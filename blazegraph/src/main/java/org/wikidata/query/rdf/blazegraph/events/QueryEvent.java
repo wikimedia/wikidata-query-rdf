@@ -1,10 +1,13 @@
 package org.wikidata.query.rdf.blazegraph.events;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+
 import java.time.Duration;
 import java.util.Map;
 
 import javax.annotation.Nullable;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -62,6 +65,7 @@ public class QueryEvent implements Event {
         return query;
     }
 
+    @JsonInclude(NON_NULL)
     public String getFormat() {
         return format;
     }

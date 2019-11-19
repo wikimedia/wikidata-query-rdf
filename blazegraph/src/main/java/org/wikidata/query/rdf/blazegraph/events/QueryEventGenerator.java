@@ -55,6 +55,7 @@ public class QueryEventGenerator {
 
     public QueryEvent generateQueryEvent(HttpServletRequest request, int responseStatus, Duration duration, Instant queryStartTime, String defaultNamespace) {
         Objects.requireNonNull(defaultNamespace, "defaultNamespace");
+        Objects.requireNonNull(duration, "duration");
         EventMetadata metadata = generateEventMetadata(request, queryStartTime);
         EventHttpMetadata httpMetadata = generateHttpMetadata(request, responseStatus);
         String format = request.getParameter("format");

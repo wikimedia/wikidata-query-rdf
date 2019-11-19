@@ -21,8 +21,8 @@ import org.wikidata.query.rdf.blazegraph.JacksonUtil;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 public class EventHttpSender implements EventSender, AutoCloseable {
-    public static final int DEFAULT_CON_TIMEOUT = 5;
-    public static final int DEFAULT_READ_TIMEOUT = 5;
+    public static final int DEFAULT_CON_TIMEOUT = 5000;
+    public static final int DEFAULT_READ_TIMEOUT = 5000;
 
     private final CloseableHttpClient httpClient;
     private final String eventGateUri;

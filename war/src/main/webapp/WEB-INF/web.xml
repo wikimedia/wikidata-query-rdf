@@ -129,7 +129,7 @@
     <filter-mapping>
         <filter-name>event-sender-filter</filter-name>
         <url-pattern>/sparql</url-pattern>
-        <url-pattern>/namespace/*/sparql</url-pattern>
+        <url-pattern>/namespace/*</url-pattern>
     </filter-mapping>
     <filter>
         <filter-name>mdc-inserting-filter</filter-name>
