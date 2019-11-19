@@ -9,12 +9,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -24,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.change.Change;
-import org.wikidata.query.rdf.tool.change.Change.DelayedChange;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.Munger;
@@ -35,8 +32,6 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 
 /**
@@ -103,7 +98,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      * Change is delayed if RDF data produces lower revision than change - this means we're
      * affected by replication lag.
      */
-    private final DelayQueue<DelayedChange> deferralQueue;
+    private final DeferredChanges deferredChanges = new DeferredChanges();
     private final Timer wikibaseDataFetchTime;
     private final Timer rdfRepositoryImportTime;
     private final Timer rdfRepositoryFetchTime;
@@ -144,7 +139,6 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
         this.noopedChangesByRevisionCheck = metricRegistry.counter("noop-by-revision-check");
         this.importedChanged = metricRegistry.counter("rdf-repository-imported-changes");
         this.importedTriples = metricRegistry.counter("rdf-repository-imported-triples");
-        this.deferralQueue = new DelayQueue<>();
     }
 
     @Override
@@ -161,7 +155,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
         Instant oldDate = null;
         while (!currentThread().isInterrupted()) {
             try {
-                handleChanges(addDeferredChanges(deferralQueue, batch.changes()));
+                handleChanges(this.deferredChanges.augmentWithDeferredChanges(batch.changes()));
                 Instant leftOffDate = batch.leftOffDate();
                 if (leftOffDate != null) {
                     /*
@@ -189,34 +183,6 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 currentThread().interrupt();
             }
         }
-    }
-
-    /**
-     * If there are any deferred changes, add them to changes list.
-     * @return Modified collection as iterable.
-     */
-    @VisibleForTesting
-    static Collection<Change> addDeferredChanges(DelayQueue<DelayedChange> deferralQueue, Collection<Change> newChanges) {
-        if (deferralQueue.isEmpty()) {
-            return newChanges;
-        }
-        List<Change> allChanges = new LinkedList<>(newChanges);
-        int deferrals = 0;
-        Set<String> changeIds = newChanges.stream().map(Change::entityId).collect(ImmutableSet.toImmutableSet());
-        for (DelayedChange deferred = deferralQueue.poll();
-             deferred != null;
-             deferred = deferralQueue.poll()) {
-           if (changeIds.contains(deferred.getChange().entityId())) {
-               // This title ID already has newer change, drop the deferral.
-               // NOTE: here we assume that incoming stream always has changes in order of increasing revisions,
-               // which sounds plausible.
-               continue;
-           }
-           allChanges.add(deferred.getChange());
-           deferrals++;
-        }
-        log.info("Added {} deferred changes, {} still in the queue", deferrals, deferralQueue.size());
-        return allChanges;
     }
 
     /**
@@ -402,7 +368,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 if (fetchedRev < sourceRev) {
                     // Something weird happened - we've got stale revision!
                     log.warn("Stale revision on {}: change is {}, RDF is {}", change.entityId(), sourceRev, fetchedRev);
-                    change.delay(deferralQueue, DEFERRAL_DELAY);
+                    deferredChanges.add(change, DEFERRAL_DELAY);
                 }
                 if (sourceRev < fetchedRev) {
                     // We skipped some revisions, let's count it in meter

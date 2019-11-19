@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
@@ -354,7 +353,7 @@ public class Change implements Comparable<Change> {
         }
     }
 
-    public void delay(Queue<DelayedChange> queue, long timeout) {
-        queue.add(new DelayedChange(timeout));
+    public DelayedChange asDelayedChange(long timeout) {
+        return new DelayedChange(timeout);
     }
 }
