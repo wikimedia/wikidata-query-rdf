@@ -36,6 +36,10 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.isomorphism</groupId>
             <artifactId>token-bucket</artifactId>
         </dependency>
