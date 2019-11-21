@@ -62,7 +62,7 @@
     </issueManagement>
 
     <properties>
-        <blazegraph.version>2.1.5-wmf.10</blazegraph.version>
+        <blazegraph.version>2.1.5-wmf.11</blazegraph.version>
         <!-- matching version used by Blazegraph here -->
         <jackson.version>2.6.7</jackson.version>
         <!-- matching version used by Blazegraph here -->
