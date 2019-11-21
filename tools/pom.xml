@@ -66,11 +66,6 @@
             <artifactId>jewelcli</artifactId>
         </dependency>
         <dependency>
-            <!-- Tiny http server used with Munge's to option in port style -->
-            <groupId>com.nanohttpd</groupId>
-            <artifactId>nanohttpd</artifactId>
-        </dependency>
-        <dependency>
             <groupId>de.thetaphi</groupId>
             <artifactId>forbiddenapis</artifactId>
         </dependency>
@@ -169,6 +164,12 @@
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- used by a test Proxy to wikidata.org anf produce fake error -->
+            <groupId>com.nanohttpd</groupId>
+            <artifactId>nanohttpd</artifactId>
+	    <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>

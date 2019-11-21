@@ -69,14 +69,6 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
     }
 
     /**
-     * Loads a uri into this rdf repository. Uses Blazegraph's update with
-     * uri's feature.
-     */
-    public int loadUrl(String uri) {
-        return rdfClient.loadUrl(uri);
-    }
-
-    /**
      * Updates the repository.
      */
     public int update(String query) {

@@ -1,15 +1,10 @@
 package org.wikidata.query.rdf.tool;
 
 import static java.lang.Boolean.FALSE;
-import static org.wikidata.query.rdf.tool.StreamUtils.utf8;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.handleOptions;
 import static org.wikidata.query.rdf.tool.options.OptionsUtils.mungerFromOptions;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -17,9 +12,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -50,13 +42,12 @@ import com.codahale.metrics.Meter;
 
 import de.thetaphi.forbiddenapis.SuppressForbidden;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import fi.iki.elonen.NanoHTTPD;
 
 /**
  * Munges a Wikidata RDF dump so that it can be loaded in a single import.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-public class Munge implements Runnable {
+public class Munge {
     private static final Logger log = LoggerFactory.getLogger(Munge.class);
 
     /**
@@ -68,95 +59,24 @@ public class Munge implements Runnable {
         UrisScheme uris = OptionsUtils.WikibaseOptions.wikibaseUris(options);
         Munger munger = mungerFromOptions(options);
 
-        int port = parsePort(options.to());
-
         OutputPicker<Writer> to;
-        Httpd httpd = null;
         try {
             if (options.chunkSize() > 0) {
-                if (port > 0) {
-                    // We have two slots just in case
-                    BlockingQueue<InputStream> queue = new ArrayBlockingQueue<>(2);
-                    httpd = new Httpd(port, queue);
-                    to = new ChunkedPipedWriterOutputPicker(queue, options.chunkSize());
-                } else {
-                    to = new ChunkedFileWriterOutputPicker(options.to(), options.chunkSize());
-                }
+                to = new ChunkedFileWriterOutputPicker(options.to(), options.chunkSize());
             } else {
-                if (port > 0) {
-                    PipedInputStream toHttp = new PipedInputStream();
-                    Writer writer = utf8(new PipedOutputStream(toHttp));
-                    BlockingQueue<InputStream> queue = new ArrayBlockingQueue<>(1);
-                    queue.put(toHttp);
-                    httpd = new Httpd(port, queue);
-                    to = new AlwaysOutputPicker<>(writer);
-                } else {
-                    to = new AlwaysOutputPicker<>(CliUtils.writer(options.to()));
-                }
-            }
-            if (httpd != null) {
-                log.info("Starting embedded http sever on port {}", port);
-                log.info("This process will exit when the whole dump has been served");
-                httpd.start();
+                to = new AlwaysOutputPicker<>(CliUtils.writer(options.to()));
             }
         } catch (IOException e) {
             log.error("Error finding output", e);
             System.exit(1);
             return;
-        } catch (InterruptedException e) {
-            log.error("Interrupted while waiting on httpd", e);
-            System.exit(1);
-            return;
         }
         try {
-            Munge munge = new Munge(uris, munger, openInput(options.from()), to);
+            Munge munge = new Munge(uris, munger, CliUtils.reader(options.from()), to);
             munge.run();
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             log.error("Fatal error munging RDF", e);
             System.exit(1);
-        }
-        waitForHttpdToShutDownIfNeeded(httpd);
-    }
-
-    /**
-     * Parse the http port from the "to" parameter if there is one, return 0
-     * otherwise.
-     */
-    private static int parsePort(String to) {
-        if (to.startsWith("port:")) {
-            return Integer.parseInt(to.substring("port:".length()));
-        }
-        return 0;
-    }
-
-    /**
-     * Open the input using the "from" parameter, exiting on failure.
-     */
-    private static Reader openInput(String from) {
-        try {
-            return CliUtils.reader(from);
-        } catch (IOException e) {
-            log.error("Error finding input", e);
-            System.exit(1);
-            return null;
-        }
-    }
-
-    /**
-     * Wait for the HTTP server to shutdown if it was used.
-     */
-    private static void waitForHttpdToShutDownIfNeeded(Httpd httpd) {
-        if (httpd == null) {
-            return;
-        }
-        log.info("Finished munging and waiting for the http server to finish sending them");
-        while (httpd.busy.get()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                log.info("Interrupted while waiting for http server to finish sending", e);
-                System.exit(1);
-            }
         }
     }
 
@@ -184,8 +104,7 @@ public class Munge implements Runnable {
         this.to = to;
     }
 
-    @Override
-    public void run() {
+    public void run() throws Exception {
         try {
             // TODO this is a temporary hack
             // RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
@@ -193,11 +112,7 @@ public class Munge implements Runnable {
             OutputPicker<RDFHandler> writer = new WriterToRDFWriterChunkPicker(to);
             EntityMungingRdfHandler handler = new EntityMungingRdfHandler(uris, munger, writer);
             parser.setRDFHandler(new NormalizingRdfHandler(handler));
-            try {
-                parser.parse(from, uris.root());
-            } catch (RDFParseException | RDFHandlerException | IOException e) {
-                throw new RuntimeException(e);
-            }
+            parser.parse(from, uris.root());
         } finally {
             try {
                 from.close();
@@ -259,11 +174,6 @@ public class Munge implements Runnable {
          */
         private String entityId;
 
-        /**
-         * Last statement.
-         */
-        private Statement lastStatement;
-
         EntityMungingRdfHandler(UrisScheme uris, Munger munger, OutputPicker<RDFHandler> next) {
             this.uris = uris;
             this.munger = munger;
@@ -291,7 +201,6 @@ public class Munge implements Runnable {
         @Override
         @SuppressFBWarnings(value = "STT_STRING_PARSING_A_FIELD", justification = "low priority to fix")
         public void handleStatement(Statement statement) throws RDFHandlerException {
-            lastStatement = statement;
             String subject = statement.getSubject().stringValue();
             if (subject.startsWith(uris.entityDataHttps()) || subject.startsWith(uris.entityData())) {
                 if (haveNonEntityDataStatements) {
@@ -360,48 +269,6 @@ public class Munge implements Runnable {
             }
             statements.clear();
             haveNonEntityDataStatements = false;
-        }
-    }
-
-    /**
-     * Very simple HTTP server that only knows how to spit out results from a
-     * queue.
-     */
-    public static class Httpd extends NanoHTTPD {
-        /**
-         * Flag that the server is still busy. We try to make sure to set this
-         * to false if we're not busy so the process can exit.
-         */
-        private final AtomicBoolean busy = new AtomicBoolean(false);
-        /**
-         * Queue from which Turtle formatter RDF is read.
-         */
-        private final BlockingQueue<InputStream> results;
-
-        public Httpd(int port, BlockingQueue<InputStream> results) {
-            super(port);
-            this.results = results;
-        }
-
-        @Override
-        public Response serve(IHTTPSession session) {
-            try {
-                busy.set(true);
-                Response response = new Response(Response.Status.OK, " application/x-turtle", results.take()) {
-                    @Override
-                    protected void send(OutputStream outputStream) {
-                        super.send(outputStream);
-                        busy.set(false);
-                    }
-                };
-                response.setChunkedTransfer(true);
-                return response;
-            } catch (InterruptedException e) {
-                log.error("Interrupted while waiting for a result", e);
-                Thread.currentThread().interrupt();
-                busy.set(false);
-                return new Response(Response.Status.INTERNAL_ERROR, "text/plain", "internal server error");
-            }
         }
     }
 
@@ -511,39 +378,6 @@ public class Munge implements Runnable {
             log.info("Switching to {}", file);
             try {
                 return CliUtils.writer(file);
-            } catch (IOException e) {
-                throw new RuntimeException("Error switching chunks", e);
-            }
-        }
-    }
-
-    /**
-     * OutputPicker writes to PipedOutput stream and throws the corresponding
-     * PipedInputStreams on a BlockingQueue.
-     */
-    public static class ChunkedPipedWriterOutputPicker extends ChunkedWriterOutputPicker {
-        /**
-         * Queue to hold readable results streams.
-         */
-        private final BlockingQueue<InputStream> queue;
-
-        public ChunkedPipedWriterOutputPicker(BlockingQueue<InputStream> queue, int chunkSize) {
-            super(chunkSize);
-            this.queue = queue;
-        }
-
-        @Override
-        @SuppressFBWarnings(
-                value = "EXS_EXCEPTION_SOFTENING_NO_CHECKED",
-                justification = "Hiding IOException is suspicious, but seems to be the usual pattern in this project")
-        protected Writer buildWriter(long chunk) {
-            PipedInputStream toQueue = new PipedInputStream();
-            try {
-                queue.put(toQueue);
-                return utf8(new PipedOutputStream(toQueue));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Error switching chunks", e);
             } catch (IOException e) {
                 throw new RuntimeException("Error switching chunks", e);
             }

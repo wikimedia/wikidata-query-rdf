@@ -9,21 +9,11 @@ import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.tool.StreamUtils.utf8;
 import static org.wikidata.query.rdf.tool.rdf.RdfRepository.UpdateMode.NON_MERGING;
 
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.io.Reader;
-import java.io.Writer;
 import java.text.ParseException;
 import java.time.Instant;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,28 +22,20 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
-import org.wikidata.query.rdf.tool.Munge.AlwaysOutputPicker;
-import org.wikidata.query.rdf.tool.Munge.Httpd;
-import org.wikidata.query.rdf.tool.Munge.OutputPicker;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.google.common.io.Closer;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * Tests the munger that loads dumps.
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:illegalcatch"})
 public class MungeIntegrationTest {
-    private static final Logger log = LoggerFactory.getLogger(MungeIntegrationTest.class);
-
     /**
      * Wikibase uris to test with.
      */
@@ -99,41 +81,15 @@ public class MungeIntegrationTest {
         assertThat(results.next(), binds("x", new LiteralImpl("1.23456789012345678901234567890123456789", XMLSchema.DECIMAL)));
     }
 
-    @SuppressWarnings({"checkstyle:illegalcatch", "resource"})
-    private void loadDumpIntoRepo(String dumpName, int count, Closer closer) throws IOException, InterruptedException, ExecutionException {
+    private void loadDumpIntoRepo(String dumpName, int count, Closer closer) throws Exception {
         Reader from = utf8(getResource(MungeIntegrationTest.class, dumpName).openStream());
         closer.register(from);
-        PipedInputStream toHttp = new PipedInputStream();
-        closer.register(toHttp);
-        Writer writer = utf8(new PipedOutputStream(toHttp));
-        closer.register(writer);
-        OutputPicker<Writer> to = new AlwaysOutputPicker<>(writer);
-        BlockingQueue<InputStream> queue = new ArrayBlockingQueue<>(1);
-        queue.put(toHttp);
-        Munge.Httpd httpd = new Httpd(10999, queue);
-        closer.register(() -> {
-            try {
-                httpd.stop();
-            } catch (Exception e) {
-                throw new RuntimeException("Could not close Httpd", e);
-            }
-        });
         Munger munger = Munger.builder(uris).singleLabelMode("en").build();
-        ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Munge-IT-%d").build());
-        closer.register(() -> {
-            try {
-                executor.shutdown();
-            } catch (Exception e) {
-                throw new RuntimeException("Could not close Executor", e);
-            }
-        });
-        Future<?> f = executor.submit(new Munge(uris, munger, from, to));
-        httpd.start();
-        assertEquals(count, rdfRepository.loadUrl("http://localhost:10999"));
-        f.get();
-        httpd.stop();
-        executor.shutdown();
-        executor.awaitTermination(10, TimeUnit.SECONDS);
+        File file = File.createTempFile("munge-test", ".ttl");
+        String fileURL = file.toURI().toURL().toString();
+        Munge munge = new Munge(uris, munger, from, new Munge.AlwaysOutputPicker<>(CliUtils.writer(file.getAbsolutePath())));
+        munge.run();
+        assertEquals(count, (long) rdfRepository.getClient().loadUrl(fileURL));
     }
 
     /**

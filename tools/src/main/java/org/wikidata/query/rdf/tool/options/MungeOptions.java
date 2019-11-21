@@ -10,8 +10,8 @@ public interface MungeOptions extends OptionsUtils.BasicOptions, OptionsUtils.Mu
     @Option(shortName = "f", defaultValue = "-", description = "Source file (or uri) to munge. Default is - aka stdin.")
     String from();
 
-    @Option(shortName = "t", defaultValue = "-", description = "Destination of munge. Use port:<port_number> to start an "
-            + "http server on that port. Default is - aka stdout. If the file's parent directories don't exist then they "
+    @Option(shortName = "t", defaultValue = "-", description = "Destination of munge. "
+            + "Default is - aka stdout. If the file's parent directories don't exist then they "
             + "will be created ala mkdir -p.")
     String to();
 
