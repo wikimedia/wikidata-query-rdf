@@ -12,6 +12,7 @@ import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Map;
 
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.Before;
@@ -35,10 +36,10 @@ public class RdfKafkaOffsetsRepositoryUnitTest {
 
     private RdfKafkaOffsetsRepository repository;
 
-    private final Map<TopicPartition, Long> offsets = ImmutableMap.of(
-            new TopicPartition("topic-1", 2), 3L,
-            new TopicPartition("topic-4", 5), 6L,
-            new TopicPartition("topic-7", 8), 9L
+    private final Map<TopicPartition, OffsetAndMetadata> offsets = ImmutableMap.of(
+            new TopicPartition("topic-1", 2), new OffsetAndMetadata(3L),
+            new TopicPartition("topic-4", 5), new OffsetAndMetadata(6L),
+            new TopicPartition("topic-7", 8), new OffsetAndMetadata(9L)
     );
 
     @Before

@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.tool.change;
 import java.time.Instant;
 import java.util.Map;
 
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
 
@@ -21,5 +22,5 @@ public interface KafkaOffsetsRepository {
     /**
      * Store Kafka offsets.
      */
-    void store(Map<TopicPartition, Long> partitionsAndOffsets);
+    void store(Map<TopicPartition, OffsetAndMetadata> partitionsAndOffsets);
 }

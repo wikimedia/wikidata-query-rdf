@@ -2,13 +2,13 @@ package org.wikidata.query.rdf.tool.change;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -20,6 +20,7 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.InterruptException;
@@ -290,16 +291,15 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         return results;
     }
 
-    public ImmutableMap<TopicPartition, Long> currentOffsets() {
-        return topicPartitions.stream()
-                    .collect(toImmutableMap(identity(), consumer::position));
+    @Override
+    public Batch nextBatch(Batch lastBatch) throws RetryableException {
+        return fetch(lastBatch.leftOffDate());
     }
 
     @Override
-    public Batch nextBatch(Batch lastBatch) throws RetryableException {
-        consumer.commitSync();
-        kafkaOffsetsRepository.store(currentOffsets());
-        return fetch(lastBatch.leftOffDate());
+    public void done(Batch batch) {
+        consumer.commitSync(batch.offsets);
+        kafkaOffsetsRepository.store(batch.offsets);
     }
 
     /**
@@ -314,6 +314,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         ConsumerRecords<String, ChangeEvent> records;
         Instant nextInstant = Instant.EPOCH;
         AtomicLongMap<String> topicCounts = AtomicLongMap.create();
+        Map<TopicPartition, OffsetAndMetadata> batchOffsets = new HashMap<>();
         while (true) {
             try (Context timerContext = pollingTimer.time()) {
                 // TODO: make timeout configurable? Wait for a bit so we catch bursts of messages?
@@ -332,6 +333,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
             for (ConsumerRecord<String, ChangeEvent> record: records) {
                 ChangeEvent event = record.value();
                 String topic = record.topic();
+                batchOffsets.put(new TopicPartition(record.topic(), record.partition()), new OffsetAndMetadata(record.offset()));
                 log.trace("Got event t:{} o:{}", record.topic(), record.offset());
                 if (!event.domain().equals(uris.getHost())) {
                     // wrong domain, ignore
@@ -403,7 +405,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         long advanced = ChronoUnit.MILLIS.between(lastNextStartTime, nextInstant);
         // Show the user the polled time - one second because we can't
         // be sure we got the whole second
-        return new Batch(changes, advanced, nextInstant.minusSeconds(1).toString(), nextInstant);
+        return new Batch(changes, advanced, nextInstant.minusSeconds(1).toString(), nextInstant, batchOffsets);
     }
 
     /**
@@ -436,10 +438,12 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
          * The date where we last left off.
          */
         private final Instant leftOffDate;
+        private final Map<TopicPartition, OffsetAndMetadata> offsets;
 
-        public Batch(ImmutableList<Change> changes, long advanced, String leftOff, Instant nextStartTime) {
+        public Batch(ImmutableList<Change> changes, long advanced, String leftOff, Instant nextStartTime, Map<TopicPartition, OffsetAndMetadata> offsets) {
             super(changes, advanced, leftOff);
             leftOffDate = nextStartTime;
+            this.offsets = offsets;
         }
 
         @Override

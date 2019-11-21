@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
 import org.wikidata.query.rdf.tool.rdf.UpdateBuilder;
@@ -70,13 +71,13 @@ public class RdfKafkaOffsetsRepository implements KafkaOffsetsRepository {
      */
     @Override
     @SuppressFBWarnings(value = "VA_FORMAT_STRING_USES_NEWLINE", justification = "we want to be platform independent here.")
-    public void store(Map<TopicPartition, Long> partitionsAndOffsets) {
+    public void store(Map<TopicPartition, OffsetAndMetadata> partitionsAndOffsets) {
         UpdateBuilder ub = new UpdateBuilder(UPDATE_OFFSETS);
         StringBuilder sb = new StringBuilder();
 
-        for (Map.Entry<TopicPartition, Long> partitionAndOffset : partitionsAndOffsets.entrySet()) {
+        for (Map.Entry<TopicPartition, OffsetAndMetadata> partitionAndOffset : partitionsAndOffsets.entrySet()) {
             TopicPartition tp = partitionAndOffset.getKey();
-            Long offset = partitionAndOffset.getValue();
+            Long offset = partitionAndOffset.getValue().offset();
             sb.append(String.format(Locale.ROOT,
                     "<%s> wikibase:kafka ( \"%s:%d\" %d ) .\n",
                     root, tp.topic(), tp.partition(), offset));

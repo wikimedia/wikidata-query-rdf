@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool.change;
 
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
@@ -54,18 +57,20 @@ import com.google.common.collect.Maps;
 @RunWith(MockitoJUnitRunner.class)
 public class KafkaPollerUnitTest {
 
+    public static final long ENTITY_NS = 0L;
     @Mock
     private KafkaConsumer<String, ChangeEvent> consumer;
     private Uris uris;
 
     private static final ConsumerRecords<String, ChangeEvent> EMPTY_CHANGES =
             new ConsumerRecords<>(Collections.emptyMap());
+
     private static final int BATCH_SIZE = 5;
 
     @Before
     public void setupUris() {
         uris = Uris.fromString("https://" + DOMAIN);
-        uris.setEntityNamespaces(singleton(0L));
+        uris.setEntityNamespaces(singleton(ENTITY_NS));
     }
 
     @Test
@@ -445,15 +450,28 @@ public class KafkaPollerUnitTest {
         Collection<String> topics = ImmutableList.of("topictest", "othertopic", "thirdtopic");
         KafkaOffsetsRepository offsetsRepository = mock(KafkaOffsetsRepository.class);
 
+        Map<TopicPartition, List<ConsumerRecord<String, ChangeEvent>>> records = new HashMap<>();
+        records.put(new TopicPartition("topictest", 0),
+                Arrays.asList(
+                        new ConsumerRecord<>("topictest", 0, 2L, "1", newChange("Q1")),
+                        new ConsumerRecord<>("topictest", 0, 2L, "4", newChange("Q4"))
+                )
+        );
+        records.put(new TopicPartition("othertopic", 0),
+                Arrays.asList(
+                        new ConsumerRecord<>("othertopic", 0, 2L, "2", newChange("Q2")),
+                        new ConsumerRecord<>("othertopic", 0, 3L, "5", newChange("Q5"))
+                )
+        );
+        records.put(new TopicPartition("thirdtopic", 0),
+                singletonList(new ConsumerRecord<>("thirdtopic", 0, 2L, "3", newChange("Q3"))));
+
         createTopicPartitions(1);
         when(offsetsRepository.load(any())).thenReturn(ImmutableMap.of());
 
-        when(consumer.poll(anyLong())).thenReturn(EMPTY_CHANGES);
+        when(consumer.poll(anyLong())).thenReturn(new ConsumerRecords<>(records));
 
-        ArgumentCaptor<TopicPartition> positionArgs = ArgumentCaptor.forClass(TopicPartition.class);
-        when(consumer.position(positionArgs.capture())).thenReturn(1L, 2L, 3L);
-
-        ArgumentCaptor<Map<TopicPartition, Long>> storeCaptor = ArgumentCaptor.forClass((Class)Map.class);
+        ArgumentCaptor<Map<TopicPartition, OffsetAndMetadata>> storeCaptor = ArgumentCaptor.forClass((Class)Map.class);
         doNothing().when(offsetsRepository).store(storeCaptor.capture());
 
         KafkaPoller poller = new KafkaPoller(
@@ -461,21 +479,14 @@ public class KafkaPollerUnitTest {
                 offsetsRepository, true, new MetricRegistry());
 
         Batch batch = poller.firstBatch();
-        batch = poller.nextBatch(batch);
-
-        assertThat(positionArgs.getAllValues())
-                .containsExactlyInAnyOrder(
-                        new TopicPartition("topictest", 0),
-                        new TopicPartition("othertopic", 0),
-                        new TopicPartition("thirdtopic", 0)
-                );
+        poller.done(batch);
 
         // Should be one update query
         verify(offsetsRepository, times(1)).store(any());
         assertThat(storeCaptor.getValue())
-                .containsEntry(new TopicPartition("topictest", 0), 1L)
-                .containsEntry(new TopicPartition("othertopic", 0), 2L)
-                .containsEntry(new TopicPartition("thirdtopic", 0), 3L);
+                .containsEntry(new TopicPartition("topictest", 0), new OffsetAndMetadata(2L))
+                .containsEntry(new TopicPartition("othertopic", 0), new OffsetAndMetadata(3L))
+                .containsEntry(new TopicPartition("thirdtopic", 0), new OffsetAndMetadata(2L));
     }
 
     private Predicate<Change> title(String title) {
@@ -552,6 +563,16 @@ public class KafkaPollerUnitTest {
             }
             return pl;
         });
+    }
+
+    private ChangeEvent newChange(String enityId) {
+        ChangeEvent e = mock(ChangeEvent.class);
+        when(e.domain()).thenReturn(uris.getHost());
+        when(e.isRedundant()).thenReturn(false);
+        when(e.title()).thenReturn(enityId);
+        when(e.revision()).thenReturn(Change.NO_REVISION);
+        when(e.namespace()).thenReturn(ENTITY_NS);
+        return e;
     }
 
 }
