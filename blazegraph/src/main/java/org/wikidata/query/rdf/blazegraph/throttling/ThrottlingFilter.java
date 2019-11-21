@@ -9,7 +9,6 @@ import static java.util.Locale.ENGLISH;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,14 +23,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Stream;
 
-import javax.annotation.Nullable;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -45,6 +36,7 @@ import org.isomorphism.util.TokenBuckets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.blazegraph.filters.FilterConfiguration;
+import org.wikidata.query.rdf.blazegraph.filters.MonitoredFilter;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
@@ -111,8 +103,8 @@ import com.google.common.collect.ImmutableList;
  *
  * All state is limited to a single JVM, this filter is not cluster aware.
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity") // We should externalize MXBean related code
-public class ThrottlingFilter implements Filter, ThrottlingMXBean {
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
+public class ThrottlingFilter extends MonitoredFilter implements Filter, ThrottlingMXBean {
 
     private static final Logger log = LoggerFactory.getLogger(ThrottlingFilter.class);
 
@@ -142,8 +134,6 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
     /** Keeps track of the number of requests that have been banned. */
     private final LongAdder nbBannedRequests = new LongAdder();
 
-    /** The object name under which the stats for this filter are exposed through JMX. */
-    @Nullable  private ObjectName objectName;
     private Cache<Object, ThrottlingState> stateStore;
 
     /**
@@ -197,7 +187,8 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
      * @param filterConfig {@inheritDoc}
      */
     @Override
-    public void init(FilterConfig filterConfig) {
+    public void init(FilterConfig filterConfig) throws ServletException {
+        super.init(filterConfig);
         ThrottlingFilterConfig config = new ThrottlingFilterConfig(new FilterConfiguration(filterConfig, FilterConfiguration.WDQS_CONFIG_PREFIX));
 
         this.enabled = config.isFilterEnabled();
@@ -244,32 +235,6 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
                 config.getEnableBanIfHeader(),
                 config.getAlwaysBanParam(),
                 Clock.systemUTC());
-
-        objectName = registerMBean(filterConfig.getFilterName());
-    }
-
-    /**
-     * Register this Filter as an MBean.
-     *
-     * On successful registration, the {@link ObjectName} used for registration
-     * will be stored into the instance field {@link ThrottlingFilter#objectName}.
-     *
-     */
-    private ObjectName registerMBean(String filterName) {
-        ObjectName name = null;
-        try {
-            name = new ObjectName(ThrottlingFilter.class.getName(), "filterName", filterName);
-            MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
-            platformMBeanServer.registerMBean(this, name);
-            log.info("ThrottlingFilter MBean registered as {}.", name);
-        } catch (MalformedObjectNameException e) {
-            log.error("filter name {} is invalid as an MBean property.", filterName, e);
-        } catch (InstanceAlreadyExistsException e) {
-            log.error("MBean for ThrottlingFilter has already been registered.", e);
-        } catch (NotCompliantMBeanException | MBeanRegistrationException e) {
-            log.error("Could not register MBean for ThrottlingFilter.", e);
-        }
-        return name;
     }
 
     /**
@@ -399,24 +364,6 @@ public class ThrottlingFilter implements Filter, ThrottlingMXBean {
         String retryAfter = Long.toString(duration.getSeconds());
         response.setHeader("Retry-After", retryAfter);
         response.sendError(429, format(ENGLISH, "Too Many Requests - Please retry in %s seconds.", retryAfter));
-    }
-
-    /** Unregister MBean. */
-    @Override
-    public void destroy() {
-        // Don't do anything if the MBean isn't registered.
-        if (objectName == null) return;
-
-        MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
-        try {
-            platformMBeanServer.unregisterMBean(objectName);
-            log.info("ThrottlingFilter MBean {} unregistered.", objectName);
-            objectName = null;
-        } catch (InstanceNotFoundException e) {
-            log.warn("MBean already unregistered.", e);
-        } catch (MBeanRegistrationException e) {
-            log.error("Could not unregister MBean.", e);
-        }
     }
 
     @Override

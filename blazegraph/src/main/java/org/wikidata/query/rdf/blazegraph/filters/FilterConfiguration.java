@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.blazegraph.filters;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Boolean.parseBoolean;
+import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 
 import javax.servlet.FilterConfig;
@@ -73,5 +74,15 @@ public class FilterConfiguration {
     public int loadIntParam(String name, int defaultValue) {
         String result = loadStringParam(name);
         return result != null ? parseInt(result) : defaultValue;
+    }
+
+    /**
+     * Load a parameter from multiple locations, with a default value.
+     *
+     * @return the parameter's value
+     */
+    public double loadDoubleParam(String name, double defaultValue) {
+        String result = loadStringParam(name);
+        return result != null ? parseDouble(result) : defaultValue;
     }
 }
