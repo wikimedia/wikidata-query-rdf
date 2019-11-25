@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static com.google.common.collect.ImmutableSet.copyOf;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
 
@@ -22,29 +22,23 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
-import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.ServiceUnavailableRetryStrategy;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
@@ -53,7 +47,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.IdleConnectionEvictor;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HttpContext;
 import org.openrdf.model.Statement;
 import org.openrdf.rio.RDFFormat;
@@ -70,8 +63,6 @@ import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
-import org.wikidata.query.rdf.tool.wikibase.EditRequest.Label;
-import org.wikidata.query.rdf.tool.wikibase.SearchResponse.SearchResult;
 import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
 import org.wikidata.query.rdf.tool.utils.StreamDumper;
 
@@ -82,7 +73,6 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -478,99 +468,6 @@ public class WikibaseRepository implements Closeable {
         return collector.getStatements();
     }
 
-    /**
-     * Get the first id with the provided label in the provided language.
-     *
-     * @throws RetryableException thrown if there is an error communicating with
-     *             wikibase
-     */
-    public String firstEntityIdForLabelStartingWith(String label, String language, String type)
-            throws RetryableException {
-        URI uri = uris.searchForLabel(label, language, type);
-        log.debug("Searching for entity using {}", uri);
-        try {
-            SearchResponse result = checkApi(getJson(new HttpGet(uri), SearchResponse.class));
-            List<SearchResult> resultList = result.getSearch();
-            if (resultList.isEmpty()) {
-                return null;
-            }
-            return resultList.get(0).getId();
-        } catch (IOException e) {
-            throw new RetryableException("Error searching for page", e);
-        }
-    }
-
-    /**
-     * Edits or creates a page by setting a label. Used for testing.
-     *
-     * @param entityId id of the entity - if null then the entity will be
-     *            created new
-     * @param type type of entity to create or edit
-     * @param label label of the page to create
-     * @param language language of the label to add
-     * @return the entityId
-     * @throws RetryableException thrown if there is an error communicating with
-     *             wikibase
-     */
-    @VisibleForTesting
-    public String setLabel(String entityId, String type, String label, String language) throws RetryableException {
-        String datatype = type.equals("property") ? "string" : null;
-
-        EditRequest data = new EditRequest(
-                datatype,
-                ImmutableMap.of(
-                        language,
-                        new Label(language, label)));
-
-        try {
-            URI uri = uris.edit(entityId, type, mapper.writeValueAsString(data));
-            log.debug("Editing entity using {}", uri);
-            EditResponse result = checkApi(getJson(postWithToken(uri), EditResponse.class));
-            return result.getEntity().getId();
-        } catch (IOException e) {
-            throw new RetryableException("Error adding page", e);
-        }
-    }
-
-    /**
-     * Delete entity from repository.
-     * @throws RetryableException thrown if there is an error communicating with
-     *             wikibase
-     */
-    public void delete(String entityId) throws RetryableException {
-        URI uri = uris.delete(entityId);
-        log.debug("Deleting entity {} using {}", entityId, uri);
-        try {
-            DeleteResponse result = checkApi(getJson(postWithToken(uri), DeleteResponse.class));
-            log.debug("Deleted: {}", result);
-        } catch (IOException e) {
-            throw new RetryableException("Error deleting page", e);
-        }
-    }
-
-    /**
-     * Post with a csrf token.
-     *
-     * @throws IOException if its thrown while communicating with wikibase
-     */
-    private HttpPost postWithToken(URI uri) throws IOException {
-        HttpPost request = new HttpPost(uri);
-        List<NameValuePair> entity = new ArrayList<>();
-        entity.add(new BasicNameValuePair("token", csrfToken()));
-        request.setEntity(new UrlEncodedFormEntity(entity, Consts.UTF_8));
-        return request;
-    }
-
-    /**
-     * Fetch a csrf token.
-     *
-     * @throws IOException if its thrown while communicating with wikibase
-     */
-    private String csrfToken() throws IOException {
-        URI uri = uris.csrfToken();
-        log.debug("Fetching csrf token from {}", uri);
-        return getJson(new HttpGet(uri), CsrfTokenResponse.class).getQuery().getTokens().getCsrfToken();
-    }
 
     /**
      * Perform an HTTP request and return the JSON in the response body.
@@ -663,7 +560,7 @@ public class WikibaseRepository implements Closeable {
         /**
          * URL of the API endpoint.
          */
-        private static final String API_URL = "/w/api.php";
+        public static final String API_URL = "/w/api.php";
         public static final Set<Long> DEFAULT_ENTITY_NAMESPACES = ImmutableSet.of(0L, 120L);
         /**
          * Item and Property namespaces.
@@ -780,64 +677,6 @@ public class WikibaseRepository implements Closeable {
             URIBuilder builder = constraintsURIBuilder(entityId);
             // Cache is not our friend, try to work around it
             builder.addParameter("nocache", String.valueOf(Instant.now().toEpochMilli()));
-            return build(builder);
-        }
-
-        /**
-         * Uri to fetch a csrf token.
-         */
-        public URI csrfToken() {
-            URIBuilder builder = apiBuilder();
-            builder.setParameter("action", "query");
-            builder.setParameter("meta", "tokens");
-            builder.setParameter("continue", "");
-            return build(builder);
-        }
-
-        /**
-         * Uri to search for a label in a language.
-         *
-         * @param label the label to search
-         * @param language the language to search
-         * @param type the type of the entity
-         */
-        public URI searchForLabel(String label, String language, String type) {
-            URIBuilder builder = apiBuilder();
-            builder.addParameter("action", "wbsearchentities");
-            builder.addParameter("search", label);
-            builder.addParameter("language", language);
-            builder.addParameter("type", type);
-            return build(builder);
-        }
-
-        /**
-         * Uri to which you can post to edit an entity.
-         *
-         * @param entityId the id to edit
-         * @param newType the type of the entity to create. Ignored if entityId
-         *            is not null.
-         * @param data data to add to the entity
-         */
-        public URI edit(String entityId, String newType, String data) {
-            URIBuilder builder = apiBuilder();
-            builder.addParameter("action", "wbeditentity");
-            if (entityId != null) {
-                builder.addParameter("id", entityId);
-            } else {
-                builder.addParameter("new", newType);
-            }
-            builder.addParameter("data", data);
-            return build(builder);
-        }
-
-        /**
-         * Uri for deleting an entity.
-         * @param entityId Entity ID to delete
-         */
-        public URI delete(String entityId) {
-            URIBuilder builder = apiBuilder();
-            builder.addParameter("action", "delete");
-            builder.addParameter("title", entityId);
             return build(builder);
         }
 
