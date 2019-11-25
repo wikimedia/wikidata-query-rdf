@@ -88,9 +88,6 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
             + " that defined in Wikibase repository, comma separated.")
     String entityNamespaces();
 
-    @Option(description = "Run Updater in test mode - only report updates but do not record")
-    boolean testMode();
-
     @Option(description = "Load Wikibase constraints data")
     boolean constraints();
 

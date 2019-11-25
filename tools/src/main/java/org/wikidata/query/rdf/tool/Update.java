@@ -154,7 +154,7 @@ public final class Update {
             Updater<? extends Change.Batch> updater = createUpdater(
                     wikibaseRepository, wikibaseUris, rdfRepository, changeSource,
                     munger, updaterExecutorService, options.importAsync(),
-                    options.pollDelay(), options.verify(), options.testMode(),
+                    options.pollDelay(), options.verify(),
                     metricRegistry);
             closer.register(updater);
             return updater;
@@ -191,13 +191,8 @@ public final class Update {
             boolean importAsync,
             int pollDelay,
             boolean verify,
-            boolean testMode,
             MetricRegistry metricRegistry) {
 
-        if (testMode) {
-            return new TestUpdater<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
-                    importAsync, pollDelay, uris, verify, metricRegistry);
-        }
         return new Updater<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
                 importAsync, pollDelay, uris, verify, metricRegistry);
     }
