@@ -7,10 +7,10 @@
         </encoder>
     </appender>
     <appender name="UPDATED_ENTITY_IDS" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>updatedEntityIds.log</file>
+        <file>target/updatedEntityIds.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover -->
-            <fileNamePattern>updatedEntityIds.%d{yyyy-MM-dd}.gz</fileNamePattern>
+            <fileNamePattern>target/updatedEntityIds.%d{yyyy-MM-dd}.gz</fileNamePattern>
             <maxHistory>7</maxHistory>
             <totalSizeCap>10GB</totalSizeCap>
         </rollingPolicy>
