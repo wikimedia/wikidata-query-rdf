@@ -31,14 +31,14 @@ public class TestUpdater<B extends Change.Batch> extends Updater<B> {
 
     public TestUpdater(Source<B> changeSource, WikibaseRepository wikibase,
                        RdfRepository rdfRepository, Munger munger,
-                       ExecutorService executor, int pollDelay, UrisScheme uris,
+                       ExecutorService executor, boolean importAsync, int pollDelay, UrisScheme uris,
                        boolean verify, MetricRegistry metricRegistry) {
-        super(changeSource, wikibase, rdfRepository, munger, executor, pollDelay, uris,
+        super(changeSource, wikibase, rdfRepository, munger, executor, importAsync, pollDelay, uris,
                 verify, metricRegistry);
     }
 
     @Override
-    protected void handleChanges(Collection<Change> changes) {
+    protected void handleChanges(Collection<Change> changes, Runnable doneListener) {
         for (Change change: changes) {
             log.info("C: {} {}", change.entityId(), change);
             Long old = updates.put(change.entityId(), change.revision());
@@ -53,6 +53,7 @@ public class TestUpdater<B extends Change.Batch> extends Updater<B> {
                 log.info("Duplicate revision on {}: {}", change.entityId(), old);
             }
         }
+        doneListener.run();
     }
 
     @Override

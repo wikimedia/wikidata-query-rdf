@@ -2,44 +2,25 @@ package org.wikidata.query.rdf.tool.change;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.io.Resources.getResource;
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singleton;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.wikidata.query.rdf.tool.HttpClientUtils.buildHttpClient;
-import static org.wikidata.query.rdf.tool.HttpClientUtils.buildHttpClientRetryer;
-import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyHost;
-import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyPort;
-import static org.wikidata.query.rdf.tool.RdfRepositoryForTesting.url;
 import static org.wikidata.query.rdf.tool.change.KafkaPoller.buildKafkaPoller;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.TopicPartition;
-import org.eclipse.jetty.client.HttpClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.wikidata.query.rdf.tool.change.events.ChangeEvent;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
-import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris;
 
 import com.codahale.metrics.MetricRegistry;
@@ -56,7 +37,6 @@ public class KafkaPollerIntegrationTest {
     public static final String UNDELETE_TOPIC = "mediawiki.page-undelete";
     public static final String CHANGE_TOPIC = "mediawiki.page-properties-change";
     private static final String DOMAIN = "acme.test";
-    private static final long BEGIN_DATE = 1518207153000L;
 
     @ClassRule
     public static KafkaJunitRule kafkaRule = new KafkaJunitRule(EphemeralKafkaBroker.create()).waitForStartup();
@@ -211,54 +191,6 @@ public class KafkaPollerIntegrationTest {
     private String load(String name) throws IOException {
         String prefix = this.getClass().getPackage().getName().replace(".", "/");
         return Resources.toString(getResource(prefix + "/events/" + name), UTF_8);
-    }
-
-    @Test
-    public void readWriteOffsets() throws Exception {
-        KafkaConsumer<String, ChangeEvent> consumer = mock(KafkaConsumer.class);
-        Uris uris = Uris.fromString("https://acme.test").setEntityNamespaces(singleton(0L));
-
-        Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
-        Collection<String> topics = ImmutableList.of("topictest", "othertopic");
-
-        when(consumer.partitionsFor(any())).thenAnswer(inv -> {
-            String pName = inv.getArgumentAt(0, String.class);
-            PartitionInfo pi = new PartitionInfo(pName, 0, null, null, null);
-            return ImmutableList.of(pi);
-        });
-
-        HttpClient httpClient = buildHttpClient(getHttpProxyHost(), getHttpProxyPort());
-        RdfClient rdfClient = new RdfClient(httpClient,
-                url("/namespace/wdq/sparql"),
-                buildHttpClientRetryer(),
-                Duration.of(-1, SECONDS)
-        );
-
-        try {
-            rdfClient.update("CLEAR ALL");
-            cleanupPoller();
-            KafkaOffsetsRepository kafkaOffsetsRepository = new RdfKafkaOffsetsRepository(uris.builder().build(), rdfClient);
-            poller = new KafkaPoller(consumer, uris, startTime, 5, topics, kafkaOffsetsRepository,
-                    true, new MetricRegistry());
-
-            when(consumer.position(any())).thenReturn(1L, 2L, 3L, 4L);
-            kafkaOffsetsRepository.store(poller.currentOffsets());
-
-            Map<TopicPartition, OffsetAndTimestamp> offsets = kafkaOffsetsRepository.load(startTime);
-            assertThat(offsets.get(new TopicPartition("topictest", 0)).offset()).isEqualTo(1L);
-            assertThat(offsets.get(new TopicPartition("othertopic", 0)).offset()).isEqualTo(2L);
-
-            kafkaOffsetsRepository.store(poller.currentOffsets());
-            offsets = kafkaOffsetsRepository.load(startTime);
-            assertThat(offsets.get(new TopicPartition("topictest", 0)).offset()).isEqualTo(3L);
-            assertThat(offsets.get(new TopicPartition("othertopic", 0)).offset()).isEqualTo(4L);
-        } finally {
-            rdfClient.update("CLEAR ALL");
-            httpClient.stop();
-            if (poller != null) {
-                poller.close();
-            }
-        }
     }
 
     @Test

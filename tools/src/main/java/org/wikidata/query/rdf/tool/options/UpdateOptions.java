@@ -52,8 +52,11 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     @Option(shortName = "d", defaultValue = "10", description = "Poll delay when no updates found")
     int pollDelay();
 
-    @Option(shortName = "t", defaultValue = "10", description = "Thread count")
+    @Option(shortName = "t", defaultValue = "10", description = "Thread count (for wikibase entity fetch)")
     int threadCount();
+
+    @Option(longName = "import-async", description = "Import batch asynchronously")
+    boolean importAsync();
 
     @Option(shortName = "b", defaultValue = "100", description = "Number of recent changes fetched at a time.")
     int batchSize();

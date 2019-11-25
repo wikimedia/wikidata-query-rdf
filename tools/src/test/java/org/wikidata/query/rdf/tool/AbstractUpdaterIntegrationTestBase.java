@@ -53,7 +53,7 @@ public class AbstractUpdaterIntegrationTestBase {
         try (
             Change.Source<?> source = IdRangeChangeSource.forItems(from, to, 30);
             Updater<?> updater = new Updater<>(
-                    source, wikibaseRepository.get(), rdfRepository, munger, executorService, 0,
+                    source, wikibaseRepository.get(), rdfRepository, munger, executorService, true, 0,
                     uris, false, new MetricRegistry())
         ) {
             updater.run();

@@ -165,6 +165,12 @@ public class Change implements Comparable<Change> {
          * @throws RetryableException is the fetch fails in a retryable way
          */
         B nextBatch(B lastBatch) throws RetryableException;
+
+        /**
+         * Called when the batch has been imported into the rdf store.
+         */
+        default void done(B batch) {
+        }
     }
 
     /**

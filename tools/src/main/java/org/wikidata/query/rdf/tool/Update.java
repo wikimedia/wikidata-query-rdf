@@ -153,7 +153,7 @@ public final class Update {
 
             Updater<? extends Change.Batch> updater = createUpdater(
                     wikibaseRepository, wikibaseUris, rdfRepository, changeSource,
-                    munger, updaterExecutorService,
+                    munger, updaterExecutorService, options.importAsync(),
                     options.pollDelay(), options.verify(), options.testMode(),
                     metricRegistry);
             closer.register(updater);
@@ -188,6 +188,7 @@ public final class Update {
             Change.Source<? extends Change.Batch> changeSource,
             Munger munger,
             ExecutorService executor,
+            boolean importAsync,
             int pollDelay,
             boolean verify,
             boolean testMode,
@@ -195,18 +196,22 @@ public final class Update {
 
         if (testMode) {
             return new TestUpdater<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
-                    pollDelay, uris, verify, metricRegistry);
+                    importAsync, pollDelay, uris, verify, metricRegistry);
         }
         return new Updater<>(changeSource, wikibaseRepository, rdfRepository, munger, executor,
-                pollDelay, uris, verify, metricRegistry);
+                importAsync, pollDelay, uris, verify, metricRegistry);
     }
 
     private static ExecutorService createUpdaterExecutorService(int threadCount) {
+        return createUpdaterExecutorService(threadCount, Integer.MAX_VALUE);
+    }
+
+    private static ExecutorService createUpdaterExecutorService(int threadCount, int queueSize) {
         ThreadFactoryBuilder threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("update %s");
         return new ThreadPoolExecutor(
                 threadCount, threadCount,
                 0, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(),
+                new LinkedBlockingQueue<>(queueSize),
                 threadFactory.build());
     }
 
