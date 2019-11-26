@@ -197,12 +197,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                     // and only one batch at a time (see startImporter).
                     Instant leftOffDate = batch.leftOffDate();
                     if (leftOffDate != null) {
-                        /*
-                         * Back one second because the resolution on our poll isn't
-                         * super good and because its not big deal to recheck if we
-                         * have some updates.
-                         */
-                        syncDate(leftOffDate.minusSeconds(1));
+                        syncDate(leftOffDate);
                     }
                     batchAdvanced.mark(batch.advanced());
                     log.info("Polled up to {} at {} updates per second and {} {} per second", batch.leftOffHuman(),
@@ -251,8 +246,13 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      * Record that we reached certain date in permanent storage.
      */
     protected synchronized void syncDate(Instant newDate) {
-        if (newDate.isAfter(lastRepoDate)) {
-            rdfRepository.updateLeftOffTime(newDate);
+        if (lastRepoDate == null || newDate.isAfter(lastRepoDate)) {
+            /*
+             * Back one second because the resolution on our poll isn't
+             * super good and because its not big deal to recheck if we
+             * have some updates.
+             */
+            rdfRepository.updateLeftOffTime(newDate.minusSeconds(1));
             lastRepoDate = newDate;
         }
     }
