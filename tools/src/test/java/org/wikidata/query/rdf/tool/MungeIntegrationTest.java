@@ -34,7 +34,7 @@ import com.google.common.io.Closer;
 /**
  * Tests the munger that loads dumps.
  */
-@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:illegalcatch"})
+@SuppressWarnings("checkstyle:illegalcatch")
 public class MungeIntegrationTest {
     /**
      * Wikibase uris to test with.
@@ -87,7 +87,7 @@ public class MungeIntegrationTest {
         Munger munger = Munger.builder(uris).singleLabelMode("en").build();
         File file = File.createTempFile("munge-test", ".ttl");
         String fileURL = file.toURI().toURL().toString();
-        Munge munge = new Munge(uris, munger, from, new Munge.AlwaysOutputPicker<>(CliUtils.writer(file.getAbsolutePath())));
+        Munge munge = new Munge(uris, munger, from, Integer.MAX_VALUE, file.getAbsolutePath());
         munge.run();
         assertEquals(count, (long) rdfRepository.getClient().loadUrl(fileURL));
     }

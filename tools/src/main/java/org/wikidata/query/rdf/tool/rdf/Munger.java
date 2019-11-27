@@ -121,6 +121,11 @@ public final class Munger {
         this.dumpFormatVersion = version;
     }
 
+    @VisibleForTesting
+    String getDumpFormatVersion() {
+        return this.dumpFormatVersion;
+    }
+
     /**
      * Adds and removes entries from the statements collection to munge Wikibase
      * RDF exports into a more queryable form.
