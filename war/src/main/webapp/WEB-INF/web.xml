@@ -56,7 +56,7 @@
     <context-param>
         <description>When non-zero, the timeout for queries (milliseconds).</description>
         <param-name>queryTimeout</param-name>
-        <param-value>6000000</param-value>
+        <param-value>24000000</param-value>
     </context-param>
     <context-param>
         <description>When non-zero, the timeout for the warmup period (milliseconds). The warmup period pulls in the
