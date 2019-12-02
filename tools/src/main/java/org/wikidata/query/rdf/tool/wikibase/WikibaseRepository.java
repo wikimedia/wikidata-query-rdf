@@ -536,7 +536,7 @@ public class WikibaseRepository implements Closeable {
     }
 
     private static String getUserAgent() {
-        return System.getProperty("http.userAgent", "Wikidata Query Service Updater");
+        return System.getProperty("http.userAgent", "Wikidata Query Service Updater Bot");
     }
 
     private static InstrumentedHttpClientConnectionManager createConnectionManager(MetricRegistry registry) {
