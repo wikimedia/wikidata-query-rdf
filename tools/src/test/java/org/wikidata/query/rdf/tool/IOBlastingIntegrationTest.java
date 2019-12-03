@@ -27,7 +27,6 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
-import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
@@ -110,7 +109,7 @@ public class IOBlastingIntegrationTest {
          * Generate a whole mess of statements, and sync them into the triple
          * store.
          */
-        private static List<Statement> generateAndInsert(RdfRepository rdfRepository) {
+        private static List<Statement> generateAndInsert(RdfRepositoryForTesting rdfRepository) {
             String s = "Q" + randomizer.randomIntBetween(1, 65536);
             int statementCount = randomizer.randomIntBetween(1, MAX_STATEMENTS_PER_NAMESPACE);
 

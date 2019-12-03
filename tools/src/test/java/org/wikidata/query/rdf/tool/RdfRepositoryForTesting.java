@@ -45,15 +45,6 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
     }
 
     /**
-     * Should we use single-id or multi-change sync method.
-     */
-    private boolean useMultiSync;
-
-    public void setSyncMode(boolean useMultiSync) {
-        this.useMultiSync = useMultiSync;
-    }
-
-    /**
      * Take a relative path and create a URL with the full path to Blazegraph on
      * localhost.
      */
@@ -161,24 +152,16 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
      * Overridden sync method.
      * Selects which sync to use - one-value or multi-value, to ensure both work the same.
      */
-    public int syncWithMode(String entityId, Collection<org.openrdf.model.Statement> statements, Collection<String> valueList) {
-        if (useMultiSync) {
-            return multiSync(entityId, statements, valueList);
-        } else {
-            return sync(entityId, statements, valueList);
-        }
+    public int sync(String entityId, Collection<org.openrdf.model.Statement> statements, Collection<String> valueList) {
+        return multiSync(entityId, statements, valueList);
     }
 
     /**
      * Overridden sync method.
      * Selects which sync to use - one-value or multi-value, to ensure both work the same.
      */
-    public int syncWithMode(String entityId, Collection<org.openrdf.model.Statement> statements) {
-        if (useMultiSync) {
-            return multiSync(entityId, statements, Collections.emptyList());
-        } else {
-            return sync(entityId, statements);
-        }
+    public int sync(String entityId, Collection<org.openrdf.model.Statement> statements) {
+        return multiSync(entityId, statements, Collections.emptyList());
     }
 
     /**

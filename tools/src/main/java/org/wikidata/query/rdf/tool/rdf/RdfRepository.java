@@ -5,7 +5,6 @@ import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
@@ -69,10 +68,6 @@ public class RdfRepository {
     private final UrisScheme uris;
 
     /**
-     * SPARQL for a portion of the update.
-     */
-    private final String syncBody;
-    /**
      * SPARQL for a portion of the update, batched sync.
      */
     private final String msyncBody;
@@ -127,7 +122,6 @@ public class RdfRepository {
         this.rdfClient = rdfClient;
 
         msyncBody = loadBody("multiSync");
-        syncBody = loadBody("sync");
         updateLeftOffTimeBody = loadBody("updateLeftOffTime");
         getValues = loadBody("GetValues");
         getRefs = loadBody("GetRefs");
@@ -205,53 +199,6 @@ public class RdfRepository {
         b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
 
         return rdfClient.selectToMap(b.toString(), "entity", "s");
-    }
-
-    /**
-     * Provides the SPARQL needed to synchronize the data statements for a single entity.
-     *
-     * @param entityId id of the entity to sync
-     * @param statements all known statements about the entity
-     * @param valueList list of used values, for cleanup
-     * @return the number of statements modified
-     */
-    private String getSyncQuery(String entityId, Collection<Statement> statements, Collection<String> valueList) {
-        // TODO this is becoming a mess too
-        log.debug("Generating update for {}", entityId);
-        UpdateBuilder b = new UpdateBuilder(syncBody);
-        b.bindUri("entity:id", uris.entityIdToURI(entityId));
-        b.bindUri("schema:about", SchemaDotOrg.ABOUT);
-        b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
-        b.bind("uris.value", uris.value());
-        b.bind("uris.statement", uris.statement());
-        b.bindStatements("insertStatements", statements);
-
-        if (entityId.startsWith("L")) {
-            // Lexeme ID
-            b.bindEntityIds("lexemeIds",
-                    fetchLexemeSubIds(Collections.singleton(entityId)),
-                    uris);
-        } else {
-            b.bind("lexemeIds", "");
-        }
-
-        ClassifiedStatements classifiedStatements = new ClassifiedStatements(uris);
-        classifiedStatements.classify(statements, entityId);
-
-        b.bindValues("entityStatements", classifiedStatements.entityStatements);
-        b.bindValues("statementStatements", classifiedStatements.statementStatements);
-        b.bindValues("aboutStatements", classifiedStatements.aboutStatements);
-
-        if (valueList != null && !valueList.isEmpty()) {
-            UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
-            cleanup.bindUris("values", valueList);
-            cleanup.bindUri("wikibase:quantityNormalized", Ontology.Quantity.NORMALIZED);
-            b.bind("cleanupQuery", cleanup.toString());
-        }  else {
-            b.bind("cleanupQuery", "");
-        }
-
-        return b.toString();
     }
 
     /**
@@ -555,46 +502,6 @@ public class RdfRepository {
             log.error("{}\t{}\t{}", s.getValue().stringValue(),
                     p.getValue().stringValue(), o.getValue().stringValue());
         }
-    }
-
-    /**
-     * Synchronizes the RDF repository's representation of an entity to be
-     * exactly the provided statements. You can think of the RDF managed for an
-     * entity as a tree rooted at the entity. The managed tree ends where the
-     * next entity's managed tree starts. For example Q23 from wikidata includes
-     * all statements about George Washington but not those about Martha
-     * (Q191789) even though she is linked by the spouse attribute. On the other
-     * hand the qualifiers on statements about George are included in George.
-     *
-     * This method is not used for actual updates but is used for tests.
-     * TODO: switch tests to use same method as actual updates do
-     *
-     * @param entityId id of the entity to sync
-     * @param statements all known statements about the entity
-     * @param valueList list of used values, for cleanup
-     * @return the number of statements modified
-     */
-    public int sync(String entityId, Collection<Statement> statements, Collection<String> valueList) {
-        long start = System.currentTimeMillis();
-        int modified = rdfClient.update(getSyncQuery(entityId, statements, valueList));
-        log.debug("Updating {} took {} millis and modified {} statements", entityId,
-                System.currentTimeMillis() - start, modified);
-        return modified;
-    }
-
-    /**
-     * Synchronizes the RDF repository's representation.
-     *
-     * This method is not used for actual updates but is used for tests.
-     * TODO: switch tests to use same method as actual updates do
-     *
-     * @see #sync(String, Collection, Collection)
-     * @param entityId id of the entity to sync
-     * @param statements all known statements about the entity
-     * @return the number of statements modified
-     */
-    public int sync(String entityId, Collection<Statement> statements) {
-        return sync(entityId, statements, null);
     }
 
     /**
