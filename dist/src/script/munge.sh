@@ -24,7 +24,7 @@ done
 # allow extra args
 shift $((OPTIND-1))
 
-if [ -z "$FROM" -o ! -f "$FROM" ]
+if [[ -z "$FROM" || ! ( -f "$FROM" || "$FROM" == '-' ) ]]
 then
   echo "Usage: $0 -f <dumpfile> [-d <directory>] [-l languages] [-c CHUNK-SIZE]"
   exit 1
