@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
@@ -148,6 +150,8 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
      * changes are available in Kafka for a poll to complete immediately.
      */
     private final Timer pollingTimer;
+
+    private final Queue<Map<TopicPartition, OffsetAndMetadata>> offsetsToCommit = new ConcurrentLinkedQueue<>();
 
     public KafkaPoller(Consumer<String, ChangeEvent> consumer, Uris uris,
                        Instant firstStartTime, int batchSize, Collection<String> topics,
@@ -298,7 +302,10 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
 
     @Override
     public void done(Batch batch) {
-        consumer.commitSync(batch.offsets);
+        offsetsToCommit.offer(batch.offsets);
+        // We store offsets to the repository synchronously
+        // TODO: get rid of the offsets here, there should be no need
+        // to store offsets in different stores
         kafkaOffsetsRepository.store(batch.offsets);
     }
 
@@ -316,6 +323,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         AtomicLongMap<String> topicCounts = AtomicLongMap.create();
         Map<TopicPartition, OffsetAndMetadata> batchOffsets = new HashMap<>();
         while (true) {
+            commitPendindOffsets();
             try (Context timerContext = pollingTimer.time()) {
                 // TODO: make timeout configurable? Wait for a bit so we catch bursts of messages?
                 records = consumer.poll(1000);
@@ -457,8 +465,32 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         }
     }
 
+    private void commitPendindOffsets() {
+        // Commit asynchronously pending offsets, they should be managed by the next poll
+        // We assume that failing couple commits is OK as long as it is temporary
+        // c.f. https://www.oreilly.com/library/view/kafka-the-definitive/9781491936153/ch04.html#idm45788273408552
+        // section Combining Synchronous and Asynchronous Commits
+        // Here the synchronous commits are handled by the close method
+        // Continuous failures to commit offsets will be seen by monitoring classic kafka consumer lag metrics
+        Map<TopicPartition, OffsetAndMetadata> offsets;
+        while ((offsets = offsetsToCommit.poll()) != null) {
+            consumer.commitAsync(offsets, (o, e) -> log.warn("Failed to commit offsets to kafka", e));
+        }
+    }
+
     @Override
     public void close() {
+        Map<TopicPartition, OffsetAndMetadata> lastOffsets = null;
+        while (true) {
+            Map<TopicPartition, OffsetAndMetadata> offsets = offsetsToCommit.poll();
+            if (offsets == null) {
+                break;
+            }
+            lastOffsets = offsets;
+        }
+        if (lastOffsets != null) {
+            consumer.commitSync(lastOffsets);
+        }
         consumer.close();
     }
 
