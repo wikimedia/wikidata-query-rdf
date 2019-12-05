@@ -613,7 +613,7 @@ public class RdfRepositoryIntegrationTest {
         munger.mungeWithValues(entityId, data,
                 rdfRepository.getValues(singletonList(entityURI)),
                 rdfRepository.getRefs(singletonList(entityURI)),
-                values, refs, null);
+                values, refs);
         List<String> changeList = new ArrayList<>();
         changeList.addAll(values);
         changeList.addAll(refs);

@@ -2,7 +2,6 @@ package org.wikidata.query.rdf.tool.rdf;
 
 import static java.util.Collections.emptySet;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,10 +21,8 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.LiteralImpl;
-import org.openrdf.model.impl.NumericLiteralImpl;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.model.vocabulary.XMLSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.WikibasePoint;
@@ -42,7 +39,6 @@ import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
-import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -59,8 +55,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * Munges RDF from Wikibase into a more queryable format. Note that this is
  * tightly coupled with Wikibase's export format.
  */
-// TODO fan out complexity
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class Munger {
     private static final Logger log = LoggerFactory.getLogger(Munger.class);
     /**
@@ -133,28 +127,19 @@ public final class Munger {
      * @param statements statements to munge
      * @param existingValues Existing value statements
      * @param existingRefs Existing reference statements
-     * @param sourceChange Change that originated the operation
      * @return the revision data from statements, as Change. At least revision ID and timestamp will
      * be accurate.
      */
-    public Change munge(String entityId,
+    public long munge(String entityId,
                       Collection<Statement> statements,
                       Collection<String> existingValues,
-                      Collection<String> existingRefs,
-                      Change sourceChange) {
-        if (statements.isEmpty()) {
-            // Empty collection is a delete.
-            return sourceChange;
-        }
+                      Collection<String> existingRefs) {
         MungeOperation op = new MungeOperation(entityId, statements, existingValues, existingRefs);
-        if (sourceChange != null) {
-            op.importFromChange(sourceChange);
-        }
         op.munge();
         // remove all values that we have seen as they are used by statements
         existingValues.removeAll(op.extraValidSubjects);
         existingRefs.removeAll(op.extraValidSubjects);
-        return op.asChange();
+        return op.getRevisionId();
     }
 
     /**
@@ -171,20 +156,17 @@ public final class Munger {
      * @param repoRefs multimap of all reference nodes, keyed by entity ID
      * @param valuesContainer Value nodes container
      * @param refsContainer Reference nodes container
-     * @param sourceChange Change that originated the operation
-     * @return the revision data from statements, as Change. At least revision ID and timestamp will
-     * be accurate.
+     * @return the revision from identified in the statements/mui
      */
-    public Change mungeWithValues(String entityId,
+    public long mungeWithValues(String entityId,
             Collection<Statement> statements,
             Multimap<String, String> repoValues,
             Multimap<String, String> repoRefs,
             Collection<String> valuesContainer,
-            Collection<String> refsContainer,
-            Change sourceChange) {
+            Collection<String> refsContainer) {
         valuesContainer.addAll(repoValues.get(uris.entityIdToURI(entityId)));
         refsContainer.addAll(repoRefs.get(uris.entityIdToURI(entityId)));
-        return munge(entityId, statements, valuesContainer, refsContainer, sourceChange);
+        return munge(entityId, statements, valuesContainer, refsContainer);
     }
 
     /**
@@ -193,8 +175,8 @@ public final class Munger {
      *
      * @param statements statements to munge
      */
-    public Change munge(String entityId, Collection<Statement> statements) {
-        return munge(entityId, statements, emptySet(), emptySet(), null);
+    public long munge(String entityId, Collection<Statement> statements) {
+        return munge(entityId, statements, emptySet(), emptySet());
     }
 
     public static Builder builder(UrisScheme uris) {
@@ -403,16 +385,11 @@ public final class Munger {
          * Set of statements that have rank statement.
          */
         private final Set<String> statementsWithRanks = new HashSet<>();
-        /**
-         * Entity ID.
-         */
-        private final String entityId;
 
 
         MungeOperation(String entityId, Collection<Statement> statements, Collection<String> existingValues,
                 Collection<String> existingRefs) {
             this.statements = statements;
-            this.entityId = entityId;
             entityUri = uris.entityIdToURI(entityId);
             entityUriImpl = new URIImpl(entityUri);
             if (singleLabelModeLanguages != null) {
@@ -435,26 +412,10 @@ public final class Munger {
         }
 
         /**
-         * Import revision data from Change object.
-         */
-        public void importFromChange(Change sourceChange) {
-            if (sourceChange.revision() > 0) {
-                this.revisionId = new NumericLiteralImpl(sourceChange.revision());
-            }
-            if (sourceChange.timestamp() != null) {
-                this.lastModified = new LiteralImpl(sourceChange.timestamp().toString(), XMLSchema.DATETIME);
-            }
-        }
-
-        /**
          * Get revision ID for this change.
          */
-        public long getRevisionId() {
+        private long getRevisionId() {
             return revisionId == null ? -1 : Long.parseLong(revisionId.stringValue());
-        }
-
-        public Instant getLastModified() {
-            return Instant.parse(lastModified.stringValue());
         }
 
         /**
@@ -1057,14 +1018,6 @@ public final class Munger {
                     statements.add(bestStatement);
                 }
             }
-        }
-
-        /**
-         * Return parsed data as Change.
-         * @return Parsed data, at least revision ID and last modified are as in the data.
-         */
-        private Change asChange() {
-            return new Change(entityId, getRevisionId(), getLastModified(), 0);
         }
     }
 

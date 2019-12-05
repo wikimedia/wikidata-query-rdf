@@ -418,12 +418,11 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
         Collection<Statement> statements = wikibase.fetchRdfForEntity(change);
         Set<String> values = new HashSet<>();
         Set<String> refs = new HashSet<>();
-        Change loadedChange = munger.mungeWithValues(change.entityId(), statements, repoValues, repoRefs, values, refs, change);
-        if (!statements.isEmpty() && loadedChange != change) {
+        if (!statements.isEmpty()) {
+            long fetchedRev = munger.mungeWithValues(change.entityId(), statements, repoValues, repoRefs, values, refs);
             // If we've got no statements, we have no usable loaded data, so no point in checking
             // Same if we just got back our own change - no point in checking against it
             final long sourceRev = change.revision();
-            final long fetchedRev = loadedChange.revision();
             if (sourceRev > 0 && fetchedRev > 0) {
                 if (fetchedRev < sourceRev) {
                     // Something weird happened - we've got stale revision!

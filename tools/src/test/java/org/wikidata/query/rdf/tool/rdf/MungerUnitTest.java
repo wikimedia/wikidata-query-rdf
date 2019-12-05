@@ -8,7 +8,6 @@ import static org.wikidata.query.rdf.test.StatementHelper.siteLink;
 import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 import java.math.BigInteger;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,11 +33,10 @@ import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
-import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.test.StatementHelper;
-import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.rdf.Munger.BadSubjectException;
 
 /**
@@ -407,13 +405,11 @@ public class MungerUnitTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void returnChange() {
         List<Statement> statements = StatementHelper.basicEntity(uris, "Q1234", "100", "2015-04-02T10:54:56Z");
-        Change change = new Change("Q123", 105, Instant.EPOCH, 110);
         Munger munger = Munger.builder(uris).build();
-        Change loadedChange = munger.munge("Q1234", statements, Collections.EMPTY_SET, Collections.EMPTY_SET, change);
-        assertThat(loadedChange.revision(), equalTo(100L));
+        long revision = munger.munge("Q1234", statements, Collections.emptySet(), Collections.emptySet());
+        assertThat(revision, equalTo(100L));
     }
 
     private Mungekin entity(String id) {
