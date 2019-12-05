@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikimedia.discovery</groupId>
         <artifactId>discovery-parent-pom</artifactId>
-        <version>1.29</version>
+        <version>1.30</version>
         <relativePath></relativePath>
     </parent>
     <groupId>org.wikidata.query.rdf</groupId>
@@ -744,6 +744,25 @@
                              https://github.com/eirslett/frontend-maven-plugin/issues/560
                         -->
                         <npmVersion>3.8.3</npmVersion>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>de.is24.mavenplugins</groupId>
+                    <artifactId>deadcode4j-maven-plugin</artifactId>
+                    <configuration>
+                        <classesToIgnore>
+                            <!-- some classes are dynamically loaded via properties -->
+                            <ignore>org.wikidata.query.rdf.blazegraph.PrefixDelegatingServiceFactory</ignore>
+                            <ignore>org.wikidata.query.rdf.blazegraph.ProxiedHttpConnectionFactory</ignore>
+                            <ignore>org.wikidata.query.rdf.blazegraph.WikibaseExtensionFactory</ignore>
+                            <ignore>org.wikidata.query.rdf.blazegraph.WikibaseOptimizers</ignore>
+                            <!-- logback filter is loaded by config -->
+                            <ignore>org.wikidata.query.rdf.common.log.RateLimitFilter</ignore>
+                        </classesToIgnore>
+                        <modulesToSkip>
+                            <!-- test tools are only used from tests, thus detected as dead code -->
+                            <moduleToSkip>testTools</moduleToSkip>
+                        </modulesToSkip>
                     </configuration>
                 </plugin>
                 <plugin>
