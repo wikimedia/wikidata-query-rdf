@@ -29,8 +29,4 @@ public interface ChangeEvent {
      * Domain for the event.
      */
     String domain();
-    /**
-     * This change is redundant and can be skipped.
-     */
-    boolean isRedundant();
 }

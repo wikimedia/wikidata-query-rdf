@@ -586,7 +586,6 @@ public class KafkaPollerUnitTest {
     private ChangeEvent newChange(String enityId) {
         ChangeEvent e = mock(ChangeEvent.class);
         when(e.domain()).thenReturn(uris.getHost());
-        when(e.isRedundant()).thenReturn(false);
         when(e.title()).thenReturn(enityId);
         when(e.revision()).thenReturn(Change.NO_REVISION);
         when(e.namespace()).thenReturn(ENTITY_NS);

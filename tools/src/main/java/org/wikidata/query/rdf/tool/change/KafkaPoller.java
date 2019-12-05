@@ -353,10 +353,6 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
                 if (!uris.isEntityNamespace(event.namespace())) {
                     continue;
                 }
-                if (event.isRedundant()) {
-                    // This is a redundant event, we can skip it.
-                    continue;
-                }
                 // Now we have event that we want to process
                 foundSomething = true;
                 topicCounts.getAndIncrement(record.topic());

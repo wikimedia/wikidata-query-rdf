@@ -36,10 +36,4 @@ public abstract class EventWithMeta implements ChangeEvent {
     public String domain() {
         return meta.domain();
     }
-
-    @Override
-    public boolean isRedundant() {
-        // By default it's not redundant
-        return false;
-    }
 }
