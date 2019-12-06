@@ -472,7 +472,11 @@ public class KafkaPollerUnitTest {
         when(consumer.poll(anyLong())).thenReturn(new ConsumerRecords<>(records));
 
         ArgumentCaptor<Map<TopicPartition, OffsetAndMetadata>> storeCaptor = ArgumentCaptor.forClass((Class)Map.class);
+        ArgumentCaptor<Map<TopicPartition, OffsetAndMetadata>> kafkaAsyncStoreCaptor = ArgumentCaptor.forClass((Class)Map.class);
+        ArgumentCaptor<Map<TopicPartition, OffsetAndMetadata>> kafkaSyncStoreCaptor = ArgumentCaptor.forClass((Class)Map.class);
         doNothing().when(offsetsRepository).store(storeCaptor.capture());
+        doNothing().when(consumer).commitAsync(kafkaAsyncStoreCaptor.capture(), any());
+        doNothing().when(consumer).commitSync(kafkaSyncStoreCaptor.capture());
 
         KafkaPoller poller = new KafkaPoller(
                 consumer, uris, START_TIME, BATCH_SIZE, topics,
@@ -484,6 +488,20 @@ public class KafkaPollerUnitTest {
         // Should be one update query
         verify(offsetsRepository, times(1)).store(any());
         assertThat(storeCaptor.getValue())
+                .containsEntry(new TopicPartition("topictest", 0), new OffsetAndMetadata(2L))
+                .containsEntry(new TopicPartition("othertopic", 0), new OffsetAndMetadata(3L))
+                .containsEntry(new TopicPartition("thirdtopic", 0), new OffsetAndMetadata(2L));
+
+        poller.nextBatch(batch);
+        assertThat(kafkaAsyncStoreCaptor.getValue())
+                .containsEntry(new TopicPartition("topictest", 0), new OffsetAndMetadata(2L))
+                .containsEntry(new TopicPartition("othertopic", 0), new OffsetAndMetadata(3L))
+                .containsEntry(new TopicPartition("thirdtopic", 0), new OffsetAndMetadata(2L));
+
+        poller.done(batch);
+        // Verify that the last offsets are committed synchronously when closing
+        poller.close();
+        assertThat(kafkaSyncStoreCaptor.getValue())
                 .containsEntry(new TopicPartition("topictest", 0), new OffsetAndMetadata(2L))
                 .containsEntry(new TopicPartition("othertopic", 0), new OffsetAndMetadata(3L))
                 .containsEntry(new TopicPartition("thirdtopic", 0), new OffsetAndMetadata(2L));
