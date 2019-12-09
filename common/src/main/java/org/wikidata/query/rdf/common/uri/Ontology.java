@@ -34,6 +34,8 @@ public final class Ontology {
     /**
      * Wikibase exports values with an assertion that their RDF.TYPE is this and
      * we filter that out.
+     * Mentioned in the wikibase ontology as a super type for all 3 types of value.
+     * Should not be used directly here unless we start doing some reasoning.
      */
     public static final String VALUE = NAMESPACE + "Value";
 

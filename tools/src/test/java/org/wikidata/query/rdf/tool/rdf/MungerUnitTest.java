@@ -173,9 +173,9 @@ public class MungerUnitTest {
                         statement(valueUri, Ontology.Time.VALUE, "-13798000000-01-01T00:00:00Z"), //
                         statement(valueUri, Ontology.Time.PRECISION, new IntegerLiteralImpl(BigInteger.valueOf(3))), //
                         statement(valueUri, Ontology.Time.TIMEZONE, new IntegerLiteralImpl(BigInteger.valueOf(0))), //
+                        statement(valueUri, RDF.TYPE, Ontology.Time.TYPE),
                         statement(valueUri, Ontology.Time.CALENDAR_MODEL, "Q1985727")) //
-                .remove(statement(statementUri, RDF.TYPE, Ontology.STATEMENT), //
-                        statement(valueUri, RDF.TYPE, Ontology.VALUE)) //
+                .remove(statement(statementUri, RDF.TYPE, Ontology.STATEMENT))
                 .testWithoutShuffle();
 
     }
@@ -193,13 +193,12 @@ public class MungerUnitTest {
                         statement(valueUri, Ontology.Quantity.AMOUNT, new IntegerLiteralImpl(BigInteger.valueOf(123))),
                         statement(valueUri, Ontology.Quantity.UNIT, "Q12345"),
                         statement(valueUri, Ontology.Quantity.NORMALIZED, valueNormUri),
+                        statement(valueUri, RDF.TYPE, Ontology.Quantity.TYPE),
                         statement(valueNormUri, Ontology.Quantity.AMOUNT, new IntegerLiteralImpl(BigInteger.valueOf(456))),
                         statement(valueNormUri, Ontology.Quantity.UNIT, "Q4567"),
                         statement(valueNormUri, Ontology.Quantity.NORMALIZED, valueNormUri)
                         )
-                .remove(statement(statementUri, RDF.TYPE, Ontology.STATEMENT),
-                        statement(valueNormUri, RDF.TYPE, Ontology.VALUE),
-                        statement(valueUri, RDF.TYPE, Ontology.VALUE))
+                .remove(statement(statementUri, RDF.TYPE, Ontology.STATEMENT))
                 .testWithoutShuffle();
 
     }
@@ -219,9 +218,9 @@ public class MungerUnitTest {
                         statement(valueUri, Ontology.Time.VALUE, "-13798000000-01-01T00:00:00Z"), //
                         statement(valueUri, Ontology.Time.PRECISION, new IntegerLiteralImpl(BigInteger.valueOf(3))), //
                         statement(valueUri, Ontology.Time.TIMEZONE, new IntegerLiteralImpl(BigInteger.valueOf(0))), //
-                        statement(valueUri, Ontology.Time.CALENDAR_MODEL, "Q1985727")) //
-                .remove(statement(statementUri, RDF.TYPE, Ontology.STATEMENT), //
-                        statement(valueUri, RDF.TYPE, Ontology.VALUE)) //
+                        statement(valueUri, Ontology.Time.CALENDAR_MODEL, "Q1985727"),
+                        statement(valueUri, RDF.TYPE, Ontology.Time.TYPE)) //
+                .remove(statement(statementUri, RDF.TYPE, Ontology.STATEMENT)) //
                 .testWithoutShuffle();
     }
 
@@ -244,8 +243,7 @@ public class MungerUnitTest {
                         statement(valueUri, Ontology.Time.TIMEZONE, new IntegerLiteralImpl(BigInteger.valueOf(0))), //
                         statement(valueUri, Ontology.Time.CALENDAR_MODEL, "Q1985727")) //
                 .remove(statement(statementUri, RDF.TYPE, Ontology.STATEMENT), //
-                        statement(referenceUri, RDF.TYPE, Ontology.REFERENCE), //
-                        statement(valueUri, RDF.TYPE, Ontology.VALUE)) //
+                        statement(referenceUri, RDF.TYPE, Ontology.REFERENCE)) //
                 .testWithoutShuffle();
     }
 
@@ -408,7 +406,7 @@ public class MungerUnitTest {
     public void returnChange() {
         List<Statement> statements = StatementHelper.basicEntity(uris, "Q1234", "100", "2015-04-02T10:54:56Z");
         Munger munger = Munger.builder(uris).build();
-        long revision = munger.munge("Q1234", statements, Collections.emptySet(), Collections.emptySet());
+        long revision = munger.munge("Q1234", statements);
         assertThat(revision, equalTo(100L));
     }
 
