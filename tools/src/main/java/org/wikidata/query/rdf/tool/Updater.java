@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool;
 
 import static java.lang.Thread.currentThread;
+import static org.wikidata.query.rdf.tool.rdf.EntityStatementsWithoutRank.entityStatementsWithoutRank;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -416,6 +417,14 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
     private void handleChange(Change change, Multimap<String, String> repoValues, Multimap<String, String> repoRefs) throws RetryableException {
         log.debug("Processing data for {}", change);
         Collection<Statement> statements = wikibase.fetchRdfForEntity(change);
+        if (verify) {
+            Set<String> entityStmtsWithoutRank = statements
+                    .stream()
+                    .collect(entityStatementsWithoutRank());
+            if (!entityStmtsWithoutRank.isEmpty()) {
+                log.warn("Found some statements without ranks while processing {}: {}", change.entityId(), entityStmtsWithoutRank);
+            }
+        }
         Set<String> values = new HashSet<>();
         Set<String> refs = new HashSet<>();
         if (!statements.isEmpty()) {
