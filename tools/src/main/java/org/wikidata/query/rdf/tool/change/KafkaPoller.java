@@ -470,7 +470,11 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         // Continuous failures to commit offsets will be seen by monitoring classic kafka consumer lag metrics
         Map<TopicPartition, OffsetAndMetadata> offsets;
         while ((offsets = offsetsToCommit.poll()) != null) {
-            consumer.commitAsync(offsets, (o, e) -> log.warn("Failed to commit offsets to kafka", e));
+            consumer.commitAsync(offsets, (o, e) -> {
+                if (e != null) {
+                    log.warn("Failed to commit offsets to kafka", e);
+                }
+            });
         }
     }
 
