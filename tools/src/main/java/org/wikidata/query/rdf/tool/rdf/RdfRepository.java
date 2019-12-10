@@ -1,15 +1,19 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
+import static java.util.stream.Collectors.toSet;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -597,5 +601,37 @@ public class RdfRepository {
 
     public enum UpdateMode {
         MERGING, NON_MERGING
+    }
+
+    /**
+     * Detects the values that are no longer referenced from the entity statements.
+     * @param existingValues the existing values as known by the rdf repository (old state)
+     * @param entityStatements the statements of the entity (new state before munging)
+     * @return A list of potential orphaned value ids
+     */
+    public static Set<String> extractValuesToCleanup(Set<String> existingValues, Collection<Statement> entityStatements) {
+        return extractSubjectsToCleanup(existingValues, entityStatements, StatementPredicates::valueTypeStatement);
+    }
+
+    /**
+     * Detects the references that are no longer referenced from the entity statements.
+     * @param existingReferences the existing referenced as known by the rdf repository (old state)
+     * @param entityStatements the statements of the entity (new state before munging)
+     * @return A list of potential orphaned reference ids
+     */
+    public static Set<String> extractReferencesToCleanup(Set<String> existingReferences, Collection<Statement> entityStatements) {
+        return extractSubjectsToCleanup(existingReferences, entityStatements, StatementPredicates::referenceTypeStatement);
+    }
+
+    private static Set<String> extractSubjectsToCleanup(Set<String> existingSubjects, Collection<Statement> entityStatements,
+                                                        Predicate<Statement> subjectFilter) {
+        if (existingSubjects.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<String> newStateSubjects = entityStatements.stream()
+            .filter(subjectFilter)
+            .map(triple -> triple.getSubject().stringValue())
+            .collect(toSet());
+        return difference(existingSubjects, newStateSubjects);
     }
 }

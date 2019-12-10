@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -9,9 +10,10 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,9 +22,11 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.LiteralImpl;
+import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.RDFS;
-import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.test.StatementHelper;
 import org.wikidata.query.rdf.test.StatementHelper.StatementBuilder;
@@ -93,7 +97,7 @@ public class RdfRepositoryUnitTest {
 
     @Parameters(name = "check {0}")
     public static Collection<Class<? extends RdfEnv>> data() {
-        return Arrays.asList(NonMerging.class, Merging.class);
+        return asList(NonMerging.class, Merging.class);
     }
 
     private final RdfEnv rdfEnv;
@@ -133,7 +137,7 @@ public class RdfRepositoryUnitTest {
     public void testOverflowOnCount() {
         // 6000 statements - should go over the limit
         // followed by just one statement - will be split in 2 batches as the first change overflows the batch
-        List<Change> changes = Arrays.asList(MANY_STATEMENTS, SMALL_STATEMENT);
+        List<Change> changes = asList(MANY_STATEMENTS, SMALL_STATEMENT);
         int count = rdfEnv.getRepo().syncFromChanges(changes, /* verifyResult */ false);
         assertThat(count).isEqualTo(2);
         rdfEnv.verifyUpdates(count);
@@ -142,7 +146,7 @@ public class RdfRepositoryUnitTest {
     public void testOverflowOnSize() {
         // One statement with 300K data - should go over the limit
         // followed by just one statement - will be split in 2 batches as the first change overflows the batch
-        List<Change> changes = Arrays.asList(LARGE_STATEMENT, SMALL_STATEMENT);
+        List<Change> changes = asList(LARGE_STATEMENT, SMALL_STATEMENT);
         int count = rdfEnv.getRepo().syncFromChanges(changes, /* verifyResult */ false);
         assertThat(count).isEqualTo(2);
         rdfEnv.verifyUpdates(count);
@@ -150,9 +154,35 @@ public class RdfRepositoryUnitTest {
     @Test
     public void testBatchUp() {
         // One statement followed by another one statement - should be sent as a single batch
-        List<Change> changes = Arrays.asList(SMALL_STATEMENT, SMALL_STATEMENT2);
+        List<Change> changes = asList(SMALL_STATEMENT, SMALL_STATEMENT2);
         int count = rdfEnv.getRepo().syncFromChanges(changes, /* verifyResult */ false);
         assertThat(count).isEqualTo(1);
         rdfEnv.verifyUpdates(count);
+    }
+
+    @Test
+    public void testExtractValuesToCleanup() {
+        List<Statement> statements = asList(
+                StatementHelper.statement("val:quantity_to_keep", RDF.TYPE, Ontology.Quantity.TYPE),
+                StatementHelper.statement("val:date_to_keep", RDF.TYPE, Ontology.Time.TYPE),
+                StatementHelper.statement("val:coord_to_keep", RDF.TYPE, Ontology.Geo.TYPE),
+                StatementHelper.statement("val:new_quantity", RDF.TYPE, Ontology.Quantity.TYPE),
+                StatementHelper.statement("val:new_date", RDF.TYPE, Ontology.Time.TYPE),
+                StatementHelper.statement("val:new_coord", RDF.TYPE, Ontology.Geo.TYPE)
+        );
+        Set<String> existingValues = new HashSet<>(asList("val:maybe_orphan_1", "val:maybe_orphan_2",
+             "val:quantity_to_keep", "val:date_to_keep", "val:coord_to_keep"));
+        assertThat(RdfRepository.extractValuesToCleanup(existingValues, statements))
+            .containsExactlyInAnyOrder("val:maybe_orphan_1", "val:maybe_orphan_2");
+    }
+
+    @Test
+    public void testExtractReferencesToCleanup() {
+        List<Statement> statements = asList(
+                StatementHelper.statement("ref:to_keep", RDF.TYPE, Ontology.REFERENCE),
+                StatementHelper.statement("ref:new", RDF.TYPE, Ontology.REFERENCE)
+        );
+        Set<String> existingRefs = new HashSet<>(asList("ref:maybe_orphan_1", "ref:maybe_orphan_2", "ref:to_keep"));
+        assertThat(RdfRepository.extractReferencesToCleanup(existingRefs, statements)).containsExactlyInAnyOrder("ref:maybe_orphan_1", "ref:maybe_orphan_2");
     }
 }
