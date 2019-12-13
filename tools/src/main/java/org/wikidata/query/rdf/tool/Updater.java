@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import org.openrdf.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.TimerCounter;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
@@ -35,7 +34,6 @@ import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
-import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableSetMultimap;
@@ -57,19 +55,6 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      * For how long (seconds) we should defer a change in case we detect replication lag.
      */
     private static final long DEFERRAL_DELAY = 5;
-    /**
-     * Meter for the raw number of updates synced.
-     */
-    private final Meter updatesMeter;
-    /**
-     * Meter measuring in a batch specific unit. For the RecentChangesPoller its
-     * milliseconds, for the IdChangeSource its ids.
-     */
-    private final Meter batchAdvanced;
-    /**
-     * Measure how many updates skipped ahead of their change revisions.
-     */
-    private final Meter skipAheadMeter;
     /**
      * Source of change batches.
      */
@@ -115,17 +100,14 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      * affected by replication lag.
      */
     private final DeferredChanges deferredChanges = new DeferredChanges();
-    private final TimerCounter wikibaseDataFetchTime;
-    private final TimerCounter rdfRepositoryImportTime;
-    private final TimerCounter rdfRepositoryFetchTime;
-    private final Counter importedChanged;
-    private final Counter noopedChangesByRevisionCheck;
-    private final Counter importedTriples;
-
     /**
      * Should we verify updates?
      */
     private final boolean verify;
+    /**
+     * Handles recording of all the metrics related to Updater.
+     */
+    private final UpdaterMetricsRepository metricsRepository;
 
     /**
      * Last known instant we updated the repository.
@@ -149,15 +131,8 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
         this.pollDelay = pollDelay;
         this.uris = uris;
         this.verify = verify;
-        this.updatesMeter = metricRegistry.meter("updates");
-        this.batchAdvanced = metricRegistry.meter("batch-progress");
-        this.skipAheadMeter = metricRegistry.meter("updates-skip");
-        this.wikibaseDataFetchTime = TimerCounter.counter(metricRegistry.counter("wikibase-data-fetch-time-cnt"));
-        this.rdfRepositoryImportTime = TimerCounter.counter(metricRegistry.counter("rdf-repository-import-time-cnt"));
-        this.rdfRepositoryFetchTime = TimerCounter.counter(metricRegistry.counter("rdf-repository-fetch-time-cnt"));
-        this.noopedChangesByRevisionCheck = metricRegistry.counter("noop-by-revision-check");
-        this.importedChanged = metricRegistry.counter("rdf-repository-imported-changes");
-        this.importedTriples = metricRegistry.counter("rdf-repository-imported-triples");
+        this.metricsRepository = new UpdaterMetricsRepository(metricRegistry);
+
     }
 
     @Override
@@ -201,9 +176,9 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                     if (leftOffDate != null) {
                         syncDate(leftOffDate);
                     }
-                    batchAdvanced.mark(batch.advanced());
+                    metricsRepository.markBatchProgress(batch.advanced());
                     log.info("Polled up to {} at {} updates per second and {} {} per second", batch.leftOffHuman(),
-                            meterReport(updatesMeter), meterReport(batchAdvanced), batch.advancedUnits());
+                            metricsRepository.reportUpdatesMeter(), metricsRepository.reportBatchProgress(), batch.advancedUnits());
                     changeSource.done(batch);
                     countDownLatch.countDown();
                     if (batch.last()) {
@@ -272,11 +247,10 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      *             on changes to sync
      */
     protected void handleChanges(Collection<Change> changes, Runnable onCompleteListener) throws InterruptedException {
-        ChangesWithValuesAndRefs changesWithValuesAndRefs = rdfRepositoryFetchTime.time(() -> getRevisionUpdates(changes));
-        noopedChangesByRevisionCheck.inc(changes.size() - changesWithValuesAndRefs.changes.size());
+        ChangesWithValuesAndRefs changesWithValuesAndRefs = metricsRepository.timeRdfFetch(() -> getRevisionUpdates(changes));
+        metricsRepository.incNoopedChangesByRevisionCheck(changes.size() - changesWithValuesAndRefs.changes.size());
 
-        List<Change> processedChanges = wikibaseDataFetchTime
-                .timeCheckedCallable(() -> fetchDataFromWikibaseAndMunge(changesWithValuesAndRefs));
+        List<Change> processedChanges = metricsRepository.timeWikibaseDataFetch(() -> fetchDataFromWikibaseAndMunge(changesWithValuesAndRefs));
 
         Runnable importFunction = () -> importToRdfRepository(processedChanges, onCompleteListener);
         if (importAsync) {
@@ -291,10 +265,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
     }
 
     private void importToRdfRepository(List<Change> processedChanges, Runnable onCompleteListener) {
-        int nbTriples = rdfRepositoryImportTime.time(() -> rdfRepository.syncFromChanges(processedChanges, verify));
-        updatesMeter.mark(processedChanges.size());
-        importedChanged.inc(processedChanges.size());
-        importedTriples.inc(nbTriples);
+        metricsRepository.updateChanges(() -> rdfRepository.syncFromChanges(processedChanges, verify), processedChanges.size());
         onCompleteListener.run();
     }
 
@@ -447,7 +418,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 }
                 if (sourceRev < fetchedRev) {
                     // We skipped some revisions, let's count it in meter
-                    skipAheadMeter.mark();
+                    metricsRepository.markSkipAhead();
                 }
             }
         }

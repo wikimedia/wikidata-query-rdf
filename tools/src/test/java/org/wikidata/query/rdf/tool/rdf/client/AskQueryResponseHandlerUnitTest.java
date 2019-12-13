@@ -13,11 +13,11 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class AskQueryResponseUnitTest {
+public class AskQueryResponseHandlerUnitTest {
 
     @Mock private ContentResponse response;
 
-    private final AskQueryResponse responseHandler = new AskQueryResponse();
+    private final AskQueryResponseHandler responseHandler = new AskQueryResponseHandler();
 
     @Test
     public void trueIsParsed() throws IOException {

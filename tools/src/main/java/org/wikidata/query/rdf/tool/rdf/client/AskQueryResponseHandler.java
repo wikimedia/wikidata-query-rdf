@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Parses responses to ask queries into booleans.
  */
-class AskQueryResponse implements ResponseHandler<Boolean> {
+class AskQueryResponseHandler implements ResponseHandler<Boolean> {
 
     private final ObjectMapper mapper = getObjectMapper();
 

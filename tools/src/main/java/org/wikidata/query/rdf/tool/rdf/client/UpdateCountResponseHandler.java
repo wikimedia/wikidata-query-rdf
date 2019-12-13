@@ -14,8 +14,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * Attempts to log update response information but very likely only works
  * for Blazegraph.
  */
-class UpdateCountResponse implements ResponseHandler<Integer> {
-    private static final Logger log = LoggerFactory.getLogger(UpdateCountResponse.class);
+class UpdateCountResponseHandler implements ResponseHandler<Integer> {
+    private static final Logger log = LoggerFactory.getLogger(UpdateCountResponseHandler.class);
 
     /**
      * The pattern for the response for an update.

@@ -1,0 +1,18 @@
+# Clear out of date site links
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+  VALUES ?entity {
+     %entityListTop%
+  }
+  ?s %schema:about% ?entity .
+  ?s ?p ?o .
+  # This construct is constantly reused throughout the updates.  Its job is to not delete statements
+  # that are still in use.
+  MINUS {
+    VALUES ( ?s ?p ?o ) {
+      %aboutStatements%
+    }
+  }
+};

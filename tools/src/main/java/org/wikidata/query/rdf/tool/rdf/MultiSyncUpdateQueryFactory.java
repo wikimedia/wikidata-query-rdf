@@ -1,38 +1,26 @@
 package org.wikidata.query.rdf.tool.rdf;
 
-import static org.wikidata.query.rdf.tool.Utils.loadBody;
-
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.openrdf.model.Statement;
-import org.wikidata.query.rdf.common.uri.Ontology;
-import org.wikidata.query.rdf.common.uri.Provenance;
-import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 final class MultiSyncUpdateQueryFactory {
 
     private final UrisScheme uris;
-    /**
-     * SPARQL for a portion of the update, batched sync - pre-filled with static elements of the query.
-     */
-    private final String msyncBody;
-    /**
-     * SPARQL for a portion of the update.
-     */
-    private final String cleanUnused;
 
     MultiSyncUpdateQueryFactory(UrisScheme uris) {
         this.uris = uris;
-
-        cleanUnused = loadBody("CleanUnused", MultiSyncUpdateQueryFactory.class);
-
-        msyncBody = getPrefilledTemplate(uris);
     }
 
-    String buildQuery(Set<String> entityIds,
+    String buildQuery(
+            Set<String> entityIds,
                       List<Statement> insertStatements,
                       ClassifiedStatements classifiedStatements,
                       Set<String> valueSet,
@@ -40,47 +28,49 @@ final class MultiSyncUpdateQueryFactory {
                       List<String> lexemeSubIds,
                       Instant timestamp) {
 
-        UpdateBuilder updateBuilder = new UpdateBuilder(msyncBody);
-        updateBuilder.bindEntityIds("entityListTop", entityIds, uris);
+        Set<String> entityIdsWithLexemes = new LinkedHashSet<>();
+        entityIdsWithLexemes.addAll(entityIds);
+        entityIdsWithLexemes.addAll(lexemeSubIds);
 
-        entityIds.addAll(lexemeSubIds);
-        updateBuilder.bindEntityIds("entityList", entityIds, uris);
-        updateBuilder.bindStatements("insertStatements", insertStatements);
-        updateBuilder.bindValues("entityStatements", classifiedStatements.entityStatements);
-
-        updateBuilder.bindValues("statementStatements", classifiedStatements.statementStatements);
-        updateBuilder.bindValues("aboutStatements", classifiedStatements.aboutStatements);
-        updateBuilder.bindValue("ts", timestamp);
-
-        if (!refSet.isEmpty()) {
-            UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
-            cleanup.bindUris("values", refSet);
-            // This is not necessary but easier than having separate templates
-            cleanup.bindUri("wikibase:quantityNormalized", Ontology.Quantity.NORMALIZED);
-            updateBuilder.bind("refCleanupQuery", cleanup.toString());
-        }  else {
-            updateBuilder.bind("refCleanupQuery", "");
-        }
-
-        if (!valueSet.isEmpty()) {
-            UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
-            cleanup.bindUris("values", valueSet);
-            cleanup.bindUri("wikibase:quantityNormalized", Ontology.Quantity.NORMALIZED);
-            updateBuilder.bind("valueCleanupQuery", cleanup.toString());
-        }  else {
-            updateBuilder.bind("valueCleanupQuery", "");
-        }
-
-        return updateBuilder.toString();
+        return Arrays.stream(MultiSyncStep.values())
+                .filter(step -> step != MultiSyncStep.CLEANUP_REFERENCES || !refSet.isEmpty())
+                .filter(step -> step != MultiSyncStep.CLEANUP_VALUES || !valueSet.isEmpty())
+                .map(step -> prepareQuery(step,
+                        entityIds,
+                        entityIdsWithLexemes,
+                        insertStatements,
+                        classifiedStatements,
+                        refSet,
+                        valueSet,
+                        timestamp))
+                .collect(Collectors.joining("\n"));
     }
 
-    private static String getPrefilledTemplate(UrisScheme uris) {
-        UpdateBuilder updateBuilder = new UpdateBuilder(loadBody("multiSync", MultiSyncUpdateQueryFactory.class));
-        // Pre-bind static elements of the template
-        updateBuilder.bindUri("schema:about", SchemaDotOrg.ABOUT);
-        updateBuilder.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
-        updateBuilder.bind("uris.value", uris.value());
-        updateBuilder.bind("uris.statement", uris.statement());
-        return updateBuilder.toString();
+    private String prepareQuery(MultiSyncStep step,
+                                Collection<String> entityTopIds,
+                                Collection<String> entityIdsWithLexemes,
+                                List<Statement> insertStatements,
+                                ClassifiedStatements classifiedStatements,
+                                Set<String> refSet,
+                                Set<String> valueSet,
+                                Instant timestamp) {
+        switch (step) {
+            case CLEAR_OOD_SITE_LINKS:
+                return MultiSyncStep.createClearOodLinksQuery(entityTopIds, classifiedStatements, uris);
+            case CLEAR_OOD_ST_ABOUT_ST:
+                return MultiSyncStep.createClearOodStatementsAboutStatementsQuery(entityIdsWithLexemes, classifiedStatements, uris);
+            case CLEAR_OOD_ST_ABOUT_ENT:
+                return MultiSyncStep.createClearOodStatementsAboutEntitiesQuery(entityIdsWithLexemes, classifiedStatements, uris);
+            case INSERT_NEW_DATA:
+                return MultiSyncStep.createInsertNewDataQuery(insertStatements);
+            case ADD_TIMESTAMPS:
+                return MultiSyncStep.createAddTimestampsQuery(entityTopIds, timestamp, uris);
+            case CLEANUP_REFERENCES:
+                return MultiSyncStep.createCleanupReferencesQuery(refSet);
+            case CLEANUP_VALUES:
+                return MultiSyncStep.createCleanupValuesQuery(valueSet);
+            default:
+                throw new IllegalArgumentException("Step " + step.getStepName() + " is unknown!");
+        }
     }
 }

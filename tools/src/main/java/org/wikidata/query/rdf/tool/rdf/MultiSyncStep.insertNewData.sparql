@@ -1,0 +1,4 @@
+# Insert new data
+INSERT DATA {
+  %insertStatements%
+};

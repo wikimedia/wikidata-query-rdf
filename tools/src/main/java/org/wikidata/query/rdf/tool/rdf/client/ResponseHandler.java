@@ -17,7 +17,7 @@ import org.eclipse.jetty.client.api.ContentResponse;
  *
  * @param <T> the type of response parsed
  */
-interface ResponseHandler<T> {
+public interface ResponseHandler<T> {
     /**
      * The contents of the accept header sent to the rdf repository.
      */

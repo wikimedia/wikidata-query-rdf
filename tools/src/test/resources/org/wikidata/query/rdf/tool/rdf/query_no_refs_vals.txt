@@ -61,5 +61,3 @@ VALUES ?entity {
        <http://acme.test/entity/Q1> <http://acme.test/entity/Q2> <http://acme.test/entity/Q3>
   }
 };
-
-

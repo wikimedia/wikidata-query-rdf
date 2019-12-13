@@ -61,7 +61,6 @@ VALUES ?entity {
        <http://acme.test/entity/Q1> <http://acme.test/entity/Q2> <http://acme.test/entity/Q3>
   }
 };
-
 DELETE { ?s ?p ?o } WHERE {
   VALUES ?s { <12> <13> }
   # Since values are shared we can only clear the values on them when they are no longer used
@@ -72,4 +71,3 @@ DELETE { ?s ?p ?o } WHERE {
   }
   ?s ?p ?o .
 };
-

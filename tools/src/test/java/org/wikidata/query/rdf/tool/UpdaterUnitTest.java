@@ -1,9 +1,12 @@
 package org.wikidata.query.rdf.tool;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -22,6 +25,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
+import org.wikidata.query.rdf.tool.rdf.CollectedUpdateMetrics;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
@@ -52,10 +56,14 @@ public class UpdaterUnitTest {
         TestChangeSource source = new TestChangeSource(Arrays.asList(batch1, batch2));
         WikibaseRepository wbRepo = mock(WikibaseRepository.class);
         RdfRepository rdfRepo = mock(RdfRepository.class);
+        CollectedUpdateMetrics mutationCountOnlyMetrics = CollectedUpdateMetrics.getMutationCountOnlyMetrics(0);
+        when(rdfRepo.syncFromChanges(anyCollectionOf(Change.class), anyBoolean())).thenReturn(mutationCountOnlyMetrics);
         Munger munger = Munger.builder(UrisSchemeFactory.WIKIDATA).build();
         ExecutorService executorService = Executors.newFixedThreadPool(2, (r) -> new Thread(r, "Thread-" + this.getClass().getSimpleName()));
+        MetricRegistry metricRegistry = new MetricRegistry();
+
         Updater<TestChange> updater = new Updater<>(source, wbRepo, rdfRepo, munger,
-                executorService, true, 100, UrisSchemeFactory.WIKIDATA, false, new MetricRegistry());
+                executorService, true, 100, UrisSchemeFactory.WIKIDATA, false, metricRegistry);
         updater.run();
         verify(rdfRepo, times(2)).updateLeftOffTime(lestOffDateCaptor.capture());
         assertThat(lestOffDateCaptor.getAllValues()).containsExactly(leftOffInstant1.minusSeconds(1), leftOffInstant2.minusSeconds(1));

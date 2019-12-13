@@ -18,11 +18,11 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.google.common.io.ByteSource;
 
 @RunWith(MockitoJUnitRunner.class)
-public class UpdateCountResponseUnitTest {
+public class UpdateCountResponseHandlerUnitTest {
 
     @Mock private ContentResponse response;
 
-    private final UpdateCountResponse responseHandler = new UpdateCountResponse();
+    private final UpdateCountResponseHandler responseHandler = new UpdateCountResponseHandler();
 
     @Test
     public void canParseUpdateCounts() throws IOException {
@@ -35,7 +35,7 @@ public class UpdateCountResponseUnitTest {
     }
 
     private String loadResponseFromFile() throws IOException {
-        URL r = getResource(TupleQueryResponseUnitTest.class, "update-response.html");
+        URL r = getResource(TupleQueryResponseHandlerUnitTest.class, "update-response.html");
 
         ByteSource source = new ByteSource() {
             @Override

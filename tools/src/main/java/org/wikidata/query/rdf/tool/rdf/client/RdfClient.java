@@ -61,11 +61,11 @@ public class RdfClient {
     private static final Logger log = LoggerFactory.getLogger(RdfClient.class);
 
     /** Count and log the number of updates. */
-    private static final ResponseHandler<Integer> UPDATE_COUNT_RESPONSE = new UpdateCountResponse();
+    private static final ResponseHandler<Integer> UPDATE_COUNT_RESPONSE = new UpdateCountResponseHandler();
     /** Parse the response from a regular query into a TupleQueryResult. */
-    private static final ResponseHandler<TupleQueryResult> TUPLE_QUERY_RESPONSE = new TupleQueryResponse();
+    private static final ResponseHandler<TupleQueryResult> TUPLE_QUERY_RESPONSE = new TupleQueryResponseHandler();
     /** Parse the response from an ask query into a boolean. */
-    private static final ResponseHandler<Boolean> ASK_QUERY_RESPONSE = new AskQueryResponse();
+    private static final ResponseHandler<Boolean> ASK_QUERY_RESPONSE = new AskQueryResponseHandler();
 
     /** Http connection pool for the rdf repository. */
     @VisibleForTesting
@@ -102,6 +102,13 @@ public class RdfClient {
      */
     public Integer update(String sparql) {
         return execute("update", UPDATE_COUNT_RESPONSE, sparql);
+    }
+
+    /**
+     * Executes an update and returns the number of changes. Custom responseHandler is allowed
+     */
+    public <T> T update(String sparql, ResponseHandler<T> responseHandler) {
+        return execute("update", responseHandler, sparql);
     }
 
     /**
@@ -149,8 +156,8 @@ public class RdfClient {
     /**
      * Create HTTP request.
      * @param content Provider of insertStatements part
-     * @param type Request type
-     * @param sparql SPARQL code
+     * @param valueSet values to cleanup
+     * @param refSet references to cleanup
      * @param accept Accept header (can be null)
      * @return Request object
      */

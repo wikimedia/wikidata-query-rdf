@@ -1,0 +1,15 @@
+# Clear out of date statements about the entity
+DELETE {
+  ?entity ?p ?o .
+}
+WHERE {
+  VALUES ?entity {
+       %entityList%
+  }
+  ?entity ?p ?o .
+  MINUS {
+    VALUES ( ?entity ?p ?o ) {
+      %entityStatements%
+    }
+  }
+};

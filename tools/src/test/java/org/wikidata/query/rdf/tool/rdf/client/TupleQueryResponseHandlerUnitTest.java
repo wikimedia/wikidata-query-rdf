@@ -20,11 +20,11 @@ import org.openrdf.query.TupleQueryResult;
 import com.google.common.io.ByteStreams;
 
 @RunWith(MockitoJUnitRunner.class)
-public class TupleQueryResponseUnitTest {
+public class TupleQueryResponseHandlerUnitTest {
 
     @Mock private ContentResponse response;
 
-    private final TupleQueryResponse responseHandler = new TupleQueryResponse();
+    private final TupleQueryResponseHandler responseHandler = new TupleQueryResponseHandler();
 
     @Test
     public void canParseTuples() throws IOException, QueryEvaluationException {
@@ -65,7 +65,7 @@ public class TupleQueryResponseUnitTest {
      * }
      */
     private byte[] loadResponseFromFile() throws IOException {
-        URL r = getResource(TupleQueryResponseUnitTest.class, "tuples-query.bin");
+        URL r = getResource(TupleQueryResponseHandlerUnitTest.class, "tuples-query.bin");
         return ByteStreams.toByteArray(r.openStream());
     }
 

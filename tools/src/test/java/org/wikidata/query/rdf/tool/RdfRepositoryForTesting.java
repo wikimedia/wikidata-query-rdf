@@ -172,10 +172,10 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
         change.setStatements(statements);
         change.setValueCleanupList(valueList);
         change.setRefCleanupList(valueList);
-        int res = syncFromChanges(Collections.singleton(change), false);
+        int res = syncFromChanges(Collections.singleton(change), false).getMutationCount();
         // This is because many tests do not know about timestamps which are later addition.
         // This is the easiest way to make them ignore timestamps without complicating syncFromChanges too much.
-        int ts = rdfClient.update("DELETE { ?x wikibase:timestamp ?y } WHERE { ?x wikibase:timestamp ?y }").intValue();
+        int ts = rdfClient.update("DELETE { ?x wikibase:timestamp ?y } WHERE { ?x wikibase:timestamp ?y }");
         return res - ts;
     }
 }

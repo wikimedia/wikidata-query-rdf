@@ -1,0 +1,8 @@
+# Add timestamps
+INSERT {
+  ?entity wikibase:timestamp %ts% .
+} WHERE {
+VALUES ?entity {
+       %entityListTop%
+  }
+};

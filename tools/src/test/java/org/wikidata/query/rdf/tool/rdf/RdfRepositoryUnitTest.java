@@ -33,6 +33,8 @@ import org.wikidata.query.rdf.test.StatementHelper.StatementBuilder;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository.UpdateMode;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
+import org.wikidata.query.rdf.tool.rdf.client.UpdateMetrics;
+import org.wikidata.query.rdf.tool.rdf.client.UpdateMetricsResponseHandler;
 
 /**
  * Test RdfRepository class.
@@ -63,7 +65,10 @@ public class RdfRepositoryUnitTest {
         NonMerging() {
             super();
             client = mock(RdfClient.class);
-            when(client.update(any(String.class))).thenReturn(1);
+            CollectedUpdateMetrics collectedUpdateMetrics = new CollectedUpdateMetrics();
+            collectedUpdateMetrics.setMutationCount(1);
+            collectedUpdateMetrics.merge(MultiSyncStep.INSERT_NEW_DATA, UpdateMetrics.builder().build());
+            when(client.update(any(String.class), any(UpdateMetricsResponseHandler.class))).thenReturn(collectedUpdateMetrics);
             repo = new RdfRepository(uris, client, MAX_POST_SIZE, UpdateMode.NON_MERGING);
         }
         @Override
@@ -72,13 +77,14 @@ public class RdfRepositoryUnitTest {
         }
         @Override
         void verifyUpdates(int count) {
-            verify(client, times(count)).update(any());
+            verify(client, times(count)).update(any(), any());
         }
     }
 
     private static class Merging extends RdfEnv {
         private final RdfClient client;
         private final RdfRepository repo;
+
         @SuppressWarnings("unused") // Called by reflection
         Merging() {
             super();
@@ -138,7 +144,8 @@ public class RdfRepositoryUnitTest {
         // 6000 statements - should go over the limit
         // followed by just one statement - will be split in 2 batches as the first change overflows the batch
         List<Change> changes = asList(MANY_STATEMENTS, SMALL_STATEMENT);
-        int count = rdfEnv.getRepo().syncFromChanges(changes, /* verifyResult */ false);
+        CollectedUpdateMetrics collectedUpdateMetrics = rdfEnv.getRepo().syncFromChanges(changes, /* verifyResult */ false);
+        int count = collectedUpdateMetrics.getMutationCount();
         assertThat(count).isEqualTo(2);
         rdfEnv.verifyUpdates(count);
     }
@@ -147,7 +154,7 @@ public class RdfRepositoryUnitTest {
         // One statement with 300K data - should go over the limit
         // followed by just one statement - will be split in 2 batches as the first change overflows the batch
         List<Change> changes = asList(LARGE_STATEMENT, SMALL_STATEMENT);
-        int count = rdfEnv.getRepo().syncFromChanges(changes, /* verifyResult */ false);
+        int count = rdfEnv.getRepo().syncFromChanges(changes, /* verifyResult */ false).getMutationCount();
         assertThat(count).isEqualTo(2);
         rdfEnv.verifyUpdates(count);
     }
@@ -155,7 +162,7 @@ public class RdfRepositoryUnitTest {
     public void testBatchUp() {
         // One statement followed by another one statement - should be sent as a single batch
         List<Change> changes = asList(SMALL_STATEMENT, SMALL_STATEMENT2);
-        int count = rdfEnv.getRepo().syncFromChanges(changes, /* verifyResult */ false);
+        int count = rdfEnv.getRepo().syncFromChanges(changes, /* verifyResult */ false).getMutationCount();
         assertThat(count).isEqualTo(1);
         rdfEnv.verifyUpdates(count);
     }

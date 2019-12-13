@@ -1,0 +1,17 @@
+# Clear out of date statements about statements
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+  VALUES ?entity {
+     %entityList%
+  }
+  ?entity ?statementPred ?s .
+  FILTER( STRSTARTS(STR(?s), "%uris.statement%") ) .
+  ?s ?p ?o .
+  MINUS {
+    VALUES ( ?s ?p ?o ) {
+      %statementStatements%
+    }
+  }
+};

@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.tool.rdf;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static java.util.stream.Collectors.toSet;
+import static org.wikidata.query.rdf.tool.rdf.CollectedUpdateMetrics.getMutationCountOnlyMetrics;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
+import org.wikidata.query.rdf.tool.rdf.client.UpdateMetricsResponseHandler;
 
 import com.google.common.collect.ImmutableSetMultimap;
 
@@ -210,16 +212,17 @@ public class RdfRepository {
      * @param changes List of changes.
      * @return Number of triples modified.
      */
-    public int syncFromChanges(Collection<Change> changes, boolean verifyResult) {
+    public CollectedUpdateMetrics syncFromChanges(Collection<Change> changes, boolean verifyResult) {
         if (changes.isEmpty()) {
             // no changes, we're done
-            return 0;
+            return getMutationCountOnlyMetrics(0);
         }
         switch (updateMode) {
             case NON_MERGING:
                 return syncFromChangesNonMerging(changes, verifyResult);
             case MERGING:
-                return syncFromChangesMerging(changes, verifyResult);
+                int mutationCount = syncFromChangesMerging(changes, verifyResult);
+                return getMutationCountOnlyMetrics(mutationCount);
             default:
                 throw new IllegalStateException("Unknown update mode");
         }
@@ -231,7 +234,7 @@ public class RdfRepository {
      * @param changes List of changes.
      * @return Number of triples modified.
      */
-    private int syncFromChangesNonMerging(Collection<Change> changes, boolean verifyResult) {
+    private CollectedUpdateMetrics syncFromChangesNonMerging(Collection<Change> changes, boolean verifyResult) {
         Set<String> entityIds = newHashSetWithExpectedSize(changes.size());
         List<Statement> insertStatements = new ArrayList<>();
         ClassifiedStatements classifiedStatements = new ClassifiedStatements(uris);
@@ -239,7 +242,7 @@ public class RdfRepository {
         Set<String> valueSet = new HashSet<>();
         Set<String> refSet = new HashSet<>();
 
-        int modified = 0;
+        CollectedUpdateMetrics collectedMetrics = new CollectedUpdateMetrics();
         for (final Change change : changes) {
             if (change.getStatements() == null) {
                 // broken change, probably failed retrieval
@@ -256,8 +259,8 @@ public class RdfRepository {
                 // Logging as info for now because I want to know how many split batches we get. I don't want too many.
                 log.info("Too much data with {} bytes - sending batch out, last ID {}", classifiedStatements.getDataSize(), change.entityId());
 
-                modified += sendUpdateBatch(entityIds, insertStatements, classifiedStatements,
-                        refSet, valueSet, verifyResult);
+                collectedMetrics.merge(sendUpdateBatch(entityIds, insertStatements, classifiedStatements,
+                        refSet, valueSet, verifyResult));
                 entityIds.clear();
                 insertStatements.clear();
                 classifiedStatements.clear();
@@ -267,23 +270,23 @@ public class RdfRepository {
         }
 
         if (!entityIds.isEmpty()) {
-            modified += sendUpdateBatch(entityIds,
+            collectedMetrics.merge(sendUpdateBatch(entityIds,
                                         insertStatements, classifiedStatements,
-                    refSet, valueSet, verifyResult);
+                    refSet, valueSet, verifyResult));
         }
 
-        return modified;
+        return collectedMetrics;
     }
 
-    private int sendUpdateBatch(Set<String> entityIds,
+    private CollectedUpdateMetrics sendUpdateBatch(Set<String> entityIds,
                                 List<Statement> insertStatements,
                                 ClassifiedStatements classifiedStatements,
                                 Set<String> valueSet,
                                 Set<String> refSet,
-                                boolean verifyResult
-    ) {
+                                boolean verifyResult) {
         log.debug("Processing {} IDs and {} statements", entityIds.size(), insertStatements.size());
         logUpdatedEntityIds(entityIds);
+
         String query = multiSyncUpdateQueryFactory.buildQuery(entityIds,
                 insertStatements,
                 classifiedStatements,
@@ -291,11 +294,12 @@ public class RdfRepository {
                 refSet,
                 fetchLexemeSubIds(entityIds),
                 Instant.now());
+
         log.debug("Sending query {} bytes", query.length());
-        long start = System.currentTimeMillis();
-        Integer modified = rdfClient.update(query);
-        log.debug("Update query took {} millis and modified {} statements",
-                System.currentTimeMillis() - start, modified);
+        long start = System.nanoTime();
+        CollectedUpdateMetrics collectedUpdateMetrics = rdfClient.update(query, new UpdateMetricsResponseHandler(!refSet.isEmpty(), !valueSet.isEmpty()));
+        log.debug("Update query took {} nanos and modified {} statements",
+                System.nanoTime() - start, collectedUpdateMetrics.getMutationCount());
 
         if (verifyResult) {
             try {
@@ -305,7 +309,7 @@ public class RdfRepository {
             }
         }
 
-        return modified;
+        return collectedUpdateMetrics;
     }
 
     /**

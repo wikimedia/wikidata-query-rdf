@@ -138,6 +138,10 @@
             <artifactId>sesame-rio-turtle</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
@@ -169,7 +173,7 @@
             <!-- used by a test Proxy to wikidata.org anf produce fake error -->
             <groupId>com.nanohttpd</groupId>
             <artifactId>nanohttpd</artifactId>
-	    <scope>test</scope>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>

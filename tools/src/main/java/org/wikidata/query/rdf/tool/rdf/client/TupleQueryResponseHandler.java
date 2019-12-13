@@ -13,7 +13,7 @@ import org.openrdf.query.resultio.binary.BinaryQueryResultParser;
 /**
  * Parses responses to regular queries into TupleQueryResults.
  */
-class TupleQueryResponse implements ResponseHandler<TupleQueryResult> {
+class TupleQueryResponseHandler implements ResponseHandler<TupleQueryResult> {
     @Override
     public String acceptHeader() {
         return "application/x-binary-rdf-results-table";
