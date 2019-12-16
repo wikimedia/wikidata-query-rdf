@@ -1,5 +1,9 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import static org.wikidata.query.rdf.tool.rdf.StatementPredicates.dumpFormatVersion;
+import static org.wikidata.query.rdf.tool.rdf.StatementPredicates.dumpStatement;
+import static org.wikidata.query.rdf.tool.rdf.StatementPredicates.redirect;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,8 +12,6 @@ import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.common.uri.OWL;
-import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
@@ -107,8 +109,8 @@ public class EntityMungingRdfHandler implements RDFHandler {
             statements.add(statement);
             return;
         }
-        if (subject.equals(Ontology.DUMP)) {
-            if (statement.getPredicate().stringValue().equals(SchemaDotOrg.SOFTWARE_VERSION)) {
+        if (dumpStatement(statement)) {
+            if (dumpFormatVersion(statement)) {
                 munger.setFormatVersion(statement.getObject().stringValue());
             }
             /*
@@ -117,7 +119,7 @@ public class EntityMungingRdfHandler implements RDFHandler {
             output.handleStatement(statement);
             return;
         }
-        if (statement.getPredicate().stringValue().equals(OWL.SAME_AS)) {
+        if (redirect(statement)) {
             // Temporary fix for T100463
             if (haveNonEntityDataStatements) {
                 munge();

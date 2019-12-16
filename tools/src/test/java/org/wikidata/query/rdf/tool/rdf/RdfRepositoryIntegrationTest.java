@@ -604,19 +604,15 @@ public class RdfRepositoryIntegrationTest {
     }
 
     /**
-     * Use Munger to create proper cleanup list.
+     * Use RdfRepository utils to create proper cleanup list.
      */
     private List<String> makeCleanupList(String entityId, List<Statement> data) {
-        Set<String> values = new HashSet<>();
-        Set<String> refs = new HashSet<>();
         String entityURI = uris.entityIdToURI(entityId);
-        munger.mungeWithValues(entityId, data,
-                rdfRepository.getValues(singletonList(entityURI)),
-                rdfRepository.getRefs(singletonList(entityURI)),
-                values, refs);
+        Set<String> existingValues = rdfRepository.getValues(singletonList(entityURI)).get(entityURI);
+        Set<String> existingRefs = rdfRepository.getRefs(singletonList(entityURI)).get(entityURI);
         List<String> changeList = new ArrayList<>();
-        changeList.addAll(values);
-        changeList.addAll(refs);
+        changeList.addAll(RdfRepository.extractValuesToCleanup(existingValues, data));
+        changeList.addAll(RdfRepository.extractReferencesToCleanup(existingRefs, data));
         return changeList;
     }
 

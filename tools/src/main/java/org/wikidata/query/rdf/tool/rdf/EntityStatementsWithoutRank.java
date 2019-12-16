@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool.rdf;
 
 import static java.util.Collections.singleton;
+import static org.wikidata.query.rdf.tool.rdf.StatementPredicates.typeStatement;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -12,7 +13,6 @@ import java.util.stream.Collector;
 
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.common.uri.Ontology;
-import org.wikidata.query.rdf.common.uri.RDF;
 
 /**
  * Collect all wikibase statements that have no rank.
@@ -40,7 +40,7 @@ public final class EntityStatementsWithoutRank implements Collector<Statement, E
     @Override
     public BiConsumer<StatementsAndRanks, Statement> accumulator() {
         return (accum, statement) -> {
-            if (statement.getObject().stringValue().equals(Ontology.STATEMENT) && RDF.TYPE.equals(statement.getPredicate().stringValue())) {
+            if (statement.getObject().stringValue().equals(Ontology.STATEMENT) && typeStatement(statement)) {
                 accum.wikibaseStatementIds.add(statement.getSubject().stringValue());
             } else if (statement.getPredicate().stringValue().equals(Ontology.RANK)) {
                 accum.subjectsWithRank.add(statement.getSubject().stringValue());

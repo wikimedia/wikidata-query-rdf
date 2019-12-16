@@ -1,7 +1,5 @@
 package org.wikidata.query.rdf.tool.rdf;
 
-import static java.util.Collections.emptySet;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,7 +45,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Multimap;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -125,58 +122,14 @@ public final class Munger {
      * RDF exports into a more queryable form.
      *
      * @param statements statements to munge
-     * @param existingValues Existing value statements
-     * @param existingRefs Existing reference statements
      * @return the revision data from statements, as Change. At least revision ID and timestamp will
      * be accurate.
      */
     public long munge(String entityId,
-                      Collection<Statement> statements,
-                      Collection<String> existingValues,
-                      Collection<String> existingRefs) {
-        MungeOperation op = new MungeOperation(entityId, statements, existingValues, existingRefs);
+                      Collection<Statement> statements) {
+        MungeOperation op = new MungeOperation(entityId, statements);
         op.munge();
-        // remove all values that we have seen as they are used by statements
-        existingValues.removeAll(op.extraValidSubjects);
-        existingRefs.removeAll(op.extraValidSubjects);
         return op.getRevisionId();
-    }
-
-    /**
-     * Adds and removes entries from the statements collection to munge Wikibase
-     * RDF exports into a more queryable form.
-     *
-     * This variant also extracts value and reference nodes from multimap
-     * collected by Updater and the ones that will be left in the container
-     * at the end of the operation are unused by this change and have to be
-     * cleaned up.
-     *
-     * @param statements statements to munge
-     * @param repoValues multimap of all value nodes, keyed by entity ID
-     * @param repoRefs multimap of all reference nodes, keyed by entity ID
-     * @param valuesContainer Value nodes container
-     * @param refsContainer Reference nodes container
-     * @return the revision from identified in the statements/mui
-     */
-    public long mungeWithValues(String entityId,
-            Collection<Statement> statements,
-            Multimap<String, String> repoValues,
-            Multimap<String, String> repoRefs,
-            Collection<String> valuesContainer,
-            Collection<String> refsContainer) {
-        valuesContainer.addAll(repoValues.get(uris.entityIdToURI(entityId)));
-        refsContainer.addAll(repoRefs.get(uris.entityIdToURI(entityId)));
-        return munge(entityId, statements, valuesContainer, refsContainer);
-    }
-
-    /**
-     * Adds and removes entries from the statements collection to munge Wikibase
-     * RDF exports into a more queryable form.
-     *
-     * @param statements statements to munge
-     */
-    public long munge(String entityId, Collection<Statement> statements) {
-        return munge(entityId, statements, emptySet(), emptySet());
     }
 
     public static Builder builder(UrisScheme uris) {
@@ -347,20 +300,17 @@ public final class Munger {
         private final SingleLabelModeWork singleLabelModeWorkForDescription;
 
         /**
-         * Existing values that we'll just remove from the provided statements.
-         */
-        private final Collection<String> existingValues;
-        /**
-         * Existing references which we'll just remove from the provided
-         * statements.
-         */
-        private final Collection<String> existingRefs;
-
-        /**
          * Statements that belong to data entity.
          * We will transfer them to the item/property.
          */
         private final Set<Pair<URI, Literal>> dataStatements = new HashSet<>();
+
+        /**
+         * Predicates that are UriScheme dependent.
+         */
+        private final NamespaceStatementPredicates predicates;
+
+
         // These are set by the entire munge operation
         /**
          * Revision id that we find while scanning the statements.
@@ -378,8 +328,7 @@ public final class Munger {
          */
         private FormatHandler formatHandler;
 
-        MungeOperation(String entityId, Collection<Statement> statements, Collection<String> existingValues,
-                Collection<String> existingRefs) {
+        MungeOperation(String entityId, Collection<Statement> statements) {
             this.statements = statements;
             entityUri = uris.entityIdToURI(entityId);
             entityUriImpl = new URIImpl(entityUri);
@@ -390,9 +339,8 @@ public final class Munger {
                 singleLabelModeWorkForLabel = null;
                 singleLabelModeWorkForDescription = null;
             }
-            this.existingValues = existingValues;
-            this.existingRefs = existingRefs;
             setFormatVersion(dumpFormatVersion);
+            this.predicates = new NamespaceStatementPredicates(uris);
         }
 
         /**
@@ -480,16 +428,16 @@ public final class Munger {
         @SuppressWarnings("checkstyle:npathcomplexity")
         private boolean statement(Statement statement) {
             String subject = statement.getSubject().stringValue();
-            if (inNamespace(subject, uris.entityData()) || inNamespace(subject, uris.entityDataHttps())) {
+            if (predicates.subjectInEntityDataNS(statement)) {
                 return entityDataStatement(statement);
             }
-            if (inNamespace(subject, uris.statement())) {
+            if (predicates.subjectInStatementNS(statement)) {
                 return entityStatementStatement(statement);
             }
-            if (inNamespace(subject, uris.reference())) {
+            if (predicates.subjectInReferenceNS(statement)) {
                 return entityReferenceStatement(statement);
             }
-            if (inNamespace(subject, uris.value())) {
+            if (predicates.subjectInValueNS(statement)) {
                 return entityValueStatement(statement);
             }
             if (uris.isEntityURI(subject)) {
@@ -509,16 +457,6 @@ public final class Munger {
         }
 
         /**
-         * Is a uri in just this namespace? The trouble is that some namespaces
-         * are suffixes of one another. For now / isn't a valid character after
-         * a namespace so we can use its absence to determine that we're just in
-         * the provided namespace and not a suffix namespace.
-         */
-        private boolean inNamespace(String uri, String namespace) {
-            return uri.startsWith(namespace) && uri.indexOf('/', namespace.length()) < 0;
-        }
-
-        /**
          * Process statement about property.
          * @return true to keep the statement, false to remove it
          */
@@ -530,7 +468,6 @@ public final class Munger {
             // It's p:P2762 a owl:ObjectProperty, it's ok.
             return statement.getPredicate().stringValue().equals(RDF.TYPE);
         }
-
 
         /**
          * Process a statement who's subject is in the entityData prefix.
@@ -626,9 +563,8 @@ public final class Munger {
          * recognized.
          */
         private boolean entityStatementWithUnrecognizedPredicate(Statement statement) {
-            String object = statement.getObject().stringValue();
-            if (inNamespace(statement.getPredicate().stringValue(), uris.property(PropertyType.CLAIM)) && inNamespace(object, uris.statement())) {
-                registerExtraValidSubject(object);
+            if (predicates.reificationStatement(statement)) {
+                registerExtraValidSubject(statement.getObject().stringValue());
             }
             // Most statements should be kept.
             return true;
@@ -655,9 +591,8 @@ public final class Munger {
                 }
                 break;
             case Provenance.WAS_DERIVED_FROM:
-                String object = statement.getObject().stringValue();
-                if (inNamespace(object, uris.reference())) {
-                    registerExtraValidSubject(object);
+                if (predicates.objectInReferenceNS(statement)) {
+                    registerExtraValidSubject(statement.getObject().stringValue());
                 }
                 return true;
             default:
@@ -675,28 +610,10 @@ public final class Munger {
                 }
                 return false;
             }
-            String object = statement.getObject().stringValue();
-            if (inNamespace(object, uris.value())) {
-                registerExtraValidSubject(object);
+            if (predicates.objectInValueNS(statement)) {
+                registerExtraValidSubject(statement.getObject().stringValue());
             }
             return true;
-        }
-
-        /**
-         * Whether this triple links reference and value.
-         * @return Is it ref->value?
-         */
-        private boolean tripleRefValue(Statement statement) {
-            String predicate = statement.getPredicate().stringValue();
-            String object = statement.getObject().stringValue();
-            if (!inNamespace(object, uris.value())) {
-                return false;
-            }
-            if (inNamespace(predicate, uris.property(PropertyType.REFERENCE_VALUE)) ||
-                    inNamespace(predicate, uris.property(PropertyType.REFERENCE_VALUE_NORMALIZED))) {
-                return true;
-            }
-            return false;
         }
 
         /**
@@ -707,24 +624,8 @@ public final class Munger {
         private boolean entityReferenceStatement(Statement statement) {
             String object = statement.getObject().stringValue();
             String subject = statement.getSubject().stringValue();
-            if (existingRefs.contains(subject)) {
-                if (tripleRefValue(statement) && !existingValues.contains(object)) {
-                    /* Something is wrong here: we know this ref but somehow don't know its value.
-                     * We should recover it.
-                     */
-                    registerExtraValidSubject(object);
-                    log.info("Weird reference {}: unknown value {} for {}", subject, object, entityUri);
-                }
 
-                /*
-                 * TODO: we temporarily keep all the ref data because of the issues
-                 * in https://phabricator.wikimedia.org/T194325
-                 * We already have this ref, so no need to import it again since
-                 * refs are IDed by content, we know it is the same
-                 */
-                // return false;
-            }
-            if (RDF.TYPE.equals(statement.getPredicate().stringValue())) {
+            if (StatementPredicates.typeStatement(statement)) {
                 if (keepTypes) {
                     return true;
                 }
@@ -732,7 +633,7 @@ public final class Munger {
                  * We don't need r:<uuid> a ontology:Reference because its super
                  * common and not super interesting.
                  */
-                if (statement.getObject().stringValue().equals(Ontology.REFERENCE)) {
+                if (StatementPredicates.referenceTypeStatement(statement)) {
                     return false;
                 }
             }
@@ -746,7 +647,7 @@ public final class Munger {
                 unknownSubjects.put(subject, statement);
                 return false;
             }
-            if (tripleRefValue(statement)) {
+            if (predicates.tripleRefValue(statement)) {
                 registerExtraValidSubject(object);
             }
             return true;
@@ -759,13 +660,6 @@ public final class Munger {
          */
         private boolean entityValueStatement(Statement statement) {
             String subject = statement.getSubject().stringValue();
-            if (existingValues.contains(subject)) {
-                /*
-                 * We already have this value, so no need to import it again
-                 * Since values are IDed by content, we know it is the same
-                 */
-                return false;
-            }
             switch (statement.getPredicate().stringValue()) {
             case RDF.TYPE:
                 // We keep value types

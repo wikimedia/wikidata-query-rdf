@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,7 +39,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
 
 /**
  * Update tool.
@@ -303,7 +304,10 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
             futureChanges.add(executor.submit(() -> {
                 while (true) {
                     try {
-                        handleChange(change, trueChanges.repoValues, trueChanges.repoRefs);
+                        String entityURI = uris.entityIdToURI(change.entityId());
+                        Set<String> existingValues = trueChanges.repoValues.get(entityURI);
+                        Set<String> existingRefs = trueChanges.repoRefs.get(entityURI);
+                        handleChange(change, existingValues, existingRefs);
                         return change;
                     } catch (RetryableException e) {
                         log.warn("Retryable error syncing.  Retrying.", e);
@@ -414,7 +418,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      * @throws RetryableException if there is a retryable error updating the rdf
      *             store
      */
-    private void handleChange(Change change, Multimap<String, String> repoValues, Multimap<String, String> repoRefs) throws RetryableException {
+    private void handleChange(Change change, Set<String> repoValues, Set<String> repoRefs) throws RetryableException {
         log.debug("Processing data for {}", change);
         Collection<Statement> statements = wikibase.fetchRdfForEntity(change);
         if (verify) {
@@ -425,10 +429,13 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 log.warn("Found some statements without ranks while processing {}: {}", change.entityId(), entityStmtsWithoutRank);
             }
         }
-        Set<String> values = new HashSet<>();
-        Set<String> refs = new HashSet<>();
+        Set<String> valuesToClean = Collections.emptySet();
+        Set<String> referencesToClean = Collections.emptySet();
         if (!statements.isEmpty()) {
-            long fetchedRev = munger.mungeWithValues(change.entityId(), statements, repoValues, repoRefs, values, refs);
+            valuesToClean = RdfRepository.extractValuesToCleanup(repoValues, statements);
+            referencesToClean = RdfRepository.extractReferencesToCleanup(repoRefs, statements);
+            long fetchedRev = munger.munge(change.entityId(), statements);
+
             // If we've got no statements, we have no usable loaded data, so no point in checking
             // Same if we just got back our own change - no point in checking against it
             final long sourceRev = change.revision();
@@ -444,8 +451,17 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 }
             }
         }
-        change.setRefCleanupList(refs);
-        change.setValueCleanupList(values);
+
+        /*
+         * TODO: we temporarily keep all the ref data because of the issues
+         * in https://phabricator.wikimedia.org/T194325
+         * see Change-ID Ia6c68a5b93e8c9a35310892904819c956ca9cd95
+         * or git commit hash 2931b5af725b7ab341dd60920710619fa249d1f2
+         * for more context
+         */
+        referencesToClean = Collections.emptySet();
+        change.setRefCleanupList(referencesToClean);
+        change.setValueCleanupList(valuesToClean);
         change.setStatements(statements);
     }
 
@@ -459,10 +475,10 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
 
     public static class ChangesWithValuesAndRefs {
         private final Set<Change> changes;
-        private final Multimap<String, String> repoValues;
-        private final Multimap<String, String> repoRefs;
+        private final SetMultimap<String, String> repoValues;
+        private final SetMultimap<String, String> repoRefs;
 
-        public ChangesWithValuesAndRefs(Set<Change> changes, Multimap<String, String> repoValues, Multimap<String, String> repoRefs) {
+        public ChangesWithValuesAndRefs(Set<Change> changes, SetMultimap<String, String> repoValues, SetMultimap<String, String> repoRefs) {
             this.changes = changes;
             this.repoValues = repoValues;
             this.repoRefs = repoRefs;
