@@ -768,17 +768,8 @@ public final class Munger {
             }
             switch (statement.getPredicate().stringValue()) {
             case RDF.TYPE:
-                if (keepTypes) {
-                    return true;
-                }
-                /*
-                 * We don't need v:<uuid> a ontology:Value because its super
-                 * common and not super interesting.
-                 */
-                if (statement.getObject().stringValue().equals(Ontology.VALUE)) {
-                    return false;
-                }
-                break;
+                // We keep value types
+                return true;
             case Quantity.NORMALIZED:
                 /* Keep normalized values. It's a bit tricky here since
                  * normalized value may not be used yet and when we restore

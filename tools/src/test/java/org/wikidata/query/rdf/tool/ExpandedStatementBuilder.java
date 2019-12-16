@@ -69,10 +69,6 @@ public class ExpandedStatementBuilder {
      */
     private Value dateModified;
     /**
-     * Information about the expanded value node.
-     */
-    private ExpandedValueInfo expandedValue;
-    /**
      * Uri for the statement. Generated if not set.
      */
     private String statementUri;
@@ -159,19 +155,6 @@ public class ExpandedStatementBuilder {
     public ExpandedStatementBuilder qualifier(String property, Object value) {
         checkCanChange();
         extraInfo.add(new QualifierInfo(property, value));
-        return this;
-    }
-
-    /**
-     * Add an expanded value statement to this statement.
-     */
-    public ExpandedStatementBuilder expandedValue(String property, Object value) {
-        checkCanChange();
-        if (expandedValue == null) {
-            expandedValue = new ExpandedValueInfo(this.property, null);
-            extraInfo.add(expandedValue);
-        }
-        expandedValue.entries.add(new ExpandedValueInfoEntry(property, value));
         return this;
     }
 
@@ -457,43 +440,6 @@ public class ExpandedStatementBuilder {
         @Override
         public void munge(List<Statement> statements) {
             // Intentionally a noop
-        }
-    }
-
-    /**
-     * Builds expanded values on the statement. Can contain lots of triples.
-     */
-    private class ExpandedValueInfo extends AbstractComplexExtraInfo {
-        /**
-         * Triples to build for the expanded value.
-         */
-        private List<ExpandedValueInfoEntry> entries = new ArrayList<>();
-
-        ExpandedValueInfo(String property, Object value) {
-            super(property, value);
-        }
-
-        @Override
-        public void build() {
-            super.build();
-            for (ExpandedValueInfoEntry e : entries) {
-                statement(statements, uri(), e.predicate, e.object);
-            }
-        }
-
-        @Override
-        protected String namespace() {
-            return uris.value();
-        }
-
-        @Override
-        protected String declarationPredicate() {
-            return uris.value() + property() + "-value";
-        }
-
-        @Override
-        protected String type() {
-            return Ontology.VALUE;
         }
     }
 

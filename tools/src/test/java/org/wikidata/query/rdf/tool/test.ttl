@@ -590,7 +590,7 @@ wds:Q11-67466A3E-AFD1-4883-9791-814D76A71DF8 a wikibase:Statement ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-wdv:bf2ab36fb64c0174477c2455da198d2c a wikibase:Value ;
+wdv:bf2ab36fb64c0174477c2455da198d2c a wikibase:GlobecoordinateValue ;
 	wikibase:geoLatitude "33"^^xsd:decimal ;
 	wikibase:geoLongitude "22"^^xsd:decimal ;
 	wikibase:geoPrecision "1"^^xsd:decimal ;
@@ -626,7 +626,7 @@ wds:P12-ee37a6b9-4681-8a86-7302-dae2cd631f4a a wikibase:Statement ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-wdv:5ecc8d72111da6fbcc582342d3205365 a wikibase:Value ;
+wdv:5ecc8d72111da6fbcc582342d3205365 a wikibase:TimeValue ;
 	wikibase:timeTime "+00000002013-00-00T00:00:00Z" ;
 	wikibase:timePrecision "9"^^xsd:integer ;
 	wikibase:timeTimezone "0"^^xsd:integer ;
@@ -858,79 +858,79 @@ wds:Q14-b4082c40-49c9-1b6c-1973-c7da7b999956 a wikibase:Statement ;
 	wikibase:rank wikibase:NormalRank,
 		wikibase:BestRank .
 
-wdv:7c981c800a4464b63c818720d579254b a wikibase:Value ;
+wdv:7c981c800a4464b63c818720d579254b a wikibase:QuantityValue ;
 	wikibase:quantityAmount "-150000"^^xsd:decimal ;
 	wikibase:quantityUpperBound "-149999"^^xsd:decimal ;
 	wikibase:quantityLowerBound "-150001"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:d64d9775421c3d2bc179588b46837a29 a wikibase:Value ;
+wdv:d64d9775421c3d2bc179588b46837a29 a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+1234"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+1235"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+1233"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:5cf7b5f3be01a3e6111a79d18ba7be7c a wikibase:Value ;
+wdv:5cf7b5f3be01a3e6111a79d18ba7be7c a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+12345"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+12346"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+12344"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:fb6ee2d7a0fbec85c01e0625ac8ca124 a wikibase:Value ;
+wdv:fb6ee2d7a0fbec85c01e0625ac8ca124 a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+12.345"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+12.346"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+12.344"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:12fb348573db2d8a13ecfb23d8639803 a wikibase:Value ;
+wdv:12fb348573db2d8a13ecfb23d8639803 a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+12.3450"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+12.3451"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+12.3449"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:d95264dae8710b3f8e1584688ea3f0a8 a wikibase:Value ;
+wdv:d95264dae8710b3f8e1584688ea3f0a8 a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+0.00"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+0.01"^^xsd:decimal ;
 	wikibase:quantityLowerBound "-0.01"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:394f940eb6b136333bff2e050fede187 a wikibase:Value ;
+wdv:394f940eb6b136333bff2e050fede187 a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+126.5"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+126.6"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+126.4"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:dd1a4cb705e33cd129676923939b1747 a wikibase:Value ;
+wdv:dd1a4cb705e33cd129676923939b1747 a wikibase:GlobecoordinateValue ;
 	wikibase:geoLatitude "32.715"^^xsd:decimal ;
 	wikibase:geoLongitude "-117.1625"^^xsd:decimal ;
 	wikibase:geoPrecision "0.00027777777777778"^^xsd:decimal ;
 	wikibase:geoGlobe <http://www.wikidata.org/entity/Q2> .
 
-wdv:75c28912294a055e365a4038f039eee7 a wikibase:Value ;
+wdv:75c28912294a055e365a4038f039eee7 a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+1"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+2"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+0"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:1bd4c72ac43b1924aab9b38fef5e4305 a wikibase:Value ;
+wdv:1bd4c72ac43b1924aab9b38fef5e4305 a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+0"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+0"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+0"^^xsd:decimal ;
 	wikibase:quantityUnit "+0" .
 
-wdv:80b77f8ea48a3a749c557e2f223e1db2 a wikibase:Value ;
+wdv:80b77f8ea48a3a749c557e2f223e1db2 a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+989"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+990"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+988"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:3867f29c0d46f8b3f92d68d93e9bf27e a wikibase:Value ;
+wdv:3867f29c0d46f8b3f92d68d93e9bf27e a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+84"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+85"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+83"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:3de5f41db1f4f32f932baec49a81e9ef a wikibase:Value ;
+wdv:3de5f41db1f4f32f932baec49a81e9ef a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+222.2"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+222.3"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+222.1"^^xsd:decimal ;
@@ -1908,25 +1908,25 @@ wdref:b390ecc110fb3279258a2905b0708772cdb9187f a wikibase:Reference ;
 	pr:P9 wd:Q9 ;
 	pr:P40 "bbbb" .
 
-wdv:6216f6cc07a04f88ab05387a3e7aac30 a wikibase:Value ;
+wdv:6216f6cc07a04f88ab05387a3e7aac30 a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+1212"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+1213"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+1211"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:fe067bc3a4680e114b9c41a8bffdf208 a wikibase:Value ;
+wdv:fe067bc3a4680e114b9c41a8bffdf208 a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+800000"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+800001"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+799999"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:d4a64aafba6a4ac39db06a3951926ea5 a wikibase:Value ;
+wdv:d4a64aafba6a4ac39db06a3951926ea5 a wikibase:QuantityValue ;
 	wikibase:quantityAmount "-45"^^xsd:decimal ;
 	wikibase:quantityUpperBound "-44"^^xsd:decimal ;
 	wikibase:quantityLowerBound "-46"^^xsd:decimal ;
 	wikibase:quantityUnit "1" .
 
-wdv:87ec7deee25511032644133f42a3da42 a wikibase:Value ;
+wdv:87ec7deee25511032644133f42a3da42 a wikibase:QuantityValue ;
 	wikibase:quantityAmount "+98.2"^^xsd:decimal ;
 	wikibase:quantityUpperBound "+98.3"^^xsd:decimal ;
 	wikibase:quantityLowerBound "+98.1"^^xsd:decimal ;

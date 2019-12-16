@@ -1,6 +1,5 @@
 package org.wikidata.query.rdf.tool;
 
-import static com.google.common.io.Resources.getResource;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -12,7 +11,6 @@ import static org.wikidata.query.rdf.tool.rdf.RdfRepository.UpdateMode.NON_MERGI
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
-import java.text.ParseException;
 import java.time.Instant;
 
 import org.junit.Rule;
@@ -22,6 +20,8 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
+import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.RDFParseException;
 import org.wikidata.query.rdf.common.uri.Ontology;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
@@ -29,12 +29,9 @@ import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
-import com.google.common.io.Closer;
-
 /**
  * Tests the munger that loads dumps.
  */
-@SuppressWarnings("checkstyle:illegalcatch")
 public class MungeIntegrationTest {
     /**
      * Wikibase uris to test with.
@@ -48,19 +45,14 @@ public class MungeIntegrationTest {
      * RDF client.
      */
     private RdfClient rdfClient = rdfRepository.getClient();
-    private Closer closer = Closer.create();
 
     /**
      * Loads a truncated version of a test dump from test wikidata.
      */
     @Test
-    public void loadTest() throws IOException, ParseException, QueryEvaluationException {
-        try {
-            loadDumpIntoRepo("test.ttl", 944, closer);
-        } catch (Throwable t) {
-            throw closer.rethrow(t);
-        } finally {
-            closer.close();
+    public void loadTest() throws IOException, QueryEvaluationException, InterruptedException, RDFParseException, RDFHandlerException {
+        try (Reader dumpReader = utf8(this.getClass().getResourceAsStream("test.ttl"))) {
+            loadDumpIntoRepo(dumpReader, 963);
         }
         assertTrue(ask("ASK { wd:Q10 rdfs:label \"Wikidata\"@en }"));
 
@@ -81,13 +73,11 @@ public class MungeIntegrationTest {
         assertThat(results.next(), binds("x", new LiteralImpl("1.23456789012345678901234567890123456789", XMLSchema.DECIMAL)));
     }
 
-    private void loadDumpIntoRepo(String dumpName, int count, Closer closer) throws Exception {
-        Reader from = utf8(getResource(MungeIntegrationTest.class, dumpName).openStream());
-        closer.register(from);
+    private void loadDumpIntoRepo(Reader dumpReader, int count) throws IOException, InterruptedException, RDFParseException, RDFHandlerException {
         Munger munger = Munger.builder(uris).singleLabelMode("en").build();
         File file = File.createTempFile("munge-test", ".ttl");
         String fileURL = file.toURI().toURL().toString();
-        Munge munge = new Munge(uris, munger, from, Integer.MAX_VALUE, file.getAbsolutePath());
+        Munge munge = new Munge(uris, munger, dumpReader, Integer.MAX_VALUE, file.getAbsolutePath());
         munge.run();
         assertEquals(count, (long) rdfRepository.getClient().loadUrl(fileURL));
     }
@@ -103,13 +93,9 @@ public class MungeIntegrationTest {
      * Loads a lexeme dump.
      */
     @Test
-    public void lexemeTest() throws IOException, QueryEvaluationException {
-        try {
-            loadDumpIntoRepo("lexeme.ttl", 38, closer);
-        } catch (Throwable t) {
-            throw closer.rethrow(t);
-        } finally {
-            closer.close();
+    public void lexemeTest() throws IOException, QueryEvaluationException, InterruptedException, RDFParseException, RDFHandlerException {
+        try (Reader dumpReader = utf8(this.getClass().getResourceAsStream("lexeme.ttl"))) {
+            loadDumpIntoRepo(dumpReader, 38);
         }
 
         // Metadata
