@@ -377,15 +377,6 @@ public final class Munger {
          * Format handler for current format.
          */
         private FormatHandler formatHandler;
-        /**
-         * Set of statements that have no rank statement.
-         */
-        private final Set<String> statementsWithoutRanks = new HashSet<>();
-        /**
-         * Set of statements that have rank statement.
-         */
-        private final Set<String> statementsWithRanks = new HashSet<>();
-
 
         MungeOperation(String entityId, Collection<Statement> statements, Collection<String> existingValues,
                 Collection<String> existingRefs) {
@@ -636,10 +627,6 @@ public final class Munger {
          */
         private boolean entityStatementWithUnrecognizedPredicate(Statement statement) {
             String object = statement.getObject().stringValue();
-            if (inNamespace(object, uris.statement())) {
-                // Register statement for rank checking
-                statementsWithoutRanks.add(object);
-            }
             if (inNamespace(statement.getPredicate().stringValue(), uris.property(PropertyType.CLAIM)) && inNamespace(object, uris.statement())) {
                 registerExtraValidSubject(object);
             }
@@ -656,8 +643,6 @@ public final class Munger {
             String subject = statement.getSubject().stringValue();
             switch (statement.getPredicate().stringValue()) {
             case RDF.TYPE:
-                // Haven't seen the rank yet
-                statementsWithoutRanks.add(subject);
                 if (keepTypes) {
                     return true;
                 }
@@ -675,9 +660,6 @@ public final class Munger {
                     registerExtraValidSubject(object);
                 }
                 return true;
-            case Ontology.RANK:
-                statementsWithRanks.add(subject);
-                break;
             default:
             }
             if (!extraValidSubjects.contains(subject)) {
@@ -920,12 +902,6 @@ public final class Munger {
                         log.info("More than 20 unrecognized statements, further statements not logged.");
                     }
                 }
-            }
-            statementsWithoutRanks.removeAll(statementsWithRanks);
-            if (!statementsWithoutRanks.isEmpty()) {
-                 // We have some statements without ranks, this is very weird.
-                log.error("Found some statements without ranks while processing {}: {}",
-                        entityUri, statementsWithoutRanks);
             }
             if (revisionId == null) {
                 throw new ContainedException("Didn't get a revision id for " + statements);
