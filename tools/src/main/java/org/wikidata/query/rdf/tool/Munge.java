@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
@@ -23,7 +22,6 @@ import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.Rio;
 import org.openrdf.rio.WriterConfig;
 import org.openrdf.rio.helpers.BasicWriterSettings;
-import org.openrdf.rio.turtle.TurtleParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
@@ -34,8 +32,6 @@ import org.wikidata.query.rdf.tool.rdf.EntityMungingRdfHandler;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
 import org.wikidata.query.rdf.tool.rdf.PrefixRecordingRdfHandler;
-
-import de.thetaphi.forbiddenapis.SuppressForbidden;
 
 /**
  * Munges a Wikidata RDF dump so that it can be loaded in a single import.
@@ -92,9 +88,6 @@ public class Munge {
 
     public void run() throws RDFHandlerException, IOException, RDFParseException, InterruptedException {
         try {
-            // TODO this is a temporary hack
-            // RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
-            RDFParser parser = new ForbiddenOk.HackedTurtleParser();
             AsyncRDFHandler chunkWriter = AsyncRDFHandler.processAsync(new RDFChunkWriter(chunkFileFormat), false, BUFFER_SIZE);
             AtomicLong actualChunk = new AtomicLong(0);
             EntityMungingRdfHandler.EntityCountListener chunker = (entities) -> {
@@ -106,6 +99,7 @@ public class Munge {
                 }
             };
             EntityMungingRdfHandler munger = new EntityMungingRdfHandler(uris, this.munger, chunkWriter, chunker);
+            RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
             parser.setRDFHandler(AsyncRDFHandler.processAsync(new NormalizingRdfHandler(munger), true, BUFFER_SIZE));
             parser.parse(from, uris.root());
             // thread:main: parser -> AsyncRDFHandler -> queue
@@ -213,57 +207,5 @@ public class Munge {
             handler.handleComment(comment);
         }
 
-    }
-
-    /**
-     * We need access to getMessage from exceptions. This is brittle but
-     * (hopefully) temporary.
-     */
-    @SuppressForbidden
-    private static class ForbiddenOk {
-        /**
-         * TurtleParser that tries to recover from errors we see in wikibase.
-         */
-        private static class HackedTurtleParser extends TurtleParser {
-            @Override
-            protected URI parseURI() throws IOException, RDFParseException {
-                try {
-                    return super.parseURI();
-                } catch (RDFParseException e) {
-                    if (e.getMessage().startsWith("IRI includes string escapes: ")
-                            || e.getMessage().startsWith("IRI included an unencoded space: '32'")) {
-                        log.warn("Attempting to recover from", e);
-                        if (!e.getMessage().startsWith("IRI includes string escapes: '\\62'")) {
-                            while (readCodePoint() != '>') {
-                                /*
-                                 * Dump until the end of the uri.
-                                 */
-                            }
-                        }
-                        return super.resolveURI("http://example.com/error");
-                    }
-                    throw e;
-                }
-            }
-
-            @Override
-            protected void parseStatement() throws IOException, RDFParseException, RDFHandlerException {
-                try {
-                    super.parseStatement();
-                } catch (RDFParseException e) {
-                    if (e.getMessage().startsWith("Namespace prefix 'Warning' used but not defined")) {
-                        log.warn("Attempting to recover from", e);
-                        while (readCodePoint() != '\n') {
-                            /*
-                             * Just dump the rest of the line. Hopefully that'll
-                             * be enough to recover.
-                             */
-                        }
-                    } else {
-                        throw e;
-                    }
-                }
-            }
-        }
     }
 }
