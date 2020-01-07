@@ -1,0 +1,31 @@
+data:Q31 a schema:Dataset ;
+        schema:about wd:Q31 ;
+        schema:version "1065756426"^^xsd:integer ;
+        schema:dateModified "2019-11-30T01:14:52Z"^^xsd:dateTime ;
+        wikibase:sitelinks "322"^^xsd:integer ;
+        wikibase:statements "776"^^xsd:integer ;
+        wikibase:identifiers "78"^^xsd:integer .
+
+wd:Q31 a wikibase:Item .
+
+<https://it.wikivoyage.org/wiki/Belgio> a schema:Article ;
+        schema:about wd:Q31 ;
+        schema:inLanguage "it" ;
+        schema:isPartOf <https://it.wikivoyage.org/> ;
+        schema:name "Belgio"@it .
+
+data:Q8 a schema:Dataset ;
+        schema:about wd:Q8 ;
+        schema:version "1052652842"^^xsd:integer ;
+        schema:dateModified "2019-11-14T09:50:27Z"^^xsd:dateTime ;
+        wikibase:sitelinks "141"^^xsd:integer ;
+        wikibase:statements "39"^^xsd:integer ;
+        wikibase:identifiers "26"^^xsd:integer .
+
+wd:Q8 a wikibase:Item .
+
+<https://fr.wikiquote.org/wiki/Bonheur> a schema:Article ;
+        schema:about wd:Q8 ;
+        schema:inLanguage "fr" ;
+        schema:isPartOf <https://fr.wikiquote.org/> ;
+        schema:name "Bonheur"@fr .
