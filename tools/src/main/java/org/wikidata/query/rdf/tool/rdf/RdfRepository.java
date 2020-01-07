@@ -70,11 +70,6 @@ public class RdfRepository {
      * Uris for wikibase.
      */
     private final UrisScheme uris;
-
-    /**
-     * SPARQL for a portion of the update, batched sync.
-     */
-    private final String msyncBody;
     /**
      * SPARQL for a portion of the update.
      */
@@ -83,10 +78,6 @@ public class RdfRepository {
      * SPARQL for a portion of the update.
      */
     private final String getRefs;
-    /**
-     * SPARQL for a portion of the update.
-     */
-    private final String cleanUnused;
     /**
      * SPARQL to sync the left off time.
      */
@@ -113,6 +104,7 @@ public class RdfRepository {
      * Should we use merging update endpoint?
      */
     private final UpdateMode updateMode;
+    private final MultiSyncUpdateQueryFactory multiSyncUpdateQueryFactory;
 
     /**
      * @param maxPostSize Max POST form content size.
@@ -125,11 +117,9 @@ public class RdfRepository {
         this.uris = uris;
         this.rdfClient = rdfClient;
 
-        msyncBody = loadBody("multiSync");
         updateLeftOffTimeBody = loadBody("updateLeftOffTime");
         getValues = loadBody("GetValues");
         getRefs = loadBody("GetRefs");
-        cleanUnused = loadBody("CleanUnused");
         getRevisions = loadBody("GetRevisions");
         verifyExtra = loadBody("verifyExtra");
         verifyMissing = loadBody("verifyMissing");
@@ -137,6 +127,7 @@ public class RdfRepository {
         maxStatementsPerBatch = maxPostSize / 400;
         maxPostDataSize = (maxPostSize - 1024 * 1024) / 2;
         this.updateMode = updateMode;
+        multiSyncUpdateQueryFactory = new MultiSyncUpdateQueryFactory(uris);
     }
 
     /**
@@ -241,23 +232,12 @@ public class RdfRepository {
      * @return Number of triples modified.
      */
     private int syncFromChangesNonMerging(Collection<Change> changes, boolean verifyResult) {
-        UpdateBuilder b = new UpdateBuilder(msyncBody);
-        // Pre-bind static elements of the template
-        b.bindUri("schema:about", SchemaDotOrg.ABOUT);
-        b.bindUri("prov:wasDerivedFrom", Provenance.WAS_DERIVED_FROM);
-        b.bind("uris.value", uris.value());
-        b.bind("uris.statement", uris.statement());
-        b.bindValue("ts", Instant.now());
-
         Set<String> entityIds = newHashSetWithExpectedSize(changes.size());
         List<Statement> insertStatements = new ArrayList<>();
         ClassifiedStatements classifiedStatements = new ClassifiedStatements(uris);
 
         Set<String> valueSet = new HashSet<>();
         Set<String> refSet = new HashSet<>();
-
-        // Pre-filled query template to use in the batch loop below
-        final String queryTemplate = b.toString();
 
         int modified = 0;
         for (final Change change : changes) {
@@ -276,7 +256,7 @@ public class RdfRepository {
                 // Logging as info for now because I want to know how many split batches we get. I don't want too many.
                 log.info("Too much data with {} bytes - sending batch out, last ID {}", classifiedStatements.getDataSize(), change.entityId());
 
-                modified += sendUpdateBatch(queryTemplate, entityIds, insertStatements, classifiedStatements,
+                modified += sendUpdateBatch(entityIds, insertStatements, classifiedStatements,
                         refSet, valueSet, verifyResult);
                 entityIds.clear();
                 insertStatements.clear();
@@ -287,7 +267,7 @@ public class RdfRepository {
         }
 
         if (!entityIds.isEmpty()) {
-            modified += sendUpdateBatch(queryTemplate, entityIds,
+            modified += sendUpdateBatch(entityIds,
                                         insertStatements, classifiedStatements,
                     refSet, valueSet, verifyResult);
         }
@@ -295,8 +275,7 @@ public class RdfRepository {
         return modified;
     }
 
-    private int sendUpdateBatch(String queryTemplate,
-                                Set<String> entityIds,
+    private int sendUpdateBatch(Set<String> entityIds,
                                 List<Statement> insertStatements,
                                 ClassifiedStatements classifiedStatements,
                                 Set<String> valueSet,
@@ -304,40 +283,17 @@ public class RdfRepository {
                                 boolean verifyResult
     ) {
         log.debug("Processing {} IDs and {} statements", entityIds.size(), insertStatements.size());
-        UpdateBuilder b = new UpdateBuilder(queryTemplate);
-        b.bindEntityIds("entityListTop", entityIds, uris);
         logUpdatedEntityIds(entityIds);
-        entityIds.addAll(fetchLexemeSubIds(entityIds));
-        b.bindEntityIds("entityList", entityIds, uris);
-        b.bindStatements("insertStatements", insertStatements);
-        b.bindValues("entityStatements", classifiedStatements.entityStatements);
-
-        b.bindValues("statementStatements", classifiedStatements.statementStatements);
-        b.bindValues("aboutStatements", classifiedStatements.aboutStatements);
-        b.bindValue("ts", Instant.now());
-
-        if (!refSet.isEmpty()) {
-            UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
-            cleanup.bindUris("values", refSet);
-            // This is not necessary but easier than having separate templates
-            cleanup.bindUri("wikibase:quantityNormalized", Ontology.Quantity.NORMALIZED);
-            b.bind("refCleanupQuery", cleanup.toString());
-        }  else {
-            b.bind("refCleanupQuery", "");
-        }
-
-        if (!valueSet.isEmpty()) {
-            UpdateBuilder cleanup = new UpdateBuilder(cleanUnused);
-            cleanup.bindUris("values", valueSet);
-            cleanup.bindUri("wikibase:quantityNormalized", Ontology.Quantity.NORMALIZED);
-            b.bind("valueCleanupQuery", cleanup.toString());
-        }  else {
-            b.bind("valueCleanupQuery", "");
-        }
-
+        String query = multiSyncUpdateQueryFactory.buildQuery(entityIds,
+                insertStatements,
+                classifiedStatements,
+                valueSet,
+                refSet,
+                fetchLexemeSubIds(entityIds),
+                Instant.now());
+        log.debug("Sending query {} bytes", query.length());
         long start = System.currentTimeMillis();
-        log.debug("Sending query {} bytes", b.toString().length());
-        Integer modified = rdfClient.update(b.toString());
+        Integer modified = rdfClient.update(query);
         log.debug("Update query took {} millis and modified {} statements",
                 System.currentTimeMillis() - start, modified);
 
@@ -634,4 +590,5 @@ public class RdfRepository {
             .collect(toSet());
         return difference(existingSubjects, newStateSubjects);
     }
+
 }

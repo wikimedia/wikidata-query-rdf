@@ -1,0 +1,85 @@
+# Clear out of date site links
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+  VALUES ?entity {
+     <http://acme.test/entity/Q1> <http://acme.test/entity/Q2> <http://acme.test/entity/Q3>
+  }
+  ?s <http://schema.org/about> ?entity .
+  ?s ?p ?o .
+  # This construct is constantly reused throughout the updates.  Its job is to not delete statements
+  # that are still in use.
+  MINUS {
+    VALUES ( ?s ?p ?o ) {
+      ( <http://acme.test/entity/Q1> <http://acme.test/prop/statement/value/> <http://acme.test/entity/Some value> )
+    }
+  }
+};
+# Clear out of date statements about statements
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+  VALUES ?entity {
+     <http://acme.test/entity/Q1> <http://acme.test/entity/Q2> <http://acme.test/entity/Q3> <http://acme.test/entity/lex1> <http://acme.test/entity/lex2>
+  }
+  ?entity ?statementPred ?s .
+  FILTER( STRSTARTS(STR(?s), "http://acme.test/entity/statement/") ) .
+  ?s ?p ?o .
+  MINUS {
+    VALUES ( ?s ?p ?o ) {
+      ( <http://acme.test/entity/Q5> <http://acme.test/prop/statement/> <http://acme.test/entity/Statement> )
+    }
+  }
+};
+# Clear out of date statements about the entity
+DELETE {
+  ?entity ?p ?o .
+}
+WHERE {
+  VALUES ?entity {
+       <http://acme.test/entity/Q1> <http://acme.test/entity/Q2> <http://acme.test/entity/Q3> <http://acme.test/entity/lex1> <http://acme.test/entity/lex2>
+  }
+  ?entity ?p ?o .
+  MINUS {
+    VALUES ( ?entity ?p ?o ) {
+      ( <http://acme.test/entity/Q4> <http://acme.test/prop/direct/> <http://acme.test/entity/entity> )
+    }
+  }
+};
+# Insert new data
+INSERT DATA {
+  <http://acme.test/entity/Q1> <http://acme.test/prop/direct/> <http://acme.test/entity/Q2> .
+<http://acme.test/entity/Q2> <http://acme.test/prop/> <http://acme.test/entity/Q3> .
+};
+# Add timestamps
+INSERT {
+  ?entity wikibase:timestamp "2020-01-07T10:03:23Z"^^xsd:dateTime .
+} WHERE {
+VALUES ?entity {
+       <http://acme.test/entity/Q1> <http://acme.test/entity/Q2> <http://acme.test/entity/Q3>
+  }
+};
+DELETE { ?s ?p ?o } WHERE {
+  VALUES ?s { <ref1> <ref2> }
+  # Since values are shared we can only clear the values on them when they are no longer used
+  # anywhere else.
+  FILTER NOT EXISTS {
+    ?someEntity ?someStatementPred ?s .
+    FILTER(?someStatementPred != <http://wikiba.se/ontology#quantityNormalized>)
+  }
+  ?s ?p ?o .
+};
+
+DELETE { ?s ?p ?o } WHERE {
+  VALUES ?s { <12> <13> }
+  # Since values are shared we can only clear the values on them when they are no longer used
+  # anywhere else.
+  FILTER NOT EXISTS {
+    ?someEntity ?someStatementPred ?s .
+    FILTER(?someStatementPred != <http://wikiba.se/ontology#quantityNormalized>)
+  }
+  ?s ?p ?o .
+};
+
