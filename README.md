@@ -12,8 +12,6 @@ Tools for Querying Wikibase instances with RDF.  The modules:
   * Apache Licensed
 * testTools - Helpers for testing
   * Apache Licensed
-* gui - UI for running queries and displaying results
-  * Apache Licensed
 * dist - scripts for running the service
   * Apache Licensed
 

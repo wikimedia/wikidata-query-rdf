@@ -596,11 +596,6 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wikidata.query.rdf</groupId>
-                <artifactId>gui</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>xml-apis</groupId>
                 <artifactId>xml-apis</artifactId>
                 <version>1.4.01</version>
@@ -791,20 +786,6 @@
         </testResources>
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <groupId>com.github.eirslett</groupId>
-                    <artifactId>frontend-maven-plugin</artifactId>
-                    <version>1.6</version>
-                    <configuration>
-                        <!--
-                             npm installed from NodeJS distribution turns out
-                             to not be in PATH which has side effects.
-                             https://phabricator.wikimedia.org/T188285
-                             https://github.com/eirslett/frontend-maven-plugin/issues/560
-                        -->
-                        <npmVersion>3.8.3</npmVersion>
-                    </configuration>
-                </plugin>
                 <plugin>
                     <groupId>de.is24.mavenplugins</groupId>
                     <artifactId>deadcode4j-maven-plugin</artifactId>
@@ -1078,7 +1059,6 @@
             </build>
         </profile>
         <profile>
-            <id>gui</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
@@ -1089,7 +1069,6 @@
                 <module>war</module>
                 <module>tools</module>
                 <module>dist</module>
-                <module>gui</module>
             </modules>
         </profile>
     </profiles>

@@ -1,3 +1,0 @@
-[submodule "gui"]
-	path = gui
-	url = https://gerrit.wikimedia.org/r/wikidata/query/gui

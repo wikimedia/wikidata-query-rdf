@@ -27,7 +27,6 @@ Unzipping the package, we find a customized Blazegraph, Jetty launcher, launch s
 .
 ├── blazegraph-service-0.1.0-dist.war
 ├── docs
-├── gui
 ├── jetty-runner-9.2.9.v20150224.jar
 ├── lib
 ├── munge.sh
@@ -85,12 +84,6 @@ The updater is designed to run constantly, but can be interrupted and resumed at
 Use the same set of language/skip options as in the `munge.sh` script, e.g. `-l en -s`.
 
 ## Run queries
-
-In order to query the database, you can use the GUI at *http://localhost:9999/bigdata/*. If you install it on a remote machine, you can configure SSH tunnel in your `.ssh/config`:
-```
-Host blazegraph-runner
-  LocalForward localhost:9999 127.0.0.1:9999
-```
 
 The REST query endpoint is located at *http://localhost:9999/bigdata/namespace/wdq/sparql*, read more at http://wiki.blazegraph.com/wiki/index.php/NanoSparqlServer#REST_API.
 
