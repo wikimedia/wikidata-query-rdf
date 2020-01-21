@@ -1058,18 +1058,5 @@
                 </pluginManagement>
             </build>
         </profile>
-        <profile>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <modules>
-                <module>testTools</module>
-                <module>common</module>
-                <module>blazegraph</module>
-                <module>war</module>
-                <module>tools</module>
-                <module>dist</module>
-            </modules>
-        </profile>
     </profiles>
 </project>
