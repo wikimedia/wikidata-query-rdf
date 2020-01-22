@@ -1,0 +1,18 @@
+{
+  "id" : "1f132ed9-f302-49e6-93df-ac227ead784f",
+  "name" : "w_apiphp",
+  "request" : {
+    "url" : "/w/api.php?format=json&action=query&list=recentchanges&rcdir=newer&rcprop=title%7Cids%7Ctimestamp&rcnamespace=0%7C120&rclimit=10&continue=&rcstart=2020-01-22T08%3A49%3A56.580Z",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"batchcomplete\":\"\",\"query\":{\"recentchanges\":[{\"type\":\"edit\",\"ns\":0,\"title\":\"Q1608\",\"pageid\":2885,\"revid\":525141,\"old_revid\":525137,\"rcid\":540185,\"timestamp\":\"2020-01-22T08:50:08Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q1608\",\"pageid\":2885,\"revid\":525142,\"old_revid\":525141,\"rcid\":540186,\"timestamp\":\"2020-01-22T08:50:11Z\"},{\"type\":\"edit\",\"ns\":120,\"title\":\"Property:P423\",\"pageid\":2147,\"revid\":525143,\"old_revid\":525138,\"rcid\":540187,\"timestamp\":\"2020-01-22T08:50:13Z\"}]}}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8"
+    }
+  },
+  "uuid" : "1f132ed9-f302-49e6-93df-ac227ead784f",
+  "persistent" : true,
+  "insertionIndex" : 14
+}

@@ -1,0 +1,18 @@
+{
+  "id" : "5dc441c7-aefe-4bf5-82eb-2117bae93e00",
+  "name" : "w_apiphp",
+  "request" : {
+    "url" : "/w/api.php?format=json&action=query&meta=tokens&continue=",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"batchcomplete\":\"\",\"query\":{\"tokens\":{\"csrftoken\":\"+\\\\\"}}}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8"
+    }
+  },
+  "uuid" : "5dc441c7-aefe-4bf5-82eb-2117bae93e00",
+  "persistent" : true,
+  "insertionIndex" : 22
+}

@@ -1,0 +1,22 @@
+{
+  "id" : "178be81a-ddd7-4253-8700-6649403d0ee6",
+  "name" : "w_apiphp",
+  "request" : {
+    "url" : "/w/api.php?format=json&action=wbeditentity&id=P423&data=%7B%22datatype%22%3A%22string%22%2C%22labels%22%3A%7B%22en%22%3A%7B%22language%22%3A%22en%22%2C%22value%22%3A%22QueryTestProperty1579683006580%22%7D%7D%7D",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalTo" : "token=%2B%5C",
+      "caseInsensitive" : false
+    } ]
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"entity\":{\"labels\":{\"en\":{\"language\":\"en\",\"value\":\"QueryTestProperty1579683006580\"}},\"descriptions\":{},\"aliases\":{},\"claims\":{},\"id\":\"P423\",\"type\":\"property\",\"lastrevid\":525143},\"success\":1}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8"
+    }
+  },
+  "uuid" : "178be81a-ddd7-4253-8700-6649403d0ee6",
+  "persistent" : true,
+  "insertionIndex" : 13
+}

@@ -1,0 +1,18 @@
+{
+  "id" : "8e10ad30-5029-4c5a-96e0-3535c356096b",
+  "name" : "w_apiphp",
+  "request" : {
+    "url" : "/w/api.php?format=json&action=wbsearchentities&search=QueryTestItem&language=en&type=item",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"searchinfo\":{\"search\":\"QueryTestItem\"},\"search\":[{\"repository\":\"local\",\"id\":\"Q1608\",\"concepturi\":\"http://test.wikidata.org/entity/Q1608\",\"title\":\"Q1608\",\"pageid\":2885,\"url\":\"//test.wikidata.org/wiki/Q1608\",\"label\":\"QueryTestItem1579679951479updated\",\"description\":\"Test\",\"match\":{\"type\":\"label\",\"language\":\"en\",\"text\":\"QueryTestItem1579679951479updated\"}},{\"repository\":\"local\",\"id\":\"Q70759\",\"concepturi\":\"http://test.wikidata.org/entity/Q70759\",\"title\":\"Q70759\",\"pageid\":106138,\"url\":\"//test.wikidata.org/wiki/Q70759\",\"label\":\"QueryTestItem1579679951479\",\"match\":{\"type\":\"label\",\"language\":\"en\",\"text\":\"QueryTestItem1579679951479\"}},{\"repository\":\"local\",\"id\":\"Q202416\",\"concepturi\":\"http://test.wikidata.org/entity/Q202416\",\"title\":\"Q202416\",\"pageid\":288862,\"url\":\"//test.wikidata.org/wiki/Q202416\",\"label\":\"QueryTestItem1579679951479\",\"match\":{\"type\":\"label\",\"language\":\"en\",\"text\":\"QueryTestItem1579679951479\"}}],\"success\":1}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8"
+    }
+  },
+  "uuid" : "8e10ad30-5029-4c5a-96e0-3535c356096b",
+  "persistent" : true,
+  "insertionIndex" : 21
+}

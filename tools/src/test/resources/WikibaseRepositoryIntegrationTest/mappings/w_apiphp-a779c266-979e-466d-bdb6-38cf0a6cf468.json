@@ -1,0 +1,18 @@
+{
+  "id" : "a779c266-979e-466d-bdb6-38cf0a6cf468",
+  "name" : "w_apiphp",
+  "request" : {
+    "url" : "/w/api.php?format=json&action=wbsearchentities&search=QueryTestProperty&language=en&type=property",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"searchinfo\":{\"search\":\"QueryTestProperty\"},\"search\":[{\"repository\":\"local\",\"id\":\"P423\",\"concepturi\":\"http://test.wikidata.org/entity/P423\",\"title\":\"Property:P423\",\"pageid\":2147,\"url\":\"//test.wikidata.org/wiki/Property:P423\",\"datatype\":\"string\",\"label\":\"QueryTestProperty1579679951479\",\"match\":{\"type\":\"label\",\"language\":\"en\",\"text\":\"QueryTestProperty1579679951479\"}},{\"repository\":\"local\",\"id\":\"P91671\",\"concepturi\":\"http://test.wikidata.org/entity/P91671\",\"title\":\"Property:P91671\",\"pageid\":288863,\"url\":\"//test.wikidata.org/wiki/Property:P91671\",\"datatype\":\"string\",\"label\":\"QueryTestProperty1554410403164\",\"match\":{\"type\":\"label\",\"language\":\"en\",\"text\":\"QueryTestProperty1554410403164\"}}],\"success\":1}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8"
+    }
+  },
+  "uuid" : "a779c266-979e-466d-bdb6-38cf0a6cf468",
+  "persistent" : true,
+  "insertionIndex" : 11
+}

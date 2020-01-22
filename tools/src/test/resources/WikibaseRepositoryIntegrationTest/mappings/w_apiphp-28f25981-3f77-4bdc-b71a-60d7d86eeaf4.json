@@ -1,0 +1,21 @@
+{
+  "id" : "28f25981-3f77-4bdc-b71a-60d7d86eeaf4",
+  "name" : "w_apiphp",
+  "request" : {
+    "url" : "/w/api.php?format=json&action=query&list=recentchanges&rcdir=newer&rcprop=title%7Cids%7Ctimestamp&rcnamespace=0%7C120&rclimit=500&continue=&rcstart=2020-01-22T08%3A50%3A18.118Z",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 429,
+    "body" : "dummy error",
+    "headers" : {
+      "Content-Type" : "text/plain"
+    }
+  },
+  "uuid" : "28f25981-3f77-4bdc-b71a-60d7d86eeaf4",
+  "persistent" : true,
+  "scenarioName" : "retry-scenario",
+  "requiredScenarioState" : "Started",
+  "newScenarioState" : "retry-scenario-2",
+  "insertionIndex" : 1
+}

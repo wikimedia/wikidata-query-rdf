@@ -1,0 +1,18 @@
+{
+  "id" : "ae28def0-8bba-41f8-bead-a36d1d96b3d6",
+  "name" : "w_apiphp",
+  "request" : {
+    "url" : "/w/api.php?format=json&action=query&list=recentchanges&rcdir=newer&rcprop=title%7Cids%7Ctimestamp&rcnamespace=0%7C120&rclimit=10&continue=&rcstart=2020-01-22T08%3A50%3A09Z",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"batchcomplete\":\"\",\"query\":{\"recentchanges\":[{\"type\":\"edit\",\"ns\":0,\"title\":\"Q1608\",\"pageid\":2885,\"revid\":525142,\"old_revid\":525141,\"rcid\":540186,\"timestamp\":\"2020-01-22T08:50:11Z\"}]}}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8"
+    }
+  },
+  "uuid" : "ae28def0-8bba-41f8-bead-a36d1d96b3d6",
+  "persistent" : true,
+  "insertionIndex" : 7
+}

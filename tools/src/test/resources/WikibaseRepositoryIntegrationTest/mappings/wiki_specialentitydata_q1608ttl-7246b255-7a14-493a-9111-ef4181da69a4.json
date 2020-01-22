@@ -1,0 +1,18 @@
+{
+  "id" : "7246b255-7a14-493a-9111-ef4181da69a4",
+  "name" : "wiki_specialentitydata_q1608ttl",
+  "request" : {
+    "urlPath" : "/wiki/Special:EntityData/Q1608.ttl",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .\n@prefix dct: <http://purl.org/dc/terms/> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix wikibase: <http://wikiba.se/ontology#> .\n@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n@prefix schema: <http://schema.org/> .\n@prefix cc: <http://creativecommons.org/ns#> .\n@prefix geo: <http://www.opengis.net/ont/geosparql#> .\n@prefix prov: <http://www.w3.org/ns/prov#> .\n@prefix wd: <http://test.wikidata.org/entity/> .\n@prefix data: <https://test.wikidata.org/wiki/Special:EntityData/> .\n@prefix s: <http://test.wikidata.org/entity/statement/> .\n@prefix ref: <http://test.wikidata.org/reference/> .\n@prefix v: <http://test.wikidata.org/value/> .\n@prefix wdt: <http://test.wikidata.org/prop/direct/> .\n@prefix wdtn: <http://test.wikidata.org/prop/direct-normalized/> .\n@prefix p: <http://test.wikidata.org/prop/> .\n@prefix ps: <http://test.wikidata.org/prop/statement/> .\n@prefix psv: <http://test.wikidata.org/prop/statement/value/> .\n@prefix psn: <http://test.wikidata.org/prop/statement/value-normalized/> .\n@prefix pq: <http://test.wikidata.org/prop/qualifier/> .\n@prefix pqv: <http://test.wikidata.org/prop/qualifier/value/> .\n@prefix pqn: <http://test.wikidata.org/prop/qualifier/value-normalized/> .\n@prefix pr: <http://test.wikidata.org/prop/reference/> .\n@prefix prv: <http://test.wikidata.org/prop/reference/value/> .\n@prefix prn: <http://test.wikidata.org/prop/reference/value-normalized/> .\n@prefix wdno: <http://test.wikidata.org/prop/novalue/> .\n\ndata:Q1608 a schema:Dataset ;\n\tschema:about wd:Q1608 ;\n\tcc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;\n\tschema:softwareVersion \"1.0.0\" ;\n\tschema:version \"525144\"^^xsd:integer ;\n\tschema:dateModified \"2020-01-22T08:50:15Z\"^^xsd:dateTime ;\n\twikibase:statements \"1\"^^xsd:integer ;\n\twikibase:identifiers \"0\"^^xsd:integer ;\n\twikibase:sitelinks \"0\"^^xsd:integer .\n\nwd:Q1608 a wikibase:Item ;\n\trdfs:label \"QueryTestItem1579683006580\"@en ;\n\tskos:prefLabel \"QueryTestItem1579683006580\"@en ;\n\tschema:name \"QueryTestItem1579683006580\"@en ;\n\tschema:description \"Test\"@en ;\n\twdt:P73857 \"-991390970807655179\"^^xsd:decimal ;\n\tp:P73857 s:Q1608-81a7eda0-4168-2f20-86e8-c1a20e3db04e .\n\ns:Q1608-81a7eda0-4168-2f20-86e8-c1a20e3db04e a wikibase:Statement,\n\t\twikibase:BestRank ;\n\twikibase:rank wikibase:NormalRank ;\n\tps:P73857 \"-991390970807655179\"^^xsd:decimal ;\n\tpsv:P73857 v:3a6c7327e76aeb4edb1e0fade6e36c06 .\n\nv:3a6c7327e76aeb4edb1e0fade6e36c06 a wikibase:QuantityValue ;\n\twikibase:quantityAmount \"-991390970807655179\"^^xsd:decimal ;\n\twikibase:quantityUnit <http://www.wikidata.org/entity/Q199> .\n",
+    "headers" : {
+      "Content-Type" : "text/turtle; charset=UTF-8"
+    }
+  },
+  "uuid" : "7246b255-7a14-493a-9111-ef4181da69a4",
+  "persistent" : true,
+  "insertionIndex" : 20
+}

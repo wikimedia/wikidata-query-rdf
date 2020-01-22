@@ -1,0 +1,18 @@
+{
+  "id" : "79efa95e-0e04-4eda-b077-874c8e381a3d",
+  "name" : "w_apiphp",
+  "request" : {
+    "url" : "/w/api.php?format=json&action=query&list=recentchanges&rcdir=newer&rcprop=title%7Cids%7Ctimestamp&rcnamespace=0%7C120&rclimit=15&continue=&rcstart=2019-12-23T08%3A50%3A06.580Z",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"batchcomplete\":\"\",\"continue\":{\"rccontinue\":\"20191228153556|539189\",\"continue\":\"-||\"},\"query\":{\"recentchanges\":[{\"type\":\"edit\",\"ns\":0,\"title\":\"Q34698\",\"pageid\":52325,\"revid\":524280,\"old_revid\":108582,\"rcid\":539091,\"timestamp\":\"2019-12-23T11:35:35Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q34698\",\"pageid\":52325,\"revid\":524281,\"old_revid\":524280,\"rcid\":539092,\"timestamp\":\"2019-12-23T11:35:36Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q34698\",\"pageid\":52325,\"revid\":524282,\"old_revid\":524281,\"rcid\":539093,\"timestamp\":\"2019-12-23T11:35:36Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q34698\",\"pageid\":52325,\"revid\":524283,\"old_revid\":524282,\"rcid\":539094,\"timestamp\":\"2019-12-23T11:37:45Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q34698\",\"pageid\":52325,\"revid\":524284,\"old_revid\":524283,\"rcid\":539095,\"timestamp\":\"2019-12-23T14:29:02Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q34698\",\"pageid\":52325,\"revid\":524285,\"old_revid\":524284,\"rcid\":539096,\"timestamp\":\"2019-12-23T14:29:23Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q34698\",\"pageid\":52325,\"revid\":524286,\"old_revid\":524285,\"rcid\":539097,\"timestamp\":\"2019-12-23T14:29:24Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q188427\",\"pageid\":269771,\"revid\":524292,\"old_revid\":521034,\"rcid\":539118,\"timestamp\":\"2019-12-26T18:46:07Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q188427\",\"pageid\":269771,\"revid\":524293,\"old_revid\":524292,\"rcid\":539119,\"timestamp\":\"2019-12-26T18:47:04Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q188427\",\"pageid\":269771,\"revid\":524294,\"old_revid\":524293,\"rcid\":539120,\"timestamp\":\"2019-12-26T18:47:13Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q188427\",\"pageid\":269771,\"revid\":524295,\"old_revid\":524294,\"rcid\":539121,\"timestamp\":\"2019-12-26T19:03:58Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q188427\",\"pageid\":269771,\"revid\":524296,\"old_revid\":524295,\"rcid\":539122,\"timestamp\":\"2019-12-26T19:09:56Z\"},{\"type\":\"new\",\"ns\":0,\"title\":\"Q211811\",\"pageid\":301891,\"revid\":524311,\"old_revid\":0,\"rcid\":539186,\"timestamp\":\"2019-12-28T15:31:17Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q211811\",\"pageid\":301891,\"revid\":524312,\"old_revid\":524311,\"rcid\":539187,\"timestamp\":\"2019-12-28T15:31:59Z\"},{\"type\":\"edit\",\"ns\":0,\"title\":\"Q211811\",\"pageid\":301891,\"revid\":524313,\"old_revid\":524312,\"rcid\":539188,\"timestamp\":\"2019-12-28T15:32:37Z\"}]}}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8"
+    }
+  },
+  "uuid" : "79efa95e-0e04-4eda-b077-874c8e381a3d",
+  "persistent" : true,
+  "insertionIndex" : 9
+}

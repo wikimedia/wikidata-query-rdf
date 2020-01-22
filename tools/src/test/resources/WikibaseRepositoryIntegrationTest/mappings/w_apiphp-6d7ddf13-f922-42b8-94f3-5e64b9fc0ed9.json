@@ -1,0 +1,25 @@
+{
+  "id" : "6d7ddf13-f922-42b8-94f3-5e64b9fc0ed9",
+  "name" : "w_apiphp",
+  "request" : {
+    "url" : "/w/api.php?format=json&action=wbeditentity&id=Q1608&data=%7B%22labels%22%3A%7B%22en%22%3A%7B%22language%22%3A%22en%22%2C%22value%22%3A%22QueryTestItem1579683006580%22%7D%7D%7D",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalTo" : "token=%2B%5C",
+      "caseInsensitive" : false
+    } ]
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"entity\":{\"labels\":{\"en\":{\"language\":\"en\",\"value\":\"QueryTestItem1579683006580\"}},\"descriptions\":{\"en\":{\"language\":\"en\",\"value\":\"Test\"}},\"aliases\":{},\"sitelinks\":{},\"claims\":{\"P73857\":[{\"mainsnak\":{\"snaktype\":\"value\",\"property\":\"P73857\",\"hash\":\"43f9fbe55343e6569d0bec01cc2c7e0344696004\",\"datavalue\":{\"value\":{\"amount\":\"-991390970807655179\",\"unit\":\"1\"},\"type\":\"quantity\"},\"datatype\":\"quantity\"},\"type\":\"statement\",\"id\":\"Q1608$81a7eda0-4168-2f20-86e8-c1a20e3db04e\",\"rank\":\"normal\"}]},\"id\":\"Q1608\",\"type\":\"item\",\"lastrevid\":525144},\"success\":1}",
+    "headers" : {
+      "Content-Type" : "application/json; charset=utf-8"
+    }
+  },
+  "uuid" : "6d7ddf13-f922-42b8-94f3-5e64b9fc0ed9",
+  "persistent" : true,
+  "scenarioName" : "scenario-3-w-api.php",
+  "requiredScenarioState" : "scenario-3-w-api.php-2",
+  "newScenarioState" : "scenario-3-w-api.php-3",
+  "insertionIndex" : 18
+}
