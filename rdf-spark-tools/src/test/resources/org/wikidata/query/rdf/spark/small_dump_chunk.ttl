@@ -1,3 +1,41 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix data: <https://www.wikidata.org/wiki/Special:EntityData/> .
+@prefix s: <http://www.wikidata.org/entity/statement/> .
+@prefix ref: <http://www.wikidata.org/reference/> .
+@prefix v: <http://www.wikidata.org/value/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix wdtn: <http://www.wikidata.org/prop/direct-normalized/> .
+@prefix p: <http://www.wikidata.org/prop/> .
+@prefix ps: <http://www.wikidata.org/prop/statement/> .
+@prefix psv: <http://www.wikidata.org/prop/statement/value/> .
+@prefix psn: <http://www.wikidata.org/prop/statement/value-normalized/> .
+@prefix pq: <http://www.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://www.wikidata.org/prop/qualifier/value/> .
+@prefix pqn: <http://www.wikidata.org/prop/qualifier/value-normalized/> .
+@prefix pr: <http://www.wikidata.org/prop/reference/> .
+@prefix prv: <http://www.wikidata.org/prop/reference/value/> .
+@prefix prn: <http://www.wikidata.org/prop/reference/value-normalized/> .
+@prefix wdno: <http://www.wikidata.org/prop/novalue/> .
+
+wikibase:Dump a schema:Dataset,
+                owl:Ontology ;
+        cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+        schema:softwareVersion "1.0.0" ;
+        schema:dateModified "2020-03-02T23:00:02Z"^^xsd:dateTime ;
+        owl:imports <http://wikiba.se/ontology-1.0.owl> .
+
 data:Q31 a schema:Dataset ;
         schema:about wd:Q31 ;
         schema:version "1065756426"^^xsd:integer ;
@@ -14,6 +52,44 @@ wd:Q31 a wikibase:Item .
         schema:isPartOf <https://it.wikivoyage.org/> ;
         schema:name "Belgio"@it .
 
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix data: <https://www.wikidata.org/wiki/Special:EntityData/> .
+@prefix s: <http://www.wikidata.org/entity/statement/> .
+@prefix ref: <http://www.wikidata.org/reference/> .
+@prefix v: <http://www.wikidata.org/value/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix wdtn: <http://www.wikidata.org/prop/direct-normalized/> .
+@prefix p: <http://www.wikidata.org/prop/> .
+@prefix ps: <http://www.wikidata.org/prop/statement/> .
+@prefix psv: <http://www.wikidata.org/prop/statement/value/> .
+@prefix psn: <http://www.wikidata.org/prop/statement/value-normalized/> .
+@prefix pq: <http://www.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://www.wikidata.org/prop/qualifier/value/> .
+@prefix pqn: <http://www.wikidata.org/prop/qualifier/value-normalized/> .
+@prefix pr: <http://www.wikidata.org/prop/reference/> .
+@prefix prv: <http://www.wikidata.org/prop/reference/value/> .
+@prefix prn: <http://www.wikidata.org/prop/reference/value-normalized/> .
+@prefix wdno: <http://www.wikidata.org/prop/novalue/> .
+
+wikibase:Dump a schema:Dataset,
+                owl:Ontology ;
+        cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+        schema:softwareVersion "1.0.0" ;
+        schema:dateModified "2020-03-02T23:24:20Z"^^xsd:dateTime ;
+        owl:imports <http://wikiba.se/ontology-1.0.owl> .
+
 data:Q8 a schema:Dataset ;
         schema:about wd:Q8 ;
         schema:version "1052652842"^^xsd:integer ;
@@ -29,3 +105,24 @@ wd:Q8 a wikibase:Item .
         schema:inLanguage "fr" ;
         schema:isPartOf <https://fr.wikiquote.org/> ;
         schema:name "Bonheur"@fr .
+
+wd:Q8 p:P646 s:Q8-63214A9F-B2C8-42F9-8DA0-B046A989DDCF .
+
+s:Q8-63214A9F-B2C8-42F9-8DA0-B046A989DDCF a wikibase:Statement,
+                wikibase:BestRank ;
+        wikibase:rank wikibase:NormalRank ;
+        ps:P646 "/m/016pp7" ;
+        psn:P646 <http://g.co/kg/m/016pp7> ;
+        prov:wasDerivedFrom ref:2b00cb481cddcac7623114367489b5c194901c4a .
+
+ref:2b00cb481cddcac7623114367489b5c194901c4a a wikibase:Reference ;
+        pr:P248 wd:Q15241312 ;
+        pr:P577 "2013-10-28T00:00:00Z"^^xsd:dateTime ;
+        prv:P577 v:f987783e1f9c9fa0cb0b774d330af52d .
+
+v:f987783e1f9c9fa0cb0b774d330af52d a wikibase:TimeValue ;
+        wikibase:timeValue "2013-10-28T00:00:00Z"^^xsd:dateTime ;
+        wikibase:timePrecision "11"^^xsd:integer ;
+        wikibase:timeTimezone "0"^^xsd:integer ;
+        wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+

@@ -6,10 +6,12 @@ import static org.wikidata.query.rdf.tool.rdf.StatementPredicates.redirect;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 
 import org.openrdf.model.Statement;
 import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.helpers.RDFHandlerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
@@ -70,9 +72,19 @@ public class EntityMungingRdfHandler implements RDFHandler {
     private String entityId;
 
     public EntityMungingRdfHandler(UrisScheme uris, Munger munger, RDFHandler output, EntityCountListener entityMetricConsumer) {
+        this(uris, munger, output, entityMetricConsumer, (s, e) -> s);
+    }
+
+    public EntityMungingRdfHandler(UrisScheme uris, Munger munger, RDFHandler output, EntityCountListener entityMetricConsumer,
+                                   BiFunction<Statement, String, Statement> transformer) {
         this.uris = uris;
         this.munger = munger;
-        this.output = output;
+        this.output = new RDFHandlerWrapper(output) {
+            @Override
+            public void handleStatement(Statement st) throws RDFHandlerException {
+                output.handleStatement(transformer.apply(st, entityId));
+            }
+        };
         this.entityMetricConsumer = entityMetricConsumer;
     }
 

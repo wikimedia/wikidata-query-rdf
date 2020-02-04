@@ -27,6 +27,7 @@
             <groupId>com.github.scopt</groupId>
             <artifactId>scopt_${scala.compat.version}</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.clapper</groupId>
             <artifactId>grizzled-slf4j_${scala.compat.version}</artifactId>
@@ -67,6 +68,17 @@
             <scope>provided</scope>
         </dependency>
         <!-- Test Scopes -->
+        <!-- we need to force a very old version of guava
+             as the version of hadoop we use depends on such
+             version
+             c.f. https://stackoverflow.com/questions/36427291/illegalaccesserror-to-guavas-stopwatch-from-org-apache-hadoop-mapreduce-lib-inp
+         -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>15.0</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.compat.version}</artifactId>
