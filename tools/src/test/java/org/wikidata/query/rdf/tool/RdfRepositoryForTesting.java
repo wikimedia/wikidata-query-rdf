@@ -151,6 +151,7 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
     /**
      * Overridden sync method.
      * Selects which sync to use - one-value or multi-value, to ensure both work the same.
+     * FIXME: there should be two cleanup list params here, values & refs
      */
     public int sync(String entityId, Collection<org.openrdf.model.Statement> statements, Collection<String> valueList) {
         return multiSync(entityId, statements, valueList);
@@ -170,6 +171,7 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
     private int multiSync(String entityId, Collection<org.openrdf.model.Statement> statements, Collection<String> valueList) {
         Change change = new Change(entityId, -1, Instant.now(), -1);
         change.setStatements(statements);
+        // FIXME: we should not conflate refs&values cleanups like that in test
         change.setValueCleanupList(valueList);
         change.setRefCleanupList(valueList);
         int res = syncFromChanges(Collections.singleton(change), false).getMutationCount();

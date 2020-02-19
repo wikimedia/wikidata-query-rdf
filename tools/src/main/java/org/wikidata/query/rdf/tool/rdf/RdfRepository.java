@@ -260,7 +260,7 @@ public class RdfRepository {
                 log.info("Too much data with {} bytes - sending batch out, last ID {}", classifiedStatements.getDataSize(), change.entityId());
 
                 collectedMetrics.merge(sendUpdateBatch(entityIds, insertStatements, classifiedStatements,
-                        refSet, valueSet, verifyResult));
+                        valueSet, refSet, verifyResult));
                 entityIds.clear();
                 insertStatements.clear();
                 classifiedStatements.clear();
@@ -272,7 +272,7 @@ public class RdfRepository {
         if (!entityIds.isEmpty()) {
             collectedMetrics.merge(sendUpdateBatch(entityIds,
                                         insertStatements, classifiedStatements,
-                    refSet, valueSet, verifyResult));
+                    valueSet, refSet, verifyResult));
         }
 
         return collectedMetrics;

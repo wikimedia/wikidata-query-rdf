@@ -52,6 +52,7 @@ import com.google.common.collect.ImmutableList;
  * Tests RdfRepository against a live RDF repository.
  */
 public class RdfRepositoryIntegrationTest {
+    // FIXME: fix this cleanupList by splitting it to cleanupRefs and cleanupValues
     private Set<String> cleanupList = new HashSet<>();
 
     /**
