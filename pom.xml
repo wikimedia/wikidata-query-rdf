@@ -327,7 +327,6 @@
                 <artifactId>flink-connector-kafka_${scala.compat.version}</artifactId>
                 <version>${flink.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.apache.flink</groupId>
                 <artifactId>flink-runtime_${scala.compat.version}</artifactId>
@@ -340,6 +339,18 @@
                 <groupId>org.apache.flink</groupId>
                 <artifactId>flink-scala_${scala.compat.version}</artifactId>
                 <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-statebackend-rocksdb_${scala.compat.version}</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-streaming-java_${scala.compat.version}</artifactId>
+                <version>${flink.version}</version>
+                <classifier>tests</classifier>
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
