@@ -340,6 +340,11 @@
                 <artifactId>flink-scala_${scala.compat.version}</artifactId>
                 <version>${flink.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-state-processor-api_${scala.compat.version}</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.apache.flink</groupId>

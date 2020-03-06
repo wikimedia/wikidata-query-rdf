@@ -2,8 +2,6 @@ package org.wikidata.query.rdf.updater
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.flink.api.common.state.ListState
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.function.ProcessWindowFunction
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -11,12 +9,6 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.util.Collector
 
 class EventReorderingWindowFunction extends ProcessWindowFunction[InputEvent, InputEvent, String, TimeWindow] {
-  private var buffer: ListState[InputEvent] = _
-
-  override def open(parameters: Configuration): Unit = {
-    this.buffer = getRuntimeContext.getListState(UpdaterStateDescriptors.newReorderingStateDesc())
-  }
-
   override def process(key: String, context: Context, inputEvents: Iterable[InputEvent], out: Collector[InputEvent]): Unit = {
     val toReorder = new ListBuffer[InputEvent]
     for (event <- inputEvents) {

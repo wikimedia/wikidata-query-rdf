@@ -26,9 +26,16 @@ object IncomingStreams {
     fromStream(kafkaStream, hostname, conv)
   }
 
-  def fromStream[E <: ChangeEvent](stream: DataStream[E], hostname: String, conv: E => InputEvent): DataStream[InputEvent] = {
+  def fromStream[E <: ChangeEvent](stream: DataStream[E],
+                                   hostname: String,
+                                   conv: E => InputEvent,
+                                   filterParallelism: Option[Int] = None,
+                                   mapperParallelism: Option[Int] = None)
+                                  (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
     stream.filter(new EventWithMetadataHostFilter[E](hostname))
+      .setParallelism(filterParallelism.getOrElse(env.getParallelism))
       .map(conv)
+      .setParallelism(mapperParallelism.getOrElse(env.getParallelism))
       .name(s"Filtered(${stream.name} == $hostname)")
   }
 }

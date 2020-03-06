@@ -6,13 +6,13 @@ import java.util.concurrent.TimeUnit
 
 import org.apache.flink.api.common.serialization.Encoder
 import org.apache.flink.api.java.utils.ParameterTool
-import org.apache.flink.contrib.streaming.state.RocksDBStateBackend
 import org.apache.flink.core.fs.Path
-import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.TimeCharacteristic
+import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup
+import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.DefaultRollingPolicy
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 
 object UpdaterJob {
   def main(args: Array[String]): Unit = {
@@ -30,15 +30,16 @@ object UpdaterJob {
       maxLateness = params.getInt("max_lateness", 60000)
     )
 
-    // FIXME: add external checkpoint config to handle job cancellation
     val checkpointDir = params.get("checkpoint_dir")
     val spuriousEventsDir = params.get("spurious_events_dir")
     val lateEventsDir = params.get("late_events_dir")
     val outputDir = params.get("output_dir")
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
-    env.setStateBackend(new RocksDBStateBackend(checkpointDir))
-    env.enableCheckpointing(30000)
+    env.setStateBackend(UpdaterStateConfiguration.newStateBackend(checkpointDir))
+    env.enableCheckpointing(2*60*1000) // checkpoint every 2mins, checkpoint timeout is 10m by default
+    env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
     UpdaterPipeline.build(pipelineOptions, buildIncomingStreams(pipelineInputEventStreamOptions, pipelineOptions))
       .saveLateEventsTo(prepareJsonDebugSink(lateEventsDir))
       .saveSpuriousEventsTo(prepareJsonDebugSink(spuriousEventsDir))

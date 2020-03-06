@@ -4,10 +4,21 @@ import java.time.Instant
 
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
+import org.wikidata.query.rdf.tool.change.events.{EventsMeta, RevisionCreateEvent}
 
 trait TestEventGenerator {
   def newInputEventRecord(entity: String, revision: Long, ts: Long): StreamRecord[InputEvent] = {
     new StreamRecord[InputEvent](Rev(entity, Instant.ofEpochMilli(ts), revision), ts)
+  }
+
+  def instant(millis: Long): Instant = {
+    Instant.ofEpochMilli(millis)
+  }
+
+  def newEvent(item: String, revision: Long, date: Instant, namespace: Int, domain: String): RevisionCreateEvent = {
+    new RevisionCreateEvent(
+      new EventsMeta(date, "unused", domain),
+      revision, item, namespace)
   }
 
   def newRecord(mutationOperation: AllMutationOperation): StreamRecord[AllMutationOperation] = {

@@ -1,15 +1,23 @@
 package org.wikidata.query.rdf.updater
 
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.windowing.time.Time
 
 sealed class UpdaterPipeline(outputStream: DataStream[MutationOperation],
                              lateEventStream: DataStream[InputEvent],
                              spuriousEventStream: DataStream[IgnoredMutation])
                             (implicit env: StreamExecutionEnvironment)
 {
-  def execute(appName: String = "WDQS Updater Stream Updater"): Unit = {
+  val defaultAppName = "WDQS Updater Stream Updater"
+
+  def execute(appName: String = defaultAppName): Unit = {
     env.execute(appName)
+  }
+
+  def streamGraph(appName: String = defaultAppName): StreamGraph = {
+    env.getStreamGraph(defaultAppName)
   }
 
   def saveLateEventsTo(sink: SinkFunction[InputEvent]): UpdaterPipeline = {
@@ -64,7 +72,7 @@ object UpdaterPipeline {
       case x :: rest => x.union(rest: _*)
     }
 
-    val windowStream = EventReorderingWindowFunction.attach(incomingEventStream)
+    val windowStream = EventReorderingWindowFunction.attach(incomingEventStream, Time.milliseconds(opts.reorderingWindowLengthMs))
     val lateEventsSideOutput = windowStream.getSideOutput(EventReorderingWindowFunction.LATE_EVENTS_SIDE_OUTPUT_TAG)
     val outputEventStream = windowStream
       .keyBy(_.item)

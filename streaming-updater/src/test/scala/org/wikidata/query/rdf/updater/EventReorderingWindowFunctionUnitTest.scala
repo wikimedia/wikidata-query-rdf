@@ -19,7 +19,7 @@ import org.scalatest.{FlatSpec, Matchers}
 class EventReorderingWindowFunctionUnitTest extends FlatSpec with Matchers with TestEventGenerator {
   "EventReorderingWindowFunction" should "reorder events" in {
     val window = TumblingEventTimeWindows.of(Time.seconds(1))
-    val stateDescr = UpdaterStateDescriptors.newReorderingStateDesc()
+    val stateDescr = UpdaterStateConfiguration.newReorderingStateDesc()
     stateDescr.initializeSerializerUnlessSet(new ExecutionConfig())
     val function = new ScalaProcessWindowFunctionWrapper(new EventReorderingWindowFunction());
     val windowFunction = new InternalIterableProcessWindowFunction[InputEvent, InputEvent, String, TimeWindow](function)

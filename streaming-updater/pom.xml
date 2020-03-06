@@ -20,6 +20,10 @@
             <artifactId>flink-connector-kafka_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-state-processor-api_${scala.compat.version}</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.wikidata.query.rdf</groupId>
             <artifactId>tools</artifactId>
             <version>${project.version}</version>
