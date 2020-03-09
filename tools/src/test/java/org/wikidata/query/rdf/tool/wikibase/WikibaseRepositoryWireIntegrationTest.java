@@ -9,7 +9,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.io.Resources.getResource;
 import static org.hamcrest.CoreMatchers.is;
@@ -179,16 +178,5 @@ public class WikibaseRepositoryWireIntegrationTest {
 
             verify(getRequestedFor(anyUrl()).withHeader("User-Agent", containing("some-agent")));
         }
-    }
-
-    @Test
-    public void testChronologyId() throws RetryableException {
-        repository.setCollectConstraints(false);
-        repository.setRevisionCutoff(Duration.of(3, ChronoUnit.HOURS));
-        stubFor(get(urlMatching("/wiki/Special:EntityData/Q6.ttl[?]flavor=dump&revision=1234"))
-                .withHeader("MediaWiki-Chronology-Client-Id", equalTo("tardis"))
-                .willReturn(aResponse().withBody("<a> <b> <c> .")));
-        Collection<Statement> response = repository.fetchRdfForEntity(new Change("Q6", 1234, Instant.now().minus(5, ChronoUnit.MINUTES), 0, "tardis"));
-        assertThat(response, hasSize(1));
     }
 }
