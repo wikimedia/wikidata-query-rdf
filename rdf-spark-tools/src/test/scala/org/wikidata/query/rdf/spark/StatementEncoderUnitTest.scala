@@ -61,4 +61,8 @@ class StatementEncoderUnitTest extends FlatSpec with Matchers {
     valueFactory.createLiteral(123) should equal(statementEncoder.decode(""""123"^^<http://www.w3.org/2001/XMLSchema#int>"""))
   }
 
+  "a URI" should "be directly encoded" in {
+    statementEncoder.encodeURI("http://test.local") should equal("<http://test.local>")
+  }
+
 }
