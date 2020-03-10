@@ -1,0 +1,109 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix data: <https://www.wikidata.org/wiki/Special:EntityData/> .
+@prefix s: <http://www.wikidata.org/entity/statement/> .
+@prefix ref: <http://www.wikidata.org/reference/> .
+@prefix v: <http://www.wikidata.org/value/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix wdtn: <http://www.wikidata.org/prop/direct-normalized/> .
+@prefix p: <http://www.wikidata.org/prop/> .
+@prefix ps: <http://www.wikidata.org/prop/statement/> .
+@prefix psv: <http://www.wikidata.org/prop/statement/value/> .
+@prefix psn: <http://www.wikidata.org/prop/statement/value-normalized/> .
+@prefix pq: <http://www.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://www.wikidata.org/prop/qualifier/value/> .
+@prefix pqn: <http://www.wikidata.org/prop/qualifier/value-normalized/> .
+@prefix pr: <http://www.wikidata.org/prop/reference/> .
+@prefix prv: <http://www.wikidata.org/prop/reference/value/> .
+@prefix prn: <http://www.wikidata.org/prop/reference/value-normalized/> .
+@prefix wdno: <http://www.wikidata.org/prop/novalue/> .
+
+data:L4696 a schema:Dataset ;
+        schema:about wd:L4696 ;
+        cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+        schema:softwareVersion "1.0.0" ;
+        schema:version "766944915"^^xsd:integer ;
+        schema:dateModified "2018-10-18T13:09:53Z"^^xsd:dateTime ;
+        wikibase:statements "4"^^xsd:integer .
+
+wd:L4696 a wikibase:Lexeme,
+                ontolex:LexicalEntry ;
+        rdfs:label "statement"@en ;
+        wikibase:lemma "statement"@en ;
+        dct:language wd:Q1860 ;
+        wikibase:lexicalCategory wd:Q1084 ;
+        ontolex:lexicalForm wd:L4696-F1,
+                wd:L4696-F2 ;
+        ontolex:sense wd:L4696-S1,
+                wd:L4696-S2,
+                wd:L4696-S3 ;
+        wdt:P5275 "189259" ;
+        p:P5275 s:L4696-bdf1b4d9-4ee2-fdc6-384f-f1bd74b8a605 .
+
+s:L4696-bdf1b4d9-4ee2-fdc6-384f-f1bd74b8a605 a wikibase:Statement,
+                wikibase:BestRank ;
+        wikibase:rank wikibase:NormalRank ;
+        ps:P5275 "189259" .
+
+wd:L4696-F1 a wikibase:Form,
+                ontolex:Form ;
+        rdfs:label "statement"@en ;
+        ontolex:representation "statement"@en ;
+        wikibase:grammaticalFeature wd:Q110786 .
+
+wd:L4696-F2 a wikibase:Form,
+                ontolex:Form ;
+        rdfs:label "statements"@en ;
+        ontolex:representation "statements"@en ;
+        wikibase:grammaticalFeature wd:Q146786 .
+
+wd:L4696-S1 a wikibase:Sense,
+                ontolex:LexicalSense ;
+        rdfs:label "declaration"@en ;
+        skos:definition "declaration"@en ;
+        rdfs:label "Aussage"@de ;
+        skos:definition "Aussage"@de ;
+        wdt:P5137 wd:Q2684591 ;
+        p:P5137 s:L4696-S1-67bef0e8-47dc-607c-7a8d-3afb13e29028 .
+
+s:L4696-S1-67bef0e8-47dc-607c-7a8d-3afb13e29028 a wikibase:Statement,
+                wikibase:BestRank ;
+        wikibase:rank wikibase:NormalRank ;
+        ps:P5137 wd:Q2684591 .
+
+wd:L4696-S2 a wikibase:Sense,
+                ontolex:LexicalSense ;
+        rdfs:label "unit of information in the Wikibase data model, e. g. on Wikidata"@en ;
+        skos:definition "unit of information in the Wikibase data model, e. g. on Wikidata"@en ;
+        rdfs:label "Informationseinheit im Wikibase-Datenmodell, z. B. auf Wikidata"@de ;
+        skos:definition "Informationseinheit im Wikibase-Datenmodell, z. B. auf Wikidata"@de ;
+        wdt:P5137 wd:Q16354754 ;
+        p:P5137 s:L4696-S2-18565fb2-44e4-5415-1bdc-b96609dccc3b .
+
+s:L4696-S2-18565fb2-44e4-5415-1bdc-b96609dccc3b a wikibase:Statement,
+                wikibase:BestRank ;
+        wikibase:rank wikibase:NormalRank ;
+        ps:P5137 wd:Q16354754 .
+
+wd:L4696-S3 a wikibase:Sense,
+                ontolex:LexicalSense ;
+        rdfs:label "element in programming language"@en ;
+        skos:definition "element in programming language"@en ;
+        wdt:P5137 wd:Q613299 ;
+        p:P5137 s:L4696-S3-601a4002-4c3d-7b4c-1463-64a5ff969386 .
+
+s:L4696-S3-601a4002-4c3d-7b4c-1463-64a5ff969386 a wikibase:Statement,
+                wikibase:BestRank ;
+        wikibase:rank wikibase:NormalRank ;
+        ps:P5137 wd:Q613299 .
