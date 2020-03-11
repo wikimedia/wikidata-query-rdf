@@ -8,7 +8,7 @@
         <relativePath />
     </parent>
     <groupId>org.wikidata.query.rdf</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>query-service-parent</artifactId>
     <version>0.3.15-SNAPSHOT</version>
     <packaging>pom</packaging>
 
