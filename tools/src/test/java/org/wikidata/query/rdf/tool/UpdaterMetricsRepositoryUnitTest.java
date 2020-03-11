@@ -32,13 +32,18 @@ public class UpdaterMetricsRepositoryUnitTest {
         updaterMetricsRepository.incNoopedChangesByRevisionCheck(2);
         updaterMetricsRepository.markBatchProgress(5);
 
+        updaterMetricsRepository.incDeferredChanges();
+        updaterMetricsRepository.incDeferredChanges();
+
         Meter updatesSkip = metricRegistry.meter("updates-skip");
         Counter noops = metricRegistry.counter("noop-by-revision-check");
         Meter batchProgress = metricRegistry.meter("batch-progress");
+        Counter delayedChanges = metricRegistry.counter("updates-deferred-changes");
 
         assertThat(updatesSkip.getCount()).isEqualTo(1);
         assertThat(noops.getCount()).isEqualTo(2);
         assertThat(batchProgress.getCount()).isEqualTo(5);
+        assertThat(delayedChanges.getCount()).isEqualTo(2);
     }
 
 

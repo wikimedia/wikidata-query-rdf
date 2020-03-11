@@ -414,6 +414,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 if (fetchedRev < sourceRev) {
                     // Something weird happened - we've got stale revision!
                     log.warn("Stale revision on {}: change is {}, RDF is {}", change.entityId(), sourceRev, fetchedRev);
+                    metricsRepository.incDeferredChanges();
                     deferredChanges.add(change, DEFERRAL_DELAY);
                 }
                 if (sourceRev < fetchedRev) {

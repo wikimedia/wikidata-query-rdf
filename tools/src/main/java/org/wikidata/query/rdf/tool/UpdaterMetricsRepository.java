@@ -36,6 +36,7 @@ public class UpdaterMetricsRepository {
     private final Counter importedChanged;
     private final Counter noopedChangesByRevisionCheck;
     private final Counter importedTriples;
+    private final Counter deferredChanges;
 
     private final Map<MultiSyncStep, BlazeGraphMetrics> blazeGraphMetrics = new EnumMap<>(MultiSyncStep.class);
     private final Counter blazeGraphCommitTotalElapsed;
@@ -51,6 +52,7 @@ public class UpdaterMetricsRepository {
         this.importedChanged = metricRegistry.counter("rdf-repository-imported-changes");
         this.importedTriples = metricRegistry.counter("rdf-repository-imported-triples");
         this.blazeGraphCommitTotalElapsed = metricRegistry.counter("blazegraph-commit-total-elapsed");
+        this.deferredChanges = metricRegistry.counter("updates-deferred-changes");
 
         //update metrics from blazegraph
         for (MultiSyncStep step : MultiSyncStep.values()) {
@@ -87,6 +89,10 @@ public class UpdaterMetricsRepository {
         updatesMeter.mark(changesCount);
         importedChanged.inc(changesCount);
         updateMetricsFrom(updateMetrics);
+    }
+
+    public void incDeferredChanges() {
+        deferredChanges.inc();
     }
 
     public void markSkipAhead() {
