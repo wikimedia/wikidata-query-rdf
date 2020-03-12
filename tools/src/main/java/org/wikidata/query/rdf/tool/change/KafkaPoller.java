@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.change.events.ChangeEvent;
-import org.wikidata.query.rdf.tool.change.events.EventWithChronology;
 import org.wikidata.query.rdf.tool.change.events.PageDeleteEvent;
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
@@ -416,11 +415,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
      * Create change object from event.
      */
     private Change makeChange(ChangeEvent event, long position) {
-        if (event instanceof EventWithChronology) {
-            return new Change(event.title(), event.revision(), event.timestamp(), position, ((EventWithChronology) event).chronologyId());
-        } else {
-            return new Change(event.title(), event.revision(), event.timestamp(), position);
-        }
+        return new Change(event.title(), event.revision(), event.timestamp(), position);
     }
 
     /**

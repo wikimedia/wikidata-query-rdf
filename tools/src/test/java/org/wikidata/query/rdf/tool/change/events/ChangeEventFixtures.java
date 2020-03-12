@@ -42,7 +42,7 @@ public final class ChangeEventFixtures {
     public static ChangeEvent makeDeleteEvent(Duration offset, String qid) {
         return new PageDeleteEvent(
                 new EventsMeta(START_TIME.plus(offset), "", DOMAIN),
-                qid, 0, "");
+                qid, 0);
     }
 
     /**
@@ -54,18 +54,6 @@ public final class ChangeEventFixtures {
     public static ChangeEvent makeRCEvent(Duration offset, long revid, String qid, int ns, String domain) {
         return new RevisionCreateEvent(
                 new EventsMeta(START_TIME.plus(offset), "", domain),
-                revid, qid, ns, "");
-    }
-
-    /**
-     * Make RC event with different namespace and domain.
-     * @param offset Duration from start time to event's time
-     * @param revid Revision ID
-     * @param qid Title (Q-id)
-     */
-    public static ChangeEvent makeRCEvent(Duration offset, long revid, String qid, String chronologyId) {
-        return new RevisionCreateEvent(
-                new EventsMeta(START_TIME.plus(offset), "", DOMAIN),
-                revid, qid, 0, chronologyId);
+                revid, qid, ns);
     }
 }

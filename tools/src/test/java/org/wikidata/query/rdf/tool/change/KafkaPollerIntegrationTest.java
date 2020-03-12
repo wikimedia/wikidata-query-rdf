@@ -66,7 +66,6 @@ public class KafkaPollerIntegrationTest {
         assertThat(change.entityId()).isEqualTo("Q123");
         assertThat(change.revision()).isEqualTo(1L);
         assertThat(change.timestamp()).isEqualTo(Instant.parse("2018-02-19T13:31:23Z"));
-        assertThat(change.chronologyId()).isNull();
     }
 
     @Test
@@ -80,7 +79,6 @@ public class KafkaPollerIntegrationTest {
         assertThat(change.entityId()).isEqualTo("Q20672616");
         assertThat(change.revision()).isEqualTo(62295L);
         assertThat(change.timestamp()).isEqualTo(Instant.parse("2018-01-21T16:38:20Z"));
-        assertThat(change.chronologyId()).isEqualTo("tardis");
     }
 
     @Test
@@ -205,15 +203,4 @@ public class KafkaPollerIntegrationTest {
         assertThat(change.revision()).isEqualTo(5L);
         assertThat(change.timestamp()).isEqualTo(Instant.parse("2018-10-24T00:28:24.1623Z"));
     }
-
-    @Test
-    public void receiveEventWithChronology() throws RetryableException, IOException {
-        sendEvent(CREATE_TOPIC, "rc-chrono.json");
-        List<Change> changes = poller.firstBatch().changes();
-        assertThat(changes).hasSize(1);
-        Change change = changes.get(0);
-        assertThat(change.entityId()).isEqualTo("Q123");
-        assertThat(change.chronologyId()).isEqualTo("tardis");
-    }
-
 }

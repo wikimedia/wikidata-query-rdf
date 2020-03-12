@@ -40,10 +40,6 @@ public class Change implements Comparable<Change> {
      * Timestamp of the change.
      */
     private final Instant timestamp;
-    /**
-     * Chronology Id.
-     */
-    private final String chronologyId;
 
     /**
      * Set of processed statements for the change.
@@ -66,15 +62,10 @@ public class Change implements Comparable<Change> {
     private final long offset;
 
     public Change(String entityId, long revision, Instant timestamp, long offset) {
-        this(entityId, revision, timestamp, offset, null);
-    }
-
-    public Change(String entityId, long revision, Instant timestamp, long offset, String chronologyId) {
         this.entityId = cleanEntityId(entityId);
         this.revision = revision;
         this.timestamp = timestamp;
         this.offset = offset;
-        this.chronologyId = chronologyId;
     }
 
     private String cleanEntityId(String entityIdWithPrefix) {
@@ -121,13 +112,6 @@ public class Change implements Comparable<Change> {
      */
     public Instant timestamp() {
         return timestamp;
-    }
-
-    /**
-     * The entity that changed.
-     */
-    public String chronologyId() {
-        return chronologyId;
     }
 
     @Override

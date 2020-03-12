@@ -4,24 +4,20 @@ import org.wikidata.query.rdf.tool.change.Change;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Strings;
 
-public class PageDeleteEvent extends EventWithMeta implements EventWithChronology {
+public class PageDeleteEvent extends EventWithMeta {
     private final String title;
     private final long namespace;
-    private final String chronologyId;
 
     @JsonCreator
     public PageDeleteEvent(
             @JsonProperty("meta") EventsMeta meta,
             @JsonProperty("page_title") String title,
-            @JsonProperty("page_namespace") long namespace,
-            @JsonProperty("chronology_id") String chronologyId
+            @JsonProperty("page_namespace") long namespace
     ) {
         super(meta);
         this.title = title;
         this.namespace = namespace;
-        this.chronologyId = Strings.emptyToNull(chronologyId);
     }
 
     @Override
@@ -38,10 +34,5 @@ public class PageDeleteEvent extends EventWithMeta implements EventWithChronolog
     @Override
     public long namespace() {
         return namespace;
-    }
-
-    @Override
-    public String chronologyId() {
-        return chronologyId;
     }
 }
