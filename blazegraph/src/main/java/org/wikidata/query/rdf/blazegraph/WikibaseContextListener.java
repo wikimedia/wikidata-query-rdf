@@ -42,13 +42,14 @@ import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.SKOS;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
-import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 
 import com.bigdata.bop.IValueExpression;
 import com.bigdata.rdf.graph.impl.bd.GASService;
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.internal.constraints.DateBOp.DateOp;
+import com.bigdata.rdf.internal.constraints.IsBNodeBOp;
 import com.bigdata.rdf.sail.sparql.PrefixDeclProcessor;
 import com.bigdata.rdf.sail.webapp.BigdataRDFServletContextListener;
 import com.bigdata.rdf.sparql.ast.FunctionRegistry;
@@ -184,6 +185,8 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         FunctionRegistry.add(new URIImpl(GeoSparql.LAT_FUNCTION), getCoordinatePartBOpFactory(CoordinatePartBOp.Parts.LAT));
         // wikibase:decodeUri
         FunctionRegistry.add(new URIImpl(Ontology.NAMESPACE + "decodeUri"), getDecodeUriBOpFactory());
+        // wikibase:isSomevalue, meant to filter https://www.mediawiki.org/wiki/Wikibase/DataModel#PropertySomeValueSnak
+        FunctionRegistry.add(new URIImpl(Ontology.NAMESPACE + "isSomeValue"), getIsSomeValueBOpFactory());
 
         addPrefixes(UrisSchemeFactory.getURISystem());
 
@@ -399,6 +402,15 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
             throw new IllegalArgumentException("Service call not allowed: " + params.getServiceURI());
         }
 
+    }
+
+    private Factory getIsSomeValueBOpFactory() {
+        return (context, globals, scalarValues, args) -> {
+            // Simple wrapper around isBlank for now
+            FunctionRegistry.checkArgs(args, ValueExpressionNode.class);
+            IValueExpression<? extends IV> ve = AST2BOpUtility.toVE(context, globals, args[0]);
+            return new IsBNodeBOp(ve);
+        };
     }
 
 }
