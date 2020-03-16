@@ -14,9 +14,11 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiConsumer;
 
 import javax.servlet.ServletContextEvent;
 
+import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.resultio.TupleQueryResultFormat;
 import org.slf4j.Logger;
@@ -24,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.blazegraph.categories.CategoriesStoredQuery;
 import org.wikidata.query.rdf.blazegraph.constraints.CoordinatePartBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.DecodeUriBOp;
+import org.wikidata.query.rdf.blazegraph.constraints.IsSomeValueFunctionFactory;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseCornerBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseDateBOp;
 import org.wikidata.query.rdf.blazegraph.constraints.WikibaseDistanceBOp;
@@ -49,7 +52,6 @@ import com.bigdata.bop.IValueExpression;
 import com.bigdata.rdf.graph.impl.bd.GASService;
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.internal.constraints.DateBOp.DateOp;
-import com.bigdata.rdf.internal.constraints.IsBNodeBOp;
 import com.bigdata.rdf.sail.sparql.PrefixDeclProcessor;
 import com.bigdata.rdf.sail.webapp.BigdataRDFServletContextListener;
 import com.bigdata.rdf.sparql.ast.FunctionRegistry;
@@ -185,9 +187,12 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         FunctionRegistry.add(new URIImpl(GeoSparql.LAT_FUNCTION), getCoordinatePartBOpFactory(CoordinatePartBOp.Parts.LAT));
         // wikibase:decodeUri
         FunctionRegistry.add(new URIImpl(Ontology.NAMESPACE + "decodeUri"), getDecodeUriBOpFactory());
-        // wikibase:isSomevalue, meant to filter https://www.mediawiki.org/wiki/Wikibase/DataModel#PropertySomeValueSnak
-        FunctionRegistry.add(new URIImpl(Ontology.NAMESPACE + "isSomeValue"), getIsSomeValueBOpFactory());
-
+        IsSomeValueFunctionFactory.SomeValueMode mode = IsSomeValueFunctionFactory.SomeValueMode.lookup(System.getProperty("wikibaseSomeValueMode", "blank"));
+        String skolemURIPrefix = System.getProperty("wikibaseSomeValueSkolemURIPrefix");
+        if (mode == IsSomeValueFunctionFactory.SomeValueMode.Skolem && skolemURIPrefix == null) {
+            throw new IllegalArgumentException("wikibaseSomeValueSkolemURIPrefix must be provided when wikibaseSomeValueMode=skolem");
+        }
+        registerIsSomeValueFunction(FunctionRegistry::add, mode, skolemURIPrefix);
         addPrefixes(UrisSchemeFactory.getURISystem());
 
         log.info("Wikibase services initialized.");
@@ -404,13 +409,11 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
     }
 
-    private Factory getIsSomeValueBOpFactory() {
-        return (context, globals, scalarValues, args) -> {
-            // Simple wrapper around isBlank for now
-            FunctionRegistry.checkArgs(args, ValueExpressionNode.class);
-            IValueExpression<? extends IV> ve = AST2BOpUtility.toVE(context, globals, args[0]);
-            return new IsBNodeBOp(ve);
-        };
+    public static void registerIsSomeValueFunction(BiConsumer<URI, FunctionRegistry.Factory> registry,
+                                                   IsSomeValueFunctionFactory.SomeValueMode mode,
+                                                   String skolemUri
+    ) {
+        // wikibase:isSomeValue, meant to filter https://www.mediawiki.org/wiki/Wikibase/DataModel#PropertySomeValueSnak
+        registry.accept(IsSomeValueFunctionFactory.IS_SOMEVALUE_FUNCTION_URI, new IsSomeValueFunctionFactory(mode, skolemUri));
     }
-
 }
