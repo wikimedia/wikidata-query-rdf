@@ -5,9 +5,9 @@ import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 
-sealed class UpdaterPipeline(outputStream: DataStream[MutationOperation],
-                             lateEventStream: DataStream[InputEvent],
-                             spuriousEventStream: DataStream[IgnoredMutation])
+sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
+                             spuriousEventStream: DataStream[IgnoredMutation],
+                             tripleEventStream: DataStream[EntityTripleDiffs])
                             (implicit env: StreamExecutionEnvironment)
 {
   val defaultAppName = "WDQS Updater Stream Updater"
@@ -30,8 +30,8 @@ sealed class UpdaterPipeline(outputStream: DataStream[MutationOperation],
     this
   }
 
-  def saveTo(sink: SinkFunction[MutationOperation]): UpdaterPipeline = {
-    outputStream.addSink(sink)
+  def saveTo(sink: SinkFunction[EntityTripleDiffs]): UpdaterPipeline = {
+    tripleEventStream.addSink(sink)
     this
   }
 }
@@ -62,26 +62,32 @@ sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
  *  => process(remove spurious events) see RouteIgnoredMutationToSideOutput
  *
  *  output of the stream a MutationOperation
- *  TODO: fetch info from Wikibase, generate the diff, output triples
+
  */
 object UpdaterPipeline {
-  def build(opts: UpdaterPipelineOptions, incomingStreams: List[DataStream[InputEvent]])(implicit env: StreamExecutionEnvironment): UpdaterPipeline = {
+  def build(opts: UpdaterPipelineOptions, incomingStreams: List[DataStream[InputEvent]], repository: WikibaseEntityRevRepositoryTrait)
+           (implicit env: StreamExecutionEnvironment): UpdaterPipeline = {
     val incomingEventStream = incomingStreams match {
       case Nil => throw new NoSuchElementException("at least one stream is needed")
       case x :: Nil => x
       case x :: rest => x.union(rest: _*)
     }
-
     val windowStream = EventReorderingWindowFunction.attach(incomingEventStream, Time.milliseconds(opts.reorderingWindowLengthMs))
     val lateEventsSideOutput = windowStream.getSideOutput(EventReorderingWindowFunction.LATE_EVENTS_SIDE_OUTPUT_TAG)
-    val outputEventStream = windowStream
+
+    val outputMutationStream = windowStream
       .keyBy(_.item)
       .map(new DecideMutationOperation())
       .uid("DecideMutationOperation")
       .process(new RouteIgnoredMutationToSideOutput())
       .name("output")
       .uid("output")
-    val spuriousEventsLate = outputEventStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
-    new UpdaterPipeline(outputEventStream, lateEventsSideOutput, spuriousEventsLate)
+
+
+    val tripleEventStream: DataStream[EntityTripleDiffs] = outputMutationStream
+      .map(ExtractTriplesFunction(opts.hostname, repository))
+
+    val spuriousEventsLate = outputMutationStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
+    new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, tripleEventStream)
   }
 }

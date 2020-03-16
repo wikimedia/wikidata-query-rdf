@@ -5,7 +5,7 @@
         <groupId>org.wikimedia.discovery</groupId>
         <artifactId>discovery-parent-pom</artifactId>
         <version>1.32</version>
-        <relativePath />
+        <relativePath></relativePath>
     </parent>
     <groupId>org.wikidata.query.rdf</groupId>
     <artifactId>query-service-parent</artifactId>
@@ -250,6 +250,11 @@
                         <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-scala_2.11</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.rholder</groupId>
@@ -1086,7 +1091,7 @@
                                                 </goals>
                                             </pluginExecutionFilter>
                                             <action>
-                                                <ignore />
+                                                <ignore></ignore>
                                             </action>
                                         </pluginExecution>
                                         <pluginExecution>
@@ -1100,7 +1105,7 @@
                                                 </goals>
                                             </pluginExecutionFilter>
                                             <action>
-                                                <ignore />
+                                                <ignore></ignore>
                                             </action>
                                         </pluginExecution>
                                     </pluginExecutions>
