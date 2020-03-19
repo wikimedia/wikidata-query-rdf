@@ -3,7 +3,9 @@ package org.wikidata.query.rdf.blazegraph.events;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+@JsonPropertyOrder({"method", "client_ip", "request_headers", "has_cookies", "status_code"})
 public class EventHttpMetadata {
     private final String method;
     private final String clientIp;
@@ -23,6 +25,7 @@ public class EventHttpMetadata {
         return method;
     }
 
+    @JsonProperty("client_ip")
     public String getClientIp() {
         return clientIp;
     }
