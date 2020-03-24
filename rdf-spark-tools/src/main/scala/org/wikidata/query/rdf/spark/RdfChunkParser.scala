@@ -2,14 +2,15 @@ package org.wikidata.query.rdf.spark
 
 import java.io.{ByteArrayInputStream, InputStream, SequenceInputStream}
 import java.nio.charset.StandardCharsets
+import java.util.function.BiFunction
 
 import scala.collection.mutable.ListBuffer
-
 import org.openrdf.model.Statement
+import org.openrdf.model.impl.ValueFactoryImpl
 import org.openrdf.rio.RDFHandler
 import org.openrdf.rio.turtle.TurtleParser
-import org.wikidata.query.rdf.common.uri.{UrisScheme, UrisSchemeFactory}
-import org.wikidata.query.rdf.tool.rdf.{EntityMungingRdfHandler, Munger, NormalizingRdfHandler}
+import org.wikidata.query.rdf.common.uri.{Ontology, UrisScheme, UrisSchemeFactory}
+import org.wikidata.query.rdf.tool.rdf.{EntityMungingRdfHandler, Munger, NamespaceStatementPredicates, NormalizingRdfHandler, StatementPredicates}
 import org.wikidata.query.rdf.tool.rdf.EntityMungingRdfHandler.EntityCountListener
 
 /**
@@ -20,6 +21,9 @@ import org.wikidata.query.rdf.tool.rdf.EntityMungingRdfHandler.EntityCountListen
  * So any line starting with "data:" should mark the beginning of an entity
  */
 class RdfChunkParser(urisScheme: UrisScheme, munger: Munger, namespaces: Map[String, String]) {
+  val predicates = new NamespaceStatementPredicates(urisScheme)
+  val valueFactory = new ValueFactoryImpl()
+
   def parse(inputStream: InputStream): List[Statement] = {
     val statements = new ListBuffer[Statement]()
     val handler = new RDFHandler {
@@ -35,11 +39,34 @@ class RdfChunkParser(urisScheme: UrisScheme, munger: Munger, namespaces: Map[Str
     val countListener = new EntityCountListener {
       override def entitiesProcessed(l: Long): Unit = {}
     }
-    val mungingRdfHandler = new EntityMungingRdfHandler(urisScheme, this.munger, handler, countListener)
-    val parser = new TurtleParser()
+    val mungingRdfHandler = new EntityMungingRdfHandler(urisScheme, this.munger, handler, countListener, quadGenerator)
+
+    val parser = new TurtleParser(valueFactory)
     parser.setRDFHandler(new NormalizingRdfHandler(mungingRdfHandler))
     parser.parse(new SequenceInputStream(new ByteArrayInputStream(makePrefixHeader().getBytes(StandardCharsets.UTF_8)), inputStream), urisScheme.root())
     statements.toList
+  }
+
+  /**
+   * Generate quads for the purpose of attaching together all triples of a given entity.
+   */
+  private def quadGenerator: BiFunction[Statement, String, Statement] = new BiFunction[Statement, String, Statement] {
+    def apply(st: Statement, entityId: String): Statement = {
+      val context =
+      // Dump statements are Bound to the dump file not a particular entity
+      // Values & references cannot be bound to a single entity, let's put them in their rdfs:type for now, this does
+      // not make much sense but preferable as assigning them to random entity.
+        if (StatementPredicates.dumpStatement(st)) {
+          valueFactory.createURI(Ontology.DUMP)
+        } else if (predicates.subjectInReferenceNS(st)) {
+          valueFactory.createURI(Ontology.REFERENCE)
+        } else if (predicates.subjectInValueNS(st)) {
+          valueFactory.createURI(Ontology.VALUE)
+        } else {
+          valueFactory.createURI(urisScheme.entityIdToURI(entityId))
+        }
+      valueFactory.createStatement(st.getSubject, st.getPredicate, st.getObject, context)
+    }
   }
 
   private def makePrefixHeader(): String = {
@@ -84,6 +111,7 @@ object RdfChunkParser {
     )
     val urisScheme = UrisSchemeFactory.WIKIDATA
     val munger = Munger.builder(urisScheme).build()
+
     // also hardcode format version for now
     munger.setFormatVersion("1.0.0")
     new RdfChunkParser(urisScheme, munger, prefixes)
