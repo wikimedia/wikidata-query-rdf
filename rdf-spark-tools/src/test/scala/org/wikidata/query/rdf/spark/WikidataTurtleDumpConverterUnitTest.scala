@@ -1,16 +1,17 @@
 package org.wikidata.query.rdf.spark
 
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers}
 
-class WikidataTurtleDumpConverterUnitTest extends FlatSpec with SparkSessionProvider with Matchers with BeforeAndAfter {
+class WikidataTurtleDumpConverterUnitTest extends FlatSpec with SparkSessionProvider with Matchers {
+  var rdfData: String = _
   val paths = Seq(
     this.getClass.getResource("small_dump_chunk.ttl").toURI.toString,
     this.getClass.getResource("lexeme_dump.ttl").toURI.toString
   )
 
   "a rdf dump present" should "be converted as a parquet file" in {
-    WikidataTurtleDumpConverter.importDump(spark, paths, 2, "parquet", "test_import")
-    val parquetFileDF = spark.read.parquet("test_import")
+    WikidataTurtleDumpConverter.importDump(spark, paths, 2, "parquet", rdfData)
+    val parquetFileDF = spark.read.parquet(rdfData)
     val existingContext = parquetFileDF
       .select("context")
       .distinct()
@@ -27,7 +28,8 @@ class WikidataTurtleDumpConverterUnitTest extends FlatSpec with SparkSessionProv
       "<http://wikiba.se/ontology#Dump>")
   }
 
-  before {
-    paths foreach spark.sparkContext.addFile
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    rdfData = newSparkSubDir("test_import")
   }
 }

@@ -55,6 +55,10 @@ class StatementEncoder extends Serializable {
     NTriplesUtil.append(elt, stringBuffer)
     stringBuffer.toString
   }
+
+  def encodeURI(uri: String): String = {
+    encode(valueFactory.createURI(uri))
+  }
 }
 
 object StatementEncoder {
