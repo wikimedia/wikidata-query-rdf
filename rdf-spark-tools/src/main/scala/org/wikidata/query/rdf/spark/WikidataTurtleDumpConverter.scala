@@ -36,7 +36,7 @@ object WikidataTurtleDumpConverter {
    * Class handling parsed parameters
    */
   case class Params(
-                     inputPath: String = "",
+                     inputPath: Seq[String] = Seq(),
                      outputPath: String = "",
                      outputFormat: String = "parquet",
                      numPartitions: Int = 512
@@ -49,9 +49,11 @@ object WikidataTurtleDumpConverter {
     head("Wikidata Turtle Dump Converter", "")
     help("help") text "Prints this usage text"
 
-    opt[String]('i', "input-path") required() valueName "<path>" action { (x, p) =>
-      p.copy(inputPath = if (x.endsWith("/")) x.dropRight(1) else x)
-    } text "Path to wikidata ttl dump to convert"
+    opt[Seq[String]]('i', "input-path") required() valueName  "<path1>,<path2>..." action { (x, paths) =>
+      paths.copy(inputPath = x map {
+        path => if (path.endsWith("/")) path.dropRight(1) else path
+      })
+    } text "Paths to wikidata ttl dump to convert"
 
     opt[String]('o', "output-path") required() valueName "<path>" action { (x, p) =>
       p.copy(outputPath = if (x.endsWith("/")) x.dropRight(1) else x)
@@ -93,11 +95,11 @@ object WikidataTurtleDumpConverter {
     }
   }
 
-  def importDump(spark: SparkSession, inputPath: String, numPartitions: Int, outputFormat: String, outputPath: String): Unit = {
+  def importDump(spark: SparkSession, inputPaths: Seq[String], numPartitions: Int, outputFormat: String, outputPath: String): Unit = {
     spark.sparkContext.hadoopConfiguration.set("textinputformat.record.delimiter", ENTITY_SEPARATOR)
 
-    val rdd = spark.sparkContext.textFile(inputPath).
-      flatMap(str => {
+    val rdd = spark.sparkContext.union(inputPaths map {spark.sparkContext.textFile(_)})
+      .flatMap(str => {
         // Filter out prefixes
         if (!str.startsWith("@prefix")) {
           // Parse entity turtle block (add entity header that have been removed by parsing)
