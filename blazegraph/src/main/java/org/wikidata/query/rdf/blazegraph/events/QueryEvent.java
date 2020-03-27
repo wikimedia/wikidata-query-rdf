@@ -9,12 +9,14 @@ import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * Event describing a sparql query.
  *
  * https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/event-schemas/+/master/jsonschema/sparql/query/1.0.0.yaml
  */
+@JsonPropertyOrder({"$schema", "meta", "http", "backend_host", "namespace", "query", "format", "params", "query_time"})
 public class QueryEvent implements Event {
     private static final String SCHEMA = "/sparql/query/1.0.0";
     private final EventMetadata metadata;

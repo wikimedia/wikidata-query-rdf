@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.blazegraph.events;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.list;
+import static java.util.stream.Collectors.toMap;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -9,6 +10,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -82,7 +84,7 @@ public class QueryEventGenerator {
 
     private EventHttpMetadata generateHttpMetadata(HttpServletRequest httpServletRequest, int responseStatusCode) {
         Map<String, String> headers = list(httpServletRequest.getHeaderNames()).stream()
-                .collect(Collectors.toMap(Function.identity(),
+                .collect(toMap(s -> s.toLowerCase(Locale.ROOT),
                         name -> joinWithComma(list(httpServletRequest.getHeaders(name)))));
         // We run after the ClientIpFilter
         return new EventHttpMetadata(httpServletRequest.getMethod(), httpServletRequest.getRemoteAddr(),
@@ -92,7 +94,7 @@ public class QueryEventGenerator {
     private Map<String, String> extractRequestParams(HttpServletRequest httpServletRequest) {
         return list(httpServletRequest.getParameterNames()).stream()
                 .filter(p -> !EXCLUDED_PARAMS.contains(p))
-                .collect(Collectors.toMap(Function.identity(),
+                .collect(toMap(Function.identity(),
                         name -> joinWithComma(asList(httpServletRequest.getParameterValues(name)))));
     }
 

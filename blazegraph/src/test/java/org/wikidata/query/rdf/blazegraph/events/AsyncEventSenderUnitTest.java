@@ -19,7 +19,7 @@ public class AsyncEventSenderUnitTest {
         List<Event> receivedEvents = new ArrayList<>();
         EventSender underlyingSender = receivedEvents::add;
         BufferedEventSender.Worker resender = sender.newSendWorker(receivedEvents::add, 10);
-        List<Event> sentEvents = Stream.generate(EventTestUtils::newTestEvent)
+        List<Event> sentEvents = Stream.generate(EventTestUtils::newQueryEvent)
                 .limit(10)
                 .collect(toList());
         AsyncEventSender asyncSend = new AsyncEventSender(sender, resender, underlyingSender);

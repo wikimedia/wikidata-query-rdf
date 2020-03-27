@@ -36,7 +36,7 @@ public class EventHttpSenderUnitTest {
         when(resp.getStatusLine()).thenReturn(new BasicStatusLine(HttpVersion.HTTP_1_1, 200, "OK"));
         when(client.execute(any(HttpUriRequest.class))).thenReturn(resp);
 
-        Event event = EventTestUtils.newTestEvent();
+        Event event = EventTestUtils.newQueryEvent();
         EventHttpSender sender = new EventHttpSender(client, eventGateHost, JacksonUtil.DEFAULT_OBJECT_WRITER);
         sender.push(event);
 
@@ -52,7 +52,7 @@ public class EventHttpSenderUnitTest {
         assertThat(post.getEntity().getContentType().getValue()).isEqualTo(ContentType.APPLICATION_JSON.toString());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         post.getEntity().writeTo(baos);
-        assertThat(new String(baos.toByteArray(), StandardCharsets.UTF_8)).isEqualTo("[" + EventTestUtils.testEventJsonString() + "]");
+        assertThat(new String(baos.toByteArray(), StandardCharsets.UTF_8)).isEqualTo("[" + EventTestUtils.queryEventJsonString() + "]");
     }
 
     @Test
@@ -64,12 +64,13 @@ public class EventHttpSenderUnitTest {
         when(resp.getStatusLine()).thenReturn(new BasicStatusLine(HttpVersion.HTTP_1_1, 200, "OK"));
         when(client.execute(any(HttpUriRequest.class))).thenReturn(resp);
 
-        int n = 0;
-        Collection<Event> events = Stream.generate(EventTestUtils::newTestEvent)
+        int n = 5;
+        Collection<Event> events = Stream.generate(EventTestUtils::newQueryEvent)
                 .limit(n)
                 .collect(Collectors.toList());
 
-        String expectedEventsAsJson = Stream.generate(EventTestUtils::testEventJsonString)
+
+        String expectedEventsAsJson = Stream.generate(EventTestUtils::queryEventJsonString)
                 .limit(n)
                 .collect(Collectors.joining(",", "[",  "]"));
 
@@ -98,8 +99,8 @@ public class EventHttpSenderUnitTest {
         CloseableHttpClient client = mock(CloseableHttpClient.class);
         when(client.execute(any(HttpUriRequest.class))).thenThrow(new IOException("failure"));
         EventHttpSender sender = new EventHttpSender(client, eventGateHost, JacksonUtil.DEFAULT_OBJECT_WRITER);
-        assertThat(sender.push(EventTestUtils.newTestEvent())).isFalse();
-        assertThat(sender.push(Collections.singleton(EventTestUtils.newTestEvent()))).isEqualTo(0);
+        assertThat(sender.push(EventTestUtils.newQueryEvent())).isFalse();
+        assertThat(sender.push(Collections.singleton(EventTestUtils.newQueryEvent()))).isEqualTo(0);
         // we should not fail here
     }
 
@@ -113,8 +114,8 @@ public class EventHttpSenderUnitTest {
         when(client.execute(any(HttpUriRequest.class))).thenReturn(resp);
 
         EventHttpSender sender = new EventHttpSender(client, eventGateHost, JacksonUtil.DEFAULT_OBJECT_WRITER);
-        assertThat(sender.push(EventTestUtils.newTestEvent())).isFalse();
-        assertThat(sender.push(Collections.singleton(EventTestUtils.newTestEvent()))).isEqualTo(0);
+        assertThat(sender.push(EventTestUtils.newQueryEvent())).isFalse();
+        assertThat(sender.push(Collections.singleton(EventTestUtils.newQueryEvent()))).isEqualTo(0);
 
         verify(resp, times(2)).close();
     }

@@ -66,7 +66,7 @@ public class QueryEventGeneratorUnitTest {
 
         assertThat(event.getHttpMetadata().getClientIp()).isEqualTo(clientIp);
         assertThat(event.getHttpMetadata().getMethod()).isEqualTo(method);
-        assertThat(event.getHttpMetadata().getRequestHeaders()).containsOnlyKeys("Accept", "X-Request-Id", "X-Custom");
+        assertThat(event.getHttpMetadata().getRequestHeaders()).containsOnlyKeys("accept", "x-request-id", "x-custom");
         assertThat(event.getHttpMetadata().getRequestHeaders()).containsValues("application/json", requestId, "one,two\\,t\\\\hree");
         assertThat(event.getHttpMetadata().hasCookies()).isTrue();
         assertThat(event.getHttpMetadata().getStatusCode()).isEqualTo(statusCode);

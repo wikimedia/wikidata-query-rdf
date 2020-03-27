@@ -29,7 +29,7 @@ public class BufferedEventSenderUnitTest {
     @Test
     public void testPushSingle() throws InterruptedException {
         BufferedEventSender bufferedEventGateSender = new BufferedEventSender(1);
-        Event e = EventTestUtils.newTestEvent();
+        Event e = EventTestUtils.newQueryEvent();
         assertThat(bufferedEventGateSender.push(e)).isTrue();
         EventSender resendGate = mock(EventSender.class);
 
@@ -44,7 +44,7 @@ public class BufferedEventSenderUnitTest {
     @Test
     public void testPushReturnsFalseWhenFull() {
         BufferedEventSender bufferedEventGateSender = new BufferedEventSender(1);
-        Event e = EventTestUtils.newTestEvent();
+        Event e = EventTestUtils.newQueryEvent();
         assertThat(bufferedEventGateSender.push(e)).isTrue();
         assertThat(bufferedEventGateSender.push(e)).isFalse();
         assertThat(bufferedEventGateSender.push(Collections.singleton(e))).isEqualTo(0);
@@ -53,7 +53,7 @@ public class BufferedEventSenderUnitTest {
     @Test
     public void testBufferingOnResend() throws InterruptedException {
         BufferedEventSender bufferedEventGateSender = new BufferedEventSender(10);
-        List<Event> events = Stream.generate(EventTestUtils::newTestEvent).limit(10).collect(toList());
+        List<Event> events = Stream.generate(EventTestUtils::newQueryEvent).limit(10).collect(toList());
         Event[] batch1 = events.subList(0, 5).toArray(new Event[0]);
         Event[] batch2 = events.subList(5, 10).toArray(new Event[0]);
         assertThat(bufferedEventGateSender.push(events)).isEqualTo(10);
@@ -88,7 +88,7 @@ public class BufferedEventSenderUnitTest {
         // require to expose more states or to mock the internal BlockingQueue.
         Thread.sleep(1000);
         Random r = new Random(123);
-        Supplier<Collection<Event>> batchGenerator = () -> Stream.generate(EventTestUtils::newTestEvent)
+        Supplier<Collection<Event>> batchGenerator = () -> Stream.generate(EventTestUtils::newQueryEvent)
                 .limit(r.nextInt(5))
                 .collect(Collectors.toList());
 
