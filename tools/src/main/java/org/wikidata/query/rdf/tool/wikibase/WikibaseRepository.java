@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.io.PushbackInputStream;
+import java.io.Serializable;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -547,7 +548,7 @@ public class WikibaseRepository implements Closeable {
      * URIs used for accessing wikibase.
      */
     @SuppressFBWarnings(value = {"EI_EXPOSE_REP2", "MS_MUTABLE_ARRAY"}, justification = "minor enough")
-    public static class Uris {
+    public static class Uris implements Serializable {
         /**
          * URL which should be used to retrieve Entity data.
          */

@@ -13,18 +13,24 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.DefaultRollingPolicy
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 
 object UpdaterJob {
   def main(args: Array[String]): Unit = {
     val params = ParameterTool.fromArgs(args)
 
+    val hostName: String = params.get("hostname")
+    val proxyServer: Option[String] = Option(params.get("proxyserver"))
+
     // FIXME: proper options handling
     val pipelineOptions = UpdaterPipelineOptions(
-      hostname = params.get("hostname"),
+      hostname = hostName,
       reorderingWindowLengthMs = params.getInt("reordering_window_length", 60000)
     )
+    val kafkaBrokers: String = params.get("brokers")
     val pipelineInputEventStreamOptions = UpdaterPipelineInputEventStreamOptions(
-      kafkaBrokers = params.get("brokers"),
+      kafkaBrokers = kafkaBrokers,
       revisionCreateTopic = params.get("rev_create_topic"),
       consumerGroup = params.get("consumer_group", "wdqs_streaming_updater"),
       maxLateness = params.getInt("max_lateness", 60000)
@@ -33,17 +39,19 @@ object UpdaterJob {
     val checkpointDir = params.get("checkpoint_dir")
     val spuriousEventsDir = params.get("spurious_events_dir")
     val lateEventsDir = params.get("late_events_dir")
-    val outputDir = params.get("output_dir")
-    implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+    val entityTriplesDir = params.get("entity_triples_dir")
 
+    implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+    val uris: Uris = WikibaseRepository.Uris.fromString(s"https://$hostName")
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env.setStateBackend(UpdaterStateConfiguration.newStateBackend(checkpointDir))
     env.enableCheckpointing(2*60*1000) // checkpoint every 2mins, checkpoint timeout is 10m by default
     env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
-    UpdaterPipeline.build(pipelineOptions, buildIncomingStreams(pipelineInputEventStreamOptions, pipelineOptions))
-      .saveLateEventsTo(prepareJsonDebugSink(lateEventsDir))
-      .saveSpuriousEventsTo(prepareJsonDebugSink(spuriousEventsDir))
-      .saveTo(prepareJsonDebugSink(outputDir))
+    UpdaterPipeline.build(pipelineOptions, buildIncomingStreams(pipelineInputEventStreamOptions, pipelineOptions),
+      WikibaseEntityRevRepository(uris, proxyServer))
+      .saveLateEventsTo(prepareFileDebugSink(lateEventsDir))
+      .saveSpuriousEventsTo(prepareFileDebugSink(spuriousEventsDir))
+      .saveTo(prepareFileDebugSink(entityTriplesDir))
       .execute("WDQS Streaming Updater POC")
   }
 
@@ -61,7 +69,7 @@ object UpdaterJob {
   }
 
 
-  private def prepareJsonDebugSink[O](outputPath: String): SinkFunction[O] = {
+  private def prepareFileDebugSink[O](outputPath: String): SinkFunction[O] = {
     StreamingFileSink.forRowFormat(new Path(outputPath),
       new Encoder[O] {
         override def encode(element: O, stream: OutputStream): Unit = {
@@ -75,6 +83,5 @@ object UpdaterJob {
         .build())
       .build()
   }
-
 }
 

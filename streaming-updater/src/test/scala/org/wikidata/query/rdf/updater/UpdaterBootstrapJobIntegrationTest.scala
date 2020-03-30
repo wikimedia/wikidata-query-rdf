@@ -4,20 +4,23 @@ import java.io.File
 import java.nio.file.{Files, Paths}
 
 import org.apache.commons.io.FileUtils
-import org.apache.flink.api.scala.{ExecutionEnvironment, _}
+import org.apache.flink.api.scala._
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.watermark.Watermark
+
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
 
-class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster with TestEventGenerator with Matchers with BeforeAndAfter {
+
+class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers with BeforeAndAfter {
   private var savePointDir: File = _
   private var checkPointDir: File = _
   private var checkPointDirInStream: File = _
-  private val DOMAIN = "tested.domain"
+
+
   before {
     savePointDir = Files.createTempDirectory("savePoint").toFile
     checkPointDir = Files.createTempDirectory("checkPoint").toFile
@@ -42,6 +45,13 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     streamingEnv.setParallelism(PARALLELISM)
     streamingEnv.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     streamingEnv.setStateBackend(UpdaterStateConfiguration.newStateBackend(checkPointDirInStream.toURI.toString))
+    val repository: WikibaseEntityRevRepositoryTrait = MockWikibaseEntityRevRepository()
+      .withResponse(("Q1", 2L) -> metaStatements("Q1", 2L, Some(3L)).entityDataNS)
+      .withResponse(("Q1", 3L) -> metaStatements("Q1", 3L, Some(3L)).entityDataNS)
+      .withResponse(("Q2", 4L) -> metaStatements("Q2", 4L, Some(3L)).entityDataNS)
+      .withResponse(("Q2", 8L) -> metaStatements("Q2", 8L, Some(3L)).entityDataNS)
+      .withResponse(("Q3", 101010L) -> metaStatements("Q3", 101010L, Some(3L)).entityDataNS)
+      .withResponse(("Q3", 101013L) -> metaStatements("Q3", 101013L, Some(3L)).entityDataNS)
 
     val input = Seq(
       newEvent("Q1", 2, instant(3), 0, DOMAIN), // dupped event, currently treated as spurious
@@ -69,19 +79,23 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       // (does not affect the ordering but ensure that we can detect the late event
       Some(1), Some(1))
 
-    val graph = UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, 60000), List(source))
-      .saveTo(new CollectSink[MutationOperation](CollectSink.values.append(_)))
+    val graph = UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, 60000), List(source), repository)
       .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
       .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))
+      .saveTo(new CollectSink[EntityTripleDiffs](CollectSink.values.append(_)))
       .streamGraph("test")
     graph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savePointDir.toURI.toString, false))
     streamingEnv.getJavaEnv.execute(graph)
     CollectSink.lateEvents shouldBe empty
     CollectSink.spuriousRevEvents should contain only IgnoredMutation("Q1", instant(3), 2, Rev("Q1", instant(3), 2))
+    //only change is the revision, lastmodified are identical
     CollectSink.values should contain theSameElementsInOrderAs Vector(
-      Diff("Q1", instant(3), 3, 2),
-      Diff("Q2", instant(3), 8, 4),
-      Diff("Q3", instant(3), 101013, 101010)
+      EntityTripleDiffs(Diff("Q1", instant(3), 3, 2), Set(revisionStatement("Q1", 3L).entityNS),
+        Set(revisionStatement("Q1", 2L).entityNS)),
+      EntityTripleDiffs(Diff("Q2", instant(3), 8, 4), Set(revisionStatement("Q2", 8L).entityNS),
+        Set(revisionStatement("Q2", 4L).entityNS)),
+      EntityTripleDiffs(Diff("Q3", instant(3), 101013, 101010), Set(revisionStatement("Q3", 101013L).entityNS),
+        Set(revisionStatement("Q3", 101010L).entityNS))
     )
   }
 

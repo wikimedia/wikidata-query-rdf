@@ -39,7 +39,7 @@ class CollectSink[E](func: E => Unit) extends SinkFunction[E] {
 
 object CollectSink {
   // must be static
-  val values: ListBuffer[MutationOperation] = ListBuffer()
+  val values: ListBuffer[EntityTripleDiffs] = ListBuffer()
   val lateEvents: ListBuffer[InputEvent] = ListBuffer()
   val spuriousRevEvents: ListBuffer[IgnoredMutation] = ListBuffer()
 }
