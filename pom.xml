@@ -772,6 +772,12 @@
                 <version>1.10.19</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.scalamock</groupId>
+                <artifactId>scalamock_${scala.compat.version}</artifactId>
+                <version>4.4.0</version>
+                <scope>test</scope>
+            </dependency>
             <!-- Test Scopes -->
             <dependency>
                 <groupId>org.scalatest</groupId>

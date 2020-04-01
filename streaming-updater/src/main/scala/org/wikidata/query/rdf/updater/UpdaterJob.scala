@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.updater
 
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
+import java.time.Clock
 import java.util.concurrent.TimeUnit
 
 import org.apache.flink.api.common.serialization.Encoder
@@ -17,6 +18,8 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 
 object UpdaterJob {
+
+  val DEFAULT_CLOCK = Clock.systemUTC()
   def main(args: Array[String]): Unit = {
     val params = ParameterTool.fromArgs(args)
 
@@ -47,7 +50,7 @@ object UpdaterJob {
     env.enableCheckpointing(2*60*1000) // checkpoint every 2mins, checkpoint timeout is 10m by default
     env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
     UpdaterPipeline.build(pipelineOptions, buildIncomingStreams(pipelineInputEventStreamOptions, pipelineOptions),
-      rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup))
+      rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup), DEFAULT_CLOCK)
       .saveLateEventsTo(prepareFileDebugSink(lateEventsDir))
       .saveSpuriousEventsTo(prepareFileDebugSink(spuriousEventsDir))
       .saveTo(prepareFileDebugSink(entityTriplesDir))
@@ -62,7 +65,8 @@ object UpdaterJob {
         KafkaConsumerProperties(ievops.revisionCreateTopic, ievops.kafkaBrokers, ievops.consumerGroup, new RevisionCreateEventJson()),
         opts.hostname,
         IncomingStreams.REV_CREATE_CONV,
-        ievops.maxLateness
+        ievops.maxLateness,
+        DEFAULT_CLOCK
       )
     )
   }

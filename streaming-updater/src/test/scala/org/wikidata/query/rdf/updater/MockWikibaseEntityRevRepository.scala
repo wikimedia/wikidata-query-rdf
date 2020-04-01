@@ -1,6 +1,5 @@
 package org.wikidata.query.rdf.updater
 
-import org.apache.flink.metrics.MetricGroup
 import org.openrdf.model.Statement
 
 case class MockWikibaseEntityRevRepository (private val responses: Map[(String, Long), Iterable[Statement]] = Map())

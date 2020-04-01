@@ -1,6 +1,5 @@
 package org.wikidata.query.rdf.updater
 
-import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala._
@@ -34,7 +33,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
         override def extractTimestamp(t: RevisionCreateEvent, l: Long): Long = t.timestamp().toEpochMilli
       }),
     DOMAIN,
-    IncomingStreams.REV_CREATE_CONV,
+    IncomingStreams.REV_CREATE_CONV, clock,
     // Disable any parallelism for the input collection so that order of input events are kept intact
     // (does not affect the ordering but ensure that we can detect the late event
     Some(1), Some(1))
@@ -42,8 +41,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
 
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
-
-    UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, REORDERING_WINDOW_LENGTH), List(source), _ => repository)
+    UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, REORDERING_WINDOW_LENGTH), List(source), _ => repository, clock)
       .saveTo(new CollectSink[ResolvedOp](CollectSink.values.append(_)))
       .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
       .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))

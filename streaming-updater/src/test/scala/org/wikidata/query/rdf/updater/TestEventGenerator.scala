@@ -7,17 +7,17 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.wikidata.query.rdf.tool.change.events.{EventsMeta, RevisionCreateEvent}
 
 trait TestEventGenerator {
-  def newInputEventRecord(entity: String, revision: Long, ts: Long): StreamRecord[InputEvent] = {
-    new StreamRecord[InputEvent](Rev(entity, Instant.ofEpochMilli(ts), revision), ts)
+  def newInputEventRecord(entity: String, revision: Long, eventTime: Long, ingestionTime: Long): StreamRecord[InputEvent] = {
+    new StreamRecord[InputEvent](Rev(entity, instant(eventTime), revision, instant(ingestionTime)), eventTime)
   }
 
   def instant(millis: Long): Instant = {
     Instant.ofEpochMilli(millis)
   }
 
-  def newEvent(item: String, revision: Long, date: Instant, namespace: Int, domain: String): RevisionCreateEvent = {
+  def newEvent(item: String, revision: Long, eventTime: Instant, namespace: Int, domain: String): RevisionCreateEvent = {
     new RevisionCreateEvent(
-      new EventsMeta(date, "unused", domain),
+      new EventsMeta(eventTime, "unused", domain),
       revision, item, namespace)
   }
 

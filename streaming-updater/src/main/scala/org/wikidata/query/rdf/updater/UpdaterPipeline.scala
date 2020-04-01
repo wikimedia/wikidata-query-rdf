@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.updater
 
+import java.time.Clock
+
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.graph.StreamGraph
@@ -67,7 +69,8 @@ sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
  */
 object UpdaterPipeline {
   def build(opts: UpdaterPipelineOptions, incomingStreams: List[DataStream[InputEvent]],
-            wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait)
+            wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
+            clock: Clock)
            (implicit env: StreamExecutionEnvironment): UpdaterPipeline = {
     val incomingEventStream: DataStream[InputEvent] = incomingStreams match {
       case Nil => throw new NoSuchElementException("at least one stream is needed")
@@ -91,6 +94,9 @@ object UpdaterPipeline {
       .map(ExtractTriplesOperation(opts.hostname, wikibaseRepositoryGenerator))
       .name("ExtractTriplesOperation")
       .uid("ExtractTriplesOperation")
+      .map(MeasureEventProcessingLatencyOperation(clock))
+      .name("MeasureEventProcessingLatencyOperation")
+      .uid("MeasureEventProcessingLatencyOperation")
 
     val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
     new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, tripleEventStream)

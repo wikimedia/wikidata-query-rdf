@@ -41,6 +41,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
 
     implicit val streamingEnv = StreamExecutionEnvironment.getExecutionEnvironment
 
+
     // configure your test environment
     streamingEnv.setParallelism(PARALLELISM)
     streamingEnv.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
@@ -74,12 +75,12 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
         }
 
         override def extractTimestamp(t: RevisionCreateEvent, l: Long): Long = t.timestamp().toEpochMilli
-      }), DOMAIN, IncomingStreams.REV_CREATE_CONV,
+      }), DOMAIN, IncomingStreams.REV_CREATE_CONV, clock,
       // Disable any parallelism for the input collection so that order of input events are kept intact
       // (does not affect the ordering but ensure that we can detect the late event
       Some(1), Some(1))
 
-    val graph = UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, 60000), List(source), _ => repository)
+    val graph = UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, 60000), List(source), _ => repository, clock)
       .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
       .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))
       .saveTo(new CollectSink[ResolvedOp](CollectSink.values.append(_)))
@@ -87,14 +88,15 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     graph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savePointDir.toURI.toString, false))
     streamingEnv.getJavaEnv.execute(graph)
     CollectSink.lateEvents shouldBe empty
-    CollectSink.spuriousRevEvents should contain only IgnoredMutation("Q1", instant(3), 2, Rev("Q1", instant(3), 2))
+    CollectSink.spuriousRevEvents should contain only IgnoredMutation("Q1", instant(3), 2, Rev("Q1", instant(3), 2, instantNow), instantNow)
     //only change is the revision, lastmodified are identical
+
     CollectSink.values should contain theSameElementsInOrderAs Vector(
-      EntityTripleDiffs(Diff("Q1", instant(3), 3, 2), Set(revisionStatement("Q1", 3L).entityNS),
-        Set(revisionStatement("Q1", 2L).entityNS)),
-      EntityTripleDiffs(Diff("Q2", instant(3), 8, 4), Set(revisionStatement("Q2", 8L).entityNS),
+        EntityTripleDiffs(Diff("Q1", instant(3), 3, 2, instantNow), Set(revisionStatement("Q1", 3L).entityNS),
+          Set(revisionStatement("Q1", 2L).entityNS)),
+      EntityTripleDiffs(Diff("Q2", instant(3), 8, 4, instantNow), Set(revisionStatement("Q2", 8L).entityNS),
         Set(revisionStatement("Q2", 4L).entityNS)),
-      EntityTripleDiffs(Diff("Q3", instant(3), 101013, 101010), Set(revisionStatement("Q3", 101013L).entityNS),
+      EntityTripleDiffs(Diff("Q3", instant(3), 101013, 101010, instantNow), Set(revisionStatement("Q3", 101013L).entityNS),
         Set(revisionStatement("Q3", 101010L).entityNS))
     )
   }

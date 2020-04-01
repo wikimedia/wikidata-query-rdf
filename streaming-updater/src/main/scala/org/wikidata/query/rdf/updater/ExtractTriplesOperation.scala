@@ -22,26 +22,25 @@ case class ExtractTriplesOperation(domain: String, wikibaseRepositoryGenerator: 
   extends RichMapFunction[MutationOperation, ResolvedOp] {
 
   val LOG = LoggerFactory.getLogger(getClass)
-
   lazy val repository: WikibaseEntityRevRepositoryTrait =  wikibaseRepositoryGenerator(this.getRuntimeContext)
 
-  override def map(op: MutationOperation): ResolvedOp =  try {
-    op match {
+  override def map(op: MutationOperation): ResolvedOp = {
+    try {
+      op match {
+        case Diff(item, _, revision, fromRev, _) =>
+          val revStatements: Set[Statement] = munge(item, repository.getEntityByRevision(item, revision))
+          val fromRevStatements: Set[Statement] = munge(item, repository.getEntityByRevision(item, fromRev))
+          EntityTripleDiffs(op,
+            revStatements -- fromRevStatements, fromRevStatements -- revStatements)
 
-      case Diff(item, _, revision, fromRev) =>
-        val revStatements: Set[Statement] = munge(item, repository.getEntityByRevision(item, revision))
-        val fromRevStatements: Set[Statement] = munge(item, repository.getEntityByRevision(item, fromRev))
-        EntityTripleDiffs(op,
-          revStatements -- fromRevStatements, fromRevStatements -- revStatements)
-
-      case FullImport(item, _, revision) =>
-        EntityTripleDiffs(op, munge(item, repository.getEntityByRevision(item, revision)))
-
-    }
-  } catch {
-    case exception: ContainedException => {
-      LOG.error(s"Exception thrown for op: $op", exception)
-      FailedOp(op)
+        case FullImport(item, _, revision, _) =>
+          EntityTripleDiffs(op, munge(item, repository.getEntityByRevision(item, revision)))
+      }
+    } catch {
+      case exception: ContainedException => {
+        LOG.error(s"Exception thrown for op: $op", exception)
+        FailedOp(op)
+      }
     }
   }
 

@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.updater
 
+import java.lang
+
 import org.apache.flink.api.common.functions.{RichFunction, RichMapFunction}
 import org.apache.flink.api.common.state.ValueState
 import org.apache.flink.api.java.tuple.Tuple2
@@ -13,17 +15,17 @@ sealed class DecideMutationOperation extends RichMapFunction[InputEvent, AllMuta
   override def map(ev: InputEvent): AllMutationOperation = {
     ev match {
       case rev: Rev => {
-        val lastRev = state.value()
+        val lastRev: lang.Long = state.value()
         if (lastRev == null) {
           state.update(rev.revision)
-          FullImport(rev.item, rev.eventTime, rev.revision)
+          FullImport(rev.item, rev.eventTime, rev.revision, rev.ingestionTime)
         } else if (lastRev < rev.revision) {
           state.update(rev.revision)
-          Diff(rev.item, rev.eventTime, rev.revision, lastRev)
+          Diff(rev.item, rev.eventTime, rev.revision, lastRev, rev.ingestionTime)
         } else {
           // Event related to an old revision
           // It's too late to handle it
-          IgnoredMutation(rev.item, rev.eventTime, rev.revision, rev)
+          IgnoredMutation(rev.item, rev.eventTime, rev.revision, rev, rev.ingestionTime)
         }
       }
     }

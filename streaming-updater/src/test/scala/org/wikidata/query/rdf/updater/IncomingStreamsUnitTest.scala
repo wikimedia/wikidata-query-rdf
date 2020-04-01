@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.updater
 
-import java.time.Instant
+import java.time.{Clock, Instant}
 
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
@@ -10,7 +10,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   "IncomingStreams" should "create properly named streams" in {
     implicit val env = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group", new RevisionCreateEventJson()),
-      "my-hostname", IncomingStreams.REV_CREATE_CONV, 40000)
+      "my-hostname", IncomingStreams.REV_CREATE_CONV, 40000, Clock.systemUTC())
     stream.name should equal ("Filtered(RevisionCreateEvent<group:my-topic@broker1 == my-hostname)")
   }
 
@@ -26,7 +26,8 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
       new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain"),
       1234,
       "Q123",
-      1))
+      1),
+      Clock.systemUTC())
     event.eventTime should equal(Instant.ofEpochMilli(123))
     event.item should equal("Q123")
     event.revision should equal(1234)

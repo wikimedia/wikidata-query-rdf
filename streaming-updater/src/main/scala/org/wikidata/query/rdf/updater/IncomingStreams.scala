@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.updater
 
+import java.time.Clock
+
 import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
@@ -11,9 +13,11 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 
 
 object IncomingStreams {
-  val REV_CREATE_CONV: RevisionCreateEvent => InputEvent = e => Rev(cleanEntityId(e.title()), e.timestamp(), e.revision())
+  val REV_CREATE_CONV: (RevisionCreateEvent, Clock) => InputEvent =
+    (e, clock) => Rev(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant())
 
-  def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], hostname: String, conv: E => InputEvent, maxLatenessMs: Int)
+  def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], hostname: String,
+                                  conv: (E, Clock) => InputEvent, maxLatenessMs: Int, clock: Clock)
                                  (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
 
     val nameAndUid = s"${classOf[RevisionCreateEvent].getSimpleName}<${kafkaProps.consumerGroup}:${kafkaProps.topic}@${kafkaProps.brokers}"
@@ -24,18 +28,19 @@ object IncomingStreams {
       })
       .uid(nameAndUid)
       .name(nameAndUid)
-    fromStream(kafkaStream, hostname, conv)
+    fromStream(kafkaStream, hostname, conv, clock)
   }
 
   def fromStream[E <: ChangeEvent](stream: DataStream[E],
                                    hostname: String,
-                                   conv: E => InputEvent,
+                                   conv: (E, Clock) => InputEvent,
+                                   clock: Clock,
                                    filterParallelism: Option[Int] = None,
                                    mapperParallelism: Option[Int] = None)
                                   (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
     stream.filter(new EventWithMetadataHostFilter[E](hostname))
       .setParallelism(filterParallelism.getOrElse(env.getParallelism))
-      .map(conv)
+      .map(conv(_, clock))
       .setParallelism(mapperParallelism.getOrElse(env.getParallelism))
       .name(s"Filtered(${stream.name} == $hostname)")
   }

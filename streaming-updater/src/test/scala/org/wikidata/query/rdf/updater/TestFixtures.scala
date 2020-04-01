@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.updater
 
-import java.time.Instant
+import java.time.{Clock, Instant, ZoneOffset}
 
 import org.openrdf.model.Statement
 import org.openrdf.model.impl.{StatementImpl, ValueFactoryImpl}
@@ -14,11 +14,12 @@ case class MetaStatements(revision: MetaStatement, lastModified: MetaStatement) 
 trait TestFixtures extends TestEventGenerator {
   val REORDERING_WINDOW_LENGTH = 60000
   val DOMAIN = "tested.domain"
-
   val WATERMARK_1 = REORDERING_WINDOW_LENGTH
   val WATERMARK_2 = REORDERING_WINDOW_LENGTH*2
   val urisScheme = UrisSchemeFactory.forHost(DOMAIN)
   val valueFactory = new ValueFactoryImpl()
+  val instantNow: Instant = instant(5)
+  val clock: Clock = Clock.fixed(instantNow, ZoneOffset.UTC)
 
   private val eventTimes = Map (
     ("Q1", 1L) -> instant(4),
@@ -47,8 +48,9 @@ trait TestFixtures extends TestEventGenerator {
   private val mSt5 = metaStatements("Q1", 5L)
   private val mSt6 = metaStatements("Q1", 6L)
 
-  val ignoredRevision = Rev("Q1", instant(5), 3)
-  val ignoredMutations = Set(IgnoredMutation("Q1", instant(WATERMARK_2 + 1), 4, Rev("Q1", instant(WATERMARK_2 + 1), 4)))
+  val ignoredRevision = Rev("Q1", instant(5), 3, instantNow)
+  val ignoredMutations = Set(IgnoredMutation("Q1", instant(WATERMARK_2 + 1), 4,
+    Rev("Q1", instant(WATERMARK_2 + 1), 4, instant(5)), instantNow))
 
   private val testData = Map(
     ("Q1", 1L) -> RevisionData("Q1", eventTimes("Q1", 1), mSt1.entityDataNS.toSeq, mSt1.entityNS),
@@ -76,9 +78,9 @@ trait TestFixtures extends TestEventGenerator {
     val data: RevisionData = testData((entityId, revisionTo))
     val eventTime: Instant = eventTimes(entityId, revisionTo)
     val operation: MutationOperation = if (revisionFrom == 0L) {
-      FullImport(entityId, eventTime, revisionTo)
+      FullImport(entityId, eventTime, revisionTo, instantNow)
     } else {
-      Diff(entityId, eventTime, revisionTo, revisionFrom)
+      Diff(entityId, eventTime, revisionTo, revisionFrom, instantNow)
     }
     EntityTripleDiffs(operation, data.expectedAdds, data.expectedRemoves)
   }
