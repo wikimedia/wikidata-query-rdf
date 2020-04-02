@@ -39,6 +39,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.SetMultimap;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Update tool.
  *
@@ -307,6 +309,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      * @param changes Collection of incoming changes.
      * @return A set of changes that need to be entered into the repository.
      */
+    @SuppressFBWarnings(value = {"UC_USELESS_OBJECT", "WOC_WRITE_ONLY_COLLECTION_LOCAL"}, justification = "see comment about T249196")
     private ChangesWithValuesAndRefs getRevisionUpdates(Iterable<Change> changes) {
         // List of changes that indeed need update
         Set<Change> trueChanges = new HashSet<>();
@@ -334,13 +337,17 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
         log.debug("Filtered batch contains {} changes", trueChanges.size());
 
         if (!trueChanges.isEmpty()) {
+            /**
+             * FIXME: either completely remove this feature or improve.
+             *  disabled see T249196
             ImmutableSetMultimap<String, String> values = rdfRepository.getValues(changeIds);
             ImmutableSetMultimap<String, String> refs = rdfRepository.getRefs(changeIds);
+             */
+            ImmutableSetMultimap<String, String> values = ImmutableSetMultimap.of();
+            ImmutableSetMultimap<String, String> refs = ImmutableSetMultimap.of();
             if (log.isDebugEnabled()) {
-                synchronized (this) {
-                    log.debug("Fetched {} values", values.size());
-                    log.debug("Fetched {} refs", refs.size());
-                }
+                log.debug("Fetched {} values", values.size());
+                log.debug("Fetched {} refs", refs.size());
             }
             return new ChangesWithValuesAndRefs(trueChanges, values, refs);
         }
@@ -433,6 +440,11 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
          */
         referencesToClean = Collections.emptySet();
         change.setRefCleanupList(referencesToClean);
+        /*
+         * TODO: we disable values cleanup to measure the impact on the lag
+         *  see: T249196
+         */
+        valuesToClean = Collections.emptySet();
         change.setValueCleanupList(valuesToClean);
         change.setStatements(statements);
     }
