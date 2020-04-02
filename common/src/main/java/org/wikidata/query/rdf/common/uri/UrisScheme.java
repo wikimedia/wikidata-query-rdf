@@ -89,6 +89,12 @@ public interface UrisScheme {
      */
     String property(String suffix);
 
+    /**
+     * Prefix used for skolems of blank nodes.
+     * c.f. RDF 1.1§3.5
+     */
+    String wellKnownBNodeIRIPrefix();
+
     boolean supportsUri(String uri);
 
     boolean supportsInitial(String entityId);

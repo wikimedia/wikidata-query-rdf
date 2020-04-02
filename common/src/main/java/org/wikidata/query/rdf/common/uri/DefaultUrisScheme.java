@@ -66,6 +66,7 @@ public class DefaultUrisScheme implements UrisScheme {
     private final String entityPrefix;
     private final String entityDataPrefix;
     private final List<String> initials;
+    private final String wellKnownBNodeIRIPrefix;
 
     public DefaultUrisScheme(URI conceptUrl, String entityPrefix, String entityDataPrefix, List<String> wikibaseInitials) {
         root = conceptUrl.toString().replaceAll("/+$", "");
@@ -73,12 +74,20 @@ public class DefaultUrisScheme implements UrisScheme {
         entityDataHttps = otherScheme(conceptUrl) + "/wiki/Special:EntityData/";
         entity = root + "/entity/";
         statement = entity + "statement/";
+        wellKnownBNodeIRIPrefix = generateWellKnownURI(conceptUrl, "genid/");
         value = root + "/value/";
         reference = root + "/reference/";
         prop = root + "/prop/";
         this.entityPrefix = entityPrefix;
         this.entityDataPrefix = entityDataPrefix;
         initials = copyOf(wikibaseInitials);
+    }
+
+    /**
+     * Generate a well-known URI as defined in RFC5785.
+     */
+    private static String generateWellKnownURI(URI conceptUrl, String what) {
+        return conceptUrl.getScheme() + "://" + conceptUrl.getHost() + (conceptUrl.getPort() > 0 ? ":" + conceptUrl.getPort() : "") + "/.well-known/" + what;
     }
 
     /**
@@ -189,6 +198,11 @@ public class DefaultUrisScheme implements UrisScheme {
     @Override
     public String property(String suffix) {
         return prop + suffix;
+    }
+
+    @Override
+    public String wellKnownBNodeIRIPrefix() {
+        return wellKnownBNodeIRIPrefix;
     }
 
     @Override

@@ -188,12 +188,9 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         // wikibase:decodeUri
         FunctionRegistry.add(new URIImpl(Ontology.NAMESPACE + "decodeUri"), getDecodeUriBOpFactory());
         IsSomeValueFunctionFactory.SomeValueMode mode = IsSomeValueFunctionFactory.SomeValueMode.lookup(System.getProperty("wikibaseSomeValueMode", "blank"));
-        String skolemURIPrefix = System.getProperty("wikibaseSomeValueSkolemURIPrefix");
-        if (mode == IsSomeValueFunctionFactory.SomeValueMode.Skolem && skolemURIPrefix == null) {
-            throw new IllegalArgumentException("wikibaseSomeValueSkolemURIPrefix must be provided when wikibaseSomeValueMode=skolem");
-        }
-        registerIsSomeValueFunction(FunctionRegistry::add, mode, skolemURIPrefix);
-        addPrefixes(UrisSchemeFactory.getURISystem());
+        UrisScheme uris = UrisSchemeFactory.getURISystem();
+        registerIsSomeValueFunction(FunctionRegistry::add, mode, uris.wellKnownBNodeIRIPrefix());
+        addPrefixes(uris);
 
         log.info("Wikibase services initialized.");
     }

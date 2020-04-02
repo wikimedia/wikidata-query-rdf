@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import static java.util.function.UnaryOperator.identity;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -10,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -78,6 +81,13 @@ public final class Munger {
      */
     private final boolean keepTypes;
     private final ValueFactory valueFactory;
+    private final UnaryOperator<Statement> statementFilter;
+
+    /**
+     * Predicates that are UriScheme dependent.
+     */
+    private final NamespaceStatementPredicates predicates;
+
 
     /**
      * Format version we're dealing with.
@@ -97,7 +107,7 @@ public final class Munger {
 
     private Munger(UrisScheme uris, Set<String> limitLabelLanguages, List<String> singleLabelModeLanguages,
                    boolean removeSiteLinks, boolean keepTypes, Map<String, FormatHandler> formatHandlers,
-                   ValueFactory valueFactory) {
+                   ValueFactory valueFactory, UnaryOperator<Statement> statementFilter) {
         this.uris = uris;
         this.limitLabelLanguages = limitLabelLanguages;
         this.singleLabelModeLanguages = singleLabelModeLanguages;
@@ -105,6 +115,8 @@ public final class Munger {
         this.keepTypes = keepTypes;
         this.formatHandlers = formatHandlers;
         this.valueFactory = valueFactory;
+        this.statementFilter = statementFilter;
+        this.predicates = new NamespaceStatementPredicates(uris);
     }
 
     /**
@@ -147,6 +159,7 @@ public final class Munger {
         private boolean keepTypes;
         private Map<String, FormatHandler> formatHandlers = new HashMap<>();
         private ValueFactory valueFactory;
+        private boolean convertBNodesToSkolemIRIs;
 
         Builder(UrisScheme uris) {
             this.uris = uris;
@@ -185,6 +198,11 @@ public final class Munger {
 
         public Builder valueFactory(ValueFactory valueFactory) {
             this.valueFactory = valueFactory;
+            return this;
+        }
+
+        public Builder convertBNodesToSkolemIRIs(boolean convertBNodesToSkolemIRIs) {
+            this.convertBNodesToSkolemIRIs = convertBNodesToSkolemIRIs;
             return this;
         }
 
@@ -231,6 +249,13 @@ public final class Munger {
         }
 
         public Munger build() {
+            ValueFactory vF = this.valueFactory != null ? this.valueFactory : new ValueFactoryImpl();
+            UnaryOperator<Statement> statementFilter;
+            if (convertBNodesToSkolemIRIs) {
+                statementFilter = new BNodeSkolemization(vF, uris.wellKnownBNodeIRIPrefix());
+            } else {
+                statementFilter = identity();
+            }
             return new Munger(
                     uris,
                     limitLabelLanguages == null ? null : ImmutableSet.copyOf(limitLabelLanguages),
@@ -238,7 +263,8 @@ public final class Munger {
                     removeSiteLinks,
                     keepTypes,
                     ImmutableMap.copyOf(formatHandlers),
-                    valueFactory != null ? valueFactory : new ValueFactoryImpl());
+                    vF,
+                    statementFilter);
         }
 
     }
@@ -314,12 +340,6 @@ public final class Munger {
          */
         private final Set<Pair<URI, Literal>> dataStatements = new HashSet<>();
 
-        /**
-         * Predicates that are UriScheme dependent.
-         */
-        private final NamespaceStatementPredicates predicates;
-
-
         // These are set by the entire munge operation
         /**
          * Revision id that we find while scanning the statements.
@@ -349,7 +369,7 @@ public final class Munger {
                 singleLabelModeWorkForDescription = null;
             }
             setFormatVersion(dumpFormatVersion);
-            this.predicates = new NamespaceStatementPredicates(uris);
+
         }
 
         /**
@@ -373,22 +393,20 @@ public final class Munger {
             Iterator<Statement> itr = statements.iterator();
             while (itr.hasNext()) {
                 Statement statement = itr.next();
-                if (formatHandler != null) {
-                    Statement handled = formatHandler.handle(statement);
-                    if (handled == null) {
-                        // drop it
+                Statement handled = filter(statement);
+                if (handled == null) {
+                    // drop it
+                    itr.remove();
+                    continue;
+                } else {
+                    if (!handled.equals(statement)) {
+                        // modified
                         itr.remove();
-                        continue;
-                    } else {
-                        if (!handled.equals(statement)) {
-                            // modified
-                            itr.remove();
-                            statement = handled;
-                            if (statement(statement)) {
-                                // if we accept it in modified form, add back
-                                restoredStatements.add(statement);
-                                continue;
-                            }
+                        statement = handled;
+                        if (statement(statement)) {
+                            // if we accept it in modified form, add back
+                            restoredStatements.add(statement);
+                            continue;
                         }
                     }
                 }
@@ -405,6 +423,16 @@ public final class Munger {
 
             finishSingleLabelMode();
             finishCommon();
+        }
+
+        private Statement filter(Statement statement) {
+            if (formatHandler != null) {
+                statement = formatHandler.handle(statement);
+            }
+            if (statement == null) {
+                return null;
+            }
+            return statementFilter.apply(statement);
         }
 
         /**

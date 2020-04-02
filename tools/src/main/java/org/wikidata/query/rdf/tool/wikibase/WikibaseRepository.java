@@ -52,11 +52,9 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.IdleConnectionEvictor;
 import org.apache.http.protocol.HttpContext;
 import org.openrdf.model.Statement;
-import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.RDFParser;
-import org.openrdf.rio.Rio;
 import org.openrdf.rio.helpers.StatementCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +63,8 @@ import org.wikidata.query.rdf.tool.exception.BadParameterException;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
-import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
+import org.wikidata.query.rdf.tool.rdf.RDFParserSupplier;
+import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
 import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
 import org.wikidata.query.rdf.tool.utils.StreamDumper;
 
@@ -216,24 +215,27 @@ public class WikibaseRepository implements Closeable {
      */
     private final StreamDumper streamDumper;
 
+    private final RDFParserSupplier rdfParserSupplier;
+
     public WikibaseRepository(URI baseUrl, MetricRegistry metricRegistry) {
-        this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper(), null);
+        this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
     }
 
     public WikibaseRepository(Uris uris, MetricRegistry metricRegistry) {
-        this(uris, false, metricRegistry, new NullStreamDumper(), null);
+        this(uris, false, metricRegistry, new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
     }
 
     public WikibaseRepository(String baseUrl, MetricRegistry metricRegistry) {
-        this(Uris.fromString(baseUrl), false, metricRegistry, new NullStreamDumper(), null);
+        this(Uris.fromString(baseUrl), false, metricRegistry, new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
     }
 
     public WikibaseRepository(URI baseUrl, Set<Long> entityNamespaces, MetricRegistry metricRegistry) {
-        this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper(), null);
+        this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
         uris.setEntityNamespaces(entityNamespaces);
     }
 
-    public WikibaseRepository(Uris uris, boolean collectConstraints, MetricRegistry metricRegistry, StreamDumper streamDumper, Duration revisionCutoff) {
+    public WikibaseRepository(Uris uris, boolean collectConstraints, MetricRegistry metricRegistry, StreamDumper streamDumper,
+                              Duration revisionCutoff, RDFParserSupplier rdfParserSupplier) {
         this.uris = uris;
         this.collectConstraints = collectConstraints;
         this.rdfFetchTimer = metricRegistry.timer("rdf-fetch-timer");
@@ -243,6 +245,7 @@ public class WikibaseRepository implements Closeable {
         client = createHttpClient(connectionManager);
         this.streamDumper = streamDumper;
         this.revisionCutoff = revisionCutoff;
+        this.rdfParserSupplier = rdfParserSupplier;
     }
 
     /**
@@ -374,8 +377,7 @@ public class WikibaseRepository implements Closeable {
      */
     @SuppressFBWarnings("CC_CYCLOMATIC_COMPLEXITY")
     private void collectStatementsFromUrl(URI uri, StatementCollector collector, Timer timer) throws RetryableException {
-        RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
-        parser.setRDFHandler(new NormalizingRdfHandler(collector));
+        RDFParser parser = this.rdfParserSupplier.get(collector);
         HttpGet request = new HttpGet(uri);
         request.setConfig(configWithTimeout);
         log.debug("Fetching rdf from {}", uri);

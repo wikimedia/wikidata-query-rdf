@@ -37,6 +37,7 @@ import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.options.OptionsUtils.WikibaseOptions;
 import org.wikidata.query.rdf.tool.options.UpdateOptions;
 import org.wikidata.query.rdf.tool.rdf.Munger;
+import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository.UpdateMode;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
@@ -123,7 +124,7 @@ public final class Update {
 
             WikibaseRepository wikibaseRepository = new WikibaseRepository(
                     UpdateOptions.uris(options), options.constraints(), metricRegistry, wikibaseStreamDumper,
-                    UpdateOptions.revisionDuration(options));
+                    UpdateOptions.revisionDuration(options), RDFParserSuppliers.defaultRdfParser());
             closer.register(wikibaseRepository);
 
             UrisScheme wikibaseUris = WikibaseOptions.wikibaseUris(options);

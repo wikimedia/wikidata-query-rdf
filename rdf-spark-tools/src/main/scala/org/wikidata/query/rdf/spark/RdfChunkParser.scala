@@ -5,12 +5,12 @@ import java.nio.charset.StandardCharsets
 import java.util.function.BiFunction
 
 import scala.collection.mutable.ListBuffer
+
 import org.openrdf.model.Statement
 import org.openrdf.model.impl.ValueFactoryImpl
 import org.openrdf.rio.RDFHandler
-import org.openrdf.rio.turtle.TurtleParser
 import org.wikidata.query.rdf.common.uri.{Ontology, UrisScheme, UrisSchemeFactory}
-import org.wikidata.query.rdf.tool.rdf.{EntityMungingRdfHandler, Munger, NamespaceStatementPredicates, NormalizingRdfHandler, StatementPredicates}
+import org.wikidata.query.rdf.tool.rdf._
 import org.wikidata.query.rdf.tool.rdf.EntityMungingRdfHandler.EntityCountListener
 
 /**
@@ -41,8 +41,7 @@ class RdfChunkParser(urisScheme: UrisScheme, munger: Munger, namespaces: Map[Str
     }
     val mungingRdfHandler = new EntityMungingRdfHandler(urisScheme, this.munger, handler, countListener, quadGenerator)
 
-    val parser = new TurtleParser(valueFactory)
-    parser.setRDFHandler(new NormalizingRdfHandler(mungingRdfHandler))
+    val parser = RDFParserSuppliers.defaultRdfParser().get(new NormalizingRdfHandler(mungingRdfHandler));
     parser.parse(new SequenceInputStream(new ByteArrayInputStream(makePrefixHeader().getBytes(StandardCharsets.UTF_8)), inputStream), urisScheme.root())
     statements.toList
   }
@@ -106,9 +105,9 @@ object RdfChunkParser {
     "wdno" -> "<http://www.wikidata.org/prop/novalue/>"
   )
 
-  def forWikidata(): RdfChunkParser = {
+  def forWikidata(skolemize: Boolean = false): RdfChunkParser = {
     val urisScheme = UrisSchemeFactory.WIKIDATA
-    val munger = Munger.builder(urisScheme).build()
+    val munger = Munger.builder(urisScheme).convertBNodesToSkolemIRIs(skolemize).build()
 
     // also hardcode format version for now
     munger.setFormatVersion("1.0.0")

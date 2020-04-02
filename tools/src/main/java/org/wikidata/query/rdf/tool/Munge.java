@@ -32,6 +32,7 @@ import org.wikidata.query.rdf.tool.rdf.EntityMungingRdfHandler;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
 import org.wikidata.query.rdf.tool.rdf.PrefixRecordingRdfHandler;
+import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
 
 /**
  * Munges a Wikidata RDF dump so that it can be loaded in a single import.
@@ -99,8 +100,8 @@ public class Munge {
                 }
             };
             EntityMungingRdfHandler munger = new EntityMungingRdfHandler(uris, this.munger, chunkWriter, chunker);
-            RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
-            parser.setRDFHandler(AsyncRDFHandler.processAsync(new NormalizingRdfHandler(munger), true, BUFFER_SIZE));
+
+            RDFParser parser = RDFParserSuppliers.defaultRdfParser().get(AsyncRDFHandler.processAsync(new NormalizingRdfHandler(munger), true, BUFFER_SIZE));
             parser.parse(from, uris.root());
             // thread:main: parser -> AsyncRDFHandler -> queue
             // thread:replayer1: Normalizing/Munging -> AsyncRDFHandler -> queue

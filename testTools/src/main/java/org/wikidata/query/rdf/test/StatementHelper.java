@@ -10,6 +10,7 @@ import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.model.impl.BNodeImpl;
 import org.openrdf.model.impl.IntegerLiteralImpl;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.StatementImpl;
@@ -49,6 +50,10 @@ public final class StatementHelper {
             p = UrisSchemeFactory.getURISystem().property(PropertyType.CLAIM) + p;
         }
         return new StatementImpl(uri(s), uri(p), oValue);
+    }
+
+    public static Value blank(String label) {
+        return new BNodeImpl(label);
     }
 
     /**

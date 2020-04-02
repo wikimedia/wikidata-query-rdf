@@ -60,6 +60,9 @@ public final class OptionsUtils {
 
         @Option(description = "Preserve all types")
         boolean keepTypes();
+
+        @Option(longName = "skolemize", description = "Skolemization of blank nodes, expects the blank nodes to have uniquely identifiable labels")
+        boolean skolemize();
     }
 
     /**
@@ -149,7 +152,9 @@ public final class OptionsUtils {
         if (options.keepTypes()) {
             builder = builder.keepTypes(true);
         }
-        return builder.build();
+        return builder
+                .convertBNodesToSkolemIRIs(options.skolemize())
+                .build();
     }
 
     /**
