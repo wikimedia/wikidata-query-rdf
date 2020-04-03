@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikidata.query.rdf</groupId>
         <artifactId>query-service-parent</artifactId>
-        <version>0.3.15-SNAPSHOT</version>
+        <version>0.3.15</version>
     </parent>
     <artifactId>tools</artifactId>
     <packaging>jar</packaging>
@@ -206,8 +206,7 @@
                  wants 2.11.12 but causes failures like :
 [ERROR] Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.297 s <<< FAILURE! - in org.wikidata.query.rdf.tool.change.KafkaPollerIntegrationTest
 [ERROR] org.wikidata.query.rdf.tool.change.KafkaPollerIntegrationTest Time elapsed: 0.297 s <<< ERROR!
-java.lang.NoSuchMethodError: 'void scala.collection.GenTraversableOnce.$init$(scala.collection.GenTraversableOnce)'
-            -->
+java.lang.NoSuchMethodError: 'void scala.collection.GenTraversableOnce.$init$(scala.collection.GenTraversableOnce)' -->
 
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
