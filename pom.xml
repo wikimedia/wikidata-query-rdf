@@ -5,11 +5,11 @@
         <groupId>org.wikimedia.discovery</groupId>
         <artifactId>discovery-parent-pom</artifactId>
         <version>1.35</version>
-        <relativePath />
+        <relativePath></relativePath>
     </parent>
     <groupId>org.wikidata.query.rdf</groupId>
     <artifactId>query-service-parent</artifactId>
-    <version>0.3.19-SNAPSHOT</version>
+    <version>0.3.19</version>
     <packaging>pom</packaging>
 
     <name>Wikidata Query Service</name>
@@ -54,7 +54,7 @@
     <scm>
         <connection>scm:git:https://gerrit.wikimedia.org/r/wikidata/query/rdf</connection>
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikidata/query/rdf</developerConnection>
-        <tag>parent-0.3.4</tag>
+        <tag>query-service-parent-0.3.19</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/wikidata/query/rdf</url>
     </scm>
 
@@ -1096,7 +1096,7 @@
                                                 </goals>
                                             </pluginExecutionFilter>
                                             <action>
-                                                <ignore />
+                                                <ignore></ignore>
                                             </action>
                                         </pluginExecution>
                                         <pluginExecution>
@@ -1110,7 +1110,7 @@
                                                 </goals>
                                             </pluginExecutionFilter>
                                             <action>
-                                                <ignore />
+                                                <ignore></ignore>
                                             </action>
                                         </pluginExecution>
                                     </pluginExecutions>
