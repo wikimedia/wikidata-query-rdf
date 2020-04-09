@@ -23,7 +23,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
 
   "RevCreateEvent" should "be convertible into InputEvent" in {
     val event = IncomingStreams.REV_CREATE_CONV.apply(new RevisionCreateEvent(
-      new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain"),
+      new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "unused for now"),
       1234,
       "Q123",
       1),
