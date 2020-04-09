@@ -67,9 +67,9 @@ public class WikibaseInlineUriFactoryUnitTest extends AbstractBlazegraphTestBase
     public void viafIsInlined() {
         BigdataStatement statement = roundTrip(CommonValues.VIAF + "123313", CommonValues.VIAF_HTTP + "1234555",
                 CommonValues.VIAF_HTTP + "23466/");
-        assertThat(statement.getSubject().getIV(), uriIv(CommonValues.VIAF, "123313"));
-        assertThat(statement.getPredicate().getIV(), uriIv(CommonValues.VIAF, "1234555"));
-        assertThat(statement.getObject().getIV(), uriIv(CommonValues.VIAF, "23466"));
+        assertThat(statement.getSubject().getIV(), uriIv(CommonValues.VIAF_HTTP, "123313"));
+        assertThat(statement.getPredicate().getIV(), uriIv(CommonValues.VIAF_HTTP, "1234555"));
+        assertThat(statement.getObject().getIV(), uriIv(CommonValues.VIAF_HTTP, "23466"));
     }
 
     @SuppressWarnings("rawtypes")

@@ -73,7 +73,7 @@ public class AbstractBlazegraphStorageTestCase {
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.vocabularyClass",
                 WikibaseVocabulary.VOCABULARY_CLASS.getName());
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.inlineURIFactory",
-                WikibaseInlineUriFactory.class.getName());
+                WikibaseInlineUriFactory.V001.class.getName());
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.extensionFactoryClass",
                 WikibaseExtensionFactory.class.getName());
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.geoSpatial", "true");
