@@ -21,7 +21,6 @@ object UpdaterJob {
     val params = ParameterTool.fromArgs(args)
 
     val hostName: String = params.get("hostname")
-    val proxyServer: Option[String] = Option(params.get("proxyserver"))
 
     // FIXME: proper options handling
     val pipelineOptions = UpdaterPipelineOptions(
@@ -46,9 +45,9 @@ object UpdaterJob {
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env.setStateBackend(UpdaterStateConfiguration.newStateBackend(checkpointDir))
     env.enableCheckpointing(2*60*1000) // checkpoint every 2mins, checkpoint timeout is 10m by default
-    env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
+    env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
     UpdaterPipeline.build(pipelineOptions, buildIncomingStreams(pipelineInputEventStreamOptions, pipelineOptions),
-      WikibaseEntityRevRepository(uris, proxyServer))
+      rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup))
       .saveLateEventsTo(prepareFileDebugSink(lateEventsDir))
       .saveSpuriousEventsTo(prepareFileDebugSink(spuriousEventsDir))
       .saveTo(prepareFileDebugSink(entityTriplesDir))

@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.updater
 
+
 import org.openrdf.model.Statement
 
 trait WikibaseEntityRevRepositoryTrait {

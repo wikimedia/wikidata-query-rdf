@@ -32,6 +32,7 @@ import javax.net.ssl.SSLHandshakeException;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -46,6 +47,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.IdleConnectionEvictor;
 import org.apache.http.protocol.HttpContext;
@@ -95,6 +97,10 @@ public class WikibaseRepository implements Closeable {
      */
     private static final String TIMEOUT_PROPERTY = WikibaseRepository.class.getName() + ".timeout";
     /**
+     * Request proxy property.
+     */
+    private static final String PROXY_PROPERTY = WikibaseRepository.class.getName() + ".proxy";
+    /**
      * How many retries allowed on error.
      */
     private static final int RETRIES = 3;
@@ -128,6 +134,24 @@ public class WikibaseRepository implements Closeable {
             .parseDefaulting(ChronoField.NANO_OF_SECOND, 0)
             .toFormatter()
             .withZone(ZoneId.of("Z"));
+
+    /**
+     * Configured proxy for requests.
+     */
+    private static final String PROXY_HOST;
+    private static final int PROXY_PORT;
+
+    static {
+        String proxy = System.getProperty(PROXY_PROPERTY);
+        if (proxy != null) {
+            String[] split = proxy.split(":");
+            PROXY_HOST = split[0];
+            PROXY_PORT = Integer.parseInt(split[1]);
+        } else {
+            PROXY_HOST = null;
+            PROXY_PORT = -1;
+        }
+    }
 
     /**
      * HTTP client for wikibase.
@@ -194,6 +218,10 @@ public class WikibaseRepository implements Closeable {
 
     public WikibaseRepository(URI baseUrl, MetricRegistry metricRegistry) {
         this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper(), null);
+    }
+
+    public WikibaseRepository(Uris uris, MetricRegistry metricRegistry) {
+        this(uris, false, metricRegistry, new NullStreamDumper(), null);
     }
 
     public WikibaseRepository(String baseUrl, MetricRegistry metricRegistry) {
@@ -522,12 +550,14 @@ public class WikibaseRepository implements Closeable {
     }
 
     private static CloseableHttpClient createHttpClient(HttpClientConnectionManager connectionManager) {
-        return HttpClients.custom()
+        HttpClientBuilder httpClientBuilder = HttpClients.custom()
                 .setConnectionManager(connectionManager)
                 .setRetryHandler(getRetryHandler(RETRIES))
                 .setServiceUnavailableRetryStrategy(getRetryStrategy(RETRIES, RETRY_INTERVAL))
                 .disableCookieManagement()
-                .setUserAgent(getUserAgent())
+                .setUserAgent(getUserAgent());
+
+        return (PROXY_HOST != null ? httpClientBuilder.setProxy(new HttpHost(PROXY_HOST, PROXY_PORT)) : httpClientBuilder)
                 .build();
     }
 

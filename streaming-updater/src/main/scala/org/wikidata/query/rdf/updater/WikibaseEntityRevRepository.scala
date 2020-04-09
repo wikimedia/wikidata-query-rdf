@@ -1,46 +1,24 @@
 package org.wikidata.query.rdf.updater
 
-import org.apache.http.HttpHost
-import org.apache.http.client.methods.{CloseableHttpResponse, HttpGet}
-import org.apache.http.impl.client.{CloseableHttpClient, HttpClientBuilder}
+import com.codahale.metrics.MetricRegistry
+import org.apache.flink.metrics.MetricGroup
 import org.openrdf.model.Statement
-import org.openrdf.rio.helpers.StatementCollector
-import org.openrdf.rio.{RDFFormat, RDFParser, Rio}
-import org.slf4j.{Logger, LoggerFactory}
-import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 
-import scala.collection.JavaConverters.iterableAsScalaIterableConverter
+import collection.JavaConverters._
 
 
-case class WikibaseEntityRevRepository(uris: Uris, proxyServer: Option[String] = None) extends WikibaseEntityRevRepositoryTrait {
-//  lazy val uris: Uris = WikibaseRepository.Uris.fromString(s"https://$sourceHostname")
-  lazy val parser: RDFParser = Rio.createParser(RDFFormat.TURTLE)
-  lazy val client: CloseableHttpClient = {
-    val builder: HttpClientBuilder = HttpClientBuilder.create()
-    proxyServer
-      .map(proxyHost => builder.setProxy(HttpHost.create(proxyHost)))
-      .getOrElse(builder)
-      .build()
+case class WikibaseEntityRevRepository(uris: Uris, metricGroup: MetricGroup) extends WikibaseEntityRevRepositoryTrait {
+
+  private lazy val registry = {
+    val metricRegistry = new MetricRegistry()
+    metricRegistry.addListener(new DropwizardToFlinkListener(metricGroup))
+    metricRegistry
   }
-
-  private lazy val LOG: Logger = LoggerFactory.getLogger(getClass)
+  lazy val wikibaseRepository: WikibaseRepository = new WikibaseRepository(uris, registry)
 
   override def getEntityByRevision(entityId: String, revision: Long): Iterable[Statement] = {
-    try {
-      val response: CloseableHttpResponse = client.execute(new HttpGet(uris.rdf(entityId, revision)))
-      response.getEntity.getContent
-      val collector: StatementCollector = new StatementCollector();
-
-      parser.setRDFHandler(new NormalizingRdfHandler(collector))
-      parser.parse(response.getEntity.getContent, uris.getHost)
-      collector.getStatements.asScala
-    } catch {
-      case e: Exception => {
-        LOG.error(s"Exception for $entityId thrown.", e)
-        Seq()
-      }
-    }
+    wikibaseRepository.fetchRdfForEntity(entityId, revision).asScala
   }
 }

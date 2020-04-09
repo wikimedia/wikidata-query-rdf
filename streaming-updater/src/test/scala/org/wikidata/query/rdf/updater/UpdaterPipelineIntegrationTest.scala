@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.updater
 
+import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala._
@@ -39,8 +40,11 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     Some(1), Some(1))
 
 
-    UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, REORDERING_WINDOW_LENGTH), List(source), getMockRepository)
-      .saveTo(new CollectSink[EntityTripleDiffs](CollectSink.values.append(_)))
+    //this needs to be evaluated before the lambda below because of serialization issues
+    val repository: MockWikibaseEntityRevRepository = getMockRepository
+
+    UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, REORDERING_WINDOW_LENGTH), List(source), _ => repository)
+      .saveTo(new CollectSink[ResolvedOp](CollectSink.values.append(_)))
       .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
       .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))
       .execute("test")

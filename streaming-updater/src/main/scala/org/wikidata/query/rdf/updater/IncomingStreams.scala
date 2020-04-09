@@ -14,7 +14,7 @@ object IncomingStreams {
 
   def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], hostname: String, conv: E => InputEvent, maxLatenessMs: Int)
                                  (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
-
+    //FIXME name's too long - Flink truncates names after 80
     val nameAndUid = s"${classOf[RevisionCreateEvent].getSimpleName}<${kafkaProps.consumerGroup}:${kafkaProps.topic}@${kafkaProps.brokers}"
     val kafkaStream = env
       .addSource(new FlinkKafkaConsumer[E](kafkaProps.topic, kafkaProps.schema, kafkaProps.asProperties()))(kafkaProps.schema.getProducedType)
