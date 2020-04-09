@@ -72,6 +72,14 @@ public class WikibaseInlineUriFactoryUnitTest extends AbstractBlazegraphTestBase
         assertThat(statement.getObject().getIV(), uriIv(CommonValues.VIAF_HTTP, "23466"));
     }
 
+    @Test
+    public void someValueIsInlined() {
+        BigdataStatement statement = roundTrip(uris().wellKnownBNodeIRIPrefix() + "a10564107110b2d5739b8fe235cddf73", "uri:test",
+                uris().wellKnownBNodeIRIPrefix() + "a10564107110b2d5739b8fe235cddf74");
+        assertThat(statement.getSubject().getIV(), uriIv(uris().wellKnownBNodeIRIPrefix(), "a10564107110b2d5739b8fe235cddf73"));
+        assertThat(statement.getObject().getIV(), uriIv(uris().wellKnownBNodeIRIPrefix(), "a10564107110b2d5739b8fe235cddf74"));
+    }
+
     @SuppressWarnings("rawtypes")
     public static Matcher<IV> uriIv(String namespace, String localName) {
         /*

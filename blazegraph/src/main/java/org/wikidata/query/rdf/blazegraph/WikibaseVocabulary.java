@@ -15,9 +15,10 @@ import org.wikidata.query.rdf.blazegraph.vocabulary.OntologyVocabularyDecl3;
 import org.wikidata.query.rdf.blazegraph.vocabulary.ProvenanceVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.SchemaDotOrgVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.SchemaDotOrgVocabularyDecl2;
+import org.wikidata.query.rdf.blazegraph.vocabulary.SomeValueVocabularyDecl;
 import org.wikidata.query.rdf.blazegraph.vocabulary.WikibaseUrisVocabularyDecl;
-import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.PropertyType;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 
 import com.bigdata.rdf.vocab.DefaultBigdataVocabulary;
 import com.bigdata.rdf.vocab.core.BigdataCoreVocabulary_v20160317;
@@ -31,7 +32,7 @@ public class WikibaseVocabulary {
     /**
      * Current vocabulary class, for tests.
      */
-    public static final Class VOCABULARY_CLASS = V004.class;
+    public static final Class VOCABULARY_CLASS = V005.class;
 
     protected WikibaseVocabulary() {
         // prevents calls from subclass
@@ -153,6 +154,21 @@ public class WikibaseVocabulary {
             addDecl(new OntologyVocabularyDecl3());
             addDecl(new MediawikiVocabularyDecl2());
             addDecl(new LexemeVocabularyDecl());
+        }
+    }
+
+    public static class V005 extends V004 {
+        public V005() {
+        }
+
+        public V005(String namespace) {
+            super(namespace);
+        }
+
+        @Override
+        protected void addValues() {
+            super.addValues();
+            addDecl(new SomeValueVocabularyDecl(UrisSchemeFactory.getURISystem()));
         }
     }
 }
