@@ -18,9 +18,8 @@ import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
-import org.openrdf.model.impl.LiteralImpl;
-import org.openrdf.model.impl.StatementImpl;
-import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.WikibasePoint;
@@ -78,6 +77,7 @@ public final class Munger {
      * True if we want to keep types for Statement and Item.
      */
     private final boolean keepTypes;
+    private final ValueFactory valueFactory;
 
     /**
      * Format version we're dealing with.
@@ -96,13 +96,15 @@ public final class Munger {
     private final Map<String, FormatHandler> formatHandlers;
 
     private Munger(UrisScheme uris, Set<String> limitLabelLanguages, List<String> singleLabelModeLanguages,
-                   boolean removeSiteLinks, boolean keepTypes, Map<String, FormatHandler> formatHandlers) {
+                   boolean removeSiteLinks, boolean keepTypes, Map<String, FormatHandler> formatHandlers,
+                   ValueFactory valueFactory) {
         this.uris = uris;
         this.limitLabelLanguages = limitLabelLanguages;
         this.singleLabelModeLanguages = singleLabelModeLanguages;
         this.removeSiteLinks = removeSiteLinks;
         this.keepTypes = keepTypes;
         this.formatHandlers = formatHandlers;
+        this.valueFactory = valueFactory;
     }
 
     /**
@@ -144,6 +146,7 @@ public final class Munger {
         private boolean removeSiteLinks;
         private boolean keepTypes;
         private Map<String, FormatHandler> formatHandlers = new HashMap<>();
+        private ValueFactory valueFactory;
 
         Builder(UrisScheme uris) {
             this.uris = uris;
@@ -177,6 +180,11 @@ public final class Munger {
          */
         public Builder limitLabelLanguages(Collection<String> languages) {
             limitLabelLanguages = languages;
+            return this;
+        }
+
+        public Builder valueFactory(ValueFactory valueFactory) {
+            this.valueFactory = valueFactory;
             return this;
         }
 
@@ -229,7 +237,8 @@ public final class Munger {
                     singleLabelModeLanguages == null ? null : ImmutableList.copyOf(singleLabelModeLanguages).reverse(),
                     removeSiteLinks,
                     keepTypes,
-                    ImmutableMap.copyOf(formatHandlers));
+                    ImmutableMap.copyOf(formatHandlers),
+                    valueFactory != null ? valueFactory : new ValueFactoryImpl());
         }
 
     }
@@ -260,7 +269,7 @@ public final class Munger {
         /**
          * The entity uri that we're working with.
          */
-        private final Resource entityUriImpl;
+        private final Resource entityUriResource;
         /*
          * These are modified during the pass over the statements and used to
          * modify the statements during cleanup
@@ -331,7 +340,7 @@ public final class Munger {
         MungeOperation(String entityId, Collection<Statement> statements) {
             this.statements = statements;
             entityUri = uris.entityIdToURI(entityId);
-            entityUriImpl = new URIImpl(entityUri);
+            entityUriResource = valueFactory.createURI(entityUri);
             if (singleLabelModeLanguages != null) {
                 singleLabelModeWorkForLabel = new SingleLabelModeWork();
                 singleLabelModeWorkForDescription = new SingleLabelModeWork();
@@ -409,11 +418,11 @@ public final class Munger {
                 if (value.stringValue().length() > Short.MAX_VALUE) {
                     final Literal newValue;
                     if (value.getDatatype().equals(org.openrdf.model.vocabulary.RDF.LANGSTRING)) {
-                        newValue = new LiteralImpl(value.stringValue().substring(0, Short.MAX_VALUE), value.getLanguage());
+                        newValue = valueFactory.createLiteral(value.stringValue().substring(0, Short.MAX_VALUE), value.getLanguage());
                     } else {
-                        newValue = new LiteralImpl(value.stringValue().substring(0, Short.MAX_VALUE), value.getDatatype());
+                        newValue = valueFactory.createLiteral(value.stringValue().substring(0, Short.MAX_VALUE), value.getDatatype());
                     }
-                    return new StatementImpl(statement.getSubject(),
+                    return valueFactory.createStatement(statement.getSubject(),
                             statement.getPredicate(), newValue);
                 }
             }
@@ -797,7 +806,7 @@ public final class Munger {
 
             // Move all selected entity data statements to main entity statement
             for (Pair<URI, Literal> dataStatement: dataStatements) {
-                statements.add(new StatementImpl(entityUriImpl,
+                statements.add(valueFactory.createStatement(entityUriResource,
                         dataStatement.getLeft(), dataStatement.getRight()));
             }
 
