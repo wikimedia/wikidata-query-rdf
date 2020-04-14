@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.tool.change;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.wikidata.query.rdf.tool.utils.EntityUtil.cleanEntityId;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.OUTPUT_DATE_FORMATTER;
 
 import java.io.Closeable;
@@ -66,18 +67,6 @@ public class Change implements Comparable<Change> {
         this.revision = revision;
         this.timestamp = timestamp;
         this.offset = offset;
-    }
-
-    private String cleanEntityId(String entityIdWithPrefix) {
-        // FIXME: this should not be hardcoded
-        if (entityIdWithPrefix.startsWith("Property:")) {
-           return entityIdWithPrefix.substring("Property:".length());
-        } else if (entityIdWithPrefix.startsWith("Item:")) {
-            return entityIdWithPrefix.substring("Item:".length());
-        } else if (entityIdWithPrefix.startsWith("Lexeme:")) {
-            return entityIdWithPrefix.substring("Lexeme:".length());
-        }
-        return entityIdWithPrefix;
     }
 
     /**

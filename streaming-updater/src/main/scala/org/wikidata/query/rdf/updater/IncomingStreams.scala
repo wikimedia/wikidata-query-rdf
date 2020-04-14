@@ -5,16 +5,17 @@ import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrderness
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
-import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
 import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, RevisionCreateEvent}
+import org.wikidata.query.rdf.tool.utils.EntityUtil.cleanEntityId
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 
+
 object IncomingStreams {
-  val REV_CREATE_CONV: RevisionCreateEvent => InputEvent = (e: RevisionCreateEvent) => Rev(e.title(), e.timestamp(), e.revision())
+  val REV_CREATE_CONV: RevisionCreateEvent => InputEvent = e => Rev(cleanEntityId(e.title()), e.timestamp(), e.revision())
 
   def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], hostname: String, conv: E => InputEvent, maxLatenessMs: Int)
                                  (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
-    //FIXME name's too long - Flink truncates names after 80
+
     val nameAndUid = s"${classOf[RevisionCreateEvent].getSimpleName}<${kafkaProps.consumerGroup}:${kafkaProps.topic}@${kafkaProps.brokers}"
     val kafkaStream = env
       .addSource(new FlinkKafkaConsumer[E](kafkaProps.topic, kafkaProps.schema, kafkaProps.asProperties()))(kafkaProps.schema.getProducedType)
@@ -41,9 +42,8 @@ object IncomingStreams {
 }
 
 class EventWithMetadataHostFilter[E <: ChangeEvent](hostname: String) extends FilterFunction[E] {
-  lazy val urisScheme = UrisSchemeFactory.forHost(hostname)
   lazy val uris = Uris.fromString(s"https://$hostname")
   override def filter(e: E): Boolean = {
-    e.domain() == uris.getHost && urisScheme.supportsInitial(e.title())
+    e.domain() == uris.getHost && uris.isEntityNamespace(e.namespace())
   }
 }

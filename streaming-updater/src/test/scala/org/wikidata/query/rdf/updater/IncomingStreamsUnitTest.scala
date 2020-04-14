@@ -35,6 +35,6 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
 
 sealed case class FakeEvent(domain: String, title: String) extends ChangeEvent {
   override def revision(): Long = ???
-  override def namespace(): Long = ???
+  override def namespace(): Long = if (title.startsWith("Q")) 0L else 1L
   override def timestamp(): Instant = ???
 }

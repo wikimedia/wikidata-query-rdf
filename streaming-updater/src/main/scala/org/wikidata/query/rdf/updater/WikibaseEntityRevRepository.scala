@@ -6,7 +6,7 @@ import org.openrdf.model.Statement
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 
-import collection.JavaConverters._
+import scala.collection.JavaConverters._
 
 
 case class WikibaseEntityRevRepository(uris: Uris, metricGroup: MetricGroup) extends WikibaseEntityRevRepositoryTrait {
