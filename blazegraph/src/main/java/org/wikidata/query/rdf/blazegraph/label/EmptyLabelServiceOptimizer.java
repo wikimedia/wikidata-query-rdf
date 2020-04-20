@@ -154,8 +154,8 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
             return;
         }
         for (AssignmentNode a : p) {
-            IVariable<IV> var = a.getVar();
-            if (a.getValueExpression() != var) {
+            IVariable<IV> v = a.getVar();
+            if (a.getValueExpression() != v) {
                 continue;
             }
             /*
@@ -163,11 +163,11 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
              * that we should match AltLabel before Label because Label is a
              * suffix of it....
              */
-            boolean replaced = addResolutionIfSuffix(ctx, g, "AltLabel", SKOS.ALT_LABEL, var)
-                    || addResolutionIfSuffix(ctx, g, "Label", RDFS.LABEL, var)
-                    || addResolutionIfSuffix(ctx, g, "Description", DESCRIPTION, var);
+            boolean replaced = addResolutionIfSuffix(ctx, g, "AltLabel", SKOS.ALT_LABEL, v)
+                    || addResolutionIfSuffix(ctx, g, "Label", RDFS.LABEL, v)
+                    || addResolutionIfSuffix(ctx, g, "Description", DESCRIPTION, v);
             if (replaced && log.isDebugEnabled()) {
-                log.debug("Resolving {} using a label lookup.", var);
+                log.debug("Resolving {} using a label lookup.", v);
             }
         }
     }
@@ -180,13 +180,13 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
             value = "OCP_OVERLY_CONCRETE_PARAMETER",
             justification = "Using AST2BOpContext makes sense since it is the only type that will ever be passed")
     private boolean addResolutionIfSuffix(AST2BOpContext ctx, JoinGroupNode g, String suffix, URI labelType,
-            IVariable<IV> var) {
-        if (!var.getName().endsWith(suffix)) {
+            IVariable<IV> iVar) {
+        if (!iVar.getName().endsWith(suffix)) {
             return false;
         }
-        String source = var.getName().substring(0, var.getName().length() - suffix.length());
+        String source = iVar.getName().substring(0, iVar.getName().length() - suffix.length());
         IConstant<IV> labelTypeAsConstant = ctx.getAbstractTripleStore().getVocabulary().getConstant(labelType);
-        g.addArg(new StatementPatternNode(new VarNode(source), new ConstantNode(labelTypeAsConstant), new VarNode(var)));
+        g.addArg(new StatementPatternNode(new VarNode(source), new ConstantNode(labelTypeAsConstant), new VarNode(iVar)));
         return true;
     }
 }

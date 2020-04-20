@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 final class MultiSyncUpdateQueryFactory {
 
     private final UrisScheme uris;
@@ -19,6 +21,7 @@ final class MultiSyncUpdateQueryFactory {
         this.uris = uris;
     }
 
+    @SuppressFBWarnings(value = "OCP_OVERLY_CONCRETE_PARAMETER", justification = "It isn't entirely clear if order is important or not in lexemeSubIds.")
     String buildQuery(
             Set<String> entityIds,
                       List<Statement> insertStatements,

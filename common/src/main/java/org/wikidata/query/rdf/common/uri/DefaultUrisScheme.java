@@ -67,6 +67,9 @@ public class DefaultUrisScheme implements UrisScheme {
     private final String entityDataPrefix;
     private final List<String> initials;
 
+    @SuppressFBWarnings(
+            value = "OCP_OVERLY_CONCRETE_PARAMETER",
+            justification = "wikibaseInitials needs to be a List, order is important here")
     public DefaultUrisScheme(URI conceptUrl, String entityPrefix, String entityDataPrefix, List<String> wikibaseInitials) {
         root = conceptUrl.toString().replaceAll("/+$", "");
         entityData = root + "/wiki/Special:EntityData/";

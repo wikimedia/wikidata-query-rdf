@@ -25,8 +25,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 public class DecodeUriBOp extends IVValueExpression<IV> implements INeedsMaterialization {
 
-    private static final long serialVersionUID = -8448763718374010166L;
-
     public DecodeUriBOp(final IValueExpression<? extends IV> x,
             final GlobalAnnotations globals) {
         super(x, globals);

@@ -26,11 +26,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 public class WikibaseDistanceBOp extends IVValueExpression<IV> implements INeedsMaterialization {
 
     /**
-     *
-     */
-    private static final long serialVersionUID = 2909300288279424402L;
-
-    /**
      * Required shallow copy constructor.
      */
     public WikibaseDistanceBOp(final BOp[] args,

@@ -26,11 +26,6 @@ import com.bigdata.service.geospatial.IGeoSpatialLiteralSerializer;
 public class WKTSerializer implements IGeoSpatialLiteralSerializer {
 
     /**
-     * Serializer ID.
-     */
-    private static final long serialVersionUID = -8893919944620967416L;
-
-    /**
      * Prefix for globe URIs.
      */
     private static final String URL_PREFIX = UrisSchemeFactory.getURISystem().entityIdToURI("Q");

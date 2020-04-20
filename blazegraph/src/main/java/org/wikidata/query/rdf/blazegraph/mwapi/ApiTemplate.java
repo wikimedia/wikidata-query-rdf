@@ -29,6 +29,7 @@ import com.bigdata.rdf.sparql.ast.service.ServiceNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -161,10 +162,10 @@ public class ApiTemplate {
      * Add input var from the service params to the map.
      * @param vars Target Map
      * @param varName Parameter name
-     * @param var Parameter node (can be null if it's pre-defined but not specified)
+     * @param iVar Parameter node (can be null if it's pre-defined but not specified)
      */
-    private void addInputVar(Map<String, IVariableOrConstant> vars, String varName, TermNode var) {
-        if (var == null) {
+    private void addInputVar(Map<String, IVariableOrConstant> vars, String varName, TermNode iVar) {
+        if (iVar == null) {
             if (!defaults.containsKey(varName)) {
                 // Param should have either binding or default
                 throw new IllegalArgumentException("Parameter " + varName + " must be bound");
@@ -173,11 +174,11 @@ public class ApiTemplate {
             // how to handle it.
             vars.put(varName, null);
         } else {
-            if (!var.isConstant() && !var.isVariable()) {
+            if (!iVar.isConstant() && !iVar.isVariable()) {
                 // Binding should be constant or var
                 throw new IllegalArgumentException("Parameter " + varName + " must be constant or variable");
             }
-            vars.put(varName, var.getValueExpression());
+            vars.put(varName, iVar.getValueExpression());
         }
     }
 
@@ -187,7 +188,7 @@ public class ApiTemplate {
      * @return Map of bindings, which has constant or variable from service params if bound, or null if not bound.
      */
     public Map<String, IVariableOrConstant> getInputVars(final ServiceParams serviceParams) {
-        Map<String, IVariableOrConstant> vars = new HashMap<>(inputVars.size());
+        Map<String, IVariableOrConstant> vars = Maps.newHashMapWithExpectedSize(inputVars.size());
 
         String prefix = paramNameToURI("").stringValue();
         // Collect pre-defined vars
@@ -236,18 +237,18 @@ public class ApiTemplate {
                 if (sp.s().isVariable() && sp.o().isConstant() && sp.p().isConstant()) {
                     for (OutputVariable.Type varType : OutputVariable.Type.values()) {
                         if (varType.predicate.equals(sp.p().getValue())) {
-                            IVariable var = (IVariable)sp.s().getValueExpression();
+                            IVariable v = (IVariable)sp.s().getValueExpression();
                             if (varType == ORDINAL) {
                                 // Ordinal values ignore the object
-                                vars.add(new OutputVariable(varType, var, "."));
+                                vars.add(new OutputVariable(varType, v, "."));
                                 break;
                              }
                             IV value = sp.o().getValueExpression().get();
                             if (value.isURI()) {
                                 String paramName = value.stringValue().substring(prefix.length());
-                                vars.add(new OutputVariable(varType, var, outputVars.get(paramName)));
+                                vars.add(new OutputVariable(varType, v, outputVars.get(paramName)));
                             } else {
-                                vars.add(new OutputVariable(varType, var, value.stringValue()));
+                                vars.add(new OutputVariable(varType, v, value.stringValue()));
                             }
                             break;
                         }
@@ -310,7 +311,7 @@ public class ApiTemplate {
         /**
          * Original Blazegraph var.
          */
-        private final IVariable var;
+        private final IVariable iVar;
         /**
          * Path expression to extract value from result.
          * The path is relative to items in template.
@@ -324,21 +325,21 @@ public class ApiTemplate {
          */
         private final Type type;
 
-        public OutputVariable(Type type, IVariable var, String xpath) {
-            this.var = var;
+        public OutputVariable(Type type, IVariable iVar, String xpath) {
+            this.iVar = iVar;
             this.path = xpath;
             this.type = type;
         }
 
-        public OutputVariable(IVariable var, String xpath) {
-            this(Type.STRING, var, xpath);
+        public OutputVariable(IVariable iVar, String xpath) {
+            this(Type.STRING, iVar, xpath);
         }
 
         /**
          * Get associated variable.
          */
         public IVariable getVar() {
-            return var;
+            return iVar;
         }
 
         /**
@@ -352,7 +353,7 @@ public class ApiTemplate {
          * Get associated variable name.
          */
         public String getName() {
-            return var.getName();
+            return iVar.getName();
         }
 
         @Override

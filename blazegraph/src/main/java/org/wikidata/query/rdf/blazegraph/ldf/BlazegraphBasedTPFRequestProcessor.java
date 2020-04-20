@@ -185,7 +185,6 @@ public class BlazegraphBasedTPFRequestProcessor extends
      * Filter based on variables.
      */
     public static class VariablesBasedFilter extends SPOFilter<ISPO> {
-        private static final long serialVersionUID = 6979067019748992496L;
 
         /**
          * Check subject.

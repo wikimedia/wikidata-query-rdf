@@ -16,6 +16,8 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.codahale.metrics.MetricRegistry;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Provides methods to initialize change sources.
  * Depends on options provided on the command line for the choice of source.
@@ -37,6 +39,7 @@ public final class ChangeSourceContext {
      * @throws IllegalArgumentException if the options are invalid
      * @throws IllegalStateException if the left off date is too ancient
      */
+    @SuppressFBWarnings(value = "CE_CLASS_ENVY", justification = "Might make sense to refactor at some point.")
     @Nonnull
     public static Change.Source<? extends Change.Batch> buildChangeSource(
             UpdateOptions options, Instant startTime,

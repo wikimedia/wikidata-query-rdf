@@ -20,10 +20,12 @@ import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.Provenance;
 import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
-import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 
 import com.google.common.collect.ImmutableList;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Constructs statements for testing.
@@ -54,6 +56,9 @@ public final class StatementHelper {
     /**
      * Statement build helper.
      */
+    @SuppressFBWarnings(
+            value = "OCP_OVERLY_CONCRETE_PARAMETER",
+            justification = "statements needs to be a List, order is important here")
     public static Statement statement(List<Statement> statements, String s, String p, Object o) {
         Statement st = statement(s, p, o);
         statements.add(st);

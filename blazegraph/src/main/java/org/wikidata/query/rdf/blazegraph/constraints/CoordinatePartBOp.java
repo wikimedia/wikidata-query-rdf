@@ -22,11 +22,6 @@ import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 public class CoordinatePartBOp extends IVValueExpression<IV> implements INeedsMaterialization {
 
     /**
-     *
-     */
-    private static final long serialVersionUID = -81134263515935773L;
-
-    /**
      * Parts supported by this op.
      */
     public enum Parts { GLOBE, LAT, LON }

@@ -181,8 +181,8 @@ public abstract class WikidataServicePlacementOptimizer extends AbstractJoinGrou
         if (projectedVars.contains(node.getVar())) {
             return true;
         }
-        for (IVariable<?> var: node.getConsumedVars()) {
-            if (projectedVars.contains(var)) {
+        for (IVariable<?> v: node.getConsumedVars()) {
+            if (projectedVars.contains(v)) {
                 return true;
             }
         }

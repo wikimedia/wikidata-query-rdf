@@ -14,10 +14,6 @@ import com.bigdata.rdf.sail.webapp.BigdataRDFServlet;
  * and on https://github.com/hartig/BlazegraphBasedTPFServer/
  */
 public class LDFServlet extends BigdataRDFServlet {
-    /**
-     *
-     */
-    private static final long serialVersionUID = -9156574015263443551L;
 
     /**
      * Delegate LDF servlet.

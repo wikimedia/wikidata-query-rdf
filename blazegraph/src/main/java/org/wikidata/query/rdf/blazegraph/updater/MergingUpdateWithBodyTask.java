@@ -238,8 +238,9 @@ class MergingUpdateWithBodyTask extends AbstractRestApiTask<Void> {
         source.removeAll(toRemove);
         // then iterate over those statements which have to be removed as bnodes
         removeBnodes.keySet().forEach(k -> {
-            if (sourceBnodes.containsKey(k)) {
-                source.remove(sourceBnodes.get(k));
+            ISPO sourceBnode = sourceBnodes.get(k);
+            if (sourceBnode != null) {
+                source.remove(sourceBnode);
             }
         });
     }
@@ -337,8 +338,6 @@ class MergingUpdateWithBodyTask extends AbstractRestApiTask<Void> {
         for (BigdataValue v: refAndValueList) {
             if (v.isRealIV()) {
                 database.getAccessPath((IV)null, (IV)null, (IV)v.getIV(), new IElementFilter<ISPO>() {
-                    private static final long serialVersionUID = -4038518841880048301L;
-
                     @Override
                     public boolean isValid(Object object) {
                         ISPO ispo = (ISPO) object;

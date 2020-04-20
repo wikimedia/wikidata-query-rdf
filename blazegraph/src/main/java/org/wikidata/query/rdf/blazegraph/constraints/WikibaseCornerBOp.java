@@ -26,11 +26,6 @@ import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 public class WikibaseCornerBOp extends IVValueExpression<IV> implements INeedsMaterialization {
 
     /**
-     *
-     */
-    private static final long serialVersionUID = -811348263515935773L;
-
-    /**
      * Corners supported by this op.
      */
     public enum Corners { NE, SW }

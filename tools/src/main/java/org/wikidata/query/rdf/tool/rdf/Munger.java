@@ -895,8 +895,6 @@ public final class Munger {
      * Thrown when the munged triples contain a subject we don't recognize.
      */
     public static class BadSubjectException extends ContainedException {
-        private static final long serialVersionUID = -4869053066714948939L;
-
         public BadSubjectException(Set<String> badSubjects, UrisScheme uris) {
             super(String.format(Locale.ROOT,
                     "Unrecognized subjects:  %s.  Expected only sitelinks and subjects starting with %s and %s",

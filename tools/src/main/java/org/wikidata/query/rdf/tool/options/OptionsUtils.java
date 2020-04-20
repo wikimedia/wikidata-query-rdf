@@ -117,7 +117,7 @@ public final class OptionsUtils {
      * @param options Original options list
      * @return Split options list
      */
-    public static List<String> splitByComma(List<String> options) {
+    public static List<String> splitByComma(Iterable<String> options) {
         if (options == null) {
             return null;
         }

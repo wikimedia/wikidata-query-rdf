@@ -39,6 +39,8 @@ import com.bigdata.relation.accesspath.IElementFilter;
 import com.bigdata.striterator.IChunkedOrderedIterator;
 import com.bigdata.striterator.IKeyOrder;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class EntityDataUtil {
 
     private static final Logger log = LoggerFactory.getLogger(EntityDataUtil.class);
@@ -144,6 +146,9 @@ public class EntityDataUtil {
         return new ResolvedValues(schemaAbout, ontolexLexicalForm, ontolexSense, wikibaseTimestamp, entityTimestamp);
     }
 
+    @SuppressFBWarnings(
+            value = "OCP_OVERLY_CONCRETE_PARAMETER",
+            justification = "timestampStatements needs to be a List, order is important here")
     protected ArrayList<IV<?, ?>> collectSubjectsToDelete(AbstractTripleStore database,
             List<ISPO> timestampStatements, List<IV> entityIVs, ResolvedValues resolvedValues) {
         Collection<IV<?, ?>> subjSiteLinks = new HashSet<>();

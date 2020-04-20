@@ -116,7 +116,7 @@ public class EntitiesDataServlet extends BigdataRDFServletEx {
         }
     }
 
-    private FileItem getEntityIds(List<FileItem> items) {
+    private FileItem getEntityIds(Iterable<FileItem> items) {
         for (FileItem item : items) {
             if (ENTITY_IDS_PARAM.equals(item.getFieldName())) {
                 return item;

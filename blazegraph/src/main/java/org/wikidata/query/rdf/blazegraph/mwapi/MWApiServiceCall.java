@@ -64,7 +64,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * Instance of API service call.
  */
 @SuppressWarnings({"rawtypes", "unchecked", "checkstyle:classfanoutcomplexity", "checkstyle:npathcomplexity"})
-@SuppressFBWarnings(value = "DMC_DUBIOUS_MAP_COLLECTION", justification = "while inputVars could be implemented as a list, the maps makes semantic sense.")
+@SuppressFBWarnings(
+        value = {"DMC_DUBIOUS_MAP_COLLECTION", "PMB_INSTANCE_BASED_THREAD_LOCAL"},
+        justification = "While inputVars could be implemented as a list, the maps makes semantic sense." +
+                "docBuilder as an instance ThreadLocal seems reasonable to me, especially since we expect a single long lived instance.")
 public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServiceCall {
     private static final Logger log = LoggerFactory.getLogger(MWApiServiceCall.class);
     /**
@@ -290,32 +293,32 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         // TODO: would be nice to convert it to stream expression, but xpath
         // throws, and lambdas do not work with checked exceptions.
         // Thanks, Oracle!
-        for (OutputVariable var : outputVars) {
-            compiledVars.put(var, xpath.get().compile(var.getPath()));
+        for (OutputVariable v : outputVars) {
+            compiledVars.put(v, xpath.get().compile(v.getPath()));
         }
 
         for (int i = 0; i < nodes.getLength(); i++) {
             final Node node = nodes.item(i);
             results[i] = binding.copy(null);
-            for (Map.Entry<OutputVariable, XPathExpression> var : compiledVars.entrySet()) {
+            for (Map.Entry<OutputVariable, XPathExpression> v : compiledVars.entrySet()) {
                 final IConstant constant;
-                if (var.getKey().isOrdinal()) {
+                if (v.getKey().isOrdinal()) {
                     constant = makeConstant(lexiconRelation.getValueFactory(), i + recordsCount);
-                    results[i].set(var.getKey().getVar(), constant);
+                    results[i].set(v.getKey().getVar(), constant);
                     continue;
                 }
-                final Node value = (Node) var.getValue().evaluate(node, XPathConstants.NODE);
+                final Node value = (Node) v.getValue().evaluate(node, XPathConstants.NODE);
                 if (value != null && value.getNodeValue() != null) {
-                    if (var.getKey().isURI()) {
+                    if (v.getKey().isURI()) {
                         constant = makeConstant(
                                 lexiconRelation.getValueFactory(),
-                                var.getKey().getURI(value.getNodeValue()));
+                                v.getKey().getURI(value.getNodeValue()));
                     } else {
                         constant = makeConstant(
                                 lexiconRelation.getValueFactory(),
                                 value.getNodeValue());
                     }
-                    results[i].set(var.getKey().getVar(), constant);
+                    results[i].set(v.getKey().getVar(), constant);
                 }
             }
         }

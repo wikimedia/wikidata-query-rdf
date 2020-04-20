@@ -82,9 +82,6 @@ public class WikibaseVocabulary {
      */
     public static class V002 extends BigdataCoreVocabulary_v20160317 {
 
-        @SuppressWarnings("unused")
-        private static final long serialVersionUID = -1324123255255667253L;
-
         public V002() {
         }
 

@@ -21,8 +21,6 @@ import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
  */
 public class WikibaseNowBOp extends IVValueExpression<IV> implements INeedsMaterialization {
 
-    private static final long serialVersionUID = 9136864442064392445L;
-
     public WikibaseNowBOp(final GlobalAnnotations globals) {
 
         this(BOp.NOARGS, anns(globals));
