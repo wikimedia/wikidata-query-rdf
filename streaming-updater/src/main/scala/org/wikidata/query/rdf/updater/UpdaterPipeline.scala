@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.updater
 
 import java.time.Clock
+import java.util.UUID
 
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -63,6 +64,7 @@ sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
  *  => keyBy item
  *  => map(decide mutation ope) see DecideMutationOperation
  *  => process(remove spurious events) see RouteIgnoredMutationToSideOutput
+ *  => flatMap(fetch data from wikibase and diff) see ExtractTriplesOperation
  *
  *  output of the stream a MutationOperation
 
@@ -70,7 +72,9 @@ sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
 object UpdaterPipeline {
   def build(opts: UpdaterPipelineOptions, incomingStreams: List[DataStream[InputEvent]],
             wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
-            clock: Clock)
+            uniqueIdGenerator: () => String = UUID.randomUUID().toString,
+            clock: Clock = Clock.systemUTC(),
+            outputStreamName: String = "wdqs_streaming_updater")
            (implicit env: StreamExecutionEnvironment): UpdaterPipeline = {
     val incomingEventStream: DataStream[InputEvent] = incomingStreams match {
       case Nil => throw new NoSuchElementException("at least one stream is needed")
@@ -89,16 +93,22 @@ object UpdaterPipeline {
       .name("output")
       .uid("output")
 
+    val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
 
     val tripleEventStream: DataStream[ResolvedOp] = outputMutationStream
-      .map(ExtractTriplesOperation(opts.hostname, wikibaseRepositoryGenerator))
+      .flatMap(GenerateEntityDiffPatchOperation(
+        domain = opts.hostname,
+        wikibaseRepositoryGenerator = wikibaseRepositoryGenerator,
+        uniqueIdGenerator = uniqueIdGenerator,
+        clock = clock,
+        stream = outputStreamName)
+      )
       .name("ExtractTriplesOperation")
       .uid("ExtractTriplesOperation")
       .map(MeasureEventProcessingLatencyOperation(clock))
       .name("MeasureEventProcessingLatencyOperation")
       .uid("MeasureEventProcessingLatencyOperation")
 
-    val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
     new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, tripleEventStream)
   }
 }

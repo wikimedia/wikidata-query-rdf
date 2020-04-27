@@ -10,6 +10,8 @@ import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.{Histogram, MetricGroup}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+import org.wikidata.query.rdf.tool.change.events.EventsMeta
+import org.wikidata.query.rdf.tool.stream.{DiffEventData, MutationEventData, RDFDataChunk}
 
 class MeasureEventProcessingLatencyOperationUnitTest extends FlatSpec with TestFixtures with BeforeAndAfter with MockFactory with Matchers {
 
@@ -36,7 +38,10 @@ class MeasureEventProcessingLatencyOperationUnitTest extends FlatSpec with TestF
     val processingTime: Instant = instantNow.minusSeconds(secondsBeforeStartedProcessing)
     val input: FullImport = FullImport("Q1", eventTime, 1, processingTime)
 
-    eventProcessingMetricsOperation.map(EntityTripleDiffs(input, Set()))
+    eventProcessingMetricsOperation.map(EntityPatchOp(input,
+      new DiffEventData(new EventsMeta(clock.instant(), "", "", "", ""),
+        "", 0, clock.instant(), 0, 1, MutationEventData.DIFF_OPERATION, new RDFDataChunk("", ""),
+        new RDFDataChunk("", ""), new RDFDataChunk("", ""), new RDFDataChunk("", ""))))
 
     val eventTimeHisto: Array[Long] = eventTimeHistogram.getStatistics.getValues
     eventTimeHisto should have length 1
@@ -46,5 +51,4 @@ class MeasureEventProcessingLatencyOperationUnitTest extends FlatSpec with TestF
     processingTimeHisto should have length 1
     processingTimeHisto(0) shouldBe TimeUnit.SECONDS.toMillis(secondsBeforeStartedProcessing)
   }
-
 }

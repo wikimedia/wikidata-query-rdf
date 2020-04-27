@@ -10,7 +10,6 @@ import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.watermark.Watermark
-
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
 
@@ -80,7 +79,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       // (does not affect the ordering but ensure that we can detect the late event
       Some(1), Some(1))
 
-    val graph = UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, 60000), List(source), _ => repository, clock)
+    val graph = UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, 60000), List(source), _ => repository, clock = clock)
       .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
       .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))
       .saveTo(new CollectSink[ResolvedOp](CollectSink.values.append(_)))
@@ -91,13 +90,10 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     CollectSink.spuriousRevEvents should contain only IgnoredMutation("Q1", instant(3), 2, Rev("Q1", instant(3), 2, instantNow), instantNow)
     //only change is the revision, lastmodified are identical
 
-    CollectSink.values should contain theSameElementsInOrderAs Vector(
-        EntityTripleDiffs(Diff("Q1", instant(3), 3, 2, instantNow), Set(revisionStatement("Q1", 3L).entityNS),
-          Set(revisionStatement("Q1", 2L).entityNS)),
-      EntityTripleDiffs(Diff("Q2", instant(3), 8, 4, instantNow), Set(revisionStatement("Q2", 8L).entityNS),
-        Set(revisionStatement("Q2", 4L).entityNS)),
-      EntityTripleDiffs(Diff("Q3", instant(3), 101013, 101010, instantNow), Set(revisionStatement("Q3", 101013L).entityNS),
-        Set(revisionStatement("Q3", 101010L).entityNS))
+    CollectSink.values map {_.operation} should contain theSameElementsInOrderAs Vector(
+      Diff("Q1", instant(3), 3, 2, instantNow),
+      Diff("Q2", instant(3), 8, 4, instantNow),
+      Diff("Q3", instant(3), 101013, 101010, instantNow)
     )
   }
 

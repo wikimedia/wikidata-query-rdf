@@ -49,8 +49,9 @@ object UpdaterJob {
     env.setStateBackend(UpdaterStateConfiguration.newStateBackend(checkpointDir))
     env.enableCheckpointing(2*60*1000) // checkpoint every 2mins, checkpoint timeout is 10m by default
     env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
-    UpdaterPipeline.build(pipelineOptions, buildIncomingStreams(pipelineInputEventStreamOptions, pipelineOptions),
-      rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup), DEFAULT_CLOCK)
+    UpdaterPipeline.build(pipelineOptions, buildIncomingStreams(pipelineInputEventStreamOptions, pipelineOptions, DEFAULT_CLOCK),
+      rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup),
+      clock = DEFAULT_CLOCK)
       .saveLateEventsTo(prepareFileDebugSink(lateEventsDir))
       .saveSpuriousEventsTo(prepareFileDebugSink(spuriousEventsDir))
       .saveTo(prepareFileDebugSink(entityTriplesDir))
@@ -58,7 +59,7 @@ object UpdaterJob {
   }
 
   private def buildIncomingStreams(ievops: UpdaterPipelineInputEventStreamOptions,
-                           opts: UpdaterPipelineOptions)
+                           opts: UpdaterPipelineOptions, clock: Clock)
                           (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
     List(
       IncomingStreams.fromKafka(
@@ -66,7 +67,7 @@ object UpdaterJob {
         opts.hostname,
         IncomingStreams.REV_CREATE_CONV,
         ievops.maxLateness,
-        DEFAULT_CLOCK
+        clock
       )
     )
   }
