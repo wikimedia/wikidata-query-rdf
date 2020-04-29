@@ -53,7 +53,11 @@
 
     <scm>
         <connection>scm:git:https://gerrit.wikimedia.org/r/wikidata/query/rdf</connection>
-        <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikidata/query/rdf</developerConnection>
+        <!--
+            We point to an user property to make it possible to override the remote
+            SCM in CI. Namely CI pushes over https when developers typically use ssh.
+        -->
+        <developerConnection>${developerConnection}</developerConnection>
         <tag>parent-0.3.4</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/wikidata/query/rdf</url>
     </scm>
@@ -65,6 +69,8 @@
 
     <properties>
         <blazegraph.version>2.1.6-wmf.1</blazegraph.version>
+
+        <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikidata/query/rdf</developerConnection>
 
         <flink.version>1.10.0</flink.version>
         <hadoop.version>2.6.0-cdh5.15.0</hadoop.version>
