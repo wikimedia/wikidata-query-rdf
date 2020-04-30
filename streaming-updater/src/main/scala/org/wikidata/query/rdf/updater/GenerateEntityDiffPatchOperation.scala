@@ -9,6 +9,8 @@ import java.util.UUID
 import scala.collection.JavaConverters._
 
 import org.apache.flink.api.common.functions.{RichFlatMapFunction, RuntimeContext}
+import org.apache.flink.streaming.api.functions.ProcessFunction
+import org.apache.flink.streaming.api.scala.{OutputTag, _}
 import org.apache.flink.util.Collector
 import org.openrdf.model.Statement
 import org.openrdf.rio.{RDFFormat, RDFWriterRegistry}
@@ -25,7 +27,7 @@ sealed trait ResolvedOp {
 
 case class EntityPatchOp(operation: MutationOperation,
                          data: MutationEventData) extends ResolvedOp
-case class FailedOp(operation: MutationOperation) extends ResolvedOp
+case class FailedOp(operation: MutationOperation, error: String) extends ResolvedOp
 
 case class GenerateEntityDiffPatchOperation(domain: String,
                                             wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
@@ -36,6 +38,7 @@ case class GenerateEntityDiffPatchOperation(domain: String,
                                             stream: String = "wdqs_streaming_updater"
                                   )
   extends RichFlatMapFunction[MutationOperation, ResolvedOp] {
+
 
   private val LOG = LoggerFactory.getLogger(getClass)
 
@@ -65,7 +68,7 @@ case class GenerateEntityDiffPatchOperation(domain: String,
   } catch {
     case exception: ContainedException => {
       LOG.error(s"Exception thrown for op: $op", exception)
-      collector.collect(FailedOp(op))
+      collector.collect(FailedOp(op, exception.toString))
     }
   }
 
@@ -86,4 +89,22 @@ case class GenerateEntityDiffPatchOperation(domain: String,
 
     diff.diff(emptyList(), toList)
   }
+}
+
+sealed class RouteFailedOpsToSideOutput(ignoredEventTag: OutputTag[FailedOp] = RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
+  extends ProcessFunction[ResolvedOp, EntityPatchOp]
+{
+  override def processElement(i: ResolvedOp,
+                              context: ProcessFunction[ResolvedOp, EntityPatchOp]#Context,
+                              collector: Collector[EntityPatchOp]
+                             ): Unit = {
+    i match {
+      case e: FailedOp => context.output(ignoredEventTag, e)
+      case x: EntityPatchOp => collector.collect(x)
+    }
+  }
+}
+
+object RouteFailedOpsToSideOutput {
+  val FAILED_OPS_TAG: OutputTag[FailedOp] = new OutputTag[FailedOp]("failed-ops-events")
 }
