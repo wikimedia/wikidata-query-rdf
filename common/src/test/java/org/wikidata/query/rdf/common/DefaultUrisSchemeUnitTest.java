@@ -72,4 +72,9 @@ public class DefaultUrisSchemeUnitTest {
         assertThat(uris.entityInitials()).containsExactly("P", "Q");
     }
 
+    @Test
+    public void testBNodeSkolemIRIPrefix() throws URISyntaxException {
+        UrisScheme uris = new DefaultUrisScheme(new URI("http://acme2.test"), WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
+        assertThat(uris.wellKnownBNodeIRIPrefix()).isEqualTo("http://acme2.test/.well-known/genid/");
+    }
 }

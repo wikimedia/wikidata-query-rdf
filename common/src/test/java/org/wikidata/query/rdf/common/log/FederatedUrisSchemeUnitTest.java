@@ -74,4 +74,8 @@ public class FederatedUrisSchemeUnitTest {
         assertThat(uris.entityInitials()).contains("Q", "P", "M");
     }
 
+    @Test
+    public void testSomeValuePrefix() {
+        assertThat(uris.wellKnownBNodeIRIPrefix()).isEqualTo("http://acme.commons/.well-known/genid/");
+    }
 }

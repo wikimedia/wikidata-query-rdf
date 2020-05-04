@@ -403,6 +403,60 @@ public class MungerUnitTest {
     }
 
     @Test
+    public void testSkolemisation() {
+        String statementUri = uris.statement() + "q1-someuuid";
+        String valueUri = uris.value() + "someotheruuid";
+        String refUri = uris.reference() + "somerefuid";
+        String valueNormUri = uris.value() + "normalizedvalue";
+        entity("Q1")
+                .withBlankNodeSkolemization()
+                .retain(statement("Q1", "P580", statementUri), //
+                        statement(statementUri, uris.property(PropertyType.STATEMENT) + "P580", new IntegerLiteralImpl(BigInteger.valueOf(123))),
+                        statement(statementUri, uris.property(PropertyType.STATEMENT_VALUE) + "P580", valueUri),
+                        statement(valueUri, Ontology.Quantity.AMOUNT, new IntegerLiteralImpl(BigInteger.valueOf(123))),
+                        statement(valueUri, Ontology.Quantity.UNIT, "Q12345"),
+                        statement(valueUri, Ontology.Quantity.NORMALIZED, valueNormUri),
+                        statement(valueUri, RDF.TYPE, Ontology.Quantity.TYPE),
+                        statement(valueNormUri, Ontology.Quantity.AMOUNT, new IntegerLiteralImpl(BigInteger.valueOf(456))),
+                        statement(valueNormUri, Ontology.Quantity.UNIT, "Q4567"),
+                        statement(valueNormUri, Ontology.Quantity.NORMALIZED, valueNormUri)
+                )
+                .transform(
+                        statement(statementUri, uris.property(PropertyType.STATEMENT) + "P581", new BNodeImpl("bnode_uid1")),
+                        statement(statementUri, uris.property(PropertyType.STATEMENT) + "P581", uris.wellKnownBNodeIRIPrefix() + "bnode_uid1")
+                )
+                .transform(
+                        statement("Q1", uris.property(PropertyType.DIRECT) + "P581", new BNodeImpl("bnode_uid2")),
+                        statement("Q1", uris.property(PropertyType.DIRECT) + "P581", uris.wellKnownBNodeIRIPrefix() + "bnode_uid2")
+                )
+                .transform(
+                        statement("Q1", uris.property(PropertyType.DIRECT_NORMALIZED) + "P581", new BNodeImpl("bnode_uid3")),
+                        statement("Q1", uris.property(PropertyType.DIRECT_NORMALIZED) + "P581", uris.wellKnownBNodeIRIPrefix() + "bnode_uid3")
+                )
+                .retain(statement(statementUri, Provenance.WAS_DERIVED_FROM, refUri))
+                .transform(
+                        statement(refUri, uris.reference() + "P5", new BNodeImpl("bnode_uid4")),
+                        statement(refUri, uris.reference() + "P5", uris.wellKnownBNodeIRIPrefix() + "bnode_uid4"))
+                .remove(statement(statementUri, RDF.TYPE, Ontology.STATEMENT))
+                .testWithoutShuffle();
+    }
+
+    @Test
+    public void propertyDefsWithBNodeSkelomization() {
+        entity("P1234")
+                .withBlankNodeSkolemization()
+                .retain(statement(uris.property(PropertyType.DIRECT) + "P1234", RDF.TYPE, OWL.OBJECTPROPERTY))
+                .retain(statement(uris.property(PropertyType.CLAIM) + "P1234", RDF.TYPE, OWL.DATATYPEPROPERTY))
+                .retain(statement(uris.property(PropertyType.NOVALUE) + "P1234", RDF.TYPE, OWL.CLASS))
+                .transform(
+                        statement(uris.property(PropertyType.NOVALUE) + "P1234", OWL.COMPLEMENTOF.toString(), new BNodeImpl("genid1")),
+                        statement(uris.property(PropertyType.NOVALUE) + "P1234", OWL.COMPLEMENTOF.toString(), uris.wellKnownBNodeIRIPrefix() + "genid1")
+                )
+                .remove(statement(uris.property(PropertyType.CLAIM) + "P1234", SchemaDotOrg.ABOUT, new LiteralImpl("deleteme", "en")))
+                .test();
+    }
+
+    @Test
     public void returnChange() {
         List<Statement> statements = StatementHelper.basicEntity(uris, "Q1234", "100", "2015-04-02T10:54:56Z");
         Munger munger = Munger.builder(uris).build();
@@ -442,6 +496,17 @@ public class MungerUnitTest {
             this.id = id;
             mungerBuilder = Munger.builder(uris);
             statements = StatementHelper.basicEntity(uris, id, "1234", "2019-01-13T09:06:53Z");
+        }
+
+        private Mungekin withBlankNodeSkolemization() {
+            mungerBuilder.convertBNodesToSkolemIRIs(true);
+            return this;
+        }
+
+        private Mungekin transform(Statement input, Statement output) {
+            statements.add(input);
+            toRetain.add(output);
+            return this;
         }
 
         private Mungekin retain(Statement... xs) {

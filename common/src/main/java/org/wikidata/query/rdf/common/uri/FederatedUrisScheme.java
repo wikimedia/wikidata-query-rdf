@@ -142,6 +142,11 @@ public class FederatedUrisScheme implements UrisScheme {
     }
 
     @Override
+    public String wellKnownBNodeIRIPrefix() {
+        return mainUris.wellKnownBNodeIRIPrefix();
+    }
+
+    @Override
     public boolean supportsUri(String uri) {
         return mainUris.supportsUri(uri) || federatedUris.supportsUri(uri);
     }
