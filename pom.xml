@@ -5,11 +5,11 @@
         <groupId>org.wikimedia.discovery</groupId>
         <artifactId>discovery-parent-pom</artifactId>
         <version>1.37</version>
-        <relativePath />
+        <relativePath></relativePath>
     </parent>
     <groupId>org.wikidata.query.rdf</groupId>
     <artifactId>query-service-parent</artifactId>
-    <version>0.3.24-SNAPSHOT</version>
+    <version>0.3.24</version>
     <packaging>pom</packaging>
 
     <name>Wikidata Query Service</name>
@@ -58,7 +58,7 @@
             SCM in CI. Namely CI pushes over https when developers typically use ssh.
         -->
         <developerConnection>${developerConnection}</developerConnection>
-        <tag>parent-0.3.4</tag>
+        <tag>query-service-parent-0.3.24</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/wikidata/query/rdf</url>
     </scm>
 
@@ -1108,7 +1108,7 @@
                                                 </goals>
                                             </pluginExecutionFilter>
                                             <action>
-                                                <ignore />
+                                                <ignore></ignore>
                                             </action>
                                         </pluginExecution>
                                         <pluginExecution>
@@ -1122,7 +1122,7 @@
                                                 </goals>
                                             </pluginExecutionFilter>
                                             <action>
-                                                <ignore />
+                                                <ignore></ignore>
                                             </action>
                                         </pluginExecution>
                                     </pluginExecutions>
