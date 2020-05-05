@@ -25,6 +25,11 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 public class DecodeUriBOp extends IVValueExpression<IV> implements INeedsMaterialization {
 
+    @SuppressFBWarnings(
+                value = "IMC_IMMATURE_CLASS_BAD_SERIALVERSIONUID",
+                justification = "We need to keep serialVersionUID for blazegraph correctness sake.")
+    private static final long serialVersionUID = -8448763718374010166L;
+
     public DecodeUriBOp(final IValueExpression<? extends IV> x,
             final GlobalAnnotations globals) {
         super(x, globals);

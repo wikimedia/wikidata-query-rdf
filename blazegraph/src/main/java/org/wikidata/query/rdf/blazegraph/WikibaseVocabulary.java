@@ -22,6 +22,8 @@ import org.wikidata.query.rdf.common.uri.PropertyType;
 import com.bigdata.rdf.vocab.DefaultBigdataVocabulary;
 import com.bigdata.rdf.vocab.core.BigdataCoreVocabulary_v20160317;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Versioned vocabulary classes for wikibase. All classes need a namespace and a
  * default constructor or Blazegraph blows up on them.
@@ -81,6 +83,12 @@ public class WikibaseVocabulary {
      * Inherits different vocabulary and adds geospatial types.
      */
     public static class V002 extends BigdataCoreVocabulary_v20160317 {
+
+        @SuppressWarnings("unused")
+        @SuppressFBWarnings(
+                value = "IMC_IMMATURE_CLASS_BAD_SERIALVERSIONUID",
+                justification = "We need to keep serialVersionUID for blazegraph correctness sake.")
+        private static final long serialVersionUID = -1324123255255667253L;
 
         public V002() {
         }

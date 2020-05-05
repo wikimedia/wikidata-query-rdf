@@ -20,10 +20,20 @@ import com.bigdata.rdf.internal.gis.CoordinateDD;
 import com.bigdata.rdf.model.BigdataLiteral;
 import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Get NE or SW corners of the box, given two arbitrary diagonal corners.
  */
 public class WikibaseCornerBOp extends IVValueExpression<IV> implements INeedsMaterialization {
+
+    /**
+     *
+     */
+    @SuppressFBWarnings(
+                value = "IMC_IMMATURE_CLASS_BAD_SERIALVERSIONUID",
+                justification = "We need to keep serialVersionUID for blazegraph correctness sake.")
+    private static final long serialVersionUID = -811348263515935773L;
 
     /**
      * Corners supported by this op.

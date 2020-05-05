@@ -18,6 +18,7 @@ import com.bigdata.rdf.spo.SPOFilter;
 import com.bigdata.rdf.store.AbstractTripleStore;
 import com.bigdata.relation.accesspath.IAccessPath;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 /**
  * A Blazegraph-based data source.
  *
@@ -185,6 +186,10 @@ public class BlazegraphBasedTPFRequestProcessor extends
      * Filter based on variables.
      */
     public static class VariablesBasedFilter extends SPOFilter<ISPO> {
+        @SuppressFBWarnings(
+                value = "IMC_IMMATURE_CLASS_BAD_SERIALVERSIONUID",
+                justification = "We need to keep serialVersionUID for blazegraph correctness sake.")
+        private static final long serialVersionUID = 6979067019748992496L;
 
         /**
          * Check subject.

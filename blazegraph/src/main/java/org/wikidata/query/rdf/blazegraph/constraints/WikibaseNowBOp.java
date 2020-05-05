@@ -16,10 +16,16 @@ import com.bigdata.rdf.internal.constraints.INeedsMaterialization;
 import com.bigdata.rdf.internal.constraints.IVValueExpression;
 import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 /**
  * Implements the now() operator.
  */
 public class WikibaseNowBOp extends IVValueExpression<IV> implements INeedsMaterialization {
+
+    @SuppressFBWarnings(
+                value = "IMC_IMMATURE_CLASS_BAD_SERIALVERSIONUID",
+                justification = "We need to keep serialVersionUID for blazegraph correctness sake.")
+    private static final long serialVersionUID = 9136864442064392445L;
 
     public WikibaseNowBOp(final GlobalAnnotations globals) {
 

@@ -21,6 +21,8 @@ import com.bigdata.rdf.internal.impl.literal.XSDIntegerIV;
 import com.bigdata.rdf.model.BigdataLiteral;
 import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * A date expression involving a left IValueExpression operand.
  * The operation to be applied to the operands is specified by the {@link Annotations}
@@ -29,6 +31,14 @@ import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
  * We are not extending com.bigdata.rdf.internal.constraints since get() is final there.
  */
 public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMaterialization {
+
+    /**
+     *
+     */
+    @SuppressFBWarnings(
+                value = "IMC_IMMATURE_CLASS_BAD_SERIALVERSIONUID",
+                justification = "We need to keep serialVersionUID for blazegraph correctness sake.")
+    private static final long serialVersionUID = 9136864442064392445L;
 
     /**
      * Backup DateBOp for dates that aren't ours.

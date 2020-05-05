@@ -15,6 +15,8 @@ import com.bigdata.rdf.sparql.ast.DummyConstantNode;
 import com.bigdata.service.geospatial.GeoSpatialSearchException;
 import com.bigdata.service.geospatial.IGeoSpatialLiteralSerializer;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Serializer class for WKT format.
  * See https://portal.opengeospatial.org/files/?artifact_id=47664
@@ -24,6 +26,14 @@ import com.bigdata.service.geospatial.IGeoSpatialLiteralSerializer;
  */
 @SuppressWarnings("rawtypes")
 public class WKTSerializer implements IGeoSpatialLiteralSerializer {
+
+    /**
+     * Serializer ID.
+     */
+    @SuppressFBWarnings(
+                value = "IMC_IMMATURE_CLASS_BAD_SERIALVERSIONUID",
+                justification = "We need to keep serialVersionUID for blazegraph correctness sake.")
+    private static final long serialVersionUID = -8893919944620967416L;
 
     /**
      * Prefix for globe URIs.

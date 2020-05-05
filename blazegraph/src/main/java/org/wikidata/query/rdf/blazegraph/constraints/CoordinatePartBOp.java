@@ -16,10 +16,20 @@ import com.bigdata.rdf.internal.constraints.IVValueExpression;
 import com.bigdata.rdf.model.BigdataValue;
 import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Get parts of coordinate.
  */
 public class CoordinatePartBOp extends IVValueExpression<IV> implements INeedsMaterialization {
+
+    /**
+     *
+     */
+    @SuppressFBWarnings(
+                value = "IMC_IMMATURE_CLASS_BAD_SERIALVERSIONUID",
+                justification = "We need to keep serialVersionUID for blazegraph correctness sake.")
+    private static final long serialVersionUID = -81134263515935773L;
 
     /**
      * Parts supported by this op.

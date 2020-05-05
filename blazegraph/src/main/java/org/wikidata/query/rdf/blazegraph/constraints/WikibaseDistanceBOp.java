@@ -26,6 +26,14 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 public class WikibaseDistanceBOp extends IVValueExpression<IV> implements INeedsMaterialization {
 
     /**
+     *
+     */
+    @SuppressFBWarnings(
+                value = "IMC_IMMATURE_CLASS_BAD_SERIALVERSIONUID",
+                justification = "We need to keep serialVersionUID for blazegraph correctness sake.")
+    private static final long serialVersionUID = 2909300288279424402L;
+
+    /**
      * Required shallow copy constructor.
      */
     public WikibaseDistanceBOp(final BOp[] args,
