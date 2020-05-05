@@ -7,7 +7,7 @@
   <baseDirectory>${project.artifactId}-${pom.version}</baseDirectory>
 
   <formats>
-    <format>zip</format>
+    <format>tar.gz</format>
   </formats>
 
   <fileSets>
