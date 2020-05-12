@@ -13,6 +13,7 @@ import com.bigdata.bop.BOpContextBase;
 import com.bigdata.bop.IValueExpression;
 import com.bigdata.rdf.internal.IV;
 import com.bigdata.rdf.internal.constraints.IsBNodeBOp;
+import com.bigdata.rdf.lexicon.LexiconRelation;
 import com.bigdata.rdf.sparql.ast.FunctionRegistry;
 import com.bigdata.rdf.sparql.ast.GlobalAnnotations;
 import com.bigdata.rdf.sparql.ast.ValueExpressionNode;
@@ -39,7 +40,14 @@ public class IsSomeValueFunctionFactory implements FunctionRegistry.Factory {
         if (mode == SomeValueMode.Blank) {
             return new IsBNodeBOp(ve);
         } else {
-            return new URIPrefixBOp(new BOp[]{ve}, skolemURIPrefix);
+            String namespace = globals.lex;
+            long timestamp = globals.timestamp;
+            LexiconRelation lex = (LexiconRelation)context.getResource(namespace, timestamp);
+            IV vocabPrefix = lex.getContainer().getVocabulary().get(lex.getValueFactory().createURI(skolemURIPrefix));
+            if (vocabPrefix == null) {
+                throw new IllegalStateException("[" + skolemURIPrefix + "] must be part of the vocabulary");
+            }
+            return new InlineVocabEqBOp(new BOp[]{ve}, vocabPrefix);
         }
     }
 

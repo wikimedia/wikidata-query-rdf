@@ -4,8 +4,8 @@ import org.wikidata.query.rdf.blazegraph.inline.uri.InlineFixedWidthHexIntegerUR
 import org.wikidata.query.rdf.blazegraph.inline.uri.UndecoratedUuidInlineUriHandler;
 import org.wikidata.query.rdf.common.uri.CommonValues;
 import org.wikidata.query.rdf.common.uri.PropertyType;
-import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 
 import com.bigdata.rdf.internal.InlineURIFactory;
 import com.bigdata.rdf.internal.InlineURIHandler;
@@ -87,5 +87,13 @@ public class WikibaseInlineUriFactory extends InlineURIFactory {
             // Entrez Gene ID
             addHandler(new InlineUnsignedIntegerURIHandler(CommonValues.GENEID));
         }
+    }
+
+    public static class V002 extends V001 {
+        public V002() {
+            super();
+            addHandler(new UndecoratedUuidInlineUriHandler(uris.wellKnownBNodeIRIPrefix()));
+        }
+
     }
 }

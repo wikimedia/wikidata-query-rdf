@@ -10,16 +10,19 @@ import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 import org.wikidata.query.rdf.blazegraph.constraints.IsSomeValueFunctionFactory;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 
 import com.bigdata.rdf.model.BigdataURI;
 import com.bigdata.rdf.sparql.ast.FunctionRegistry;
 
 public class IsSomeValueUnitTest extends AbstractBlazegraphTestBase {
-    public static final String SKOLEM_URI_PREFIX = "http://unittest.local/bnode_skolem#";
     public static final java.util.function.BiConsumer<org.openrdf.model.URI, FunctionRegistry.Factory> REPLACE_FUNC_IN_GLOBAL_REGISTRY = (u, f) -> {
         FunctionRegistry.remove(u);
         FunctionRegistry.add(u, f);
     };
+
+    public static final UrisScheme scheme = UrisSchemeFactory.getURISystem();
 
     @AfterClass
     public static void after() {
@@ -37,7 +40,7 @@ public class IsSomeValueUnitTest extends AbstractBlazegraphTestBase {
     static void switchToSkolem() {
         WikibaseContextListener.registerIsSomeValueFunction(
                 REPLACE_FUNC_IN_GLOBAL_REGISTRY,
-                IsSomeValueFunctionFactory.SomeValueMode.Skolem, SKOLEM_URI_PREFIX);
+                IsSomeValueFunctionFactory.SomeValueMode.Skolem, scheme.wellKnownBNodeIRIPrefix());
     }
 
     @Test
@@ -65,12 +68,22 @@ public class IsSomeValueUnitTest extends AbstractBlazegraphTestBase {
     public void testReturnTrueOnSkolemPrefix() throws QueryEvaluationException {
         switchToSkolem();
         BigdataURI uri = store().getValueFactory().createURI("http://unittest.local/testReturnTrueOnSkolemPrefix");
-        BigdataURI skolem = store().getValueFactory().createURI(SKOLEM_URI_PREFIX + "mybnode");
+        BigdataURI skolem = store().getValueFactory().createURI(scheme.wellKnownBNodeIRIPrefix(), "91212dc3fcc8b65607d27f92b36e5761");
         add(uri, uri, skolem);
         TupleQueryResult tqr = query("select ?s where { ?s <" + uri + "> ?o FILTER wikibase:isSomeValue(?o) }");
         assertThat(tqr.hasNext()).isTrue();
         BindingSet result = tqr.next();
         assertThat(result).matches((e) -> binds("s", uri).matches(e));
+    }
+
+    @Test
+    public void testReturnFalseOnInlinedURI() throws QueryEvaluationException {
+        switchToSkolem();
+        BigdataURI uri = store().getValueFactory().createURI("http://unittest.local/testReturnTrueOnSkolemPrefix");
+        BigdataURI skolem = store().getValueFactory().createURI(scheme.value(), "91212dc3fcc8b65607d27f92b36e5761");
+        add(uri, uri, skolem);
+        TupleQueryResult tqr = query("select ?s where { ?s <" + uri + "> ?o FILTER wikibase:isSomeValue(?o) }");
+        assertThat(tqr.hasNext()).isFalse();
     }
 
     @Test

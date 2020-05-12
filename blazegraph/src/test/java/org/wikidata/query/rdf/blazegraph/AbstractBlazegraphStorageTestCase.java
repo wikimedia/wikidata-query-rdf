@@ -73,12 +73,13 @@ public class AbstractBlazegraphStorageTestCase {
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.vocabularyClass",
                 WikibaseVocabulary.VOCABULARY_CLASS.getName());
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.inlineURIFactory",
-                WikibaseInlineUriFactory.V001.class.getName());
+                WikibaseInlineUriFactory.V002.class.getName());
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.extensionFactoryClass",
                 WikibaseExtensionFactory.class.getName());
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.geoSpatial", "true");
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.geoSpatialIncludeBuiltinDatatypes",  "false");
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.geoSpatialDefaultDatatype", "http://www.opengis.net/ont/geosparql#wktLiteral");
+
         properties.setProperty("com.bigdata.rdf.store.AbstractTripleStore.geoSpatialDatatypeConfig.0",
                 "{\"config\": "
                         + "{ \"uri\": \"" + GeoSparql.WKT_LITERAL + "\", "
