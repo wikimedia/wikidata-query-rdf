@@ -1,0 +1,3 @@
+DELETE DATA {
+%deleteStatements%
+};

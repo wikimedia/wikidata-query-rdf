@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
 import org.wikidata.query.rdf.common.uri.{UrisScheme, UrisSchemeFactory}
 import org.wikidata.query.rdf.tool.change.events.EventsMeta
 import org.wikidata.query.rdf.tool.exception.ContainedException
-import org.wikidata.query.rdf.tool.rdf.{EntityDiff, Munger}
+import org.wikidata.query.rdf.tool.rdf.{EntityDiff, Munger, RDFPatch}
 import org.wikidata.query.rdf.tool.stream.{MutationEventData, MutationEventDataGenerator, RDFChunkSerializer}
 
 sealed trait ResolvedOp {
@@ -72,7 +72,7 @@ case class GenerateEntityDiffPatchOperation(domain: String,
     }
   }
 
-  def diff(item: String, from: Iterable[Statement], to: Iterable[Statement]): EntityDiff.Patch = {
+  def diff(item: String, from: Iterable[Statement], to: Iterable[Statement]): RDFPatch = {
     val fromList = new util.ArrayList[Statement](from.asJavaCollection)
     val toList = new util.ArrayList[Statement](to.asJavaCollection)
 
@@ -82,7 +82,7 @@ case class GenerateEntityDiffPatchOperation(domain: String,
     diff.diff(fromList, toList)
   }
 
-  def fullImport(item: String, stmts: Iterable[Statement]): EntityDiff.Patch = {
+  def fullImport(item: String, stmts: Iterable[Statement]): RDFPatch = {
     val toList = new util.ArrayList[Statement](stmts.asJavaCollection)
 
     munger.munge(item, toList)
