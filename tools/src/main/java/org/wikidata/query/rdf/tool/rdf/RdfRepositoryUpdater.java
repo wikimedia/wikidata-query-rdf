@@ -1,11 +1,18 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import static java.lang.Integer.parseInt;
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+
 import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 
 import lombok.SneakyThrows;
 
 public class RdfRepositoryUpdater {
+    private static final String TIMEOUT_PROPERTY = RdfRepositoryUpdater.class + ".timeout";
+
     private final RdfClient client;
 
     private static final String INSERT_DATA = loadBody("insertData");
@@ -48,6 +55,11 @@ public class RdfRepositoryUpdater {
         }
 
         return new RDFPatchResult(expectedMutations, actualMutations, expectedSharedEltMutations, actualSharedEltMutations);
+    }
+
+    public static Duration getRdfClientTimeout() {
+        int timeout = parseInt(System.getProperty(TIMEOUT_PROPERTY, "-1"));
+        return Duration.of(timeout, ChronoUnit.SECONDS);
     }
 
     @SneakyThrows

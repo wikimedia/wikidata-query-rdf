@@ -14,6 +14,12 @@ public class StreamingUpdater implements Runnable {
 
     public void run() {
         try {
+            // Use a custom flag instead of the interrupt flag because we want
+            // to maximize our chances to properly cleanup our resources:
+            // mainly close and commit pending kafka offsets and limit dup delivery
+            // on restarts.
+            // using interrupt() might mark some of the underlying IO resources
+            // as unavailable preventing offsets to be committed.
             while (!stop) {
                 StreamConsumer.Batch b = consumer.poll(100);
                 if (b == null) {

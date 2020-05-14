@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -56,13 +57,18 @@ public class KafkaStreamConsumer implements StreamConsumer {
     }
 
     public static KafkaStreamConsumer build(String brokers, String topic, int partition, String consumerId, int maxBatchLength, RDFChunkDeserializer deser,
-                                            BiConsumer<Consumer<String, MutationEventData>, TopicPartition> offsetReset) {
+                                            @Nullable BiConsumer<Consumer<String, MutationEventData>, TopicPartition> offsetReset) {
         Map<String, Object> props = new HashMap<>();
         props.put("bootstrap.servers", brokers);
         props.put("group.id", consumerId);
         props.put("max.poll.interval.ms", "600000");
         props.put("enable.auto.commit", "false");
         props.put("max.poll.records", SOFT_BUFFER_CAP);
+        if (offsetReset == null) {
+            props.put("auto.offset.reset", "earliest");
+        } else {
+            props.put("auto.offset.reset", "none");
+        }
         props.put("max.partition.fetch.bytes", 10*120*1024); // 10 very large messages (120k)
         KafkaConsumer<String, MutationEventData> consumer = new KafkaConsumer<>(props,
                 new StringDeserializer(),
@@ -75,6 +81,9 @@ public class KafkaStreamConsumer implements StreamConsumer {
             // If it was a group of consumers like it's usually the case this strategy would make no sense.
             consumer.position(topicPartition);
         } catch (InvalidOffsetException ioe) {
+            if (offsetReset == null) {
+                throw new IllegalStateException("Failed to find earliest offsets for [" + topicPartition + "]", ioe);
+            }
             offsetReset.accept(consumer, topicPartition);
         }
         return new KafkaStreamConsumer(consumer, topicPartition, deser, maxBatchLength);
