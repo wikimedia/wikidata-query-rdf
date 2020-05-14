@@ -134,11 +134,11 @@ public class FederatedUrisScheme implements UrisScheme {
 
     @Override
     public String property(PropertyType p) {
-        return mainUris.property(p);
+        return federatedUris.property(p);
     }
 
     public String property(String suffix) {
-        return mainUris.property(suffix);
+        return federatedUris.property(suffix);
     }
 
     @Override
