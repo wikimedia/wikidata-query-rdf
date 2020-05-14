@@ -44,6 +44,8 @@ import org.wikidata.query.rdf.tool.change.events.EventsMeta;
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
 import org.wikidata.query.rdf.tool.rdf.RDFPatch;
 
+import com.codahale.metrics.MetricRegistry;
+
 @RunWith(MockitoJUnitRunner.class)
 public class KafkaStreamConsumerUnitTest {
     private static final String TEST_DOMAIN = "tested.unittest.local";
@@ -90,12 +92,13 @@ public class KafkaStreamConsumerUnitTest {
     public void test_poll_accumulates_records_into_a_rdfpatch() {
         TopicPartition topicPartition = new TopicPartition("test", 0);
 
+        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 10,
+                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
         List<ConsumerRecord<String, MutationEventData>> allRecords = recordsList();
         when(consumer.poll(anyLong())).thenReturn(
             new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(0, 2))),
             new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(2, allRecords.size()))),
             new ConsumerRecords<>(emptyMap()));
-        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 10);
 
         while (true) {
             StreamConsumer.Batch b = streamConsumer.poll(100);
@@ -134,7 +137,8 @@ public class KafkaStreamConsumerUnitTest {
                 new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(KafkaStreamConsumer.SOFT_BUFFER_CAP / 2, allRecords.size()))),
                 new ConsumerRecords<>(emptyMap()));
 
-        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 10);
+        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 10,
+                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
         StreamConsumer.Batch b = streamConsumer.poll(100);
         assertThat(b).isNotNull();
         RDFPatch patch = b.getPatch();
@@ -160,7 +164,8 @@ public class KafkaStreamConsumerUnitTest {
                 new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(KafkaStreamConsumer.SOFT_BUFFER_CAP, allRecords.size()))),
                 new ConsumerRecords<>(emptyMap()));
 
-        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 10);
+        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 10,
+                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
         StreamConsumer.Batch b = streamConsumer.poll(100);
         assertThat(b).isNotNull();
         RDFPatch patch = b.getPatch();
@@ -197,7 +202,8 @@ public class KafkaStreamConsumerUnitTest {
 
         ArgumentCaptor<OffsetCommitCallback> callback = ArgumentCaptor.forClass(OffsetCommitCallback.class);
 
-        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 1);
+        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 1,
+                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
         StreamConsumer.Batch b = streamConsumer.poll(10);
         streamConsumer.acknowledge();
         verify(consumer, times(1)).commitAsync(eq(firstOffsets), callback.capture());

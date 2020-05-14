@@ -27,6 +27,8 @@ public interface StreamingUpdateOptions extends OptionsUtils.BasicOptions {
     @Option(shortName = "u", description = "URL to post updates")
     String sparqlUrl();
 
+    @Option(longName = "metricDomain", defaultValue = "wdqs-streaming-updater", description = "JMX metrics domain")
+    String metricDomain();
 
     static URI sparqlUri(StreamingUpdateOptions options) {
         URI sparqlUri;

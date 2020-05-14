@@ -23,10 +23,13 @@ import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
 import org.wikidata.query.rdf.tool.rdf.RdfRepositoryUpdater;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.stream.KafkaStreamConsumer;
+import org.wikidata.query.rdf.tool.stream.KafkaStreamConsumerMetricsListener;
 import org.wikidata.query.rdf.tool.stream.MutationEventData;
 import org.wikidata.query.rdf.tool.stream.RDFChunkDeserializer;
 import org.wikidata.query.rdf.tool.stream.StreamingUpdater;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.jmx.JmxReporter;
 import com.github.rholder.retry.Retryer;
 
 public final class StreamingUpdate {
@@ -37,14 +40,16 @@ public final class StreamingUpdate {
     public static void main(String[] args) {
         log.info("Starting StreamingUpdater");
         StreamingUpdateOptions options = OptionsUtils.handleOptions(StreamingUpdateOptions.class, args);
-        StreamingUpdater updater = build(options);
+        MetricRegistry metrics = new MetricRegistry();
+        JmxReporter reporter = JmxReporter.forRegistry(metrics).inDomain(options.metricDomain()).build();
+        StreamingUpdater updater = build(options, metrics);
         Thread streamingUpdaterThread = Thread.currentThread();
         streamingUpdaterThread.setUncaughtExceptionHandler((t, e) -> log.error("Uncaught exception in the updater thread: ", e));
-        addShutdownHook(updater, streamingUpdaterThread);
+        addShutdownHook(updater, streamingUpdaterThread, reporter);
         updater.run();
     }
 
-    static void addShutdownHook(StreamingUpdater updater, Thread updaterThread) {
+    static void addShutdownHook(StreamingUpdater updater, Thread updaterThread, JmxReporter reporter) {
         Thread t = new Thread(() -> {
             updater.close();
             try {
@@ -55,11 +60,12 @@ public final class StreamingUpdate {
             if (updaterThread.isAlive()) {
                 log.warn("Failed to stop the streaming updater cleanly.");
             }
+            reporter.close();
         }, "StreamingUpdate shutdown");
         Runtime.getRuntime().addShutdownHook(t);
     }
 
-    static StreamingUpdater build(StreamingUpdateOptions options) {
+    static StreamingUpdater build(StreamingUpdateOptions options, MetricRegistry metrics) {
         RDFChunkDeserializer deser = new RDFChunkDeserializer(new RDFParserSuppliers(RDFParserRegistry.getInstance()));
 
         KafkaStreamConsumer consumer = KafkaStreamConsumer.build(options.brokers(),
@@ -68,13 +74,14 @@ public final class StreamingUpdate {
                 options.consumerGroup(),
                 options.batchSize(),
                 deser,
-                parseInitialOffset(options));
+                parseInitialOffset(options),
+                KafkaStreamConsumerMetricsListener.forRegistry(metrics));
 
         HttpClient httpClient = buildHttpClient(getHttpProxyHost(), getHttpProxyPort());
         Retryer<ContentResponse> retryer = buildHttpClientRetryer();
         Duration rdfClientTimeout = RdfRepositoryUpdater.getRdfClientTimeout();
         RdfClient rdfClient = new RdfClient(httpClient, StreamingUpdateOptions.sparqlUri(options), retryer, rdfClientTimeout);
-        return new StreamingUpdater(consumer, new RdfRepositoryUpdater(rdfClient));
+        return new StreamingUpdater(consumer, new RdfRepositoryUpdater(rdfClient), metrics);
     }
 
     static String RESET_OFFSETS_TO_EARLIEST = "earliest";

@@ -4,7 +4,8 @@ import org.wikidata.query.rdf.tool.rdf.RDFPatch;
 
 import lombok.Value;
 
-public interface StreamConsumer {
+public interface StreamConsumer extends AutoCloseable {
+
     Batch poll(long timeout);
 
     void acknowledge();

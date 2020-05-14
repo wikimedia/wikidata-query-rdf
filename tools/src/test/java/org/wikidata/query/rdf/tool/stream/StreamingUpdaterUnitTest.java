@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.same;
@@ -20,6 +21,8 @@ import org.wikidata.query.rdf.tool.rdf.RDFPatch;
 import org.wikidata.query.rdf.tool.rdf.RDFPatchResult;
 import org.wikidata.query.rdf.tool.rdf.RdfRepositoryUpdater;
 
+import com.codahale.metrics.MetricRegistry;
+
 @RunWith(MockitoJUnitRunner.class)
 public class StreamingUpdaterUnitTest {
     @Mock
@@ -30,7 +33,7 @@ public class StreamingUpdaterUnitTest {
     @Test
     public void test() throws InterruptedException {
         RDFPatch patch = new RDFPatch(statements(), statements(), statements(), statements());
-        RDFPatchResult rdfPatchResult = new RDFPatchResult(0, 0, 0, 0);
+        RDFPatchResult rdfPatchResult = new RDFPatchResult(2, 1, 2, 1);
         LongAdder patchApplied = new LongAdder();
         CountDownLatch countdown = new CountDownLatch(5);
         when(consumer.poll(anyLong())).thenAnswer((Answer<StreamConsumer.Batch>) invocationOnMock -> new StreamConsumer.Batch(patch));
@@ -39,7 +42,8 @@ public class StreamingUpdaterUnitTest {
             patchApplied.increment();
             return rdfPatchResult;
         });
-        StreamingUpdater updater = new StreamingUpdater(consumer, rdfRepositoryUpdater);
+        MetricRegistry registry = new MetricRegistry();
+        StreamingUpdater updater = new StreamingUpdater(consumer, rdfRepositoryUpdater, registry);
         Thread t = new Thread(updater);
         t.start();
         // Wait for five patches to be applied and stop the updater
@@ -54,5 +58,10 @@ public class StreamingUpdaterUnitTest {
         verify(consumer, times(1)).close();
         verify(rdfRepositoryUpdater, times(patchApplied.intValue())).applyPatch(same(patch));
         verify(rdfRepositoryUpdater, times(1)).close();
+
+        assertThat(registry.counter("mutations").getCount()).isEqualTo(patchApplied.intValue());
+        assertThat(registry.counter("divergences").getCount()).isEqualTo(patchApplied.intValue());
+        assertThat(registry.counter("shared-element-mutations").getCount()).isEqualTo(patchApplied.intValue());
+        assertThat(registry.counter("shared-element-redundant-mutations").getCount()).isEqualTo(patchApplied.intValue());
     }
 }

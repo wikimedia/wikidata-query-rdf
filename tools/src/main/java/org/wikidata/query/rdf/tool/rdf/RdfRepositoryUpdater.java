@@ -10,7 +10,7 @@ import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 
 import lombok.SneakyThrows;
 
-public class RdfRepositoryUpdater {
+public class RdfRepositoryUpdater implements AutoCloseable {
     private static final String TIMEOUT_PROPERTY = RdfRepositoryUpdater.class + ".timeout";
 
     private final RdfClient client;

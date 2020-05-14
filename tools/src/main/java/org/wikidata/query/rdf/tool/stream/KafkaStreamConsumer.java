@@ -37,8 +37,11 @@ public class KafkaStreamConsumer implements StreamConsumer {
     private final LinkedHashSet<ConsumerRecord<String, MutationEventData>> buffer = new LinkedHashSet<>(SOFT_BUFFER_CAP);
     private final RDFChunkDeserializer rdfDeser;
     private final int preferredBatchLength;
+    private final KafkaStreamConsumerMetricsListener metrics;
+
     private Map<TopicPartition, OffsetAndMetadata> lastPendingOffsets;
     private Map<TopicPartition, OffsetAndMetadata> lastOfferedBatchOffsets;
+    private Instant lastBatchEventTime;
 
     public static BiConsumer<Consumer<String, MutationEventData>, TopicPartition> resetToTime(Instant time) {
         return (consumer, topic) -> {
@@ -57,7 +60,8 @@ public class KafkaStreamConsumer implements StreamConsumer {
     }
 
     public static KafkaStreamConsumer build(String brokers, String topic, int partition, String consumerId, int maxBatchLength, RDFChunkDeserializer deser,
-                                            @Nullable BiConsumer<Consumer<String, MutationEventData>, TopicPartition> offsetReset) {
+                                            @Nullable BiConsumer<Consumer<String, MutationEventData>, TopicPartition> offsetReset,
+                                            KafkaStreamConsumerMetricsListener metrics) {
         Map<String, Object> props = new HashMap<>();
         props.put("bootstrap.servers", brokers);
         props.put("group.id", consumerId);
@@ -86,17 +90,18 @@ public class KafkaStreamConsumer implements StreamConsumer {
             }
             offsetReset.accept(consumer, topicPartition);
         }
-        return new KafkaStreamConsumer(consumer, topicPartition, deser, maxBatchLength);
+        return new KafkaStreamConsumer(consumer, topicPartition, deser, maxBatchLength, metrics);
     }
 
     public KafkaStreamConsumer(KafkaConsumer<String, MutationEventData> consumer, TopicPartition topicPartition,
-                               RDFChunkDeserializer rdfDeser, int preferredBatchLength) {
+                               RDFChunkDeserializer rdfDeser, int preferredBatchLength, KafkaStreamConsumerMetricsListener metrics) {
         this.consumer = consumer;
         this.topicPartition = topicPartition;
         this.rdfDeser = rdfDeser;
         if (preferredBatchLength <= 0) {
             throw new IllegalArgumentException("preferredBatchLength must be strictly positive: " + preferredBatchLength + " given");
         }
+        this.metrics = metrics;
         this.preferredBatchLength = preferredBatchLength;
     }
 
@@ -132,9 +137,12 @@ public class KafkaStreamConsumer implements StreamConsumer {
             }
             buffer.removeAll(entityChunks);
         }
+        metrics.triplesAccum(accumulator.getTotalAccumulated());
+        metrics.triplesOffered(accumulator.size());
         Map<TopicPartition, OffsetAndMetadata> offsetsAndMetadata;
         if (lastRecord != null) {
             offsetsAndMetadata = singletonMap(topicPartition, new OffsetAndMetadata(lastRecord.offset()));
+            lastBatchEventTime = lastRecord.value().getEventTime();
             lastOfferedBatchOffsets = offsetsAndMetadata;
             return new Batch(accumulator.asPatch());
         } else {
@@ -164,9 +172,11 @@ public class KafkaStreamConsumer implements StreamConsumer {
     @Override
     public void acknowledge() {
         if (lastOfferedBatchOffsets != null) {
+            metrics.lag(lastBatchEventTime);
+            lastBatchEventTime = null;
             lastPendingOffsets = lastOfferedBatchOffsets;
-            lastOfferedBatchOffsets = null;
             consumer.commitAsync(lastPendingOffsets, this::offsetCommitCallback);
+            lastOfferedBatchOffsets = null;
         }
     }
 
