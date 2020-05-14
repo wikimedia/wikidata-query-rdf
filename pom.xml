@@ -5,7 +5,7 @@
         <groupId>org.wikimedia.discovery</groupId>
         <artifactId>discovery-parent-pom</artifactId>
         <version>1.39</version>
-        <relativePath />
+        <relativePath></relativePath>
     </parent>
     <groupId>org.wikidata.query.rdf</groupId>
     <artifactId>query-service-parent</artifactId>
@@ -1114,7 +1114,7 @@
                                                 </goals>
                                             </pluginExecutionFilter>
                                             <action>
-                                                <ignore />
+                                                <ignore></ignore>
                                             </action>
                                         </pluginExecution>
                                         <pluginExecution>
@@ -1128,7 +1128,7 @@
                                                 </goals>
                                             </pluginExecutionFilter>
                                             <action>
-                                                <ignore />
+                                                <ignore></ignore>
                                             </action>
                                         </pluginExecution>
                                     </pluginExecutions>
