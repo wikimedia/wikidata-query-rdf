@@ -15,6 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.wikidata.query.rdf.common.uri.FederatedUrisScheme;
 import org.wikidata.query.rdf.common.uri.DefaultUrisScheme;
+import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 public class FederatedUrisSchemeUnitTest {
@@ -77,5 +78,11 @@ public class FederatedUrisSchemeUnitTest {
     @Test
     public void testSomeValuePrefix() {
         assertThat(uris.wellKnownBNodeIRIPrefix()).isEqualTo("http://acme.commons/.well-known/genid/");
+    }
+
+    @Test
+    public void testCorrectPropertyPrefixes() {
+        assertThat(uris.property(PropertyType.CLAIM)).isEqualTo("http://acme.test/prefix/prop/");
+        assertThat(uris.property("direct/")).isEqualTo("http://acme.test/prefix/prop/direct/");
     }
 }
