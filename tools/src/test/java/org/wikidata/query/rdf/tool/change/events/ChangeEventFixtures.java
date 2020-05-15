@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool.change.events;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * Provides fixtures to help test classes depending on ChangeEvent.
@@ -41,7 +42,7 @@ public final class ChangeEventFixtures {
      */
     public static ChangeEvent makeDeleteEvent(Duration offset, String qid) {
         return new PageDeleteEvent(
-                new EventsMeta(START_TIME.plus(offset), "", DOMAIN),
+                new EventsMeta(START_TIME.plus(offset), "", DOMAIN, "", ""),
                 qid, 0);
     }
 
@@ -53,7 +54,16 @@ public final class ChangeEventFixtures {
      */
     public static ChangeEvent makeRCEvent(Duration offset, long revid, String qid, int ns, String domain) {
         return new RevisionCreateEvent(
-                new EventsMeta(START_TIME.plus(offset), "", domain),
+                new EventsMeta(START_TIME.plus(offset), "", domain, "", ""),
                 revid, qid, ns);
+    }
+
+    public static EventsMeta makeEventMeta() {
+        return makeEventMeta(UUID.randomUUID(), UUID.randomUUID());
+    }
+
+    public static EventsMeta makeEventMeta(UUID eventUuid, UUID requestId) {
+        Instant processingTime = Instant.EPOCH.plusMillis(1);
+        return  new EventsMeta(processingTime, eventUuid.toString(), "unittest.local", "rdf_stream", requestId.toString());
     }
 }

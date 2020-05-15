@@ -17,7 +17,7 @@ trait TestEventGenerator {
 
   def newEvent(item: String, revision: Long, eventTime: Instant, namespace: Int, domain: String): RevisionCreateEvent = {
     new RevisionCreateEvent(
-      new EventsMeta(eventTime, "unused", domain),
+      new EventsMeta(eventTime, "unused", domain, "unused for now", "unused for now"),
       revision, item, namespace)
   }
 

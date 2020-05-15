@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Locale;
@@ -270,6 +271,39 @@ public final class StatementHelper {
         public List<Statement> build() {
             return statements;
         }
+    }
+
+    /**
+     * Comparator to use with assertj (usingComparatorForType).
+     *
+     * Reason is that two Double may not be considered equal here
+     */
+    @SuppressWarnings({"CyclomaticComplexity", "test method"})
+    public static Comparator<Statement> comparator() {
+        return (c1, c2) -> {
+            if (!c1.getSubject().equals(c2.getSubject())) {
+                int cmp = c1.getSubject().stringValue().compareTo(c1.getSubject().toString());
+                return cmp == 0 ? 1 : cmp;
+            }
+            if (!c1.getPredicate().equals(c2.getPredicate())) {
+                int cmp = c1.getPredicate().stringValue().compareTo(c1.getPredicate().toString());
+                return cmp == 0 ? 1 : cmp;
+            }
+
+            Value o1 = c1.getObject();
+            Value o2 = c2.getObject();
+            if (o1 instanceof Literal && o2 instanceof Literal) {
+                if (((Literal) o1).getDatatype() == XMLSchema.DOUBLE && ((Literal) o2).getDatatype() == XMLSchema.DOUBLE) {
+                    int cmp = Double.compare(((Literal) o1).doubleValue(), ((Literal) o2).doubleValue());
+                    if (cmp == 0) return 0;
+                }
+            }
+            if (!o1.equals(o2)) {
+                int cmp = o1.stringValue().compareTo(o1.stringValue());
+                return cmp == 0 ? 1 : cmp;
+            }
+            return 0;
+        };
     }
 
 }
