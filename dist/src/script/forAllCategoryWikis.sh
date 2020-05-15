@@ -12,7 +12,7 @@ else
 fi
 
 shift
-$fetch $DUMP_LIST | while read wiki; do
+$fetch $DUMP_LIST | grep -v '^#' | while read wiki; do
 	echo "Processing $wiki..."
 	$DIR/$COMMAND $wiki "$@"
 done
