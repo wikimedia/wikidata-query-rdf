@@ -44,7 +44,7 @@ case class GenerateEntityDiffPatchOperation(domain: String,
 
   lazy val repository: WikibaseEntityRevRepositoryTrait =  wikibaseRepositoryGenerator(this.getRuntimeContext)
   lazy val scheme: UrisScheme = UrisSchemeFactory.forHost(domain)
-  lazy val munger: Munger = Munger.builder(scheme).build()
+  lazy val munger: Munger = Munger.builder(scheme).convertBNodesToSkolemIRIs(true).build()
   lazy val diff: EntityDiff = EntityDiff.withValuesAndRefsAsSharedElements(scheme)
   lazy val rdfSerializer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())
   lazy val dataEventGenerator: MutationEventDataGenerator = new MutationEventDataGenerator(rdfSerializer, mimeType, chunkSoftMaxSize)
