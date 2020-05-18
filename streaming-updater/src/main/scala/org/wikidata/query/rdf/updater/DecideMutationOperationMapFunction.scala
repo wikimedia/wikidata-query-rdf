@@ -18,10 +18,10 @@ sealed class DecideMutationOperation extends RichMapFunction[InputEvent, AllMuta
         val lastRev: lang.Long = state.value()
         if (lastRev == null) {
           state.update(rev.revision)
-          FullImport(rev.item, rev.eventTime, rev.revision, rev.ingestionTime)
+          FullImport(rev.item, rev.eventTime, rev.revision, rev.ingestionTime, rev.originalEventMetadata)
         } else if (lastRev < rev.revision) {
           state.update(rev.revision)
-          Diff(rev.item, rev.eventTime, rev.revision, lastRev, rev.ingestionTime)
+          Diff(rev.item, rev.eventTime, rev.revision, lastRev, rev.ingestionTime, rev.originalEventMetadata)
         } else {
           // Event related to an old revision
           // It's too late to handle it

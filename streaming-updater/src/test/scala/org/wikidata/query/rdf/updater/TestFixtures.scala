@@ -2,7 +2,7 @@ package org.wikidata.query.rdf.updater
 
 import java.time.{Clock, Instant, ZoneOffset}
 import java.util
-import java.util.Collections
+import java.util.{Collections, UUID}
 import java.util.function.Supplier
 
 import scala.collection.JavaConverters._
@@ -25,6 +25,9 @@ trait TestFixtures extends TestEventGenerator {
   val DOMAIN = "tested.domain"
   val OUTPUT_EVENT_UUID_GENERATOR: () => String = () => "UNIQUE FOR TESTING"
   val OUTPUT_EVENT_STREAM_NAME = "wdqs_streaming_updater_test_stream"
+  val STREAM: String = "input_stream"
+  val ORIG_REQUEST_ID: String = UUID.randomUUID().toString
+
 
   val WATERMARK_1 = REORDERING_WINDOW_LENGTH
   val WATERMARK_2 = REORDERING_WINDOW_LENGTH*2
@@ -41,14 +44,14 @@ trait TestFixtures extends TestEventGenerator {
   )
 
   val inputEvents = Seq(
-        newEvent("Q1", 2, eventTimes("Q1", 2), 0, DOMAIN),
-        newEvent("Q1", 1, eventTimes("Q1", 1), 0, DOMAIN),
-        newEvent("Q2", -1, instant(WATERMARK_1), 0, "unrelated.domain"), //unrelated event, test filtering and triggers watermark
-        newEvent("Q1", 5, eventTimes("Q1", 5), 0, DOMAIN),
-        newEvent("Q1", 3, instant(5), 0, DOMAIN), // ignored late event
-        newEvent("Q2", -1, instant(WATERMARK_2), 0, "unrelated.domain"), //unrelated event, test filter and triggers watermark
-        newEvent("Q1", 4, instant(WATERMARK_2 + 1), 0, DOMAIN), // spurious event, rev 4 arrived after WM2 but rev5 was handled at WM1
-        newEvent("Q1", 6, eventTimes("Q1", 6), 0, DOMAIN)
+        newEvent("Q1", 2, eventTimes("Q1", 2), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+        newEvent("Q1", 1, eventTimes("Q1", 1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+        newEvent("Q2", -1, instant(WATERMARK_1), 0, "unrelated.domain", STREAM, ORIG_REQUEST_ID), //unrelated event, test filtering and triggers watermark
+        newEvent("Q1", 5, eventTimes("Q1", 5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+        newEvent("Q1", 3, instant(5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // ignored late event
+        newEvent("Q2", -1, instant(WATERMARK_2), 0, "unrelated.domain", STREAM, ORIG_REQUEST_ID), //unrelated event, test filter and triggers watermark
+        newEvent("Q1", 4, instant(WATERMARK_2 + 1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // spurious event, rev 4 arrived after WM2 but rev5 was handled at WM1
+        newEvent("Q1", 6, eventTimes("Q1", 6), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
   )
 
   private val statement1: Statement = createStatement("Q1", PropertyType.QUALIFIER, "Statement_1")
@@ -60,9 +63,12 @@ trait TestFixtures extends TestEventGenerator {
   private val mSt5 = metaStatements("Q1", 5L)
   private val mSt6 = metaStatements("Q1", 6L)
 
-  val ignoredRevision = Rev("Q1", instant(5), 3, instantNow)
-  val ignoredMutations = Set(IgnoredMutation("Q1", instant(WATERMARK_2 + 1), 4,
-    Rev("Q1", instant(WATERMARK_2 + 1), 4, instant(5)), instantNow))
+  val ignoredRevision = Rev("Q1", instant(5), 3, instantNow, newEventMeta(instant(5), DOMAIN, STREAM, ORIG_REQUEST_ID))
+  val ignoredMutations = Set(
+    IgnoredMutation("Q1", instant(WATERMARK_2 + 1), 4,
+      Rev("Q1", instant(WATERMARK_2 + 1), 4, instant(5),
+        newEventMeta(instant(WATERMARK_2 + 1), DOMAIN, STREAM, ORIG_REQUEST_ID)
+      ), instantNow))
   val rdfChunkSer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())
   val rdfChunkDeser: RDFChunkDeserializer = new RDFChunkDeserializer(new RDFParserSuppliers(RDFParserRegistry.getInstance()))
   val dataEventGenerator = new MutationEventDataGenerator(rdfChunkSer,
@@ -95,12 +101,13 @@ trait TestFixtures extends TestEventGenerator {
     val eventTime: Instant = eventTimes(entityId, revisionTo)
     val eventsMetaData: Supplier[EventsMeta] = new Supplier[EventsMeta]() {
       override def get(): EventsMeta = new EventsMeta(clock.instant(),
-        OUTPUT_EVENT_UUID_GENERATOR.apply(), DOMAIN, OUTPUT_EVENT_STREAM_NAME, "TODO")
+        OUTPUT_EVENT_UUID_GENERATOR.apply(), DOMAIN, OUTPUT_EVENT_STREAM_NAME, ORIG_REQUEST_ID)
     }
+    val origEventMeta: EventsMeta = new EventsMeta(eventTime, "unused", DOMAIN, STREAM, ORIG_REQUEST_ID);
     val operation: MutationOperation = if (revisionFrom == 0L) {
-      FullImport(entityId, eventTime, revisionTo, instantNow)
+      FullImport(entityId, eventTime, revisionTo, instantNow, origEventMeta)
     } else {
-      Diff(entityId, eventTime, revisionTo, revisionFrom, instantNow)
+      Diff(entityId, eventTime, revisionTo, revisionFrom, instantNow, origEventMeta)
     }
     val dataEvent = operation match {
       case _: FullImport =>

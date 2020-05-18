@@ -14,7 +14,7 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 
 object IncomingStreams {
   val REV_CREATE_CONV: (RevisionCreateEvent, Clock) => InputEvent =
-    (e, clock) => Rev(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant())
+    (e, clock) => Rev(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
 
   def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], hostname: String,
                                   conv: (E, Clock) => InputEvent, maxLatenessMs: Int, clock: Clock)

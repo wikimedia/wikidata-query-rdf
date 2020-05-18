@@ -54,10 +54,10 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       .withResponse(("Q3", 101013L) -> metaStatements("Q3", 101013L, Some(3L)).entityDataNS)
 
     val input = Seq(
-      newEvent("Q1", 2, instant(3), 0, DOMAIN), // dupped event, currently treated as spurious
-      newEvent("Q1", 3, instant(3), 0, DOMAIN),
-      newEvent("Q2", 8, instant(3), 0, DOMAIN),
-      newEvent("Q3", 101013, instant(3), 0, DOMAIN)
+      newEvent("Q1", 2, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // dupped event, currently treated as spurious
+      newEvent("Q1", 3, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+      newEvent("Q2", 8, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+      newEvent("Q3", 101013, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
     )
 
     val source: DataStream[InputEvent] = IncomingStreams.fromStream(streamingEnv.fromCollection(input)
@@ -87,13 +87,14 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     graph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savePointDir.toURI.toString, false))
     streamingEnv.getJavaEnv.execute(graph)
     CollectSink.lateEvents shouldBe empty
-    CollectSink.spuriousRevEvents should contain only IgnoredMutation("Q1", instant(3), 2, Rev("Q1", instant(3), 2, instantNow), instantNow)
+    CollectSink.spuriousRevEvents should contain only IgnoredMutation("Q1", instant(3), 2,
+      Rev("Q1", instant(3), 2, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)), instantNow)
     //only change is the revision, lastmodified are identical
 
     CollectSink.values map {_.operation} should contain theSameElementsInOrderAs Vector(
-      Diff("Q1", instant(3), 3, 2, instantNow),
-      Diff("Q2", instant(3), 8, 4, instantNow),
-      Diff("Q3", instant(3), 101013, 101010, instantNow)
+      Diff("Q1", instant(3), 3, 2, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
+      Diff("Q2", instant(3), 8, 4, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
+      Diff("Q3", instant(3), 101013, 101010, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID))
     )
   }
 

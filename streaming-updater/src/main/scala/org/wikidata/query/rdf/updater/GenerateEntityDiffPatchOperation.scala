@@ -51,18 +51,14 @@ case class GenerateEntityDiffPatchOperation(domain: String,
 
 
   override def flatMap(op: MutationOperation, collector: Collector[ResolvedOp]): Unit =  try {
-    // TODO: find a way to convert scala lambdas () => Type as a java Supplier[Type]
-    val eventMetaSupplier: Supplier[EventsMeta] = new Supplier[EventsMeta] {
-      override def get(): EventsMeta = new EventsMeta(clock.instant(), uniqueIdGenerator.apply(), domain, stream, "TODO")
-    }
     val events = op match {
-      case Diff(item, _, revision, fromRev, _) =>
+      case Diff(item, _, revision, fromRev, _, origMeta) =>
         val patch = diff(item, repository.getEntityByRevision(item, fromRev), repository.getEntityByRevision(item, revision))
-        dataEventGenerator.diffEvent(eventMetaSupplier, item, revision, op.eventTime, patch.getAdded, patch.getRemoved,
+        dataEventGenerator.diffEvent(eventMetaSupplier(origMeta), item, revision, op.eventTime, patch.getAdded, patch.getRemoved,
           patch.getLinkedSharedElements, patch.getUnlinkedSharedElements)
-      case FullImport(item, _, revision, _) =>
+      case FullImport(item, _, revision, _, origMeta) =>
         val patch = fullImport(item, repository.getEntityByRevision(item, revision));
-        dataEventGenerator.fullImportEvent(eventMetaSupplier, item, revision, op.eventTime, patch.getAdded, patch.getLinkedSharedElements)
+        dataEventGenerator.fullImportEvent(eventMetaSupplier(origMeta), item, revision, op.eventTime, patch.getAdded, patch.getLinkedSharedElements)
     }
     events.asScala.foreach {e => collector.collect(EntityPatchOp(op, e))}
   } catch {
@@ -70,6 +66,12 @@ case class GenerateEntityDiffPatchOperation(domain: String,
       LOG.error(s"Exception thrown for op: $op", exception)
       collector.collect(FailedOp(op, exception.toString))
     }
+  }
+
+  private def eventMetaSupplier(originalEventMeta: EventsMeta): Supplier[EventsMeta] = {
+      new Supplier[EventsMeta] {
+        override def get(): EventsMeta = new EventsMeta(clock.instant(), uniqueIdGenerator.apply(), domain, stream, originalEventMeta.requestId())
+      }
   }
 
   def diff(item: String, from: Iterable[Statement], to: Iterable[Statement]): RDFPatch = {
