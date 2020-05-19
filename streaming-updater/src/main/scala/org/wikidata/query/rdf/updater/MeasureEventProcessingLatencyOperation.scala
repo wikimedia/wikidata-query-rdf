@@ -8,7 +8,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.Histogram
 
-case class MeasureEventProcessingLatencyOperation(clock: Clock) extends RichMapFunction[ResolvedOp, ResolvedOp] {
+case class MeasureEventProcessingLatencyOperation(clock: Clock) extends RichMapFunction[EntityPatchOp, EntityPatchOp] {
 
   var eventLatencyHistogram: Histogram = _
   var processingLatencyHistogram: Histogram = _
@@ -22,7 +22,7 @@ case class MeasureEventProcessingLatencyOperation(clock: Clock) extends RichMapF
     processingLatencyHistogram = getOrCreateHistogram(PROCESSING_EVENT_METRIC)
   }
 
-  override def map(op: ResolvedOp): ResolvedOp = {
+  override def map(op: EntityPatchOp): EntityPatchOp = {
     val currentMillis: Long = clock.millis
     eventLatencyHistogram.update(currentMillis - op.operation.eventTime.toEpochMilli)
     processingLatencyHistogram.update(currentMillis - op.operation.ingestionTime.toEpochMilli)

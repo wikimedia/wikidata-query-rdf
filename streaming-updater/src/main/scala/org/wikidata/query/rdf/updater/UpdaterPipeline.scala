@@ -11,7 +11,8 @@ import org.apache.flink.streaming.api.windowing.time.Time
 
 sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
                              spuriousEventStream: DataStream[IgnoredMutation],
-                             tripleEventStream: DataStream[ResolvedOp])
+                             failedOpsStream: DataStream[FailedOp],
+                             tripleEventStream: DataStream[EntityPatchOp])
                             (implicit env: StreamExecutionEnvironment)
 {
   val defaultAppName = "WDQS Updater Stream Updater"
@@ -26,16 +27,30 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
 
   def saveLateEventsTo(sink: SinkFunction[InputEvent]): UpdaterPipeline = {
     lateEventStream.addSink(sink)
+      .uid("late-events-output")
+      .name("late-events-output")
     this
   }
 
   def saveSpuriousEventsTo(sink: SinkFunction[IgnoredMutation]): UpdaterPipeline = {
     spuriousEventStream.addSink(sink)
+      .uid("spurious-events-output")
+      .name("spurious-events-output")
     this
   }
 
-  def saveTo(sink: SinkFunction[ResolvedOp]): UpdaterPipeline = {
-    tripleEventStream.addSink(sink)
+  def saveFailedOpsTo(sink: SinkFunction[FailedOp]): UpdaterPipeline = {
+    failedOpsStream.addSink(sink)
+      .uid("failed-ops-output")
+      .name("failed-ops-output")
+    this
+  }
+
+  def saveTo(sink: SinkFunction[EntityPatchOp], sinkParallelism: Option[Int] = None): UpdaterPipeline = {
+    val sinkOp = tripleEventStream.addSink(sink)
+      .uid("output")
+      .name("output")
+    sinkParallelism.foreach(sinkOp.setParallelism)
     this
   }
 }
@@ -48,6 +63,12 @@ sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
                                                          consumerGroup: String,
                                                          revisionCreateTopic: String,
                                                          maxLateness: Int)
+
+sealed case class UpdaterPipelineOutputStreamOption(
+                                                   kafkaBrokers: String,
+                                                   topic: String,
+                                                   partition: Int
+                                                   )
 
 /**
  * Current state
@@ -65,9 +86,8 @@ sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
  *  => map(decide mutation ope) see DecideMutationOperation
  *  => process(remove spurious events) see RouteIgnoredMutationToSideOutput
  *  => flatMap(fetch data from wikibase and diff) see ExtractTriplesOperation
- *
- *  output of the stream a MutationOperation
-
+ *  => process(remove failed ops) see RouteFailedOpsToSideOutput
+ *  output of the stream is a EntityPatchOp
  */
 object UpdaterPipeline {
   def build(opts: UpdaterPipelineOptions, incomingStreams: List[DataStream[InputEvent]],
@@ -90,12 +110,12 @@ object UpdaterPipeline {
       .name("DecideMutationOperation")
       .uid("DecideMutationOperation")
       .process(new RouteIgnoredMutationToSideOutput())
-      .name("output")
-      .uid("output")
+      .name("RouteIgnoredMutationToSideOutput")
+      .uid("RouteIgnoredMutationToSideOutput")
 
     val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
 
-    val tripleEventStream: DataStream[ResolvedOp] = outputMutationStream
+    val tripleEventStream: DataStream[EntityPatchOp] = outputMutationStream
       .flatMap(GenerateEntityDiffPatchOperation(
         domain = opts.hostname,
         wikibaseRepositoryGenerator = wikibaseRepositoryGenerator,
@@ -103,12 +123,16 @@ object UpdaterPipeline {
         clock = clock,
         stream = outputStreamName)
       )
-      .name("ExtractTriplesOperation")
-      .uid("ExtractTriplesOperation")
+      .name("GenerateEntityDiffPatchOperation")
+      .uid("GenerateEntityDiffPatchOperation")
+      .process(new RouteFailedOpsToSideOutput())
+      .name("RouteFailedOpsToSideOutput")
+      .uid("RouteFailedOpsToSideOutput")
       .map(MeasureEventProcessingLatencyOperation(clock))
       .name("MeasureEventProcessingLatencyOperation")
       .uid("MeasureEventProcessingLatencyOperation")
 
-    new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, tripleEventStream)
+    val failedOpsToSideOutput: DataStream[FailedOp] = tripleEventStream.getSideOutput(RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
+    new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, failedOpsToSideOutput, tripleEventStream)
   }
 }
