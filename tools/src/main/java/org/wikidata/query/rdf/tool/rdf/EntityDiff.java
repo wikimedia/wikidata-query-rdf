@@ -13,8 +13,6 @@ import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 import com.google.common.collect.Sets;
 
-import lombok.Value;
-
 /**
  * Very naive diff algorithm.
  */
@@ -33,7 +31,7 @@ public class EntityDiff {
     /**
      * Diff two list of statements.
      */
-    public Patch diff(Iterable<Statement> current, Iterable<Statement> next) {
+    public RDFPatch diff(Iterable<Statement> current, Iterable<Statement> next) {
         Set<Statement> currentSet = Sets.newHashSet(current);
         Set<Statement> nextSet = Sets.newHashSet(next);
         Set<Statement> allDeleted = Sets.difference(currentSet, nextSet);
@@ -45,7 +43,7 @@ public class EntityDiff {
 
         allAdded.forEach(filterSharedElements(linkedSharedElements::add, added::add));
         allDeleted.forEach(filterSharedElements(unlinkedSharedElements::add, deleted::add));
-        return new Patch(unmodifiableList(added), unmodifiableList(linkedSharedElements),
+        return new RDFPatch(unmodifiableList(added), unmodifiableList(linkedSharedElements),
                 unmodifiableList(deleted), unmodifiableList(unlinkedSharedElements));
     }
 
@@ -59,11 +57,4 @@ public class EntityDiff {
         };
     }
 
-    @Value
-    public static class Patch {
-        List<Statement> added;
-        List<Statement> linkedSharedElements;
-        List<Statement> removed;
-        List<Statement> unlinkedSharedElements;
-    }
 }

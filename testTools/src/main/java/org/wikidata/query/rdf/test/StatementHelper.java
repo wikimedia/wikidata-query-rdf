@@ -1,7 +1,10 @@
 package org.wikidata.query.rdf.test;
 
+import static java.util.stream.Collectors.toList;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Formatter;
 import java.util.List;
@@ -53,6 +56,14 @@ public final class StatementHelper {
             p = UrisSchemeFactory.getURISystem().property(PropertyType.CLAIM) + p;
         }
         return new StatementImpl(uri(s), uri(p), oValue);
+    }
+
+    public static List<Statement> statements(String...uris) {
+        return Arrays.stream(uris).map(StatementHelper::genStatement).collect(toList());
+    }
+
+    private static Statement genStatement(String uri) {
+        return StatementHelper.statement(uri, uri, StatementHelper.uri(uri));
     }
 
     public static Value blank(String label) {
