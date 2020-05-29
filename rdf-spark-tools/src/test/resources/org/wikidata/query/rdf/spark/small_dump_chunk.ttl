@@ -98,7 +98,8 @@ data:Q8 a schema:Dataset ;
         wikibase:statements "39"^^xsd:integer ;
         wikibase:identifiers "26"^^xsd:integer .
 
-wd:Q8 a wikibase:Item .
+wd:Q8 a wikibase:Item ;
+        wdt:P576 _:e39d2a834262fbd171919ab2c038c9fb .
 
 <https://fr.wikiquote.org/wiki/Bonheur> a schema:Article ;
         schema:about wd:Q8 ;

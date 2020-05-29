@@ -28,7 +28,7 @@ class EntityRevisionMapGeneratorUnitTest extends FlatSpec with SparkSessionProvi
     super.beforeEach()
     rdfData = newSparkSubDir("test_import_dump")
     csvFile = newSparkSubDir("entity_rev_map.csv")
-    WikidataTurtleDumpConverter.importDump(spark, paths, 2, "parquet", rdfData)
+    WikidataTurtleDumpConverter.importDump(spark, paths, 2, "parquet", outputPath = rdfData, skolemizeBlankNodes = true)
   }
 }
 

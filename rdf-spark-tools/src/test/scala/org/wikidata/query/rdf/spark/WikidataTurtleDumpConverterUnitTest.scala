@@ -10,7 +10,7 @@ class WikidataTurtleDumpConverterUnitTest extends FlatSpec with SparkSessionProv
   )
 
   "a rdf dump present" should "be converted as a parquet file" in {
-    WikidataTurtleDumpConverter.importDump(spark, paths, 2, "parquet", rdfData)
+    WikidataTurtleDumpConverter.importDump(spark, paths, 2, "parquet", outputPath = rdfData, skolemizeBlankNodes = true)
     val parquetFileDF = spark.read.parquet(rdfData)
     val existingContext = parquetFileDF
       .select("context")
@@ -26,6 +26,10 @@ class WikidataTurtleDumpConverterUnitTest extends FlatSpec with SparkSessionProv
       "<http://wikiba.se/ontology#Reference>",
       "<http://wikiba.se/ontology#Value>",
       "<http://wikiba.se/ontology#Dump>")
+
+    parquetFileDF
+      .filter("object = '<http://www.wikidata.org/.well-known/genid/e39d2a834262fbd171919ab2c038c9fb>'")
+      .count() shouldEqual 1
   }
 
   override def beforeEach(): Unit = {

@@ -39,7 +39,8 @@ object WikidataTurtleDumpConverter {
                      inputPath: Seq[String] = Seq(),
                      outputPath: String = "",
                      outputFormat: String = "parquet",
-                     numPartitions: Int = 512
+                     numPartitions: Int = 512,
+                     skolemizeBlankNodes: Boolean = false
                    )
 
   /**
@@ -72,6 +73,10 @@ object WikidataTurtleDumpConverter {
     opt[Int]('n', "num-partitions") optional() action { (x, p) =>
       p.copy(numPartitions = x)
     } text "Number of partitions to use (output files). Defaults to 512"
+
+    opt[Unit]('s', "skolemize") action { (_, p) =>
+      p.copy(skolemizeBlankNodes = true)
+    } text "Skolemize blank nodes"
   }
 
   /**
@@ -89,13 +94,14 @@ object WikidataTurtleDumpConverter {
           .getOrCreate()
 
         // Make spark read text with dedicated separator instead of end-of-line
-        importDump(spark, params.inputPath, params.numPartitions, params.outputFormat, params.outputPath)
+        importDump(spark, params.inputPath, params.numPartitions, params.outputFormat, params.outputPath, params.skolemizeBlankNodes)
 
       case None => sys.exit(1) // If args parsing fail (parser prints nice error)
     }
   }
 
-  def importDump(spark: SparkSession, inputPaths: Seq[String], numPartitions: Int, outputFormat: String, outputPath: String): Unit = {
+  def importDump(spark: SparkSession, inputPaths: Seq[String], numPartitions: Int,
+                 outputFormat: String, outputPath: String, skolemizeBlankNodes: Boolean): Unit = {
     spark.sparkContext.hadoopConfiguration.set("textinputformat.record.delimiter", ENTITY_SEPARATOR)
 
     val rdd = spark.sparkContext.union(inputPaths map {spark.sparkContext.textFile(_)})
@@ -104,7 +110,7 @@ object WikidataTurtleDumpConverter {
         if (!str.startsWith("@prefix")) {
           // Parse entity turtle block (add entity header that have been removed by parsing)
           val is = new ByteArrayInputStream(s"$ENTITY_HEADER$str".getBytes(StandardCharsets.UTF_8))
-          val statements = RdfChunkParser.forWikidata().parse(is)
+          val statements = RdfChunkParser.forWikidata(skolemizeBlankNodes).parse(is)
           // Convert statements to rows
           val encoder = new StatementEncoder()
           statements.map(encoder.encode)
