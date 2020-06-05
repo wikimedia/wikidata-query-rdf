@@ -144,7 +144,7 @@
                         <phase>package</phase>
                         <configuration>
                             <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                                <descriptorRef>jar-with-dependencies-spi-compliant</descriptorRef>
                             </descriptorRefs>
                         </configuration>
                     </execution>

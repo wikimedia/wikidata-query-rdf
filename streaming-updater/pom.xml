@@ -197,13 +197,8 @@
                         </goals>
                         <phase>package</phase>
                         <configuration>
-                            <archive>
-                                <manifest>
-                                    <mainClass>org.wikidata.query.rdf.updater.UpdaterJob</mainClass>
-                                </manifest>
-                            </archive>
                             <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                                <descriptorRef>jar-with-dependencies-spi-compliant</descriptorRef>
                             </descriptorRefs>
                         </configuration>
                     </execution>

@@ -888,6 +888,17 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.wikimedia.discovery</groupId>
+                            <artifactId>discovery-maven-tool-configs</artifactId>
+                            <version>${discovery-maven-tool-configs.version}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
                     <executions>
                         <execution>
