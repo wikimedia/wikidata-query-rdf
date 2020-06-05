@@ -397,27 +397,16 @@ public final class Munger {
                 if (handled == null) {
                     // drop it
                     itr.remove();
-                    continue;
-                } else {
-                    if (!handled.equals(statement)) {
-                        // modified
-                        itr.remove();
-                        statement = handled;
-                        if (statement(statement)) {
-                            // if we accept it in modified form, add back
-                            restoredStatements.add(statement);
-                            continue;
-                        }
+                } else if (!handled.equals(statement)) {
+                    // modified
+                    itr.remove();
+                    statement = handled;
+                    if (statement(statement)) {
+                        // if we accept it in modified form, add back
+                        restoredStatements.add(statement);
                     }
-                }
-                if (!statement(statement)) {
+                } else if (!statement(statement)) {
                     itr.remove();
-                }
-                // Check object length, cut if needed.
-                final Statement shortStatement = checkObjectLength(statement);
-                if (shortStatement != null) {
-                    itr.remove();
-                    restoredStatements.add(shortStatement);
                 }
             }
 
@@ -432,15 +421,16 @@ public final class Munger {
             if (statement == null) {
                 return null;
             }
-            return statementFilter.apply(statement);
+            statement = statementFilter.apply(statement);
+            return trimLargeObject(statement);
         }
 
         /**
          * Check whether object's length is more than 32k.
          * If so, create new statement that cuts object down to 32k.
-         * @return New statement or null if not needed.
+         * @return New statement or the same statement if not needed.
          */
-        private Statement checkObjectLength(Statement statement) {
+        private Statement trimLargeObject(Statement statement) {
             if (statement.getObject() instanceof Literal) {
                 final Literal value = (Literal) statement.getObject();
                 if (value.stringValue().length() > Short.MAX_VALUE) {
@@ -454,7 +444,7 @@ public final class Munger {
                             statement.getPredicate(), newValue);
                 }
             }
-            return null;
+            return statement;
         }
 
         /**
