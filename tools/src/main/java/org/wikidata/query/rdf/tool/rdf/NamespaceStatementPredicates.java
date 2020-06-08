@@ -3,7 +3,10 @@ package org.wikidata.query.rdf.tool.rdf;
 import static org.wikidata.query.rdf.common.uri.PropertyType.REFERENCE_VALUE;
 import static org.wikidata.query.rdf.common.uri.PropertyType.REFERENCE_VALUE_NORMALIZED;
 
+import org.openrdf.model.BNode;
+import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
+import org.openrdf.model.URI;
 import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 
@@ -110,5 +113,13 @@ public class NamespaceStatementPredicates {
 
     private static boolean inNamespace(String uri, String namespace) {
         return uri.startsWith(namespace) && uri.indexOf('/', namespace.length()) < 0;
+    }
+
+    public boolean subjectIsBNodeOrSkolemIRI(Statement statement) {
+        return isBNodeOrSkolemIRI(statement.getSubject());
+    }
+
+    private boolean isBNodeOrSkolemIRI(Resource res) {
+        return res instanceof BNode || (res instanceof URI && res.stringValue().startsWith(uris.wellKnownBNodeIRIPrefix()));
     }
 }
