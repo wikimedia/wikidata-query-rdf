@@ -54,9 +54,6 @@ object UpdaterJob {
 
     val uris: Uris = WikibaseRepository.Uris.fromString(s"https://$hostName")
     implicit val env: StreamExecutionEnvironment = prepareEnv(checkpointDir)
-    UpdaterPipeline.build(pipelineOptions, buildIncomingStreams(pipelineInputEventStreamOptions, pipelineOptions, DEFAULT_CLOCK),
-      rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup),
-      clock = DEFAULT_CLOCK)
 
     UpdaterPipeline.build(pipelineOptions, buildIncomingStreams(pipelineInputEventStreamOptions, pipelineOptions, clock = DEFAULT_CLOCK),
       rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup))
