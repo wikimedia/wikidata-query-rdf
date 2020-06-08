@@ -8,6 +8,7 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.api.CheckpointingMode
 
 sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
                              spuriousEventStream: DataStream[IgnoredMutation],
@@ -22,7 +23,7 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
   }
 
   def streamGraph(appName: String = defaultAppName): StreamGraph = {
-    env.getStreamGraph(defaultAppName)
+    env.getStreamGraph(appName)
   }
 
   def saveLateEventsTo(sink: SinkFunction[InputEvent]): UpdaterPipeline = {
@@ -55,8 +56,11 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
   }
 }
 
-sealed case class UpdaterPipelineOptions (hostname: String,
-                                          reorderingWindowLengthMs: Int
+sealed case class UpdaterPipelineOptions(hostname: String,
+                                          reorderingWindowLengthMs: Int,
+                                          reorderingOpParallelism: Option[Int],
+                                          decideMutationOpParallelism: Option[Int],
+                                          generateDiffParallelism: Option[Int]
 )
 
 sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
@@ -67,7 +71,8 @@ sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
 sealed case class UpdaterPipelineOutputStreamOption(
                                                    kafkaBrokers: String,
                                                    topic: String,
-                                                   partition: Int
+                                                   partition: Int,
+                                                   checkpointingMode: CheckpointingMode
                                                    )
 
 /**
@@ -101,21 +106,42 @@ object UpdaterPipeline {
       case x :: Nil => x
       case x :: rest => x.union(rest: _*)
     }
-    val windowStream: DataStream[InputEvent] = EventReorderingWindowFunction.attach(incomingEventStream, Time.milliseconds(opts.reorderingWindowLengthMs))
+    val windowStream: DataStream[InputEvent] = EventReorderingWindowFunction.attach(incomingEventStream,
+      Time.milliseconds(opts.reorderingWindowLengthMs), opts.reorderingOpParallelism)
     val lateEventsSideOutput: DataStream[InputEvent] = windowStream.getSideOutput(EventReorderingWindowFunction.LATE_EVENTS_SIDE_OUTPUT_TAG)
 
-    val outputMutationStream: DataStream[MutationOperation] = windowStream
-      .keyBy(_.item)
-      .map(new DecideMutationOperation())
-      .name("DecideMutationOperation")
-      .uid("DecideMutationOperation")
-      .process(new RouteIgnoredMutationToSideOutput())
-      .name("RouteIgnoredMutationToSideOutput")
-      .uid("RouteIgnoredMutationToSideOutput")
-
+    val outputMutationStream: DataStream[MutationOperation] = rerouteIgnoredMutations(decideMutationOp(windowStream, opts))
     val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
 
-    val tripleEventStream: DataStream[EntityPatchOp] = outputMutationStream
+    val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, uniqueIdGenerator,
+      clock, outputStreamName, outputMutationStream)
+
+    val tripleEventStream: DataStream[EntityPatchOp] = rerouteFailedOpsAndMeasureLatency(clock, resolvedOpStream)
+
+    val failedOpsToSideOutput: DataStream[FailedOp] = tripleEventStream.getSideOutput(RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
+
+    new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, failedOpsToSideOutput, tripleEventStream)
+  }
+
+  private def rerouteFailedOpsAndMeasureLatency(clock: Clock, resolvedOpStream: DataStream[ResolvedOp]): DataStream[EntityPatchOp] = {
+    val tripleEventStream: DataStream[EntityPatchOp] = resolvedOpStream
+      .process(new RouteFailedOpsToSideOutput())
+      .name("RouteFailedOpsToSideOutput")
+      .uid("RouteFailedOpsToSideOutput")
+      .map(MeasureEventProcessingLatencyOperation(clock))
+      .name("MeasureEventProcessingLatencyOperation")
+      .uid("MeasureEventProcessingLatencyOperation")
+    tripleEventStream
+  }
+
+  private def resolveMutationOperations(opts: UpdaterPipelineOptions,
+                                        wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
+                                        uniqueIdGenerator: () => String,
+                                        clock: Clock,
+                                        outputStreamName: String,
+                                        outputMutationStream: DataStream[MutationOperation]
+                                       ): DataStream[ResolvedOp] = {
+    val resolvedOpStream: DataStream[ResolvedOp] = outputMutationStream
       .flatMap(GenerateEntityDiffPatchOperation(
         domain = opts.hostname,
         wikibaseRepositoryGenerator = wikibaseRepositoryGenerator,
@@ -125,14 +151,25 @@ object UpdaterPipeline {
       )
       .name("GenerateEntityDiffPatchOperation")
       .uid("GenerateEntityDiffPatchOperation")
-      .process(new RouteFailedOpsToSideOutput())
-      .name("RouteFailedOpsToSideOutput")
-      .uid("RouteFailedOpsToSideOutput")
-      .map(MeasureEventProcessingLatencyOperation(clock))
-      .name("MeasureEventProcessingLatencyOperation")
-      .uid("MeasureEventProcessingLatencyOperation")
+    opts.generateDiffParallelism.foreach(resolvedOpStream.setParallelism)
+    resolvedOpStream
+  }
 
-    val failedOpsToSideOutput: DataStream[FailedOp] = tripleEventStream.getSideOutput(RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
-    new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, failedOpsToSideOutput, tripleEventStream)
+  private def rerouteIgnoredMutations(allOutputMutationStream: DataStream[AllMutationOperation]): DataStream[MutationOperation] = {
+    val outputMutationStream: DataStream[MutationOperation] = allOutputMutationStream
+      .process(new RouteIgnoredMutationToSideOutput())
+      .name("RouteIgnoredMutationToSideOutput")
+      .uid("RouteIgnoredMutationToSideOutput")
+    outputMutationStream
+  }
+
+  private def decideMutationOp(windowStream: DataStream[InputEvent], opts: UpdaterPipelineOptions): DataStream[AllMutationOperation] = {
+    val allOutputMutationStream: DataStream[AllMutationOperation] = windowStream
+      .keyBy(_.item)
+      .map(new DecideMutationOperation())
+      .name("DecideMutationOperation")
+      .uid("DecideMutationOperation")
+    opts.decideMutationOpParallelism.foreach(allOutputMutationStream.setParallelism)
+    allOutputMutationStream
   }
 }

@@ -24,8 +24,9 @@ object EventReorderingWindowFunction {
   val LATE_EVENTS_SIDE_OUTPUT_TAG = new OutputTag[InputEvent]("late-events")
   def attach(stream: DataStream[InputEvent],
              windowLength: Time = Time.milliseconds(60000),
+             parallelism: Option[Int] = None,
              uuid: String = "EventReordering"): DataStream[InputEvent] = {
-    stream
+    val reorderedStream = stream
       .keyBy(_.item)
       .timeWindow(windowLength)
       // NOTE: allowing lateness here is tricky to handle as it might fire the same window multiple times
@@ -36,5 +37,7 @@ object EventReorderingWindowFunction {
       .sideOutputLateData(LATE_EVENTS_SIDE_OUTPUT_TAG)
       .process(new EventReorderingWindowFunction())
       .uid(uuid)
+    parallelism.foreach(reorderedStream.setParallelism)
+    reorderedStream
   }
 }
