@@ -385,11 +385,15 @@ public class WikibaseRepository implements Closeable {
             try (CloseableHttpResponse response = client.execute(request)) {
                 if (response.getStatusLine().getStatusCode() == 404) {
                     // A delete/nonexistent page
+                    // FIXME: swallowing a 404 is not a good idea,
+                    //  caller may fail expecting some data has been parsed
                     return;
                 }
                 if (response.getStatusLine().getStatusCode() == 204) {
                     // No content, it's OK
                     log.debug("No content, we're done");
+                    // FIXME: swallowing a 204 is not a good idea
+                    //  caller may fail expecting some data has been parsed
                     return;
                 }
                 if (response.getStatusLine().getStatusCode() == 400) {
@@ -403,6 +407,8 @@ public class WikibaseRepository implements Closeable {
                     if (in == null) {
                         // No proper response
                         log.debug("Empty response, we're done");
+                        // FIXME: swallowing invalid response is not a good idea,
+                        //  caller may fail expecting that some data has been parsed
                         return;
                     }
                     parser.parse(new InputStreamReader(in, UTF_8), uri.toString());
