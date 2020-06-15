@@ -104,4 +104,13 @@ public class NamespaceStatementPredicatesUnitTest {
         isFalse(predicate, statement("uri:entity/123", "prop:claim/P12", "uri:foo"));
         isFalse(predicate, statement("uri:entity/123", "uri:foo", "stmt:statement/ST-ID"));
     }
+
+    @Test
+    public void bnodeOrSkolemIRI() {
+        when(urisScheme.wellKnownBNodeIRIPrefix()).thenReturn("main:.well-known/");
+        Predicate<Statement> predicate = predicates::subjectIsBNodeOrSkolemIRI;
+        isTrue(predicate, statement("main:.well-known/123", "prop:claim/P12", "stmt:statement/ST-ID"));
+        isTrue(predicate, statement("_:123", "prop:claim/P12", "stmt:statement/ST-ID"));
+        isFalse(predicate, statement("main:/pref/123", "prop:claim/P12", "stmt:statement/ST-ID"));
+    }
 }

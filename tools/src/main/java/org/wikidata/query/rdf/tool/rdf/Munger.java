@@ -16,7 +16,6 @@ import java.util.function.UnaryOperator;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -477,7 +476,7 @@ public final class Munger {
              *  Allow bnodes, they are not linked to specific entity
              *  but used to declare classes
              */
-            if (statement.getSubject() instanceof BNode) {
+            if (predicates.subjectIsBNodeOrSkolemIRI(statement)) {
                 return true;
             }
             return unknownStatement(statement);
