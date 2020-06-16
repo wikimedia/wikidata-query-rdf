@@ -50,6 +50,14 @@
     <dependencySet>
       <outputDirectory></outputDirectory>
       <includes>
+        <include>org.wikidata.query.rdf:mw-oauth-proxy:war</include>
+      </includes>
+      <useProjectArtifact>false</useProjectArtifact>
+    </dependencySet>
+
+    <dependencySet>
+      <outputDirectory></outputDirectory>
+      <includes>
         <include>org.eclipse.jetty:jetty-runner:jar</include>
       </includes>
       <useProjectArtifact>false</useProjectArtifact>

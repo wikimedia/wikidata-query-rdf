@@ -13,6 +13,12 @@ DIR=${DIR:-`dirname $0`}
 PREFIXES_FILE=$DIR/prefixes.conf
 WIKIBASE_CONCEPT_URI_PARAM=${WIKIBASE_CONCEPT_URI_PARAM:-""}
 COMMONS_CONCEPT_URI_PARAM=${COMMONS_CONCEPT_URI_PARAM:-""}
+OAUTH_RUN=${OAUTH_RUN:-""}
+OAUTH_CONSUMER_KEY_PARAM=${OAUTH_CONSUMER_KEY_PARAM:-""}
+OAUTH_CONSUMER_SECRET_PARAM=${OAUTH_CONSUMER_SECRET_PARAM:-""}
+OAUTH_SESSION_STORE_LIMIT_PARAM=${OAUTH_SESSION_STORE_LIMIT_PARAM:-""}
+OAUTH_INDEX_URL_PARAM=${OAUTH_INDEX_URL_PARAM:-""}
+OAUTH_NICE_URL_PARAM=${OAUTH_NICE_URL_PARAM:-""}
 HEAP_SIZE=${HEAP_SIZE:-"16g"}
 LOG_CONFIG=${LOG_CONFIG:-""}
 LOG_DIR=${LOG_DIR:-"/var/log/wdqs"}
@@ -45,17 +51,20 @@ fi
 EXTRA_JVM_OPTS=${EXTRA_JVM_OPTS:-""}
 BLAZEGRAPH_OPTS=${BLAZEGRAPH_OPTS:-""}
 CONFIG_FILE=${CONFIG_FILE:-"RWStore.properties"}
-DEBUG=-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n
+DEBUG=-agentlib:jdwp=transport=dt_socket,server=y,address=5005,suspend=n
 # Disable this for debugging
 DEBUG=
 
 function usage() {
   echo "Usage: $0 [-h <host>] [-d <dir>] [-c <context>] [-p <port>] " \
-  "[-o <blazegraph options>] [-f config.properties] [-n prefixes.conf] [-w wikibaseConceptUri] [-m commonsConceptUri]"
+  "[-o <blazegraph options>] [-f config.properties] [-n prefixes.conf] [-w wikibaseConceptUri] [-m commonsConceptUri] " \
+  "[-r -k <oauthConsumerKey> -s <oauthConsumerSecret -l <oauthSessionStoreLimit -i <oauthIndexUrl> -b <oauthNiceUrl>]"
   exit 1
 }
 
-while getopts h:c:p:d:o:f:n:w:m:? option
+OAUTH_PROPS_PREFIX="org.wikidata.query.rdf.mwoauth.OAuthProxyConfig"
+
+while getopts h:c:p:d:o:f:n:w:m:rk:s:l:b:i:? option
 do
   case "${option}"
   in
@@ -68,6 +77,12 @@ do
     n) PREFIXES_FILE=${OPTARG};;
     w) WIKIBASE_CONCEPT_URI_PARAM="-DwikibaseConceptUri=${OPTARG} ";;
     m) COMMONS_CONCEPT_URI_PARAM="-DcommonsConceptUri=${OPTARG} ";;
+    r) OAUTH_RUN=" mw-oauth-proxy-*.war";;
+    k) OAUTH_CONSUMER_KEY_PARAM="-D${OAUTH_PROPS_PREFIX}.consumerKey=${OPTARG}";;
+    s) OAUTH_CONSUMER_SECRET_PARAM="-D${OAUTH_PROPS_PREFIX}.consumerSecret=${OPTARG}";;
+    l) OAUTH_SESSION_STORE_LIMIT_PARAM="-D${OAUTH_PROPS_PREFIX}.sessionStoreLimit=${OPTARG}";;
+    b) OAUTH_NICE_URL_PARAM="-D${OAUTH_PROPS_PREFIX}.niceUrlBase=${OPTARG}";;
+    i) OAUTH_INDEX_URL_PARAM="-D${OAUTH_PROPS_PREFIX}.indexUrl=${OPTARG}";;
     ?) usage;;
   esac
 done
@@ -100,10 +115,18 @@ exec java \
      -Dhttp.userAgent="${USER_AGENT}" \
      $WIKIBASE_CONCEPT_URI_PARAM \
      $COMMONS_CONCEPT_URI_PARAM \
+     $COMMONS_CONCEPT_URI_PARAM \
+     $OAUTH_CONSUMER_KEY_PARAM \
+     $OAUTH_CONSUMER_SECRET_PARAM \
+     $OAUTH_SESSION_STORE_LIMIT_PARAM \
+     $OAUTH_INDEX_URL_PARAM \
+     $OAUTH_NICE_URL_PARAM \
      -Dorg.eclipse.jetty.annotations.AnnotationParser.LEVEL=OFF \
      ${BLAZEGRAPH_OPTS} \
      -jar jetty-runner*.jar \
      --host $HOST \
      --port $PORT \
      --path /$CONTEXT \
-     blazegraph-service-*.war
+     blazegraph-service-*.war \
+     ${OAUTH_RUN}
+
