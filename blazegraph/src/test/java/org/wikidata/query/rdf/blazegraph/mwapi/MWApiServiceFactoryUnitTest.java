@@ -87,7 +87,7 @@ public class MWApiServiceFactoryUnitTest extends AbstractBlazegraphTestBase {
             MWApiLimits limits = factory.getLimitsFromParams(serviceParams);
 
             assertEquals(10000, limits.limitResults);
-            assertEquals(1, limits.limitContinuations);
+            assertEquals(0, limits.limitContinuations);
             assertEquals(25, limits.limitEmptyContinuations);
         }
     }

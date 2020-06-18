@@ -207,8 +207,8 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
      * @return Limits object/tracker
      */
     MWApiLimits getLimitsFromParams(final ServiceParams serviceParams) {
-        int limitResults = 0;
-        int limitContinuations = getSettingFromParams(serviceParams, LIMIT_CONTINUATIONS_KEY, 0);
+        int limitResults = -1;
+        int limitContinuations = getSettingFromParams(serviceParams, LIMIT_CONTINUATIONS_KEY, -1);
         int limitEmptyContinuations = getSettingFromParams(serviceParams, LIMIT_EMPTY_CONTINUATIONS_KEY, 25);
 
         TermNode limitResultsNode = serviceParams.get(LIMIT_RESULTS_KEY, null);
@@ -217,7 +217,7 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
             String s = limitResultsNode.getValue().stringValue();
             if (s.equals("once")) {
                 // backwards compatibility, there used to be just one limit
-                limitContinuations = 1;
+                limitContinuations = 0;
             } else {
                 limitResults = Integer.parseInt(s);
             }
@@ -236,13 +236,13 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
     }
 
     private MWApiLimits clampLimitsByConfig(int limitResults, int limitContinuations, int limitEmptyContinuations) {
-        if (limitResults <= 0 || limitResults > maxResults) {
+        if (limitResults < 0 || limitResults > maxResults) {
             limitResults = maxResults;
         }
-        if (limitContinuations <= 0 || limitContinuations > maxContinuations) {
+        if (limitContinuations < 0 || limitContinuations > maxContinuations) {
             limitContinuations = maxContinuations;
         }
-        if (limitEmptyContinuations <= 0 || limitEmptyContinuations > maxEmptyContinuations) {
+        if (limitEmptyContinuations < 0 || limitEmptyContinuations > maxEmptyContinuations) {
             limitEmptyContinuations = maxEmptyContinuations;
         }
 
