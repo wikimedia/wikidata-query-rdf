@@ -601,7 +601,7 @@
             <dependency>
                 <groupId>org.linkeddatafragments</groupId>
                 <artifactId>ldfserver</artifactId>
-                <version>0.2.4-wmf</version>
+                <version>0.2.5-wmf</version>
                 <classifier>classes</classifier>
                 <exclusions>
                     <exclusion>
@@ -645,7 +645,7 @@
             <dependency>
                 <groupId>org.linkeddatafragments</groupId>
                 <artifactId>ldfserver</artifactId>
-                <version>0.2.2-wmf</version>
+                <version>0.2.5-wmf</version>
                 <type>war</type>
             </dependency>
             <dependency>
