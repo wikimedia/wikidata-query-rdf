@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikidata.query.rdf</groupId>
         <artifactId>query-service-parent</artifactId>
-        <version>0.3.40</version>
+        <version>0.3.41-SNAPSHOT</version>
     </parent>
 
     <artifactId>streaming-updater</artifactId>
