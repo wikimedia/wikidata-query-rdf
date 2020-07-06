@@ -7,6 +7,7 @@ import static javax.ws.rs.core.Response.Status.TEMPORARY_REDIRECT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.wikidata.query.rdf.mwoauth.OAuthProxyService.SESSION_COOKIE_NAME;
 
 import java.io.IOException;
 import java.net.URI;
@@ -55,13 +56,14 @@ public class OAuthProxyServiceUnitTest {
 
         //at this time user would authenticate with MediaWiki...
 
-        String wikiSession = "wiki_session";
+
         String redirectUrl = "http://localhost/redirect";
-        Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, wikiSession, redirectUrl);
+        Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, redirectUrl);
 
         assertThat(verifyResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
         assertThat(extractRedirectLocation(verifyResponse)).isEqualTo(new URI(redirectUrl));
 
+        String wikiSession = verifyResponse.getCookies().get(SESSION_COOKIE_NAME).getValue();
         Response checkUserResponse = sut.checkUser(wikiSession);
         assertThat(checkUserResponse.getStatus()).isEqualTo(OK.getStatusCode());
     }
@@ -76,7 +78,7 @@ public class OAuthProxyServiceUnitTest {
         when(mwoauthServiceMock.getAuthorizationUrl(requestToken)).thenReturn(AUTHORIZE_URL);
         sut.checkLogin();
         //1st user request for session verification
-        Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, "wikiSession", "http://localhost");
+        Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, "http://localhost");
         assertThat(verifyResponse.getStatus()).isEqualTo(FORBIDDEN.getStatusCode());
     }
 

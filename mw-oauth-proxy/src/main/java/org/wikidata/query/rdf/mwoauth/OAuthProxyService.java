@@ -18,6 +18,7 @@ import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 
 import com.github.scribejava.apis.MediaWikiApi;
@@ -33,6 +34,8 @@ import com.google.common.cache.CacheBuilder;
 @Singleton
 public class OAuthProxyService {
 
+    public static final String SESSION_COOKIE_NAME = "wcqsSession";
+    public static final int SESSION_MAX_AGE = 60;
     @Context
     private ServletConfig servletConfig;
 
@@ -73,7 +76,6 @@ public class OAuthProxyService {
     @Path("/oauth_verify")
     public Response oauthVerify(@QueryParam ("oauth_verifier") String oauthVerifier,
                                 @QueryParam ("oauth_token") String oauthToken,
-                                @CookieParam ("wiki_session") String wikiSession,
                                 @HeaderParam("X-redirect-url") String redirectUrl
     ) throws InterruptedException, ExecutionException, IOException, URISyntaxException {
         OAuth1RequestToken requestToken = requestTokens.getIfPresent(oauthToken);
@@ -81,14 +83,17 @@ public class OAuthProxyService {
             return status(FORBIDDEN).build();
         }
         OAuth1AccessToken accessToken = service.getAccessToken(requestToken, oauthVerifier);
-        accessTokens.put(wikiSession, accessToken);
-        return temporaryRedirect(new URI(redirectUrl)).build();
+        accessTokens.put(accessToken.getToken(), accessToken);
+        NewCookie sessionCookie = new NewCookie(SESSION_COOKIE_NAME,
+                accessToken.getToken(), "/", null, null, SESSION_MAX_AGE, true, true);
+
+        return temporaryRedirect(new URI(redirectUrl)).cookie(sessionCookie).build();
     }
 
     @GET
     @Path("/check_auth")
-    public Response checkUser(@CookieParam("wiki_session") String wikiSession) {
-        if (wikiSession != null && accessTokens.getIfPresent(wikiSession) != null) {
+    public Response checkUser(@CookieParam(SESSION_COOKIE_NAME) String token) {
+        if (token != null && accessTokens.getIfPresent(token) != null) {
             return Response.ok().build();
         } else {
             return status(FORBIDDEN).build();
