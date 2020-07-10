@@ -16,8 +16,8 @@ object EntityRevisionMapGenerator {
    * Class handling parsed parameters
    */
   case class Params(
-                     inputPath: String = "",
-                     inputFormat: String = "parquet",
+                     table: String = "",
+                     date: String = "",
                      outputPath: String = "",
                      hostname: String = "www.wikidata.org",
                      numPartitions: Int = 100
@@ -30,20 +30,9 @@ object EntityRevisionMapGenerator {
     head("Wikidata Entity Revision map generator", "")
     help("help") text "Prints this usage text"
 
-    opt[String]('i', "input-path") required() valueName  "<path>" action { (x, p) =>
-      val path = if (x.endsWith("/")) x.dropRight(1) else x
-      p.copy(inputPath = path)
-    } text "Path to wikidata graph dataframe"
-
-    opt[String]('f', "input-format") optional() action { (x, p) =>
-      p.copy(inputFormat = x)
-    } validate { x =>
-      if (!Seq("avro", "parquet").contains(x)) {
-        failure("Invalid input format - can be avro or parquet")
-      } else {
-        success
-      }
-    } text "Output file format, avro or parquet. Defaults to parquet"
+    opt[String]('t', "input-table") required() valueName  "<input-date>" action { (x, p) =>
+      p.copy(table = x)
+    } text "Table-partition holding the wikidata triples"
 
     opt[String]('h', "hostname") optional() valueName "<hostname>" action { (x, p) =>
       p.copy(hostname = x)
@@ -68,16 +57,15 @@ object EntityRevisionMapGenerator {
           .getOrCreate()
 
         // Make spark read text with dedicated separator instead of end-of-line
-        generateMap(spark, params.inputPath, params.inputFormat, params.numPartitions,
+        generateMap(spark, params.table, params.numPartitions,
           params.outputPath, () => UrisSchemeFactory.forHost(params.hostname))
 
       case None => sys.exit(1) // If args parsing fail (parser prints nice error)
     }
   }
 
-  def generateMap(spark: SparkSession,
-                  inputPath: String,
-                  inputFormat: String,
+  def generateMap(implicit spark: SparkSession,
+                  tableAndPartitionSpec: String,
                   numPartitions: Int,
                   outputPath: String,
                   urisSchemeProvider: () => UrisScheme
@@ -85,10 +73,9 @@ object EntityRevisionMapGenerator {
 
 
     val versionPredicate = new StatementEncoder().encodeURI(SchemaDotOrg.VERSION)
-    val df = spark.read.format(inputFormat).load(inputPath)
+    val df = SparkUtils.readTablePartition(tableAndPartitionSpec)
     val entityRevDf = spark.createDataFrame(
       df
-        .select("*")
         .filter(df("predicate") === versionPredicate)
         .rdd
         .map(r => {

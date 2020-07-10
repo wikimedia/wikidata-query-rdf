@@ -3,7 +3,10 @@ package org.wikidata.query.rdf.spark
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.SaveMode.Overwrite
+import org.openrdf.model.Statement
 import scopt.OptionParser
 
 
@@ -37,7 +40,8 @@ object WikidataTurtleDumpConverter {
    */
   case class Params(
                      inputPath: Seq[String] = Seq(),
-                     outputPath: String = "",
+                     outputTable: Option[String] = None,
+                     outputPath: Option[String] = None,
                      outputFormat: String = "parquet",
                      numPartitions: Int = 512,
                      skolemizeBlankNodes: Boolean = false
@@ -56,19 +60,17 @@ object WikidataTurtleDumpConverter {
       })
     } text "Paths to wikidata ttl dump to convert"
 
-    opt[String]('o', "output-path") required() valueName "<path>" action { (x, p) =>
-      p.copy(outputPath = if (x.endsWith("/")) x.dropRight(1) else x)
+    opt[String]('t', "output-table") optional() valueName "<output-table>" action { (x, p) =>
+      p.copy(outputTable = Some(x))
+    } text "Table to output converted result."
+
+    opt[String]('o', "output-path") optional() valueName "<output-path>" action { (x, p) =>
+      p.copy(outputPath = Some(x))
     } text "Path to output converted result."
 
-    opt[String]('f', "output-format") optional() action { (x, p) =>
+    opt[String]('f', "output-format") optional() valueName "<output-format>" action { (x, p) =>
       p.copy(outputFormat = x)
-    } validate { x =>
-      if (!Seq("avro", "parquet").contains(x)) {
-        failure("Invalid output format - can be avro or parquet")
-      } else {
-        success
-      }
-    } text "Output file format, avro or parquet. Defaults to parquet"
+    } text "Format to use when storing results using --output-path."
 
     opt[Int]('n', "num-partitions") optional() action { (x, p) =>
       p.copy(numPartitions = x)
@@ -87,24 +89,39 @@ object WikidataTurtleDumpConverter {
   def main(args: Array[String]): Unit = {
     argsParser.parse(args, Params()) match {
       case Some(params) =>
-
-        val spark = SparkSession
+        if (params.outputTable.isEmpty == params.outputPath.isEmpty) {
+          Console.err.print("Either --table or --output-path must be provided\n")
+          sys.exit(1)
+        }
+        implicit val spark: SparkSession = SparkSession
           .builder()
+          // required because spark would fail with:
+          // Exception in thread "main" org.apache.spark.SparkException: Dynamic partition strict mode requires
+          // at least one static partition column. To turn this off set // hive.exec.dynamic.partition.mode=nonstrict
+          .config("hive.exec.dynamic.partition", value = true)
+          .config("hive.exec.dynamic.partition.mode", "non-strict")
+          // Allows overwriting the target partitions
+          .config("spark.sql.sources.partitionOverwriteMode", "dynamic")
           .appName("WikidataTurtleConverter")
           .getOrCreate()
 
-        // Make spark read text with dedicated separator instead of end-of-line
-        importDump(spark, params.inputPath, params.numPartitions, params.outputFormat, params.outputPath, params.skolemizeBlankNodes)
+        val dataWriter: RDD[Row] => Unit = params.outputTable match {
+          case Some(table) =>
+            getTableWriter(table, params.numPartitions, Some("hive"))
+          case None =>
+            getDirectoryWriter(params.outputPath.get, params.outputFormat, params.numPartitions)
+        }
+        importDump(params.inputPath, params.skolemizeBlankNodes, rowEncoder(), dataWriter)
 
       case None => sys.exit(1) // If args parsing fail (parser prints nice error)
     }
   }
 
-  def importDump(spark: SparkSession, inputPaths: Seq[String], numPartitions: Int,
-                 outputFormat: String, outputPath: String, skolemizeBlankNodes: Boolean): Unit = {
+  def importDump(inputPaths: Seq[String], skolemizeBlankNodes: Boolean, statementEncoder: Statement => Row,
+                 rddWriter: RDD[Row] => Unit)(implicit spark: SparkSession): Unit = {
+    // Make spark read text with dedicated separator instead of end-of-line
     spark.sparkContext.hadoopConfiguration.set("textinputformat.record.delimiter", ENTITY_SEPARATOR)
-
-    val rdd = spark.sparkContext.union(inputPaths map {spark.sparkContext.textFile(_)})
+    val rdd: RDD[Row] = spark.sparkContext.union(inputPaths map {spark.sparkContext.textFile(_)})
       .flatMap(str => {
         // Filter out prefixes
         if (!str.startsWith("@prefix")) {
@@ -112,18 +129,37 @@ object WikidataTurtleDumpConverter {
           val is = new ByteArrayInputStream(s"$ENTITY_HEADER$str".getBytes(StandardCharsets.UTF_8))
           val statements = RdfChunkParser.forWikidata(skolemizeBlankNodes).parse(is)
           // Convert statements to rows
-          val encoder = new StatementEncoder()
-          statements.map(encoder.encode)
+          statements.map(statementEncoder)
         } else {
           Seq.empty[Row]
         }
       })
+    rddWriter(rdd)
+  }
 
-    val df = spark.createDataFrame(rdd, StatementEncoder.schema)
+  def rowEncoder(): Statement => Row = {
+    val encoder = new StatementEncoder()
+    stmt: Statement => {
+      Row.fromTuple(encoder.encode(stmt))
+    }
+  }
 
-    df.repartition(numPartitions).write
-      .mode(SaveMode.Overwrite)
-      .format(outputFormat)
-      .save(outputPath)
+  def getTableWriter(table: String, partitions: Int, format: Option[String])(implicit spark: SparkSession): RDD[Row] => Unit = {
+    rdd: RDD[Row] => {
+      val df = spark.createDataFrame(rdd, StatementEncoder.baseSchema)
+        .repartition(partitions)
+      SparkUtils.insertIntoTablePartition(table, df, saveMode = Overwrite, format = format)
+    }
+  }
+
+  def getDirectoryWriter(outputPath: String, outputFormat: String, partitions: Int)(implicit spark: SparkSession): RDD[Row] => Unit = {
+    rdd: RDD[Row] => {
+      spark.createDataFrame(rdd, StatementEncoder.baseSchema)
+        .repartition(partitions)
+        .write
+        .mode(Overwrite)
+        .format(outputFormat)
+        .save(outputPath)
+    }
   }
 }

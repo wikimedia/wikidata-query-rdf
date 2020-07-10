@@ -14,7 +14,7 @@ class StatementEncoderUnitTest extends FlatSpec with Matchers {
       valueFactory.createURI("http://foo.../what"),
       valueFactory.createURI("http://foo.local/bar")
     )
-    statementEncoder.encode(st) should equal(Row.fromTuple(
+    statementEncoder.encode(st) should equal((
       "<http://foo.local/bar>",
       "<http://foo.local/something>",
       "<http://foo.local/link>",

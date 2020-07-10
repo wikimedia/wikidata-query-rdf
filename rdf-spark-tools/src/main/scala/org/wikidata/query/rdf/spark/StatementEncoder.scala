@@ -16,34 +16,36 @@ import org.openrdf.rio.ntriples.NTriplesUtil
  * Data is wrapped inside "" and suffixed with type info ^^TypeURI
  */
 @NotThreadSafe
-class StatementEncoder extends Serializable {
+class StatementEncoder() extends Serializable {
   // on large graph (10B triples for wikidata as of march 2020)
   // we convert 4 values per triple.
   // Keeping a string buffer here we decrease StringBuffer allocations from
   // 40B (one per value) to 80M (one per entity)
   // drawback is that this class becomes not thread safe
-  private val stringBuffer = new StringBuffer()
+  @transient
+  private lazy val stringBuffer = new StringBuffer()
 
-  private val valueFactory = new ValueFactoryImpl()
+  @transient
+  private lazy val valueFactory = new ValueFactoryImpl()
 
-  def encode(st: Statement): Row = {
-    if (st.getContext == null) {
-      throw new IllegalArgumentException(s"Invalid context provided from triple: $st")
-    }
-    Row.fromTuple((
-      encode(st.getContext),
-      encode(st.getSubject),
-      encode(st.getPredicate),
-      encode(st.getObject)
-    ): (String, String, String, String))
+  def encode(st: Statement): (String, String, String, String) = {
+      if (st.getContext == null) {
+        throw new IllegalArgumentException(s"Invalid context provided from triple: $st")
+      }
+      (
+        encode(st.getContext),
+        encode(st.getSubject),
+        encode(st.getPredicate),
+        encode(st.getObject)
+      )
   }
 
   def decode(row: Row): Statement = {
     valueFactory.createStatement(
-      NTriplesUtil.parseResource(row.getString(StatementEncoder.schema.fieldIndex("subject")), valueFactory),
-      NTriplesUtil.parseURI(row.getString(StatementEncoder.schema.fieldIndex("predicate")), valueFactory),
-      NTriplesUtil.parseValue(row.getString(StatementEncoder.schema.fieldIndex("object")), valueFactory),
-      NTriplesUtil.parseResource(row.getString(StatementEncoder.schema.fieldIndex("context")), valueFactory))
+      NTriplesUtil.parseResource(row.getString(StatementEncoder.baseSchema.fieldIndex("subject")), valueFactory),
+      NTriplesUtil.parseURI(row.getString(StatementEncoder.baseSchema.fieldIndex("predicate")), valueFactory),
+      NTriplesUtil.parseValue(row.getString(StatementEncoder.baseSchema.fieldIndex("object")), valueFactory),
+      NTriplesUtil.parseResource(row.getString(StatementEncoder.baseSchema.fieldIndex("context")), valueFactory))
   }
 
   def decode(value: String): Value = {
@@ -62,7 +64,7 @@ class StatementEncoder extends Serializable {
 }
 
 object StatementEncoder {
-  val schema: StructType = StructType(Seq(
+  def baseSchema: StructType = StructType(Seq(
     StructField("context", StringType, nullable = false),
     StructField("subject", StringType, nullable = false),
     StructField("predicate", StringType, nullable = false),
