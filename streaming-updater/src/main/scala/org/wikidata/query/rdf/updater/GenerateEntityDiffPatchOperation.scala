@@ -5,12 +5,13 @@ import java.util
 import java.util.function.Supplier
 import java.util.Collections.emptyList
 import java.util.UUID
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, ThreadFactory}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import org.apache.flink.api.common.functions.{RichFlatMapFunction, RuntimeContext}
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.scala.{OutputTag, _}
@@ -52,7 +53,9 @@ case class GenerateEntityDiffPatchOperation(domain: String,
   lazy val diff: EntityDiff = EntityDiff.withValuesAndRefsAsSharedElements(scheme)
   lazy val rdfSerializer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())
   lazy val dataEventGenerator: MutationEventDataGenerator = new MutationEventDataGenerator(rdfSerializer, mimeType, chunkSoftMaxSize)
-  implicit lazy val executionContext: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
+
+  implicit lazy val executionContext: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2,
+    new ThreadFactoryBuilder().setNameFormat("GenerateEntityDiffPatchOperation-fetcher-%d").build()))
   lazy val mungeOperation: (String, util.Collection[Statement]) => Long = mungeOperationProvider.apply(scheme)
 
 
