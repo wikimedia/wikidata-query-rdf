@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -89,6 +90,11 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      */
     private static final boolean ENABLE_WHITELIST =
             Boolean.parseBoolean(System.getProperty("wikibaseServiceEnableWhitelist", "true"));
+
+    /**
+     * Overrides the default namespace set by blazegraph on within the web.xml file.
+     */
+    private static final String DEFAULT_NAMESPACE = System.getProperty("blazegraphDefaultNamespace");
 
     /**
      * Default service whitelist filename.
@@ -276,6 +282,16 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
     @Override
     public void contextInitialized(final ServletContextEvent sce) {
+        if (DEFAULT_NAMESPACE != null) {
+            Map<String, String> overrides;
+            if (sce.getServletContext().getAttribute("INIT_PARAMS_OVERRIDES") != null) {
+                overrides = (Map<String, String>) sce.getServletContext().getAttribute("INIT_PARAMS_OVERRIDES");
+            } else {
+                overrides = new HashMap<>();
+                sce.getServletContext().setAttribute("INIT_PARAMS_OVERRIDES", overrides);
+            }
+            overrides.put("namespace", DEFAULT_NAMESPACE);
+        }
         super.contextInitialized(sce);
         sce.getServletContext().setAttribute(BLAZEGRAPH_DEFAULT_NAMESPACE, this.getBigdataRDFContext().getConfig().namespace);
         initializeServices();

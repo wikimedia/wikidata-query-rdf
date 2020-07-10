@@ -11,6 +11,7 @@ CONTEXT=bigdata
 PORT=${PORT:-"9999"}
 DIR=${DIR:-`dirname $0`}
 PREFIXES_FILE=$DIR/prefixes.conf
+BLAZEGRAPH_MAIN_NS=${BLAZEGRAPH_MAIN_NS:-"wdq"}
 WIKIBASE_CONCEPT_URI_PARAM=${WIKIBASE_CONCEPT_URI_PARAM:-""}
 COMMONS_CONCEPT_URI_PARAM=${COMMONS_CONCEPT_URI_PARAM:-""}
 OAUTH_RUN=${OAUTH_RUN:-""}
@@ -112,6 +113,7 @@ exec java \
      -Dcom.bigdata.rdf.sail.sparql.PrefixDeclProcessor.additionalDeclsFile="$PREFIXES_FILE" \
      -Dorg.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.config=$DIR/mwservices.json \
      -Dcom.bigdata.rdf.sail.webapp.client.HttpClientConfigurator=org.wikidata.query.rdf.blazegraph.ProxiedHttpConnectionFactory \
+     -DblazegraphDefaultNamespace="$BLAZEGRAPH_MAIN_NS" \
      -Dhttp.userAgent="${USER_AGENT}" \
      $WIKIBASE_CONCEPT_URI_PARAM \
      $COMMONS_CONCEPT_URI_PARAM \
