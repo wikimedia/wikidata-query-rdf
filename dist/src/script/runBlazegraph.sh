@@ -20,6 +20,7 @@ OAUTH_CONSUMER_SECRET_PARAM=${OAUTH_CONSUMER_SECRET_PARAM:-""}
 OAUTH_SESSION_STORE_LIMIT_PARAM=${OAUTH_SESSION_STORE_LIMIT_PARAM:-""}
 OAUTH_INDEX_URL_PARAM=${OAUTH_INDEX_URL_PARAM:-""}
 OAUTH_NICE_URL_PARAM=${OAUTH_NICE_URL_PARAM:-""}
+OAUTH_WIKI_LOGOUT_LINK_PARAM=${OAUTH_WIKI_LOGOUT_LINK_PARAM:-""}
 HEAP_SIZE=${HEAP_SIZE:-"16g"}
 LOG_CONFIG=${LOG_CONFIG:-""}
 LOG_DIR=${LOG_DIR:-"/var/log/wdqs"}
@@ -59,13 +60,13 @@ DEBUG=
 function usage() {
   echo "Usage: $0 [-h <host>] [-d <dir>] [-c <context>] [-p <port>] " \
   "[-o <blazegraph options>] [-f config.properties] [-n prefixes.conf] [-w wikibaseConceptUri] [-m commonsConceptUri] " \
-  "[-r -k <oauthConsumerKey> -s <oauthConsumerSecret -l <oauthSessionStoreLimit -i <oauthIndexUrl> -b <oauthNiceUrl>]"
+  "[-r -k <oauthConsumerKey> -s <oauthConsumerSecret -l <oauthSessionStoreLimit -i <oauthIndexUrl> -b <oauthNiceUrl> -g <wikiLogoutLink>]"
   exit 1
 }
 
 OAUTH_PROPS_PREFIX="org.wikidata.query.rdf.mwoauth.OAuthProxyConfig"
 
-while getopts h:c:p:d:o:f:n:w:m:rk:s:l:b:i:? option
+while getopts h:c:p:d:o:f:n:w:m:rk:s:l:b:i:g:? option
 do
   case "${option}"
   in
@@ -84,6 +85,7 @@ do
     l) OAUTH_SESSION_STORE_LIMIT_PARAM="-D${OAUTH_PROPS_PREFIX}.sessionStoreLimit=${OPTARG}";;
     b) OAUTH_NICE_URL_PARAM="-D${OAUTH_PROPS_PREFIX}.niceUrlBase=${OPTARG}";;
     i) OAUTH_INDEX_URL_PARAM="-D${OAUTH_PROPS_PREFIX}.indexUrl=${OPTARG}";;
+    g) OAUTH_WIKI_LOGOUT_LINK_PARAM="-D${OAUTH_PROPS_PREFIX}.wikiLogoutLink=${OPTARG}";;
     ?) usage;;
   esac
 done
@@ -123,6 +125,7 @@ exec java \
      $OAUTH_SESSION_STORE_LIMIT_PARAM \
      $OAUTH_INDEX_URL_PARAM \
      $OAUTH_NICE_URL_PARAM \
+     $OAUTH_WIKI_LOGOUT_LINK_PARAM \
      -Dorg.eclipse.jetty.annotations.AnnotationParser.LEVEL=OFF \
      ${BLAZEGRAPH_OPTS} \
      -jar jetty-runner*.jar \

@@ -12,6 +12,8 @@ public final class OAuthProxyConfig {
     static final String SESSIONS_STORE_LIMIT_PROPERTY = "sessionStoreLimit";
     static final String INDEX_URL_PROPERTY = "indexUrl";
     static final String NICE_URL_BASE_PROPERTY = "niceUrlBase";
+    static final String WIKI_LOGOUT_LINK_PROPERTY = "wikiLogoutLink";
+
 
 
     public OAuthProxyConfig(ServletConfig servletConfig) {
@@ -38,6 +40,9 @@ public final class OAuthProxyConfig {
         return loadStringParam(NICE_URL_BASE_PROPERTY);
     }
 
+    public String wikiLogoutLink() {
+        return loadStringParam(WIKI_LOGOUT_LINK_PROPERTY);
+    }
     private String loadStringParam(String property) {
         String value = servletConfig != null ? servletConfig.getInitParameter(property) : null;
         return value != null ? value : System.getProperty(SYSTEM_PROPERTY_PREFIX + property);
