@@ -125,7 +125,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
 
   "an unexpected failure fetching one of the two revisions" should "break the pipeline" in {
     (repoMock.getEntityByRevision _).expects("Q1", 1) throwing new IllegalArgumentException("bug")
-    (repoMock.getEntityByRevision _).expects("Q1", 2) returning statements("uri:a", "uri:b").asScala
+    (repoMock.getEntityByRevision _).expects("Q1", 2).noMoreThanOnce returning statements("uri:a", "uri:b").asScala
 
     intercept[IllegalArgumentException] {
       operator.flatMap(inputDiffOp, new DiscardingOutputCollector[ResolvedOp]())
