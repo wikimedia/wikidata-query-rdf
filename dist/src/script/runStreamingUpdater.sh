@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-if [ -r /etc/default/wdqs-streaming-updater ]; then
-  . /etc/default/wdqs-streaming-updater
+if [ -r /etc/default/wdqs-updater ]; then
+  . /etc/default/wdqs-updater
 fi
 
 HOST=http://localhost:9999
