@@ -20,7 +20,10 @@ ${DEPLOY_DIR}/munge.sh \
 -- \
 --wikibaseHost commons.wikimedia.org \
 --conceptUri http://www.wikidata.org \
---commonsUri http://commons.wikimedia.org
+--commonsUri https://commons.wikimedia.org
+
+echo "Stopping nginx"
+sudo systemctl stop nginx
 
 echo "Stopping Blazegraph"
 sudo systemctl stop wcqs-blazegraph
@@ -36,3 +39,6 @@ sleep 30
 
 echo "Loading data"
 ${DEPLOY_DIR}/loadData.sh -n wcq -h http://localhost:9999 -d ${DATA_DIR}/munged
+
+echo "Starting nginx"
+sudo systemctl start nginx
