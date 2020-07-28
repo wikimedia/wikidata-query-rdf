@@ -27,6 +27,8 @@ public class MutationEventDataJsonSerializationUnitTest {
             .getResource("MutationEventDataJsonSerializationUnitTest-testImport.json");
     private static URL TEST_DIFF_JSON_RESOURCE = MutationEventDataJsonSerializationUnitTest.class
             .getResource("MutationEventDataJsonSerializationUnitTest-testDiff.json");
+    private static URL TEST_DELETE_JSON_RESOURCE = MutationEventDataJsonSerializationUnitTest.class
+            .getResource("MutationEventDataJsonSerializationUnitTest-testDelete.json");
 
     private final RDFChunkSerializer chunkSer;
 
@@ -67,6 +69,21 @@ public class MutationEventDataJsonSerializationUnitTest {
 
         Object data = MapperUtils.getObjectMapper().readValue(TEST_DIFF_JSON_RESOURCE, MutationEventData.class);
         assertThat(data).isEqualTo(events.get(0));
+    }
+
+    @Test
+    public void testDelete() throws IOException {
+        MutationEventDataGenerator eventGenerator = buildEventGenerator(Integer.MAX_VALUE);
+        EventsMeta meta = ChangeEventFixtures.makeEventMeta(new UUID(2, 3), new UUID(3, 4));
+        Instant eventTime = Instant.EPOCH;
+        MutationEventData event = eventGenerator.deleteEvent(meta, "Q123", 123, eventTime);
+
+        StringWriter sw = new StringWriter();
+        MapperUtils.getObjectMapper().writer().writeValue(sw, event);
+        assertThat(sw.toString()).isEqualTo(Resources.toString(TEST_DELETE_JSON_RESOURCE, UTF_8).replace("\n", ""));
+
+        Object data = MapperUtils.getObjectMapper().readValue(TEST_DELETE_JSON_RESOURCE, MutationEventData.class);
+        assertThat(data).isEqualTo(event);
     }
 
     private MutationEventDataGenerator buildEventGenerator(int softMaxSize) {

@@ -37,6 +37,10 @@ public class MutationEventDataGenerator {
                 linkedValuesAndRefs, unlinkedValuesAndRefs);
     }
 
+    public MutationEventData deleteEvent(EventsMeta meta, String entity, long revision, Instant eventTime) {
+        return new MutationEventData(meta, entity, revision, eventTime, 0, 1, MutationEventData.DELETE_OPERATION);
+    }
+
     private List<DiffEventData> createChunks(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
                                              String operation, List<Statement> added, List<Statement> deleted,
                                              List<Statement> linkedValuesAndRefs,

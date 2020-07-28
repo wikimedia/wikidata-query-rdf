@@ -1,0 +1,1 @@
+{"$schema":"/wikibase/rdf/update_stream/1.0.0","meta":{"dt":"1970-01-01T00:00:00.001Z","id":"00000000-0000-0002-0000-000000000003","domain":"unittest.local","stream":"rdf_stream","request_id":"00000000-0000-0003-0000-000000000004"},"entity":"Q123","revision":123,"event_time":"1970-01-01T00:00:00Z","sequence":0,"sequence_length":1,"operation":"delete"}

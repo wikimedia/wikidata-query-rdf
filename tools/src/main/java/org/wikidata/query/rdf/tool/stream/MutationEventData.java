@@ -5,6 +5,7 @@ import java.time.Instant;
 
 import org.wikidata.query.rdf.tool.change.events.EventsMeta;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -23,6 +24,7 @@ import lombok.experimental.NonFinal;
 @JsonSubTypes({
         @JsonSubTypes.Type(value = DiffEventData.class, name = "diff"),
         @JsonSubTypes.Type(value = DiffEventData.class, name = "import"),
+        @JsonSubTypes.Type(value = MutationEventData.class, name = "delete"),
 })
 @Value
 @NonFinal
@@ -39,6 +41,7 @@ import lombok.experimental.NonFinal;
 public class MutationEventData implements Serializable {
     public static final String DIFF_OPERATION = "diff";
     public static final String IMPORT_OPERATION = "import";
+    public static final String DELETE_OPERATION = "delete";
     private static final String SCHEMA = "/wikibase/rdf/update_stream/1.0.0";
 
     @JsonProperty("$schema")
@@ -55,4 +58,23 @@ public class MutationEventData implements Serializable {
     int sequenceLength;
     @JsonProperty("operation")
     String operation;
+
+    @JsonCreator
+    public MutationEventData(
+            @JsonProperty("meta") EventsMeta meta,
+            @JsonProperty("entity") String entity,
+            @JsonProperty("revision") long revision,
+            @JsonProperty("event_time") Instant eventTime,
+            @JsonProperty("sequence") int sequence,
+            @JsonProperty("sequence_length") int sequenceLength,
+            @JsonProperty("operation") String operation
+    ) {
+        this.meta = meta;
+        this.entity = entity;
+        this.revision = revision;
+        this.eventTime = eventTime;
+        this.sequence = sequence;
+        this.sequenceLength = sequenceLength;
+        this.operation = operation;
+    }
 }
