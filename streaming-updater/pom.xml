@@ -46,17 +46,12 @@
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
                 </exclusion>
+                <exclusion>
+                    <!-- conflicts with flink log4j-slf4j-impl -->
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-core</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -213,8 +208,8 @@
                     </ignoredClassPatterns>
                     <ignoredResourcePatterns>
                         <ignoredResourcePattern>git.properties</ignoredResourcePattern>
-                        <!-- FIXME: declared by tools & this project -->
-                        <ignoredResourcePattern>logback.xml</ignoredResourcePattern>
+                        <!-- test resource -->
+                        <ignoredResourcePattern>log4j2-test.properties</ignoredResourcePattern>
                     </ignoredResourcePatterns>
                     <ignoredDependencies>
                         <dependency>
