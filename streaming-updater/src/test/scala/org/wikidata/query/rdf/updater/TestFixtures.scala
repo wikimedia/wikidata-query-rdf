@@ -87,7 +87,7 @@ trait TestFixtures extends TestEventGenerator {
       (repo, elem) => repo.withResponse(elem._1, elem._2.inputTriples)
     }
 
-  def expectedTripleDiffs: Seq[EntityPatchOp] = {
+  def expectedTripleDiffs: Seq[MutationDataChunk] = {
     Seq(
       getExpectedTripleDiff("Q1", 1L),
       getExpectedTripleDiff("Q1", 2L, 1L),
@@ -96,14 +96,14 @@ trait TestFixtures extends TestEventGenerator {
     )
   }
 
-  def getExpectedTripleDiff(entityId: String, revisionTo: Long, revisionFrom: Long = 0L): EntityPatchOp = {
+  def getExpectedTripleDiff(entityId: String, revisionTo: Long, revisionFrom: Long = 0L): MutationDataChunk = {
     val data: RevisionData = testData((entityId, revisionTo))
     val eventTime: Instant = eventTimes(entityId, revisionTo)
     val eventsMetaData: Supplier[EventsMeta] = new Supplier[EventsMeta]() {
       override def get(): EventsMeta = new EventsMeta(clock.instant(),
         OUTPUT_EVENT_UUID_GENERATOR.apply(), DOMAIN, OUTPUT_EVENT_STREAM_NAME, ORIG_REQUEST_ID)
     }
-    val origEventMeta: EventsMeta = new EventsMeta(eventTime, "unused", DOMAIN, STREAM, ORIG_REQUEST_ID);
+    val origEventMeta: EventsMeta = new EventsMeta(eventTime, "unused", DOMAIN, STREAM, ORIG_REQUEST_ID)
     val operation: MutationOperation = if (revisionFrom == 0L) {
       FullImport(entityId, eventTime, revisionTo, instantNow, origEventMeta)
     } else {
@@ -117,7 +117,7 @@ trait TestFixtures extends TestEventGenerator {
         dataEventGenerator.diffEvent(eventsMetaData, entityId, revisionTo, eventTime, new util.ArrayList[Statement](data.expectedAdds.asJavaCollection),
           new util.ArrayList[Statement](data.expectedRemoves.asJavaCollection), Collections.emptyList(), Collections.emptyList())
     }
-    EntityPatchOp(operation, dataEvent.get(0))
+    MutationDataChunk(operation, dataEvent.get(0))
   }
 
   def metaStatements(entityId: String, revision: Long, eventTime: Option[Long] = None): MetaStatements =

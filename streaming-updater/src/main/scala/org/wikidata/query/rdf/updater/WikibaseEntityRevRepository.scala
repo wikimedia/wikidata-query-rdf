@@ -6,7 +6,6 @@ import com.codahale.metrics.MetricRegistry
 import org.apache.flink.metrics.MetricGroup
 import org.openrdf.model.Statement
 import org.slf4j.{Logger, LoggerFactory}
-import org.wikidata.query.rdf.tool.exception.RetryableException
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 

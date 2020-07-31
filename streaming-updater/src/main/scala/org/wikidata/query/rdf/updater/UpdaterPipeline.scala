@@ -9,11 +9,14 @@ import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.CheckpointingMode
+import org.wikidata.query.rdf.tool.rdf.RDFPatch
 
 sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
                              spuriousEventStream: DataStream[IgnoredMutation],
                              failedOpsStream: DataStream[FailedOp],
-                             tripleEventStream: DataStream[EntityPatchOp])
+                             tripleEventStream: DataStream[MutationDataChunk],
+                             updaterPipelineOptions: UpdaterPipelineOptions
+                            )
                             (implicit env: StreamExecutionEnvironment)
 {
   val defaultAppName = "WDQS Updater Stream Updater"
@@ -47,11 +50,11 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
     this
   }
 
-  def saveTo(sink: SinkFunction[EntityPatchOp], sinkParallelism: Option[Int] = None): UpdaterPipeline = {
+  def saveTo(sink: SinkFunction[MutationDataChunk]): UpdaterPipeline = {
     val sinkOp = tripleEventStream.addSink(sink)
       .uid("output")
       .name("output")
-    sinkParallelism.foreach(sinkOp.setParallelism)
+      .setParallelism(updaterPipelineOptions.outputParallelism)
     this
   }
 }
@@ -60,7 +63,8 @@ sealed case class UpdaterPipelineOptions(hostname: String,
                                           reorderingWindowLengthMs: Int,
                                           reorderingOpParallelism: Option[Int],
                                           decideMutationOpParallelism: Option[Int],
-                                          generateDiffParallelism: Option[Int]
+                                          generateDiffParallelism: Option[Int],
+                                          outputParallelism: Int = 1
 )
 
 sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
@@ -90,9 +94,10 @@ sealed case class UpdaterPipelineOutputStreamOption(
  *  => keyBy item
  *  => map(decide mutation ope) see DecideMutationOperation
  *  => process(remove spurious events) see RouteIgnoredMutationToSideOutput
- *  => flatMap(fetch data from wikibase and diff) see ExtractTriplesOperation
+ *  => map(fetch data from wikibase and diff) see GenerateEntityDiffPatchOperation
  *  => process(remove failed ops) see RouteFailedOpsToSideOutput
- *  output of the stream is a EntityPatchOp
+ *  => flatMap(split large patches into chunks) see RDFPatchChunkOperation
+ *  output of the stream is a MutationDataChunk
  */
 object UpdaterPipeline {
   def build(opts: UpdaterPipelineOptions, incomingStreams: List[DataStream[InputEvent]],
@@ -101,6 +106,7 @@ object UpdaterPipeline {
             clock: Clock = Clock.systemUTC(),
             outputStreamName: String = "wdqs_streaming_updater")
            (implicit env: StreamExecutionEnvironment): UpdaterPipeline = {
+    env.getConfig.registerTypeWithKryoSerializer(classOf[RDFPatch], classOf[RDFPatchSerializer])
     val incomingEventStream: DataStream[InputEvent] = incomingStreams match {
       case Nil => throw new NoSuchElementException("at least one stream is needed")
       case x :: Nil => x
@@ -113,45 +119,65 @@ object UpdaterPipeline {
     val outputMutationStream: DataStream[MutationOperation] = rerouteIgnoredMutations(decideMutationOp(windowStream, opts))
     val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
 
-    val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, uniqueIdGenerator,
-      clock, outputStreamName, outputMutationStream)
+    val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, outputMutationStream)
+    val patchStream: DataStream[EntityPatchOp] = rerouteFailedOps(resolvedOpStream)
+    val failedOpsToSideOutput: DataStream[FailedOp] = patchStream.getSideOutput(RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
 
-    val tripleEventStream: DataStream[EntityPatchOp] = rerouteFailedOpsAndMeasureLatency(clock, resolvedOpStream)
+    val tripleStream: DataStream[MutationDataChunk] = measureLatency(
+      rdfPatchChunkOp(patchStream, opts, uniqueIdGenerator, clock, outputStreamName), clock, opts)
 
-    val failedOpsToSideOutput: DataStream[FailedOp] = tripleEventStream.getSideOutput(RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
-
-    new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, failedOpsToSideOutput, tripleEventStream)
+    new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, failedOpsToSideOutput, tripleStream, updaterPipelineOptions = opts)
   }
 
-  private def rerouteFailedOpsAndMeasureLatency(clock: Clock, resolvedOpStream: DataStream[ResolvedOp]): DataStream[EntityPatchOp] = {
-    val tripleEventStream: DataStream[EntityPatchOp] = resolvedOpStream
+  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp]): DataStream[EntityPatchOp] = {
+    resolvedOpStream
       .process(new RouteFailedOpsToSideOutput())
       .name("RouteFailedOpsToSideOutput")
       .uid("RouteFailedOpsToSideOutput")
-      .map(MeasureEventProcessingLatencyOperation(clock))
+  }
+
+  private def rdfPatchChunkOp(dataStream: DataStream[EntityPatchOp],
+                              opts: UpdaterPipelineOptions,
+                              uniqueIdGenerator: () => String,
+                              clock: Clock,
+                              outputStreamName: String
+                             ): DataStream[MutationDataChunk] = {
+    dataStream
+      .flatMap(new RDFPatchChunkOperation(
+        domain = opts.hostname,
+        clock = clock,
+        uniqueIdGenerator = uniqueIdGenerator,
+        stream = outputStreamName
+      ))
+      .name("RDFPatchChunkOperation")
+      .uid("RDFPatchChunkOperation")
+      .setParallelism(opts.outputParallelism)
+  }
+
+  private def measureLatency(dataStream: DataStream[MutationDataChunk],
+                             clock: Clock,
+                             updaterPipelineOptions: UpdaterPipelineOptions
+                            ): DataStream[MutationDataChunk] = {
+    dataStream.map(MeasureEventProcessingLatencyOperation(clock))
       .name("MeasureEventProcessingLatencyOperation")
       .uid("MeasureEventProcessingLatencyOperation")
-    tripleEventStream
+      .setParallelism(updaterPipelineOptions.outputParallelism)
   }
 
   private def resolveMutationOperations(opts: UpdaterPipelineOptions,
                                         wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
-                                        uniqueIdGenerator: () => String,
-                                        clock: Clock,
-                                        outputStreamName: String,
                                         outputMutationStream: DataStream[MutationOperation]
                                        ): DataStream[ResolvedOp] = {
-    val resolvedOpStream: DataStream[ResolvedOp] = outputMutationStream
-      .flatMap(GenerateEntityDiffPatchOperation(
+    val streamToResolve: KeyedStream[MutationOperation, String] = outputMutationStream
+      .keyBy(_.item)
+    opts.generateDiffParallelism.foreach(streamToResolve.setParallelism)
+    val resolvedOpStream: DataStream[ResolvedOp] = streamToResolve
+      .map(GenerateEntityDiffPatchOperation(
         domain = opts.hostname,
-        wikibaseRepositoryGenerator = wikibaseRepositoryGenerator,
-        uniqueIdGenerator = uniqueIdGenerator,
-        clock = clock,
-        stream = outputStreamName)
-      )
+        wikibaseRepositoryGenerator = wikibaseRepositoryGenerator
+      ))
       .name("GenerateEntityDiffPatchOperation")
       .uid("GenerateEntityDiffPatchOperation")
-    opts.generateDiffParallelism.foreach(resolvedOpStream.setParallelism)
     resolvedOpStream
   }
 

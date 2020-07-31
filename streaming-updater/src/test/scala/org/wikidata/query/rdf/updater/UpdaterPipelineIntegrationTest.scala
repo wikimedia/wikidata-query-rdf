@@ -49,7 +49,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, REORDERING_WINDOW_LENGTH, None, None, None),
         List(source), _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
         clock, OUTPUT_EVENT_STREAM_NAME)
-      .saveTo(new CollectSink[EntityPatchOp](CollectSink.values.append(_)))
+      .saveTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))
       .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
       .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))
       .execute("test")
@@ -59,7 +59,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     val expected = expectedTripleDiffs
     CollectSink.values should have size expected.size
     CollectSink.values zip expected map {
-      case (EntityPatchOp(actualOp, actualData), EntityPatchOp(expectedOp, expectedData)) =>
+      case (MutationDataChunk(actualOp, actualData), MutationDataChunk(expectedOp, expectedData)) =>
         // We don't compare directly expectedData vs actualData because the generated RDF data may be different in its serialized form
         // even though the resulting graph is identical. This might be because of the ordering or the mime type.
         def asComparableTuple(op: MutationOperation, data: MutationEventData): (MutationOperation, String, Instant, EventsMeta, String, Long, Int, Int) = {

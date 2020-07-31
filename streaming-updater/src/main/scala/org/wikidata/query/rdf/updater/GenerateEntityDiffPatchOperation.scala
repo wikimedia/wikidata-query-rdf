@@ -1,29 +1,23 @@
 package org.wikidata.query.rdf.updater
 
-import java.time.Clock
 import java.util
-import java.util.function.Supplier
 import java.util.Collections.emptyList
-import java.util.UUID
-import java.util.concurrent.{Executors, ThreadFactory}
+import java.util.concurrent.Executors
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import org.apache.flink.api.common.functions.{RichFlatMapFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.scala.{OutputTag, _}
 import org.apache.flink.util.Collector
 import org.openrdf.model.Statement
-import org.openrdf.rio.{RDFFormat, RDFWriterRegistry}
 import org.slf4j.LoggerFactory
 import org.wikidata.query.rdf.common.uri.{UrisScheme, UrisSchemeFactory}
-import org.wikidata.query.rdf.tool.change.events.EventsMeta
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
 import org.wikidata.query.rdf.tool.rdf.{EntityDiff, Munger, RDFPatch}
-import org.wikidata.query.rdf.tool.stream.{MutationEventData, MutationEventDataGenerator, RDFChunkSerializer}
 import org.wikidata.query.rdf.updater.GenerateEntityDiffPatchOperation.mungerOperationProvider
 
 sealed trait ResolvedOp {
@@ -31,19 +25,14 @@ sealed trait ResolvedOp {
 }
 
 case class EntityPatchOp(operation: MutationOperation,
-                         data: MutationEventData) extends ResolvedOp
+                         data: RDFPatch) extends ResolvedOp
 case class FailedOp(operation: MutationOperation, error: String) extends ResolvedOp
 
 case class GenerateEntityDiffPatchOperation(domain: String,
                                             wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
-                                            mimeType: String = RDFFormat.TURTLE.getDefaultMIMEType,
-                                            chunkSoftMaxSize: Int = 128000, // ~max 128k chars, can be slightly more
-                                            clock: Clock = Clock.systemUTC(),
-                                            uniqueIdGenerator: () => String = () => UUID.randomUUID().toString,
-                                            stream: String = "wdqs_streaming_updater",
                                             mungeOperationProvider: UrisScheme => (String, util.Collection[Statement]) => Long = s => mungerOperationProvider(s)
                                   )
-  extends RichFlatMapFunction[MutationOperation, ResolvedOp] {
+  extends RichMapFunction[MutationOperation, ResolvedOp] {
 
 
   private val LOG = LoggerFactory.getLogger(getClass)
@@ -51,13 +40,23 @@ case class GenerateEntityDiffPatchOperation(domain: String,
   lazy val repository: WikibaseEntityRevRepositoryTrait =  wikibaseRepositoryGenerator(this.getRuntimeContext)
   lazy val scheme: UrisScheme = UrisSchemeFactory.forHost(domain)
   lazy val diff: EntityDiff = EntityDiff.withValuesAndRefsAsSharedElements(scheme)
-  lazy val rdfSerializer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())
-  lazy val dataEventGenerator: MutationEventDataGenerator = new MutationEventDataGenerator(rdfSerializer, mimeType, chunkSoftMaxSize)
 
   implicit lazy val executionContext: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10,
     new ThreadFactoryBuilder().setNameFormat("GenerateEntityDiffPatchOperation-fetcher-%d").build()))
   lazy val mungeOperation: (String, util.Collection[Statement]) => Long = mungeOperationProvider.apply(scheme)
 
+  override def map(op: MutationOperation): ResolvedOp = {
+    try {
+      op match {
+        case Diff(item, _, revision, fromRev, _, _) =>
+          getDiff(op, item, revision, fromRev)
+        case FullImport(item, _, revision, _, _) =>
+          getImport(op, item, revision)
+      }
+    } catch {
+      case e: ContainedException => FailedOp(op, e.toString)
+    }
+  }
 
   private def fetchAsync(item: String, revision: Long): Future[Iterable[Statement]] = {
     @scala.annotation.tailrec
@@ -77,72 +76,43 @@ case class GenerateEntityDiffPatchOperation(domain: String,
     Future { retryableFetch() }
   }
 
-  private def fetchTwoAndSendDiff(op: MutationOperation, item: String, revision: Long, fromRev: Long, origMeta: EventsMeta,
-                                  collector: Collector[ResolvedOp]): Unit = {
+  private def getDiff(op: MutationOperation, item: String, revision: Long, fromRev: Long): ResolvedOp = {
     val from: Future[Iterable[Statement]] = fetchAsync(item, fromRev)
     val to: Future[Iterable[Statement]] = fetchAsync(item, revision)
 
-    val awaiting: Future[Unit] = from flatMap { fromIt =>
+    val awaiting: Future[RDFPatch] = from flatMap { fromIt =>
       to map {
-        toIt => generateAndSendDiff(op, item, fromIt, toIt, revision, fromRev, origMeta, collector)
+        toIt => generateDiff(item, fromIt, toIt, revision, fromRev)
       }
     }
 
-    Await.result(awaiting, Duration.Inf)
+    EntityPatchOp(op, Await.result(awaiting, Duration.Inf))
   }
 
-  private def fetchOneAndSendImport(op: MutationOperation, item: String, revision: Long, origMeta: EventsMeta, collector: Collector[ResolvedOp]): Unit = {
+  private def getImport(op: MutationOperation, item: String, revision: Long): ResolvedOp = {
     val stmts: Future[Iterable[Statement]] = fetchAsync(item, revision)
-    val awaiting: Future[Unit] = stmts map {
-      sendImport(op, item, _, revision, origMeta, collector)
+    val awaiting: Future[RDFPatch] = stmts map {
+      sendImport(item, _, revision)
     }
 
-    Await.result(awaiting, Duration.Inf)
+    EntityPatchOp(op, Await.result(awaiting, Duration.Inf))
   }
 
-  override def flatMap(op: MutationOperation, collector: Collector[ResolvedOp]): Unit = {
-    try {
-      op match {
-        case Diff(item, _, revision, fromRev, _, origMeta) =>
-          fetchTwoAndSendDiff(op, item, revision, fromRev, origMeta, collector)
-        case FullImport(item, _, revision, _, origMeta) =>
-          fetchOneAndSendImport(op, item, revision, origMeta, collector)
-      }
-    } catch {
-      case e: ContainedException => collector.collect(FailedOp(op, e.toString))
-    }
-  }
-
-  private def sendImport(op: MutationOperation, item: String, stmts: Iterable[Statement], revision: Long, origMeta: EventsMeta,
-                         collector: Collector[ResolvedOp]): Unit = {
+  private def sendImport(item: String, stmts: Iterable[Statement], revision: Long): RDFPatch = {
       if (stmts.isEmpty) {
         throw new ContainedException(s"Got empty entity for $item, revision:$revision (404 or 204?)")
       } else {
-        val patch = fullImport(item, stmts)
-        dataEventGenerator.fullImportEvent(eventMetaSupplier(origMeta), item, revision, op.eventTime,
-            patch.getAdded, patch.getLinkedSharedElements).asScala
-          .map(EntityPatchOp(op, _))
-          .foreach(collector.collect(_))
+        fullImport(item, stmts)
       }
   }
 
-  private def generateAndSendDiff(op: MutationOperation, item: String, from: Iterable[Statement], to: Iterable[Statement],
-                                  revision: Long, fromRev: Long, origMeta: EventsMeta, collector: Collector[ResolvedOp]): Unit = {
+  private def generateDiff(item: String, from: Iterable[Statement], to: Iterable[Statement],
+                           revision: Long, fromRev: Long): RDFPatch = {
       if (from.isEmpty || to.isEmpty) {
         throw new ContainedException(s"Got empty entity for $item, fromRev: $fromRev, revision:$revision (404 or 204?)")
       } else {
-        val patch = diff(item, from, to)
-        dataEventGenerator.diffEvent(eventMetaSupplier(origMeta), item, revision, op.eventTime,
-            patch.getAdded, patch.getRemoved, patch.getLinkedSharedElements, patch.getUnlinkedSharedElements).asScala
-          .map(EntityPatchOp(op, _))
-          .foreach(collector.collect(_))
+        diff(item, from, to)
     }
-  }
-
-  private def eventMetaSupplier(originalEventMeta: EventsMeta): Supplier[EventsMeta] = {
-      new Supplier[EventsMeta] {
-        override def get(): EventsMeta = new EventsMeta(clock.instant(), uniqueIdGenerator.apply(), domain, stream, originalEventMeta.requestId())
-      }
   }
 
   private def diff(item: String, from: Iterable[Statement], to: Iterable[Statement]): RDFPatch = {

@@ -52,7 +52,6 @@ object UpdaterJob {
     val checkPointInterval: Int = params.getInt("checkpoint_interval", 3*60*1000);
     val minPauseBetweenCheckpoints: Int = params.getInt("min_pause_between_checkpoints", 2000);
     val autoWMInterval: Int = params.getInt("auto_wm_interval", 200);
-    val outputSinkParallelism: Option[Int] = Some(params.getInt("output_sink_parallelism", 1));
     val latencyTrackingInterval: Option[Int] = optionalIntArg(params, "latency_tracking_interval")
     val checkpointTimeout: Int = params.getInt("checkpoint_timeout", 10*60*1000)
     val checkpointingMode: CheckpointingMode = if (params.getBoolean("exactly_once", true)) {
@@ -62,7 +61,7 @@ object UpdaterJob {
     }
 
     val outputStreamOption = UpdaterPipelineOutputStreamOption(outputKafkaBrokers, outputTopic, outputPartition, checkpointingMode)
-    val outputSink: SinkFunction[EntityPatchOp] = prepareKafkaSink(outputStreamOption)
+    val outputSink: SinkFunction[MutationDataChunk] = prepareKafkaSink(outputStreamOption)
 
     val uris: Uris = WikibaseRepository.Uris.fromString(s"https://$hostName")
     implicit val env: StreamExecutionEnvironment = prepareEnv(checkpointDir, checkPointInterval, checkpointTimeout, minPauseBetweenCheckpoints,
@@ -73,7 +72,7 @@ object UpdaterJob {
       .saveLateEventsTo(prepareFileDebugSink(lateEventsDir))
       .saveSpuriousEventsTo(prepareFileDebugSink(spuriousEventsDir))
       .saveFailedOpsTo(prepareFileDebugSink(failedOpsDir))
-      .saveTo(outputSink, outputSinkParallelism)
+      .saveTo(outputSink)
       .execute("WDQS Streaming Updater POC")
   }
 
@@ -135,7 +134,7 @@ object UpdaterJob {
       .build()
   }
 
-  private def prepareKafkaSink(options: UpdaterPipelineOutputStreamOption): SinkFunction[EntityPatchOp] = {
+  private def prepareKafkaSink(options: UpdaterPipelineOutputStreamOption): SinkFunction[MutationDataChunk] = {
     val producerConfig = new Properties()
     producerConfig.setProperty("bootstrap.servers", options.kafkaBrokers)
     producerConfig.setProperty("transaction.timeout.ms", "900000")
@@ -144,7 +143,7 @@ object UpdaterJob {
     producerConfig.setProperty("batch.size", "250000")
     producerConfig.setProperty("linger.ms", "1")
     producerConfig.setProperty("compression.type", "gzip")
-    new FlinkKafkaProducer[EntityPatchOp](
+    new FlinkKafkaProducer[MutationDataChunk](
       options.topic,
       new MutationEventDataSerializationSchema(options.topic, options.partition),
       producerConfig,
