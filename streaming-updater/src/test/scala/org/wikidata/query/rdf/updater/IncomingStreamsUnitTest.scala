@@ -4,7 +4,7 @@ import java.time.{Clock, Instant}
 
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
-import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, EventsMeta, RevisionCreateEvent}
+import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, EventsMeta, RevisionCreateEvent, PageDeleteEvent}
 
 class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   "IncomingStreams" should "create properly named streams" in {
@@ -31,6 +31,16 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     event.eventTime should equal(Instant.ofEpochMilli(123))
     event.item should equal("Q123")
     event.revision should equal(1234)
+  }
+
+  "PageDelEvent" should "be convertible into InputEvent" in {
+    val event = IncomingStreams.PAGE_DEL_CONV.apply(new PageDeleteEvent(
+      new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "unused for now"),
+      "Q123",
+      1),
+      Clock.systemUTC())
+    event.eventTime should equal(Instant.ofEpochMilli(123))
+    event.item should equal("Q123")
   }
 }
 

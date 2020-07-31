@@ -13,9 +13,17 @@ sealed trait InputEvent {
 }
 
 /** Describe a new revision */
-final case class Rev(item: String,
-                     eventTime: Instant,
-                     revision: Long,
-                     ingestionTime: Instant,
-                     originalEventMetadata: EventsMeta
+final case class RevCreate(item: String,
+                           eventTime: Instant,
+                           revision: Long,
+                           ingestionTime: Instant,
+                           originalEventMetadata: EventsMeta
                     ) extends InputEvent
+
+/** Describe a delete event */
+final case class PageDelete(item: String,
+                            eventTime: Instant,
+                            revision: Long,
+                            ingestionTime: Instant,
+                            originalEventMetadata: EventsMeta
+                       ) extends InputEvent

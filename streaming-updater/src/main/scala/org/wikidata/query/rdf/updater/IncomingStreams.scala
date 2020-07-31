@@ -7,14 +7,17 @@ import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrderness
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
-import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, RevisionCreateEvent}
+import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, RevisionCreateEvent, PageDeleteEvent}
 import org.wikidata.query.rdf.tool.utils.EntityUtil.cleanEntityId
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 
 
 object IncomingStreams {
   val REV_CREATE_CONV: (RevisionCreateEvent, Clock) => InputEvent =
-    (e, clock) => Rev(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
+    (e, clock) => RevCreate(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
+
+  val PAGE_DEL_CONV: (PageDeleteEvent, Clock) => InputEvent =
+    (e, clock) => PageDelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
 
   def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], hostname: String,
                                   conv: (E, Clock) => InputEvent, maxLatenessMs: Int, clock: Clock)

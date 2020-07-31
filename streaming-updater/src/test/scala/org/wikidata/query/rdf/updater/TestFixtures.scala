@@ -63,10 +63,10 @@ trait TestFixtures extends TestEventGenerator {
   private val mSt5 = metaStatements("Q1", 5L)
   private val mSt6 = metaStatements("Q1", 6L)
 
-  val ignoredRevision = Rev("Q1", instant(5), 3, instantNow, newEventMeta(instant(5), DOMAIN, STREAM, ORIG_REQUEST_ID))
+  val ignoredRevision = RevCreate("Q1", instant(5), 3, instantNow, newEventMeta(instant(5), DOMAIN, STREAM, ORIG_REQUEST_ID))
   val ignoredMutations = Set(
     IgnoredMutation("Q1", instant(WATERMARK_2 + 1), 4,
-      Rev("Q1", instant(WATERMARK_2 + 1), 4, instant(5),
+      RevCreate("Q1", instant(WATERMARK_2 + 1), 4, instant(5),
         newEventMeta(instant(WATERMARK_2 + 1), DOMAIN, STREAM, ORIG_REQUEST_ID)
       ), instantNow))
   val rdfChunkSer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())

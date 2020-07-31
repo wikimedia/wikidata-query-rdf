@@ -9,7 +9,7 @@ import org.wikidata.query.rdf.tool.change.events.{EventsMeta, RevisionCreateEven
 trait TestEventGenerator {
   def newInputEventRecord(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
                           stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
-    new StreamRecord[InputEvent](Rev(entity, instant(eventTime), revision, instant(ingestionTime),
+    new StreamRecord[InputEvent](RevCreate(entity, instant(eventTime), revision, instant(ingestionTime),
       newEventMeta(instant(eventTime), domain, stream, requestId)), eventTime)
   }
 

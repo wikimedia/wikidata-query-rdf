@@ -22,6 +22,8 @@ final case class Diff(item: String, eventTime: Instant, revision: Long, fromRev:
   extends MutationOperation
 final case class FullImport(item: String, eventTime: Instant, revision: Long, ingestionTime: Instant, originalEventMetadata: EventsMeta)
   extends MutationOperation
+final case class DeleteItem(item: String, eventTime: Instant, revision: Long, ingestionTime: Instant, originalEventMetadata: EventsMeta)
+  extends MutationOperation
 
 /**
  * This mutation is issued from a "spurious" event: late event that correspond to an out-of-date revision

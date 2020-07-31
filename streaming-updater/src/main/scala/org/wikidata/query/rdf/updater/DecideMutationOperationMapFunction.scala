@@ -14,7 +14,7 @@ import org.apache.flink.util.Collector
 sealed class DecideMutationOperation extends RichMapFunction[InputEvent, AllMutationOperation] with LastSeenRevState {
   override def map(ev: InputEvent): AllMutationOperation = {
     ev match {
-      case rev: Rev => {
+      case rev: RevCreate => {
         val lastRev: lang.Long = state.value()
         if (lastRev == null) {
           state.update(rev.revision)
