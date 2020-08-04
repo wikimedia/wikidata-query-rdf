@@ -5,17 +5,23 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
+import java.io.OutputStream;
 import java.io.PushbackInputStream;
 import java.io.Serializable;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -30,6 +36,7 @@ import java.util.stream.Collectors;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
+import org.apache.commons.io.input.TeeInputStream;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpHost;
@@ -411,7 +418,7 @@ public class WikibaseRepository implements Closeable {
                         //  caller may fail expecting that some data has been parsed
                         return;
                     }
-                    parser.parse(new InputStreamReader(in, UTF_8), uri.toString());
+                    parseAndInvestigateT255657(uri, collector, parser, in);
                 }
             }
         } catch (UnknownHostException | SocketException | SSLHandshakeException e) {
@@ -421,6 +428,34 @@ public class WikibaseRepository implements Closeable {
             throw new RetryableException("Error fetching RDF for " + uri, e);
         } catch (RDFParseException | RDFHandlerException e) {
             throw new ContainedException("RDF parsing error for " + uri, e);
+        }
+    }
+
+    private void parseAndInvestigateT255657(URI base, StatementCollector collector, RDFParser parser, InputStream in)
+            throws IOException, RDFParseException, RDFHandlerException {
+        // Investigate T255657
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        TeeInputStream tee = new TeeInputStream(in, baos);
+
+        String baseUri = base.toString();
+        parser.parse(new InputStreamReader(tee, UTF_8), baseUri);
+        boolean bugFound = false;
+        for (Statement st : collector.getStatements()) {
+            if (st.getObject() != null && st.getObject().stringValue().contains(baseUri)) {
+                bugFound = true;
+                break;
+            }
+        }
+        if (bugFound) {
+            // Keep only 20 copies per thread
+            long bucket = System.currentTimeMillis() % 20L;
+            long threadId = Thread.currentThread().getId();
+            Path debugOutput = Paths.get(System.getProperty("java.io.tmpdir"), "T255657-" + threadId + "-" + bucket + ".ttl");
+            log.warn("Detected T255657 issue, copying input ttl data to {}", debugOutput);
+            tee.close();
+            try (OutputStream fos = new BufferedOutputStream(Files.newOutputStream(debugOutput))) {
+                fos.write(baos.toByteArray());
+            }
         }
     }
 
