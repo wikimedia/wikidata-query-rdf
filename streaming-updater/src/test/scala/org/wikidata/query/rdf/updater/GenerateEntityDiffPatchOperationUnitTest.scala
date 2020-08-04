@@ -3,17 +3,24 @@ package org.wikidata.query.rdf.updater
 import java.time.Instant
 import java.util.Collections.emptyList
 
-import scala.collection.JavaConverters.iterableAsScalaIterableConverter
+import scala.collection.JavaConverters._
 
-import org.apache.flink.streaming.util.MockStreamingRuntimeContext
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.runtime.operators.testutils.MockEnvironment
+import org.apache.flink.streaming.api.datastream.AsyncDataStream.OutputMode
+import org.apache.flink.streaming.api.functions.async.{AsyncFunction, ResultFuture}
+import org.apache.flink.streaming.api.operators.async.AsyncWaitOperatorFactory
+import org.apache.flink.streaming.api.scala.async
+import org.apache.flink.streaming.util.{MockStreamingRuntimeContext, OneInputStreamOperatorTestHarness}
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.test.StatementHelper.statements
 import org.wikidata.query.rdf.tool.change.events.EventsMeta
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
 import org.wikidata.query.rdf.tool.rdf.RDFPatch
 
-class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers with MockFactory with TestEventGenerator {
+
+class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers with MockFactory with TestEventGenerator with BeforeAndAfter {
   val DOMAIN = "tested.domain"
   val STREAM = "tested.stream"
   val REQ_ID = "tested.req.id"
@@ -22,14 +29,34 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
   val INPUT_EVENT_META: EventsMeta = newEventMeta(NOW, DOMAIN, STREAM, REQ_ID)
 
   val repoMock: WikibaseEntityRevRepositoryTrait = mock[WikibaseEntityRevRepositoryTrait]
-
-  private def operator: GenerateEntityDiffPatchOperation = {
-    val operator = GenerateEntityDiffPatchOperation(
+  private def testHarness[T <: Throwable](expectExternalFailure: Option[Class[T]] = None) = {
+    val genDiff = GenerateEntityDiffPatchOperation(
       wikibaseRepositoryGenerator = _ => repoMock,
       domain = DOMAIN,
       mungeOperationProvider = _ => (_, _) => 1)
-    operator.setRuntimeContext(new MockStreamingRuntimeContext(true, 1, 1))
-    operator
+
+    val operator: AsyncFunction[MutationOperation, ResolvedOp] = new AsyncFunction[MutationOperation, ResolvedOp] {
+      override def asyncInvoke(input: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = genDiff.asyncInvoke(input,
+        new async.ResultFuture[ResolvedOp] {
+
+          override def completeExceptionally(throwable: Throwable): Unit = resultFuture.completeExceptionally(throwable)
+
+          override def complete(result: Iterable[ResolvedOp]): Unit = resultFuture.complete(result.toSeq.asJava)
+        }
+      )
+    }
+
+    val typeInfo = TypeInformation.of(classOf[MutationOperation]: Class[MutationOperation])
+    val operatorFactory = new AsyncWaitOperatorFactory[MutationOperation, ResolvedOp](operator, 5L, 10, OutputMode.ORDERED)
+    val env = MockEnvironment.builder().build()
+    genDiff.setRuntimeContext(new MockStreamingRuntimeContext(false, 1, 1))
+    env.getExecutionConfig.registerTypeWithKryoSerializer(classOf[RDFPatch], classOf[RDFPatchSerializer])
+    // AsyncAwaitOperator will always throw Exception wrapping our own
+    expectExternalFailure map { _ => classOf[Exception] } foreach env.setExpectedExternalFailureCause
+    val harness = new OneInputStreamOperatorTestHarness[MutationOperation, ResolvedOp](operatorFactory, typeInfo.createSerializer(env.getExecutionConfig), env)
+    harness.getExecutionConfig
+    harness.open()
+    harness
   }
 
   "a diff mutation" should "fetch 2 entity revisions" in {
@@ -37,21 +64,24 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     (repoMock.getEntityByRevision _).expects("Q1", 2) returning statements("uri:a", "uri:c").asScala
 
     val op = inputDiffOp
-    operator.map(op) shouldBe outputDiffEvent(op)
+    val harness = sendData(op)
+    harness.extractOutputValues() should contain only outputDiffEvent(op)
   }
 
   "a import mutation" should "fetch 1 entity revisions" in {
     (repoMock.getEntityByRevision _).expects("Q1", 1) returning statements("uri:a").asScala
 
     val op = importOp
-    operator.map(op) shouldBe outputImportEvent(op)
+    val harness = sendData(op)
+    harness.extractOutputValues() should contain only outputImportEvent(op)
   }
 
   "a repo failure on an import op" should "send a failed op" in {
     (repoMock.getEntityByRevision _).expects("Q1", 1) throwing new ContainedException("error")
 
     val op = importOp
-    operator.map(op) shouldBe FailedOp(op, new ContainedException("error").toString)
+    val harness = sendData(op)
+    harness.extractOutputValues() should contain only FailedOp(op, new ContainedException("error").toString)
   }
 
   "a repo single failure on an diff op" should "send a failed op" in {
@@ -59,14 +89,18 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     (repoMock.getEntityByRevision _).expects("Q1", 2) throwing new ContainedException("error fetching rev 2")
 
     val op = inputDiffOp
-    operator.map(op) shouldBe FailedOp(op, new ContainedException("error fetching rev 2").toString)
+    val harness = sendData(op)
+    harness.extractOutputValues() should contain only FailedOp(op, new ContainedException("error fetching rev 2").toString)
   }
 
   "a retryable repo failure on an import op" should "send a failed op when retried too many times" in {
     for (_ <- 1 to 4) (repoMock.getEntityByRevision _).expects("Q1", 1) throwing new RetryableException("error")
 
     val op = importOp
-    operator.map(op) shouldBe FailedOp(op, new ContainedException("Cannot fetch entity Q1 revision 1 failed 4 times, abandoning.").toString)
+
+    val harness = sendData(op)
+    harness.extractOutputValues() should contain only FailedOp(op,
+      new ContainedException("Cannot fetch entity Q1 revision 1 failed 4 times, abandoning.").toString)
   }
 
   "a retryable repo failure on an diff op" should "send a failed op when retried too many times" in {
@@ -74,7 +108,9 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     for (_ <- 1 to 4) (repoMock.getEntityByRevision _).expects("Q1", 2) throwing new RetryableException("error fetching rev 2")
 
     val op = inputDiffOp
-    operator.map(op) shouldBe FailedOp(op, new ContainedException("Cannot fetch entity Q1 revision 2 failed 4 times, abandoning.").toString)
+    val harness = sendData(op)
+    harness.extractOutputValues() should contain only FailedOp(op,
+      new ContainedException("Cannot fetch entity Q1 revision 2 failed 4 times, abandoning.").toString)
   }
 
   "a retryable repo failure on an import op" should "should not prevent sending an event if temporary" in {
@@ -82,7 +118,8 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     (repoMock.getEntityByRevision _).expects("Q1", 1) returning statements("uri:a").asScala
 
     val op = importOp
-    operator.map(op) shouldBe outputImportEvent(op)
+    val harness = sendData(op)
+    harness.extractOutputValues() should contain only outputImportEvent(op)
   }
 
   "a retryable repo failure on an diff op" should "should not prevent sending an event if temporary" in {
@@ -91,26 +128,25 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     (repoMock.getEntityByRevision _).expects("Q1", 2) returning statements("uri:a", "uri:c").asScala
 
     val op = inputDiffOp
-    operator.map(op) shouldBe outputDiffEvent(op)
+    val harness = sendData(op)
+    harness.extractOutputValues() should contain only outputDiffEvent(op)
   }
 
   "an unexpected failure fetching one of the two revisions" should "break the pipeline" in {
     (repoMock.getEntityByRevision _).expects("Q1", 1) throwing new IllegalArgumentException("bug")
     (repoMock.getEntityByRevision _).expects("Q1", 2).noMoreThanOnce returning statements("uri:a", "uri:b").asScala
 
-    intercept[IllegalArgumentException] {
-      operator.map(inputDiffOp)
-    }.getMessage should equal("bug")
+    val op = inputDiffOp
+    val harness = sendData(op, Some(classOf[IllegalArgumentException]))
+    harness.extractOutputValues() shouldBe empty
   }
 
   "an unexpected failure fetching a single revision" should "break the pipeline" in {
     (repoMock.getEntityByRevision _).expects("Q1", 1) throwing new IllegalArgumentException("bug")
 
-    intercept[IllegalArgumentException] {
-      operator.map(importOp)
-    }.getMessage should equal("bug")
+    val harness = sendData(importOp, Some(classOf[IllegalArgumentException]))
+    harness.extractOutputValues() shouldBe empty
   }
-
   private def importOp = {
     FullImport("Q1", NOW, 1, NOW, INPUT_EVENT_META)
   }
@@ -125,6 +161,16 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
 
   private def outputDiffEvent(op: Diff) = {
     EntityPatchOp(op, new RDFPatch(statements("uri:c"), emptyList(), statements("uri:b"), emptyList()))
+  }
+
+  private def sendData[T <: Throwable](op: MutationOperation, expectedException: Option[Class[T]] = None) = {
+    val harness = testHarness(expectedException)
+    harness.processElement(op, 1L)
+    harness.endInput()
+    if (expectedException.isDefined) {
+      harness.getEnvironment.getActualExternalFailureCause.get().getCause.getClass shouldEqual expectedException.get
+    }
+    harness
   }
 }
 

@@ -4,6 +4,9 @@ import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.util.Properties
+import java.util.concurrent.TimeUnit.MILLISECONDS
+
+import scala.concurrent.duration.MINUTES
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.NoRestartStrategyConfiguration
 import org.apache.flink.api.common.serialization.Encoder
@@ -34,7 +37,9 @@ object UpdaterJob {
       reorderingWindowLengthMs = params.getInt("reordering_window_length", 60000),
       reorderingOpParallelism = optionalIntArg(params, "reordering_parallelism"),
       decideMutationOpParallelism = optionalIntArg(params, "decide_mut_op_parallelism"),
-      generateDiffParallelism = optionalIntArg(params, "generate_diff_parallelism")
+      generateDiffParallelism = params.getInt("generate_diff_parallelism", 2),
+      generateDiffTimeout = params.getLong("generate_diff_timeout", MILLISECONDS.convert(5, MINUTES)),
+      wikibaseRepoThreadPoolSize = params.getInt("wikibase_repo_thread_pool_size", 30) // at most 60 concurrent requests to wikibase
     )
     val inputKafkaBrokers: String = params.get("brokers")
     val outputKafkaBrokers: String = params.get("output_brokers", inputKafkaBrokers)
@@ -50,9 +55,9 @@ object UpdaterJob {
     val failedOpsDir: String = params.get("failed_ops_dir")
     val lateEventsDir: String = params.get("late_events_dir")
     val networkBufferTimeout: Int = params.getInt("network_buffer_timeout", 100)
-    val checkPointInterval: Int = params.getInt("checkpoint_interval", 3*60*1000);
-    val minPauseBetweenCheckpoints: Int = params.getInt("min_pause_between_checkpoints", 2000);
-    val autoWMInterval: Int = params.getInt("auto_wm_interval", 200);
+    val checkPointInterval: Int = params.getInt("checkpoint_interval", 3*60*1000)
+    val minPauseBetweenCheckpoints: Int = params.getInt("min_pause_between_checkpoints", 2000)
+    val autoWMInterval: Int = params.getInt("auto_wm_interval", 200)
     val latencyTrackingInterval: Option[Int] = optionalIntArg(params, "latency_tracking_interval")
     val checkpointTimeout: Int = params.getInt("checkpoint_timeout", 10*60*1000)
     val checkpointingMode: CheckpointingMode = if (params.getBoolean("exactly_once", true)) {

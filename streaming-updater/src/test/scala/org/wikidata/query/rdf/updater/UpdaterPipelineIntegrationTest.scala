@@ -46,7 +46,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
 
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
-    UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, REORDERING_WINDOW_LENGTH, None, None, None),
+    UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, REORDERING_WINDOW_LENGTH, None, None, 2, Int.MaxValue, 10),
         List(source), _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
         clock, OUTPUT_EVENT_STREAM_NAME)
       .saveTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))

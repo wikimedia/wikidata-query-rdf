@@ -3,12 +3,15 @@ package org.wikidata.query.rdf.updater
 import java.time.Clock
 import java.util.UUID
 
+import scala.concurrent.duration.MILLISECONDS
+
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.CheckpointingMode
+import org.apache.flink.streaming.api.scala.async.AsyncFunction
 import org.wikidata.query.rdf.tool.rdf.RDFPatch
 
 sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
@@ -51,7 +54,7 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
   }
 
   def saveTo(sink: SinkFunction[MutationDataChunk]): UpdaterPipeline = {
-    val sinkOp = tripleEventStream.addSink(sink)
+    tripleEventStream.addSink(sink)
       .uid("output")
       .name("output")
       .setParallelism(updaterPipelineOptions.outputParallelism)
@@ -60,11 +63,13 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
 }
 
 sealed case class UpdaterPipelineOptions(hostname: String,
-                                          reorderingWindowLengthMs: Int,
-                                          reorderingOpParallelism: Option[Int],
-                                          decideMutationOpParallelism: Option[Int],
-                                          generateDiffParallelism: Option[Int],
-                                          outputParallelism: Int = 1
+                                         reorderingWindowLengthMs: Int,
+                                         reorderingOpParallelism: Option[Int],
+                                         decideMutationOpParallelism: Option[Int],
+                                         generateDiffParallelism: Int,
+                                         generateDiffTimeout: Long,
+                                         wikibaseRepoThreadPoolSize: Int,
+                                         outputParallelism: Int = 1
 )
 
 sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
@@ -120,7 +125,7 @@ object UpdaterPipeline {
     val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
 
     val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, outputMutationStream)
-    val patchStream: DataStream[EntityPatchOp] = rerouteFailedOps(resolvedOpStream)
+    val patchStream: DataStream[EntityPatchOp] = rerouteFailedOps(resolvedOpStream, opts)
     val failedOpsToSideOutput: DataStream[FailedOp] = patchStream.getSideOutput(RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
 
     val tripleStream: DataStream[MutationDataChunk] = measureLatency(
@@ -129,11 +134,12 @@ object UpdaterPipeline {
     new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, failedOpsToSideOutput, tripleStream, updaterPipelineOptions = opts)
   }
 
-  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp]): DataStream[EntityPatchOp] = {
+  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp], opts: UpdaterPipelineOptions): DataStream[EntityPatchOp] = {
     resolvedOpStream
       .process(new RouteFailedOpsToSideOutput())
       .name("RouteFailedOpsToSideOutput")
       .uid("RouteFailedOpsToSideOutput")
+      .setParallelism(opts.outputParallelism)
   }
 
   private def rdfPatchChunkOp(dataStream: DataStream[EntityPatchOp],
@@ -168,17 +174,19 @@ object UpdaterPipeline {
                                         wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
                                         outputMutationStream: DataStream[MutationOperation]
                                        ): DataStream[ResolvedOp] = {
-    val streamToResolve: KeyedStream[MutationOperation, String] = outputMutationStream
-      .keyBy(_.item)
-    opts.generateDiffParallelism.foreach(streamToResolve.setParallelism)
-    val resolvedOpStream: DataStream[ResolvedOp] = streamToResolve
-      .map(GenerateEntityDiffPatchOperation(
-        domain = opts.hostname,
-        wikibaseRepositoryGenerator = wikibaseRepositoryGenerator
-      ))
+    val streamToResolve: KeyedStream[MutationOperation, String] = outputMutationStream.keyBy(_.item)
+
+    val genDiffOperator: AsyncFunction[MutationOperation, ResolvedOp] = GenerateEntityDiffPatchOperation(
+      domain = opts.hostname,
+      wikibaseRepositoryGenerator = wikibaseRepositoryGenerator,
+      poolSize = opts.wikibaseRepoThreadPoolSize
+    )
+
+    // poolSize * 2 for the number of inflight items is a random guess
+    AsyncDataStream.orderedWait(streamToResolve, genDiffOperator, opts.generateDiffTimeout, MILLISECONDS,  opts.wikibaseRepoThreadPoolSize * 2)
       .name("GenerateEntityDiffPatchOperation")
       .uid("GenerateEntityDiffPatchOperation")
-    resolvedOpStream
+      .setParallelism(opts.generateDiffParallelism)
   }
 
   private def rerouteIgnoredMutations(allOutputMutationStream: DataStream[AllMutationOperation]): DataStream[MutationOperation] = {

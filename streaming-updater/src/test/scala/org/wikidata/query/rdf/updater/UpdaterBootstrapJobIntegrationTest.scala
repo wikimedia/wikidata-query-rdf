@@ -79,7 +79,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       // (does not affect the ordering but ensure that we can detect the late event
       Some(1), Some(1))
 
-    val graph = UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, 60000, None, None, None), List(source), _ => repository, clock = clock)
+    val graph = UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, 60000, None, None, 2, Int.MaxValue, 10, 1), List(source), _ => repository, clock = clock)
       .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
       .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))
       .saveTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))

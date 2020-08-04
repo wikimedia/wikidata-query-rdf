@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.flink.api.java.typeutils.runtime.kryo.JavaSerializer;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.tool.rdf.RDFPatch;
 
@@ -13,10 +14,10 @@ import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.serializers.JavaSerializer;
 
 public class RDFPatchSerializer extends Serializer<RDFPatch> {
-    public static final JavaSerializer JAVA_SERIALIZER = new JavaSerializer();
+    // use flink's java serializer (ref FLINK-6025)
+    public static final JavaSerializer<Statement> JAVA_SERIALIZER = new JavaSerializer<>();
     public static final int VERSION = 1;
 
     @Override

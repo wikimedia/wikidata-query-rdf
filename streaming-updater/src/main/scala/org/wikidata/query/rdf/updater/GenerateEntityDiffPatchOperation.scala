@@ -5,13 +5,14 @@ import java.util.Collections.emptyList
 import java.util.concurrent.Executors
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.scala.{OutputTag, _}
+import org.apache.flink.streaming.api.scala.async.{ResultFuture, RichAsyncFunction}
 import org.apache.flink.util.Collector
 import org.openrdf.model.Statement
 import org.slf4j.LoggerFactory
@@ -28,11 +29,13 @@ case class EntityPatchOp(operation: MutationOperation,
                          data: RDFPatch) extends ResolvedOp
 case class FailedOp(operation: MutationOperation, error: String) extends ResolvedOp
 
-case class GenerateEntityDiffPatchOperation(domain: String,
-                                            wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
-                                            mungeOperationProvider: UrisScheme => (String, util.Collection[Statement]) => Long = s => mungerOperationProvider(s)
-                                  )
-  extends RichMapFunction[MutationOperation, ResolvedOp] {
+case class GenerateEntityDiffPatchOperation(
+                                             domain: String,
+                                             wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
+                                             mungeOperationProvider: UrisScheme => (String, util.Collection[Statement]) => Long = mungerOperationProvider,
+                                             poolSize: Int = 10
+                                           )
+  extends RichAsyncFunction[MutationOperation, ResolvedOp] {
 
 
   private val LOG = LoggerFactory.getLogger(getClass)
@@ -41,20 +44,21 @@ case class GenerateEntityDiffPatchOperation(domain: String,
   lazy val scheme: UrisScheme = UrisSchemeFactory.forHost(domain)
   lazy val diff: EntityDiff = EntityDiff.withValuesAndRefsAsSharedElements(scheme)
 
-  implicit lazy val executionContext: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10,
+  implicit lazy val executionContext: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(poolSize,
     new ThreadFactoryBuilder().setNameFormat("GenerateEntityDiffPatchOperation-fetcher-%d").build()))
   lazy val mungeOperation: (String, util.Collection[Statement]) => Long = mungeOperationProvider.apply(scheme)
 
-  override def map(op: MutationOperation): ResolvedOp = {
-    try {
-      op match {
-        case Diff(item, _, revision, fromRev, _, _) =>
-          getDiff(op, item, revision, fromRev)
-        case FullImport(item, _, revision, _, _) =>
-          getImport(op, item, revision)
-      }
-    } catch {
-      case e: ContainedException => FailedOp(op, e.toString)
+  override def asyncInvoke(op: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = {
+    val future: Future[RDFPatch] = op match {
+      case Diff(item, _, revision, fromRev, _, _) =>
+        getDiff(item, revision, fromRev)
+      case FullImport(item, _, revision, _, _) =>
+        getImport(item, revision)
+    }
+    future.onComplete {
+      case Success(patch) => resultFuture.complete(EntityPatchOp(op, patch) :: Nil)
+      case Failure(exception: ContainedException) => resultFuture.complete(FailedOp(op, exception.toString) :: Nil)
+      case Failure(exception: Throwable) => resultFuture.completeExceptionally(exception)
     }
   }
 
@@ -76,26 +80,20 @@ case class GenerateEntityDiffPatchOperation(domain: String,
     Future { retryableFetch() }
   }
 
-  private def getDiff(op: MutationOperation, item: String, revision: Long, fromRev: Long): ResolvedOp = {
+  private def getDiff(item: String, revision: Long, fromRev: Long): Future[RDFPatch] = {
     val from: Future[Iterable[Statement]] = fetchAsync(item, fromRev)
     val to: Future[Iterable[Statement]] = fetchAsync(item, revision)
 
-    val awaiting: Future[RDFPatch] = from flatMap { fromIt =>
+    from flatMap { fromIt =>
       to map {
         toIt => generateDiff(item, fromIt, toIt, revision, fromRev)
       }
     }
-
-    EntityPatchOp(op, Await.result(awaiting, Duration.Inf))
   }
 
-  private def getImport(op: MutationOperation, item: String, revision: Long): ResolvedOp = {
+  private def getImport(item: String, revision: Long): Future[RDFPatch] = {
     val stmts: Future[Iterable[Statement]] = fetchAsync(item, revision)
-    val awaiting: Future[RDFPatch] = stmts map {
-      sendImport(item, _, revision)
-    }
-
-    EntityPatchOp(op, Await.result(awaiting, Duration.Inf))
+    stmts map { sendImport(item, _, revision) }
   }
 
   private def sendImport(item: String, stmts: Iterable[Statement], revision: Long): RDFPatch = {
