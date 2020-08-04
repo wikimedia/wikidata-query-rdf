@@ -18,6 +18,7 @@ import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironm
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
+import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
 
 object UpdaterJob {
   val DEFAULT_CLOCK = Clock.systemUTC()
@@ -113,7 +114,8 @@ object UpdaterJob {
                                   (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
     List(
       IncomingStreams.fromKafka(
-        KafkaConsumerProperties(ievops.revisionCreateTopic, ievops.kafkaBrokers, ievops.consumerGroup, new RevisionCreateEventJson()),
+        KafkaConsumerProperties(ievops.revisionCreateTopic, ievops.kafkaBrokers, ievops.consumerGroup,
+          DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
         opts.hostname,
         IncomingStreams.REV_CREATE_CONV,
         ievops.maxLateness,

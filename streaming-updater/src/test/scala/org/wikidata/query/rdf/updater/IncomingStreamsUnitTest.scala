@@ -9,7 +9,8 @@ import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, EventsMeta, Revis
 class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   "IncomingStreams" should "create properly named streams" in {
     implicit val env = StreamExecutionEnvironment.getExecutionEnvironment
-    val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group", new RevisionCreateEventJson()),
+    val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
+      DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
       "my-hostname", IncomingStreams.REV_CREATE_CONV, 40000, Clock.systemUTC())
     stream.name should equal ("Filtered(RevisionCreateEvent<group:my-topic@broker1 == my-hostname)")
   }
