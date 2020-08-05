@@ -5,9 +5,9 @@ import java.util.Collections.emptyList
 import java.util.concurrent.Executors
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
+import scala.concurrent.{ExecutionContext, Future}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.api.functions.ProcessFunction
@@ -29,6 +29,8 @@ case class EntityPatchOp(operation: MutationOperation,
                          data: RDFPatch) extends ResolvedOp
 case class FailedOp(operation: MutationOperation, error: String) extends ResolvedOp
 
+case class DeleteOp(operation: MutationOperation) extends ResolvedOp
+
 case class GenerateEntityDiffPatchOperation(
                                              domain: String,
                                              wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
@@ -36,7 +38,6 @@ case class GenerateEntityDiffPatchOperation(
                                              poolSize: Int = 10
                                            )
   extends RichAsyncFunction[MutationOperation, ResolvedOp] {
-
 
   private val LOG = LoggerFactory.getLogger(getClass)
 
@@ -49,6 +50,14 @@ case class GenerateEntityDiffPatchOperation(
   lazy val mungeOperation: (String, util.Collection[Statement]) => Long = mungeOperationProvider.apply(scheme)
 
   override def asyncInvoke(op: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = {
+    if (op.isInstanceOf[DeleteItem]) {
+      resultFuture.complete(DeleteOp(op) :: Nil)
+    } else {
+      completeDiffPatch(op, resultFuture)
+    }
+  }
+
+  private def completeDiffPatch(op: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = {
     val future: Future[RDFPatch] = op match {
       case Diff(item, _, revision, fromRev, _, _) =>
         getDiff(item, revision, fromRev)

@@ -12,15 +12,17 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
 
 sealed class DecideMutationOperation extends RichMapFunction[InputEvent, AllMutationOperation] with LastSeenRevState {
+  var prevDelState: ValueState[java.lang.Long] = _
   override def map(ev: InputEvent): AllMutationOperation = {
     ev match {
       case rev: RevCreate => {
-        val lastRev: lang.Long = state.value()
-        if (lastRev == null) {
-          state.update(rev.revision)
+        val lastRev: lang.Long = lastRevState.value()
+        val prevDel: lang.Long = prevDelState.value()
+        if (lastRev == null && prevDel == null) {
+          lastRevState.update(rev.revision)
           FullImport(rev.item, rev.eventTime, rev.revision, rev.ingestionTime, rev.originalEventMetadata)
-        } else if (lastRev < rev.revision) {
-          state.update(rev.revision)
+        } else if (lastRev < rev.revision && prevDel == null) {
+          lastRevState.update(rev.revision)
           Diff(rev.item, rev.eventTime, rev.revision, lastRev, rev.ingestionTime, rev.originalEventMetadata)
         } else {
           // Event related to an old revision
@@ -28,10 +30,22 @@ sealed class DecideMutationOperation extends RichMapFunction[InputEvent, AllMuta
           IgnoredMutation(rev.item, rev.eventTime, rev.revision, rev, rev.ingestionTime)
         }
       }
+      case del: PageDelete => {
+        val lastRev: lang.Long = lastRevState.value()
+        if (lastRev != null && lastRev <= del.revision) {
+          prevDelState.update(del.revision)
+          DeleteItem(del.item, del.eventTime, del.revision, del.ingestionTime, del.originalEventMetadata)
+        } else {
+          // Event related to an old revision
+          // It's too late to handle it
+          IgnoredMutation(del.item, del.eventTime, del.revision, del, del.ingestionTime)
+        }
+      }
     }
   }
   override def open(parameters: Configuration): Unit = {
-    state = getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())
+    lastRevState = getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())
+    prevDelState = getRuntimeContext.getState(UpdaterStateConfiguration.newPreviousDeleteStateDesc())
   }
 }
 
@@ -39,10 +53,10 @@ trait LastSeenRevState extends RichFunction {
   // use java.lang.Long for nullability
   //  (flink's way for detecting that the state is not set for this entity)
   // there are perhaps better ways to do this
-  var state: ValueState[java.lang.Long] = _
+  var lastRevState: ValueState[java.lang.Long] = _
 
   override def open(parameters: Configuration): Unit = {
-    state = getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())
+    lastRevState = getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())
   }
 }
 
@@ -76,7 +90,7 @@ object DecideMutationOperation {
 class DecideMutationOperationBootstrap extends KeyedStateBootstrapFunction[String, Tuple2[String, java.lang.Long]] with LastSeenRevState {
   override def processElement(rev: Tuple2[String, java.lang.Long],
                               context: KeyedStateBootstrapFunction[String, Tuple2[String, java.lang.Long]]#Context): Unit = {
-    state.update(rev.f1)
+    lastRevState.update(rev.f1)
   }
 }
 

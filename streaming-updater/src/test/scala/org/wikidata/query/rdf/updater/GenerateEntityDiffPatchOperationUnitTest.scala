@@ -4,7 +4,6 @@ import java.time.Instant
 import java.util.Collections.emptyList
 
 import scala.collection.JavaConverters._
-
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.operators.testutils.MockEnvironment
 import org.apache.flink.streaming.api.datastream.AsyncDataStream.OutputMode
@@ -18,7 +17,6 @@ import org.wikidata.query.rdf.test.StatementHelper.statements
 import org.wikidata.query.rdf.tool.change.events.EventsMeta
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
 import org.wikidata.query.rdf.tool.rdf.RDFPatch
-
 
 class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers with MockFactory with TestEventGenerator with BeforeAndAfter {
   val DOMAIN = "tested.domain"
@@ -93,6 +91,12 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     harness.extractOutputValues() should contain only FailedOp(op, new ContainedException("error fetching rev 2").toString)
   }
 
+  "a delete mutation" should "send a delete op" in {
+    val op = inputDelOp
+    val harness = sendData(op)
+    harness.extractOutputValues() should contain only DeleteOp(op)
+  }
+
   "a retryable repo failure on an import op" should "send a failed op when retried too many times" in {
     for (_ <- 1 to 4) (repoMock.getEntityByRevision _).expects("Q1", 1) throwing new RetryableException("error")
 
@@ -157,6 +161,10 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
 
   private def inputDiffOp = {
     Diff("Q1", NOW, 2, 1, NOW, INPUT_EVENT_META)
+  }
+
+  private def inputDelOp = {
+    DeleteItem("Q1", NOW, 2, NOW, INPUT_EVENT_META)
   }
 
   private def outputDiffEvent(op: Diff) = {

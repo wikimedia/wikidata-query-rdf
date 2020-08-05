@@ -30,16 +30,16 @@ class EventReorderingWindowFunctionUnitTest extends FlatSpec with Matchers with 
       TypeInformation.of(classOf[String]))
     val expectedOutput = new ListBuffer[Any]
     operator.open()
-    operator.processElement(newInputEventRecord("Q1", 2, 0, 5))
-    operator.processElement(newInputEventRecord("Q1", 1, 1, 5))
-    operator.processElement(newInputEventRecord("Q2", 1, 0, 5))
-    operator.processElement(newInputEventRecord("Q2", 2, 1, 5))
+    operator.processElement(newRevCreateRecord("Q1", 2, 0, 5))
+    operator.processElement(newRevCreateRecord("Q1", 1, 1, 5))
+    operator.processElement(newRevCreateRecord("Q2", 1, 0, 5))
+    operator.processElement(newRevCreateRecord("Q2", 2, 1, 5))
     operator.processWatermark(new Watermark(1000))
-    operator.processElement(newInputEventRecord("Q2", 3, 2, 5)) // Late event
-    expectedOutput += newInputEventRecord("Q1", 1, 1, 5)
-    expectedOutput += newInputEventRecord("Q1", 2, 0, 5)
-    expectedOutput += newInputEventRecord("Q2", 1, 0, 5)
-    expectedOutput += newInputEventRecord("Q2", 2, 1, 5)
+    operator.processElement(newRevCreateRecord("Q2", 3, 2, 5)) // Late event
+    expectedOutput += newRevCreateRecord("Q1", 1, 1, 5)
+    expectedOutput += newRevCreateRecord("Q1", 2, 0, 5)
+    expectedOutput += newRevCreateRecord("Q2", 1, 0, 5)
+    expectedOutput += newRevCreateRecord("Q2", 2, 1, 5)
     expectedOutput += new Watermark(1000)
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsAs decodeEvents(expectedOutput)

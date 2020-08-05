@@ -7,9 +7,15 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.wikidata.query.rdf.tool.change.events.{EventsMeta, RevisionCreateEvent}
 
 trait TestEventGenerator {
-  def newInputEventRecord(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
-                          stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
+  def newRevCreateRecord(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
+                         stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
     new StreamRecord[InputEvent](RevCreate(entity, instant(eventTime), revision, instant(ingestionTime),
+      newEventMeta(instant(eventTime), domain, stream, requestId)), eventTime)
+  }
+
+  def newPageDeleteRecord(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
+                          stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
+    new StreamRecord[InputEvent](PageDelete(entity, instant(eventTime), revision, instant(ingestionTime),
       newEventMeta(instant(eventTime), domain, stream, requestId)), eventTime)
   }
 
