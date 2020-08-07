@@ -46,6 +46,7 @@ public final class StreamingUpdate {
         Thread streamingUpdaterThread = Thread.currentThread();
         streamingUpdaterThread.setUncaughtExceptionHandler((t, e) -> log.error("Uncaught exception in the updater thread: ", e));
         addShutdownHook(updater, streamingUpdaterThread, reporter);
+        reporter.start();
         updater.run();
     }
 
