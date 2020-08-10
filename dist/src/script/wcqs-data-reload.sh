@@ -22,8 +22,8 @@ ${DEPLOY_DIR}/munge.sh \
 --conceptUri http://www.wikidata.org \
 --commonsUri https://commons.wikimedia.org
 
-echo "Stopping nginx"
-sudo systemctl stop nginx
+echo "Switching frontend to data reload page"
+touch /var/lib/nginx/wdqs/data-reload
 
 echo "Stopping Blazegraph"
 sudo systemctl stop wcqs-blazegraph
@@ -40,5 +40,5 @@ sleep 30
 echo "Loading data"
 ${DEPLOY_DIR}/loadData.sh -n wcq -h http://localhost:9999 -d ${DATA_DIR}/munged
 
-echo "Starting nginx"
-sudo systemctl start nginx
+echo "Switching frontend to standard page"
+rm /var/lib/nginx/wdqs/data-reload
