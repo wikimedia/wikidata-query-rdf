@@ -155,7 +155,7 @@ public class QueryEventSenderFilterUnitTest {
     }
 
     @Test
-    public void testDestroy() {
+    public void testDestroy() throws IOException {
         QueryEventGenerator eventGenerator = mock(QueryEventGenerator.class);
         EventSender sender = mock(EventSender.class);
         QueryEventSenderFilter filter = new QueryEventSenderFilter(sender, eventGenerator, null);

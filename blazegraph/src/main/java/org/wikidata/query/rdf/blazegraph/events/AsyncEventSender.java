@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.blazegraph.events;
 
+import java.io.IOException;
 import java.util.Collection;
 
 import org.slf4j.Logger;
@@ -29,7 +30,7 @@ public class AsyncEventSender implements EventSender {
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         try {
             worker.stopAndWaitForCompletion();
         } catch (InterruptedException e) {

@@ -3,6 +3,8 @@ package org.wikidata.query.rdf.blazegraph.filters;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -23,6 +25,7 @@ import org.wikidata.query.rdf.blazegraph.WikibaseContextListener;
 import org.wikidata.query.rdf.blazegraph.events.AsyncEventSender;
 import org.wikidata.query.rdf.blazegraph.events.EventHttpSender;
 import org.wikidata.query.rdf.blazegraph.events.EventSender;
+import org.wikidata.query.rdf.blazegraph.events.EventFileSender;
 import org.wikidata.query.rdf.blazegraph.events.QueryEvent;
 import org.wikidata.query.rdf.blazegraph.events.QueryEventGenerator;
 
@@ -54,27 +57,35 @@ public class QueryEventSenderFilter implements Filter {
     @SuppressFBWarnings(value = "MDM_INETADDRESS_GETLOCALHOST", justification = "are there alternatives?")
     public void init(FilterConfig filterConfig) throws ServletException {
         FilterConfiguration config = new FilterConfiguration(filterConfig, FilterConfiguration.WDQS_CONFIG_PREFIX);
-        int maxCap = config.loadIntParam("queue-size", 1000);
-        int maxEventsPerHttpRequest = config.loadIntParam("http-max-events-per-request", 10);
-        String httpEndPoint = config.loadStringParam("event-gate-endpoint");
-        this.enableIfHeader = config.loadStringParam("enable-event-sender-if-header");
         String wdqsHostname;
         try {
             wdqsHostname = InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
             throw new ServletException(e);
         }
-        int httpReadTimeout = config.loadIntParam("http-read-timeout", EventHttpSender.DEFAULT_READ_TIMEOUT);
-        int httpConTimeout = config.loadIntParam("http-con-timeout", EventHttpSender.DEFAULT_CON_TIMEOUT);
         String streamName = config.loadStringParam("event-gate-sparql-query-stream", "blazegraph.sparql-query");
         this.queryEventGenerator = new QueryEventGenerator(() -> UUID.randomUUID().toString(), Clock.systemUTC(), wdqsHostname, streamName);
-        if (httpEndPoint == null) {
-            sender = e -> true; // /dev/null
-            return;
-        }
+        this.enableIfHeader = config.loadStringParam("enable-event-sender-if-header");
+        boolean eventFileSenderEnabled = config.loadBooleanParam("file-event-sender", false);
+        int maxCap = config.loadIntParam("queue-size", 1000);
+        int maxEventsPerHttpRequest = config.loadIntParam("http-max-events-per-request", 10);
+        sender = AsyncEventSender.wrap(maxCap, maxEventsPerHttpRequest, eventFileSenderEnabled ? createFileEventSender(config) : createHttpEventSender(config));
+    }
 
-        EventSender httpSender = EventHttpSender.build(httpEndPoint, httpReadTimeout, httpConTimeout);
-        sender = AsyncEventSender.wrap(maxCap, maxEventsPerHttpRequest, httpSender);
+    private EventSender createFileEventSender(FilterConfiguration config) {
+        Path path = Paths.get(config.loadStringParam("file-event-sender-filepath"));
+        return new EventFileSender(path);
+    }
+
+    private EventSender createHttpEventSender(FilterConfiguration config) {
+        String httpEndPoint = config.loadStringParam("event-gate-endpoint");
+        int httpReadTimeout = config.loadIntParam("http-read-timeout", EventHttpSender.DEFAULT_READ_TIMEOUT);
+        int httpConTimeout = config.loadIntParam("http-con-timeout", EventHttpSender.DEFAULT_CON_TIMEOUT);
+        if (httpEndPoint == null) {
+            return e -> true; // /dev/null
+        }
+        return EventHttpSender.build(httpEndPoint, httpReadTimeout, httpConTimeout);
+
     }
 
     @Override
@@ -120,6 +131,10 @@ public class QueryEventSenderFilter implements Filter {
 
     @Override
     public void destroy() {
-        sender.close();
+        try {
+            sender.close();
+        } catch (IOException e) {
+            log.error("Exception thrown while closing event sender.", e);
+        }
     }
 }

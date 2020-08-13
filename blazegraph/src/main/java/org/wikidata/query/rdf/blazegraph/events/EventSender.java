@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.blazegraph.events;
 
+import java.io.IOException;
 import java.util.Collection;
 
 public interface EventSender {
@@ -19,5 +20,5 @@ public interface EventSender {
         return nb;
     }
 
-    default void close() {}
+    default void close() throws IOException {}
 }

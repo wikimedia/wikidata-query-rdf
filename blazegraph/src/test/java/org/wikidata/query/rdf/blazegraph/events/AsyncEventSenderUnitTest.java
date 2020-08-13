@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -32,7 +33,7 @@ public class AsyncEventSenderUnitTest {
     }
 
     @Test
-    public void testClose() throws InterruptedException {
+    public void testClose() throws InterruptedException, IOException {
         BufferedEventSender bufferedSender = mock(BufferedEventSender.class);
         EventSender underlyingSender = mock(EventSender.class);
         BufferedEventSender.Worker resender = mock(BufferedEventSender.Worker.class);
