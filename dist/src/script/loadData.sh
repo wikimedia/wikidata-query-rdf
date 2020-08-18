@@ -31,7 +31,7 @@ i=$START
 while [ $i -le $END ]; do
   printf -v f $FORMAT $i
   if [ ! -f "$LOCATION/$f" ]; then
-    echo File $f not found, terminating
+    echo File $LOCATION/$f not found, terminating
     exit 0
   fi
 
