@@ -7,7 +7,6 @@ import java.util.Properties
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import scala.concurrent.duration.MINUTES
-
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.NoRestartStrategyConfiguration
 import org.apache.flink.api.common.serialization.Encoder
 import org.apache.flink.api.java.utils.ParameterTool
@@ -21,7 +20,7 @@ import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironm
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
-import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
+import org.wikidata.query.rdf.tool.change.events.{PageDeleteEvent, RevisionCreateEvent}
 
 object UpdaterJob {
   val DEFAULT_CLOCK = Clock.systemUTC()
@@ -47,7 +46,9 @@ object UpdaterJob {
     val outputPartition: Int = params.getInt("output_topic_partition")
 
     val pipelineInputEventStreamOptions = UpdaterPipelineInputEventStreamOptions(kafkaBrokers = inputKafkaBrokers,
-      revisionCreateTopic = params.get("rev_create_topic"), consumerGroup = params.get("consumer_group", "wdqs_streaming_updater"),
+      revisionCreateTopicName = params.get("rev_create_topic"),
+      pageDeleteTopicName = params.get("page_delete_topic"),
+      consumerGroup = params.get("consumer_group", "wdqs_streaming_updater"),
       maxLateness = params.getInt("max_lateness", 60000))
 
     val checkpointDir: String = params.get("checkpoint_dir")
@@ -119,10 +120,18 @@ object UpdaterJob {
                                   (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
     List(
       IncomingStreams.fromKafka(
-        KafkaConsumerProperties(ievops.revisionCreateTopic, ievops.kafkaBrokers, ievops.consumerGroup,
+        KafkaConsumerProperties(ievops.revisionCreateTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
         opts.hostname,
         IncomingStreams.REV_CREATE_CONV,
+        ievops.maxLateness,
+        clock
+      ),
+        IncomingStreams.fromKafka(
+        KafkaConsumerProperties(ievops.pageDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
+          DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
+        opts.hostname,
+        IncomingStreams.PAGE_DEL_CONV,
         ievops.maxLateness,
         clock
       )

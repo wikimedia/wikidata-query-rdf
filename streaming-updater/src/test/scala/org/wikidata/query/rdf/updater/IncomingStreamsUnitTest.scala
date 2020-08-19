@@ -12,7 +12,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
       DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
       "my-hostname", IncomingStreams.REV_CREATE_CONV, 40000, Clock.systemUTC())
-    stream.name should equal ("Filtered(RevisionCreateEvent<group:my-topic@broker1 == my-hostname)")
+    stream.name should equal ("Filtered(my-topic == my-hostname)")
   }
 
   "EventWithMetadataHostFilter" should "filter events by hostname" in {

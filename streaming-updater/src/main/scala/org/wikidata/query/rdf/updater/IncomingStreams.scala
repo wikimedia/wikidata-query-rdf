@@ -23,7 +23,7 @@ object IncomingStreams {
                                   conv: (E, Clock) => InputEvent, maxLatenessMs: Int, clock: Clock)
                                  (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
 
-    val nameAndUid = s"${classOf[RevisionCreateEvent].getSimpleName}<${kafkaProps.consumerGroup}:${kafkaProps.topic}@${kafkaProps.brokers}"
+    val nameAndUid = s"${kafkaProps.topic}"
     val kafkaStream = env
       .addSource(new FlinkKafkaConsumer[E](kafkaProps.topic, kafkaProps.schema, kafkaProps.asProperties()))(kafkaProps.schema.getProducedType)
       .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor[E](Time.milliseconds(maxLatenessMs)) {

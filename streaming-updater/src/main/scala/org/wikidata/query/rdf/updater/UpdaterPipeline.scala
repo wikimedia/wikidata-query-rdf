@@ -73,7 +73,8 @@ sealed case class UpdaterPipelineOptions(hostname: String,
 
 sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
                                                          consumerGroup: String,
-                                                         revisionCreateTopic: String,
+                                                         revisionCreateTopicName: String,
+                                                         pageDeleteTopicName: String,
                                                          maxLateness: Int)
 
 sealed case class UpdaterPipelineOutputStreamOption(

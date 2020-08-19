@@ -7,9 +7,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.streaming.api.TimeCharacteristic
-import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
-import org.apache.flink.streaming.api.watermark.Watermark
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
 
@@ -54,27 +52,20 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       .withResponse(("Q3", 101013L) -> metaStatements("Q3", 101013L, Some(3L)).entityDataNS)
 
     val input = Seq(
-      newEvent("Q1", 2, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // dupped event, currently treated as spurious
-      newEvent("Q1", 3, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
-      newEvent("Q2", 8, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
-      newEvent("Q3", 101013, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
+      newRevCreateEvent("Q1", 2, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // dupped event, currently treated as spurious
+      newRevCreateEvent("Q1", 3, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+      newRevCreateEvent("Q2", 8, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+      newRevCreateEvent("Q3", 101013, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
     )
 
     val source: DataStream[InputEvent] = IncomingStreams.fromStream(streamingEnv.fromCollection(input)
       // force 1 here so that we keep the sequence order and force Q1 rev 3 to be late
       .setParallelism(1)
       // Use punctuated WM instead of periodic in test
-      .assignTimestampsAndWatermarks(new AssignerWithPunctuatedWatermarks[RevisionCreateEvent] {
-        override def checkAndGetNextWatermark(t: RevisionCreateEvent, l: Long): Watermark = {
-          val ret = t match {
-            case a: Any if a.title() == "Q3" => Some(new Watermark(a.timestamp().toEpochMilli))
-            case _: Any => None
-          }
-          ret.orNull
-        }
-
-        override def extractTimestamp(t: RevisionCreateEvent, l: Long): Long = t.timestamp().toEpochMilli
-      }), DOMAIN, IncomingStreams.REV_CREATE_CONV, clock,
+      .assignTimestampsAndWatermarks(watermarkAssigner[RevisionCreateEvent]()),
+      DOMAIN,
+      IncomingStreams.REV_CREATE_CONV,
+      clock,
       // Disable any parallelism for the input collection so that order of input events are kept intact
       // (does not affect the ordering but ensure that we can detect the late event
       Some(1), Some(1))
