@@ -18,18 +18,20 @@ import org.openrdf.model.Statement
 import org.slf4j.LoggerFactory
 import org.wikidata.query.rdf.common.uri.{UrisScheme, UrisSchemeFactory}
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
-import org.wikidata.query.rdf.tool.rdf.{EntityDiff, Munger, RDFPatch}
+import org.wikidata.query.rdf.tool.rdf.{EntityDiff, Munger, Patch}
 import org.wikidata.query.rdf.updater.GenerateEntityDiffPatchOperation.mungerOperationProvider
 
 sealed trait ResolvedOp {
   val operation: MutationOperation
 }
 
+abstract class SuccessfulOp extends ResolvedOp
+
 case class EntityPatchOp(operation: MutationOperation,
-                         data: RDFPatch) extends ResolvedOp
+                         data: Patch) extends SuccessfulOp
 case class FailedOp(operation: MutationOperation, error: String) extends ResolvedOp
 
-case class DeleteOp(operation: MutationOperation) extends ResolvedOp
+case class DeleteOp(override val operation: MutationOperation) extends SuccessfulOp
 
 case class GenerateEntityDiffPatchOperation(
                                              domain: String,
@@ -58,7 +60,7 @@ case class GenerateEntityDiffPatchOperation(
   }
 
   private def completeDiffPatch(op: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = {
-    val future: Future[RDFPatch] = op match {
+    val future: Future[Patch] = op match {
       case Diff(item, _, revision, fromRev, _, _) =>
         getDiff(item, revision, fromRev)
       case FullImport(item, _, revision, _, _) =>
@@ -89,7 +91,7 @@ case class GenerateEntityDiffPatchOperation(
     Future { retryableFetch() }
   }
 
-  private def getDiff(item: String, revision: Long, fromRev: Long): Future[RDFPatch] = {
+  private def getDiff(item: String, revision: Long, fromRev: Long): Future[Patch] = {
     val from: Future[Iterable[Statement]] = fetchAsync(item, fromRev)
     val to: Future[Iterable[Statement]] = fetchAsync(item, revision)
 
@@ -100,12 +102,12 @@ case class GenerateEntityDiffPatchOperation(
     }
   }
 
-  private def getImport(item: String, revision: Long): Future[RDFPatch] = {
+  private def getImport(item: String, revision: Long): Future[Patch] = {
     val stmts: Future[Iterable[Statement]] = fetchAsync(item, revision)
     stmts map { sendImport(item, _, revision) }
   }
 
-  private def sendImport(item: String, stmts: Iterable[Statement], revision: Long): RDFPatch = {
+  private def sendImport(item: String, stmts: Iterable[Statement], revision: Long): Patch = {
       if (stmts.isEmpty) {
         throw new ContainedException(s"Got empty entity for $item, revision:$revision (404 or 204?)")
       } else {
@@ -114,7 +116,7 @@ case class GenerateEntityDiffPatchOperation(
   }
 
   private def generateDiff(item: String, from: Iterable[Statement], to: Iterable[Statement],
-                           revision: Long, fromRev: Long): RDFPatch = {
+                           revision: Long, fromRev: Long): Patch = {
       if (from.isEmpty || to.isEmpty) {
         throw new ContainedException(s"Got empty entity for $item, fromRev: $fromRev, revision:$revision (404 or 204?)")
       } else {
@@ -122,7 +124,7 @@ case class GenerateEntityDiffPatchOperation(
     }
   }
 
-  private def diff(item: String, from: Iterable[Statement], to: Iterable[Statement]): RDFPatch = {
+  private def diff(item: String, from: Iterable[Statement], to: Iterable[Statement]): Patch = {
     val fromList = new util.ArrayList[Statement](from.asJavaCollection)
     val toList = new util.ArrayList[Statement](to.asJavaCollection)
 
@@ -132,7 +134,7 @@ case class GenerateEntityDiffPatchOperation(
     diff.diff(fromList, toList)
   }
 
-  private def fullImport(item: String, stmts: Iterable[Statement]): RDFPatch = {
+  private def fullImport(item: String, stmts: Iterable[Statement]): Patch = {
     val toList = new util.ArrayList[Statement](stmts.asJavaCollection)
 
     mungeOperation(item, toList)
@@ -149,15 +151,15 @@ object GenerateEntityDiffPatchOperation {
 }
 
 sealed class RouteFailedOpsToSideOutput(ignoredEventTag: OutputTag[FailedOp] = RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
-  extends ProcessFunction[ResolvedOp, EntityPatchOp]
+  extends ProcessFunction[ResolvedOp, SuccessfulOp]
 {
   override def processElement(i: ResolvedOp,
-                              context: ProcessFunction[ResolvedOp, EntityPatchOp]#Context,
-                              collector: Collector[EntityPatchOp]
+                              context: ProcessFunction[ResolvedOp, SuccessfulOp]#Context,
+                              collector: Collector[SuccessfulOp]
                              ): Unit = {
     i match {
       case e: FailedOp => context.output(ignoredEventTag, e)
-      case x: EntityPatchOp => collector.collect(x)
+      case x: SuccessfulOp => collector.collect(x)
     }
   }
 }

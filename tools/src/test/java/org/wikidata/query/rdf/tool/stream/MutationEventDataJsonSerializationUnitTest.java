@@ -43,7 +43,7 @@ public class MutationEventDataJsonSerializationUnitTest {
         Instant eventTime = Instant.EPOCH;
         List<Statement> added = singletonList(statement("uri:a", "uri:b", "uri:c"));
         List<Statement> linkedData = singletonList(statement("uri:x", "uri:y", "uri:z"));
-        List<DiffEventData> events = eventGenerator.fullImportEvent(() -> meta, "Q123", 123, eventTime, added, linkedData);
+        List<MutationEventData> events = eventGenerator.fullImportEvent(() -> meta, "Q123", 123, eventTime, added, linkedData);
         StringWriter sw = new StringWriter();
         MapperUtils.getObjectMapper().writer().writeValue(sw, events.get(0));
         assertThat(sw.toString()).isEqualTo(Resources.toString(TEST_IMPORT_JSON_RESOURCE, UTF_8).replace("\n", ""));
@@ -61,7 +61,7 @@ public class MutationEventDataJsonSerializationUnitTest {
         List<Statement> linkedData = singletonList(statement("uri:x", "uri:y", "uri:z"));
         List<Statement> deleted = singletonList(statement("uri:del", "uri:del", "uri:del"));
         List<Statement> unlinkedData = singletonList(statement("uri:unlinked", "uri:unlinked", "uri:unlinked"));
-        List<DiffEventData> events = eventGenerator.diffEvent(() -> meta, "Q123", 123, eventTime, added, deleted, linkedData, unlinkedData);
+        List<MutationEventData> events = eventGenerator.diffEvent(() -> meta, "Q123", 123, eventTime, added, deleted, linkedData, unlinkedData);
 
         StringWriter sw = new StringWriter();
         MapperUtils.getObjectMapper().writer().writeValue(sw, events.get(0));
@@ -76,14 +76,14 @@ public class MutationEventDataJsonSerializationUnitTest {
         MutationEventDataGenerator eventGenerator = buildEventGenerator(Integer.MAX_VALUE);
         EventsMeta meta = ChangeEventFixtures.makeEventMeta(new UUID(2, 3), new UUID(3, 4));
         Instant eventTime = Instant.EPOCH;
-        MutationEventData event = eventGenerator.deleteEvent(meta, "Q123", 123, eventTime);
+        List<MutationEventData> events = eventGenerator.deleteEvent(() -> meta, "Q123", 123, eventTime);
 
         StringWriter sw = new StringWriter();
-        MapperUtils.getObjectMapper().writer().writeValue(sw, event);
+        MapperUtils.getObjectMapper().writer().writeValue(sw, events.get(0));
         assertThat(sw.toString()).isEqualTo(Resources.toString(TEST_DELETE_JSON_RESOURCE, UTF_8).replace("\n", ""));
 
         Object data = MapperUtils.getObjectMapper().readValue(TEST_DELETE_JSON_RESOURCE, MutationEventData.class);
-        assertThat(data).isEqualTo(event);
+        assertThat(data).isEqualTo(events.get(0));
     }
 
     private MutationEventDataGenerator buildEventGenerator(int softMaxSize) {

@@ -4,6 +4,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.wikidata.query.rdf.tool.change.Change;
+
 /**
  * Provides fixtures to help test classes depending on ChangeEvent.
  */
@@ -43,7 +45,7 @@ public final class ChangeEventFixtures {
     public static ChangeEvent makeDeleteEvent(Duration offset, String qid) {
         return new PageDeleteEvent(
                 new EventsMeta(START_TIME.plus(offset), "", DOMAIN, "", ""),
-                qid, 0);
+                Change.NO_REVISION, qid, 0);
     }
 
     /**

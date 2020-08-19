@@ -11,7 +11,7 @@ import java.util.Set;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.openrdf.model.Statement;
-import org.wikidata.query.rdf.tool.rdf.RDFPatch;
+import org.wikidata.query.rdf.tool.rdf.Patch;
 
 import com.google.common.collect.Sets;
 
@@ -19,7 +19,7 @@ import lombok.Getter;
 
 @Getter
 @NotThreadSafe
-public class RDFPatchAccumulator {
+public class PatchAccumulator {
     private final Set<Statement> allAdded = new HashSet<>();
     private final Set<Statement> allRemoved = new HashSet<>();
     private final Set<Statement> allLinkedSharedElts = new HashSet<>();
@@ -27,7 +27,7 @@ public class RDFPatchAccumulator {
     private int totalAccumulated;
     private final RDFChunkDeserializer deser;
 
-    public RDFPatchAccumulator(RDFChunkDeserializer deser) {
+    public PatchAccumulator(RDFChunkDeserializer deser) {
         this.deser = deser;
     }
 
@@ -59,17 +59,20 @@ public class RDFPatchAccumulator {
         set2.removeAll(intersection);
     }
 
-    public RDFPatch asPatch() {
-        return new RDFPatch(unmodifiableList(new ArrayList<>(allAdded)),
+    public Patch asPatch() {
+        return new Patch(unmodifiableList(new ArrayList<>(allAdded)),
                 unmodifiableList(new ArrayList<>(allLinkedSharedElts)),
                 unmodifiableList(new ArrayList<>(allRemoved)),
                 unmodifiableList(new ArrayList<>(allUnlinkedSharedElts)));
     }
 
-    public void accumulate(DiffEventData value) {
-        accumulate(value.getRdfAddedData() != null ? deser.deser(value.getRdfAddedData(), "unused") : emptyList(),
-                value.getRdfDeletedData() != null ? deser.deser(value.getRdfDeletedData(), "unused") : emptyList(),
-                value.getRdfLinkedSharedData() != null ? deser.deser(value.getRdfLinkedSharedData(), "unused") : emptyList(),
-                value.getRdfUnlinkedSharedData() != null ? deser.deser(value.getRdfUnlinkedSharedData(), "unused") : emptyList());
+    public void accumulate(MutationEventData value) {
+        if (value instanceof DiffEventData) {
+            DiffEventData val = (DiffEventData) value;
+            accumulate(val.getRdfAddedData() != null ? deser.deser(val.getRdfAddedData(), "unused") : emptyList(),
+                    val.getRdfDeletedData() != null ? deser.deser(val.getRdfDeletedData(), "unused") : emptyList(),
+                    val.getRdfLinkedSharedData() != null ? deser.deser(val.getRdfLinkedSharedData(), "unused") : emptyList(),
+                    val.getRdfUnlinkedSharedData() != null ? deser.deser(val.getRdfUnlinkedSharedData(), "unused") : emptyList());
+        }
     }
 }

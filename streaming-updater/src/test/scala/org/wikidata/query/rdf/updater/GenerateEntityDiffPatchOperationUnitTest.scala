@@ -16,7 +16,7 @@ import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.test.StatementHelper.statements
 import org.wikidata.query.rdf.tool.change.events.EventsMeta
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
-import org.wikidata.query.rdf.tool.rdf.RDFPatch
+import org.wikidata.query.rdf.tool.rdf.Patch
 
 class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers with MockFactory with TestEventGenerator with BeforeAndAfter {
   val DOMAIN = "tested.domain"
@@ -48,7 +48,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     val operatorFactory = new AsyncWaitOperatorFactory[MutationOperation, ResolvedOp](operator, 5L, 10, OutputMode.ORDERED)
     val env = MockEnvironment.builder().build()
     genDiff.setRuntimeContext(new MockStreamingRuntimeContext(false, 1, 1))
-    env.getExecutionConfig.registerTypeWithKryoSerializer(classOf[RDFPatch], classOf[RDFPatchSerializer])
+    env.getExecutionConfig.registerTypeWithKryoSerializer(classOf[Patch], classOf[RDFPatchSerializer])
     // AsyncAwaitOperator will always throw Exception wrapping our own
     expectExternalFailure map { _ => classOf[Exception] } foreach env.setExpectedExternalFailureCause
     val harness = new OneInputStreamOperatorTestHarness[MutationOperation, ResolvedOp](operatorFactory, typeInfo.createSerializer(env.getExecutionConfig), env)
@@ -156,7 +156,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
   }
 
   private def outputImportEvent(op: FullImport) = {
-    EntityPatchOp(op, new RDFPatch(statements("uri:a"), emptyList(), emptyList(), emptyList()))
+    EntityPatchOp(op, new Patch(statements("uri:a"), emptyList(), emptyList(), emptyList()))
   }
 
   private def inputDiffOp = {
@@ -168,7 +168,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
   }
 
   private def outputDiffEvent(op: Diff) = {
-    EntityPatchOp(op, new RDFPatch(statements("uri:c"), emptyList(), statements("uri:b"), emptyList()))
+    EntityPatchOp(op, new Patch(statements("uri:c"), emptyList(), statements("uri:b"), emptyList()))
   }
 
   private def sendData[T <: Throwable](op: MutationOperation, expectedException: Option[Class[T]] = None) = {

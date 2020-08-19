@@ -31,7 +31,7 @@ public class EntityDiffUnitTest {
                 statement("uri:s3", "uri:p3", "uri:v3")
         );
         EntityDiff differ = new EntityDiff(stmt -> false);
-        RDFPatch patch = differ.diff(rev1, rev2);
+        Patch patch = differ.diff(rev1, rev2);
         assertThat(patch.getAdded()).containsExactly(
                 statement("uri:s3", "uri:p3", "uri:v3")
         );
@@ -64,7 +64,7 @@ public class EntityDiffUnitTest {
                 statement("uri:sharedres3", "uri:p", "uri:shared_data2")
         );
         EntityDiff differ = new EntityDiff(stmt -> stmt.getSubject().toString().contains(":sharedres"));
-        RDFPatch patch = differ.diff(rev1, rev2);
+        Patch patch = differ.diff(rev1, rev2);
         assertThat(patch.getAdded()).containsOnly(
                 statement("uri:s3", "uri:p", "uri:sharedres3")
         );
@@ -94,7 +94,7 @@ public class EntityDiffUnitTest {
                 statement("uri:sharedres2", "uri:p", "uri:shared_data2")
         );
         EntityDiff differ = new EntityDiff(stmt -> stmt.getSubject().toString().contains(":sharedres"));
-        RDFPatch patch = differ.diff(emptyList(), rev1);
+        Patch patch = differ.diff(emptyList(), rev1);
         assertThat(patch.getAdded()).containsOnly(
                 statement("uri:s1", "uri:p", "uri:v1"),
                 statement("uri:s1", "uri:p", "uri:sharedres1"),
@@ -122,7 +122,7 @@ public class EntityDiffUnitTest {
                 statement("uri:sharedres2", "uri:p", "uri:shared_data2")
         );
         EntityDiff differ = new EntityDiff(stmt -> stmt.getSubject().toString().contains(":sharedres"));
-        RDFPatch patch = differ.diff(rev1, emptyList());
+        Patch patch = differ.diff(rev1, emptyList());
         assertThat(patch.getRemoved()).containsOnly(
                 statement("uri:s1", "uri:p", "uri:v1"),
                 statement("uri:s1", "uri:p", "uri:sharedres1"),
@@ -153,7 +153,7 @@ public class EntityDiffUnitTest {
         when(urisScheme.value()).thenReturn("v:");
         when(urisScheme.reference()).thenReturn("r:");
         EntityDiff differ = EntityDiff.withValuesAndRefsAsSharedElements(urisScheme);
-        RDFPatch patch = differ.diff(rev1, rev2);
+        Patch patch = differ.diff(rev1, rev2);
         assertThat(patch.getAdded()).containsOnly(statement("uri:s3", "uri:p", "uri:v3"));
         assertThat(patch.getLinkedSharedElements()).containsOnly(statement("r:sharedres1", "uri:p", "uri:shared_data1"));
         assertThat(patch.getRemoved()).containsOnly(statement("uri:s2", "uri:p", "uri:v2"));

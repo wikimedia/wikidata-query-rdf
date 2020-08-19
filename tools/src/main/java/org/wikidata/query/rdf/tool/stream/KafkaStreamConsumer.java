@@ -109,7 +109,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
         if (lastOfferedBatchOffsets != null) {
             throw new IllegalStateException("Last batch must be acknowledged before polling a new one.");
         }
-        RDFPatchAccumulator accumulator = new RDFPatchAccumulator(rdfDeser);
+        PatchAccumulator accumulator = new PatchAccumulator(rdfDeser);
         ConsumerRecord<String, MutationEventData> lastRecord = null;
         long remaining = timeout;
         long st = System.currentTimeMillis();
@@ -129,7 +129,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
                 switch (record.value().getOperation()) {
                     case MutationEventData.DIFF_OPERATION:
                     case MutationEventData.IMPORT_OPERATION:
-                        accumulator.accumulate((DiffEventData) record.value());
+                        accumulator.accumulate(record.value());
                         break;
                     default:
                         throw new UnsupportedOperationException(record.value().getOperation() + " not supported yet.");

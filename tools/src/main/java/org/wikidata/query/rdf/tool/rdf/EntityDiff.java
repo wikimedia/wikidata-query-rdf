@@ -31,7 +31,7 @@ public class EntityDiff {
     /**
      * Diff two list of statements.
      */
-    public RDFPatch diff(Iterable<Statement> current, Iterable<Statement> next) {
+    public Patch diff(Iterable<Statement> current, Iterable<Statement> next) {
         Set<Statement> currentSet = Sets.newHashSet(current);
         Set<Statement> nextSet = Sets.newHashSet(next);
         Set<Statement> allDeleted = Sets.difference(currentSet, nextSet);
@@ -43,7 +43,7 @@ public class EntityDiff {
 
         allAdded.forEach(filterSharedElements(linkedSharedElements::add, added::add));
         allDeleted.forEach(filterSharedElements(unlinkedSharedElements::add, deleted::add));
-        return new RDFPatch(unmodifiableList(added), unmodifiableList(linkedSharedElements),
+        return new Patch(unmodifiableList(added), unmodifiableList(linkedSharedElements),
                 unmodifiableList(deleted), unmodifiableList(unlinkedSharedElements));
     }
 

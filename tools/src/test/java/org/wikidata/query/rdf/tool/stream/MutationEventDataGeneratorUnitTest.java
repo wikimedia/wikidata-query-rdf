@@ -37,7 +37,7 @@ public class MutationEventDataGeneratorUnitTest {
         Instant eventTime = Instant.EPOCH;
         List<Statement> added = singletonList(statement("uri:a", "uri:b", "uri:c"));
         List<Statement> linkedData = singletonList(statement("uri:x", "uri:y", "uri:z"));
-        List<DiffEventData> events = eventGenerator.fullImportEvent(() -> meta, "Q123", 123L, eventTime, added, linkedData);
+        List<MutationEventData> events = eventGenerator.fullImportEvent(() -> meta, "Q123", 123L, eventTime, added, linkedData);
 
         assertThat(events).containsExactly(new DiffEventData(meta, "Q123", 123L, eventTime, 0, 1, MutationEventData.IMPORT_OPERATION,
                 chunk(added),
@@ -53,7 +53,7 @@ public class MutationEventDataGeneratorUnitTest {
         Instant eventTime = Instant.EPOCH;
         List<Statement> added = singletonList(statement("uri:a", "uri:b", "uri:c"));
         List<Statement> linkedData = singletonList(statement("uri:x", "uri:y", "uri:z"));
-        List<DiffEventData> events = eventGenerator.fullImportEvent(() -> meta, "Q123", 123L, eventTime, added, linkedData);
+        List<MutationEventData> events = eventGenerator.fullImportEvent(() -> meta, "Q123", 123L, eventTime, added, linkedData);
 
         assertThat(events).containsExactly(
                 new DiffEventData(meta, "Q123", 123L, eventTime, 0, 2, MutationEventData.IMPORT_OPERATION,
@@ -72,7 +72,7 @@ public class MutationEventDataGeneratorUnitTest {
         List<Statement> linkedData = singletonList(statement("uri:x", "uri:y", "uri:z"));
         List<Statement> deleted = singletonList(statement("uri:del", "uri:del", "uri:del"));
         List<Statement> unlinkedData = singletonList(statement("uri:unlinked", "uri:unlinked", "uri:unlinked"));
-        List<DiffEventData> events = eventGenerator.diffEvent(() -> meta, "Q123", 123L, eventTime, added, deleted, linkedData, unlinkedData);
+        List<MutationEventData> events = eventGenerator.diffEvent(() -> meta, "Q123", 123L, eventTime, added, deleted, linkedData, unlinkedData);
 
         assertThat(events).containsExactly(
                 new DiffEventData(meta, "Q123", 123L, eventTime, 0, 1, MutationEventData.DIFF_OPERATION,
@@ -89,7 +89,7 @@ public class MutationEventDataGeneratorUnitTest {
         List<Statement> linkedData = singletonList(statement("uri:x", "uri:y", "uri:z"));
         List<Statement> deleted = singletonList(statement("uri:del", "uri:del", "uri:del"));
         List<Statement> unlinkedData = singletonList(statement("uri:unlinked", "uri:unlinked", "uri:unlinked"));
-        List<DiffEventData> events = eventGenerator.diffEvent(() -> meta, "Q123", 123L, eventTime, added, deleted, linkedData, unlinkedData);
+        List<MutationEventData> events = eventGenerator.diffEvent(() -> meta, "Q123", 123L, eventTime, added, deleted, linkedData, unlinkedData);
 
         assertThat(events).containsExactly(
                 new DiffEventData(meta, "Q123", 123L, eventTime, 0, 4, MutationEventData.DIFF_OPERATION,

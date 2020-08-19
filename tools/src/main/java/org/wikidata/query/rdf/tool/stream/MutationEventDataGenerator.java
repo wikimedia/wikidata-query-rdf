@@ -24,24 +24,25 @@ public class MutationEventDataGenerator {
         this.softMaxRdfSize = softMaxRdfSize;
     }
 
-    public List<DiffEventData> fullImportEvent(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
+    public List<MutationEventData> fullImportEvent(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
                                                List<Statement> statements, List<Statement> linkedValuesAndRefs) {
         return createChunks(meta, entity, revision, eventTime, MutationEventData.IMPORT_OPERATION, statements,
                 Collections.emptyList(), linkedValuesAndRefs, Collections.emptyList());
     }
 
-    public List<DiffEventData> diffEvent(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
+    public List<MutationEventData> diffEvent(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
                                          List<Statement> added, List<Statement> deleted,
                                          List<Statement> linkedValuesAndRefs, List<Statement> unlinkedValuesAndRefs) {
         return createChunks(meta, entity, revision, eventTime, MutationEventData.DIFF_OPERATION, added, deleted,
                 linkedValuesAndRefs, unlinkedValuesAndRefs);
     }
 
-    public MutationEventData deleteEvent(EventsMeta meta, String entity, long revision, Instant eventTime) {
-        return new MutationEventData(meta, entity, revision, eventTime, 0, 1, MutationEventData.DELETE_OPERATION);
+    public List<MutationEventData> deleteEvent(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime) {
+        MutationEventData deleteEvent = new MutationEventData(meta.get(), entity, revision, eventTime, 0, 1, MutationEventData.DELETE_OPERATION);
+        return new ArrayList<>(Collections.singleton(deleteEvent));
     }
 
-    private List<DiffEventData> createChunks(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
+    private List<MutationEventData> createChunks(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
                                              String operation, List<Statement> added, List<Statement> deleted,
                                              List<Statement> linkedValuesAndRefs,
                                              List<Statement> unlinkedValuesAndRefs) {
@@ -55,7 +56,7 @@ public class MutationEventDataGenerator {
 
         List<EnumMap<RDFKind, RDFDataChunk>> collected = new ArrayList<>(chunksPerType.values().stream().mapToInt(List::size).sum());
         Arrays.stream(RDFKind.values()).forEach(k -> mergeOrAppend(chunksPerType.get(k), collected, k));
-        List<DiffEventData> events = new ArrayList<>(collected.size());
+        List<MutationEventData> events = new ArrayList<>(collected.size());
         int seqMax = collected.size();
         for (int i = 0; i < seqMax; i++) {
             EnumMap<RDFKind, RDFDataChunk> chunks = collected.get(i);

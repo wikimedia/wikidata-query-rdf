@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.apache.flink.api.java.typeutils.runtime.kryo.JavaSerializer;
 import org.openrdf.model.Statement;
-import org.wikidata.query.rdf.tool.rdf.RDFPatch;
+import org.wikidata.query.rdf.tool.rdf.Patch;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoException;
@@ -15,13 +15,13 @@ import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-public class RDFPatchSerializer extends Serializer<RDFPatch> {
+public class RDFPatchSerializer extends Serializer<Patch> {
     // use flink's java serializer (ref FLINK-6025)
     public static final JavaSerializer<Statement> JAVA_SERIALIZER = new JavaSerializer<>();
     public static final int VERSION = 1;
 
     @Override
-    public void write(Kryo kryo, Output output, RDFPatch o) {
+    public void write(Kryo kryo, Output output, Patch o) {
         output.writeInt(VERSION);
         writeOptionalCollection(kryo, output, o.getAdded());
         writeOptionalCollection(kryo, output, o.getLinkedSharedElements());
@@ -30,13 +30,13 @@ public class RDFPatchSerializer extends Serializer<RDFPatch> {
     }
 
     @Override
-    public RDFPatch read(Kryo kryo, Input input, Class<RDFPatch> aClass) {
+    public Patch read(Kryo kryo, Input input, Class<Patch> aClass) {
         int v = input.readInt();
         if (v != VERSION) {
-            throw new KryoException("Unsupported version " + v + " for " + RDFPatch.class);
+            throw new KryoException("Unsupported version " + v + " for " + Patch.class);
         }
 
-        return new RDFPatch(readOptionalList(kryo, input), readOptionalList(kryo, input),
+        return new Patch(readOptionalList(kryo, input), readOptionalList(kryo, input),
                 readOptionalList(kryo, input), readOptionalList(kryo, input));
     }
 

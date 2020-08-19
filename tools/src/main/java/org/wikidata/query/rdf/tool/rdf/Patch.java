@@ -7,7 +7,7 @@ import org.openrdf.model.Statement;
 import lombok.Value;
 
 @Value
-public class RDFPatch {
+public class Patch {
     List<Statement> added;
     List<Statement> linkedSharedElements;
     List<Statement> removed;

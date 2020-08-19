@@ -30,7 +30,7 @@ public class RdfRepositoryUpdaterIntegrationTest {
                 "<uri:shared-0> <uri:shared-0> <uri:shared-0> . };\n");
 
         RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client);
-        RDFPatch patch = new RDFPatch(statements("uri:b"), statements("uri:shared-0", "uri:shared-1"),
+        Patch patch = new Patch(statements("uri:b"), statements("uri:shared-0", "uri:shared-1"),
                 statements("uri:a", "uri:x"), statements("uri:ignored"));
 
         RDFPatchResult rdfPatchResult = rdfRepositoryUpdater.applyPatch(patch);

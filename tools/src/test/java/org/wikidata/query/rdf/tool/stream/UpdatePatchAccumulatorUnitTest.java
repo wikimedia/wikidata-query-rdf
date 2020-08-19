@@ -23,13 +23,13 @@ public class UpdatePatchAccumulatorUnitTest {
     public void test() {
         RDFChunkSerializer serDeser = new RDFChunkSerializer(RDFWriterRegistry.getInstance());
         MutationEventDataGenerator generator = new MutationEventDataGenerator(serDeser, RDFFormat.TURTLE.getDefaultMIMEType(), 10);
-        List<DiffEventData> data = generator.diffEvent(() -> new EventsMeta(Instant.EPOCH, "", "", "", ""), "", 1, Instant.EPOCH,
+        List<MutationEventData> data = generator.diffEvent(() -> new EventsMeta(Instant.EPOCH, "", "", "", ""), "", 1, Instant.EPOCH,
                 singletonList(stmt("uri:added")),
                 singletonList(stmt("uri:deleted")),
                 singletonList(stmt("uri:linked")),
                 singletonList(stmt("uri:unlinked")));
 
-        RDFPatchAccumulator accum = new RDFPatchAccumulator(new RDFChunkDeserializer(new RDFParserSuppliers(RDFParserRegistry.getInstance())));
+        PatchAccumulator accum = new PatchAccumulator(new RDFChunkDeserializer(new RDFParserSuppliers(RDFParserRegistry.getInstance())));
         data.forEach(accum::accumulate);
         assertThat(accum.getTotalAccumulated()).isEqualTo(4);
         assertThat(accum.size()).isEqualTo(4);

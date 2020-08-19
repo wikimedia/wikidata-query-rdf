@@ -4,7 +4,6 @@ import java.time.Clock
 import java.util.UUID
 
 import scala.concurrent.duration.MILLISECONDS
-
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.graph.StreamGraph
@@ -12,7 +11,7 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
-import org.wikidata.query.rdf.tool.rdf.RDFPatch
+import org.wikidata.query.rdf.tool.rdf.Patch
 
 sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
                              spuriousEventStream: DataStream[IgnoredMutation],
@@ -111,7 +110,7 @@ object UpdaterPipeline {
             clock: Clock = Clock.systemUTC(),
             outputStreamName: String = "wdqs_streaming_updater")
            (implicit env: StreamExecutionEnvironment): UpdaterPipeline = {
-    env.getConfig.registerTypeWithKryoSerializer(classOf[RDFPatch], classOf[RDFPatchSerializer])
+    env.getConfig.registerTypeWithKryoSerializer(classOf[Patch], classOf[RDFPatchSerializer])
     val incomingEventStream: DataStream[InputEvent] = incomingStreams match {
       case Nil => throw new NoSuchElementException("at least one stream is needed")
       case x :: Nil => x
@@ -125,7 +124,7 @@ object UpdaterPipeline {
     val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
 
     val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, outputMutationStream)
-    val patchStream: DataStream[EntityPatchOp] = rerouteFailedOps(resolvedOpStream, opts)
+    val patchStream: DataStream[SuccessfulOp] = rerouteFailedOps(resolvedOpStream, opts)
     val failedOpsToSideOutput: DataStream[FailedOp] = patchStream.getSideOutput(RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
 
     val tripleStream: DataStream[MutationDataChunk] = measureLatency(
@@ -134,7 +133,7 @@ object UpdaterPipeline {
     new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, failedOpsToSideOutput, tripleStream, updaterPipelineOptions = opts)
   }
 
-  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp], opts: UpdaterPipelineOptions): DataStream[EntityPatchOp] = {
+  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp], opts: UpdaterPipelineOptions): DataStream[SuccessfulOp] = {
     resolvedOpStream
       .process(new RouteFailedOpsToSideOutput())
       .name("RouteFailedOpsToSideOutput")
@@ -142,14 +141,14 @@ object UpdaterPipeline {
       .setParallelism(opts.outputParallelism)
   }
 
-  private def rdfPatchChunkOp(dataStream: DataStream[EntityPatchOp],
+  private def rdfPatchChunkOp(dataStream: DataStream[SuccessfulOp],
                               opts: UpdaterPipelineOptions,
                               uniqueIdGenerator: () => String,
                               clock: Clock,
                               outputStreamName: String
                              ): DataStream[MutationDataChunk] = {
     dataStream
-      .flatMap(new RDFPatchChunkOperation(
+      .flatMap(new PatchChunkOperation(
         domain = opts.hostname,
         clock = clock,
         uniqueIdGenerator = uniqueIdGenerator,

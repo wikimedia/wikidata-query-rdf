@@ -26,7 +26,7 @@ public class RdfRepositoryUpdater implements AutoCloseable {
         return Utils.loadBody(name, RdfRepositoryUpdater.class);
     }
 
-    public RDFPatchResult applyPatch(RDFPatch patch) {
+    public RDFPatchResult applyPatch(Patch patch) {
         int expectedMutations = 0;
         StringBuilder sb = new StringBuilder();
         if (!patch.getRemoved().isEmpty()) {

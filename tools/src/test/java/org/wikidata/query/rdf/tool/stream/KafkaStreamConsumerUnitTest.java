@@ -42,7 +42,7 @@ import org.openrdf.rio.RDFParserRegistry;
 import org.openrdf.rio.RDFWriterRegistry;
 import org.wikidata.query.rdf.tool.change.events.EventsMeta;
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
-import org.wikidata.query.rdf.tool.rdf.RDFPatch;
+import org.wikidata.query.rdf.tool.rdf.Patch;
 
 import com.codahale.metrics.MetricRegistry;
 
@@ -105,7 +105,7 @@ public class KafkaStreamConsumerUnitTest {
             if (b == null) {
                 break;
             }
-            RDFPatch patch = b.getPatch();
+            Patch patch = b.getPatch();
             storedData.addAll(patch.getAdded());
             storedData.removeAll(patch.getRemoved());
             storedData.addAll(patch.getLinkedSharedElements());
@@ -141,7 +141,7 @@ public class KafkaStreamConsumerUnitTest {
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
         StreamConsumer.Batch b = streamConsumer.poll(100);
         assertThat(b).isNotNull();
-        RDFPatch patch = b.getPatch();
+        Patch patch = b.getPatch();
         assertThat(patch.getAdded().size()).isEqualTo(KafkaStreamConsumer.SOFT_BUFFER_CAP);
         streamConsumer.acknowledge();
         b = streamConsumer.poll(100);
@@ -168,7 +168,7 @@ public class KafkaStreamConsumerUnitTest {
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
         StreamConsumer.Batch b = streamConsumer.poll(100);
         assertThat(b).isNotNull();
-        RDFPatch patch = b.getPatch();
+        Patch patch = b.getPatch();
         assertThat(patch.getAdded().size()).isEqualTo(KafkaStreamConsumer.SOFT_BUFFER_CAP);
         streamConsumer.acknowledge();
         b = streamConsumer.poll(100);

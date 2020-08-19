@@ -21,7 +21,7 @@ public class RdfRepositoryUpdaterUnitTest {
 
     @Test
     public void testInsertOnly() {
-        RDFPatch patch = new RDFPatch(statements("uri:a", "uri:b"), statements(), statements(), statements());
+        Patch patch = new Patch(statements("uri:a", "uri:b"), statements(), statements(), statements());
         when(client.update(anyString())).thenReturn(2);
         RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client);
         RDFPatchResult result = rdfRepositoryUpdater.applyPatch(patch);
@@ -34,7 +34,7 @@ public class RdfRepositoryUpdaterUnitTest {
 
     @Test
     public void testDeleteOnly() {
-        RDFPatch patch = new RDFPatch(statements(), statements(), statements("uri:a", "uri:b"), statements());
+        Patch patch = new Patch(statements(), statements(), statements("uri:a", "uri:b"), statements());
         when(client.update(anyString())).thenReturn(2);
         RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client);
         RDFPatchResult result = rdfRepositoryUpdater.applyPatch(patch);
@@ -47,7 +47,7 @@ public class RdfRepositoryUpdaterUnitTest {
 
     @Test
     public void testInsertDeleteOnly() {
-        RDFPatch patch = new RDFPatch(statements("uri:a", "uri:b"), statements(), statements("uri:c", "uri:d"), statements());
+        Patch patch = new Patch(statements("uri:a", "uri:b"), statements(), statements("uri:c", "uri:d"), statements());
         when(client.update(anyString())).thenReturn(3);
         RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client);
         RDFPatchResult result = rdfRepositoryUpdater.applyPatch(patch);
@@ -68,14 +68,14 @@ public class RdfRepositoryUpdaterUnitTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testFailsOnEmptyPatch() {
-        RDFPatch patch = new RDFPatch(statements(), statements(), statements(), statements());
+        Patch patch = new Patch(statements(), statements(), statements(), statements());
         RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client);
         rdfRepositoryUpdater.applyPatch(patch);
     }
 
     @Test
     public void testInsertSharedElts() {
-        RDFPatch patch = new RDFPatch(statements("uri:a", "uri:b"), statements("uri:s1", "uri:s2"), statements(), statements());
+        Patch patch = new Patch(statements("uri:a", "uri:b"), statements("uri:s1", "uri:s2"), statements(), statements());
         when(client.update(anyString())).thenReturn(2, 1);
         RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client);
         RDFPatchResult result = rdfRepositoryUpdater.applyPatch(patch);

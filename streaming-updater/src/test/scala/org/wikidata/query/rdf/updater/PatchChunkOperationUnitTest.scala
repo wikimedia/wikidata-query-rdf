@@ -6,14 +6,13 @@ import java.util.Collections.emptyList
 import java.util.function.Supplier
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-
 import org.apache.flink.api.common.functions.util.ListCollector
 import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.test.StatementHelper.statements
 import org.wikidata.query.rdf.tool.change.events.EventsMeta
-import org.wikidata.query.rdf.tool.rdf.RDFPatch
+import org.wikidata.query.rdf.tool.rdf.Patch
 
-class RDFPatchChunkOperationUnitTest extends FlatSpec with Matchers with TestEventGenerator {
+class PatchChunkOperationUnitTest extends FlatSpec with Matchers with TestEventGenerator {
   val DOMAIN = "tested.domain"
   val STREAM = "tested.stream"
   val REQ_ID = "tested.req.id"
@@ -63,8 +62,18 @@ class RDFPatchChunkOperationUnitTest extends FlatSpec with Matchers with TestEve
     chunks.asScala.map(_.data.getOperation).toSet should contain only "import"
   }
 
+  "a delete operation" should "generate an import MutationEventData" in {
+    val op = buildOp()
+    val chunks: util.List[MutationDataChunk] = new util.ArrayList[MutationDataChunk]()
+    op.flatMap(outputDeleteEvent(importDeleteOp), new ListCollector[MutationDataChunk](chunks))
+
+    chunks.size() shouldBe 1
+    chunks.asScala.map(_.operation).toSet should contain only importDeleteOp
+    chunks.asScala.map(_.data.getOperation).toSet should contain only "delete"
+  }
+
   private def buildOp(chunkSize: Int = Int.MaxValue) = {
-    new RDFPatchChunkOperation(
+    new PatchChunkOperation(
       domain = DOMAIN,
       chunkSoftMaxSize = chunkSize,
       clock = Clock.fixed(NOW, ZoneId.of("UTC")),
@@ -73,20 +82,27 @@ class RDFPatchChunkOperationUnitTest extends FlatSpec with Matchers with TestEve
     )
   }
 
-  private def outputImportEvent(op: FullImport) = {
-    EntityPatchOp(op, new RDFPatch(statements("uri:a"), statements("uri:shared"), emptyList(), emptyList()))
+  private def outputImportEvent(op: FullImport): EntityPatchOp = {
+    EntityPatchOp(op, new Patch(statements("uri:a"), statements("uri:shared"), emptyList(), emptyList()))
   }
 
-  private def importOp = {
+  private def importOp: FullImport = {
     FullImport("Q1", NOW, 1, NOW, INPUT_EVENT_META)
   }
 
+  private def importDeleteOp: DeleteItem = {
+    DeleteItem("Q1", NOW, 1, NOW, INPUT_EVENT_META)
+  }
 
   private def inputDiffOp: Diff = {
     Diff("Q1", NOW, 2, 1, NOW, INPUT_EVENT_META)
   }
 
   private def outputDiffEvent(op: Diff): EntityPatchOp = {
-    EntityPatchOp(op, new RDFPatch(statements("uri:c"), emptyList(), statements("uri:b"), emptyList()))
+    EntityPatchOp(op, new Patch(statements("uri:c"), emptyList(), statements("uri:b"), emptyList()))
+  }
+
+  private def outputDeleteEvent(op: DeleteItem): SuccessfulOp = {
+    DeleteOp(op)
   }
 }

@@ -17,7 +17,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.wikidata.query.rdf.tool.rdf.RDFPatch;
+import org.wikidata.query.rdf.tool.rdf.Patch;
 import org.wikidata.query.rdf.tool.rdf.RDFPatchResult;
 import org.wikidata.query.rdf.tool.rdf.RdfRepositoryUpdater;
 
@@ -32,7 +32,7 @@ public class StreamingUpdaterUnitTest {
 
     @Test
     public void test() throws InterruptedException {
-        RDFPatch patch = new RDFPatch(statements(), statements(), statements(), statements());
+        Patch patch = new Patch(statements(), statements(), statements(), statements());
         RDFPatchResult rdfPatchResult = new RDFPatchResult(2, 1, 2, 1);
         LongAdder patchApplied = new LongAdder();
         CountDownLatch countdown = new CountDownLatch(5);

@@ -37,11 +37,13 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   "PageDelEvent" should "be convertible into InputEvent" in {
     val event = IncomingStreams.PAGE_DEL_CONV.apply(new PageDeleteEvent(
       new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "unused for now"),
+      1234,
       "Q123",
       1),
       Clock.systemUTC())
     event.eventTime should equal(Instant.ofEpochMilli(123))
     event.item should equal("Q123")
+    event.revision should equal(1234)
   }
 }
 

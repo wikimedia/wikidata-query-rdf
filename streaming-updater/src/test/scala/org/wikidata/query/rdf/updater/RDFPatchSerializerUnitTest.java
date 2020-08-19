@@ -9,7 +9,7 @@ import java.io.ByteArrayOutputStream;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.wikidata.query.rdf.tool.rdf.RDFPatch;
+import org.wikidata.query.rdf.tool.rdf.Patch;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -20,25 +20,25 @@ public class RDFPatchSerializerUnitTest {
 
     @Before
     public void setup() {
-        kryo.register(RDFPatch.class, new RDFPatchSerializer());
+        kryo.register(Patch.class, new RDFPatchSerializer());
     }
 
     @Test
     public void testSerDeser() {
-        RDFPatch p = new RDFPatch(statements("uri:added"), statements("uri:linked"),
+        Patch p = new Patch(statements("uri:added"), statements("uri:linked"),
                 statements("uri:deleted"), statements("uri:unlinked"));
         assertThat(readSerializedBytes(getSerializedBytes(p))).isEqualTo(p);
     }
 
     @Test
     public void testNullAndEmpty() {
-        RDFPatch p = new RDFPatch(null, emptyList(), null, emptyList());
+        Patch p = new Patch(null, emptyList(), null, emptyList());
         assertThat(readSerializedBytes(getSerializedBytes(p))).isEqualTo(p);
-        p = new RDFPatch(emptyList(), null, emptyList(), null);
+        p = new Patch(emptyList(), null, emptyList(), null);
         assertThat(readSerializedBytes(getSerializedBytes(p))).isEqualTo(p);
     }
 
-    private byte[] getSerializedBytes(RDFPatch p) {
+    private byte[] getSerializedBytes(Patch p) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (Output output = new Output(baos)) {
             kryo.writeObject(output, p);
@@ -46,7 +46,7 @@ public class RDFPatchSerializerUnitTest {
         return baos.toByteArray();
     }
 
-    private RDFPatch readSerializedBytes(byte[] bytes) {
-        return kryo.readObject(new Input(new ByteArrayInputStream(bytes)), RDFPatch.class);
+    private Patch readSerializedBytes(byte[] bytes) {
+        return kryo.readObject(new Input(new ByteArrayInputStream(bytes)), Patch.class);
     }
 }

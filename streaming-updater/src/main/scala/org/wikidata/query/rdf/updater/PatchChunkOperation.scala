@@ -18,25 +18,34 @@ sealed case class MutationDataChunk(
                                      data: MutationEventData
 )
 
-class RDFPatchChunkOperation(domain: String,
-                             mimeType: String = RDFFormat.TURTLE.getDefaultMIMEType,
-                             chunkSoftMaxSize: Int = 128000, // ~max 128k chars, can be slightly more
-                             clock: Clock = Clock.systemUTC(),
-                             uniqueIdGenerator: () => String = () => UUID.randomUUID().toString,
-                             stream: String = "wdqs_streaming_updater"
+class PatchChunkOperation(domain: String,
+                          mimeType: String = RDFFormat.TURTLE.getDefaultMIMEType,
+                          chunkSoftMaxSize: Int = 128000, // ~max 128k chars, can be slightly more
+                          clock: Clock = Clock.systemUTC(),
+                          uniqueIdGenerator: () => String = () => UUID.randomUUID().toString,
+                          stream: String = "wdqs_streaming_updater"
                             )
-  extends FlatMapFunction[EntityPatchOp, MutationDataChunk] {
+  extends FlatMapFunction[SuccessfulOp, MutationDataChunk] {
 
   lazy val rdfSerializer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())
   lazy val dataEventGenerator: MutationEventDataGenerator = new MutationEventDataGenerator(rdfSerializer, mimeType, chunkSoftMaxSize)
 
-  override def flatMap(t: EntityPatchOp, collector: Collector[MutationDataChunk]): Unit = {
-    val dataList: util.List[DiffEventData] = t.operation match {
+  override def flatMap(t: SuccessfulOp, collector: Collector[MutationDataChunk]): Unit = {
+    val dataList: util.List[MutationEventData] = t.operation match {
       case FullImport(entity, eventTime, rev, _, originalEventMetadata) =>
-        dataEventGenerator.fullImportEvent(eventMetaSupplier(originalEventMetadata), entity, rev, eventTime, t.data.getAdded, t.data.getLinkedSharedElements)
+        val epo = t.asInstanceOf[EntityPatchOp]
+        dataEventGenerator.fullImportEvent(eventMetaSupplier(originalEventMetadata), entity, rev,
+          eventTime, epo.data.getAdded,
+          epo.data.getLinkedSharedElements)
       case Diff(entity, eventTime, rev, _, _, originalEventMetadata) =>
-        dataEventGenerator.diffEvent(eventMetaSupplier(originalEventMetadata), entity, rev, eventTime, t.data.getAdded,
-          t.data.getRemoved, t.data.getLinkedSharedElements, t.data.getUnlinkedSharedElements)
+        val epo = t.asInstanceOf[EntityPatchOp]
+        dataEventGenerator.diffEvent(eventMetaSupplier(originalEventMetadata), entity, rev,
+          eventTime, epo.data.getAdded,
+          epo.data.getRemoved,
+          epo.data.getLinkedSharedElements,
+          epo.data.getUnlinkedSharedElements)
+      case DeleteItem(entity, eventTime, rev, _, originalEventMetadata) =>
+        dataEventGenerator.deleteEvent(eventMetaSupplier(originalEventMetadata), entity, rev, eventTime)
     }
     dataList.asScala map {MutationDataChunk(t.operation, _)} foreach collector.collect
   }
