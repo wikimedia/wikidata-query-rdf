@@ -696,7 +696,6 @@ public class WikibaseRepository implements Closeable {
              * looking at you test.wikidata.org
              */
             builder.setPath(baseUrl.getPath() + ENTITY_DATA_URL + entityId + ".ttl");
-            // Cache is not our friend, try to work around it
             builder.addParameter("flavor", "dump");
             return builder;
         }
