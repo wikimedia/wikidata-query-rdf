@@ -30,6 +30,7 @@ import org.wikidata.query.rdf.blazegraph.events.QueryEvent;
 import org.wikidata.query.rdf.blazegraph.events.QueryEventGenerator;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -120,7 +121,7 @@ public class QueryEventSenderFilter implements Filter {
     }
 
     private boolean canLogQueryEvent(HttpServletRequest httpRequest) {
-        if (enableIfHeader != null && httpRequest.getHeader(enableIfHeader) == null) {
+        if (!Strings.isNullOrEmpty(enableIfHeader) && httpRequest.getHeader(enableIfHeader) == null) {
             return false;
         }
         if (!queryEventGenerator.hasValidPath(httpRequest)) {
