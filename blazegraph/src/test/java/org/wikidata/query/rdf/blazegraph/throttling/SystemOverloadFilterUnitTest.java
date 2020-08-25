@@ -83,8 +83,10 @@ public class SystemOverloadFilterUnitTest {
 
         // verify that the number of invocations is within some bounds, since
         // the number of requests actually dropped is based on a pseudo-RNG.
-        verify(chain, atLeast(200)).doFilter(request, response);
-        verify(chain, atMost(300)).doFilter(request, response);
+        // assuming perfect distribution 25% of requests should pass
+        // allow between 15% and 35%
+        verify(chain, atLeast(150)).doFilter(request, response);
+        verify(chain, atMost(350)).doFilter(request, response);
     }
 
     @Test
