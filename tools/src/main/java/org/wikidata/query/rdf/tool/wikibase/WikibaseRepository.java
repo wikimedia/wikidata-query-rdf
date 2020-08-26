@@ -381,7 +381,6 @@ public class WikibaseRepository implements Closeable {
      * Collect TTL statements from single URL.
      * @throws RetryableException if there's a retryable error
      */
-    @SuppressFBWarnings("CC_CYCLOMATIC_COMPLEXITY")
     private void collectStatementsFromUrl(URI uri, StatementCollector collector, Timer timer) throws RetryableException {
         RDFParser parser = this.rdfParserSupplier.get(collector);
         HttpGet request = new HttpGet(uri);
@@ -390,29 +389,17 @@ public class WikibaseRepository implements Closeable {
         try (Timer.Context timerContext = timer.time()) {
             try (CloseableHttpResponse response = client.execute(request)) {
                 if (response.getStatusLine().getStatusCode() == 404) {
-                    // A delete/nonexistent page
-                    // FIXME: swallowing a 404 is not a good idea,
-                    //  caller may fail expecting some data has been parsed
-                    return;
+                    throw new WikibaseEntityFetchException(uri, WikibaseEntityFetchException.Type.ENTITY_NOT_FOUND);
                 }
                 if (response.getStatusLine().getStatusCode() == 204) {
-                    // No content, it's OK
-                    log.debug("No content, we're done");
-                    // FIXME: swallowing a 204 is not a good idea
-                    //  caller may fail expecting some data has been parsed
-                    return;
+                    throw new WikibaseEntityFetchException(uri, WikibaseEntityFetchException.Type.NO_CONTENT);
                 }
                 if (response.getStatusLine().getStatusCode() >= 300) {
-                    throw new ContainedException("Unexpected status code fetching RDF for " + uri + ":  "
-                            + response.getStatusLine().getStatusCode());
+                    throw new WikibaseEntityFetchException(uri, WikibaseEntityFetchException.Type.UNEXPECTED_RESPONSE);
                 }
                 try (InputStream in = streamDumper.wrap(getInputStream(response))) {
                     if (in == null) {
-                        // No proper response
-                        log.debug("Empty response, we're done");
-                        // FIXME: swallowing invalid response is not a good idea,
-                        //  caller may fail expecting that some data has been parsed
-                        return;
+                        throw new WikibaseEntityFetchException(uri, WikibaseEntityFetchException.Type.EMPTY_RESPONSE);
                     }
                     parseAndInvestigateT255657(uri, collector, parser, in);
                 }
@@ -509,6 +496,9 @@ public class WikibaseRepository implements Closeable {
         collectStatementsFromUrl(uris.rdf(entityId, revision), collector, entityFetchTimer);
         if (collectConstraints) {
             try {
+                // TODO: constraints should probably handled by its own update pipeline
+                //  and possibly be stored in a dedicated graph
+                // Re-using the same error detection patterns seems suspicious
                 collectStatementsFromUrl(uris.constraints(entityId), collector, constraintFetchTimer);
             } catch (ContainedException ex) {
                 // TODO: add RetryableException here?

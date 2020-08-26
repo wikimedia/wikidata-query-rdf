@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool;
 
 import static java.lang.Thread.currentThread;
 import static org.wikidata.query.rdf.tool.rdf.EntityStatementsWithoutRank.entityStatementsWithoutRank;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException.Type;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +34,7 @@ import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
+import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.codahale.metrics.Meter;
@@ -385,6 +388,14 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
     }
 
     /**
+     * Type of errors that signals that a delete is required.
+     * The update strategy here is to rely on the response from EntityData to determine
+     * if the entity has to be deleted or updated.
+     * The type of the source event (revision-create vs. page-delete) is not taken into account
+     */
+    private static final EnumSet<Type> DELETE_ENTITY_ERROR_TYPE = EnumSet.of(Type.ENTITY_NOT_FOUND, Type.NO_CONTENT, Type.EMPTY_RESPONSE);
+
+    /**
      * Handle a change.
      * <ul>
      * <li>Check if the RDF store has the version of the page.
@@ -398,7 +409,17 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      */
     private void handleChange(Change change, Set<String> repoValues, Set<String> repoRefs) throws RetryableException {
         log.debug("Processing data for {}", change);
-        Collection<Statement> statements = wikibase.fetchRdfForEntity(change);
+        Collection<Statement> statements;
+        try {
+            statements = wikibase.fetchRdfForEntity(change);
+        } catch (WikibaseEntityFetchException e) {
+            if (DELETE_ENTITY_ERROR_TYPE.contains(e.getErrorType())) {
+                log.debug("Cannot fetch entity (deleting entity): ", e);
+                statements = new ArrayList<>();
+            } else {
+                throw new ContainedException("Received un-recoverable error fetching entity data for " + change.entityId(), e);
+            }
+        }
         if (verify) {
             Set<String> entityStmtsWithoutRank = statements
                     .stream()
