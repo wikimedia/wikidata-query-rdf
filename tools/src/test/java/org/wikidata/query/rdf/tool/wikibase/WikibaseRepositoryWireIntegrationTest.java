@@ -143,18 +143,6 @@ public class WikibaseRepositoryWireIntegrationTest {
     }
 
     @Test
-    public void rdfHandle400() throws RetryableException {
-        repository.setCollectConstraints(false);
-        repository.setRevisionCutoff(Duration.of(3, ChronoUnit.HOURS));
-        stubFor(get(urlMatching("/wiki/Special:EntityData/Q2.ttl[?]flavor=dump&revision=1234"))
-                .willReturn(aResponse().withStatus(400)));
-        stubFor(get(urlMatching("/wiki/Special:EntityData/Q2.ttl[?]flavor=dump&nocache=[0-9]+"))
-                .willReturn(aResponse().withBody("<a> <b> <c> .")));
-        Collection<Statement> response = repository.fetchRdfForEntity(new Change("Q2", 1234, Instant.now().minus(1, ChronoUnit.MINUTES), 0));
-        assertThat(response, hasSize(1));
-    }
-
-    @Test
     public void defaultUserAgentIsSet() throws RetryableException {
         stubFor(get(anyUrl())
                 .willReturn(ok("")));
