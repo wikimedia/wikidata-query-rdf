@@ -30,7 +30,7 @@ object EntityRevisionMapGenerator {
     head("Wikidata Entity Revision map generator", "")
     help("help") text "Prints this usage text"
 
-    opt[String]('t', "input-table") required() valueName  "<input-date>" action { (x, p) =>
+    opt[String]('t', "input-table") required() valueName  "<input-table>" action { (x, p) =>
       p.copy(table = x)
     } text "Table-partition holding the wikidata triples"
 
@@ -38,7 +38,7 @@ object EntityRevisionMapGenerator {
       p.copy(hostname = x)
     } text "Hostname of the rdf data"
 
-    opt[String]('o', "output-path") required() valueName "<path>" action { (x, p) =>
+    opt[String]('o', "output-path") required() valueName "<output-path>" action { (x, p) =>
       p.copy(outputPath = if (x.endsWith("/")) x.dropRight(1) else x)
     } text "Path to output cvs file"
 
