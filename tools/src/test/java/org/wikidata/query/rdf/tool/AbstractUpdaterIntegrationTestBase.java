@@ -1,7 +1,6 @@
 package org.wikidata.query.rdf.tool;
 
 import static org.wikidata.query.rdf.test.CloseableRule.autoClose;
-import static org.wikidata.query.rdf.tool.rdf.RdfRepository.UpdateMode.NON_MERGING;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -39,7 +38,7 @@ public class AbstractUpdaterIntegrationTestBase {
      * Repository to test with.
      */
     @Rule
-    public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq", NON_MERGING);
+    public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq");
 
 
     /**

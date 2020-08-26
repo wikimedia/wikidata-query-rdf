@@ -6,7 +6,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.tool.StreamUtils.utf8;
-import static org.wikidata.query.rdf.tool.rdf.RdfRepository.UpdateMode.NON_MERGING;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +38,7 @@ public class MungeIntegrationTest {
     private final UrisScheme uris = UrisSchemeFactory.forHost("test.wikidata.org");
 
     @Rule
-    public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq", NON_MERGING);
+    public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq");
 
     /**
      * RDF client.

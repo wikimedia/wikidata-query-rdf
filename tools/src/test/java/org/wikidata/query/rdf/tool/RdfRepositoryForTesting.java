@@ -31,7 +31,7 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
     /**
      * @param namespace The namespace of the local RDF repository, e.g. "kb" or "wdq".
      */
-    public RdfRepositoryForTesting(String namespace, UpdateMode updateMode) {
+    public RdfRepositoryForTesting(String namespace) {
         super(
                 UrisSchemeFactory.WIKIDATA,
                 new RdfClient(
@@ -39,8 +39,7 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
                         buildHttpClientRetryer(),
                         getRdfClientTimeout()
                 ),
-                20_000_000,
-                updateMode
+                20_000_000
         );
     }
 

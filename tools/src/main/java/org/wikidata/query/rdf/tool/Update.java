@@ -39,7 +39,6 @@ import org.wikidata.query.rdf.tool.options.UpdateOptions;
 import org.wikidata.query.rdf.tool.rdf.Munger;
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
 import org.wikidata.query.rdf.tool.rdf.RdfRepository;
-import org.wikidata.query.rdf.tool.rdf.RdfRepository.UpdateMode;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 import org.wikidata.query.rdf.tool.utils.FileStreamDumper;
 import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
@@ -140,7 +139,7 @@ public final class Update {
 
             RdfClient rdfClient = new RdfClient(httpClient, sparqlUri, retryer, rdfClientTimeout);
 
-            RdfRepository rdfRepository = new RdfRepository(wikibaseUris, rdfClient, MAX_FORM_CONTENT_SIZE, UpdateMode.valueOf(options.updateMode()));
+            RdfRepository rdfRepository = new RdfRepository(wikibaseUris, rdfClient, MAX_FORM_CONTENT_SIZE);
 
             Instant startTime = getStartTime(startInstant(options), rdfRepository, options.init());
 

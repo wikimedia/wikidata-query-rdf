@@ -10,7 +10,6 @@ import static org.junit.Assert.assertTrue;
 import static org.wikidata.query.rdf.test.Matchers.binds;
 import static org.wikidata.query.rdf.test.StatementHelper.siteLink;
 import static org.wikidata.query.rdf.test.StatementHelper.statement;
-import static org.wikidata.query.rdf.tool.rdf.RdfRepository.UpdateMode.NON_MERGING;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -65,7 +64,7 @@ public class RdfRepositoryIntegrationTest {
     public final Randomizer randomizer = new Randomizer();
 
     @Rule
-    public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq", NON_MERGING);
+    public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq");
 
     @Before
     public void cleanList() {

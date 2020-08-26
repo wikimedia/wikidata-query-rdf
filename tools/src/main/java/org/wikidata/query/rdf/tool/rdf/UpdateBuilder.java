@@ -91,23 +91,6 @@ public class UpdateBuilder {
     }
 
     /**
-     * Bind statement values where object is bnode to a string.
-     */
-    public UpdateBuilder bindBnodeValues(String from, Collection<Statement> statements) {
-        StringBuilder b = new StringBuilder(statements.size() * 30);
-        for (Statement s : statements) {
-            if (!(s.getObject() instanceof BNode)) {
-                // only bnodes here
-                continue;
-            }
-            b.append("( ").append(str(s.getSubject())).append(' ');
-            b.append(str(s.getPredicate())).append(" )\n");
-        }
-        bind(from, b.toString().trim());
-        return this;
-    }
-
-    /**
      * Bind some uris to a string.
      */
     public UpdateBuilder bindUris(String from, Collection<String> uris) {
