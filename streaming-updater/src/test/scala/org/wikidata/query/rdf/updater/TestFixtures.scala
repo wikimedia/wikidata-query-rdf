@@ -86,7 +86,7 @@ trait TestFixtures extends TestEventGenerator {
     IgnoredMutation("Q1", instant(WATERMARK_2 + 1), 4,
       RevCreate("Q1", instant(WATERMARK_2 + 1), 4, instant(5),
         newEventMeta(instant(WATERMARK_2 + 1), DOMAIN, STREAM, ORIG_REQUEST_ID)
-      ), instantNow))
+      ), instantNow, NewerRevisionSeen))
   val rdfChunkSer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())
   val rdfChunkDeser: RDFChunkDeserializer = new RDFChunkDeserializer(new RDFParserSuppliers(RDFParserRegistry.getInstance()))
   val dataEventGenerator = new MutationEventDataGenerator(rdfChunkSer,

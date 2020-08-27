@@ -4,7 +4,9 @@ import java.time.Clock
 import java.util.UUID
 
 import scala.concurrent.duration.MILLISECONDS
-import org.apache.flink.api.common.functions.RuntimeContext
+
+import org.apache.flink.api.common.functions.{MapFunction, RuntimeContext}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
@@ -31,22 +33,31 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
     env.getStreamGraph(appName)
   }
 
-  def saveLateEventsTo(sink: SinkFunction[InputEvent]): UpdaterPipeline = {
-    lateEventStream.addSink(sink)
+  def saveLateEventsTo[O](sink: SinkFunction[O], map: MapFunction[InputEvent, O])
+                         (implicit typeInformation: TypeInformation[O]): UpdaterPipeline = {
+    lateEventStream
+      .map(map)
+      .addSink(sink)
       .uid("late-events-output")
       .name("late-events-output")
     this
   }
 
-  def saveSpuriousEventsTo(sink: SinkFunction[IgnoredMutation]): UpdaterPipeline = {
-    spuriousEventStream.addSink(sink)
+  def saveSpuriousEventsTo[O](sink: SinkFunction[O], map: MapFunction[IgnoredMutation, O])
+                             (implicit typeInformation: TypeInformation[O]): UpdaterPipeline = {
+    spuriousEventStream
+      .javaStream.map(map)
+      .addSink(sink)
       .uid("spurious-events-output")
       .name("spurious-events-output")
     this
   }
 
-  def saveFailedOpsTo(sink: SinkFunction[FailedOp]): UpdaterPipeline = {
-    failedOpsStream.addSink(sink)
+  def saveFailedOpsTo[O](sink: SinkFunction[O], map: MapFunction[FailedOp, O])
+                        (implicit typeInformation: TypeInformation[O]): UpdaterPipeline = {
+    failedOpsStream
+      .map(map)
+      .addSink(sink)
       .uid("failed-ops-output")
       .name("failed-ops-output")
     this

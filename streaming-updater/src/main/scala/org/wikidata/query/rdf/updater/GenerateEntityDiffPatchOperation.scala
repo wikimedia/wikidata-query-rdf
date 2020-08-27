@@ -29,7 +29,7 @@ abstract class SuccessfulOp extends ResolvedOp
 
 case class EntityPatchOp(operation: MutationOperation,
                          data: Patch) extends SuccessfulOp
-case class FailedOp(operation: MutationOperation, error: String) extends ResolvedOp
+case class FailedOp(operation: MutationOperation, exception: ContainedException) extends ResolvedOp
 
 case class DeleteOp(override val operation: MutationOperation) extends SuccessfulOp
 
@@ -68,7 +68,7 @@ case class GenerateEntityDiffPatchOperation(
     }
     future.onComplete {
       case Success(patch) => resultFuture.complete(EntityPatchOp(op, patch) :: Nil)
-      case Failure(exception: ContainedException) => resultFuture.complete(FailedOp(op, exception.toString) :: Nil)
+      case Failure(exception: ContainedException) => resultFuture.complete(FailedOp(op, exception) :: Nil)
       case Failure(exception: Throwable) => resultFuture.completeExceptionally(exception)
     }
   }

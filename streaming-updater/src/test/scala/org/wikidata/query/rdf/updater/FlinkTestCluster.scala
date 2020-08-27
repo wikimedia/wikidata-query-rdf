@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.updater
 
 import scala.collection.mutable.ListBuffer
 
+import org.apache.flink.api.common.functions.MapFunction
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.test.util.MiniClusterWithClientResource
@@ -26,6 +27,10 @@ trait FlinkTestCluster extends FlatSpec with BeforeAndAfterEach with BeforeAndAf
 
   override def afterEach(): Unit = {
     flinkCluster.after()
+  }
+
+  def identityMapFunction[O](): MapFunction[O, O] = new MapFunction[O, O] {
+    override def map(t: O): O = t
   }
 }
 

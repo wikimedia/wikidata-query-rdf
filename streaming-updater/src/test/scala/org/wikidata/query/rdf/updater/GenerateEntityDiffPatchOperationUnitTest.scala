@@ -75,11 +75,22 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
   }
 
   "a repo failure on an import op" should "send a failed op" in {
-    (repoMock.getEntityByRevision _).expects("Q1", 1) throwing new ContainedException("error")
+    val e = new ContainedException("error")
+    (repoMock.getEntityByRevision _).expects("Q1", 1) throwing e
 
     val op = importOp
-    val harness = sendData(op)
-    harness.extractOutputValues() should contain only FailedOp(op, new ContainedException("error").toString)
+    assertFailure(e, op, sendData(op))
+  }
+
+  private def assertFailure(e: ContainedException, op: MutationOperation, harness: OneInputStreamOperatorTestHarness[MutationOperation, ResolvedOp]) = {
+    val values = harness.extractOutputValues
+    values.size() shouldEqual 1
+    val ops: FailedOp = values.get(0) match {
+      case e: FailedOp => e
+    }
+    ops.operation shouldBe op
+    ops.exception.getClass shouldBe e.getClass
+    ops.exception.getMessage shouldBe e.getMessage
   }
 
   "a repo single failure on an diff op" should "send a failed op" in {
@@ -87,8 +98,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     (repoMock.getEntityByRevision _).expects("Q1", 2) throwing new ContainedException("error fetching rev 2")
 
     val op = inputDiffOp
-    val harness = sendData(op)
-    harness.extractOutputValues() should contain only FailedOp(op, new ContainedException("error fetching rev 2").toString)
+    assertFailure(new ContainedException("error fetching rev 2"), op, sendData(op))
   }
 
   "a delete mutation" should "send a delete op" in {
@@ -102,9 +112,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
 
     val op = importOp
 
-    val harness = sendData(op)
-    harness.extractOutputValues() should contain only FailedOp(op,
-      new ContainedException("Cannot fetch entity Q1 revision 1 failed 4 times, abandoning.").toString)
+    assertFailure(new ContainedException("Cannot fetch entity Q1 revision 1 failed 4 times, abandoning."), op, sendData(op))
   }
 
   "a retryable repo failure on an diff op" should "send a failed op when retried too many times" in {
@@ -112,9 +120,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     for (_ <- 1 to 4) (repoMock.getEntityByRevision _).expects("Q1", 2) throwing new RetryableException("error fetching rev 2")
 
     val op = inputDiffOp
-    val harness = sendData(op)
-    harness.extractOutputValues() should contain only FailedOp(op,
-      new ContainedException("Cannot fetch entity Q1 revision 2 failed 4 times, abandoning.").toString)
+    assertFailure(new ContainedException("Cannot fetch entity Q1 revision 2 failed 4 times, abandoning."), op, sendData(op))
   }
 
   "a retryable repo failure on an import op" should "should not prevent sending an event if temporary" in {

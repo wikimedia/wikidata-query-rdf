@@ -27,7 +27,7 @@ sealed class DecideMutationOperation extends RichMapFunction[InputEvent, AllMuta
         } else {
           // Event related to an old revision
           // It's too late to handle it
-          IgnoredMutation(rev.item, rev.eventTime, rev.revision, rev, rev.ingestionTime)
+          IgnoredMutation(rev.item, rev.eventTime, rev.revision, rev, rev.ingestionTime, NewerRevisionSeen)
         }
       }
       case del: PageDelete => {
@@ -38,13 +38,13 @@ sealed class DecideMutationOperation extends RichMapFunction[InputEvent, AllMuta
         } else {
           // Event related to an old revision
           // It's too late to handle it
-          IgnoredMutation(del.item, del.eventTime, del.revision, del, del.ingestionTime)
+          IgnoredMutation(del.item, del.eventTime, del.revision, del, del.ingestionTime, NewerRevisionSeen)
         }
       }
     }
   }
   override def open(parameters: Configuration): Unit = {
-    lastRevState = getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())
+    super.open(parameters)
     prevDelState = getRuntimeContext.getState(UpdaterStateConfiguration.newPreviousDeleteStateDesc())
   }
 }

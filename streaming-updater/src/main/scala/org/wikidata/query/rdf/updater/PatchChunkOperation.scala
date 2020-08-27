@@ -11,7 +11,7 @@ import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.util.Collector
 import org.openrdf.rio.{RDFFormat, RDFWriterRegistry}
 import org.wikidata.query.rdf.tool.change.events.EventsMeta
-import org.wikidata.query.rdf.tool.stream.{DiffEventData, MutationEventData, MutationEventDataGenerator, RDFChunkSerializer}
+import org.wikidata.query.rdf.tool.stream.{MutationEventData, MutationEventDataGenerator, RDFChunkSerializer}
 
 sealed case class MutationDataChunk(
                                      operation: MutationOperation,

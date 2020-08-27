@@ -4,13 +4,15 @@ import java.time.Instant
 
 import org.wikidata.query.rdf.tool.change.events.EventsMeta
 
-sealed trait InputEvent {
+trait BasicEventData {
   val item: String
   val eventTime: Instant
   val revision: Long
   val ingestionTime: Instant
   val originalEventMetadata: EventsMeta
 }
+
+sealed trait InputEvent extends BasicEventData
 
 /** Describe a new revision */
 final case class RevCreate(item: String,

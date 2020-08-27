@@ -369,6 +369,11 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
+                <artifactId>flink-avro</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
                 <artifactId>flink-connector-kafka_${scala.compat.version}</artifactId>
                 <version>${flink.version}</version>
             </dependency>
@@ -376,7 +381,11 @@
                 <groupId>org.apache.flink</groupId>
                 <artifactId>flink-metrics-dropwizard</artifactId>
                 <version>${flink.version}</version>
-
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-parquet_${scala.compat.version}</artifactId>
+                <version>${flink.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
@@ -467,6 +476,12 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>2.4.1</version>
+            </dependency>
+            <!-- required dep provided as optional by flink-parquet -->
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-avro</artifactId>
+                <version>1.10.0</version>
             </dependency>
             <dependency>
                 <groupId>org.clapper</groupId>

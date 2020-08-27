@@ -71,15 +71,15 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       Some(1), Some(1))
 
     val graph = UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, 60000, None, None, 2, Int.MaxValue, 10, 1), List(source), _ => repository, clock = clock)
-      .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
-      .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))
+      .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)), identityMapFunction())
+      .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)), identityMapFunction())
       .saveTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))
       .streamGraph("test")
     graph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savePointDir.toURI.toString, false))
     streamingEnv.getJavaEnv.execute(graph)
     CollectSink.lateEvents shouldBe empty
     CollectSink.spuriousRevEvents should contain only IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)), instantNow)
+      RevCreate("Q1", instant(3), 2, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)), instantNow, NewerRevisionSeen)
     //only change is the revision, lastmodified are identical
 
     CollectSink.values map {_.operation} should contain theSameElementsInOrderAs Vector(

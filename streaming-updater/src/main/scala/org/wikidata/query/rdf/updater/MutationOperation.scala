@@ -8,11 +8,7 @@ import org.wikidata.query.rdf.tool.change.events.EventsMeta
  * All mutations even the spurious one
  * match MutationOperation if only valid mutations are required
  */
-sealed trait AllMutationOperation {
-  val item: String
-  val eventTime: Instant
-  val revision: Long
-  val ingestionTime: Instant
+sealed trait AllMutationOperation extends BasicEventData {
   val originalEventMetadata: EventsMeta
 }
 
@@ -32,7 +28,15 @@ final case class IgnoredMutation(item: String,
                                  eventTime: Instant,
                                  revision: Long,
                                  inputEvent: InputEvent,
-                                 ingestionTime: Instant
+                                 ingestionTime: Instant,
+                                 inconsistencyType: Inconsistency
                                 ) extends AllMutationOperation {
   override val originalEventMetadata: EventsMeta = inputEvent.originalEventMetadata
+}
+
+sealed trait Inconsistency {
+  val name: String
+}
+case object NewerRevisionSeen extends Inconsistency {
+  override val name: String = "newer_revision_seen"
 }

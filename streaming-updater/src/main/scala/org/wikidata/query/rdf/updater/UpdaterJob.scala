@@ -1,29 +1,31 @@
 package org.wikidata.query.rdf.updater
 
-import java.io.OutputStream
-import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.util.Properties
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import scala.concurrent.duration.MINUTES
+
+import org.apache.avro.generic.GenericRecord
+import org.apache.avro.Schema
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.NoRestartStrategyConfiguration
-import org.apache.flink.api.common.serialization.Encoder
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.core.fs.Path
+import org.apache.flink.formats.avro.typeutils.GenericRecordAvroTypeInfo
+import org.apache.flink.formats.parquet.avro.ParquetAvroWriters
 import org.apache.flink.streaming.api.{CheckpointingMode, TimeCharacteristic}
 import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.OnCheckpointRollingPolicy
-import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
+import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
+import org.wikidata.query.rdf.tool.change.events.{PageDeleteEvent, RevisionCreateEvent}
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
-import org.wikidata.query.rdf.tool.change.events.{PageDeleteEvent, RevisionCreateEvent}
 
 object UpdaterJob {
-  val DEFAULT_CLOCK = Clock.systemUTC()
+  val DEFAULT_CLOCK: Clock = Clock.systemUTC()
   // scalastyle:off method.length
   def main(args: Array[String]): Unit = {
     val params = ParameterTool.fromArgs(args)
@@ -76,9 +78,12 @@ object UpdaterJob {
 
     UpdaterPipeline.build(pipelineOptions, buildIncomingStreams(pipelineInputEventStreamOptions, pipelineOptions, clock = DEFAULT_CLOCK),
       rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup))
-      .saveLateEventsTo(prepareFileDebugSink(lateEventsDir))
-      .saveSpuriousEventsTo(prepareFileDebugSink(spuriousEventsDir))
-      .saveFailedOpsTo(prepareFileDebugSink(failedOpsDir))
+      .saveLateEventsTo(prepareErrorTrackingFileSink(lateEventsDir,
+        InputEventEncoder.schema()), InputEventEncoder)
+      .saveSpuriousEventsTo(prepareErrorTrackingFileSink(spuriousEventsDir,
+        IgnoredMutationEncoder.schema()), IgnoredMutationEncoder)(new GenericRecordAvroTypeInfo(IgnoredMutationEncoder.schema()))
+      .saveFailedOpsTo(prepareErrorTrackingFileSink(failedOpsDir, FailedOpEncoder.schema()),
+        FailedOpEncoder)(new GenericRecordAvroTypeInfo(FailedOpEncoder.schema()))
       .saveTo(outputSink)
       .execute("WDQS Streaming Updater POC")
   }
@@ -139,13 +144,8 @@ object UpdaterJob {
   }
 
 
-  private def prepareFileDebugSink[O](outputPath: String): SinkFunction[O] = {
-    StreamingFileSink.forRowFormat(new Path(outputPath),
-      new Encoder[O] {
-        override def encode(element: O, stream: OutputStream): Unit = {
-          stream.write(s"$element\n".getBytes(StandardCharsets.UTF_8))
-        }
-      })
+  private def prepareErrorTrackingFileSink(outputPath: String, schema: Schema): SinkFunction[GenericRecord] = {
+    StreamingFileSink.forBulkFormat(new Path(outputPath), ParquetAvroWriters.forGenericRecord(schema))
       .withRollingPolicy(OnCheckpointRollingPolicy.build())
       .build()
   }
