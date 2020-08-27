@@ -36,6 +36,6 @@ while [ $i -le $END ]; do
   fi
 
   echo Processing $f
-  curl --silent --show-error -XPOST --data-binary update="LOAD <file://$LOCATION/$f>" $HOST/$CONTEXT/namespace/$NAMESPACE/sparql
+  curl --silent --show-error --retry 10 --retry-delay 30 --retry-connrefused -XPOST --data-binary update="LOAD <file://$LOCATION/$f>" $HOST/$CONTEXT/namespace/$NAMESPACE/sparql
   let i++
 done
