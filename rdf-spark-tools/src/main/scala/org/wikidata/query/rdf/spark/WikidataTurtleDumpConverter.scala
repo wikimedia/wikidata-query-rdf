@@ -21,15 +21,17 @@ import scopt.OptionParser
  *
  *
  * Command line example:
- * spark2-submit --master yarn --driver-memory 16G --executor-memory 32G --executor-cores 4 \
- *   --conf spark.dynamicAllocation.maxExecutors=32 \
- *   --conf spark.executor.memoryOverhead=8196 \
+ * DUMP=hdfs://analytics-hadoop/wmf/data/raw/wikidata/dumps
+ * spark2-submit --master yarn --driver-memory 2G --executor-memory 16G --executor-cores 8 \
+ *   --conf spark.yarn.maxAppAttempts=1 \
+ *   --conf spark.dynamicAllocation.maxExecutors=25 \
  *   --class org.wikidata.query.rdf.spark.WikidataTurtleDumpConverter \
- *   /home/joal/code/wikidata-query-rdf/rdf-spark-tools/target/rdf-spark-tools-0.3.14-SNAPSHOT.jar \
- *   -i /user/joal/wmf/data/raw/wikidata/dumps/all_ttl/20200120 \
- *   -o /user/joal/wmf/data/wmf/wikidata/triples/snapshot=20200120 \
- *   -f parquet \
- *   -n 1024
+ *   --name airflow-spark \
+ *   --queue root.default \
+ *   ~dcausse/rdf-spark-tools-0.3.42-SNAPSHOT-jar-with-dependencies.jar \
+ *   --input-path $DUMPS/all_ttl/20200817/wikidata-20200817-all-BETA.ttl.bz2,$DUMPS/lexemes_ttl/20200816/wikidata-20200816-lexemes-BETA.ttl.bz2 \
+ *   --output-table discovery.wikidata_rdf/date=20200817 \
+ *   --skolemize
  */
 object WikidataTurtleDumpConverter {
   private val ENTITY_HEADER = "data:"
