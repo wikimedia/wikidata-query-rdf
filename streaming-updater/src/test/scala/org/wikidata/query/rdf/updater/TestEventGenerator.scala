@@ -42,8 +42,8 @@ trait TestEventGenerator {
     new StreamRecord[AllMutationOperation](mutationOperation, mutationOperation.eventTime.toEpochMilli)
   }
 
-  def decodeEvents(iterable: Iterable[Any]): Iterable[Any] = {
-    iterable.map(decodeEvent)
+  def decodeEvents(iterable: Iterable[Any]): Seq[Any] = {
+    iterable.map(decodeEvent)(collection.breakOut)
   }
 
   def decodeEvent(ev: Any): Any = {
