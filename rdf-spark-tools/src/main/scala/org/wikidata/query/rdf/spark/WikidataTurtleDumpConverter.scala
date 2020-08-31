@@ -90,7 +90,7 @@ object WikidataTurtleDumpConverter {
     argsParser.parse(args, Params()) match {
       case Some(params) =>
         if (params.outputTable.isEmpty == params.outputPath.isEmpty) {
-          Console.err.print("Either --table or --output-path must be provided\n")
+          Console.err.print("Either --output-table or --output-path must be provided\n")
           sys.exit(1)
         }
         implicit val spark: SparkSession = SparkSession
