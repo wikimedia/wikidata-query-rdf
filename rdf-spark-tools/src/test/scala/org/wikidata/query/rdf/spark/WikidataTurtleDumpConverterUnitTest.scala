@@ -1,7 +1,23 @@
 package org.wikidata.query.rdf.spark
 
+import java.io.StringReader
+
+import scala.collection.JavaConverters.collectionAsScalaIterableConverter
+
+import org.openrdf.model.impl.ValueFactoryImpl
+import org.openrdf.rio.helpers.StatementCollector
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
+import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
+//import java.nio.file.{Files, Paths}
+//import java.util.zip.GZIPInputStream
+
+//import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import org.apache.spark.sql.SparkSession
+//import org.openrdf.model.impl.ValueFactoryImpl
+//import org.openrdf.rio.helpers.StatementCollector
 import org.scalatest.{FlatSpec, Matchers}
+//import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
+//import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
 
 class WikidataTurtleDumpConverterUnitTest extends FlatSpec with SparkSessionProvider with Matchers {
   val paths = Seq(
@@ -9,6 +25,9 @@ class WikidataTurtleDumpConverterUnitTest extends FlatSpec with SparkSessionProv
     this.getClass.getResource("lexeme_dump.ttl").toURI.toString
   )
 
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+  }
 
   "a rdf dump present" should "be converted as a table partition" in {
     val writer = WikidataTurtleDumpConverter.getTableWriter("rdf/date=20200602", 2, None)
@@ -61,6 +80,32 @@ class WikidataTurtleDumpConverterUnitTest extends FlatSpec with SparkSessionProv
       .filter("object = '<http://www.wikidata.org/.well-known/genid/e39d2a834262fbd171919ab2c038c9fb>'")
       .count() shouldEqual 1
   }
+
+  "a rdf dump present" should "be converted as nt chunk files" in {
+    val rdfDir = newSparkSubDir("nt_file")
+
+     val writer = WikidataTurtleDumpConverter.getTextFileDirectoryWriter(rdfDir, "nt.gz", 2)
+     WikidataTurtleDumpConverter.importDump(paths, skolemizeBlankNodes = true,
+       WikidataTurtleDumpConverter.rowEncoder(), writer)
+
+    val ntData = spark.read.text(rdfDir).collect().map(_.getString(0)).mkString("\n")
+
+    val urisScheme = UrisSchemeFactory.WIKIDATA
+    val collector = new StatementCollector()
+    val parser = RDFParserSuppliers.defaultRdfParser().get(collector)
+    parser.parse(new StringReader(ntData), "")
+     val valueF = new ValueFactoryImpl()
+
+     val s1 = valueF.createStatement(valueF.createURI("http://www.wikidata.org/entity/L4696"),
+       valueF.createURI("http://www.wikidata.org/prop/direct/P5275"),
+       valueF.createLiteral("189259")
+     )
+     val s2 = valueF.createStatement(valueF.createURI("http://www.wikidata.org/entity/Q8"),
+       valueF.createURI("http://www.wikidata.org/prop/direct/P576"),
+       valueF.createURI(urisScheme.wellKnownBNodeIRIPrefix() + "e39d2a834262fbd171919ab2c038c9fb")
+     )
+     collector.getStatements.asScala should contain allOf(s1, s2)
+   }
 
   override def beforeEach(): Unit = {
     super.beforeEach()

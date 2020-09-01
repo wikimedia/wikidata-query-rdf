@@ -3,16 +3,16 @@ package org.wikidata.query.rdf.spark
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 
+import org.apache.hadoop.io.compress.{BZip2Codec, GzipCodec}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{Encoders, Row, SparkSession}
 import org.apache.spark.sql.SaveMode.Overwrite
 import org.openrdf.model.Statement
 import scopt.OptionParser
 
-
 /**
  * This job converts a wikidata turtle dump (rdf triples formatted in turtle, usually used to
- * populate blazegraph), into either parquet or avro triples.
+ * populate blazegraph), into either parquet, avro or nt triples.
  *
  * It uses a special end-of-record separator to parallel-read the turtle text into entity-coherent portions.
  * Those portions are then streamed in parallel to an [[RdfChunkParser]] which generates RDF statements.
@@ -155,6 +155,14 @@ object WikidataTurtleDumpConverter {
   }
 
   def getDirectoryWriter(outputPath: String, outputFormat: String, partitions: Int)(implicit spark: SparkSession): RDD[Row] => Unit = {
+    if (outputFormat.startsWith("nt.")){
+      getTextFileDirectoryWriter(outputPath, outputFormat, partitions)
+    } else {
+      getFormatDirectoryWriter(outputPath, outputFormat, partitions)
+    }
+  }
+
+  def getFormatDirectoryWriter(outputPath: String, outputFormat: String, partitions: Int)(implicit spark: SparkSession): RDD[Row] => Unit = {
     rdd: RDD[Row] => {
       spark.createDataFrame(rdd, StatementEncoder.baseSchema)
         .repartition(partitions)
@@ -164,4 +172,17 @@ object WikidataTurtleDumpConverter {
         .save(outputPath)
     }
   }
+
+    def getTextFileDirectoryWriter(outputPath: String, outputFormat: String, partitions: Int)(implicit spark: SparkSession): RDD[Row] => Unit = {
+    rdd: RDD[Row] => {
+
+      val codec = if (outputFormat.endsWith(".gz")) classOf[GzipCodec] else classOf[BZip2Codec]
+      spark.createDataFrame(rdd, StatementEncoder.baseSchema)
+        .repartition(partitions)
+        .map(r => s"${r.getAs("subject")} ${r.getAs("predicate")} ${r.getAs("object")} .")(Encoders.STRING)
+        .rdd
+        .saveAsTextFile(outputPath, codec)
+    }
+  }
+
 }
