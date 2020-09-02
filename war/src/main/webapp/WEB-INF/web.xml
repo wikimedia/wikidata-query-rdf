@@ -229,7 +229,6 @@
         <async-supported>true</async-supported>
     </servlet>
     <servlet>
-    <servlet>
         <servlet-name>ldfassets</servlet-name>
         <servlet-class>org.eclipse.jetty.servlet.DefaultServlet</servlet-class>
         <init-param>
