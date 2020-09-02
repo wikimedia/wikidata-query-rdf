@@ -70,12 +70,33 @@
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <configuration>
                     <ignoreNonCompile>true</ignoreNonCompile>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
+                <!-- each set can be validated with defined xsd, add <validating>true</validating> to verify -->
+                <configuration>
+                    <validationSets>
+                        <validationSet>
+                            <dir>src/main/webapp</dir>
+                            <includes>*.xml</includes>
+                        </validationSet>
+                    </validationSets>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>validate</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

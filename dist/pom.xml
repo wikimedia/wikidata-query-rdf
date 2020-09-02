@@ -55,6 +55,25 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
+                <configuration>
+                    <validationSets>
+                        <validationSet>
+                            <dir>src/assembly</dir>
+                            <includes>*.xml</includes>
+                        </validationSet>
+                    </validationSets>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>validate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
