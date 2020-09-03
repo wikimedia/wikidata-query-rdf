@@ -1,63 +1,58 @@
 package org.wikidata.query.rdf.tool.change;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.io.Resources.getResource;
-import static java.util.Collections.emptyList;
+import static com.google.common.io.Resources.toByteArray;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.groupingBy;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.wikidata.query.rdf.tool.change.KafkaPoller.buildKafkaPoller;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.wikidata.query.rdf.tool.change.events.ChangeEvent;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris;
 
 import com.codahale.metrics.MetricRegistry;
-import com.github.charithe.kafka.EphemeralKafkaBroker;
-import com.github.charithe.kafka.KafkaJunitRule;
-import com.google.common.collect.ImmutableList;
-import com.google.common.io.Resources;
 
-@SuppressWarnings("boxing")
+@RunWith(MockitoJUnitRunner.class)
 public class KafkaPollerIntegrationTest {
 
     public static final String CREATE_TOPIC = "mediawiki.revision-create";
     public static final String DELETE_TOPIC = "mediawiki.page-delete";
     public static final String UNDELETE_TOPIC = "mediawiki.page-undelete";
     public static final String CHANGE_TOPIC = "mediawiki.page-properties-change";
-    private static final String DOMAIN = "acme.test";
-
-    @ClassRule
-    public static KafkaJunitRule kafkaRule = new KafkaJunitRule(EphemeralKafkaBroker.create()).waitForStartup();
 
     private KafkaPoller poller;
+    @Mock
+    private KafkaConsumer<String, ChangeEvent> consumer;
 
-    @Before
-    public void setupPoller() throws URISyntaxException {
-        poller = createPoller();
-    }
-
-    @After
-    public void cleanupPoller() {
-        if (poller != null) {
-            poller.close();
-        }
-    }
+    private JsonDeserializer<ChangeEvent> deserializer;
 
     @Test
     public void receiveValidCreateEvent() throws RetryableException, IOException {
-        sendEvent(CREATE_TOPIC, "create-event.json");
+        initPoller();
+        when(consumer.poll(anyLong())).thenReturn(records(
+                record(CREATE_TOPIC, "create-event.json")
+        ), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
         assertThat(changes).hasSize(1);
@@ -70,7 +65,10 @@ public class KafkaPollerIntegrationTest {
 
     @Test
     public void receiveRealCreateEvent() throws RetryableException, IOException {
-        sendEvent(CREATE_TOPIC, "create-event-full.json");
+        initPoller();
+        when(consumer.poll(anyLong())).thenReturn(records(
+                record(CREATE_TOPIC, "create-event-full.json")
+        ), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
         assertThat(changes).hasSize(1);
@@ -83,20 +81,26 @@ public class KafkaPollerIntegrationTest {
 
     @Test
     public void receivePageDeleteEvent() throws RetryableException, IOException {
-        sendEvent(DELETE_TOPIC, "page-delete.json");
+        initPoller();
+        when(consumer.poll(anyLong())).thenReturn(records(
+                record(DELETE_TOPIC, "page-delete.json")
+        ), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
         assertThat(changes).hasSize(1);
         Change change = changes.get(0);
 
         assertThat(change.entityId()).isEqualTo("Q47462581");
-        assertThat(change.revision()).isEqualTo(-1L);
+        assertThat(change.revision()).isEqualTo(621830L);
         assertThat(change.timestamp()).isEqualTo(Instant.parse("2018-01-19T18:53:59Z"));
     }
 
     @Test
     public void receivePageUndeleteEvent() throws RetryableException, IOException {
-        sendEvent(UNDELETE_TOPIC, "page-undelete.json");
+        initPoller();
+        when(consumer.poll(anyLong())).thenReturn(records(
+            record(UNDELETE_TOPIC, "page-undelete.json")
+        ), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
         assertThat(changes).hasSize(1);
@@ -110,8 +114,11 @@ public class KafkaPollerIntegrationTest {
     @Ignore("temporarily disabled prop-change for performance reasons")
     @Test
     public void receivePropChangeEvent() throws RetryableException, IOException {
-        sendEvent(CHANGE_TOPIC, "prop-change.json");
-        sendEvent(CHANGE_TOPIC, "prop-change-wb.json"); // this one will be ignored
+        initPoller();
+        when(consumer.poll(anyLong())).thenReturn(records(asList(
+                record(CHANGE_TOPIC, "prop-change.json"),
+                record(CHANGE_TOPIC, "prop-change-wb.json") // this one will be ignored
+        )), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
         assertThat(changes).hasSize(1);
@@ -124,10 +131,11 @@ public class KafkaPollerIntegrationTest {
 
     @Test
     public void receiveClusteredEvents() throws RetryableException, IOException, URISyntaxException {
-        cleanupPoller();
-        poller = createPoller(ImmutableList.of("north", "south"));
-        sendEvent("north." + CREATE_TOPIC, "create-event-full.json");
-        sendEvent("south." + DELETE_TOPIC, "page-delete.json");
+        initPoller("north", "south");
+        when(consumer.poll(anyLong())).thenReturn(records(asList(
+                record("north." + CREATE_TOPIC, "create-event-full.json"),
+                record("south." + DELETE_TOPIC, "page-delete.json")
+        )), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
         assertThat(changes).hasSize(2);
@@ -141,15 +149,18 @@ public class KafkaPollerIntegrationTest {
         change = changes.get(1);
 
         assertThat(change.entityId()).isEqualTo("Q47462581");
-        assertThat(change.revision()).isEqualTo(-1L);
+        assertThat(change.revision()).isEqualTo(621830L);
         assertThat(change.timestamp()).isEqualTo(Instant.parse("2018-01-19T18:53:59Z"));
     }
 
     @Test
     public void receiveOtherEvents() throws RetryableException, IOException {
-        sendEvent(CREATE_TOPIC, "rc-domain.json");
-        sendEvent(CREATE_TOPIC, "create-event.json");
-        sendEvent(CREATE_TOPIC, "rc-namespace.json");
+        initPoller();
+        when(consumer.poll(anyLong())).thenReturn(records(asList(
+            record(CREATE_TOPIC, "rc-domain.json"),
+            record(CREATE_TOPIC, "create-event.json"),
+            record(CREATE_TOPIC, "rc-namespace.json")
+        )), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
         assertThat(changes).hasSize(1);
@@ -160,40 +171,45 @@ public class KafkaPollerIntegrationTest {
         assertThat(change.timestamp()).isEqualTo(Instant.parse("2018-02-19T13:31:23Z"));
     }
 
-    private void sendEvent(String topic, String eventFile) throws IOException {
-        String eventData = load(eventFile);
-        try (KafkaProducer<String, String> producer = kafkaRule.helper().createStringProducer()) {
-            producer.send(new ProducerRecord<>(topic, eventData));
-        }
+    private ConsumerRecord<String, ChangeEvent> record(String topic, String data) throws IOException {
+        return new ConsumerRecord<>(topic, 0, 0, null, deserializer.deserialize(topic, load(data)));
     }
 
-    private String randomConsumer() {
-        return DOMAIN + Instant.now().toEpochMilli() + Math.round(Math.random() * 1000);
+    private ConsumerRecords<String, ChangeEvent> records(List<ConsumerRecord<String, ChangeEvent>> records) {
+        return new ConsumerRecords<>(records.stream().collect(groupingBy(r -> new TopicPartition(r.topic(), r.partition()))));
     }
 
-    private KafkaPoller createPoller() throws URISyntaxException {
-        return createPoller(emptyList());
+    private ConsumerRecords<String, ChangeEvent> records(ConsumerRecord<String, ChangeEvent> record) {
+        return records(singletonList(record));
     }
 
-    private KafkaPoller createPoller(Collection<String> clusterNames) throws URISyntaxException {
-        String servers = "localhost:" + kafkaRule.helper().kafkaPort();
+    private void initPoller(String...clusterNames) {
         Uris uris = Uris.fromString("https://acme.test");
-        URI root = uris.builder().build();
+        URI root = null;
+        try {
+            root = uris.builder().build();
+        } catch (URISyntaxException e) {
+            fail("failed to build UriScheme", e);
+        }
         KafkaOffsetsRepository kafkaOffsetsRepository = new RdfKafkaOffsetsRepository(root, null);
-        return buildKafkaPoller(servers, randomConsumer(), clusterNames,
-                uris, 5, Instant.now(), true, kafkaOffsetsRepository,
+        Map<String, Class<? extends ChangeEvent>> topicsToClass = KafkaPoller.clusterNamesAwareTopics(Arrays.asList(clusterNames));
+        deserializer = new JsonDeserializer<>(topicsToClass);
+        poller = new KafkaPoller(consumer,
+                uris, Instant.now(), 100, topicsToClass.keySet(), kafkaOffsetsRepository, true,
                 new MetricRegistry());
     }
 
 
-    private String load(String name) throws IOException {
+    private byte[] load(String name) throws IOException {
         String prefix = this.getClass().getPackage().getName().replace(".", "/");
-        return Resources.toString(getResource(prefix + "/events/" + name), UTF_8);
+        return toByteArray(getResource(prefix + "/events/" + name));
     }
 
     @Test
     public void receiveCreateEventWithMs() throws RetryableException, IOException {
-        sendEvent(CREATE_TOPIC, "create-event-ms.json");
+        initPoller();
+        when(consumer.poll(anyLong())).thenReturn(records(
+                record(CREATE_TOPIC, "create-event-ms.json")), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
         assertThat(changes).hasSize(1);

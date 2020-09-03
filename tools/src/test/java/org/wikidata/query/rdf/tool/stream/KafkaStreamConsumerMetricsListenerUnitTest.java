@@ -51,12 +51,12 @@ public class KafkaStreamConsumerMetricsListenerUnitTest {
                 new RDFDataChunk("\n<uri:b> <uri:b> <uri:b> .\n", RDFFormat.TURTLE.getDefaultMIMEType()),
                 null, null, null);
 
-        TopicPartition topicPartition = new TopicPartition("topic", -1);
+        TopicPartition topicPartition = new TopicPartition("topic", 0);
         when(consumer.poll(anyLong())).thenReturn(
                 new ConsumerRecords<>(singletonMap(topicPartition,
-                        singletonList(new ConsumerRecord<>(topicPartition.topic(), topicPartition.partition(), -1, null, msg1)))),
+                        singletonList(new ConsumerRecord<>(topicPartition.topic(), topicPartition.partition(), 0, null, msg1)))),
                 new ConsumerRecords<>(singletonMap(topicPartition,
-                        singletonList(new ConsumerRecord<>(topicPartition.topic(), topicPartition.partition(), 0, null, msg2))))
+                        singletonList(new ConsumerRecord<>(topicPartition.topic(), topicPartition.partition(), 1, null, msg2))))
         );
 
         MetricRegistry registry = new MetricRegistry();

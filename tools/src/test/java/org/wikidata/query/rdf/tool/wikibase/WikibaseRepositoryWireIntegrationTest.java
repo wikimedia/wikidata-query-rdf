@@ -5,12 +5,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.io.Resources.getResource;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -97,8 +97,9 @@ public class WikibaseRepositoryWireIntegrationTest {
     public void noContentResponse() throws RetryableException {
         stubFor(get(anyUrl())
                 .willReturn(aResponse().withStatus(204).withBody("")));
-        Collection<Statement> response = repository.fetchRdfForEntity("Q1");
-        assertThat(response, hasSize(0));
+        assertThatThrownBy(() -> repository.fetchRdfForEntity("Q1", 123))
+                .isInstanceOf(WikibaseEntityFetchException.class)
+                .hasMessage("Cannot fetch entity at http://localhost:%d/wiki/Special:EntityData/Q1.ttl?flavor=dump&revision=123: NO_CONTENT", wiremockPort);
     }
 
     @Test
@@ -145,7 +146,7 @@ public class WikibaseRepositoryWireIntegrationTest {
     @Test
     public void defaultUserAgentIsSet() throws RetryableException {
         stubFor(get(anyUrl())
-                .willReturn(ok("")));
+                .willReturn(aResponse().withBody("<a> <b> <c> .")));
 
         repository.fetchRdfForEntity("Q1");
 
@@ -160,7 +161,7 @@ public class WikibaseRepositoryWireIntegrationTest {
             createWikibaseRepository();
 
             stubFor(get(anyUrl())
-                    .willReturn(ok("")));
+                    .willReturn(aResponse().withBody("<a> <b> <c> .")));
 
             repository.fetchRdfForEntity("Q1");
 

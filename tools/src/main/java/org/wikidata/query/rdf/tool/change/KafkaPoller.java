@@ -174,7 +174,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
      * @param clusterNames Cluster names (if empty, original list is returned)
      * @return List of topics with cluster names as: %cluster%.%topic%
      */
-    private static Map<String, Class<? extends ChangeEvent>> clusterNamesAwareTopics(Collection<String> clusterNames) {
+    protected static Map<String, Class<? extends ChangeEvent>> clusterNamesAwareTopics(Collection<String> clusterNames) {
         if (clusterNames == null || clusterNames.isEmpty()) {
             // No cluster - use topic names as is
             return defaultTopics;

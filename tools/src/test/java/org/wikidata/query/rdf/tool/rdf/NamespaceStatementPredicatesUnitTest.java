@@ -12,6 +12,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.openrdf.model.Statement;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 
@@ -20,6 +22,7 @@ public class NamespaceStatementPredicatesUnitTest {
     @Mock
     UrisScheme urisScheme;
     private NamespaceStatementPredicates predicates;
+    private ValueFactory valueFactory = new ValueFactoryImpl();
 
     @Before
     public void init() {
@@ -110,7 +113,8 @@ public class NamespaceStatementPredicatesUnitTest {
         when(urisScheme.wellKnownBNodeIRIPrefix()).thenReturn("main:.well-known/");
         Predicate<Statement> predicate = predicates::subjectIsBNodeOrSkolemIRI;
         isTrue(predicate, statement("main:.well-known/123", "prop:claim/P12", "stmt:statement/ST-ID"));
-        isTrue(predicate, statement("_:123", "prop:claim/P12", "stmt:statement/ST-ID"));
+        isTrue(predicate, valueFactory.createStatement(valueFactory.createBNode("123"),
+                valueFactory.createURI("prop:claim/P12"), valueFactory.createURI("stmt:statement/ST-ID")));
         isFalse(predicate, statement("main:/pref/123", "prop:claim/P12", "stmt:statement/ST-ID"));
     }
 }
