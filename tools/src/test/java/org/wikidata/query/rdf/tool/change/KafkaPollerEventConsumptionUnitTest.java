@@ -33,8 +33,11 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris;
 
 import com.codahale.metrics.MetricRegistry;
 
+/**
+ * TODO: ideally should be merged with {@link KafkaPollerUnitTest}.
+ */
 @RunWith(MockitoJUnitRunner.class)
-public class KafkaPollerIntegrationTest {
+public class KafkaPollerEventConsumptionUnitTest {
 
     public static final String CREATE_TOPIC = "mediawiki.revision-create";
     public static final String DELETE_TOPIC = "mediawiki.page-delete";

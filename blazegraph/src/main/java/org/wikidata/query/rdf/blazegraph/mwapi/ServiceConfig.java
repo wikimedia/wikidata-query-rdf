@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.mwapi;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -53,7 +54,7 @@ public class ServiceConfig {
 
         return Streams.stream(node.fieldNames())
                 .collect(ImmutableMap.toImmutableMap(
-                    fieldName -> fieldName,
+                    identity(),
                     fieldName -> ApiTemplate.fromJSON(node.get(fieldName))));
     }
 

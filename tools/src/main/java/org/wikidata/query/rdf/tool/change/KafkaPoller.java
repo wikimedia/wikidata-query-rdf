@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool.change;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
 import java.time.Instant;
@@ -41,6 +42,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.Timer.Context;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -174,7 +176,8 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
      * @param clusterNames Cluster names (if empty, original list is returned)
      * @return List of topics with cluster names as: %cluster%.%topic%
      */
-    protected static Map<String, Class<? extends ChangeEvent>> clusterNamesAwareTopics(Collection<String> clusterNames) {
+    @VisibleForTesting
+    static Map<String, Class<? extends ChangeEvent>> clusterNamesAwareTopics(Collection<String> clusterNames) {
         if (clusterNames == null || clusterNames.isEmpty()) {
             // No cluster - use topic names as is
             return defaultTopics;
@@ -277,7 +280,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         // Make a map (topic, partition) -> timestamp for those not in loaded map
         Map<TopicPartition, Long> topicParts = topicPartitions.stream()
                 .filter(tp -> !storedOffsets.containsKey(tp))
-                .collect(toMap(o -> o, o -> firstStartTime.toEpochMilli()));
+                .collect(toMap(identity(), o -> firstStartTime.toEpochMilli()));
 
         // Remove topics that are not supported anymore
         Map<TopicPartition, OffsetAndTimestamp> results = storedOffsets
