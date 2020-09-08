@@ -5,15 +5,14 @@ import java.util
 import java.util.{Collections, UUID}
 import java.util.function.Supplier
 
-import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
-import org.apache.flink.streaming.api.watermark.Watermark
-
 import scala.collection.JavaConverters._
+
+import org.apache.flink.api.common.eventtime._
 import org.openrdf.model.Statement
 import org.openrdf.model.impl.{StatementImpl, ValueFactoryImpl}
 import org.openrdf.rio.{RDFFormat, RDFParserRegistry, RDFWriterRegistry}
 import org.wikidata.query.rdf.common.uri.{PropertyType, SchemaDotOrg, UrisSchemeFactory}
-import org.wikidata.query.rdf.tool.change.events.{EventWithMeta, EventsMeta}
+import org.wikidata.query.rdf.tool.change.events.{EventsMeta, EventWithMeta}
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
 
 case class MetaStatement(entityDataNS: Statement, entityNS: Statement)
@@ -180,16 +179,22 @@ trait TestFixtures extends TestEventGenerator {
   private case class RevisionData(entityId: String, eventTime: Instant, inputTriples: Seq[Statement],
                                   expectedAdds: Set[Statement], expectedRemoves: Set[Statement] = Set())
 
-  def watermarkAssigner[E <: EventWithMeta](): AssignerWithPunctuatedWatermarks[E] = new AssignerWithPunctuatedWatermarks[E] {
+  def watermarkStrategy[E <: EventWithMeta](): WatermarkStrategy[E] = {
     val wm_domain = WATERMARK_DOMAIN
-    override def checkAndGetNextWatermark(t: E, l: Long): Watermark = {
-      val ret = t match {
-        case a: Any if a.domain() == wm_domain => Some(new Watermark(a.timestamp().toEpochMilli))
-        case _: Any => None
+    WatermarkStrategy.forGenerator(new WatermarkGeneratorSupplier[E] {
+      override def createWatermarkGenerator(context: WatermarkGeneratorSupplier.Context): WatermarkGenerator[E] = new WatermarkGenerator[E] {
+        override def onEvent(event: E, eventTimestamp: Long, output: WatermarkOutput): Unit = {
+          val wm: Option[Watermark] = event match {
+            case a: Any if a.domain() == wm_domain => Some(new Watermark(a.timestamp().toEpochMilli))
+            case _: Any => None
+          }
+          wm.foreach(output.emitWatermark)
+        }
+        override def onPeriodicEmit(output: WatermarkOutput): Unit = {/* no periodic emission */}
       }
-      ret.orNull
-    }
-    override def extractTimestamp(t: E, l: Long): Long = t.timestamp().toEpochMilli
+    }).withTimestampAssigner(new SerializableTimestampAssigner[E] {
+      override def extractTimestamp(element: E, recordTimestamp: Long): Long = element.timestamp().toEpochMilli
+    })
   }
 }
 

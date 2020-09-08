@@ -62,7 +62,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       // force 1 here so that we keep the sequence order and force Q1 rev 3 to be late
       .setParallelism(1)
       // Use punctuated WM instead of periodic in test
-      .assignTimestampsAndWatermarks(watermarkAssigner[RevisionCreateEvent]()),
+      .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
       DOMAIN,
       IncomingStreams.REV_CREATE_CONV,
       clock,

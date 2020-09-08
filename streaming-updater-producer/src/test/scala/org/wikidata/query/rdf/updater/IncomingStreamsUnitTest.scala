@@ -11,7 +11,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     implicit val env = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
       DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-      "my-hostname", IncomingStreams.REV_CREATE_CONV, 40000, Clock.systemUTC())
+      "my-hostname", IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC())
     stream.name should equal ("Filtered(my-topic == my-hostname)")
   }
 

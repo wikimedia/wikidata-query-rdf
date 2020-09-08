@@ -51,7 +51,9 @@ object UpdaterJob {
       revisionCreateTopicName = params.get("rev_create_topic"),
       pageDeleteTopicName = params.get("page_delete_topic"),
       consumerGroup = params.get("consumer_group", "wdqs_streaming_updater"),
-      maxLateness = params.getInt("max_lateness", 60000))
+      maxLateness = params.getInt("max_lateness", 60000),
+      idleness = params.getInt("input_idleness", 60000)
+    )
 
     val checkpointDir: String = params.get("checkpoint_dir")
     val spuriousEventsDir: String = params.get("spurious_events_dir")
@@ -124,25 +126,14 @@ object UpdaterJob {
                                    opts: UpdaterPipelineOptions, clock: Clock)
                                   (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
     List(
-      IncomingStreams.fromKafka(
-        KafkaConsumerProperties(ievops.revisionCreateTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
-          DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-        opts.hostname,
-        IncomingStreams.REV_CREATE_CONV,
-        ievops.maxLateness,
-        clock
-      ),
-        IncomingStreams.fromKafka(
-        KafkaConsumerProperties(ievops.pageDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
-          DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
-        opts.hostname,
-        IncomingStreams.PAGE_DEL_CONV,
-        ievops.maxLateness,
-        clock
-      )
+      IncomingStreams.fromKafka(KafkaConsumerProperties(ievops.revisionCreateTopicName, ievops.kafkaBrokers, ievops.kafkaBrokers,
+        DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
+        opts.hostname, IncomingStreams.REV_CREATE_CONV, ievops.maxLateness, ievops.idleness, clock),
+      IncomingStreams.fromKafka(KafkaConsumerProperties(ievops.pageDeleteTopicName, ievops.kafkaBrokers, ievops.kafkaBrokers,
+        DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
+        opts.hostname, IncomingStreams.PAGE_DEL_CONV, ievops.maxLateness, ievops.idleness, clock)
     )
   }
-
 
   private def prepareErrorTrackingFileSink(outputPath: String, schema: Schema): SinkFunction[GenericRecord] = {
     StreamingFileSink.forBulkFormat(new Path(outputPath), ParquetAvroWriters.forGenericRecord(schema))

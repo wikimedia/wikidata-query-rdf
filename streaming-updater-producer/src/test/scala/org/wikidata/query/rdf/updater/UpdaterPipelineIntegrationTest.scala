@@ -22,7 +22,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       // force 1 here so that we keep the sequence order and force Q1 rev 3 to be late
       .setParallelism(1)
       // Use punctuated WM instead of periodic in test
-      .assignTimestampsAndWatermarks(watermarkAssigner[RevisionCreateEvent]()),
+      .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
       DOMAIN,
       IncomingStreams.REV_CREATE_CONV, clock,
       // Disable any parallelism for the input collection so that order of input events are kept intact
@@ -59,7 +59,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       // force 1 here so that we keep the sequence order and force Q1 rev 3 to be late
       .setParallelism(1)
       // Use punctuated WM instead of periodic in test
-      .assignTimestampsAndWatermarks(watermarkAssigner[RevisionCreateEvent]()),
+      .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
       DOMAIN,
       IncomingStreams.REV_CREATE_CONV, clock,
       // Disable any parallelism for the input collection so that order of input events are kept intact
@@ -69,7 +69,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
   val pageDeleteSource: DataStream[InputEvent] = IncomingStreams.fromStream(env.fromCollection(pageDeleteEvents)
       .setParallelism(1)
       //       Use punctuated WM instead of periodic in test
-      .assignTimestampsAndWatermarks(watermarkAssigner[PageDeleteEvent]()),
+      .assignTimestampsAndWatermarks(watermarkStrategy[PageDeleteEvent]()),
       DOMAIN,
       IncomingStreams.PAGE_DEL_CONV, clock,
       // Disable any parallelism for the input collection so that order of input events are kept intact

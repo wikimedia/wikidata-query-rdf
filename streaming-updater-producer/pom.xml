@@ -240,6 +240,7 @@
                         <arg>-deprecation</arg>
                         <arg>-dependencyfile</arg>
                         <arg>${project.build.directory}/.scala_dependencies</arg>
+                        <arg>-target:jvm-1.8</arg>
                     </args>
                     <secondaryCacheDir>${project.build.directory}/sbt_1.0_zinc_org.scala-sbt</secondaryCacheDir>
                 </configuration>
