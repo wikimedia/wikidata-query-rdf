@@ -66,7 +66,7 @@ if [ ! -z "$LOG_CONFIG" ]; then
     LOG_OPTIONS="-Dlogback.configurationFile=${LOG_CONFIG}"
 fi
 
-CP=`dirname $BASH_SOURCE`/lib/wikidata-query-tools-*-jar-with-dependencies.jar
+CP=`dirname $BASH_SOURCE`/lib/streaming-updater-consumer-*-jar-with-dependencies.jar
 MAIN=org.wikidata.query.rdf.tool.StreamingUpdate
 SPARQL_URL=$HOST/$CONTEXT/namespace/$NAMESPACE/sparql
 echo "Updating via $SPARQL_URL"
