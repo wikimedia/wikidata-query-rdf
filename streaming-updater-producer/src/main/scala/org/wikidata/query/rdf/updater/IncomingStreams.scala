@@ -18,6 +18,21 @@ object IncomingStreams {
   val PAGE_DEL_CONV: (PageDeleteEvent, Clock) => InputEvent =
     (e, clock) => PageDelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
 
+  def buildIncomingStreams(ievops: UpdaterPipelineInputEventStreamOptions,
+                                   hostname: String, clock: Clock)
+                                  (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
+    ievops.topicPrefixes.flatMap(prefix => {
+      List(
+        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.revisionCreateTopicName, ievops.kafkaBrokers, ievops.kafkaBrokers,
+          DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
+          hostname, IncomingStreams.REV_CREATE_CONV, ievops.maxLateness, ievops.idleness, clock),
+        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.pageDeleteTopicName, ievops.kafkaBrokers, ievops.kafkaBrokers,
+          DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
+          hostname, IncomingStreams.PAGE_DEL_CONV, ievops.maxLateness, ievops.idleness, clock)
+      )
+    })
+  }
+
   def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], hostname: String,
                                   conv: (E, Clock) => InputEvent, maxLatenessMs: Int, idlenessMs: Int, clock: Clock)
                                  (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {

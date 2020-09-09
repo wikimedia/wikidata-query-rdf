@@ -4,15 +4,40 @@ import java.time.{Clock, Instant}
 
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
-import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, EventsMeta, RevisionCreateEvent, PageDeleteEvent}
+import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, EventsMeta, PageDeleteEvent, RevisionCreateEvent}
 
 class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   "IncomingStreams" should "create properly named streams" in {
-    implicit val env = StreamExecutionEnvironment.getExecutionEnvironment
+    implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
       DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
       "my-hostname", IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC())
     stream.name should equal ("Filtered(my-topic == my-hostname)")
+  }
+
+  "IncomingStreams" should "create regular incoming streams when using no prefixes" in {
+    implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+    val stream = IncomingStreams.buildIncomingStreams(
+      UpdaterPipelineInputEventStreamOptions("broker1", "consumerGroup1", "rev-create-topic", "page-delete-topic", List(""), 10, 10),
+      "hostname",
+      Clock.systemUTC()
+    )
+    stream.map(_.name) should contain only("Filtered(rev-create-topic == hostname)", "Filtered(page-delete-topic == hostname)")
+  }
+
+  "IncomingStreams" should "create twice more incoming streams when using 2 prefixes" in {
+    implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+    val stream = IncomingStreams.buildIncomingStreams(
+      UpdaterPipelineInputEventStreamOptions("broker1", "consumerGroup1", "rev-create-topic", "page-delete-topic", List("cluster1.", "cluster2."), 10, 10),
+      "hostname",
+      Clock.systemUTC()
+    )
+    stream.map(_.name) should contain only(
+      "Filtered(cluster1.rev-create-topic == hostname)",
+      "Filtered(cluster1.page-delete-topic == hostname)",
+      "Filtered(cluster2.rev-create-topic == hostname)",
+      "Filtered(cluster2.page-delete-topic == hostname)"
+    )
   }
 
   "EventWithMetadataHostFilter" should "filter events by hostname" in {

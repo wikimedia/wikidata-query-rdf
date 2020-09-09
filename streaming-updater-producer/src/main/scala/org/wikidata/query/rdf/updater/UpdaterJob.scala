@@ -5,6 +5,7 @@ import java.util.Properties
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import scala.concurrent.duration.MINUTES
+import scala.Seq
 
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.Schema
@@ -50,6 +51,7 @@ object UpdaterJob {
     val pipelineInputEventStreamOptions = UpdaterPipelineInputEventStreamOptions(kafkaBrokers = inputKafkaBrokers,
       revisionCreateTopicName = params.get("rev_create_topic"),
       pageDeleteTopicName = params.get("page_delete_topic"),
+      topicPrefixes = params.get("topic_prefixes", "").split(",").toList,
       consumerGroup = params.get("consumer_group", "wdqs_streaming_updater"),
       maxLateness = params.getInt("max_lateness", 60000),
       idleness = params.getInt("input_idleness", 60000)
@@ -78,7 +80,7 @@ object UpdaterJob {
     implicit val env: StreamExecutionEnvironment = prepareEnv(checkpointDir, checkPointInterval, checkpointTimeout, minPauseBetweenCheckpoints,
       autoWMInterval, checkpointingMode, networkBufferTimeout, latencyTrackingInterval)
 
-    UpdaterPipeline.build(pipelineOptions, buildIncomingStreams(pipelineInputEventStreamOptions, pipelineOptions, clock = DEFAULT_CLOCK),
+    UpdaterPipeline.build(pipelineOptions, IncomingStreams.buildIncomingStreams(pipelineInputEventStreamOptions, pipelineOptions.hostname, DEFAULT_CLOCK),
       rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup))
       .saveLateEventsTo(prepareErrorTrackingFileSink(lateEventsDir,
         InputEventEncoder.schema()), InputEventEncoder)
@@ -120,19 +122,6 @@ object UpdaterJob {
     env.setBufferTimeout(networkBufferTimeout)
     latencyTrackingInterval.foreach(l => env.getConfig.setLatencyTrackingInterval(l))
     env
-  }
-
-  private def buildIncomingStreams(ievops: UpdaterPipelineInputEventStreamOptions,
-                                   opts: UpdaterPipelineOptions, clock: Clock)
-                                  (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
-    List(
-      IncomingStreams.fromKafka(KafkaConsumerProperties(ievops.revisionCreateTopicName, ievops.kafkaBrokers, ievops.kafkaBrokers,
-        DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-        opts.hostname, IncomingStreams.REV_CREATE_CONV, ievops.maxLateness, ievops.idleness, clock),
-      IncomingStreams.fromKafka(KafkaConsumerProperties(ievops.pageDeleteTopicName, ievops.kafkaBrokers, ievops.kafkaBrokers,
-        DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
-        opts.hostname, IncomingStreams.PAGE_DEL_CONV, ievops.maxLateness, ievops.idleness, clock)
-    )
   }
 
   private def prepareErrorTrackingFileSink(outputPath: String, schema: Schema): SinkFunction[GenericRecord] = {
