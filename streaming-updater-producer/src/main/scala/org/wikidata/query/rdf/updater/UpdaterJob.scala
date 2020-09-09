@@ -34,6 +34,11 @@ object UpdaterJob {
     val hostName: String = params.get("hostname")
 
     // FIXME: proper options handling
+    val inputKafkaBrokers: String = params.get("brokers")
+    val outputKafkaBrokers: String = params.get("output_brokers", inputKafkaBrokers)
+    val outputTopic: String = params.get("output_topic")
+    val outputPartition: Int = params.getInt("output_topic_partition")
+
     val pipelineOptions = UpdaterPipelineOptions(
       hostname = hostName,
       reorderingWindowLengthMs = params.getInt("reordering_window_length", 60000),
@@ -41,12 +46,10 @@ object UpdaterJob {
       decideMutationOpParallelism = optionalIntArg(params, "decide_mut_op_parallelism"),
       generateDiffParallelism = params.getInt("generate_diff_parallelism", 2),
       generateDiffTimeout = params.getLong("generate_diff_timeout", MILLISECONDS.convert(5, MINUTES)),
-      wikibaseRepoThreadPoolSize = params.getInt("wikibase_repo_thread_pool_size", 30) // at most 60 concurrent requests to wikibase
+      wikibaseRepoThreadPoolSize = params.getInt("wikibase_repo_thread_pool_size", 30), // at most 60 concurrent requests to wikibase
+      // T262020 and FLINK-11654 (might change to something more explicit on the KafkaProducer rather than reusing operator's name
+      outputOperatorNameAndUuid = s"$outputTopic:$outputPartition"
     )
-    val inputKafkaBrokers: String = params.get("brokers")
-    val outputKafkaBrokers: String = params.get("output_brokers", inputKafkaBrokers)
-    val outputTopic: String = params.get("output_topic")
-    val outputPartition: Int = params.getInt("output_topic_partition")
 
     val pipelineInputEventStreamOptions = UpdaterPipelineInputEventStreamOptions(kafkaBrokers = inputKafkaBrokers,
       revisionCreateTopicName = params.get("rev_create_topic"),

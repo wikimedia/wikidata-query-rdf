@@ -11,6 +11,8 @@ import org.wikidata.query.rdf.tool.change.events.{EventsMeta, PageDeleteEvent, R
 
 
 class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers {
+  private val pipelineOptions: UpdaterPipelineOptions = UpdaterPipelineOptions(DOMAIN, REORDERING_WINDOW_LENGTH, None, None, 2,
+    Int.MaxValue, 10, outputOperatorNameAndUuid = "test-output-name")
   "Updater job" should "work" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
 
@@ -32,7 +34,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
 
-    UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, REORDERING_WINDOW_LENGTH, None, None, 2, Int.MaxValue, 10),
+    UpdaterPipeline.build(pipelineOptions,
         List(revCreateSource), _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
         clock, OUTPUT_EVENT_STREAM_NAME)
       .saveTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))
@@ -80,7 +82,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
 
-    UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, REORDERING_WINDOW_LENGTH, None, None, 2, Int.MaxValue, 10),
+    UpdaterPipeline.build(pipelineOptions,
       List(revCreateSourceForDeleteTest, pageDeleteSource), _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
       clock, OUTPUT_EVENT_STREAM_NAME)
       .saveTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))

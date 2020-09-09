@@ -36,8 +36,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     val metatadaFile = Paths.get(savePointDir.getAbsolutePath, "_metadata").toFile
     metatadaFile.exists() should equal(true)
 
-    implicit val streamingEnv = StreamExecutionEnvironment.getExecutionEnvironment
-
+    implicit val streamingEnv: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
 
     // configure your test environment
     streamingEnv.setParallelism(PARALLELISM)
@@ -70,7 +69,8 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       // (does not affect the ordering but ensure that we can detect the late event
       Some(1), Some(1))
 
-    val graph = UpdaterPipeline.build(UpdaterPipelineOptions(DOMAIN, 60000, None, None, 2, Int.MaxValue, 10, 1), List(source), _ => repository, clock = clock)
+    val options = UpdaterPipelineOptions(DOMAIN, 60000, None, None, 2, Int.MaxValue, 10, 1, "test-output-name")
+    val graph = UpdaterPipeline.build(options, List(source), _ => repository, clock = clock)
       .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)), identityMapFunction())
       .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)), identityMapFunction())
       .saveTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))

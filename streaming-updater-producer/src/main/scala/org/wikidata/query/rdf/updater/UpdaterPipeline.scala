@@ -65,8 +65,8 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
 
   def saveTo(sink: SinkFunction[MutationDataChunk]): UpdaterPipeline = {
     tripleEventStream.addSink(sink)
-      .uid("output")
-      .name("output")
+      .uid(updaterPipelineOptions.outputOperatorNameAndUuid)
+      .name(updaterPipelineOptions.outputOperatorNameAndUuid)
       .setParallelism(updaterPipelineOptions.outputParallelism)
     this
   }
@@ -79,7 +79,8 @@ sealed case class UpdaterPipelineOptions(hostname: String,
                                          generateDiffParallelism: Int,
                                          generateDiffTimeout: Long,
                                          wikibaseRepoThreadPoolSize: Int,
-                                         outputParallelism: Int = 1
+                                         outputParallelism: Int = 1,
+                                         outputOperatorNameAndUuid: String
 )
 
 sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
