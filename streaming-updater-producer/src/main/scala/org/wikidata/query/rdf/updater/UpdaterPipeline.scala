@@ -33,35 +33,35 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
     env.getStreamGraph(appName)
   }
 
-  def saveLateEventsTo[O](sink: SinkFunction[O], map: MapFunction[InputEvent, O])
+  def saveLateEventsTo[O](sink: SinkFunction[O], map: MapFunction[InputEvent, O], parallelism: Option[Int] = Some(1))
                          (implicit typeInformation: TypeInformation[O]): UpdaterPipeline = {
-    lateEventStream
-      .map(map)
-      .addSink(sink)
-      .uid("late-events-output")
-      .name("late-events-output")
-    this
+
+    prepareSideOutputSink(sink, lateEventStream, "late-events-output", map, parallelism)
   }
 
-  def saveSpuriousEventsTo[O](sink: SinkFunction[O], map: MapFunction[IgnoredMutation, O])
+  def saveSpuriousEventsTo[O](sink: SinkFunction[O], map: MapFunction[IgnoredMutation, O], parallelism: Option[Int] = Some(1))
                              (implicit typeInformation: TypeInformation[O]): UpdaterPipeline = {
-    spuriousEventStream
+    prepareSideOutputSink(sink, spuriousEventStream, "spurious-events-output", map, parallelism)
+  }
+
+  def saveFailedOpsTo[O](sink: SinkFunction[O], map: MapFunction[FailedOp, O], parallelism: Option[Int] = Some(1))
+                        (implicit typeInformation: TypeInformation[O]): UpdaterPipeline = {
+    prepareSideOutputSink(sink, failedOpsStream, "failed-ops-output", map, parallelism)
+  }
+
+  private def prepareSideOutputSink[E, O](sinkFunction: SinkFunction[O], sideOutputStream: DataStream[E], nameAndUuid: String, map: MapFunction[E, O],
+                                          parallelism: Option[Int] = Some(1)): UpdaterPipeline = {
+    val mappedStream = sideOutputStream
       .javaStream.map(map)
-      .addSink(sink)
-      .uid("spurious-events-output")
-      .name("spurious-events-output")
+    parallelism.foreach(mappedStream.setParallelism)
+    val sink = mappedStream
+      .addSink(sinkFunction)
+      .uid(nameAndUuid)
+      .name(nameAndUuid)
+    parallelism.foreach(sink.setParallelism)
     this
   }
 
-  def saveFailedOpsTo[O](sink: SinkFunction[O], map: MapFunction[FailedOp, O])
-                        (implicit typeInformation: TypeInformation[O]): UpdaterPipeline = {
-    failedOpsStream
-      .map(map)
-      .addSink(sink)
-      .uid("failed-ops-output")
-      .name("failed-ops-output")
-    this
-  }
 
   def saveTo(sink: SinkFunction[MutationDataChunk]): UpdaterPipeline = {
     tripleEventStream.addSink(sink)
@@ -71,8 +71,6 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
     this
   }
 }
-
-
 
 /**
  * Current state

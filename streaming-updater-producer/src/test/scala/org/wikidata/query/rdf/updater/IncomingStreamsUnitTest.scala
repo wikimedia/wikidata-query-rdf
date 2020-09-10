@@ -12,14 +12,24 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
       DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-      "my-hostname", IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC())
+      "my-hostname", IncomingStreams.REV_CREATE_CONV, 1, 40000, 40000, Clock.systemUTC())
     stream.name should equal ("Filtered(my-topic == my-hostname)")
+  }
+
+  "IncomingStreams" should "create regular incoming streams proper parallelism" in {
+    implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+    val stream = IncomingStreams.buildIncomingStreams(
+      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic", "page-delete-topic", List(""), 3, 10, 10),
+      "hostname",
+      Clock.systemUTC()
+    )
+    stream.map(_.parallelism).toSet should contain only 3
   }
 
   "IncomingStreams" should "create regular incoming streams when using no prefixes" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
-      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic", "page-delete-topic", List(""), 10, 10),
+      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic", "page-delete-topic", List(""), 1, 10, 10),
       "hostname",
       Clock.systemUTC()
     )
@@ -29,7 +39,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   "IncomingStreams" should "create twice more incoming streams when using 2 prefixes" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
-      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic", "page-delete-topic", List("cluster1.", "cluster2."), 10, 10),
+      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic", "page-delete-topic", List("cluster1.", "cluster2."), 1, 10, 10),
       "hostname",
       Clock.systemUTC()
     )

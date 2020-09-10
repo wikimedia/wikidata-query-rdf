@@ -24,27 +24,30 @@ object IncomingStreams {
                                   (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
     ievops.topicPrefixes.flatMap(prefix => {
       List(
-        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.revisionCreateTopicName, ievops.kafkaBrokers, ievops.kafkaBrokers,
+        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.revisionCreateTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-          hostname, IncomingStreams.REV_CREATE_CONV, ievops.maxLateness, ievops.idleness, clock),
-        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.pageDeleteTopicName, ievops.kafkaBrokers, ievops.kafkaBrokers,
+          hostname, IncomingStreams.REV_CREATE_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock),
+        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.pageDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
-          hostname, IncomingStreams.PAGE_DEL_CONV, ievops.maxLateness, ievops.idleness, clock)
+          hostname, IncomingStreams.PAGE_DEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock)
       )
     })
   }
 
   def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], hostname: String,
-                                  conv: (E, Clock) => InputEvent, maxLatenessMs: Int, idlenessMs: Int, clock: Clock)
+                                  conv: (E, Clock) => InputEvent, parallelism: Int,
+                                  maxLatenessMs: Int, idlenessMs: Int, clock: Clock)
                                  (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
 
     val nameAndUid = s"${kafkaProps.topic}"
     val kafkaStream = env
       .addSource(new FlinkKafkaConsumer[E](kafkaProps.topic, kafkaProps.schema, kafkaProps.asProperties()))(kafkaProps.schema.getProducedType)
+      .setParallelism(parallelism)
       .assignTimestampsAndWatermarks(watermarkStrategy[E](maxLatenessMs, idlenessMs))
       .uid(nameAndUid)
       .name(nameAndUid)
-    fromStream(kafkaStream, hostname, conv, clock)
+      .setParallelism(parallelism)
+    fromStream(kafkaStream, hostname, conv, clock, Some(parallelism), Some(parallelism))
   }
 
   private def watermarkStrategy[E <: ChangeEvent](maxLatenessMs: Int, idlenessMs: Int): WatermarkStrategy[E] = {
@@ -62,11 +65,14 @@ object IncomingStreams {
                                    filterParallelism: Option[Int] = None,
                                    mapperParallelism: Option[Int] = None)
                                   (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
-    stream.filter(new EventWithMetadataHostFilter[E](hostname))
-      .setParallelism(filterParallelism.getOrElse(env.getParallelism))
+    val filteredStream = stream.filter(new EventWithMetadataHostFilter[E](hostname));
+    filterParallelism.foreach(filteredStream.setParallelism)
+
+    val convertedStream = filteredStream
       .map(conv(_, clock))
-      .setParallelism(mapperParallelism.getOrElse(env.getParallelism))
       .name(s"Filtered(${stream.name} == $hostname)")
+    mapperParallelism.foreach(convertedStream.setParallelism)
+    convertedStream
   }
 }
 

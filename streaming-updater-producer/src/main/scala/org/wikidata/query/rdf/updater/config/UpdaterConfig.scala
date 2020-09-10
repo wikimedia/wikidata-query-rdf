@@ -30,6 +30,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(ParameterTool.from
     pageDeleteTopicName = getStringParam("page_delete_topic"),
     topicPrefixes = params.get("topic_prefixes", "").split(",").toList,
     consumerGroup = params.get("consumer_group", "wdqs_streaming_updater"),
+    parallelism = params.getInt("consumer_parallelism", 1),
     maxLateness = params.getInt("max_lateness", 1 minute),
     idleness = params.getInt("input_idleness", 1 minute)
   )
@@ -90,6 +91,7 @@ sealed case class UpdaterPipelineInputEventStreamConfig(kafkaBrokers: String,
                                                         revisionCreateTopicName: String,
                                                         pageDeleteTopicName: String,
                                                         topicPrefixes: List[String],
+                                                        parallelism: Int,
                                                         maxLateness: Int,
                                                         idleness: Int)
 

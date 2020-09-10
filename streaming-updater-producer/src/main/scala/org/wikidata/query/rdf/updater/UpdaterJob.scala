@@ -6,15 +6,16 @@ import java.util.Properties
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.NoRestartStrategyConfiguration
+import org.apache.flink.api.common.time.Time
 import org.apache.flink.core.fs.Path
 import org.apache.flink.formats.avro.typeutils.GenericRecordAvroTypeInfo
 import org.apache.flink.formats.parquet.avro.ParquetAvroWriters
+import org.apache.flink.streaming.api.{CheckpointingMode, TimeCharacteristic}
 import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.OnCheckpointRollingPolicy
 import org.apache.flink.streaming.api.scala._
-import org.apache.flink.streaming.api.{CheckpointingMode, TimeCharacteristic}
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
@@ -70,11 +71,11 @@ object UpdaterJob {
   private def prepareKafkaSink(options: UpdaterPipelineOutputStreamConfig): SinkFunction[MutationDataChunk] = {
     val producerConfig = new Properties()
     producerConfig.setProperty("bootstrap.servers", options.kafkaBrokers)
-    producerConfig.setProperty("transaction.timeout.ms", "900000")
-    producerConfig.setProperty("timeout.ms", "900000")
-    producerConfig.setProperty("delivery.timeout.ms", "900000")
+    // Flink defaults is 1hour but wmf kafka uses the default value of 15min for transaction.max.timeout.ms
+    val txTimeoutMs = Time.minutes(15).toMilliseconds
+    producerConfig.setProperty("transaction.timeout.ms", txTimeoutMs.toString)
+    producerConfig.setProperty("delivery.timeout.ms", txTimeoutMs.toString)
     producerConfig.setProperty("batch.size", "250000")
-    producerConfig.setProperty("linger.ms", "1")
     producerConfig.setProperty("compression.type", "gzip")
     new FlinkKafkaProducer[MutationDataChunk](
       options.topic,
