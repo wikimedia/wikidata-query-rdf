@@ -4,7 +4,6 @@ import java.time.Clock
 import java.util.UUID
 
 import scala.concurrent.duration.MILLISECONDS
-
 import org.apache.flink.api.common.functions.{MapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -14,12 +13,13 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
 import org.wikidata.query.rdf.tool.rdf.Patch
+import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
 
 sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
                              spuriousEventStream: DataStream[IgnoredMutation],
                              failedOpsStream: DataStream[FailedOp],
                              tripleEventStream: DataStream[MutationDataChunk],
-                             updaterPipelineOptions: UpdaterPipelineOptions
+                             updaterPipelineOptions: UpdaterPipelineGeneralConfig
                             )
                             (implicit env: StreamExecutionEnvironment)
 {
@@ -72,31 +72,7 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
   }
 }
 
-sealed case class UpdaterPipelineOptions(hostname: String,
-                                         reorderingWindowLengthMs: Int,
-                                         reorderingOpParallelism: Option[Int],
-                                         decideMutationOpParallelism: Option[Int],
-                                         generateDiffParallelism: Int,
-                                         generateDiffTimeout: Long,
-                                         wikibaseRepoThreadPoolSize: Int,
-                                         outputParallelism: Int = 1,
-                                         outputOperatorNameAndUuid: String
-)
 
-sealed case class UpdaterPipelineInputEventStreamOptions(kafkaBrokers: String,
-                                                         consumerGroup: String,
-                                                         revisionCreateTopicName: String,
-                                                         pageDeleteTopicName: String,
-                                                         topicPrefixes: List[String],
-                                                         maxLateness: Int,
-                                                         idleness: Int)
-
-sealed case class UpdaterPipelineOutputStreamOption(
-                                                   kafkaBrokers: String,
-                                                   topic: String,
-                                                   partition: Int,
-                                                   checkpointingMode: CheckpointingMode
-                                                   )
 
 /**
  * Current state
@@ -119,7 +95,7 @@ sealed case class UpdaterPipelineOutputStreamOption(
  *  output of the stream is a MutationDataChunk
  */
 object UpdaterPipeline {
-  def build(opts: UpdaterPipelineOptions, incomingStreams: List[DataStream[InputEvent]],
+  def build(opts: UpdaterPipelineGeneralConfig, incomingStreams: List[DataStream[InputEvent]],
             wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
             uniqueIdGenerator: () => String = UUID.randomUUID().toString,
             clock: Clock = Clock.systemUTC(),
@@ -148,7 +124,7 @@ object UpdaterPipeline {
     new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, failedOpsToSideOutput, tripleStream, updaterPipelineOptions = opts)
   }
 
-  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp], opts: UpdaterPipelineOptions): DataStream[SuccessfulOp] = {
+  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp], opts: UpdaterPipelineGeneralConfig): DataStream[SuccessfulOp] = {
     resolvedOpStream
       .process(new RouteFailedOpsToSideOutput())
       .name("RouteFailedOpsToSideOutput")
@@ -157,7 +133,7 @@ object UpdaterPipeline {
   }
 
   private def rdfPatchChunkOp(dataStream: DataStream[SuccessfulOp],
-                              opts: UpdaterPipelineOptions,
+                              opts: UpdaterPipelineGeneralConfig,
                               uniqueIdGenerator: () => String,
                               clock: Clock,
                               outputStreamName: String
@@ -176,7 +152,7 @@ object UpdaterPipeline {
 
   private def measureLatency(dataStream: DataStream[MutationDataChunk],
                              clock: Clock,
-                             updaterPipelineOptions: UpdaterPipelineOptions
+                             updaterPipelineOptions: UpdaterPipelineGeneralConfig
                             ): DataStream[MutationDataChunk] = {
     dataStream.map(MeasureEventProcessingLatencyOperation(clock))
       .name("MeasureEventProcessingLatencyOperation")
@@ -184,7 +160,7 @@ object UpdaterPipeline {
       .setParallelism(updaterPipelineOptions.outputParallelism)
   }
 
-  private def resolveMutationOperations(opts: UpdaterPipelineOptions,
+  private def resolveMutationOperations(opts: UpdaterPipelineGeneralConfig,
                                         wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
                                         outputMutationStream: DataStream[MutationOperation]
                                        ): DataStream[ResolvedOp] = {
@@ -211,7 +187,7 @@ object UpdaterPipeline {
     outputMutationStream
   }
 
-  private def decideMutationOp(windowStream: DataStream[InputEvent], opts: UpdaterPipelineOptions): DataStream[AllMutationOperation] = {
+  private def decideMutationOp(windowStream: DataStream[InputEvent], opts: UpdaterPipelineGeneralConfig): DataStream[AllMutationOperation] = {
     val allOutputMutationStream: DataStream[AllMutationOperation] = windowStream
       .keyBy(_.item)
       .map(new DecideMutationOperation())

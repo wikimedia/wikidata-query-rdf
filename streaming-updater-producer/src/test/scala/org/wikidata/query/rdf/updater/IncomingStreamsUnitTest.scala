@@ -5,6 +5,7 @@ import java.time.{Clock, Instant}
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, EventsMeta, PageDeleteEvent, RevisionCreateEvent}
+import org.wikidata.query.rdf.updater.config.UpdaterPipelineInputEventStreamConfig
 
 class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   "IncomingStreams" should "create properly named streams" in {
@@ -18,7 +19,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   "IncomingStreams" should "create regular incoming streams when using no prefixes" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
-      UpdaterPipelineInputEventStreamOptions("broker1", "consumerGroup1", "rev-create-topic", "page-delete-topic", List(""), 10, 10),
+      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic", "page-delete-topic", List(""), 10, 10),
       "hostname",
       Clock.systemUTC()
     )
@@ -28,7 +29,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   "IncomingStreams" should "create twice more incoming streams when using 2 prefixes" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
-      UpdaterPipelineInputEventStreamOptions("broker1", "consumerGroup1", "rev-create-topic", "page-delete-topic", List("cluster1.", "cluster2."), 10, 10),
+      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic", "page-delete-topic", List("cluster1.", "cluster2."), 10, 10),
       "hostname",
       Clock.systemUTC()
     )

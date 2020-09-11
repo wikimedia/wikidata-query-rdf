@@ -10,6 +10,7 @@ import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
+import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
 
 
 class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers with BeforeAndAfter {
@@ -69,7 +70,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       // (does not affect the ordering but ensure that we can detect the late event
       Some(1), Some(1))
 
-    val options = UpdaterPipelineOptions(DOMAIN, 60000, None, None, 2, Int.MaxValue, 10, 1, "test-output-name")
+    val options = UpdaterPipelineGeneralConfig(DOMAIN, 60000, None, None, 2, Int.MaxValue, 10, 1, "test-output-name")
     val graph = UpdaterPipeline.build(options, List(source), _ => repository, clock = clock)
       .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)), identityMapFunction())
       .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)), identityMapFunction())

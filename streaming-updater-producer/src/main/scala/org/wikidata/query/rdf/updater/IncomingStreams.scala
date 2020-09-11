@@ -9,6 +9,7 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, PageDeleteEvent, RevisionCreateEvent}
 import org.wikidata.query.rdf.tool.utils.EntityUtil.cleanEntityId
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
+import org.wikidata.query.rdf.updater.config.UpdaterPipelineInputEventStreamConfig
 
 
 object IncomingStreams {
@@ -18,8 +19,8 @@ object IncomingStreams {
   val PAGE_DEL_CONV: (PageDeleteEvent, Clock) => InputEvent =
     (e, clock) => PageDelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
 
-  def buildIncomingStreams(ievops: UpdaterPipelineInputEventStreamOptions,
-                                   hostname: String, clock: Clock)
+  def buildIncomingStreams(ievops: UpdaterPipelineInputEventStreamConfig,
+                           hostname: String, clock: Clock)
                                   (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
     ievops.topicPrefixes.flatMap(prefix => {
       List(

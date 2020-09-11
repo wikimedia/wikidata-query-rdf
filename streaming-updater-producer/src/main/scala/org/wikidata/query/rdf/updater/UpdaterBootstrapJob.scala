@@ -1,39 +1,22 @@
 package org.wikidata.query.rdf.updater
 
-import org.apache.flink.api.java.{DataSet => JavaDataSet}
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.api.java.tuple.Tuple2
-import org.apache.flink.api.java.utils.ParameterTool
+import org.apache.flink.api.java.{DataSet => JavaDataSet}
 import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.runtime.state.StateBackend
-import org.apache.flink.state.api.{BootstrapTransformation, NewSavepoint, OneInputOperatorTransformation, OperatorTransformation, Savepoint}
+import org.apache.flink.state.api._
+import org.wikidata.query.rdf.updater.config.BootstrapConfig
 
 object UpdaterBootstrapJob {
   def main(args: Array[String]): Unit = {
-    val params = ParameterTool.fromArgs(args)
-    // TODO: write better (as in more reusable) code for option handling
-    val csvFile = Option(params.get("revisions_file")) match {
-      case Some(csvFile) => csvFile;
-      case None => throw new IllegalArgumentException("""missing param revisions_file""")
-    }
-    val savepointDir = Option(params.get("savepoint_dir")) match {
-      case Some(savePointDir) => savePointDir;
-      case None => throw new IllegalArgumentException("""missing param savepoint_dir""")
-    }
-    val checkpointDir = Option(params.get("checkpoint_dir")) match {
-      case Some(checkpointDir) => checkpointDir;
-      case None => throw new IllegalArgumentException("""missing param checkpoint_dir""")
-    }
-    val parallelism = Option(params.getInt("parallelism")) match {
-      case Some(p) => p;
-      case None => throw new IllegalArgumentException("""missing param parallelism""")
-    }
+    val settings = BootstrapConfig(args)
     // Unclear but changing the parallelism of a keyed state might not be a "free" operation so I think it's better to
     // match the parallelism of the stream operation when building the initial savepoint
     implicit val env = ExecutionEnvironment.getExecutionEnvironment
-    env.setParallelism(parallelism)
-    newSavePoint(csvFile, UpdaterStateConfiguration.newStateBackend(checkpointDir), parallelism)
-      .write(savepointDir)
+    env.setParallelism(settings.parallelism)
+    newSavePoint(settings.revisionsFile, UpdaterStateConfiguration.newStateBackend(settings.checkpointDir), settings.parallelism)
+      .write(settings.savepointDir)
     env.execute("WDQS Updater Bootstrap Job")
   }
 
