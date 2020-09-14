@@ -763,6 +763,16 @@
                 <type>war</type>
             </dependency>
             <dependency>
+                <groupId>org.wikidata.query.rdf</groupId>
+                <artifactId>streaming-updater-consumer</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wikidata.query.rdf</groupId>
+                <artifactId>tools</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>xml-apis</groupId>
                 <artifactId>xml-apis</artifactId>
                 <version>1.4.01</version>
