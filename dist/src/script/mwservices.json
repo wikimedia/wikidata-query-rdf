@@ -102,6 +102,22 @@
 		}
 	}
 },
-"endpoints": [".wikipedia.org", "commons.wikimedia.org", "www.mediawiki.org", "www.wikidata.org", "test.wikidata.org", ".wikisource.org", ".wikinews.org"]
+"endpoints": [
+	".wikipedia.org",
+	"commons.wikimedia.org",
+	"www.mediawiki.org",
+	"www.wikidata.org",
+	"test.wikidata.org",
+	".wiktionary.org",
+	".wikisource.org",
+	".wikibooks.org",
+	".wikinews.org",
+	".wikiquote.org",
+	".wikisource.org",
+	".wikiversity.org",
+	".wikivoyage.org",
+	"species.wikimedia.org",
+	"wikimania.wikimedia.org"
+]
 }
 
