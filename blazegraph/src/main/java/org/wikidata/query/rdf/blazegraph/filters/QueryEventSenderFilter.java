@@ -1,6 +1,8 @@
 package org.wikidata.query.rdf.blazegraph.filters;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
@@ -9,6 +11,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -43,6 +46,8 @@ public class QueryEventSenderFilter implements Filter {
     private EventSender sender;
     private QueryEventGenerator queryEventGenerator;
     private String enableIfHeader;
+    private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
+    private static final AtomicInteger queryCounter = new AtomicInteger(0);
 
     public QueryEventSenderFilter() {
     }
@@ -65,12 +70,18 @@ public class QueryEventSenderFilter implements Filter {
             throw new ServletException(e);
         }
         String streamName = config.loadStringParam("event-gate-sparql-query-stream", "blazegraph.sparql-query");
-        this.queryEventGenerator = new QueryEventGenerator(() -> UUID.randomUUID().toString(), Clock.systemUTC(), wdqsHostname, streamName);
+
+        this.queryEventGenerator = new QueryEventGenerator(() -> UUID.randomUUID().toString(),
+                Clock.systemUTC(),
+                wdqsHostname,
+                streamName,
+                operatingSystemMXBean::getSystemLoadAverage);
         this.enableIfHeader = config.loadStringParam("enable-event-sender-if-header");
         boolean eventFileSenderEnabled = config.loadBooleanParam("file-event-sender", false);
         int maxCap = config.loadIntParam("queue-size", 1000);
         int maxEventsPerHttpRequest = config.loadIntParam("http-max-events-per-request", 10);
-        sender = AsyncEventSender.wrap(maxCap, maxEventsPerHttpRequest, eventFileSenderEnabled ? createFileEventSender(config) : createHttpEventSender(config));
+        EventSender eventSender = eventFileSenderEnabled ? createFileEventSender(config) : createHttpEventSender(config);
+        this.sender = AsyncEventSender.wrap(maxCap, maxEventsPerHttpRequest, eventSender);
     }
 
     private EventSender createFileEventSender(FilterConfiguration config) {
@@ -101,10 +112,12 @@ public class QueryEventSenderFilter implements Filter {
 
         Instant start = queryEventGenerator.instant();
         boolean succeed = false;
+        int countBefore = queryCounter.getAndIncrement();
         try {
             filterChain.doFilter(servletRequest, servletResponse);
             succeed = true;
         } finally {
+            int countAfter = queryCounter.decrementAndGet();
             int responseStatus;
             Instant end = queryEventGenerator.instant();
             if (succeed) {
@@ -113,7 +126,8 @@ public class QueryEventSenderFilter implements Filter {
                 responseStatus = 500;
             }
             String defaultNamespace = (String) servletRequest.getServletContext().getAttribute(WikibaseContextListener.BLAZEGRAPH_DEFAULT_NAMESPACE);
-            QueryEvent event = queryEventGenerator.generateQueryEvent(httpRequest, responseStatus, Duration.between(start, end), start, defaultNamespace);
+            QueryEvent event = queryEventGenerator.generateQueryEvent(httpRequest, responseStatus, Duration.between(start, end),
+                    start, defaultNamespace, countBefore, countAfter);
             if (!sender.push(event)) {
                 log.warn("Cannot sent event for {} (queue full?)", event.getMetadata().getStream());
             }

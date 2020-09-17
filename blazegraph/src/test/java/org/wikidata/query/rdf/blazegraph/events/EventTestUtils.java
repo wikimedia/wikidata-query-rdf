@@ -18,7 +18,7 @@ public final class EventTestUtils {
 
     public static String queryEventJsonString(String id) {
         return "{" +
-                "\"$schema\":\"/sparql/query/1.0.0\"," +
+                "\"$schema\":\"/sparql/query/1.1.0\"," +
                 "\"meta\":{" +
                 "\"id\":\"" + id + "\"," +
                 "\"dt\":\"1970-01-01T00:00:00Z\"," +
@@ -38,7 +38,8 @@ public final class EventTestUtils {
                 "\"query\":\"select ...\"," +
                 "\"format\":\"json\"," +
                 "\"params\":{\"param-name\":\"param-value\"}," +
-                "\"query_time\":100}";
+                "\"query_time\":100," +
+                "\"system_runtime_metrics\":{\"running_queries_before\":2,\"running_queries_after\":1,\"cpu_load_average\":1.0}}";
 
     }
 
@@ -50,7 +51,8 @@ public final class EventTestUtils {
         Map<String, String> params = new HashMap<>();
         params.put("param-name", "param-value");
         return new QueryEvent(newEventMetadata(id), newEventHttpMetadata(), "backend_host",
-                "namespace", "select ...", "json", params, Duration.ofMillis(100));
+                "namespace", "select ...", "json", params, Duration.ofMillis(100),
+                new SystemRuntimeMetrics(2, 1, 1d));
     }
 
     private static EventHttpMetadata newEventHttpMetadata() {

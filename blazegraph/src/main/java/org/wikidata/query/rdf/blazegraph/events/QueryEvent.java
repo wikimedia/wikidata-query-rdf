@@ -16,9 +16,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  *
  * https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/event-schemas/+/master/jsonschema/sparql/query/1.0.0.yaml
  */
-@JsonPropertyOrder({"$schema", "meta", "http", "backend_host", "namespace", "query", "format", "params", "query_time"})
+@JsonPropertyOrder({"$schema", "meta", "http", "backend_host", "namespace", "query", "format", "params", "query_time", "system_runtime_metrics"})
 public class QueryEvent implements Event {
-    private static final String SCHEMA = "/sparql/query/1.0.0";
+    private static final String SCHEMA = "/sparql/query/1.1.0";
     private final EventMetadata metadata;
     private final EventHttpMetadata httpMetadata;
     private final String backendHost;
@@ -27,9 +27,10 @@ public class QueryEvent implements Event {
     private final String format;
     private final Map<String, String> params;
     private final Duration queryTime;
+    private final SystemRuntimeMetrics systemRuntimeMetrics;
 
     public QueryEvent(EventMetadata metadata, EventHttpMetadata http, String backendHost, String namespace, String query,
-                      @Nullable String format, Map<String, String> params, Duration queryTime) {
+                      @Nullable String format, Map<String, String> params, Duration queryTime, SystemRuntimeMetrics systemRuntimeMetrics) {
         this.metadata = metadata;
         this.httpMetadata = http;
         this.backendHost = backendHost;
@@ -38,6 +39,7 @@ public class QueryEvent implements Event {
         this.format = format;
         this.params = params;
         this.queryTime = queryTime;
+        this.systemRuntimeMetrics = systemRuntimeMetrics;
     }
 
     public EventMetadata getMetadata() {
@@ -80,4 +82,10 @@ public class QueryEvent implements Event {
     public long getQueryTime() {
         return queryTime.toMillis();
     }
+
+    @JsonProperty("system_runtime_metrics")
+    SystemRuntimeMetrics getSystemRuntimeMetrics() {
+        return systemRuntimeMetrics;
+    }
+
 }

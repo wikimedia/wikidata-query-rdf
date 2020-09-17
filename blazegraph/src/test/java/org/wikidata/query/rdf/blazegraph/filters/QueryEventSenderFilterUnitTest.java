@@ -58,7 +58,7 @@ public class QueryEventSenderFilterUnitTest {
         when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         HttpServletResponse response = mock(HttpServletResponse.class);
 
-        when(eventGenerator.generateQueryEvent(eq(request), eq(200), eq(Duration.ofSeconds(1)), eq(Instant.EPOCH), eq(defaultNS)))
+        when(eventGenerator.generateQueryEvent(eq(request), eq(200), eq(Duration.ofSeconds(1)), eq(Instant.EPOCH), eq(defaultNS), eq(0), eq(0)))
                 .thenReturn(generatedEvent);
         FilterChain filterChain = mock(FilterChain.class);
         when(response.getStatus()).thenReturn(200);
@@ -86,7 +86,7 @@ public class QueryEventSenderFilterUnitTest {
         when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         HttpServletResponse response = mock(HttpServletResponse.class);
 
-        when(eventGenerator.generateQueryEvent(eq(request), eq(500), eq(Duration.ofSeconds(1)), eq(Instant.EPOCH), eq(defaultNS)))
+        when(eventGenerator.generateQueryEvent(eq(request), eq(500), eq(Duration.ofSeconds(1)), eq(Instant.EPOCH), eq(defaultNS), eq(0), eq(0)))
                 .thenReturn(generatedEvent);
         when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         FilterChain filterChain = mock(FilterChain.class);
@@ -115,7 +115,7 @@ public class QueryEventSenderFilterUnitTest {
         filter.doFilter(request, response, filterChain);
         verify(filterChain, times(1)).doFilter(eq(request), eq(response));
         verify(eventGenerator, never()).instant();
-        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), any(), any(), anyString());
+        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), any(), any(), anyString(), anyInt(), anyInt());
     }
 
     @Test
@@ -132,7 +132,7 @@ public class QueryEventSenderFilterUnitTest {
         filter.doFilter(request, response, filterChain);
         verify(filterChain, times(1)).doFilter(eq(request), eq(response));
         verify(eventGenerator, never()).instant();
-        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), any(), any(), anyString());
+        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), any(), any(), anyString(), eq(0), eq(0));
     }
 
     @Test
@@ -151,7 +151,7 @@ public class QueryEventSenderFilterUnitTest {
         filter.doFilter(request, response, filterChain);
         verify(filterChain, times(1)).doFilter(eq(request), eq(response));
         verify(eventGenerator, never()).instant();
-        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), any(), any(), anyString());
+        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), any(), any(), anyString(), eq(0), eq(0));
     }
 
     @Test

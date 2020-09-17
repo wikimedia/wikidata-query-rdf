@@ -33,12 +33,18 @@ public class QueryEventGenerator {
     private final Clock clock;
     private final String hostname;
     private final String stream;
+    private final Supplier<Double> systemLoadSupplier;
 
-    public QueryEventGenerator(Supplier<String> uniqueIdGenerator, Clock clock, String hostname, String stream) {
+    public QueryEventGenerator(Supplier<String> uniqueIdGenerator,
+                               Clock clock,
+                               String hostname,
+                               String stream,
+                               Supplier<Double> systemLoadSupplier) {
         this.uniqueIdGenerator = uniqueIdGenerator;
         this.clock = clock;
         this.hostname = hostname;
         this.stream = stream;
+        this.systemLoadSupplier = systemLoadSupplier;
     }
 
     public Instant instant() {
@@ -55,7 +61,8 @@ public class QueryEventGenerator {
         return "/sparql".equals(path) || QueryEventGenerator.NS_EXTRACTER.matcher(path).matches();
     }
 
-    public QueryEvent generateQueryEvent(HttpServletRequest request, int responseStatus, Duration duration, Instant queryStartTime, String defaultNamespace) {
+    public QueryEvent generateQueryEvent(HttpServletRequest request, int responseStatus, Duration duration,
+                                         Instant queryStartTime, String defaultNamespace, int queriesRunningBefore, int queriesRunningAfter) {
         Objects.requireNonNull(defaultNamespace, "defaultNamespace");
         Objects.requireNonNull(duration, "duration");
         EventMetadata metadata = generateEventMetadata(request, queryStartTime);
@@ -70,7 +77,15 @@ public class QueryEventGenerator {
             namespace = defaultNamespace;
         }
 
-        return new QueryEvent(metadata, httpMetadata, hostname, namespace, query, format, extractRequestParams(request), duration);
+        return new QueryEvent(metadata,
+                httpMetadata,
+                hostname,
+                namespace,
+                query,
+                format,
+                extractRequestParams(request),
+                duration,
+                new SystemRuntimeMetrics(queriesRunningBefore, queriesRunningAfter, systemLoadSupplier.get()));
     }
 
     private EventMetadata generateEventMetadata(HttpServletRequest request, Instant queryStartTime) {
