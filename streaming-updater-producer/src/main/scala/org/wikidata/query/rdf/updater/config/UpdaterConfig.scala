@@ -9,6 +9,12 @@ import scala.concurrent.duration._
 
 class UpdaterConfig(args: Array[String]) extends BaseConfig()(ParameterTool.fromArgs(args)) {
   private val hostName: String = getStringParam("hostname")
+
+  val inputKafkaBrokers: String = getStringParam("brokers")
+  val outputKafkaBrokers: String = params.get("output_brokers", inputKafkaBrokers)
+  val outputTopic: String = getStringParam("output_topic")
+  val outputPartition: Int = params.getInt("output_topic_partition")
+
   val generalConfig: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
     hostname = hostName,
     reorderingWindowLengthMs = params.getInt("reordering_window_length", 1 minute),
@@ -20,10 +26,6 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(ParameterTool.from
     // T262020 and FLINK-11654 (might change to something more explicit on the KafkaProducer rather than reusing operator's name
     outputOperatorNameAndUuid = s"$outputTopic:$outputPartition"
   )
-  val inputKafkaBrokers: String = getStringParam("brokers")
-  val outputKafkaBrokers: String = params.get("output_brokers", inputKafkaBrokers)
-  val outputTopic: String = getStringParam("output_topic")
-  val outputPartition: Int = params.getInt("output_topic_partition")
 
   val InputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
     revisionCreateTopicName = getStringParam("rev_create_topic"),
