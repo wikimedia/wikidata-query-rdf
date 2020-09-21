@@ -23,9 +23,20 @@ public class EntityDiff {
         this.sharedElementPredicate = sharedElementPredicate;
     }
 
-    public static EntityDiff withValuesAndRefsAsSharedElements(UrisScheme scheme) {
+    /**
+     * Builds an EntityDiff with shared elements.
+     * - declaration of values
+     * - declaration of references
+     * - declaration of wiki groups (used by sitelink)
+     *
+     * @see NamespaceStatementPredicates#objectInValueNS(Statement)
+     * @see NamespaceStatementPredicates#objectInReferenceNS(Statement)
+     * @see StatementPredicates#wikiGroupDefinition(Statement)
+     */
+    public static EntityDiff withWikibaseSharedElements(UrisScheme scheme) {
         NamespaceStatementPredicates nsStmtPreds = new NamespaceStatementPredicates(scheme);
-        return new EntityDiff(stmt -> nsStmtPreds.subjectInReferenceNS(stmt) || nsStmtPreds.subjectInValueNS(stmt));
+        return new EntityDiff(stmt -> nsStmtPreds.subjectInReferenceNS(stmt) || nsStmtPreds.subjectInValueNS(stmt)
+                || StatementPredicates.wikiGroupDefinition(stmt));
     }
 
     /**
@@ -47,7 +58,7 @@ public class EntityDiff {
                 unmodifiableList(deleted), unmodifiableList(unlinkedSharedElements));
     }
 
-    public Consumer<Statement> filterSharedElements(Consumer<Statement> sharedElements, Consumer<Statement> otherElements) {
+    private Consumer<Statement> filterSharedElements(Consumer<Statement> sharedElements, Consumer<Statement> otherElements) {
         return stmt -> {
             if (sharedElementPredicate.test(stmt)) {
                 sharedElements.accept(stmt);

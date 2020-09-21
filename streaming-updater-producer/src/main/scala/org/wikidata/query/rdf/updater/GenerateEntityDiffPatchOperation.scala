@@ -45,7 +45,7 @@ case class GenerateEntityDiffPatchOperation(
 
   lazy val repository: WikibaseEntityRevRepositoryTrait =  wikibaseRepositoryGenerator(this.getRuntimeContext)
   lazy val scheme: UrisScheme = UrisSchemeFactory.forHost(domain)
-  lazy val diff: EntityDiff = EntityDiff.withValuesAndRefsAsSharedElements(scheme)
+  lazy val diff: EntityDiff = EntityDiff.withWikibaseSharedElements(scheme)
 
   implicit lazy val executionContext: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(poolSize,
     new ThreadFactoryBuilder().setNameFormat("GenerateEntityDiffPatchOperation-fetcher-%d").build()))

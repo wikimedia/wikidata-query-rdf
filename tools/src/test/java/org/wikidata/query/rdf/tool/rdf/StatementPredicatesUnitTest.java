@@ -58,4 +58,10 @@ public class StatementPredicatesUnitTest {
         assertThat(StatementPredicates.valueTypeStatement(statement("val:XYZ", RDF.TYPE, "uri:foo"))).isFalse();
         assertThat(StatementPredicates.valueTypeStatement(statement("val:XYZ", "uri:foo", Ontology.Time.TYPE))).isFalse();
     }
+
+    @Test
+    public void wikiGroups() {
+        assertThat(StatementPredicates.wikiGroupDefinition(statement("val:XYZ", Ontology.WIKIGROUP, "uri:foo"))).isTrue();
+        assertThat(StatementPredicates.wikiGroupDefinition(statement("val:XYZ", RDF.TYPE, "uri:foo"))).isFalse();
+    }
 }

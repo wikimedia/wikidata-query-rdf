@@ -13,6 +13,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.openrdf.model.Statement;
+import org.wikidata.query.rdf.common.uri.OWL;
+import org.wikidata.query.rdf.common.uri.Ontology;
+import org.wikidata.query.rdf.common.uri.RDF;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -139,11 +142,14 @@ public class EntityDiffUnitTest {
     }
 
     @Test
-    public void testValuesAndRefs() {
+    public void testWikigroupAndValuesAndRefs() {
         List<Statement> rev1 = asList(
                 statement("uri:s1", "uri:p", "uri:v1"),
                 statement("uri:s2", "uri:p", "uri:v2"),
-                statement("v:sharedres1", "uri:p", "uri:shared_data1")
+                statement("v:sharedres1", "uri:p", "uri:shared_data1"),
+                statement("wikipedia:article", OWL.SAME_AS, "uri:s1"),
+                statement("wikipedia:article", RDF.TYPE, "wikipedia:main"),
+                statement("wikipedia:main", Ontology.WIKIGROUP, "wikimedia:wikipedia")
         );
         List<Statement> rev2 = asList(
                 statement("uri:s1", "uri:p", "uri:v1"),
@@ -152,11 +158,18 @@ public class EntityDiffUnitTest {
         );
         when(urisScheme.value()).thenReturn("v:");
         when(urisScheme.reference()).thenReturn("r:");
-        EntityDiff differ = EntityDiff.withValuesAndRefsAsSharedElements(urisScheme);
+        EntityDiff differ = EntityDiff.withWikibaseSharedElements(urisScheme);
         Patch patch = differ.diff(rev1, rev2);
         assertThat(patch.getAdded()).containsOnly(statement("uri:s3", "uri:p", "uri:v3"));
         assertThat(patch.getLinkedSharedElements()).containsOnly(statement("r:sharedres1", "uri:p", "uri:shared_data1"));
-        assertThat(patch.getRemoved()).containsOnly(statement("uri:s2", "uri:p", "uri:v2"));
-        assertThat(patch.getUnlinkedSharedElements()).containsOnly(statement("v:sharedres1", "uri:p", "uri:shared_data1"));
+        assertThat(patch.getRemoved()).containsOnly(
+                statement("uri:s2", "uri:p", "uri:v2"),
+                statement("wikipedia:article", OWL.SAME_AS, "uri:s1"),
+                statement("wikipedia:article", RDF.TYPE, "wikipedia:main")
+        );
+        assertThat(patch.getUnlinkedSharedElements()).containsOnly(
+                statement("v:sharedres1", "uri:p", "uri:shared_data1"),
+                statement("wikipedia:main", Ontology.WIKIGROUP, "wikimedia:wikipedia")
+        );
     }
 }

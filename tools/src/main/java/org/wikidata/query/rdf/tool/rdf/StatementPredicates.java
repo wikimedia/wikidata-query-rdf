@@ -70,4 +70,13 @@ public final class StatementPredicates {
         return typeStatement(statement) &&
                 (object.equals(Quantity.TYPE) || object.equals(Time.TYPE) || object.equals(Geo.TYPE));
     }
+
+    /**
+     * Statement declaring a wikiGroup (sitelink information)
+     * e.g.
+     * &lt;https://en.wikipedia.org/&gt; wikbase:wikiGroup "wikipedia"
+     */
+    public static boolean wikiGroupDefinition(Statement statement) {
+        return Ontology.WIKIGROUP.equals(statement.getPredicate().stringValue());
+    }
 }
