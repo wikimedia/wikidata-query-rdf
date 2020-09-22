@@ -41,7 +41,7 @@ import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParserRegistry;
 import org.openrdf.rio.RDFWriterRegistry;
 import org.wikidata.query.rdf.tool.change.events.EventsMeta;
-import org.wikidata.query.rdf.tool.rdf.Patch;
+import org.wikidata.query.rdf.tool.rdf.ConsumerPatch;
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
 import org.wikidata.query.rdf.updater.DiffEventData;
 import org.wikidata.query.rdf.updater.MutationEventData;
@@ -80,13 +80,19 @@ public class KafkaStreamConsumerUnitTest {
             "Q1-shared-3",
             "Q1-shared"
     )));
+    private final Set<String> deletedEntityIds = new HashSet<>();
+    private static final String REQ_ID = UUID.randomUUID().toString();
+    private static final Supplier<EventsMeta> EVENTS_META_SUPPLIER =
+            () -> new EventsMeta(Instant.EPOCH, UUID.randomUUID().toString(), TEST_DOMAIN, TESTED_STREAM, REQ_ID);
+
 
     private List<ConsumerRecord<String, MutationEventData>> recordsList() {
         List<MutationEventData> events = Stream.of(
                 genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris()),
                 genEvent("Q1", 2, uris("Q1-added-1", "Q1-added-2"), uris("Q1-removed-0"), uris(), uris()),
                 genEvent("Q1", 3, uris("Q1-added-3", "Q1-added-4", "Q1-added-5"), uris("Q1-added-1"), uris(), uris()),
-                genEvent("Q1", 4, uris("Q1-added-1"), uris("Q1-added-5"), uris("Q1-shared-2"), uris("Q1-shared", "Q1-shared-3"))
+                genEvent("Q1", 4, uris("Q1-added-1"), uris("Q1-added-5"), uris("Q1-shared-2"), uris("Q1-shared", "Q1-shared-3")),
+                genDeleteEvent("Q1", 5)
         ).flatMap(Collection::stream).collect(toList());
 
         return IntStream.range(0, events.size())
@@ -111,11 +117,12 @@ public class KafkaStreamConsumerUnitTest {
             if (b == null) {
                 break;
             }
-            Patch patch = b.getPatch();
+            ConsumerPatch patch = b.getPatch();
             storedData.addAll(patch.getAdded());
             storedData.removeAll(patch.getRemoved());
             storedData.addAll(patch.getLinkedSharedElements());
             unlinkedSharedElts.addAll(patch.getUnlinkedSharedElements());
+            deletedEntityIds.addAll(patch.getEntityIdsToDelete());
             streamConsumer.acknowledge();
         }
         streamConsumer.close();
@@ -126,6 +133,7 @@ public class KafkaStreamConsumerUnitTest {
         } else {
             assertThat(unlinkedSharedElts).containsExactlyInAnyOrderElementsOf(expectedUnlinkedEltsSingleOptimizedBatch);
         }
+        assertThat(deletedEntityIds).containsOnly("Q1");
     }
 
     @Test
@@ -147,7 +155,7 @@ public class KafkaStreamConsumerUnitTest {
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
         StreamConsumer.Batch b = streamConsumer.poll(100);
         assertThat(b).isNotNull();
-        Patch patch = b.getPatch();
+        ConsumerPatch patch = b.getPatch();
         assertThat(patch.getAdded().size()).isEqualTo(KafkaStreamConsumer.SOFT_BUFFER_CAP);
         streamConsumer.acknowledge();
         b = streamConsumer.poll(100);
@@ -174,7 +182,7 @@ public class KafkaStreamConsumerUnitTest {
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
         StreamConsumer.Batch b = streamConsumer.poll(100);
         assertThat(b).isNotNull();
-        Patch patch = b.getPatch();
+        ConsumerPatch patch = b.getPatch();
         assertThat(patch.getAdded().size()).isEqualTo(KafkaStreamConsumer.SOFT_BUFFER_CAP);
         streamConsumer.acknowledge();
         b = streamConsumer.poll(100);
@@ -250,13 +258,15 @@ public class KafkaStreamConsumerUnitTest {
 
     private List<? extends MutationEventData> genEvent(String entity, int rev, String[] added, String[] deleted,
                                                        String[] linkedSharedElt, String[] unlinkedSharedElts) {
-        String reqId = UUID.randomUUID().toString();
-        Supplier<EventsMeta> supplier = () -> new EventsMeta(Instant.EPOCH, UUID.randomUUID().toString(), TEST_DOMAIN, TESTED_STREAM, reqId);
         if (deleted.length == 0) {
-            return generator.fullImportEvent(supplier, entity, rev, Instant.EPOCH, statements(added), statements(linkedSharedElt));
+            return generator.fullImportEvent(EVENTS_META_SUPPLIER, entity, rev, Instant.EPOCH, statements(added), statements(linkedSharedElt));
         } else {
-            return generator.diffEvent(supplier, entity, rev, Instant.EPOCH, statements(added), statements(deleted),
+            return generator.diffEvent(EVENTS_META_SUPPLIER, entity, rev, Instant.EPOCH, statements(added), statements(deleted),
                     statements(linkedSharedElt), statements(unlinkedSharedElts));
         }
+    }
+
+    private List<? extends MutationEventData> genDeleteEvent(String entity, int rev) {
+        return generator.deleteEvent(EVENTS_META_SUPPLIER, entity, rev, Instant.EPOCH);
     }
 }

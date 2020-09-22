@@ -49,6 +49,7 @@ public class UpdatePatchAccumulatorUnitTest {
                 singletonList(stmt("uri:L1")),
                 emptyList()
         );
+        accum.storeEntityIdsToDelete("entity123");
 
         assertThat(accum.getTotalAccumulated()).isEqualTo(6);
         assertThat(accum.size()).isEqualTo(6);
@@ -56,6 +57,7 @@ public class UpdatePatchAccumulatorUnitTest {
         assertThat(accum.getAllRemoved()).containsOnly(stmt("uri:deleted"));
         assertThat(accum.getAllLinkedSharedElts()).containsOnly(stmt("uri:linked"), stmt("uri:L1"));
         assertThat(accum.getAllUnlinkedSharedElts()).containsOnly(stmt("uri:unlinked"));
+        assertThat(accum.getAllEntitiesToDelete()).containsOnly("entity123");
 
         accum.accumulate(
                 singletonList(stmt("uri:A2")),

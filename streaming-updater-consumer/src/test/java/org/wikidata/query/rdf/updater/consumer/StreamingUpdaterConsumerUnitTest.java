@@ -9,6 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.wikidata.query.rdf.test.StatementHelper.statements;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -17,7 +19,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.wikidata.query.rdf.tool.rdf.Patch;
+import org.wikidata.query.rdf.tool.rdf.ConsumerPatch;
 import org.wikidata.query.rdf.tool.rdf.RDFPatchResult;
 import org.wikidata.query.rdf.tool.rdf.RdfRepositoryUpdater;
 
@@ -32,8 +34,9 @@ public class StreamingUpdaterConsumerUnitTest {
 
     @Test
     public void test() throws InterruptedException {
-        Patch patch = new Patch(statements(), statements(), statements(), statements());
-        RDFPatchResult rdfPatchResult = new RDFPatchResult(2, 1, 2, 1);
+        List<String> entityIdsToDelete = new ArrayList<String>();
+        ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(), entityIdsToDelete);
+        RDFPatchResult rdfPatchResult = new RDFPatchResult(2, 1, 2, 1, 1);
         LongAdder patchApplied = new LongAdder();
         CountDownLatch countdown = new CountDownLatch(5);
         when(consumer.poll(anyLong())).thenAnswer((Answer<StreamConsumer.Batch>) invocationOnMock -> new StreamConsumer.Batch(patch));
@@ -60,6 +63,7 @@ public class StreamingUpdaterConsumerUnitTest {
         verify(rdfRepositoryUpdater, times(1)).close();
 
         assertThat(registry.counter("mutations").getCount()).isEqualTo(patchApplied.intValue());
+        assertThat(registry.counter("delete-mutations").getCount()).isEqualTo(patchApplied.intValue());
         assertThat(registry.counter("divergences").getCount()).isEqualTo(patchApplied.intValue());
         assertThat(registry.counter("shared-element-mutations").getCount()).isEqualTo(patchApplied.intValue());
         assertThat(registry.counter("shared-element-redundant-mutations").getCount()).isEqualTo(patchApplied.intValue());

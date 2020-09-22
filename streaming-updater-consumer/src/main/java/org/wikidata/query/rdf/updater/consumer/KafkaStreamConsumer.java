@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import javax.annotation.Nullable;
@@ -113,12 +114,12 @@ public class KafkaStreamConsumer implements StreamConsumer {
         }
         PatchAccumulator accumulator = new PatchAccumulator(rdfDeser);
         ConsumerRecord<String, MutationEventData> lastRecord = null;
-        long remaining = timeout;
-        long st = System.currentTimeMillis();
+        long remaining = TimeUnit.MILLISECONDS.toNanos(timeout);
+        long st = System.nanoTime();
         while (remaining > 0 && accumulator.size() < preferredBatchLength) {
             if (buffer.size() < SOFT_BUFFER_CAP) {
                 ConsumerRecords<String, MutationEventData> records = consumer.poll(remaining);
-                remaining -= System.currentTimeMillis() - st;
+                remaining -= System.nanoTime() - st;
                 records.forEach(buffer::add);
             }
             // Accept partial messages if our buffer is already full
@@ -127,16 +128,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
                 continue;
             }
             lastRecord = entityChunks.get(entityChunks.size() - 1);
-            for (ConsumerRecord<String, MutationEventData> record : entityChunks) {
-                switch (record.value().getOperation()) {
-                    case MutationEventData.DIFF_OPERATION:
-                    case MutationEventData.IMPORT_OPERATION:
-                        accumulator.accumulate(record.value());
-                        break;
-                    default:
-                        throw new UnsupportedOperationException(record.value().getOperation() + " not supported yet.");
-                }
-            }
+            accumulateRecords(accumulator, entityChunks);
             buffer.removeAll(entityChunks);
         }
         metrics.triplesAccum(accumulator.getTotalAccumulated());
@@ -152,18 +144,27 @@ public class KafkaStreamConsumer implements StreamConsumer {
         }
     }
 
-    private List<ConsumerRecord<String, MutationEventData>> reassembleMessage(Iterable<ConsumerRecord<String, MutationEventData>> records,
-                                                                              boolean acceptPartial) {
-        List<ConsumerRecord<String, MutationEventData>> entityChunks = new ArrayList<>();
-        for (ConsumerRecord<String, MutationEventData> record : records) {
+    private void accumulateRecords(PatchAccumulator accumulator, Iterable<ConsumerRecord<String, MutationEventData>> entityChunks) {
+        for (ConsumerRecord<String, MutationEventData> record : entityChunks) {
             switch (record.value().getOperation()) {
                 case MutationEventData.DIFF_OPERATION:
                 case MutationEventData.IMPORT_OPERATION:
-                    entityChunks.add(record);
+                    accumulator.accumulate(record.value());
+                    break;
+                case MutationEventData.DELETE_OPERATION:
+                    accumulator.storeEntityIdsToDelete(record.value().getEntity());
                     break;
                 default:
                     throw new UnsupportedOperationException(record.value().getOperation() + " not supported yet.");
             }
+        }
+    }
+
+    private List<ConsumerRecord<String, MutationEventData>> reassembleMessage(Iterable<ConsumerRecord<String, MutationEventData>> records,
+                                                                              boolean acceptPartial) {
+        List<ConsumerRecord<String, MutationEventData>> entityChunks = new ArrayList<>();
+        for (ConsumerRecord<String, MutationEventData> record : records) {
+            entityChunks.add(record);
             if (record.value().getSequence() + 1 == record.value().getSequenceLength()) {
                 return entityChunks;
             }

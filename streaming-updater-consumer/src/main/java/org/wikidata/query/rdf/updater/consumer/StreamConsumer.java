@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.updater.consumer;
 
-import org.wikidata.query.rdf.tool.rdf.Patch;
+import org.wikidata.query.rdf.tool.rdf.ConsumerPatch;
 
 import lombok.Value;
 
@@ -14,6 +14,6 @@ public interface StreamConsumer extends AutoCloseable {
 
     @Value
     class Batch {
-        Patch patch;
+        ConsumerPatch patch;
     }
 }

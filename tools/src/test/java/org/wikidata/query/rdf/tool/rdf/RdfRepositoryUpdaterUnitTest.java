@@ -7,11 +7,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.wikidata.query.rdf.test.StatementHelper.statements;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -19,11 +24,14 @@ public class RdfRepositoryUpdaterUnitTest {
     @Mock
     RdfClient client;
 
+    private UrisScheme urisScheme = UrisSchemeFactory.forHost("acme.test");
+    List<String> entityIdsToDelete = new ArrayList<>();
+
     @Test
     public void testInsertOnly() {
-        Patch patch = new Patch(statements("uri:a", "uri:b"), statements(), statements(), statements());
+        ConsumerPatch patch = new ConsumerPatch(statements("uri:a", "uri:b"), statements(), statements(), statements(), entityIdsToDelete);
         when(client.update(anyString())).thenReturn(2);
-        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client);
+        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, urisScheme);
         RDFPatchResult result = rdfRepositoryUpdater.applyPatch(patch);
         verify(client).update("INSERT DATA {\n<uri:a> <uri:a> <uri:a> .\n<uri:b> <uri:b> <uri:b> .\n};\n");
         assertThat(result.getActualMutations()).isEqualTo(2);
@@ -34,9 +42,9 @@ public class RdfRepositoryUpdaterUnitTest {
 
     @Test
     public void testDeleteOnly() {
-        Patch patch = new Patch(statements(), statements(), statements("uri:a", "uri:b"), statements());
+        ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements("uri:a", "uri:b"), statements(), entityIdsToDelete);
         when(client.update(anyString())).thenReturn(2);
-        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client);
+        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, urisScheme);
         RDFPatchResult result = rdfRepositoryUpdater.applyPatch(patch);
         verify(client).update("DELETE DATA {\n<uri:a> <uri:a> <uri:a> .\n<uri:b> <uri:b> <uri:b> .\n};\n");
         assertThat(result.getActualMutations()).isEqualTo(2);
@@ -47,9 +55,9 @@ public class RdfRepositoryUpdaterUnitTest {
 
     @Test
     public void testInsertDeleteOnly() {
-        Patch patch = new Patch(statements("uri:a", "uri:b"), statements(), statements("uri:c", "uri:d"), statements());
+        ConsumerPatch patch = new ConsumerPatch(statements("uri:a", "uri:b"), statements(), statements("uri:c", "uri:d"), statements(), entityIdsToDelete);
         when(client.update(anyString())).thenReturn(3);
-        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client);
+        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, urisScheme);
         RDFPatchResult result = rdfRepositoryUpdater.applyPatch(patch);
         verify(client).update(
                 "DELETE DATA {\n" +
@@ -68,16 +76,16 @@ public class RdfRepositoryUpdaterUnitTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testFailsOnEmptyPatch() {
-        Patch patch = new Patch(statements(), statements(), statements(), statements());
-        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client);
+        ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(), entityIdsToDelete);
+        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, urisScheme);
         rdfRepositoryUpdater.applyPatch(patch);
     }
 
     @Test
     public void testInsertSharedElts() {
-        Patch patch = new Patch(statements("uri:a", "uri:b"), statements("uri:s1", "uri:s2"), statements(), statements());
+        ConsumerPatch patch = new ConsumerPatch(statements("uri:a", "uri:b"), statements("uri:s1", "uri:s2"), statements(), statements(), entityIdsToDelete);
         when(client.update(anyString())).thenReturn(2, 1);
-        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client);
+        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, urisScheme);
         RDFPatchResult result = rdfRepositoryUpdater.applyPatch(patch);
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         verify(client, times(2)).update(captor.capture());
@@ -91,4 +99,49 @@ public class RdfRepositoryUpdaterUnitTest {
         assertThat(result.getActualSharedElementsMutations()).isEqualTo(1);
         assertThat(result.getPossibleSharedElementMutations()).isEqualTo(2);
     }
+
+    @Test
+    public void testDeleteEntities() {
+        entityIdsToDelete.add("entity123");
+        ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(), entityIdsToDelete);
+        when(client.update(anyString())).thenReturn(2);
+        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, urisScheme);
+        RDFPatchResult result = rdfRepositoryUpdater.applyPatch(patch);
+        verify(client).update(deleteQueryString);
+        assertThat(result.getDeleteMutations()).isEqualTo(2);
+    }
+
+    private final String deleteQueryString = "# clear all statements (except shared) about an entity\n" +
+            "DELETE {\n" +
+            "  ?entityStatements ?statementPredicate ?statementObject .\n" +
+            "}\n" +
+            "WHERE {\n" +
+            "  VALUES ?entity {\n" +
+            "     <http://acme.test/entity/entity123>\n" +
+            "  }\n" +
+            "  ?entity ?entityToStatementPredicate ?entityStatements .\n" +
+            "  FILTER( STRSTARTS(STR(?entityStatements), \"http://acme.test/entity/statement/\") ) .\n" +
+            "  ?entityStatements ?statementPredicate ?statementObject .\n" +
+            "};\n" +
+            "\n" +
+            "DELETE {\n" +
+            "    ?siteLink ?sitelinkPredicate ?sitelinkObject\n" +
+            "}\n" +
+            "WHERE {\n" +
+            "  VALUES ?entity {\n" +
+            "     <http://acme.test/entity/entity123>\n" +
+            "  }\n" +
+            "  ?siteLink <http://schema.org/about> ?entity .\n" +
+            "  ?siteLink ?sitelinkPredicate ?sitelinkObject .\n" +
+            "};\n" +
+            "\n" +
+            "DELETE {\n" +
+            "  ?entity ?entityPredicate ?entityObject .\n" +
+            "}\n" +
+            "WHERE {\n" +
+            "  VALUES ?entity {\n" +
+            "      <http://acme.test/entity/entity123>\n" +
+            "  }\n" +
+            "  ?entity ?entityPredicate ?entityObject .\n" +
+            "};";
 }

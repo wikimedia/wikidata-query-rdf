@@ -1,0 +1,33 @@
+# clear all statements (except shared) about an entity
+DELETE {
+  ?entityStatements ?statementPredicate ?statementObject .
+}
+WHERE {
+  VALUES ?entity {
+     %entityList%
+  }
+  ?entity ?entityToStatementPredicate ?entityStatements .
+  FILTER( STRSTARTS(STR(?entityStatements), "%uris.statement%") ) .
+  ?entityStatements ?statementPredicate ?statementObject .
+};
+
+DELETE {
+    ?siteLink ?sitelinkPredicate ?sitelinkObject
+}
+WHERE {
+  VALUES ?entity {
+     %entityList%
+  }
+  ?siteLink %schema:about% ?entity .
+  ?siteLink ?sitelinkPredicate ?sitelinkObject .
+};
+
+DELETE {
+  ?entity ?entityPredicate ?entityObject .
+}
+WHERE {
+  VALUES ?entity {
+      %entityList%
+  }
+  ?entity ?entityPredicate ?entityObject .
+};

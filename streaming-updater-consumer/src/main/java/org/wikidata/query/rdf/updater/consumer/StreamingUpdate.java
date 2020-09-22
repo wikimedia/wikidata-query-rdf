@@ -17,6 +17,8 @@ import org.eclipse.jetty.client.api.ContentResponse;
 import org.openrdf.rio.RDFParserRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.tool.options.OptionsUtils;
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
 import org.wikidata.query.rdf.tool.rdf.RdfRepositoryUpdater;
@@ -79,7 +81,8 @@ public final class StreamingUpdate {
         Retryer<ContentResponse> retryer = buildHttpClientRetryer();
         Duration rdfClientTimeout = RdfRepositoryUpdater.getRdfClientTimeout();
         RdfClient rdfClient = new RdfClient(httpClient, StreamingUpdateOptions.sparqlUri(options), retryer, rdfClientTimeout);
-        return new StreamingUpdaterConsumer(consumer, new RdfRepositoryUpdater(rdfClient), metrics);
+        UrisScheme uris = UrisSchemeFactory.getURISystem();
+        return new StreamingUpdaterConsumer(consumer, new RdfRepositoryUpdater(rdfClient, uris), metrics);
     }
 
     static String RESET_OFFSETS_TO_EARLIEST = "earliest";

@@ -4,7 +4,10 @@ import static java.lang.Integer.parseInt;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
+import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 
@@ -14,20 +17,24 @@ public class RdfRepositoryUpdater implements AutoCloseable {
     private static final String TIMEOUT_PROPERTY = RdfRepositoryUpdater.class + ".timeout";
 
     private final RdfClient client;
+    private final UrisScheme uris;
 
     private static final String INSERT_DATA = loadBody("insertData");
     private static final String DELETE_DATA = loadBody("deleteData");
+    private static final String DELETE_ENTITY = loadBody("deleteEntity");
 
-    public RdfRepositoryUpdater(RdfClient client) {
+    public RdfRepositoryUpdater(RdfClient client, UrisScheme uris) {
         this.client = client;
+        this.uris = uris;
     }
 
     private static String loadBody(String name) {
         return Utils.loadBody(name, RdfRepositoryUpdater.class);
     }
 
-    public RDFPatchResult applyPatch(Patch patch) {
+    public RDFPatchResult applyPatch(ConsumerPatch patch) {
         int expectedMutations = 0;
+        int actualMutations = 0;
         StringBuilder sb = new StringBuilder();
         if (!patch.getRemoved().isEmpty()) {
             UpdateBuilder builder = new UpdateBuilder(DELETE_DATA);
@@ -41,10 +48,12 @@ public class RdfRepositoryUpdater implements AutoCloseable {
             expectedMutations += patch.getAdded().size();
             sb.append(builder);
         }
-        if (expectedMutations == 0) {
+        if (expectedMutations == 0 && patch.getEntityIdsToDelete().isEmpty()) {
             throw new IllegalArgumentException("Empty patch given");
         }
-        int actualMutations = client.update(sb.toString());
+        if (expectedMutations > 0) {
+            actualMutations = client.update(sb.toString());
+        }
         int expectedSharedEltMutations = 0;
         int actualSharedEltMutations = 0;
         if (!patch.getLinkedSharedElements().isEmpty()) {
@@ -54,7 +63,20 @@ public class RdfRepositoryUpdater implements AutoCloseable {
             actualSharedEltMutations = client.update(builder.toString());
         }
 
-        return new RDFPatchResult(expectedMutations, actualMutations, expectedSharedEltMutations, actualSharedEltMutations);
+        int deleteMutations = 0;
+        if (patch.getEntityIdsToDelete().size() > 0) {
+           deleteMutations = deleteEntities(patch.getEntityIdsToDelete());
+        }
+
+        return new RDFPatchResult(expectedMutations, actualMutations, expectedSharedEltMutations, actualSharedEltMutations, deleteMutations);
+    }
+
+    private int deleteEntities(List<String> entityIds) {
+        UpdateBuilder builder = new UpdateBuilder(DELETE_ENTITY);
+        builder.bindEntityIds("entityList", entityIds, uris);
+        builder.bind("uris.statement", uris.statement());
+        builder.bindUri("schema:about", SchemaDotOrg.ABOUT);
+        return client.update(builder.toString());
     }
 
     public static Duration getRdfClientTimeout() {

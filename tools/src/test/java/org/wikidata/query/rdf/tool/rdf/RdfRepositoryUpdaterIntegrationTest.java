@@ -9,7 +9,12 @@ import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyPort;
 import static org.wikidata.query.rdf.tool.RdfRepositoryForTesting.url;
 import static org.wikidata.query.rdf.tool.Update.getRdfClientTimeout;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
+import org.wikidata.query.rdf.common.uri.UrisScheme;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 
 public class RdfRepositoryUpdaterIntegrationTest {
@@ -19,8 +24,10 @@ public class RdfRepositoryUpdaterIntegrationTest {
         getRdfClientTimeout()
     );
 
+    private final UrisScheme uris = UrisSchemeFactory.getURISystem();
+
     @Test
-    public void test() {
+    public void testSimplePatch() {
         // prepare the test dataset
         client.update("DELETE DATA {" +
                 "<uri:b> <uri:b> <uri:b> ." +
@@ -29,9 +36,10 @@ public class RdfRepositoryUpdaterIntegrationTest {
                 "INSERT DATA { <uri:a> <uri:a> <uri:a> .\n" +
                 "<uri:shared-0> <uri:shared-0> <uri:shared-0> . };\n");
 
-        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client);
-        Patch patch = new Patch(statements("uri:b"), statements("uri:shared-0", "uri:shared-1"),
-                statements("uri:a", "uri:x"), statements("uri:ignored"));
+        List<String> entityIdsToDelete = new ArrayList<String>();
+        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, uris);
+        ConsumerPatch patch = new ConsumerPatch(statements("uri:b"), statements("uri:shared-0", "uri:shared-1"),
+                statements("uri:a", "uri:x"), statements("uri:ignored"), entityIdsToDelete);
 
         RDFPatchResult rdfPatchResult = rdfRepositoryUpdater.applyPatch(patch);
         assertThat(rdfPatchResult.getActualMutations()).isEqualTo(2);

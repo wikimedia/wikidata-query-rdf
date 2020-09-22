@@ -11,7 +11,7 @@ import java.util.Set;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.openrdf.model.Statement;
-import org.wikidata.query.rdf.tool.rdf.Patch;
+import org.wikidata.query.rdf.tool.rdf.ConsumerPatch;
 import org.wikidata.query.rdf.updater.DiffEventData;
 import org.wikidata.query.rdf.updater.MutationEventData;
 import org.wikidata.query.rdf.updater.RDFChunkDeserializer;
@@ -27,6 +27,7 @@ public class PatchAccumulator {
     private final Set<Statement> allRemoved = new HashSet<>();
     private final Set<Statement> allLinkedSharedElts = new HashSet<>();
     private final Set<Statement> allUnlinkedSharedElts = new HashSet<>();
+    private final Set<String> allEntitiesToDelete = new HashSet<>();
     private int totalAccumulated;
     private final RDFChunkDeserializer deser;
 
@@ -62,11 +63,12 @@ public class PatchAccumulator {
         set2.removeAll(intersection);
     }
 
-    public Patch asPatch() {
-        return new Patch(unmodifiableList(new ArrayList<>(allAdded)),
+    public ConsumerPatch asPatch() {
+        return new ConsumerPatch(unmodifiableList(new ArrayList<>(allAdded)),
                 unmodifiableList(new ArrayList<>(allLinkedSharedElts)),
                 unmodifiableList(new ArrayList<>(allRemoved)),
-                unmodifiableList(new ArrayList<>(allUnlinkedSharedElts)));
+                unmodifiableList(new ArrayList<>(allUnlinkedSharedElts)),
+                unmodifiableList(new ArrayList<>(allEntitiesToDelete)));
     }
 
     public void accumulate(MutationEventData value) {
@@ -77,5 +79,9 @@ public class PatchAccumulator {
                     val.getRdfLinkedSharedData() != null ? deser.deser(val.getRdfLinkedSharedData(), "unused") : emptyList(),
                     val.getRdfUnlinkedSharedData() != null ? deser.deser(val.getRdfUnlinkedSharedData(), "unused") : emptyList());
         }
+    }
+
+    public void storeEntityIdsToDelete(String entity) {
+        allEntitiesToDelete.add(entity);
     }
 }
