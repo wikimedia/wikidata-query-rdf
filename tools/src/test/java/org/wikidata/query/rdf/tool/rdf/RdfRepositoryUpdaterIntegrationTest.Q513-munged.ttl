@@ -1,0 +1,2313 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix data: <https://www.wikidata.org/wiki/Special:EntityData/> .
+@prefix s: <http://www.wikidata.org/entity/statement/> .
+@prefix ref: <http://www.wikidata.org/reference/> .
+@prefix v: <http://www.wikidata.org/value/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix wdtn: <http://www.wikidata.org/prop/direct-normalized/> .
+@prefix p: <http://www.wikidata.org/prop/> .
+@prefix ps: <http://www.wikidata.org/prop/statement/> .
+@prefix psv: <http://www.wikidata.org/prop/statement/value/> .
+@prefix psn: <http://www.wikidata.org/prop/statement/value-normalized/> .
+@prefix pq: <http://www.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://www.wikidata.org/prop/qualifier/value/> .
+@prefix pqn: <http://www.wikidata.org/prop/qualifier/value-normalized/> .
+@prefix pr: <http://www.wikidata.org/prop/reference/> .
+@prefix prv: <http://www.wikidata.org/prop/reference/value/> .
+@prefix prn: <http://www.wikidata.org/prop/reference/value-normalized/> .
+@prefix wdno: <http://www.wikidata.org/prop/novalue/> .
+
+<https://en.wikivoyage.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "en" ;
+	schema:isPartOf <https://en.wikivoyage.org/> ;
+	schema:name "Mount Everest"@en .
+
+<https://en.wikivoyage.org/> wikibase:wikiGroup "wikivoyage" .
+
+<https://en.wikiquote.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "en" ;
+	schema:isPartOf <https://en.wikiquote.org/> ;
+	schema:name "Mount Everest"@en .
+
+<https://en.wikiquote.org/> wikibase:wikiGroup "wikiquote" .
+
+<https://sv.wikiquote.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sv" ;
+	schema:isPartOf <https://sv.wikiquote.org/> ;
+	schema:name "Mount Everest"@sv .
+
+<https://sv.wikiquote.org/> wikibase:wikiGroup "wikiquote" .
+
+<https://fr.wikiquote.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "fr" ;
+	schema:isPartOf <https://fr.wikiquote.org/> ;
+	schema:name "Everest"@fr .
+
+<https://fr.wikiquote.org/> wikibase:wikiGroup "wikiquote" .
+
+<https://gu.wikiquote.org/wiki/%E0%AA%AE%E0%AA%BE%E0%AA%89%E0%AA%A8%E0%AB%8D%E0%AA%9F_%E0%AA%8F%E0%AA%B5%E0%AA%B0%E0%AB%87%E0%AA%B8%E0%AB%8D%E0%AA%9F> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "gu" ;
+	schema:isPartOf <https://gu.wikiquote.org/> ;
+	schema:name "માઉન્ટ એવરેસ્ટ"@gu .
+
+<https://gu.wikiquote.org/> wikibase:wikiGroup "wikiquote" .
+
+<https://pl.wikiquote.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "pl" ;
+	schema:isPartOf <https://pl.wikiquote.org/> ;
+	schema:name "Mount Everest"@pl .
+
+<https://pl.wikiquote.org/> wikibase:wikiGroup "wikiquote" .
+
+<https://it.wikivoyage.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "it" ;
+	schema:isPartOf <https://it.wikivoyage.org/> ;
+	schema:name "Everest"@it .
+
+<https://it.wikivoyage.org/> wikibase:wikiGroup "wikivoyage" .
+
+<https://he.wikivoyage.org/wiki/%D7%90%D7%95%D7%95%D7%A8%D7%A1%D7%98_(%D7%A4%D7%99%D7%A8%D7%95%D7%A9%D7%95%D7%A0%D7%99%D7%9D)> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "he" ;
+	schema:isPartOf <https://he.wikivoyage.org/> ;
+	schema:name "אוורסט (פירושונים)"@he .
+
+<https://he.wikivoyage.org/> wikibase:wikiGroup "wikivoyage" .
+
+<https://zh.wikivoyage.org/wiki/%E7%8F%A0%E7%A9%86%E6%9C%97%E7%91%AA%E5%B3%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "zh" ;
+	schema:isPartOf <https://zh.wikivoyage.org/> ;
+	schema:name "珠穆朗瑪峰"@zh .
+
+<https://zh.wikivoyage.org/> wikibase:wikiGroup "wikivoyage" .
+
+<https://en.wikibooks.org/wiki/Pinyin/Mount_Qomolangma> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "en" ;
+	schema:isPartOf <https://en.wikibooks.org/> ;
+	schema:name "Pinyin/Mount Qomolangma"@en .
+
+<https://en.wikibooks.org/> wikibase:wikiGroup "wikibooks" .
+
+<https://en.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "en" ;
+	schema:isPartOf <https://en.wikipedia.org/> ;
+	schema:name "Mount Everest"@en .
+
+<https://en.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://de.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "de" ;
+	schema:isPartOf <https://de.wikipedia.org/> ;
+	schema:name "Mount Everest"@de ;
+	wikibase:badge wd:Q17437796 .
+
+<https://de.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://fr.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "fr" ;
+	schema:isPartOf <https://fr.wikipedia.org/> ;
+	schema:name "Everest"@fr ;
+	wikibase:badge wd:Q17437798 .
+
+<https://fr.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://es.wikipedia.org/wiki/Monte_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "es" ;
+	schema:isPartOf <https://es.wikipedia.org/> ;
+	schema:name "Monte Everest"@es .
+
+<https://es.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ru.wikipedia.org/wiki/%D0%94%D0%B6%D0%BE%D0%BC%D0%BE%D0%BB%D1%83%D0%BD%D0%B3%D0%BC%D0%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ru" ;
+	schema:isPartOf <https://ru.wikipedia.org/> ;
+	schema:name "Джомолунгма"@ru .
+
+<https://ru.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://it.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "it" ;
+	schema:isPartOf <https://it.wikipedia.org/> ;
+	schema:name "Everest"@it .
+
+<https://it.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ja.wikipedia.org/wiki/%E3%82%A8%E3%83%99%E3%83%AC%E3%82%B9%E3%83%88> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ja" ;
+	schema:isPartOf <https://ja.wikipedia.org/> ;
+	schema:name "エベレスト"@ja .
+
+<https://ja.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://nl.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "nl" ;
+	schema:isPartOf <https://nl.wikipedia.org/> ;
+	schema:name "Mount Everest"@nl .
+
+<https://nl.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://pl.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "pl" ;
+	schema:isPartOf <https://pl.wikipedia.org/> ;
+	schema:name "Mount Everest"@pl .
+
+<https://pl.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://pt.wikipedia.org/wiki/Monte_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "pt" ;
+	schema:isPartOf <https://pt.wikipedia.org/> ;
+	schema:name "Monte Everest"@pt .
+
+<https://pt.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://zh.wikipedia.org/wiki/%E7%8F%A0%E7%A9%86%E6%9C%97%E7%91%AA%E5%B3%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "zh" ;
+	schema:isPartOf <https://zh.wikipedia.org/> ;
+	schema:name "珠穆朗瑪峰"@zh .
+
+<https://zh.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sv.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sv" ;
+	schema:isPartOf <https://sv.wikipedia.org/> ;
+	schema:name "Mount Everest"@sv ;
+	wikibase:badge wd:Q17559452 .
+
+<https://sv.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://fa.wikipedia.org/wiki/%DA%A9%D9%88%D9%87_%D8%A7%D9%88%D8%B1%D8%B3%D8%AA> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "fa" ;
+	schema:isPartOf <https://fa.wikipedia.org/> ;
+	schema:name "کوه اورست"@fa .
+
+<https://fa.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://he.wikipedia.org/wiki/%D7%90%D7%95%D7%95%D7%A8%D7%A1%D7%98> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "he" ;
+	schema:isPartOf <https://he.wikipedia.org/> ;
+	schema:name "אוורסט"@he .
+
+<https://he.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://tr.wikipedia.org/wiki/Everest_Da%C4%9F%C4%B1> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "tr" ;
+	schema:isPartOf <https://tr.wikipedia.org/> ;
+	schema:name "Everest Dağı"@tr .
+
+<https://tr.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://hu.wikipedia.org/wiki/Csomolungma> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "hu" ;
+	schema:isPartOf <https://hu.wikipedia.org/> ;
+	schema:name "Csomolungma"@hu .
+
+<https://hu.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://fi.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "fi" ;
+	schema:isPartOf <https://fi.wikipedia.org/> ;
+	schema:name "Mount Everest"@fi .
+
+<https://fi.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ar.wikipedia.org/wiki/%D8%AC%D8%A8%D9%84_%D8%A5%D9%81%D8%B1%D8%B3%D8%AA> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ar" ;
+	schema:isPartOf <https://ar.wikipedia.org/> ;
+	schema:name "جبل إفرست"@ar .
+
+<https://ar.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://vi.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "vi" ;
+	schema:isPartOf <https://vi.wikipedia.org/> ;
+	schema:name "Everest"@vi .
+
+<https://vi.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://no.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "nb" ;
+	schema:isPartOf <https://no.wikipedia.org/> ;
+	schema:name "Mount Everest"@nb .
+
+<https://no.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ca.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ca" ;
+	schema:isPartOf <https://ca.wikipedia.org/> ;
+	schema:name "Everest"@ca .
+
+<https://ca.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://cs.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "cs" ;
+	schema:isPartOf <https://cs.wikipedia.org/> ;
+	schema:name "Mount Everest"@cs .
+
+<https://cs.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sr.wikipedia.org/wiki/%D0%9C%D0%BE%D0%BD%D1%82_%D0%95%D0%B2%D0%B5%D1%80%D0%B5%D1%81%D1%82> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sr" ;
+	schema:isPartOf <https://sr.wikipedia.org/> ;
+	schema:name "Монт Еверест"@sr .
+
+<https://sr.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ro.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ro" ;
+	schema:isPartOf <https://ro.wikipedia.org/> ;
+	schema:name "Everest"@ro .
+
+<https://ro.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://id.wikipedia.org/wiki/Gunung_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "id" ;
+	schema:isPartOf <https://id.wikipedia.org/> ;
+	schema:name "Gunung Everest"@id .
+
+<https://id.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://da.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "da" ;
+	schema:isPartOf <https://da.wikipedia.org/> ;
+	schema:name "Mount Everest"@da .
+
+<https://da.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://simple.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "en-simple" ;
+	schema:isPartOf <https://simple.wikipedia.org/> ;
+	schema:name "Mount Everest"@en-simple .
+
+<https://simple.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://bg.wikipedia.org/wiki/%D0%95%D0%B2%D0%B5%D1%80%D0%B5%D1%81%D1%82> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "bg" ;
+	schema:isPartOf <https://bg.wikipedia.org/> ;
+	schema:name "Еверест"@bg .
+
+<https://bg.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ace.wikipedia.org/wiki/Gunong_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ace" ;
+	schema:isPartOf <https://ace.wikipedia.org/> ;
+	schema:name "Gunong Everest"@ace .
+
+<https://ace.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://af.wikipedia.org/wiki/Berg_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "af" ;
+	schema:isPartOf <https://af.wikipedia.org/> ;
+	schema:name "Berg Everest"@af .
+
+<https://af.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://als.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "gsw" ;
+	schema:isPartOf <https://als.wikipedia.org/> ;
+	schema:name "Mount Everest"@gsw .
+
+<https://als.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://am.wikipedia.org/wiki/%E1%8A%A4%E1%89%A8%E1%88%A8%E1%88%B5%E1%89%B5_%E1%89%B0%E1%88%AB%E1%88%AB> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "am" ;
+	schema:isPartOf <https://am.wikipedia.org/> ;
+	schema:name "ኤቨረስት ተራራ"@am .
+
+<https://am.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://an.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "an" ;
+	schema:isPartOf <https://an.wikipedia.org/> ;
+	schema:name "Everest"@an .
+
+<https://an.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ang.wikipedia.org/wiki/Eferest_Beorg> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ang" ;
+	schema:isPartOf <https://ang.wikipedia.org/> ;
+	schema:name "Eferest Beorg"@ang .
+
+<https://ang.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://arz.wikipedia.org/wiki/%D8%A7%D9%8A%D9%81%D9%8A%D8%B1%D9%8A%D8%B3%D8%AA> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "arz" ;
+	schema:isPartOf <https://arz.wikipedia.org/> ;
+	schema:name "ايفيريست"@arz .
+
+<https://arz.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://as.wikipedia.org/wiki/%E0%A6%AE%E0%A6%BE%E0%A6%89%E0%A6%A3%E0%A7%8D%E0%A6%9F_%E0%A6%8F%E0%A6%AD%E0%A6%BE%E0%A7%B0%E0%A7%87%E0%A6%B7%E0%A7%8D%E0%A6%9F> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "as" ;
+	schema:isPartOf <https://as.wikipedia.org/> ;
+	schema:name "মাউণ্ট এভাৰেষ্ট"@as .
+
+<https://as.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ast.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ast" ;
+	schema:isPartOf <https://ast.wikipedia.org/> ;
+	schema:name "Everest"@ast .
+
+<https://ast.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ay.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ay" ;
+	schema:isPartOf <https://ay.wikipedia.org/> ;
+	schema:name "Everest"@ay .
+
+<https://ay.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://azb.wikipedia.org/wiki/%D8%A7%D9%88%D8%B1%D8%B3%D8%AA_%D8%AF%D8%A7%D8%BA%DB%8C> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "azb" ;
+	schema:isPartOf <https://azb.wikipedia.org/> ;
+	schema:name "اورست داغی"@azb .
+
+<https://azb.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://bar.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "bar" ;
+	schema:isPartOf <https://bar.wikipedia.org/> ;
+	schema:name "Mount Everest"@bar .
+
+<https://bar.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://bat-smg.wikipedia.org/wiki/Everests> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sgs" ;
+	schema:isPartOf <https://bat-smg.wikipedia.org/> ;
+	schema:name "Everests"@sgs .
+
+<https://bat-smg.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://bcl.wikipedia.org/wiki/Bukid_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "bcl" ;
+	schema:isPartOf <https://bcl.wikipedia.org/> ;
+	schema:name "Bukid Everest"@bcl .
+
+<https://bcl.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://be-tarask.wikipedia.org/wiki/%D0%AD%D0%B2%D1%8D%D1%80%D1%8D%D1%81%D1%82> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "be-tarask" ;
+	schema:isPartOf <https://be-tarask.wikipedia.org/> ;
+	schema:name "Эвэрэст"@be-tarask .
+
+<https://be-tarask.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://bjn.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "bjn" ;
+	schema:isPartOf <https://bjn.wikipedia.org/> ;
+	schema:name "Everest"@bjn .
+
+<https://bjn.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://bo.wikipedia.org/wiki/%E0%BD%87%E0%BD%BC%E0%BC%8B%E0%BD%98%E0%BD%BC%E0%BC%8B%E0%BD%82%E0%BE%B3%E0%BD%84%E0%BC%8B%E0%BD%98%E0%BC%8D> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "bo" ;
+	schema:isPartOf <https://bo.wikipedia.org/> ;
+	schema:name "ཇོ་མོ་གླང་མ།"@bo .
+
+<https://bo.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://br.wikipedia.org/wiki/Menez_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "br" ;
+	schema:isPartOf <https://br.wikipedia.org/> ;
+	schema:name "Menez Everest"@br .
+
+<https://br.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://bs.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "bs" ;
+	schema:isPartOf <https://bs.wikipedia.org/> ;
+	schema:name "Mount Everest"@bs .
+
+<https://bs.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://bxr.wikipedia.org/wiki/%D0%96%D0%BE%D0%BC%D0%BE%D0%BB%D1%83%D0%BD%D0%B3%D0%BC%D0%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "bxr" ;
+	schema:isPartOf <https://bxr.wikipedia.org/> ;
+	schema:name "Жомолунгма"@bxr .
+
+<https://bxr.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://cdo.wikipedia.org/wiki/Chomolungma_H%C5%ADng> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "cdo" ;
+	schema:isPartOf <https://cdo.wikipedia.org/> ;
+	schema:name "Chomolungma Hŭng"@cdo .
+
+<https://cdo.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ce.wikipedia.org/wiki/%D0%94%D0%B6%D0%BE%D0%BC%D0%BE%D0%BB%D1%83%D0%BD%D0%B3%D0%BC%D0%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ce" ;
+	schema:isPartOf <https://ce.wikipedia.org/> ;
+	schema:name "Джомолунгма"@ce .
+
+<https://ce.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ceb.wikipedia.org/wiki/Mount_Everest_(bukid_sa_Nepal)> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ceb" ;
+	schema:isPartOf <https://ceb.wikipedia.org/> ;
+	schema:name "Mount Everest (bukid sa Nepal)"@ceb .
+
+<https://ceb.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://chy.wikipedia.org/wiki/Vose_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "chy" ;
+	schema:isPartOf <https://chy.wikipedia.org/> ;
+	schema:name "Vose Everest"@chy .
+
+<https://chy.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ckb.wikipedia.org/wiki/%DA%86%DB%8C%D8%A7%DB%8C_%D8%A6%DB%8E%DA%A4%DB%95%D8%B1%D8%B3%D8%AA> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ckb" ;
+	schema:isPartOf <https://ckb.wikipedia.org/> ;
+	schema:name "چیای ئێڤەرست"@ckb .
+
+<https://ckb.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://cv.wikipedia.org/wiki/%D0%94%D0%B6%D0%BE%D0%BC%D0%BE%D0%BB%D1%83%D0%BD%D0%B3%D0%BC%D0%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "cv" ;
+	schema:isPartOf <https://cv.wikipedia.org/> ;
+	schema:name "Джомолунгма"@cv .
+
+<https://cv.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://diq.wikipedia.org/wiki/Koy%C3%AA_Everesti> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "diq" ;
+	schema:isPartOf <https://diq.wikipedia.org/> ;
+	schema:name "Koyê Everesti"@diq .
+
+<https://diq.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://dty.wikipedia.org/wiki/%E0%A4%B8%E0%A4%97%E0%A4%B0%E0%A4%AE%E0%A4%BE%E0%A4%A5%E0%A4%BE> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "dty" ;
+	schema:isPartOf <https://dty.wikipedia.org/> ;
+	schema:name "सगरमाथा"@dty .
+
+<https://dty.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://dv.wikipedia.org/wiki/%DE%87%DE%AC%DE%88%DE%A6%DE%83%DE%AC%DE%90%DE%B0%DE%93%DE%B0_%DE%8A%DE%A6%DE%83%DE%AA%DE%84%DE%A6%DE%8B%DE%A6> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "dv" ;
+	schema:isPartOf <https://dv.wikipedia.org/> ;
+	schema:name "އެވަރެސްޓް ފަރުބަދަ"@dv .
+
+<https://dv.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://el.wikipedia.org/wiki/%CE%88%CE%B2%CE%B5%CF%81%CE%B5%CF%83%CF%84> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "el" ;
+	schema:isPartOf <https://el.wikipedia.org/> ;
+	schema:name "Έβερεστ"@el .
+
+<https://el.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://eo.wikipedia.org/wiki/%C4%88omolungmo> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "eo" ;
+	schema:isPartOf <https://eo.wikipedia.org/> ;
+	schema:name "Ĉomolungmo"@eo ;
+	wikibase:badge wd:Q17437798 .
+
+<https://eo.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://et.wikipedia.org/wiki/D%C5%BEomolungma> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "et" ;
+	schema:isPartOf <https://et.wikipedia.org/> ;
+	schema:name "Džomolungma"@et .
+
+<https://et.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://eu.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "eu" ;
+	schema:isPartOf <https://eu.wikipedia.org/> ;
+	schema:name "Everest"@eu .
+
+<https://eu.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://fo.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "fo" ;
+	schema:isPartOf <https://fo.wikipedia.org/> ;
+	schema:name "Mount Everest"@fo .
+
+<https://fo.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://frp.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "frp" ;
+	schema:isPartOf <https://frp.wikipedia.org/> ;
+	schema:name "Everest"@frp .
+
+<https://frp.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://fy.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "fy" ;
+	schema:isPartOf <https://fy.wikipedia.org/> ;
+	schema:name "Mount Everest"@fy .
+
+<https://fy.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ga.wikipedia.org/wiki/Sliabh_Everest_(Teom%C3%B3lungma)> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ga" ;
+	schema:isPartOf <https://ga.wikipedia.org/> ;
+	schema:name "Sliabh Everest (Teomólungma)"@ga .
+
+<https://ga.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://gan.wikipedia.org/wiki/%E7%8F%A0%E7%A9%86%E6%9C%97%E7%91%AA%E5%B3%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "gan" ;
+	schema:isPartOf <https://gan.wikipedia.org/> ;
+	schema:name "珠穆朗瑪峰"@gan .
+
+<https://gan.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://gd.wikipedia.org/wiki/Beinn_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "gd" ;
+	schema:isPartOf <https://gd.wikipedia.org/> ;
+	schema:name "Beinn Everest"@gd .
+
+<https://gd.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://gl.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "gl" ;
+	schema:isPartOf <https://gl.wikipedia.org/> ;
+	schema:name "Everest"@gl .
+
+<https://gl.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://gn.wikipedia.org/wiki/%C3%89verest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "gn" ;
+	schema:isPartOf <https://gn.wikipedia.org/> ;
+	schema:name "Éverest"@gn .
+
+<https://gn.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://gu.wikipedia.org/wiki/%E0%AA%AE%E0%AA%BE%E0%AA%89%E0%AA%A8%E0%AB%8D%E0%AA%9F_%E0%AA%8F%E0%AA%B5%E0%AA%B0%E0%AB%87%E0%AA%B8%E0%AB%8D%E0%AA%9F> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "gu" ;
+	schema:isPartOf <https://gu.wikipedia.org/> ;
+	schema:name "માઉન્ટ એવરેસ્ટ"@gu .
+
+<https://gu.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://hak.wikipedia.org/wiki/Chomolangma_F%C3%BBng> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "hak" ;
+	schema:isPartOf <https://hak.wikipedia.org/> ;
+	schema:name "Chomolangma Fûng"@hak .
+
+<https://hak.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://haw.wikipedia.org/wiki/Mauna_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "haw" ;
+	schema:isPartOf <https://haw.wikipedia.org/> ;
+	schema:name "Mauna Everest"@haw .
+
+<https://haw.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://hi.wikipedia.org/wiki/%E0%A4%8F%E0%A4%B5%E0%A4%B0%E0%A5%87%E0%A4%B8%E0%A5%8D%E0%A4%9F_%E0%A4%AA%E0%A4%B0%E0%A5%8D%E0%A4%B5%E0%A4%A4> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "hi" ;
+	schema:isPartOf <https://hi.wikipedia.org/> ;
+	schema:name "एवरेस्ट पर्वत"@hi .
+
+<https://hi.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://hif.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "hif" ;
+	schema:isPartOf <https://hif.wikipedia.org/> ;
+	schema:name "Mount Everest"@hif .
+
+<https://hif.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://hr.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "hr" ;
+	schema:isPartOf <https://hr.wikipedia.org/> ;
+	schema:name "Mount Everest"@hr ;
+	wikibase:badge wd:Q17437796 .
+
+<https://hr.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://hsb.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "hsb" ;
+	schema:isPartOf <https://hsb.wikipedia.org/> ;
+	schema:name "Mount Everest"@hsb .
+
+<https://hsb.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ht.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ht" ;
+	schema:isPartOf <https://ht.wikipedia.org/> ;
+	schema:name "Everest"@ht .
+
+<https://ht.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://hy.wikipedia.org/wiki/%D4%B7%D5%BE%D5%A5%D6%80%D5%A5%D5%BD%D5%BF> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "hy" ;
+	schema:isPartOf <https://hy.wikipedia.org/> ;
+	schema:name "Էվերեստ"@hy .
+
+<https://hy.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ia.wikipedia.org/wiki/Monte_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ia" ;
+	schema:isPartOf <https://ia.wikipedia.org/> ;
+	schema:name "Monte Everest"@ia .
+
+<https://ia.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ie.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ie" ;
+	schema:isPartOf <https://ie.wikipedia.org/> ;
+	schema:name "Mount Everest"@ie .
+
+<https://ie.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ik.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ik" ;
+	schema:isPartOf <https://ik.wikipedia.org/> ;
+	schema:name "Everest"@ik .
+
+<https://ik.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ilo.wikipedia.org/wiki/Bantay_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ilo" ;
+	schema:isPartOf <https://ilo.wikipedia.org/> ;
+	schema:name "Bantay Everest"@ilo .
+
+<https://ilo.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://io.wikipedia.org/wiki/Monto_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "io" ;
+	schema:isPartOf <https://io.wikipedia.org/> ;
+	schema:name "Monto Everest"@io .
+
+<https://io.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://is.wikipedia.org/wiki/Everestfjall> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "is" ;
+	schema:isPartOf <https://is.wikipedia.org/> ;
+	schema:name "Everestfjall"@is .
+
+<https://is.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://jam.wikipedia.org/wiki/Mount_Evares> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "jam" ;
+	schema:isPartOf <https://jam.wikipedia.org/> ;
+	schema:name "Mount Evares"@jam .
+
+<https://jam.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://jv.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "jv" ;
+	schema:isPartOf <https://jv.wikipedia.org/> ;
+	schema:name "Mount Everest"@jv .
+
+<https://jv.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ka.wikipedia.org/wiki/%E1%83%94%E1%83%95%E1%83%94%E1%83%A0%E1%83%94%E1%83%A1%E1%83%A2%E1%83%98> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ka" ;
+	schema:isPartOf <https://ka.wikipedia.org/> ;
+	schema:name "ევერესტი"@ka .
+
+<https://ka.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://kbp.wikipedia.org/wiki/Everest_p%CA%8B%CA%8B> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "kbp" ;
+	schema:isPartOf <https://kbp.wikipedia.org/> ;
+	schema:name "Everest pʋʋ"@kbp .
+
+<https://kbp.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ki.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ki" ;
+	schema:isPartOf <https://ki.wikipedia.org/> ;
+	schema:name "Mount Everest"@ki .
+
+<https://ki.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://kk.wikipedia.org/wiki/%D0%94%D0%B6%D0%BE%D0%BC%D0%BE%D0%BB%D1%83%D0%BD%D0%B3%D0%BC%D0%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "kk" ;
+	schema:isPartOf <https://kk.wikipedia.org/> ;
+	schema:name "Джомолунгма"@kk .
+
+<https://kk.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://kl.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "kl" ;
+	schema:isPartOf <https://kl.wikipedia.org/> ;
+	schema:name "Mount Everest"@kl .
+
+<https://kl.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://kn.wikipedia.org/wiki/%E0%B2%8E%E0%B2%B5%E0%B2%B0%E0%B3%86%E0%B2%B8%E0%B3%8D%E0%B2%9F%E0%B3%8D%E2%80%8C_%E0%B2%B6%E0%B2%BF%E0%B2%96%E0%B2%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "kn" ;
+	schema:isPartOf <https://kn.wikipedia.org/> ;
+	schema:name "ಎವರೆಸ್ಟ್ ಶಿಖರ"@kn .
+
+<https://kn.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://krc.wikipedia.org/wiki/%D0%AD%D0%B2%D0%B5%D1%80%D0%B5%D1%81%D1%82> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "krc" ;
+	schema:isPartOf <https://krc.wikipedia.org/> ;
+	schema:name "Эверест"@krc .
+
+<https://krc.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ku.wikipedia.org/wiki/%C3%87iyay%C3%AA_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ku" ;
+	schema:isPartOf <https://ku.wikipedia.org/> ;
+	schema:name "Çiyayê Everest"@ku .
+
+<https://ku.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://kw.wikipedia.org/wiki/Menydh_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "kw" ;
+	schema:isPartOf <https://kw.wikipedia.org/> ;
+	schema:name "Menydh Everest"@kw .
+
+<https://kw.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ky.wikipedia.org/wiki/%D0%96%D0%BE%D0%BC%D0%BE%D0%BB%D1%83%D0%BD%D0%B3%D0%BC%D0%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ky" ;
+	schema:isPartOf <https://ky.wikipedia.org/> ;
+	schema:name "Жомолунгма"@ky .
+
+<https://ky.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://la.wikipedia.org/wiki/Everestius_mons> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "la" ;
+	schema:isPartOf <https://la.wikipedia.org/> ;
+	schema:name "Everestius mons"@la .
+
+<https://la.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://lb.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "lb" ;
+	schema:isPartOf <https://lb.wikipedia.org/> ;
+	schema:name "Mount Everest"@lb .
+
+<https://lb.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://lez.wikipedia.org/wiki/%D0%94%D0%B6%D0%BE%D0%BC%D0%BE%D0%BB%D1%83%D0%BD%D0%B3%D0%BC%D0%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "lez" ;
+	schema:isPartOf <https://lez.wikipedia.org/> ;
+	schema:name "Джомолунгма"@lez .
+
+<https://lez.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://li.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "li" ;
+	schema:isPartOf <https://li.wikipedia.org/> ;
+	schema:name "Mount Everest"@li .
+
+<https://li.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://lmo.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "lmo" ;
+	schema:isPartOf <https://lmo.wikipedia.org/> ;
+	schema:name "Everest"@lmo .
+
+<https://lmo.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://lt.wikipedia.org/wiki/D%C5%BEomolungma> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "lt" ;
+	schema:isPartOf <https://lt.wikipedia.org/> ;
+	schema:name "Džomolungma"@lt .
+
+<https://lt.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://lv.wikipedia.org/wiki/Everests> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "lv" ;
+	schema:isPartOf <https://lv.wikipedia.org/> ;
+	schema:name "Everests"@lv .
+
+<https://lv.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://mhr.wikipedia.org/wiki/%D0%AD%D0%B2%D0%B5%D1%80%D0%B5%D1%81%D1%82> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "mhr" ;
+	schema:isPartOf <https://mhr.wikipedia.org/> ;
+	schema:name "Эверест"@mhr .
+
+<https://mhr.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://mi.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "mi" ;
+	schema:isPartOf <https://mi.wikipedia.org/> ;
+	schema:name "Everest"@mi .
+
+<https://mi.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://mk.wikipedia.org/wiki/%D0%9C%D0%BE%D0%BD%D1%82_%D0%95%D0%B2%D0%B5%D1%80%D0%B5%D1%81%D1%82> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "mk" ;
+	schema:isPartOf <https://mk.wikipedia.org/> ;
+	schema:name "Монт Еверест"@mk .
+
+<https://mk.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ml.wikipedia.org/wiki/%E0%B4%8E%E0%B4%B5%E0%B4%B1%E0%B4%B8%E0%B5%8D%E0%B4%B1%E0%B5%8D%E0%B4%B1%E0%B5%8D%E2%80%8C_%E0%B4%95%E0%B5%8A%E0%B4%9F%E0%B5%81%E0%B4%AE%E0%B5%81%E0%B4%9F%E0%B4%BF> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ml" ;
+	schema:isPartOf <https://ml.wikipedia.org/> ;
+	schema:name "എവറസ്റ്റ് കൊടുമുടി"@ml .
+
+<https://ml.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://mn.wikipedia.org/wiki/%D0%96%D0%BE%D0%BC%D0%BE%D0%BB%D1%83%D0%BD%D0%B3%D0%BC%D0%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "mn" ;
+	schema:isPartOf <https://mn.wikipedia.org/> ;
+	schema:name "Жомолунгма"@mn .
+
+<https://mn.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://mr.wikipedia.org/wiki/%E0%A4%8F%E0%A4%B5%E0%A5%8D%E0%A4%B9%E0%A4%B0%E0%A5%87%E0%A4%B8%E0%A5%8D%E0%A4%9F> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "mr" ;
+	schema:isPartOf <https://mr.wikipedia.org/> ;
+	schema:name "एव्हरेस्ट"@mr ;
+	wikibase:badge wd:Q17437796 .
+
+<https://mr.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ms.wikipedia.org/wiki/Gunung_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ms" ;
+	schema:isPartOf <https://ms.wikipedia.org/> ;
+	schema:name "Gunung Everest"@ms .
+
+<https://ms.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://my.wikipedia.org/wiki/%E1%80%A7%E1%80%9D%E1%80%9B%E1%80%80%E1%80%BA%E1%80%90%E1%80%B1%E1%80%AC%E1%80%84%E1%80%BA> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "my" ;
+	schema:isPartOf <https://my.wikipedia.org/> ;
+	schema:name "ဧဝရက်တောင်"@my .
+
+<https://my.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://mzn.wikipedia.org/wiki/%D8%A7%D9%88%D8%B1%D8%B3%D8%AA> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "mzn" ;
+	schema:isPartOf <https://mzn.wikipedia.org/> ;
+	schema:name "اورست"@mzn .
+
+<https://mzn.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://nah.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "nah" ;
+	schema:isPartOf <https://nah.wikipedia.org/> ;
+	schema:name "Everest"@nah .
+
+<https://nah.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://nap.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "nap" ;
+	schema:isPartOf <https://nap.wikipedia.org/> ;
+	schema:name "Everest"@nap .
+
+<https://nap.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://nds.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "nds" ;
+	schema:isPartOf <https://nds.wikipedia.org/> ;
+	schema:name "Mount Everest"@nds .
+
+<https://nds.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://nn.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "nn" ;
+	schema:isPartOf <https://nn.wikipedia.org/> ;
+	schema:name "Mount Everest"@nn .
+
+<https://nn.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://nrm.wikipedia.org/wiki/Mont_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "fr-x-nrm" ;
+	schema:isPartOf <https://nrm.wikipedia.org/> ;
+	schema:name "Mont Everest"@fr-x-nrm .
+
+<https://nrm.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://oc.wikipedia.org/wiki/Mont_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "oc" ;
+	schema:isPartOf <https://oc.wikipedia.org/> ;
+	schema:name "Mont Everest"@oc .
+
+<https://oc.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://or.wikipedia.org/wiki/%E0%AC%8F%E0%AC%AD%E0%AC%B0%E0%AD%87%E0%AC%B7%E0%AD%8D%E0%AC%9F_%E0%AC%B6%E0%AD%83%E0%AC%99%E0%AD%8D%E0%AC%97> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "or" ;
+	schema:isPartOf <https://or.wikipedia.org/> ;
+	schema:name "ଏଭରେଷ୍ଟ ଶୃଙ୍ଗ"@or .
+
+<https://or.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://os.wikipedia.org/wiki/%D0%94%D0%B6%D0%BE%D0%BC%D0%BE%D0%BB%D1%83%D0%BD%D0%B3%D0%BC%C3%A6> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "os" ;
+	schema:isPartOf <https://os.wikipedia.org/> ;
+	schema:name "Джомолунгмæ"@os .
+
+<https://os.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://pa.wikipedia.org/wiki/%E0%A8%90%E0%A8%B5%E0%A8%B0%E0%A9%88%E0%A8%B8%E0%A8%9F_%E0%A8%AA%E0%A8%B9%E0%A8%BE%E0%A9%9C> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "pa" ;
+	schema:isPartOf <https://pa.wikipedia.org/> ;
+	schema:name "ਐਵਰੈਸਟ ਪਹਾੜ"@pa .
+
+<https://pa.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://pcd.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "pcd" ;
+	schema:isPartOf <https://pcd.wikipedia.org/> ;
+	schema:name "Everest"@pcd .
+
+<https://pcd.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://pms.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "pms" ;
+	schema:isPartOf <https://pms.wikipedia.org/> ;
+	schema:name "Everest"@pms .
+
+<https://pms.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://pnb.wikipedia.org/wiki/%D9%85%D8%A7%D8%A4%D9%86%D9%B9_%D8%A7%DB%8C%D9%88%D8%B1%D8%B3%D9%B9> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "pnb" ;
+	schema:isPartOf <https://pnb.wikipedia.org/> ;
+	schema:name "ماؤنٹ ایورسٹ"@pnb .
+
+<https://pnb.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://qu.wikipedia.org/wiki/Chomolungma> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "qu" ;
+	schema:isPartOf <https://qu.wikipedia.org/> ;
+	schema:name "Chomolungma"@qu .
+
+<https://qu.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://rm.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "rm" ;
+	schema:isPartOf <https://rm.wikipedia.org/> ;
+	schema:name "Mount Everest"@rm .
+
+<https://rm.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://roa-tara.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "it-x-tara" ;
+	schema:isPartOf <https://roa-tara.wikipedia.org/> ;
+	schema:name "Everest"@it-x-tara .
+
+<https://roa-tara.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://rue.wikipedia.org/wiki/%D0%9C%D0%BE%D0%BD%D1%82_%D0%95%D0%B2%D0%B5%D1%80%D0%B5%D1%81%D1%82> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "rue" ;
+	schema:isPartOf <https://rue.wikipedia.org/> ;
+	schema:name "Монт Еверест"@rue .
+
+<https://rue.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sah.wikipedia.org/wiki/%D0%94%D1%8C%D0%BE%D0%BC%D0%BE%D0%BB%D1%83%D1%83%D2%A5%D0%BC%D0%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sah" ;
+	schema:isPartOf <https://sah.wikipedia.org/> ;
+	schema:name "Дьомолууҥма"@sah .
+
+<https://sah.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sc.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sc" ;
+	schema:isPartOf <https://sc.wikipedia.org/> ;
+	schema:name "Everest"@sc .
+
+<https://sc.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://scn.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "scn" ;
+	schema:isPartOf <https://scn.wikipedia.org/> ;
+	schema:name "Everest"@scn .
+
+<https://scn.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sd.wikipedia.org/wiki/%D9%85%D8%A7%D8%A6%D9%88%D9%86%D9%BD_%D8%A7%D9%8A%D9%88%D8%B1%D9%8A%D8%B3%D9%BD> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sd" ;
+	schema:isPartOf <https://sd.wikipedia.org/> ;
+	schema:name "مائونٽ ايوريسٽ"@sd .
+
+<https://sd.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://se.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "se" ;
+	schema:isPartOf <https://se.wikipedia.org/> ;
+	schema:name "Mount Everest"@se .
+
+<https://se.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sg.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sg" ;
+	schema:isPartOf <https://sg.wikipedia.org/> ;
+	schema:name "Everest"@sg .
+
+<https://sg.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sh.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sh" ;
+	schema:isPartOf <https://sh.wikipedia.org/> ;
+	schema:name "Mount Everest"@sh .
+
+<https://sh.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://si.wikipedia.org/wiki/%E0%B6%91%E0%B7%80%E0%B6%BB%E0%B7%83%E0%B7%8A%E0%B6%A7%E0%B7%8A_%E0%B6%9A%E0%B6%B1%E0%B7%8A%E0%B6%AF> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "si" ;
+	schema:isPartOf <https://si.wikipedia.org/> ;
+	schema:name "එවරස්ට් කන්ද"@si .
+
+<https://si.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sk.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sk" ;
+	schema:isPartOf <https://sk.wikipedia.org/> ;
+	schema:name "Mount Everest"@sk .
+
+<https://sk.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sl.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sl" ;
+	schema:isPartOf <https://sl.wikipedia.org/> ;
+	schema:name "Mount Everest"@sl .
+
+<https://sl.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://so.wikipedia.org/wiki/Buurta_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "so" ;
+	schema:isPartOf <https://so.wikipedia.org/> ;
+	schema:name "Buurta Everest"@so .
+
+<https://so.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sq.wikipedia.org/wiki/Mali_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sq" ;
+	schema:isPartOf <https://sq.wikipedia.org/> ;
+	schema:name "Mali Everest"@sq .
+
+<https://sq.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://srn.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "srn" ;
+	schema:isPartOf <https://srn.wikipedia.org/> ;
+	schema:name "Everest"@srn .
+
+<https://srn.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sw.wikipedia.org/wiki/Everest_(mlima)> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sw" ;
+	schema:isPartOf <https://sw.wikipedia.org/> ;
+	schema:name "Everest (mlima)"@sw .
+
+<https://sw.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://szl.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "szl" ;
+	schema:isPartOf <https://szl.wikipedia.org/> ;
+	schema:name "Mount Everest"@szl .
+
+<https://szl.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ta.wikipedia.org/wiki/%E0%AE%8E%E0%AE%B5%E0%AE%B0%E0%AF%86%E0%AE%9A%E0%AF%81%E0%AE%9F%E0%AF%8D%E0%AE%9F%E0%AF%81_%E0%AE%9A%E0%AE%BF%E0%AE%95%E0%AE%B0%E0%AE%AE%E0%AF%8D> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ta" ;
+	schema:isPartOf <https://ta.wikipedia.org/> ;
+	schema:name "எவரெசுட்டு சிகரம்"@ta .
+
+<https://ta.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://te.wikipedia.org/wiki/%E0%B0%8E%E0%B0%B5%E0%B0%B0%E0%B1%86%E0%B0%B8%E0%B1%8D%E0%B0%9F%E0%B1%81_%E0%B0%AA%E0%B0%B0%E0%B1%8D%E0%B0%B5%E0%B0%A4%E0%B0%82> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "te" ;
+	schema:isPartOf <https://te.wikipedia.org/> ;
+	schema:name "ఎవరెస్టు పర్వతం"@te .
+
+<https://te.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://th.wikipedia.org/wiki/%E0%B8%A2%E0%B8%AD%E0%B8%94%E0%B9%80%E0%B8%82%E0%B8%B2%E0%B9%80%E0%B8%AD%E0%B9%80%E0%B8%A7%E0%B8%AD%E0%B9%80%E0%B8%A3%E0%B8%AA%E0%B8%95%E0%B9%8C> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "th" ;
+	schema:isPartOf <https://th.wikipedia.org/> ;
+	schema:name "ยอดเขาเอเวอเรสต์"@th .
+
+<https://th.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://tk.wikipedia.org/wiki/Jomolungma> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "tk" ;
+	schema:isPartOf <https://tk.wikipedia.org/> ;
+	schema:name "Jomolungma"@tk .
+
+<https://tk.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://tl.wikipedia.org/wiki/Bundok_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "tl" ;
+	schema:isPartOf <https://tl.wikipedia.org/> ;
+	schema:name "Bundok Everest"@tl .
+
+<https://tl.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://tt.wikipedia.org/wiki/%D0%94%D0%B6%D0%BE%D0%BC%D0%BE%D0%BB%D1%83%D0%BD%D0%B3%D0%BC%D0%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "tt" ;
+	schema:isPartOf <https://tt.wikipedia.org/> ;
+	schema:name "Джомолунгма"@tt .
+
+<https://tt.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ug.wikipedia.org/wiki/%D8%A6%DB%90%DB%8B%DB%90%D8%B1%DB%90%D8%B3%D8%AA> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ug" ;
+	schema:isPartOf <https://ug.wikipedia.org/> ;
+	schema:name "ئېۋېرېست"@ug .
+
+<https://ug.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ur.wikipedia.org/wiki/%D9%85%D8%A7%D8%A4%D9%86%D9%B9_%D8%A7%DB%8C%D9%88%D8%B1%D8%B3%D9%B9> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ur" ;
+	schema:isPartOf <https://ur.wikipedia.org/> ;
+	schema:name "ماؤنٹ ایورسٹ"@ur .
+
+<https://ur.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://uz.wikipedia.org/wiki/Jomolungma> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "uz" ;
+	schema:isPartOf <https://uz.wikipedia.org/> ;
+	schema:name "Jomolungma"@uz .
+
+<https://uz.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://vec.wikipedia.org/wiki/Monte_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "vec" ;
+	schema:isPartOf <https://vec.wikipedia.org/> ;
+	schema:name "Monte Everest"@vec .
+
+<https://vec.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://vep.wikipedia.org/wiki/D%C5%BEomolungm> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "vep" ;
+	schema:isPartOf <https://vep.wikipedia.org/> ;
+	schema:name "Džomolungm"@vep .
+
+<https://vep.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://wa.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "wa" ;
+	schema:isPartOf <https://wa.wikipedia.org/> ;
+	schema:name "Everest"@wa .
+
+<https://wa.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://war.wikipedia.org/wiki/Bukid_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "war" ;
+	schema:isPartOf <https://war.wikipedia.org/> ;
+	schema:name "Bukid Everest"@war .
+
+<https://war.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://wuu.wikipedia.org/wiki/%E7%8F%A0%E7%A9%86%E6%9C%97%E7%8E%9B%E5%B3%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "wuu" ;
+	schema:isPartOf <https://wuu.wikipedia.org/> ;
+	schema:name "珠穆朗玛峰"@wuu .
+
+<https://wuu.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://xmf.wikipedia.org/wiki/%E1%83%94%E1%83%95%E1%83%94%E1%83%A0%E1%83%94%E1%83%A1%E1%83%A2%E1%83%98> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "xmf" ;
+	schema:isPartOf <https://xmf.wikipedia.org/> ;
+	schema:name "ევერესტი"@xmf .
+
+<https://xmf.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://yi.wikipedia.org/wiki/%D7%A2%D7%95%D7%95%D7%A2%D7%A8%D7%A2%D7%A1%D7%98> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "yi" ;
+	schema:isPartOf <https://yi.wikipedia.org/> ;
+	schema:name "עווערעסט"@yi .
+
+<https://yi.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://zea.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "zea" ;
+	schema:isPartOf <https://zea.wikipedia.org/> ;
+	schema:name "Mount Everest"@zea .
+
+<https://zea.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://zh-min-nan.wikipedia.org/wiki/Chomolangma_Hong> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "nan" ;
+	schema:isPartOf <https://zh-min-nan.wikipedia.org/> ;
+	schema:name "Chomolangma Hong"@nan .
+
+<https://zh-min-nan.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://zh-yue.wikipedia.org/wiki/%E7%8F%A0%E7%A9%86%E6%9C%97%E7%91%AA%E5%B3%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "yue" ;
+	schema:isPartOf <https://zh-yue.wikipedia.org/> ;
+	schema:name "珠穆朗瑪峰"@yue .
+
+<https://zh-yue.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://zu.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "zu" ;
+	schema:isPartOf <https://zu.wikipedia.org/> ;
+	schema:name "Mount Everest"@zu .
+
+<https://zu.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ko.wikipedia.org/wiki/%EC%97%90%EB%B2%A0%EB%A0%88%EC%8A%A4%ED%8A%B8%EC%82%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ko" ;
+	schema:isPartOf <https://ko.wikipedia.org/> ;
+	schema:name "에베레스트산"@ko .
+
+<https://ko.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://be.wikipedia.org/wiki/%D0%94%D0%B6%D0%B0%D0%BC%D0%B0%D0%BB%D1%83%D0%BD%D0%B3%D0%BC%D0%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "be" ;
+	schema:isPartOf <https://be.wikipedia.org/> ;
+	schema:name "Джамалунгма"@be .
+
+<https://be.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ja.wikiquote.org/wiki/%E3%82%A8%E3%83%99%E3%83%AC%E3%82%B9%E3%83%88> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ja" ;
+	schema:isPartOf <https://ja.wikiquote.org/> ;
+	schema:name "エベレスト"@ja .
+
+<https://ja.wikiquote.org/> wikibase:wikiGroup "wikiquote" .
+
+<https://lg.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "lg" ;
+	schema:isPartOf <https://lg.wikipedia.org/> ;
+	schema:name "Mount Everest"@lg .
+
+<https://lg.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://bh.wikipedia.org/wiki/%E0%A4%AE%E0%A4%BE%E0%A4%89%E0%A4%82%E0%A4%9F_%E0%A4%8F%E0%A4%B5%E0%A4%B0%E0%A5%87%E0%A4%B8%E0%A5%8D%E0%A4%9F> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "bho" ;
+	schema:isPartOf <https://bh.wikipedia.org/> ;
+	schema:name "माउंट एवरेस्ट"@bho .
+
+<https://bh.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ba.wikipedia.org/wiki/%D0%94%D0%B6%D0%BE%D0%BC%D0%BE%D0%BB%D1%83%D0%BD%D0%B3%D0%BC%D0%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ba" ;
+	schema:isPartOf <https://ba.wikipedia.org/> ;
+	schema:name "Джомолунгма"@ba .
+
+<https://ba.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://it.wikiquote.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "it" ;
+	schema:isPartOf <https://it.wikiquote.org/> ;
+	schema:name "Everest"@it .
+
+<https://it.wikiquote.org/> wikibase:wikiGroup "wikiquote" .
+
+<https://lfn.wikipedia.org/wiki/Sagarmata> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "lfn" ;
+	schema:isPartOf <https://lfn.wikipedia.org/> ;
+	schema:name "Sagarmata"@lfn .
+
+<https://lfn.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://gor.wikipedia.org/wiki/Hu%27idu_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "gor" ;
+	schema:isPartOf <https://gor.wikipedia.org/> ;
+	schema:name "Hu'idu Everest"@gor .
+
+<https://gor.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://pih.wikipedia.org/wiki/Evrest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "pih" ;
+	schema:isPartOf <https://pih.wikipedia.org/> ;
+	schema:name "Evrest"@pih .
+
+<https://pih.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sat.wikipedia.org/wiki/%E1%B1%A2%E1%B1%9F%E1%B1%B6%E1%B1%B4_%E1%B1%AE%E1%B1%B5%E1%B1%B7%E1%B1%9A%E1%B1%A8%E1%B1%AE%E1%B1%A5%E1%B1%B4> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sat" ;
+	schema:isPartOf <https://sat.wikipedia.org/> ;
+	schema:name "ᱢᱟᱶᱴ ᱮᱵᱷᱚᱨᱮᱥᱴ"@sat .
+
+<https://sat.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://mai.wikipedia.org/wiki/%E0%A4%B8%E0%A4%97%E0%A4%B0%E0%A4%AE%E0%A4%BE%E0%A4%A5%E0%A4%BE> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "mai" ;
+	schema:isPartOf <https://mai.wikipedia.org/> ;
+	schema:name "सगरमाथा"@mai ;
+	wikibase:badge wd:Q17437796 .
+
+<https://mai.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ne.wikipedia.org/wiki/%E0%A4%B8%E0%A4%97%E0%A4%B0%E0%A4%AE%E0%A4%BE%E0%A4%A5%E0%A4%BE> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ne" ;
+	schema:isPartOf <https://ne.wikipedia.org/> ;
+	schema:name "सगरमाथा"@ne ;
+	wikibase:badge wd:Q17437796 .
+
+<https://ne.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://commons.wikimedia.org/wiki/%E0%BD%87%E0%BD%BC%E0%BC%8B%E0%BD%98%E0%BD%BC%E0%BC%8B%E0%BD%82%E0%BE%B3%E0%BD%84%E0%BC%8B%E0%BD%98> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "en" ;
+	schema:isPartOf <https://commons.wikimedia.org/> ;
+	schema:name "ཇོ་མོ་གླང་མ"@en .
+
+<https://commons.wikimedia.org/> wikibase:wikiGroup "commons" .
+
+<https://new.wikipedia.org/wiki/%E0%A4%9A%E0%A5%8B%E0%A4%AE%E0%A5%8B%E0%A4%B2%E0%A5%81%E0%A4%99%E0%A5%8D%E0%A4%AE%E0%A4%BE> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "new" ;
+	schema:isPartOf <https://new.wikipedia.org/> ;
+	schema:name "चोमोलुङ्मा"@new .
+
+<https://new.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://frr.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "frr" ;
+	schema:isPartOf <https://frr.wikipedia.org/> ;
+	schema:name "Mount Everest"@frr .
+
+<https://frr.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://cy.wikipedia.org/wiki/Mynydd_Chomolungma> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "cy" ;
+	schema:isPartOf <https://cy.wikipedia.org/> ;
+	schema:name "Mynydd Chomolungma"@cy .
+
+<https://cy.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://su.wikipedia.org/wiki/Gunung_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "su" ;
+	schema:isPartOf <https://su.wikipedia.org/> ;
+	schema:name "Gunung Everest"@su .
+
+<https://su.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://ban.wikipedia.org/wiki/%C3%89v%C3%A9r%C3%A9st> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "ban" ;
+	schema:isPartOf <https://ban.wikipedia.org/> ;
+	schema:name "Évérést"@ban .
+
+<https://ban.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://gcr.wikipedia.org/wiki/%C3%89vrest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "gcr" ;
+	schema:isPartOf <https://gcr.wikipedia.org/> ;
+	schema:name "Évrest"@gcr .
+
+<https://gcr.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sa.wikipedia.org/wiki/%E0%A4%A6%E0%A5%87%E0%A4%B5%E0%A4%97%E0%A4%BF%E0%A4%B0%E0%A4%BF_%E0%A4%B6%E0%A4%BF%E0%A4%96%E0%A4%B0%E0%A4%AE%E0%A5%8D> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sa" ;
+	schema:isPartOf <https://sa.wikipedia.org/> ;
+	schema:name "देवगिरि शिखरम्"@sa .
+
+<https://sa.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://uk.wikipedia.org/wiki/%D0%95%D0%B2%D0%B5%D1%80%D0%B5%D1%81%D1%82> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "uk" ;
+	schema:isPartOf <https://uk.wikipedia.org/> ;
+	schema:name "Еверест"@uk .
+
+<https://uk.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://az.wikipedia.org/wiki/Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "az" ;
+	schema:isPartOf <https://az.wikipedia.org/> ;
+	schema:name "Everest"@az ;
+	wikibase:badge wd:Q17437796 .
+
+<https://az.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://bn.wikipedia.org/wiki/%E0%A6%8F%E0%A6%AD%E0%A6%BE%E0%A6%B0%E0%A7%87%E0%A6%B8%E0%A7%8D%E0%A6%9F_%E0%A6%AA%E0%A6%B0%E0%A7%8D%E0%A6%AC%E0%A6%A4> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "bn" ;
+	schema:isPartOf <https://bn.wikipedia.org/> ;
+	schema:name "এভারেস্ট পর্বত"@bn .
+
+<https://bn.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://awa.wikipedia.org/wiki/%E0%A4%B8%E0%A4%97%E0%A4%B0%E0%A4%AE%E0%A4%BE%E0%A4%A5%E0%A4%BE> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "awa" ;
+	schema:isPartOf <https://awa.wikipedia.org/> ;
+	schema:name "सगरमाथा"@awa .
+
+<https://awa.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://sco.wikipedia.org/wiki/Mount_Everest> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "sco" ;
+	schema:isPartOf <https://sco.wikipedia.org/> ;
+	schema:name "Mount Everest"@sco .
+
+<https://sco.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://zh-classical.wikipedia.org/wiki/%E8%81%96%E6%AF%8D%E5%B3%B0> a schema:Article ;
+	schema:about wd:Q513 ;
+	schema:inLanguage "lzh" ;
+	schema:isPartOf <https://zh-classical.wikipedia.org/> ;
+	schema:name "聖母峰"@lzh .
+
+<https://zh-classical.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+wd:Q513 rdfs:label "Джомолунгма"@ru , "Everest"@fr , "Everest"@it , "Mount Everest"@en-ca , "Mount Everest"@en-gb , "Mount Everest"@nl , "Mount Everest"@de , "Berg Everest"@af , "ኤቨረስት ተራራ"@am , "Everest"@an , "جبل إفرست"@ar , "ايفيريست"@arz , "Everest"@ast , "Everest"@az , "Джомолунгма"@ba , "Bukid Everest"@bcl , "Гара Джамалунгма"@be , "Еверест"@bg , "Everest"@bjn , "মাউন্ট এভারেস্ট"@bn , "ཇོ་མོ་གླང་མ།"@bo , "Menez Everest"@br , "Mount Everest"@bs , "Everest"@ca , "چیای ئێڤەرست"@ckb , "Mount Everest"@cs , "Mynydd Everest"@cy , "Mount Everest"@da , "އެވަރެސްޓް ފަރުބަދަ"@dv , "Έβερεστ"@el , "Ĉomolungmo"@eo , "Everest"@es , "Džomolungma"@et , "Everest"@eu , "کوه اورست"@fa , "Mount Everest"@fi , "Mount Everest"@fo , "Mount Everest"@fy , "Sliabh Everest"@ga , "珠穆朗瑪峰"@gan , "Beinn Everest"@gd , "Everest"@gl , "Éverest"@gn , "માઉન્ટ એવરેસ્ટ"@gu , "Chomolangma Fûng"@hak , "אוורסט"@he , "एवरेस्ट पर्वत"@hi , "Mount Everest"@hif , "Mount Everest"@hr , "Csomolungma"@hu , "Էվերեստ"@hy , "Everest"@id , "Mount Everest"@ie , "Bantay Everest"@ilo , "Monto Everest"@io , "Everestfjall"@is , "エベレスト"@ja , "Gunung Èperès"@jv , "ევერესტი"@ka , "Mount Everest"@ki , "Джомолунгма"@kk , "Mount Everest"@kl , "ಮೌಂಟ್ ಎವರೆಸ್ಟ್"@kn , "에베레스트산"@ko , "Эверест"@krc , "Çiyayê Everest"@ku , "Menydh Everest"@kw , "Everestius mons"@la , "Mount Everest"@lb , "Джомолунгма"@lez , "Everest"@lmo , "Džomolungma"@lt , "Everests"@lv , "Монт Еверест"@mk , "എവറസ്റ്റ് കൊടുമുടി"@ml , "Жомолунгма"@mn , "एव्हरेस्ट"@mr , "Gunung Everest"@ms , "ဧဝရတ်တောင်"@my , "اورست"@mzn , "सगरमाथा"@ne , "सगरमाथा अञ्चल"@new , "Mount Everest"@nn , "Mont Everest"@oc , "ଏଭରେଷ୍ଟ ଶୃଙ୍ଗ"@or , "Джомолунгмæ"@os , "ਮਾਊਂਟ ਐਵਰੈਸਟ"@pa , "Mount Everest"@pl , "Everest"@pms , "ماؤنٹ ایورسٹ"@pnb , "Monte Everest"@pt , "Apu everest"@qu , "Mount Everest"@rm , "Everest"@ro , "Everest"@roa-tara , "Монт Еверест"@rue , "Дьомолууҥма"@sah , "Everest"@scn , "Mount Everest"@se , "Mount Everest"@sh , "එවරස්ට් කන්ද"@si , "Mount Everest"@sk , "Mount Everest"@sl , "Maja Everest"@sq , "Монт Еверест"@sr , "Mount Everest"@sv , "Everest"@sw , "Mount Everest"@szl , "எவரெசுட்டு சிகரம்"@ta , "ఎవరెస్టు పర్వతం"@te , "ยอดเขาเอเวอเรสต์"@th , "Jomolungma"@tk , "Bundok Everest"@tl , "Everest Dağı"@tr , "Җомолуңма"@tt , "ئېۋېرېست"@ug , "Джомолунгма"@uk , "ماؤنٹ ایورسٹ"@ur , "Monte Everest"@vec , "Everest"@vi , "Bukid Everest"@war , "珠穆朗玛峰"@wuu , "עווערעסט"@yi , "珠穆朗瑪峰"@zh , "珠穆朗玛峰"@zh-cn , "珠穆朗玛峰"@zh-hans , "珠穆朗瑪峰"@zh-hant , "Mount Everest"@zu , "Mount Everest"@nb , "Mount Everest"@de-ch , "Monte Everest"@pt-br , "Mount Everest"@zea , "珠穆朗瑪峰"@yue , "Monte Everest"@ia , "Muntanja Everest"@mt , "Mount Everest"@bar , "Mount Everest"@nds , "Эвэрэст"@be-tarask , "Jomolungma"@uz , "Munt Everest"@sco , "珠穆朗瑪峰"@zh-hk , "Džomolungm"@vep , "Everest"@pcd , "珠穆朗瑪峰"@lzh , "Эверест"@mhr , "Chomolangma Hong"@nan , "Mount Everest"@gsw , "सगरमाथा"@sa , "Everests"@sgs , "सगरमाथा"@mai , "Джомолунгма"@ce , "Everest"@nap , "Жомолунгма"@ky , "Жомолунгма"@bxr , "Chomolungma Hŭng"@cdo , "Mount Everest"@li , "Everest"@wa , "Eferest Beorg"@ang , "Mont Everest"@nrm , "Gunong Everest"@ace , "Everest"@mi , "Tepetl Everest"@nah , "Everest"@srn , "Everest"@ik , "Everest"@ht , "মাউণ্ট এভাৰেষ্ট"@as , "Everest"@frp , "Everest"@ay , "Vose Everest"@chy , "Everest"@sg , "Dził Everest"@nv , "Mauna Everest"@haw , "माउंट एवरेस्ट"@bho , "Everest"@sc , "Phiri la Everest"@ny , "اورست داغی"@azb , "Mount Evares"@jam , "مائونٽ ايوريسٽ"@sd , "Mount Everest"@hsb , "Mount Everest"@ceb , "Buurta Everst"@so , "Mount Everest"@en , "Джомолунгма"@cv , "Koyê Everesti"@diq , "सगरमाथा"@dty , "Everest pʋʋ"@kbp , "ევერესტი"@xmf , "주무랑마봉"@ko-kp , "Җомолуңма"@tt-cyrl , "Mount Everest"@lg , "Hu'idu Everest"@gor , "Sagarmata"@lfn , "Evrest"@pih , "ᱢᱟᱶᱴ ᱮᱵᱷᱚᱨᱮᱥᱴ"@sat , "珠穆朗瑪峰"@zh-tw , "Mount Everest"@frr , "Gunung Everest"@su , "Évérést"@ban , "Évrest"@gcr , "Mount Everest"@als , "Everests"@bat-smg , "Эвэрэст"@be-x-old , "माउंट एवरेस्ट"@bh , "Mount Everest"@no , "Mount Everest"@simple , "珠穆朗瑪峰"@zh-classical , "Chomolangma Hong"@zh-min-nan , "珠穆朗瑪峰"@zh-yue , "ߋߝ߭ߊߙߍߛ ߞߎ߬ߙߎ"@nqo , "सगरमाथा"@awa ;
+	schema:description "la montagna più alta della Terra"@it , "plus haute montagne de la Terre."@fr , "Earth's highest mountain, with a peak at 8,848 metres (29,029 feet) above sea level, part of the Himalaya mountain range between Nepal and China"@en-gb , "montaña superficial más alta de la Tierra"@es , "гора в Гімалаях"@uk , "지구에서 가장 높은 산이다. 네팔과 중국에 이르러 해발 8,848 미터에 이른다"@ko , "kangatuan a bantay iti lubong"@ilo , "höchster Berg der Erde, Gipfel auf 8848 Meter über dem Meeresspiegel"@de , "самая высокая гора в мире, пик которой находится на высоте 8848 метров над уровнем моря."@ru , "l-ikbar muntanja fid-dinja"@mt , "verdens høyeste fjell"@nb , "பூமியிலுள்ள உயரமான சிகரம்"@ta , "de höögste Barg op de Eer"@nds , "ネパールとチベットの間に位置するヒマラヤ山脈にある、世界最高峰の山"@ja , "世界第一高峰，峰顶位于中国与尼泊尔的边界"@zh-hans , "hoogste berg op aarde, met een top op 8.848 meter (29.029 voet) boven zeeniveau"@nl , "höchscht Berg vor Erde"@gsw , "a Föld legmagasabb hegye"@hu , "地球上最高的山峰，高度為海拔8848米"@zh , "ההר הגבוה בעולם, אחד מהרי ההימלאיה"@he , "بلند ترین  قله دنیا"@fa , "nejvyšší hora na Zemi s vrcholem 8 848 m n. m."@cs , "Det højeste bjerg på Jorden med en højde på 8848 meter"@da , "a mais alta montanha da terra, com 8.848 metros acima do nível do mar"@pt-br , "la muntagna cchiu' auta dâ Terra"@scn , "la plej alta montpinto de Tero, kun pinto je 8,848 metroj super maro"@eo , "Maailman korkein vuori (8848 metriä) Himalajan vuoristossa, Nepalin ja Kiinan väkissä"@fi , "地球上最高的山峰，高度為海拔8848米"@zh-hant , "berg i Nepal och Jordens högsta berg"@sv , "montaña de Asia"@gl , "cel mai înalt munte de pe Pământ cu vârful la 8.848 de metri deasupra nivelului mării"@ro , "Aukščiausias kalnas"@lt , "ହିମାଳୟରେ ଅବସ୍ଥିତ ବିଶ୍ଵର ଉଚ୍ଚତମ ଶୃଙ୍ଗ, ଯାହାର ଉଚ୍ଚତା ୮୮୪୮ ମିଟର (ସମୁଦ୍ରରୁ ୨୯,୦୨୯ ଫୁଟ ଉଚ୍ଚତା)"@or , "ยอดเขาที่สูงที่สุดในโลก โดยวัดความสูงได้ที่ 8,848 เมตร (29,029 ฟุต) เหนือระดับน้ำทะเล"@th , "Το υψηλότερο βουνό της Γης, στα σύνορα του Νεπάλ με την Κίνα, με ύψος 8.848 μ. (29.029 ποδιών) πάνω από τη στάθμη της θάλασσας"@el , "နီပေါနိုင်ငံနှင့် တိဘက်ဒေသတွင်ရှိသော ကမ္ဘာအဖြစ်ဆုံးတောင်ဖြစ်ပြီး ပင်လယ်ရေမျက်နှာပြင်အထက် အမြင့်ပေမှာ ၈,၈၄၈ မီတာ (၂၉,၀၂၉ ပေ) ရှိသည်"@my , "ngọn núi cao nhất Trái Đất, với độ cao 8,848 mét so với mực nước biển"@vi , "世界最高峰"@yue , "בארג אין נעפאל און כינע, העכסטער בארג אין דער וועלט"@yi , "najvišja gora na svetu"@sl , "gunung ing Népal lan Cina, gunung dhuwur dhéwé sadonya, kanthi pucuk 8.848 mèter ing dhuwur palumahan segara"@jv , "Ponto mais alto da Terra, faz parte do Himalaia localizado entre Nepal e China"@pt , "నేపాల్, చైనా ప్రాంతంలో గల పర్వతం, భూమిపై ఉన్న అత్యంత ఎత్తైన పర్వతం, ఎత్తు 8,848 మీటర్లు(29,029 అడుగులు)"@te , "أعلى جبل على الأرض، جزء من سلسلة جبال الهيمالايا بين نيبال والصين"@ar , "kemi kashca hatun apu"@qu , "gunung di Nepal dan Cina, merupakan titik tertinggi di dunia (8.848 meter) di atas permukaan laut"@id , "mendia"@eu , "পৃথিবীর সর্বোচ্চ পর্বতশৃঙ্গ ( ৮,৮৪৮ মিটার )"@bn , "Նեպալի և Չինաստանի սահմանին գտնվող գագաթ: Աշխարհի ամենաբարձր գագաթն է՝ ծովի մակարդակից 8848 մ բարձրությամբ:"@hy , "najviša planina na Zemlji s vrhom na visini od 8.848 m nadmorske visine, dio himalajskog planinskog lanca između Nepala i Kine"@bs , "Planina u Nepalu i Kini. Zemljina najveca Planina sa vrhom na visini  od 8,848 m nadnadmorske visine"@hr , "планина во состав на Хималаите, највисока во светот"@mk , "highest mountain on Earth"@en , "सगरमाथा संसारकें सबसँ ऊँच पर्वत शिखर छी ।"@mai , "an sliabh is airde ar domhan"@ga , "Earth's highest mountain, with a peak at 8,848 metres (29,029 feet) above sea level, part of the Himalaya mountain range between Nepal and China"@en-ca , "najvyšší vrch Zeme"@sk , "ಇದು ಜಗತ್ತಿನಲ್ಲಿಯೇ ಅತ್ಯಂತ ಎತ್ತರದ ಪರ್ವತ. ಇದರ ಎತ್ತರ ಸಮುದ್ರ ಮಟ್ಟದಿಂದ ಸುಮಾರು ೮,೮೪೮ ಮೀಟರ್(೨೯,೦೨೯ ಅಡಿ)ಗಳಷ್ಟು ಇದೆ. ಇದು ಹಿಮಾಲಯ ಪರ್ವತ ಶ್ರೇಣಿಯಲ್ಲಿದೆ."@kn , "największy szczyt na Ziemi, część Himalajów między Nepalem i Chinami"@pl , "पृथ्वी का सबसे ऊंचा पर्वत, समुद्र स्तर से 8,848 मीटर (29, 029 फुट) की चोटी के साथ, नेपाल और चीन के बीच हिमालय ।"@hi , "समुद्रसपाटीपासून 8,848 मीटर (29,029 फूट) उंच असलेल्या पृथ्वीच्या उंच डोंगरावर, नेपाळ आणि चीनच्या दरम्यान हिमालय पर्वतराजीचा भाग"@mr , "संसार के सभसे ऊँच परबत चोटी"@bho , "विश्वको सबैभन्दा उच्च हिमाल, यसको उचाई ८,८४८ मिटर रहेको छ ।"@ne , "Най-високият връх в света, 8848 м."@bg , "la muntanya més alta de la Terra"@ca , "Maja më e lartë në botë, me lartësi mbidetare 8,848 metra, pjesë e vargut të bjeshkëve të Himalajës, në mes të Nepalit dhe Kinës"@sq , "dünyanın 8.848 metre ile en yüksek dağı"@tr , "დედამიწის უმაღლესი მთა, მწვერვალი მდებარეობს ზღვის დონიდან 8,848 მეტრის სიმაღლეზე."@ka , "ਧਰਤੀ ਦਾ ਸਭ ਤੋਂ ਉੱਚਾ ਪਹਾੜ"@pa , "највиша планина на Земљи, део Хималаја између Непала и Кине, с врхом од 8.848 метара надморске висине"@sr , "أعلى جبل في العالم ، جزء من سلسلة الهيمالايا وموجود بين نيبال والصين"@arz , "bukid sa Nepal"@ceb , "संसारको सबै भन्ना अग्लो हिमालयको चुचुरो"@dty , "Mynydd uchaf y Ddaear, rhan o'r Himalaya rhwng Nepal a Tsieina"@cy , "পৃথিৱীৰ সৰ্ব্বোচ্চ পৰ্বত"@as , "Zemes augstākā virsotne, atrodas Himalajos"@lv , "地球上最高的山峰，高度為海拔8848米"@zh-tw , "विश्वस्य सर्वोन्नतः पर्वतः| एतस्य सर्वोन्नत प्रमाणित मापन ८८४८ मीटर २९०२८ फीट अस्ति"@sa , "ߘߎ߱ ߦߙߐ߫ ߡߊߦߟߍ߬ߣߍ߲"@nqo ;
+	skos:altLabel "Сагарматха"@ru , "Эверест"@ru , "Шэнмуфэн"@ru , "Monte Everest"@it , "Chomolungma"@it , "Zhumulangma"@it , "Sagaramāthā"@it , "Chomolungma"@fr , "mont Everest"@fr , "Sagarmatha"@fr , "Sagarmāthā"@en-gb , "Chomolungma"@en-gb , "Qomolangma"@en-gb , "Everest"@en-gb , "Sagarmatha"@es , "Chomolungma"@es , "Qomolangma Feng"@es , "Sagarmāthā"@es , "monte Everest"@es , "Еверест"@uk , "Сагарматха"@uk , "초모랑마"@ko , "사가르마타"@ko , "주무랑마펑"@ko , "주무랑마봉"@ko , "성모봉"@ko , "Everest"@ilo , "チョモランマ"@ja , "エベレスト山"@ja , "núi Everest"@vi , "đỉnh Everest"@vi , "Chomolungma"@vi , "núi Chomolungma"@vi , "đỉnh Chomolungma"@vi , "Châu Mục Lãng Mã Phong"@vi , "Thánh Mẫu Phong"@vi , "Qomolangma"@hu , "Sagarmatha"@hu , "Mount Everest"@hu , "Džomolangma"@cs , "Sagarmátha"@cs , "Everest"@cs , "Čumulangma"@cs , "Everest"@fy , "Everest"@nl , "Everest"@de , "Mt. Everest"@de , "Sagarmatha"@de , "Qomolangma"@de , "Chomolungma"@de , "Sagarmāthā"@de , "Everesto"@eo , "Ĉomolangma"@eo , "Sagarmata"@gl , "Chomolungma"@gl , "Qomolangma"@gl , "monte Everest"@gl , "Everestas"@lt , "ମାଉଣ୍ଟ ଏଭରେଷ୍ଟ"@or , "ଏଭରେଷ୍ଟ"@or , "Σαργκαρμάθα"@el , "Τσομολάνγκμα (Φενγκ)"@el , "Τσομολούνγκμα"@el , "Ζουμουλάνγκμα"@el , "ဧဝရက်တောင်"@my , "ချိုမိုလန်းမားတောင်"@my , "珠穆朗玛"@zh , "珠穆朗玛峰"@zh , "額菲爾士峰"@zh , "额菲尔士峰"@zh , "聖母峰"@zh , "إفرست"@ar , "एवरेस्ट् शिखरम्"@sa , "देवगिरि शिखरम"@sa , "चोमोलोङ्मा"@sa , "額菲爾士峰"@yue , "Everest"@sl , "Everest"@pt , "Everest"@pt-br , "Gunung Everest"@id , "Qomolangma"@id , "Sagarmatha"@id , "सगरमाथा"@bho , "Ջոմոլունգմա"@hy , "Սագարմաթա"@hy , "Everest"@bs , "Everest"@hr , "Everest"@en , "Mount Qomolangma"@en , "Mount Sagarmatha"@en , "Qomolangma"@en , "Chomolangma"@en , "Chomolungma"@en , "Qomolangma Feng"@en , "Sagarmāthā"@en , "Zhumulangma"@en , "Sagarmatha"@en , "Mount Chomolubutangma"@en , "Mt. Everest"@en , "Everest"@en-ca , "ಎವರೆಸ್ಟ್"@kn , "ఎవరెస్టు"@te , "Czomolungma"@pl , "Czumulungma"@pl , "Bjeshka Everest"@sq , "Everest"@sq , "ჯომოლუნგმა"@ka , "성모봉"@ko-kp , "Sagarmāthā"@eu , "Chomolungma"@eu , "Еверест"@sr , "планина Еверест"@sr , "планина Комолангма"@sr , "планина Сагармата"@sr , "Комолангма"@sr , "Чомолангма"@sr , "Чомолунгма"@sr , "Сагармата"@sr , "Џумулангма"@sr , "планина Чомолубутангма"@sr , "Чомолубутангма"@sr , "Маунт Еверест"@sr , "सगरमाथा"@hi , "珠峰"@zh-cn , "珠穆朗玛"@zh-cn , "额菲尔士峰"@zh-cn , "圣母峰"@zh-cn , "Qomolangma"@ca , "Chomolangma"@ca , "Chomolungma"@ca , "Qomolangma Feng"@ca , "Sagarmāthā"@ca , "Zhumulangma"@ca , "Sagarmatha"@ca , "Everest"@tr , "Mt. Qomolangma"@tr , "Sagarmāthā"@tr , "Sagarmatha"@tr , "Džomulungma"@lv , "聖母峰"@zh-hant , "聖母峰"@zh-tw , "এভারেস্ট"@bn , "珠峰"@zh-hans , "珠穆朗玛"@zh-hans , "额菲尔士峰"@zh-hans , "圣母峰"@zh-hans , "ߋߝ߭ߊߙߍߛ"@nqo , "ߌߝ߭ߊߙߍߛ"@nqo , "ߞߡߏߟߊ߲ߜ߭ߑߡߊ߫"@nqo , "ߛߜ߭ߊߙߑߡߕߊ߫"@nqo ;
+	wdt:P17 wd:Q837 , wd:Q148 ;
+	wdt:P31 wd:Q8502 , wd:Q570116 ;
+	wdt:P373 "Mount Everest" ;
+	wdt:P242 <http://commons.wikimedia.org/wiki/Special:FilePath/MountEverestRelief.png> ;
+	wdt:P227 "4040417-1" ;
+	wdtn:P227 <http://d-nb.info/gnd/4040417-1> ;
+	wdt:P214 "247168735" ;
+	wdtn:P214 <http://viaf.org/viaf/247168735> ;
+	wdt:P214 "1432156565687023500005" ;
+	wdtn:P214 <http://viaf.org/viaf/1432156565687023500005> ;
+	wdt:P349 "00628288" ;
+	wdtn:P349 <http://id.ndl.go.jp/auth/ndlna/00628288> ;
+	wdt:P625 "Point(86.925277777778 27.988055555556)"^^geo:wktLiteral ;
+	wdt:P910 wd:Q7278710 ;
+	wdt:P935 "ཇོ་མོ་གླང་མ" ;
+	wdt:P18 <http://commons.wikimedia.org/wiki/Special:FilePath/Mount%20Everest%20as%20seen%20from%20Drukair2%20PLW%20edit.jpg> ;
+	wdt:P138 wd:Q217119 ;
+	wdt:P646 "/m/0blbd" ;
+	wdtn:P646 <http://g.co/kg/m/0blbd> ;
+	wdt:P244 "sh85045978" ;
+	wdtn:P244 <https://id.loc.gov/authorities/names/sh85045978> ;
+	wdt:P948 <http://commons.wikimedia.org/wiki/Special:FilePath/Mount%20Everest%20banner%202.jpg> ;
+	wdt:P1566 "1283416" ;
+	wdtn:P1566 <http://sws.geonames.org/1283416/> ;
+	wdt:P793 wd:Q1194369 ;
+	wdt:P2044 "+8848"^^xsd:decimal ;
+	wdt:P268 "15289744k" ;
+	wdtn:P268 <http://data.bnf.fr/ark:/12148/cb15289744k#about> ;
+	wdt:P268 "11963711d" ;
+	wdtn:P268 <http://data.bnf.fr/ark:/12148/cb11963711d#about> ;
+	wdt:P3109 "10640" ;
+	wdt:P1296 "0025628" ;
+	wdt:P3221 "destination/mount-everest" ;
+	wdt:P1667 "7001423" ;
+	wdtn:P1667 <http://vocab.getty.edu/tgn/7001423> ;
+	wdt:P2924 "1952857" ;
+	wdt:P3309 "150230" ;
+	wdt:P3417 "Mount-Everest" ;
+	wdt:P131 wd:Q28363 , wd:Q17269 ;
+	wdt:P3513 "80" ;
+	wdt:P1465 wd:Q8366750 ;
+	wdt:P3018 wd:Q2211959 ;
+	wdt:P361 wd:Q5451 , wd:Q208126 ;
+	wdt:P2347 "116445" ;
+	wdtn:P2347 <http://www.yso.fi/onto/yso/p116445> ;
+	wdt:P1225 "10038395" ;
+	wdt:P4552 wd:Q924257 ;
+	wdt:P691 "ge128521" ;
+	wdt:P3219 "alpinisme-conquete-de-l-everest" ;
+	wdt:P5008 wd:Q5460604 ;
+	wdt:P1343 wd:Q2041543 , wd:Q4532138 ;
+	wdt:P1417 "place/Mount-Everest" ;
+	wdt:P2695 wd:Q56769329 ;
+	wdt:P30 wd:Q48 ;
+	wdt:P6573 "Mount_Everest" ;
+	wdt:P3365 "monte-everest" ;
+	wdt:P4291 <http://commons.wikimedia.org/wiki/Special:FilePath/Everest%20panorama%20from%20Kala%20Patthar.jpg> ;
+	wdt:P3553 "20010139" ;
+	wdt:P6058 "mont/wd/118815" ;
+	wdt:P7867 wd:Q84084667 ;
+	wdt:P7818 "Everest" ;
+	wdt:P7829 "Mount_Everest" ;
+	wdt:P7827 "Monte_Everest" ;
+	wdt:P7822 "Everest" ;
+	wdt:P1705 "Mount Everest"@en , "सगरमाथा"@ne , "ཇོ་མོ་གླང་མ"@bo , "珠穆朗瑪峰"@zh-hant , "珠穆朗玛峰"@zh-hans , "聖母峰"@zh-hant , "圣母峰"@zh-hans ;
+	wdt:P8408 "MountEverest" ;
+	wdt:P8450 wd:Q185552 ;
+	wdt:P3222 "everest" ;
+	wdt:P5019 "everest-20" ;
+	wdt:P950 "XX451838" ;
+	wdtn:P950 <http://datos.bne.es/resource/XX451838> ;
+	p:P17 s:q513-40441BCB-1D25-4924-A7FF-F5CB88DE6B31 .
+
+s:q513-40441BCB-1D25-4924-A7FF-F5CB88DE6B31 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P17 wd:Q837 ;
+	prov:wasDerivedFrom ref:2edb431a3a67c5218cda3aaa15f3d422b9e8cc51 .
+
+wd:Q513 p:P17 s:Q513-66ec2289-46d7-b1bc-158c-8ad0c873e1ac .
+
+s:Q513-66ec2289-46d7-b1bc-158c-8ad0c873e1ac a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P17 wd:Q148 ;
+	prov:wasDerivedFrom ref:ba8cfbc5f25473e1fafa3e32d70603f5c044adb6 .
+
+wd:Q513 p:P31 s:q513-B87FCB39-7299-4FF3-BD2D-E129012A835E .
+
+s:q513-B87FCB39-7299-4FF3-BD2D-E129012A835E a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P31 wd:Q8502 .
+
+wd:Q513 p:P31 s:Q513-eb590eee-4ba6-2712-ef59-797c4b042dec .
+
+s:Q513-eb590eee-4ba6-2712-ef59-797c4b042dec a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P31 wd:Q570116 .
+
+wd:Q513 p:P373 s:q513-88CD8767-5D6A-4C92-B802-A7E393D7F1EA .
+
+s:q513-88CD8767-5D6A-4C92-B802-A7E393D7F1EA a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P373 "Mount Everest" .
+
+wd:Q513 p:P242 s:q513-3DE91BBC-1ABE-4DDE-BA27-74315175D919 .
+
+s:q513-3DE91BBC-1ABE-4DDE-BA27-74315175D919 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P242 <http://commons.wikimedia.org/wiki/Special:FilePath/MountEverestRelief.png> ;
+	prov:wasDerivedFrom ref:fa278ebfc458360e5aed63d5058cca83c46134f1 .
+
+wd:Q513 p:P227 s:q513-C912836D-3E26-4815-A9FC-7B3B1A844150 .
+
+s:q513-C912836D-3E26-4815-A9FC-7B3B1A844150 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P227 "4040417-1" ;
+	psn:P227 <http://d-nb.info/gnd/4040417-1> .
+
+wd:Q513 p:P214 s:q513-62FD2325-F040-495D-828B-780DAE9516A9 .
+
+s:q513-62FD2325-F040-495D-828B-780DAE9516A9 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P214 "247168735" ;
+	psn:P214 <http://viaf.org/viaf/247168735> .
+
+wd:Q513 p:P214 s:Q513-423506E7-C15D-4A1F-8959-15D521BF993A .
+
+s:Q513-423506E7-C15D-4A1F-8959-15D521BF993A a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P214 "1432156565687023500005" ;
+	psn:P214 <http://viaf.org/viaf/1432156565687023500005> .
+
+wd:Q513 p:P349 s:q513-f577af90-4282-5c6b-7cc0-886348611619 .
+
+s:q513-f577af90-4282-5c6b-7cc0-886348611619 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P349 "00628288" ;
+	psn:P349 <http://id.ndl.go.jp/auth/ndlna/00628288> .
+
+wd:Q513 p:P625 s:q513-6dcddd25-48a6-229a-0e36-31b122c2c813 .
+
+s:q513-6dcddd25-48a6-229a-0e36-31b122c2c813 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P625 "Point(86.925277777778 27.988055555556)"^^geo:wktLiteral ;
+	psv:P625 v:e89f9f38540f8a5da5a23e7c5206119d .
+
+wd:Q513 p:P910 s:Q513-106C6F66-7E26-4113-9485-F599D2136B9B .
+
+s:Q513-106C6F66-7E26-4113-9485-F599D2136B9B a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P910 wd:Q7278710 .
+
+wd:Q513 p:P935 s:Q513-58354C43-DDC0-428F-A6B8-E943A4F44F28 .
+
+s:Q513-58354C43-DDC0-428F-A6B8-E943A4F44F28 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P935 "ཇོ་མོ་གླང་མ" .
+
+wd:Q513 p:P18 s:Q513-6fa3c95a-4cec-5cef-9283-dd92246ff02d .
+
+s:Q513-6fa3c95a-4cec-5cef-9283-dd92246ff02d wikibase:rank wikibase:NormalRank ;
+	ps:P18 <http://commons.wikimedia.org/wiki/Special:FilePath/Mount%20Everest%20from%20Rongbuk%20may%202005.JPG> .
+
+wd:Q513 p:P18 s:Q513-9AF9D572-92DC-4D74-85AE-2FA2AC8F64DD .
+
+s:Q513-9AF9D572-92DC-4D74-85AE-2FA2AC8F64DD wikibase:rank wikibase:NormalRank ;
+	ps:P18 <http://commons.wikimedia.org/wiki/Special:FilePath/Mount%20everest.jpg> ;
+	pq:P2096 "Mount Everest seen from base camp one."@en ;
+	pq:P585 "2007-06-07T00:00:00Z"^^xsd:dateTime ;
+	pqv:P585 v:914141c2f59d6771321965ccaa74d51a ;
+	prov:wasDerivedFrom ref:c0623aeb5e42745314018466233282526f7d8c9c .
+
+wd:Q513 p:P18 s:Q513-bedd5339-4c93-78a0-6b1f-de428d942747 .
+
+s:Q513-bedd5339-4c93-78a0-6b1f-de428d942747 a wikibase:BestRank ;
+	wikibase:rank wikibase:PreferredRank ;
+	ps:P18 <http://commons.wikimedia.org/wiki/Special:FilePath/Mount%20Everest%20as%20seen%20from%20Drukair2%20PLW%20edit.jpg> .
+
+wd:Q513 p:P18 s:Q513-166a120d-4320-7abe-c10f-143ee213fa84 .
+
+s:Q513-166a120d-4320-7abe-c10f-143ee213fa84 wikibase:rank wikibase:NormalRank ;
+	ps:P18 <http://commons.wikimedia.org/wiki/Special:FilePath/Everest%20kalapatthar%20crop.jpg> .
+
+wd:Q513 p:P138 s:Q513-31afbfd3-4f9f-a9e0-531f-6132649e2462 .
+
+s:Q513-31afbfd3-4f9f-a9e0-531f-6132649e2462 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P138 wd:Q217119 ;
+	pq:P580 "1865-01-01T00:00:00Z"^^xsd:dateTime ;
+	pqv:P580 v:9e26b65dd58f634a740047288c3c1ba5 ;
+	pq:P805 wd:Q2517025 ;
+	pq:P5168 "Mount Everest"@en ;
+	prov:wasDerivedFrom ref:2fb5f1d401c2603010edadf139a9c20538df8604 .
+
+wd:Q513 p:P646 s:Q513-FD00B908-FADC-41E2-B0E6-6C4D72F2990E .
+
+s:Q513-FD00B908-FADC-41E2-B0E6-6C4D72F2990E a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P646 "/m/0blbd" ;
+	psn:P646 <http://g.co/kg/m/0blbd> ;
+	prov:wasDerivedFrom ref:2b00cb481cddcac7623114367489b5c194901c4a .
+
+wd:Q513 p:P244 s:Q513-cf9115b2-4d05-b31e-6a73-6c84d7b236b3 .
+
+s:Q513-cf9115b2-4d05-b31e-6a73-6c84d7b236b3 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P244 "sh85045978" ;
+	psn:P244 <https://id.loc.gov/authorities/names/sh85045978> .
+
+wd:Q513 p:P948 s:Q513-548903D5-3A79-4C38-8503-28F5FBCF6913 .
+
+s:Q513-548903D5-3A79-4C38-8503-28F5FBCF6913 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P948 <http://commons.wikimedia.org/wiki/Special:FilePath/Mount%20Everest%20banner%202.jpg> .
+
+wd:Q513 p:P1566 s:Q513-BE2568FE-0CB0-419A-9235-7716F555B41F .
+
+s:Q513-BE2568FE-0CB0-419A-9235-7716F555B41F a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1566 "1283416" ;
+	psn:P1566 <http://sws.geonames.org/1283416/> ;
+	prov:wasDerivedFrom ref:88694a0f4d1486770c269f7db16a1982f74da69d .
+
+wd:Q513 p:P793 s:Q513-f1abee8d-49b9-d432-92a6-856d50f0625d .
+
+s:Q513-f1abee8d-49b9-d432-92a6-856d50f0625d a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P793 wd:Q1194369 ;
+	pq:P585 "1953-05-29T00:00:00Z"^^xsd:dateTime ;
+	pqv:P585 v:f6de3b69da97d2279124774cf34871d9 ;
+	pq:P710 wd:Q33817 , wd:Q80732 ;
+	pq:P805 wd:Q4567715 .
+
+wd:Q513 p:P2044 s:Q513-d46a5320-422c-f312-bc6a-669b9a36a71d .
+
+s:Q513-d46a5320-422c-f312-bc6a-669b9a36a71d a wikibase:BestRank ;
+	wikibase:rank wikibase:PreferredRank ;
+	ps:P2044 "+8848"^^xsd:decimal ;
+	psv:P2044 v:8c4bb5ae5c57ec8dcc70893f185c639c ;
+	psn:P2044 v:8c4bb5ae5c57ec8dcc70893f185c639c ;
+	prov:wasDerivedFrom ref:c9bcf7dcb3069868d5ff67d8e2b800a4e8997bd8 .
+
+wd:Q513 p:P268 s:Q513-9E8FAD79-444D-48DA-BD5D-915AECAC6C84 .
+
+s:Q513-9E8FAD79-444D-48DA-BD5D-915AECAC6C84 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P268 "15289744k" ;
+	psn:P268 <http://data.bnf.fr/ark:/12148/cb15289744k#about> .
+
+wd:Q513 p:P268 s:Q513-EE4A07D5-0C98-4D98-A8A3-B70F0D4147A6 .
+
+s:Q513-EE4A07D5-0C98-4D98-A8A3-B70F0D4147A6 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P268 "11963711d" ;
+	psn:P268 <http://data.bnf.fr/ark:/12148/cb11963711d#about> .
+
+wd:Q513 p:P3109 s:Q513-8fede0d9-4076-c7ee-0864-585b57b69c52 .
+
+s:Q513-8fede0d9-4076-c7ee-0864-585b57b69c52 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P3109 "10640" .
+
+wd:Q513 p:P1296 s:Q513-382525D3-9FD2-47E7-B72E-DB19E1C7474E .
+
+s:Q513-382525D3-9FD2-47E7-B72E-DB19E1C7474E a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1296 "0025628" .
+
+wd:Q513 p:P3221 s:Q513-7DFFB96C-0A8D-4024-97EA-23A1A77CAFD2 .
+
+s:Q513-7DFFB96C-0A8D-4024-97EA-23A1A77CAFD2 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P3221 "destination/mount-everest" .
+
+wd:Q513 p:P1667 s:Q513-F8AF13AB-9532-446A-95D7-3ABCD065C4F0 .
+
+s:Q513-F8AF13AB-9532-446A-95D7-3ABCD065C4F0 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1667 "7001423" ;
+	psn:P1667 <http://vocab.getty.edu/tgn/7001423> .
+
+wd:Q513 p:P2924 s:Q513-ff298a0d-42bf-9aaa-6bc3-86a70cf9321d .
+
+s:Q513-ff298a0d-42bf-9aaa-6bc3-86a70cf9321d a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2924 "1952857" .
+
+wd:Q513 p:P3309 s:Q513-43B9573C-EF2B-4CC1-B45F-0B0C66675B56 .
+
+s:Q513-43B9573C-EF2B-4CC1-B45F-0B0C66675B56 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P3309 "150230" .
+
+wd:Q513 p:P3417 s:Q513-105C2EDB-8712-4D45-AFF0-53C6A9AEEB93 .
+
+s:Q513-105C2EDB-8712-4D45-AFF0-53C6A9AEEB93 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P3417 "Mount-Everest" .
+
+wd:Q513 p:P131 s:Q513-98be1e5f-4be3-29de-f1b6-cce1fce62e4a .
+
+s:Q513-98be1e5f-4be3-29de-f1b6-cce1fce62e4a a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P131 wd:Q28363 .
+
+wd:Q513 p:P131 s:Q513-992cf0fb-4688-7085-48e2-ff82fb156dcf .
+
+s:Q513-992cf0fb-4688-7085-48e2-ff82fb156dcf a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P131 wd:Q17269 .
+
+wd:Q513 p:P3513 s:Q513-75FCA897-7769-4355-ADCC-F3F9F1D0A080 .
+
+s:Q513-75FCA897-7769-4355-ADCC-F3F9F1D0A080 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P3513 "80" .
+
+wd:Q513 p:P1465 s:Q513-4D1B9898-7EC3-458F-894E-0A1B925DEAAC .
+
+s:Q513-4D1B9898-7EC3-458F-894E-0A1B925DEAAC a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1465 wd:Q8366750 .
+
+wd:Q513 p:P3018 s:Q513-48edda37-4d54-c50c-e713-24baf0cbf1ee .
+
+s:Q513-48edda37-4d54-c50c-e713-24baf0cbf1ee a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P3018 wd:Q2211959 ;
+	prov:wasDerivedFrom ref:7064f1e09ab07f00403821186531d461a49b96dc .
+
+wd:Q513 p:P361 s:Q513-63e234cf-4e7d-4124-a503-f86e9ce31127 .
+
+s:Q513-63e234cf-4e7d-4124-a503-f86e9ce31127 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P361 wd:Q5451 ;
+	prov:wasDerivedFrom ref:ba8cfbc5f25473e1fafa3e32d70603f5c044adb6 .
+
+wd:Q513 p:P361 s:Q513-2269dd8c-41f0-39f2-d2ef-83b63cfdbd3f .
+
+s:Q513-2269dd8c-41f0-39f2-d2ef-83b63cfdbd3f a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P361 wd:Q208126 .
+
+wd:Q513 p:P2659 s:Q513-c79d439b-4b64-dc00-30eb-945cee464df8 .
+
+s:Q513-c79d439b-4b64-dc00-30eb-945cee464df8 wikibase:rank wikibase:DeprecatedRank ;
+	ps:P2659 "+40008"^^xsd:decimal ;
+	psv:P2659 v:8d083e4ef7c86847967a4909a3a3bcf6 ;
+	psn:P2659 v:7d23bc0fceb1df0f98e80531816317e5 .
+
+wd:Q513 p:P2347 s:Q513-2B8FF351-DF3B-4BA3-B199-772C7DAA8307 .
+
+s:Q513-2B8FF351-DF3B-4BA3-B199-772C7DAA8307 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2347 "116445" ;
+	psn:P2347 <http://www.yso.fi/onto/yso/p116445> .
+
+wd:Q513 p:P1225 s:Q513-C76D052A-288C-4C7E-A9EB-6429668F7B62 .
+
+s:Q513-C76D052A-288C-4C7E-A9EB-6429668F7B62 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1225 "10038395" .
+
+wd:Q513 p:P4552 s:Q513-71BC04F3-E24F-4E57-A3A0-AC9E7581C277 .
+
+s:Q513-71BC04F3-E24F-4E57-A3A0-AC9E7581C277 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P4552 wd:Q924257 .
+
+wd:Q513 p:P691 s:Q513-d704f979-461a-25e8-f3fd-a19988072eaa .
+
+s:Q513-d704f979-461a-25e8-f3fd-a19988072eaa a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P691 "ge128521" .
+
+wd:Q513 p:P3219 s:Q513-BC06A965-447B-4766-885A-B51567C141F0 .
+
+s:Q513-BC06A965-447B-4766-885A-B51567C141F0 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P3219 "alpinisme-conquete-de-l-everest" .
+
+wd:Q513 p:P5008 s:Q513-51CA3670-292A-4133-8BDC-FE8BAABCBF08 .
+
+s:Q513-51CA3670-292A-4133-8BDC-FE8BAABCBF08 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5008 wd:Q5460604 .
+
+wd:Q513 p:P1343 s:Q513-D8B83F81-21F3-476B-9BF2-2B6F6296A814 .
+
+s:Q513-D8B83F81-21F3-476B-9BF2-2B6F6296A814 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1343 wd:Q2041543 ;
+	pq:P805 wd:Q61728657 ;
+	prov:wasDerivedFrom ref:5c7b1418a49713ecfbba7381f86c75a884657144 .
+
+wd:Q513 p:P1343 s:Q513-883e91ef-5ddc-4a50-9a16-1d41b4ee67e2 .
+
+s:Q513-883e91ef-5ddc-4a50-9a16-1d41b4ee67e2 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1343 wd:Q4532138 ;
+	pq:P805 wd:Q87086632 .
+
+wd:Q513 p:P1417 s:Q513-30a156e6-4d97-a200-dad9-077de7f4ce4f .
+
+s:Q513-30a156e6-4d97-a200-dad9-077de7f4ce4f a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1417 "place/Mount-Everest" ;
+	prov:wasDerivedFrom ref:355b56329b78db22be549dec34f2570ca61ca056 .
+
+wd:Q513 p:P2695 s:Q513-b4bdaea6-4f46-03df-e48d-6f783180f61f .
+
+s:Q513-b4bdaea6-4f46-03df-e48d-6f783180f61f a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2695 wd:Q56769329 .
+
+wd:Q513 p:P30 s:Q513-f8fa4fa9-44ff-4998-8b1d-34d7860a3ce8 .
+
+s:Q513-f8fa4fa9-44ff-4998-8b1d-34d7860a3ce8 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P30 wd:Q48 .
+
+wd:Q513 p:P6573 s:Q513-5EDF7DF6-060A-4AEA-BB97-0361C7167162 .
+
+s:Q513-5EDF7DF6-060A-4AEA-BB97-0361C7167162 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6573 "Mount_Everest" .
+
+wd:Q513 p:P3365 s:Q513-182b72f8-43a5-2dca-4484-21e0ab7f81f4 .
+
+s:Q513-182b72f8-43a5-2dca-4484-21e0ab7f81f4 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P3365 "monte-everest" .
+
+wd:Q513 p:P4291 s:Q513-80f23192-499e-4eb0-003b-3877a32ae6a8 .
+
+s:Q513-80f23192-499e-4eb0-003b-3877a32ae6a8 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P4291 <http://commons.wikimedia.org/wiki/Special:FilePath/Everest%20panorama%20from%20Kala%20Patthar.jpg> .
+
+wd:Q513 p:P3553 s:Q513-F61DE412-874B-4F55-B27A-6485FF183207 .
+
+s:Q513-F61DE412-874B-4F55-B27A-6485FF183207 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P3553 "20010139" .
+
+wd:Q513 p:P6058 s:Q513-279887bd-4ea7-de13-e525-47676c189bda .
+
+s:Q513-279887bd-4ea7-de13-e525-47676c189bda a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6058 "mont/wd/118815" .
+
+wd:Q513 p:P7867 s:Q513-a60fb97c-68b6-4404-be72-a8044f838777 .
+
+s:Q513-a60fb97c-68b6-4404-be72-a8044f838777 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P7867 wd:Q84084667 .
+
+wd:Q513 p:P7818 s:Q513-98819E5E-33AB-4CC8-9D1B-6C69C13621B7 .
+
+s:Q513-98819E5E-33AB-4CC8-9D1B-6C69C13621B7 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P7818 "Everest" .
+
+wd:Q513 p:P7829 s:Q513-46DE94E4-6DE4-485D-8653-81B0BD36319B .
+
+s:Q513-46DE94E4-6DE4-485D-8653-81B0BD36319B a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P7829 "Mount_Everest" .
+
+wd:Q513 p:P7827 s:Q513-B72E0E3A-2221-4C82-B263-91A3DF2750A2 .
+
+s:Q513-B72E0E3A-2221-4C82-B263-91A3DF2750A2 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P7827 "Monte_Everest" .
+
+wd:Q513 p:P7822 s:Q513-79217557-F949-49D4-83E3-F806C57DB703 .
+
+s:Q513-79217557-F949-49D4-83E3-F806C57DB703 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P7822 "Everest" .
+
+wd:Q513 p:P1705 s:Q513-e246d941-48a5-e2c5-5f71-b197e56099ef .
+
+s:Q513-e246d941-48a5-e2c5-5f71-b197e56099ef a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1705 "Mount Everest"@en ;
+	prov:wasDerivedFrom ref:e03d6980eecdab58de936e9fe65e4671276a47e1 .
+
+wd:Q513 p:P1705 s:Q513-be844468-43ef-2c06-7ab7-82a3cb7fb4db .
+
+s:Q513-be844468-43ef-2c06-7ab7-82a3cb7fb4db a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1705 "सगरमाथा"@ne ;
+	prov:wasDerivedFrom ref:e03d6980eecdab58de936e9fe65e4671276a47e1 .
+
+wd:Q513 p:P1705 s:Q513-1fafde51-413e-1497-d4af-0fa3e1a2e4c5 .
+
+s:Q513-1fafde51-413e-1497-d4af-0fa3e1a2e4c5 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1705 "ཇོ་མོ་གླང་མ"@bo ;
+	pq:P4189 "jo mo lang ma" ;
+	pq:P4187 "jo mo glang ma" .
+
+wd:Q513 p:P1705 s:Q513-d17ea72f-47f9-13d1-fec5-cddfdf1ccf72 .
+
+s:Q513-d17ea72f-47f9-13d1-fec5-cddfdf1ccf72 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1705 "珠穆朗瑪峰"@zh-hant ;
+	pq:P1721 "zhūmùlǎngmǎ fēng" .
+
+wd:Q513 p:P1705 s:Q513-b5ae10a6-4875-ecb7-44e5-581d38b299d3 .
+
+s:Q513-b5ae10a6-4875-ecb7-44e5-581d38b299d3 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1705 "珠穆朗玛峰"@zh-hans ;
+	pq:P1721 "zhūmùlǎngmǎ fēng" .
+
+wd:Q513 p:P1705 s:Q513-fe4d89b0-464d-579a-7fd1-b0f190e7c702 .
+
+s:Q513-fe4d89b0-464d-579a-7fd1-b0f190e7c702 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1705 "聖母峰"@zh-hant ;
+	pq:P1721 "shèngmǔ fēng" .
+
+wd:Q513 p:P1705 s:Q513-140966f7-436f-b83e-fd4f-1dd02e934c40 .
+
+s:Q513-140966f7-436f-b83e-fd4f-1dd02e934c40 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1705 "圣母峰"@zh-hans ;
+	pq:P1721 "shèngmǔ fēng" .
+
+wd:Q513 p:P8408 s:Q513-D5A6B0E3-D42A-49AC-B036-9877D08DE28F .
+
+s:Q513-D5A6B0E3-D42A-49AC-B036-9877D08DE28F a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P8408 "MountEverest" ;
+	prov:wasDerivedFrom ref:9a681f9dd95c90224547c404e11295f4f7dcf54e .
+
+wd:Q513 p:P8450 s:Q513-39502645-4b67-381a-54ef-0fa352d6f03a .
+
+s:Q513-39502645-4b67-381a-54ef-0fa352d6f03a a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P8450 wd:Q185552 .
+
+wd:Q513 p:P3222 s:Q513-1FAF4A0D-4E6C-44D1-9B8C-F625E8D75DBB .
+
+s:Q513-1FAF4A0D-4E6C-44D1-9B8C-F625E8D75DBB a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P3222 "everest" .
+
+wd:Q513 p:P5019 s:Q513-F0AC4D67-E677-43EA-8053-6FD2CB9FDBD7 .
+
+s:Q513-F0AC4D67-E677-43EA-8053-6FD2CB9FDBD7 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5019 "everest-20" .
+
+wd:Q513 p:P950 s:Q513-32C1857C-04FF-42F3-8CD6-D41E4532A87C .
+
+s:Q513-32C1857C-04FF-42F3-8CD6-D41E4532A87C a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P950 "XX451838" ;
+	psn:P950 <http://datos.bne.es/resource/XX451838> ;
+	prov:wasDerivedFrom ref:64a97d654e0094bf0b30167bd1ce3e316b61f409 .
+
+v:e89f9f38540f8a5da5a23e7c5206119d a wikibase:GlobecoordinateValue ;
+	wikibase:geoLatitude "27.988055555556"^^xsd:double ;
+	wikibase:geoLongitude "86.925277777778"^^xsd:double ;
+	wikibase:geoPrecision "0.00027777777777778"^^xsd:double ;
+	wikibase:geoGlobe wd:Q2 .
+
+v:8c4bb5ae5c57ec8dcc70893f185c639c a wikibase:QuantityValue ;
+	wikibase:quantityAmount "+8848"^^xsd:decimal ;
+	wikibase:quantityUnit wd:Q11573 ;
+	wikibase:quantityNormalized v:8c4bb5ae5c57ec8dcc70893f185c639c .
+
+v:8d083e4ef7c86847967a4909a3a3bcf6 a wikibase:QuantityValue ;
+	wikibase:quantityAmount "+40008"^^xsd:decimal ;
+	wikibase:quantityUnit wd:Q828224 .
+
+v:7d23bc0fceb1df0f98e80531816317e5 a wikibase:QuantityValue ;
+	wikibase:quantityAmount "+40008000"^^xsd:decimal ;
+	wikibase:quantityUnit wd:Q11573 ;
+	wikibase:quantityNormalized v:7d23bc0fceb1df0f98e80531816317e5 .
+
+v:8d083e4ef7c86847967a4909a3a3bcf6 wikibase:quantityNormalized v:7d23bc0fceb1df0f98e80531816317e5 .
+
+v:d6f9a63d187bc7acf3df5913bc9546de a wikibase:TimeValue .
+
+v:914141c2f59d6771321965ccaa74d51a a wikibase:TimeValue ;
+	wikibase:timeValue "2007-06-07T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel wd:Q1985727 .
+
+v:9e26b65dd58f634a740047288c3c1ba5 a wikibase:TimeValue ;
+	wikibase:timeValue "1865-01-01T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "9"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel wd:Q1985727 .
+
+v:f987783e1f9c9fa0cb0b774d330af52d a wikibase:TimeValue .
+
+v:f6de3b69da97d2279124774cf34871d9 a wikibase:TimeValue ;
+	wikibase:timeValue "1953-05-29T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel wd:Q1985727 .
+
+v:664bae4effccc18fd4ad1ae188fab025 a wikibase:TimeValue .
+
+ref:2edb431a3a67c5218cda3aaa15f3d422b9e8cc51 pr:P854 <https://www.peakware.com/peaks.php?pk=80> ;
+	pr:P1476 "Mount Everest"@en ;
+	pr:P1433 wd:Q28493740 ;
+	pr:P813 "2019-01-28T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:d6f9a63d187bc7acf3df5913bc9546de .
+
+ref:ba8cfbc5f25473e1fafa3e32d70603f5c044adb6 pr:P1476 "Mount Everest"@en ;
+	pr:P1433 wd:Q28493740 ;
+	pr:P813 "2019-01-28T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:d6f9a63d187bc7acf3df5913bc9546de ;
+	pr:P3513 "80" .
+
+ref:fa278ebfc458360e5aed63d5058cca83c46134f1 pr:P143 wd:Q328 .
+
+ref:c0623aeb5e42745314018466233282526f7d8c9c pr:P854 <https://www.flickr.com/photos/rupertuk/534748923/> .
+
+ref:2fb5f1d401c2603010edadf139a9c20538df8604 pr:P248 wd:Q23763219 .
+
+ref:2b00cb481cddcac7623114367489b5c194901c4a pr:P248 wd:Q15241312 ;
+	pr:P577 "2013-10-28T00:00:00Z"^^xsd:dateTime ;
+	prv:P577 v:f987783e1f9c9fa0cb0b774d330af52d .
+
+ref:88694a0f4d1486770c269f7db16a1982f74da69d pr:P248 wd:Q830106 .
+
+ref:c9bcf7dcb3069868d5ff67d8e2b800a4e8997bd8 pr:P854 <https://www.peakware.com/peaks.php?pk=80> .
+
+ref:7064f1e09ab07f00403821186531d461a49b96dc pr:P854 <http://whc.unesco.org/en/list/120> .
+
+ref:5c7b1418a49713ecfbba7381f86c75a884657144 pr:P3452 wd:Q61728657 .
+
+ref:355b56329b78db22be549dec34f2570ca61ca056 pr:P248 wd:Q5375741 .
+
+ref:e03d6980eecdab58de936e9fe65e4671276a47e1 pr:P143 wd:Q58251 ;
+	pr:P4656 <https://az.wikipedia.org/?oldid=5087373> .
+
+ref:9a681f9dd95c90224547c404e11295f4f7dcf54e pr:P248 wd:Q64139102 ;
+	pr:P813 "2020-07-09T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:664bae4effccc18fd4ad1ae188fab025 .
+
+ref:64a97d654e0094bf0b30167bd1ce3e316b61f409 pr:P854 <http://datos.bne.es/tema/XX451838.html> .
+
+wd:Q513 schema:version "1271914292"^^xsd:integer ;
+	wikibase:sitelinks "200"^^xsd:integer ;
+	schema:dateModified "2020-09-05T21:24:06Z"^^xsd:dateTime ;
+	wikibase:statements "74"^^xsd:integer ;
+	wikibase:identifiers "34"^^xsd:integer .
+
+v:d6f9a63d187bc7acf3df5913bc9546de wikibase:timeValue "2019-01-28T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel wd:Q1985727 .
+
+v:f987783e1f9c9fa0cb0b774d330af52d wikibase:timeValue "2013-10-28T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel wd:Q1985727 .
+
+v:664bae4effccc18fd4ad1ae188fab025 wikibase:timeValue "2020-07-09T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel wd:Q1985727 .
