@@ -1,14 +1,21 @@
 package org.wikidata.query.rdf.tool.eventsummmary;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
@@ -19,7 +26,10 @@ import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import java.util.zip.GZIPInputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.tool.MapperUtils;
 import org.wikidata.query.rdf.tool.options.OptionsUtils;
 
@@ -27,9 +37,14 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.common.annotations.VisibleForTesting;
 
 import de.thetaphi.forbiddenapis.SuppressForbidden;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-
+// annotating here because annotations on lambdas don't work very well on lambdas
+@SuppressFBWarnings(value = "OS_OPEN_STREAM",
+        justification = "Stream in streamRotatedEvents might be not closed when exception thrown, don't really care here.")
 public final class Summarizer {
+    private static final Logger log = LoggerFactory.getLogger(Summarizer.class);
+
     public static void main(String[] args) throws IOException {
         SummarizerOptions options = OptionsUtils.handleOptions(SummarizerOptions.class, args);
         summarizeEvents(options.eventFilePath(), options.summaryFilePath());
@@ -44,9 +59,9 @@ public final class Summarizer {
         writeEventSummary(summarizeEvents, summaryFilePath);
     }
 
-    private static Stream<BasicQueryEvent> getEventStream(String path) throws IOException {
+    private static Stream<BasicQueryEvent> getEventStream(String path) {
         ObjectReader objectReader = MapperUtils.getObjectMapper().readerFor(BasicQueryEvent.class);
-        Stream<String> lines = path != null ? Files.lines(Paths.get(path)) :  getStdInLines();
+        Stream<String> lines = path != null ? streamRotatedEvents(path) :  getStdInLines();
 
         return lines
                 .map(src -> {
@@ -109,5 +124,33 @@ public final class Summarizer {
         } else {
             System.out.println(contentStream.collect(Collectors.joining("\n")));
         }
+    }
+
+    public static Stream<String> streamRotatedEvents(String fileName) {
+        Path mainPath = Paths.get(fileName).toAbsolutePath();
+        String absolutePath = mainPath.toString();
+        Path parent = firstNonNull(mainPath.getParent(), mainPath.getRoot());
+
+        FileFilter fileFilter = file -> file.getAbsolutePath().startsWith(absolutePath);
+        File[] files = parent.toFile().listFiles(fileFilter);
+        if (files == null || files.length == 0) return Stream.empty();
+        Arrays.sort(files, Comparator.comparing(Object::toString).reversed());
+
+        return Arrays.stream(files)
+                .flatMap(file -> {
+                    Path path = file.toPath();
+
+                    try {
+                        if (!file.getName().endsWith(".gz")) {
+                            return Files.lines(path);
+                        } else {
+                            GZIPInputStream gzipInputStream = new GZIPInputStream(Files.newInputStream(path));
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(gzipInputStream, StandardCharsets.UTF_8));
+                            return reader.lines();
+                        }
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                });
     }
 }
