@@ -1,9 +1,11 @@
 package org.wikidata.query.rdf.updater;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +29,7 @@ public class MutationEventDataGenerator {
     public List<MutationEventData> fullImportEvent(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
                                                    List<Statement> statements, List<Statement> linkedValuesAndRefs) {
         return createChunks(meta, entity, revision, eventTime, MutationEventData.IMPORT_OPERATION, statements,
-                Collections.emptyList(), linkedValuesAndRefs, Collections.emptyList());
+                emptyList(), linkedValuesAndRefs, emptyList());
     }
 
     public List<MutationEventData> diffEvent(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
@@ -39,7 +41,7 @@ public class MutationEventDataGenerator {
 
     public List<MutationEventData> deleteEvent(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime) {
         MutationEventData deleteEvent = new MutationEventData(meta.get(), entity, revision, eventTime, 0, 1, MutationEventData.DELETE_OPERATION);
-        return new ArrayList<>(Collections.singleton(deleteEvent));
+        return singletonList(deleteEvent);
     }
 
     private List<MutationEventData> createChunks(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,

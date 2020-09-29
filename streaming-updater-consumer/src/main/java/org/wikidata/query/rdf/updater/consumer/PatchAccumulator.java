@@ -2,10 +2,14 @@ package org.wikidata.query.rdf.updater.consumer;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -23,65 +27,98 @@ import lombok.Getter;
 @Getter
 @NotThreadSafe
 public class PatchAccumulator {
-    private final Set<Statement> allAdded = new HashSet<>();
-    private final Set<Statement> allRemoved = new HashSet<>();
-    private final Set<Statement> allLinkedSharedElts = new HashSet<>();
-    private final Set<Statement> allUnlinkedSharedElts = new HashSet<>();
     private final Set<String> allEntitiesToDelete = new HashSet<>();
     private int totalAccumulated;
     private final RDFChunkDeserializer deser;
+    private static final int TRIPLES_PER_DELETE = 100;
+    private final Map<Statement, String> allAddedMap = new HashMap<>();
+    private final Map<Statement, String> allRemovedMap = new HashMap<>();
+    private final Map<Statement, Set<String>> linkedSharedMap = new HashMap<>();
+    private final Map<Statement, String> unlinkedSharedMap = new HashMap<>();
+    private static final String duplicateErrorMessage = "Cannot add/delete the same triple for a different entity" +
+            " (should probably be considered as a shared statement)";
 
     public PatchAccumulator(RDFChunkDeserializer deser) {
         this.deser = deser;
     }
 
-    public int size() {
-        return allAdded.size() + allRemoved.size() + allLinkedSharedElts.size() + allUnlinkedSharedElts.size();
+    public int weight() {
+        int approximateNumOfDeletedTriples = allEntitiesToDelete.size() * TRIPLES_PER_DELETE;
+        return allAddedMap.size() + allRemovedMap.size() + linkedSharedMap.size() + unlinkedSharedMap.size() + approximateNumOfDeletedTriples;
     }
 
-    public int accumulate(Collection<Statement> added, Collection<Statement> removed,
-                          Collection<Statement> linkedSharedElts, Collection<Statement> unlinkedSharedElts) {
+    private void accumulate(String entityId, Collection<Statement> added, Collection<Statement> removed,
+                            Collection<Statement> linkedSharedElts, Collection<Statement> unlinkedSharedElts) {
         totalAccumulated += added.size() + removed.size() + linkedSharedElts.size() + unlinkedSharedElts.size();
-        Set<Statement> newlyAdded = new HashSet<>(added);
-        Set<Statement> newlyRemoved = new HashSet<>(removed);
-        Set<Statement> newlyLinkedSharedElts = new HashSet<>(linkedSharedElts);
-        Set<Statement> newlyUnlinkedSharedElts = new HashSet<>(unlinkedSharedElts);
-        removeIntersection(allAdded, newlyRemoved);
-        removeIntersection(newlyAdded, allRemoved);
-        removeIntersection(allLinkedSharedElts, newlyUnlinkedSharedElts);
-        removeIntersection(allUnlinkedSharedElts, newlyLinkedSharedElts);
-        allAdded.addAll(newlyAdded);
-        allRemoved.addAll(newlyRemoved);
-        allLinkedSharedElts.addAll(newlyLinkedSharedElts);
-        allUnlinkedSharedElts.addAll(newlyUnlinkedSharedElts);
-        return size();
+        Map<Statement, String> newlyAdded = added.stream().collect(toMap(identity(), ei -> entityId));
+        findInvalidStatements(newlyAdded, allAddedMap);
+        Map<Statement, String> newlyRemoved = removed.stream().collect(toMap(identity(), ei -> entityId));
+        findInvalidStatements(newlyRemoved, allRemovedMap);
+        Map<Statement, String> newlyLinkedSharedElts = linkedSharedElts.stream().collect(toMap(identity(), ei -> entityId));
+        Map<Statement, String> newlyUnlinkedSharedElts = unlinkedSharedElts.stream().collect(toMap(identity(), ei -> entityId));
+        removeIntersection(allAddedMap, newlyRemoved);
+        removeIntersection(newlyAdded, allRemovedMap);
+        removeIntersection(linkedSharedMap, newlyUnlinkedSharedElts);
+        removeIntersection(unlinkedSharedMap, newlyLinkedSharedElts);
+        newlyLinkedSharedElts.forEach((statement, entityIDMap) -> linkedSharedMap.computeIfAbsent(
+                statement, k -> new HashSet<>()).add(entityIDMap));
+        allAddedMap.putAll(newlyAdded);
+        allRemovedMap.putAll(newlyRemoved);
+        unlinkedSharedMap.putAll(newlyUnlinkedSharedElts);
     }
 
-    private void removeIntersection(Set<Statement> set1, Set<Statement> set2) {
-        Set<Statement> intersection = new HashSet<>(Sets.intersection(set1, set2));
-        set1.removeAll(intersection);
-        set2.removeAll(intersection);
+    private void findInvalidStatements(Map<Statement, String> newItemsMap, Map<Statement, String> allItemsMap) {
+        newItemsMap.forEach((statement, entityId) -> {
+            String currentEntityId = allItemsMap.get(statement);
+            if (currentEntityId != null && !currentEntityId.equals(entityId)) {
+                throw new IllegalArgumentException(duplicateErrorMessage);
+            }
+        });
+    }
+
+    /**
+     * Whether or not the patch given as argument can be accumulated in this accumulator.
+     */
+    public boolean canAccumulate(MutationEventData data) {
+        if (!data.getOperation().equals(DiffEventData.DELETE_OPERATION))
+            return !allEntitiesToDelete.contains(data.getEntity());
+        return true;
+    }
+
+    private void removeIntersection(Map<Statement, ?> map1, Map<Statement, String> map2) {
+        Set<Statement> intersection = new HashSet<>(Sets.intersection(map1.keySet(), map2.keySet()));
+        map1.keySet().removeAll(intersection);
+        map2.keySet().removeAll(intersection);
     }
 
     public ConsumerPatch asPatch() {
-        return new ConsumerPatch(unmodifiableList(new ArrayList<>(allAdded)),
-                unmodifiableList(new ArrayList<>(allLinkedSharedElts)),
-                unmodifiableList(new ArrayList<>(allRemoved)),
-                unmodifiableList(new ArrayList<>(allUnlinkedSharedElts)),
+        return new ConsumerPatch(unmodifiableList(new ArrayList<>(allAddedMap.keySet())),
+                unmodifiableList(new ArrayList<>(linkedSharedMap.keySet())),
+                unmodifiableList(new ArrayList<>(allRemovedMap.keySet())),
+                unmodifiableList(new ArrayList<>(unlinkedSharedMap.keySet())),
                 unmodifiableList(new ArrayList<>(allEntitiesToDelete)));
     }
 
     public void accumulate(MutationEventData value) {
+        if (!canAccumulate(value)) {
+            throw new IllegalArgumentException("Cannot accumulate data for entity: " + value.getEntity());
+        }
         if (value instanceof DiffEventData) {
             DiffEventData val = (DiffEventData) value;
-            accumulate(val.getRdfAddedData() != null ? deser.deser(val.getRdfAddedData(), "unused") : emptyList(),
+            accumulate(value.getEntity(), val.getRdfAddedData() != null ? deser.deser(val.getRdfAddedData(), "unused") : emptyList(),
                     val.getRdfDeletedData() != null ? deser.deser(val.getRdfDeletedData(), "unused") : emptyList(),
                     val.getRdfLinkedSharedData() != null ? deser.deser(val.getRdfLinkedSharedData(), "unused") : emptyList(),
                     val.getRdfUnlinkedSharedData() != null ? deser.deser(val.getRdfUnlinkedSharedData(), "unused") : emptyList());
+        } else if (MutationEventData.DELETE_OPERATION.equals(value.getOperation())) {
+            totalAccumulated += TRIPLES_PER_DELETE;
+            String entityId = value.getEntity();
+            allEntitiesToDelete.add(entityId);
+            allAddedMap.entrySet().removeIf(entry -> entry.getValue().equals(entityId));
+            allRemovedMap.entrySet().removeIf(entry -> entry.getValue().equals(entityId));
+            linkedSharedMap.entrySet().removeIf(entry -> entry.getValue().contains(entityId) && entry.getValue().size() <= 1);
+        } else {
+            throw new IllegalArgumentException("Unsupported MutationEventData of type " + value.getOperation());
         }
     }
 
-    public void storeEntityIdsToDelete(String entity) {
-        allEntitiesToDelete.add(entity);
-    }
 }

@@ -116,7 +116,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
         ConsumerRecord<String, MutationEventData> lastRecord = null;
         long remaining = TimeUnit.MILLISECONDS.toNanos(timeout);
         long st = System.nanoTime();
-        while (remaining > 0 && accumulator.size() < preferredBatchLength) {
+        while (remaining > 0 && accumulator.weight() < preferredBatchLength) {
             if (buffer.size() < SOFT_BUFFER_CAP) {
                 ConsumerRecords<String, MutationEventData> records = consumer.poll(remaining);
                 remaining -= System.nanoTime() - st;
@@ -128,11 +128,11 @@ public class KafkaStreamConsumer implements StreamConsumer {
                 continue;
             }
             lastRecord = entityChunks.get(entityChunks.size() - 1);
-            accumulateRecords(accumulator, entityChunks);
+            entityChunks.stream().map(ConsumerRecord::value).forEach(accumulator::accumulate);
             buffer.removeAll(entityChunks);
         }
         metrics.triplesAccum(accumulator.getTotalAccumulated());
-        metrics.triplesOffered(accumulator.size());
+        metrics.triplesOffered(accumulator.weight());
         Map<TopicPartition, OffsetAndMetadata> offsetsAndMetadata;
         if (lastRecord != null) {
             offsetsAndMetadata = singletonMap(topicPartition, new OffsetAndMetadata(lastRecord.offset()));
@@ -141,22 +141,6 @@ public class KafkaStreamConsumer implements StreamConsumer {
             return new Batch(accumulator.asPatch());
         } else {
             return null;
-        }
-    }
-
-    private void accumulateRecords(PatchAccumulator accumulator, Iterable<ConsumerRecord<String, MutationEventData>> entityChunks) {
-        for (ConsumerRecord<String, MutationEventData> record : entityChunks) {
-            switch (record.value().getOperation()) {
-                case MutationEventData.DIFF_OPERATION:
-                case MutationEventData.IMPORT_OPERATION:
-                    accumulator.accumulate(record.value());
-                    break;
-                case MutationEventData.DELETE_OPERATION:
-                    accumulator.storeEntityIdsToDelete(record.value().getEntity());
-                    break;
-                default:
-                    throw new UnsupportedOperationException(record.value().getOperation() + " not supported yet.");
-            }
         }
     }
 

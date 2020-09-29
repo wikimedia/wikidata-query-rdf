@@ -92,7 +92,8 @@ public class KafkaStreamConsumerUnitTest {
                 genEvent("Q1", 2, uris("Q1-added-1", "Q1-added-2"), uris("Q1-removed-0"), uris(), uris()),
                 genEvent("Q1", 3, uris("Q1-added-3", "Q1-added-4", "Q1-added-5"), uris("Q1-added-1"), uris(), uris()),
                 genEvent("Q1", 4, uris("Q1-added-1"), uris("Q1-added-5"), uris("Q1-shared-2"), uris("Q1-shared", "Q1-shared-3")),
-                genDeleteEvent("Q1", 5)
+                genEvent("Q2", 1, uris("Q2-added-0"), uris(), uris("Q1-shared"), uris()),
+                genDeleteEvent("Q2", 2)
         ).flatMap(Collection::stream).collect(toList());
 
         return IntStream.range(0, events.size())
@@ -104,7 +105,7 @@ public class KafkaStreamConsumerUnitTest {
     public void test_poll_accumulates_records_into_a_rdfpatch() {
         TopicPartition topicPartition = new TopicPartition("test", 0);
 
-        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 10,
+        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 20,
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
         List<ConsumerRecord<String, MutationEventData>> allRecords = recordsList();
         when(consumer.poll(anyLong())).thenReturn(
@@ -133,7 +134,7 @@ public class KafkaStreamConsumerUnitTest {
         } else {
             assertThat(unlinkedSharedElts).containsExactlyInAnyOrderElementsOf(expectedUnlinkedEltsSingleOptimizedBatch);
         }
-        assertThat(deletedEntityIds).containsOnly("Q1");
+        assertThat(deletedEntityIds).containsOnly("Q2");
     }
 
     @Test
