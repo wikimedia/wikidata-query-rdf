@@ -29,3 +29,11 @@ final case class PageDelete(item: String,
                             ingestionTime: Instant,
                             originalEventMetadata: EventsMeta
                        ) extends InputEvent
+
+/** Describe an undelete event */
+final case class PageUndelete(item: String,
+                            eventTime: Instant,
+                            revision: Long,
+                            ingestionTime: Instant,
+                            originalEventMetadata: EventsMeta
+                           ) extends InputEvent

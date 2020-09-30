@@ -41,6 +41,9 @@ sealed class DecideMutationOperation extends RichMapFunction[InputEvent, AllMuta
           IgnoredMutation(del.item, del.eventTime, del.revision, del, del.ingestionTime, NewerRevisionSeen)
         }
       }
+      case undel: PageUndelete => {
+        IgnoredMutation(undel.item, undel.eventTime, undel.revision, undel, undel.ingestionTime, NotImplementedYet)
+      }
     }
   }
   override def open(parameters: Configuration): Unit = {

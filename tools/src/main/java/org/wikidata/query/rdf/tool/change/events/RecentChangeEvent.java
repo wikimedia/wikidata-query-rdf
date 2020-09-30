@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Events for mediawiki.recentchange topic.
- * See: https://github.com/wikimedia/mediawiki-event-schemas/blob/master/jsonschema/mediawiki/recentchange/1.yaml
+ * See: https://schema.wikimedia.org/repositories/primary/jsonschema/mediawiki/recentchange/latest
  * NOTE: currently not used for polling.
  */
 public class RecentChangeEvent extends EventWithMeta {

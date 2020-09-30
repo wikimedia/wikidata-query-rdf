@@ -40,3 +40,7 @@ sealed trait Inconsistency {
 case object NewerRevisionSeen extends Inconsistency {
   override val name: String = "newer_revision_seen"
 }
+
+case object NotImplementedYet extends Inconsistency {
+  override val name: String = "not_implemented_yet"
+}

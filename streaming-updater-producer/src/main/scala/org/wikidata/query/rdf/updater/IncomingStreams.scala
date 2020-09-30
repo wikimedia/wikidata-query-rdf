@@ -6,18 +6,21 @@ import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, Wat
 import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
-import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, PageDeleteEvent, RevisionCreateEvent}
+import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, PageDeleteEvent, PageUndeleteEvent, RevisionCreateEvent}
 import org.wikidata.query.rdf.tool.utils.EntityUtil.cleanEntityId
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineInputEventStreamConfig
 
-
+// FIXME rework parts this class do limit duplication
 object IncomingStreams {
   val REV_CREATE_CONV: (RevisionCreateEvent, Clock) => InputEvent =
     (e, clock) => RevCreate(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
 
   val PAGE_DEL_CONV: (PageDeleteEvent, Clock) => InputEvent =
     (e, clock) => PageDelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
+
+  val PAGE_UNDEL_CONV: (PageUndeleteEvent, Clock) => InputEvent =
+    (e, clock) => PageUndelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
 
   def buildIncomingStreams(ievops: UpdaterPipelineInputEventStreamConfig,
                            hostname: String, clock: Clock)
@@ -29,7 +32,10 @@ object IncomingStreams {
           hostname, IncomingStreams.REV_CREATE_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock),
         IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.pageDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
-          hostname, IncomingStreams.PAGE_DEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock)
+          hostname, IncomingStreams.PAGE_DEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock),
+        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.pageUndeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
+          DeserializationSchemaFactory.getDeserializationSchema(classOf[PageUndeleteEvent])),
+          hostname, IncomingStreams.PAGE_UNDEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock)
       )
     })
   }

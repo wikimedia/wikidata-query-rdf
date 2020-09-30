@@ -32,7 +32,7 @@ object UpdaterJob {
     val uris: Uris = WikibaseRepository.Uris.fromString(s"https://${generalConfig.hostname}")
     implicit val env: StreamExecutionEnvironment = prepareEnv(config.environmentConfig)
 
-    val incomingStreams = IncomingStreams.buildIncomingStreams(config.InputEventStreamConfig, generalConfig.hostname, clock = DEFAULT_CLOCK)
+    val incomingStreams = IncomingStreams.buildIncomingStreams(config.InputEventStreamConfig, generalConfig.hostname, DEFAULT_CLOCK)
     UpdaterPipeline.build(generalConfig, incomingStreams,
       rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup))
       .saveLateEventsTo(prepareErrorTrackingFileSink(config.lateEventsDir,

@@ -111,6 +111,7 @@ trait AvroEncoders {
     builder.set("event_type", in match {
       case _: RevCreate => "revision-create"
       case _: PageDelete => "page-delete"
+      case _: PageUndelete => "page-undelete"
     })
     builder.build()
   }

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Record for mediawiki.revision-create scheme.
- * See: https://github.com/wikimedia/mediawiki-event-schemas/blob/master/jsonschema/mediawiki/revision/create/2.yaml
+ * See: https://schema.wikimedia.org/repositories/primary/jsonschema/mediawiki/revision/create/latest
  */
 public class RevisionCreateEvent extends EventWithMeta {
     private final long revision;

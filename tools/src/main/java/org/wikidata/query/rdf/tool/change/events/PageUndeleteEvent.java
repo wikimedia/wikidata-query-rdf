@@ -4,16 +4,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Record for mediawiki.page-delete scheme.
- * See: https://schema.wikimedia.org/repositories/primary/jsonschema/mediawiki/page/delete/latest
+ * Record for mediawiki.page-undelete scheme.
+ * See: https://schema.wikimedia.org/repositories/primary/jsonschema/mediawiki/page/undelete/latest
  */
-public class PageDeleteEvent extends EventWithMeta {
+public class PageUndeleteEvent extends EventWithMeta {
     private final long revision;
     private final String title;
     private final long namespace;
 
     @JsonCreator
-    public PageDeleteEvent(
+    public PageUndeleteEvent(
             @JsonProperty("meta") EventsMeta meta,
             @JsonProperty("rev_id") long revision,
             @JsonProperty("page_title") String title,

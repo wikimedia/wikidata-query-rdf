@@ -10,7 +10,6 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
 import org.wikidata.query.rdf.tool.rdf.Patch
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
