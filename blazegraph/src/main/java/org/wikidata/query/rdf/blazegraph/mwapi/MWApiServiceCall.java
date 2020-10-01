@@ -211,6 +211,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
             throw new IllegalArgumentException("Bad endpoint URL", e);
         }
         if (endpointURL == null) {
+            log.debug("MWAPI: null endpointURL");
             return null;
         }
         Request request = client.newRequest(endpointURL);
@@ -275,6 +276,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     public ResultWithContinue parseResponse(InputStream responseStream, IBindingSet binding, int recordsCount)
             throws SAXException, IOException, XPathExpressionException {
         if (outputVars.isEmpty()) {
+            log.debug("MWAPI: outputVars is empty");
             return null;
         }
         Document doc = docBuilder.get().parse(responseStream);
@@ -287,6 +289,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         NodeList nodes = (NodeList) itemsXPath.evaluate(doc, XPathConstants.NODESET);
         IBindingSet[] results = new IBindingSet[nodes.getLength()];
         if (results.length == 0) {
+            log.debug("MWAPI: item xpath {} returned 0 node (empty?)", template.getItemsPath());
             return new ResultWithContinue(results, searchContinue);
         }
         final Map<OutputVariable, XPathExpression> compiledVars = new HashMap<>();
@@ -478,6 +481,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                 try (Timer.Context context = requestTimer.time()) {
                     req.send(listener);
                     response = listener.get(requestTimeout, TimeUnit.MILLISECONDS);
+                    log.debug("MWAPI RESPONSE: HTTP {}, HEADERS: {}", response.getStatus(), response.getHeaders());
                 }
 
                 if (response.getStatus() != HttpStatus.OK_200) {
