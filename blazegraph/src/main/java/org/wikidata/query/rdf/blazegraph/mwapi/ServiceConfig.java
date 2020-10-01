@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.validator.routines.DomainValidator;
 import org.wikidata.query.rdf.blazegraph.JacksonUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,6 +23,7 @@ import com.google.common.collect.Streams;
  * MW API service configuration.
  */
 public class ServiceConfig {
+    private static final DomainValidator DOMAIN_VALIDATOR = DomainValidator.getInstance();
 
     /**
      * Map of services, keyed by name.
@@ -84,6 +86,9 @@ public class ServiceConfig {
      * Check if endpoint is allowed.
      */
     public boolean validEndpoint(String endpointHost) {
+        if (!DOMAIN_VALIDATOR.isValid(endpointHost)) {
+            return false;
+        }
         for (String allowedEndpoint: endpoints) {
             if (endpointHost.endsWith(allowedEndpoint)) {
                 return true;
