@@ -19,6 +19,12 @@ trait TestEventGenerator {
       newEventMeta(instant(eventTime), domain, stream, requestId)), eventTime)
   }
 
+  def newPageUndeleteRecord(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
+                            stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
+    new StreamRecord[InputEvent](PageUndelete(entity, instant(eventTime), revision, instant(ingestionTime),
+      newEventMeta(instant(eventTime), domain, stream, requestId)), eventTime)
+  }
+
   def instant(millis: Long): Instant = {
     Instant.ofEpochMilli(millis)
   }

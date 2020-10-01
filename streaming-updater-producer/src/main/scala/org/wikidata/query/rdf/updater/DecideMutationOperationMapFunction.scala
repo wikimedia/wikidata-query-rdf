@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.updater
 
-import java.lang
+import java.lang.Math.abs
 
 import org.apache.flink.api.common.functions.{RichFunction, RichMapFunction}
 import org.apache.flink.api.common.state.ValueState
@@ -10,56 +10,72 @@ import org.apache.flink.state.api.functions.KeyedStateBootstrapFunction
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
+import org.wikidata.query.rdf.updater.EntityStatus.{CREATED, DELETED, UNDEFINED}
 
 sealed class DecideMutationOperation extends RichMapFunction[InputEvent, AllMutationOperation] with LastSeenRevState {
-  var prevDelState: ValueState[java.lang.Long] = _
-  override def map(ev: InputEvent): AllMutationOperation = {
-    ev match {
-      case rev: RevCreate => {
-        val lastRev: lang.Long = lastRevState.value()
-        val prevDel: lang.Long = prevDelState.value()
-        if (lastRev == null && prevDel == null) {
-          lastRevState.update(rev.revision)
-          FullImport(rev.item, rev.eventTime, rev.revision, rev.ingestionTime, rev.originalEventMetadata)
-        } else if (lastRev < rev.revision && prevDel == null) {
-          lastRevState.update(rev.revision)
-          Diff(rev.item, rev.eventTime, rev.revision, lastRev, rev.ingestionTime, rev.originalEventMetadata)
-        } else {
-          // Event related to an old revision
-          // It's too late to handle it
-          IgnoredMutation(rev.item, rev.eventTime, rev.revision, rev, rev.ingestionTime, NewerRevisionSeen)
-        }
-      }
-      case del: PageDelete => {
-        val lastRev: lang.Long = lastRevState.value()
-        if (lastRev != null && lastRev <= del.revision) {
-          prevDelState.update(del.revision)
-          DeleteItem(del.item, del.eventTime, del.revision, del.ingestionTime, del.originalEventMetadata)
-        } else {
-          // Event related to an old revision
-          // It's too late to handle it
-          IgnoredMutation(del.item, del.eventTime, del.revision, del, del.ingestionTime, NewerRevisionSeen)
-        }
-      }
-      case undel: PageUndelete => {
-        IgnoredMutation(undel.item, undel.eventTime, undel.revision, undel, undel.ingestionTime, NotImplementedYet)
-      }
+  override def map(event: InputEvent): AllMutationOperation = {
+    event match {
+      case rev: RevCreate => mutationFromRevisionCreate(rev)
+      case del: PageDelete => mutationFromPageDelete(del)
+      case undel: PageUndelete => mutationFromPageUndelete(undel)
+      case unknown: InputEvent => emitIgnoredMutation(unknown, NotImplementedYet)
     }
   }
+
+  private def mutationFromRevisionCreate(event: RevCreate): AllMutationOperation = {
+    entityState.getCurrentState match {
+      case State(None, _) => emitFullImport(event)
+      case State(Some(rev), CREATED) if rev < event.revision => emitDiff(event, rev)
+      case _ =>  emitIgnoredMutation(event, NewerRevisionSeen)
+    }
+  }
+
+  private def mutationFromPageDelete(event: PageDelete): AllMutationOperation = {
+    entityState.getCurrentState match {
+      case State(Some(rev), CREATED) if rev <= event.revision => emitPageDelete(event)
+      case _ => emitIgnoredMutation(event, NewerRevisionSeen)
+    }
+  }
+
+  private def mutationFromPageUndelete(event: PageUndelete): AllMutationOperation = {
+    entityState.getCurrentState match {
+      case State(None, _) => emitFullImport(event)
+      case State(Some(rev), DELETED) if rev == event.revision => emitFullImport(event)
+      case State(Some(rev), DELETED) if rev != event.revision => emitIgnoredMutation(event, UnmatchedUndelete)
+      case State(Some(rev), CREATED) if rev == event.revision => emitIgnoredMutation(event, UnmatchedUndelete)
+      case _ => emitIgnoredMutation(event, NewerRevisionSeen)
+    }
+  }
+
+  private def emitIgnoredMutation(event: InputEvent, inconsistencyType: Inconsistency): IgnoredMutation = {
+    IgnoredMutation(event.item, event.eventTime, event.revision, event, event.ingestionTime, inconsistencyType)
+  }
+
+  private def emitFullImport(event: InputEvent): FullImport = {
+    entityState.updateRevCreate(event.revision)
+    FullImport(event.item, event.eventTime, event.revision, event.ingestionTime, event.originalEventMetadata)
+  }
+
+  private def emitDiff(event: RevCreate, prevRevision: Long): Diff = {
+    entityState.updateRevCreate(event.revision)
+    Diff(event.item, event.eventTime, event.revision, prevRevision, event.ingestionTime, event.originalEventMetadata)
+  }
+
+  private def emitPageDelete(event: PageDelete): DeleteItem = {
+    entityState.updatePageDelete(event.revision)
+    DeleteItem(event.item, event.eventTime, event.revision, event.ingestionTime, event.originalEventMetadata)
+  }
+
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    prevDelState = getRuntimeContext.getState(UpdaterStateConfiguration.newPreviousDeleteStateDesc())
   }
 }
 
 trait LastSeenRevState extends RichFunction {
-  // use java.lang.Long for nullability
-  //  (flink's way for detecting that the state is not set for this entity)
-  // there are perhaps better ways to do this
-  var lastRevState: ValueState[java.lang.Long] = _
+  var entityState: EntityState = _
 
   override def open(parameters: Configuration): Unit = {
-    lastRevState = getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())
+    entityState = new EntityState(getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc()))
   }
 }
 
@@ -90,10 +106,27 @@ object DecideMutationOperation {
   }
 }
 
+object EntityStatus extends Enumeration {
+  val DELETED, CREATED, UNDEFINED = Value
+}
+case class State(lastRevision: Option[Long], entityStatus: EntityStatus.Value)
+
+class EntityState(revState: ValueState[java.lang.Long]) {
+  def updatePageDelete(revision: Long): Unit = revState.update(-revision)
+  def updateRevCreate(revision: Long): Unit = revState.update(revision)
+
+  def getCurrentState: State = {
+    Option(revState.value()) match {
+      case None => State(None, UNDEFINED)
+      case Some(rev) => State(Some(abs(rev)), if (rev > 0) CREATED else DELETED)
+    }
+  }
+}
+
 class DecideMutationOperationBootstrap extends KeyedStateBootstrapFunction[String, Tuple2[String, java.lang.Long]] with LastSeenRevState {
   override def processElement(rev: Tuple2[String, java.lang.Long],
                               context: KeyedStateBootstrapFunction[String, Tuple2[String, java.lang.Long]]#Context): Unit = {
-    lastRevState.update(rev.f1)
+    entityState.updateRevCreate(rev.f1)
   }
 }
 

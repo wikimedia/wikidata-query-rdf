@@ -1,21 +1,32 @@
 package org.wikidata.query.rdf.updater
 
+import java.time.Instant
+
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.operators.{ProcessOperator, StreamMap}
+import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.streaming.util.{KeyedOneInputStreamOperatorTestHarness, OneInputStreamOperatorTestHarness}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 import scala.collection.mutable.ListBuffer
 
-class DecideMutationOperationUnitTest extends FlatSpec with Matchers with TestEventGenerator {
+trait MutationFixtures extends TestEventGenerator {
   val testDomain = "tested.domain"
   val testStream = "test-input-stream"
-  "a mapper" should "decide what operation to apply to the graph" in {
-    val operator = new KeyedOneInputStreamOperatorTestHarness[String, InputEvent, AllMutationOperation](
+  val ingestionTs = 5
+  val ingestionInstant: Instant = instant(5)
+}
+
+class DecideMutationOperationUnitTest extends FlatSpec with Matchers with MutationFixtures with BeforeAndAfterEach {
+  var operator: KeyedOneInputStreamOperatorTestHarness[String, InputEvent, AllMutationOperation] = _
+
+  override def beforeEach(): Unit = {
+    operator = new KeyedOneInputStreamOperatorTestHarness[String, InputEvent, AllMutationOperation](
       new StreamMap[InputEvent, AllMutationOperation](new DecideMutationOperation()), inputEventKeySelector, TypeInformation.of(classOf[String]))
-    val ingestionTs = 5
-    val ingestionInstant = instant(ingestionTs)
     operator.open()
+  }
+
+  "DecideMutationOperation operator" should "decide what operation to apply to the graph" in {
     operator.processElement(newRevCreateRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
     operator.processElement(newRevCreateRecord("Q1", 3, 2, ingestionTs, testDomain, testStream, "2"))
     operator.processElement(newRevCreateRecord("Q1", 2, 3, ingestionTs, testDomain, testStream, "3")) // spurious
@@ -35,13 +46,7 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with TestEv
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
 
-  "a mapper" should "have the delete happy path" in {
-    val operator = new KeyedOneInputStreamOperatorTestHarness[String, InputEvent, AllMutationOperation](
-      new StreamMap[InputEvent, AllMutationOperation](new DecideMutationOperation()), inputEventKeySelector, TypeInformation.of(classOf[String]))
-    val ingestionTs = 5
-    val ingestionInstant = instant(5)
-
-    operator.open()
+   it should "have the delete happy path" in {
     operator.processElement(newRevCreateRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
     operator.processElement(newPageDeleteRecord("Q1", 1, 2, ingestionTs, testDomain, testStream, "2"))
 
@@ -52,13 +57,7 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with TestEv
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsAs decodeEvents(expectedOutput)
   }
 
-  "a mapper" should "ignore a delete for an unknown entity" in {
-    val operator = new KeyedOneInputStreamOperatorTestHarness[String, InputEvent, AllMutationOperation](
-      new StreamMap[InputEvent, AllMutationOperation](new DecideMutationOperation()), inputEventKeySelector, TypeInformation.of(classOf[String]))
-    val ingestionTs = 5
-    val ingestionInstant = instant(5)
-
-    operator.open()
+  it should "ignore a delete for an unknown entity" in {
     operator.processElement(newPageDeleteRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
 
     val expectedOutput = new ListBuffer[Any]
@@ -67,13 +66,7 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with TestEv
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsAs decodeEvents(expectedOutput)
   }
 
-  "a mapper" should "ignore a late delete" in {
-    val operator = new KeyedOneInputStreamOperatorTestHarness[String, InputEvent, AllMutationOperation](
-      new StreamMap[InputEvent, AllMutationOperation](new DecideMutationOperation()), inputEventKeySelector, TypeInformation.of(classOf[String]))
-    val ingestionTs = 5
-    val ingestionInstant = instant(5)
-
-    operator.open()
+  it should "ignore a late delete" in {
     operator.processElement(newRevCreateRecord("Q1", 2, 1, ingestionTs, testDomain, testStream, "1"))
     operator.processElement(newPageDeleteRecord("Q1", 1, 2, ingestionTs, testDomain, testStream, "2"))
 
@@ -85,13 +78,7 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with TestEv
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
 
-  "a mapper" should "test a missed revision" in {
-    val operator = new KeyedOneInputStreamOperatorTestHarness[String, InputEvent, AllMutationOperation](
-      new StreamMap[InputEvent, AllMutationOperation](new DecideMutationOperation()), inputEventKeySelector, TypeInformation.of(classOf[String]))
-    val ingestionTs = 5
-    val ingestionInstant = instant(5)
-
-    operator.open()
+  it should "test a missed revision" in {
     operator.processElement(newRevCreateRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
     operator.processElement(newPageDeleteRecord("Q1", 2, 2, ingestionTs, testDomain, testStream, "2"))
 
@@ -102,13 +89,7 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with TestEv
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
 
-  "a mapper" should "test a missed revision and a late new revision" in {
-    val operator = new KeyedOneInputStreamOperatorTestHarness[String, InputEvent, AllMutationOperation](
-      new StreamMap[InputEvent, AllMutationOperation](new DecideMutationOperation()), inputEventKeySelector, TypeInformation.of(classOf[String]))
-    val ingestionTs = 5
-    val ingestionInstant = instant(5)
-
-    operator.open()
+  it should "test a missed revision and a late new revision" in {
     operator.processElement(newRevCreateRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
     operator.processElement(newPageDeleteRecord("Q1", 2, 2, ingestionTs, testDomain, testStream, "2"))
     operator.processElement(newRevCreateRecord("Q1", 2, 3, ingestionTs, testDomain, testStream, "3"))
@@ -122,13 +103,7 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with TestEv
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
 
-  "a mapper" should "test ignore a revision after a delete with no undelete event" in {
-    val operator = new KeyedOneInputStreamOperatorTestHarness[String, InputEvent, AllMutationOperation](
-      new StreamMap[InputEvent, AllMutationOperation](new DecideMutationOperation()), inputEventKeySelector, TypeInformation.of(classOf[String]))
-    val ingestionTs = 5
-    val ingestionInstant = instant(5)
-
-    operator.open()
+  it should "test ignore a revision after a delete with no undelete event" in {
     operator.processElement(newRevCreateRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
     operator.processElement(newPageDeleteRecord("Q1", 1, 2, ingestionTs, testDomain, testStream, "2"))
     operator.processElement(newRevCreateRecord("Q1", 2, 3, ingestionTs, testDomain, testStream, "3"))
@@ -142,8 +117,61 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with TestEv
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
 
-  "a process function" should "re-route spurious events to a side output" in {
-    val ingestionInstant = instant(5)
+  it should "do a full import after receiving undelete event if matching delete was properly handled" in {
+    operator.processElement(newRevCreateRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newPageDeleteRecord("Q1", 1, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(newPageUndeleteRecord("Q1", 1, 3, ingestionTs, testDomain, testStream, "3"))
+
+    val expectedOutput = new ListBuffer[Any]
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(DeleteItem("Q1", instant(2), 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
+    expectedOutput += newRecord(FullImport("Q1", instant(3), 1, ingestionInstant, newEventMeta(instant(3), testDomain, testStream, "3")))
+
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
+  }
+
+  it should "ignore late undelete event if revisions moved forward" in {
+    val undeleteEventRecordToIgnore = newPageUndeleteRecord("Q1", 1, 3, ingestionTs, testDomain, testStream, "3")
+    val undeleteEventToIgnore = undeleteEventRecordToIgnore.getValue
+
+    operator.processElement(newRevCreateRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newRevCreateRecord("Q1", 2, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(undeleteEventRecordToIgnore)
+    val expectedOutput = new ListBuffer[Any]
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(Diff("Q1", instant(2), 2, 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
+    expectedOutput += newRecord(IgnoredMutation("Q1", instant(3), 1, undeleteEventToIgnore, ingestionInstant, NewerRevisionSeen))
+
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
+  }
+
+  it should "fully import entity when first seen event is undelete" in {
+    operator.processElement(newPageUndeleteRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newRevCreateRecord("Q1", 2, 2, ingestionTs, testDomain, testStream, "2"))
+
+    val expectedOutput = new ListBuffer[StreamRecord[AllMutationOperation]]
+
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(Diff("Q1", instant(2), 2, 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
+  }
+
+
+  it should "mark unmatched undelete event" in {
+    operator.processElement(newRevCreateRecord("Q1", 2, 1, ingestionTs, testDomain, testStream, "1"))
+    val undeleteEventRecordToMarkAsUnmatched = newPageUndeleteRecord("Q1", 2, 2, ingestionTs, testDomain, testStream, "2")
+    val undeleteEventToMarkAsUnmatched = undeleteEventRecordToMarkAsUnmatched.getValue
+    operator.processElement(undeleteEventRecordToMarkAsUnmatched)
+
+    val expectedOutput = new ListBuffer[StreamRecord[AllMutationOperation]]
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 2, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(IgnoredMutation("Q1", instant(2), 2, undeleteEventToMarkAsUnmatched, ingestionInstant, UnmatchedUndelete))
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
+  }
+}
+
+class RouteIgnoredMutationToSideOutputUnitTest extends FlatSpec with Matchers with MutationFixtures {
+  "RouteIgnoredMutationToSideOutput process function" should "re-route spurious events to a side output" in {
     val operator = new OneInputStreamOperatorTestHarness[AllMutationOperation, MutationOperation](
       new ProcessOperator[AllMutationOperation, MutationOperation](new RouteIgnoredMutationToSideOutput()))
     operator.open()
@@ -163,5 +191,4 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with TestEv
     (decodeEvents(operator.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS).toArray()) should contain
       theSameElementsAs decodeEvents(expectedSideOutput))
   }
-
 }

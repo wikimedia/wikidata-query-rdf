@@ -44,3 +44,8 @@ case object NewerRevisionSeen extends Inconsistency {
 case object NotImplementedYet extends Inconsistency {
   override val name: String = "not_implemented_yet"
 }
+case object UnmatchedUndelete extends Inconsistency {
+  override val name: String = "unmatched_delete"
+}
+
+
