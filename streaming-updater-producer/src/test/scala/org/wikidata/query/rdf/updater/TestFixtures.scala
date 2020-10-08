@@ -6,14 +6,14 @@ import java.util.{Collections, UUID}
 import java.util.function.Supplier
 
 import scala.collection.JavaConverters._
-
 import org.apache.flink.api.common.eventtime._
 import org.openrdf.model.Statement
 import org.openrdf.model.impl.{StatementImpl, ValueFactoryImpl}
 import org.openrdf.rio.{RDFFormat, RDFParserRegistry, RDFWriterRegistry}
 import org.wikidata.query.rdf.common.uri.{PropertyType, SchemaDotOrg, UrisSchemeFactory}
-import org.wikidata.query.rdf.tool.change.events.{EventsMeta, EventWithMeta}
+import org.wikidata.query.rdf.tool.change.events.{EventWithMeta, EventsMeta}
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
+import org.wikidata.query.rdf.updater.EntityStatus.CREATED
 
 case class MetaStatement(entityDataNS: Statement, entityNS: Statement)
 case class MetaStatements(revision: MetaStatement, lastModified: MetaStatement) {
@@ -84,7 +84,7 @@ trait TestFixtures extends TestEventGenerator {
     IgnoredMutation("Q1", instant(WATERMARK_2 + 1), 4,
       RevCreate("Q1", instant(WATERMARK_2 + 1), 4, instant(5),
         newEventMeta(instant(WATERMARK_2 + 1), DOMAIN, STREAM, ORIG_REQUEST_ID)
-      ), instantNow, NewerRevisionSeen))
+      ), instantNow, NewerRevisionSeen, State(Some(5), CREATED)))
   val rdfChunkSer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())
   val rdfChunkDeser: RDFChunkDeserializer = new RDFChunkDeserializer(new RDFParserSuppliers(RDFParserRegistry.getInstance()))
   val dataEventGenerator = new MutationEventDataGenerator(rdfChunkSer,

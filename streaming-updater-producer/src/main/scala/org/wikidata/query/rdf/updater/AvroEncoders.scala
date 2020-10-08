@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.updater
 
 import org.apache.avro.SchemaBuilder.FieldAssembler
-import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
+import org.apache.avro.generic.{GenericData, GenericRecord, GenericRecordBuilder}
 import org.apache.avro.{Schema, SchemaBuilder}
 import org.apache.flink.api.common.functions.MapFunction
 import org.wikidata.query.rdf.tool.change.events.EventsMeta
@@ -23,6 +23,10 @@ class AvroEncodersSchema(fieldAssembler: FieldAssembler[Schema]) {
       .requiredString("event_time")
       .requiredString("ingestion_time")
       .requiredLong("revision")
+  }
+
+  def state(): FieldAssembler[Schema] = {
+    fieldAssembler.name("state").`type`().optional().`type`(AvroEncodersSchema.state_schema)
   }
 }
 
@@ -49,6 +53,7 @@ object AvroEncodersSchema {
     .requiredString("op_type")
     .optionalLong("from_revision")
     .optionalString("inconsistency")
+    .state()
     .inputEvent()
     .endRecord()
 
@@ -58,10 +63,16 @@ object AvroEncodersSchema {
     .requiredString("exception_msg")
     .optionalString("fetch_error_type")
     .endRecord()
+
+  @transient lazy val state_schema: Schema = SchemaBuilder.record("state").fields()
+    .optionalLong("rev")
+    .requiredString("status")
+    .endRecord()
 }
 
 trait AvroEncoders {
   def schema(): Schema
+
 
   protected def writeMutationOperation(in: AllMutationOperation): GenericRecord = {
     val builder = new GenericRecordBuilder(AvroEncodersSchema.all_mutation_schema)
@@ -78,6 +89,7 @@ trait AvroEncoders {
         builder.set("op_type", "ignored")
         builder.set("inconsistency", e.inconsistencyType.name)
         builder.set("input_event", writeInputEvent(e.inputEvent))
+        builder.set("state", writeState(e.state))
     }
     builder.build()
   }
@@ -113,6 +125,13 @@ trait AvroEncoders {
       case _: PageDelete => "page-delete"
       case _: PageUndelete => "page-undelete"
     })
+    builder.build()
+  }
+
+  protected def writeState(state: State): GenericRecord = {
+    val builder = new GenericRecordBuilder(AvroEncodersSchema.state_schema)
+    state.lastRevision.foreach(rev => builder.set("rev", rev))
+    builder.set("status", state.entityStatus.toString)
     builder.build()
   }
 }

@@ -29,7 +29,8 @@ final case class IgnoredMutation(item: String,
                                  revision: Long,
                                  inputEvent: InputEvent,
                                  ingestionTime: Instant,
-                                 inconsistencyType: Inconsistency
+                                 inconsistencyType: Inconsistency,
+                                 state: State
                                 ) extends AllMutationOperation {
   override val originalEventMetadata: EventsMeta = inputEvent.originalEventMetadata
 }

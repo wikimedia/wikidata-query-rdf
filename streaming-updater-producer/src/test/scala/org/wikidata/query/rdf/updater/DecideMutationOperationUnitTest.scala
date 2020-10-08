@@ -7,6 +7,7 @@ import org.apache.flink.streaming.api.operators.{ProcessOperator, StreamMap}
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.streaming.util.{KeyedOneInputStreamOperatorTestHarness, OneInputStreamOperatorTestHarness}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import org.wikidata.query.rdf.updater.EntityStatus._
 
 import scala.collection.mutable.ListBuffer
 
@@ -38,7 +39,8 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with Mutati
     expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
     expectedOutput += newRecord(Diff("Q1", instant(2), 3, 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
     expectedOutput += newRecord(IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, ingestionInstant, newEventMeta(instant(3), testDomain, testStream, "3")), ingestionInstant, NewerRevisionSeen))
+      RevCreate("Q1", instant(3), 2, ingestionInstant, newEventMeta(instant(3), testDomain, testStream, "3")),
+      ingestionInstant, NewerRevisionSeen, State(Some(3), CREATED)))
     expectedOutput += newRecord(FullImport("Q2", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "4")))
     expectedOutput += newRecord(Diff("Q2", instant(2), 2, 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "5")))
     expectedOutput += newRecord(DeleteItem("Q2", instant(3), 3, ingestionInstant, newEventMeta(instant(3), testDomain, testStream, "6")))
@@ -62,7 +64,8 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with Mutati
 
     val expectedOutput = new ListBuffer[Any]
     expectedOutput += newRecord(IgnoredMutation("Q1", instant(1), 1,
-      PageDelete("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")), ingestionInstant, NewerRevisionSeen))
+      PageDelete("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")),
+      ingestionInstant, NewerRevisionSeen,State(None, UNDEFINED)))
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsAs decodeEvents(expectedOutput)
   }
 
@@ -73,7 +76,8 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with Mutati
     val expectedOutput = new ListBuffer[Any]
     expectedOutput += newRecord(FullImport("Q1", instant(1), 2, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
     expectedOutput += newRecord(IgnoredMutation("Q1", instant(2), 1,
-      PageDelete("Q1", instant(2), 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")), ingestionInstant, NewerRevisionSeen))
+      PageDelete("Q1", instant(2), 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")),
+      ingestionInstant, NewerRevisionSeen, State(Some(2), CREATED)))
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
@@ -98,7 +102,8 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with Mutati
     expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
     expectedOutput += newRecord(DeleteItem("Q1", instant(2), 2, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
     expectedOutput += newRecord(IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, ingestionInstant, newEventMeta(instant(3), testDomain, testStream, "3")), ingestionInstant, NewerRevisionSeen))
+      RevCreate("Q1", instant(3), 2, ingestionInstant, newEventMeta(instant(3), testDomain, testStream, "3")),
+      ingestionInstant, NewerRevisionSeen, State(Some(2), DELETED)))
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
@@ -112,7 +117,8 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with Mutati
     expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
     expectedOutput += newRecord(DeleteItem("Q1", instant(2), 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
     expectedOutput += newRecord(IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, ingestionInstant, newEventMeta(instant(3), testDomain, testStream, "3")), ingestionInstant, NewerRevisionSeen))
+      RevCreate("Q1", instant(3), 2, ingestionInstant, newEventMeta(instant(3), testDomain, testStream, "3")),
+      ingestionInstant, NewerRevisionSeen, State(Some(1), DELETED)))
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
@@ -140,7 +146,7 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with Mutati
     val expectedOutput = new ListBuffer[Any]
     expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
     expectedOutput += newRecord(Diff("Q1", instant(2), 2, 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
-    expectedOutput += newRecord(IgnoredMutation("Q1", instant(3), 1, undeleteEventToIgnore, ingestionInstant, NewerRevisionSeen))
+    expectedOutput += newRecord(IgnoredMutation("Q1", instant(3), 1, undeleteEventToIgnore, ingestionInstant, NewerRevisionSeen, State(Some(2), CREATED)))
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
@@ -165,7 +171,8 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with Mutati
 
     val expectedOutput = new ListBuffer[StreamRecord[AllMutationOperation]]
     expectedOutput += newRecord(FullImport("Q1", instant(1), 2, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
-    expectedOutput += newRecord(IgnoredMutation("Q1", instant(2), 2, undeleteEventToMarkAsUnmatched, ingestionInstant, UnmatchedUndelete))
+    expectedOutput += newRecord(IgnoredMutation("Q1", instant(2), 2, undeleteEventToMarkAsUnmatched,
+      ingestionInstant, UnmatchedUndelete, State(Some(2), CREATED)))
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
 }
@@ -178,14 +185,16 @@ class RouteIgnoredMutationToSideOutputUnitTest extends FlatSpec with Matchers wi
     operator.processElement(newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1"))))
     operator.processElement(newRecord(Diff("Q1", instant(2), 3, 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2"))))
     operator.processElement(newRecord(IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, instant(0), newEventMeta(instant(3), testDomain, testStream, "3")), ingestionInstant, NewerRevisionSeen)))
+      RevCreate("Q1", instant(3), 2, instant(0), newEventMeta(instant(3), testDomain, testStream, "3")),
+      ingestionInstant, NewerRevisionSeen, State(Some(2), CREATED))))
 
     val expectedOutput = new ListBuffer[Any]
     val expectedSideOutput = new ListBuffer[Any]
     expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
     expectedOutput += newRecord(Diff("Q1", instant(2), 3, 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
     expectedSideOutput += newRecord(IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, instant(0), newEventMeta(instant(3), testDomain, testStream, "3")), ingestionInstant, NewerRevisionSeen))
+      RevCreate("Q1", instant(3), 2, instant(0), newEventMeta(instant(3), testDomain, testStream, "3")),
+      ingestionInstant, NewerRevisionSeen, State(Some(2), CREATED)))
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsAs decodeEvents(expectedOutput)
     (decodeEvents(operator.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS).toArray()) should contain

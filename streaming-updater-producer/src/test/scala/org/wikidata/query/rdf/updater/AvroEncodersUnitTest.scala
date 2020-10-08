@@ -10,6 +10,7 @@ import org.wikidata.query.rdf.tool.change.events.EventsMeta
 import org.wikidata.query.rdf.tool.exception.ContainedException
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException.Type.ENTITY_NOT_FOUND
+import org.wikidata.query.rdf.updater.EntityStatus.CREATED
 
 class AvroEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerator {
   val item: String = "Q1"
@@ -25,10 +26,18 @@ class AvroEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
 
   "IgnoredMutation" should "be encoded properly as an avro GenericRecord" in {
     val inputEvent = RevCreate(item, eventTime, revision, ingestionTime, eventMeta)
-    val record = IgnoredMutationEncoder.map(IgnoredMutation("Q1", eventTime, revision, inputEvent, ingestionTime, NewerRevisionSeen))
+    val state = State(Some(revision), CREATED)
+    val record = IgnoredMutationEncoder.map(IgnoredMutation("Q1", eventTime, revision, inputEvent, ingestionTime, NewerRevisionSeen, state))
     assertBasicMetadata(record)
     record.get("op_type") shouldBe "ignored"
     record.get("inconsistency") shouldBe NewerRevisionSeen.name
+
+    val origState = record.get("state") match {
+      case state: GenericRecord => state
+      case _ => fail("Invalid type for state")
+    }
+    origState.get("rev").asInstanceOf[Long] shouldBe revision
+    origState.get("status") shouldBe "CREATED"
     val origEvent = record.get("input_event") match {
       case e: GenericRecord => e
       case _ => fail("Invalid type for input_event")

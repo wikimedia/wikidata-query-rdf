@@ -10,6 +10,7 @@ import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
+import org.wikidata.query.rdf.updater.EntityStatus.CREATED
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
 
 
@@ -80,7 +81,8 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     streamingEnv.getJavaEnv.execute(graph)
     CollectSink.lateEvents shouldBe empty
     CollectSink.spuriousRevEvents should contain only IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)), instantNow, NewerRevisionSeen)
+      RevCreate("Q1", instant(3), 2, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
+      instantNow, NewerRevisionSeen, State(Some(2), CREATED))
     //only change is the revision, lastmodified are identical
 
     CollectSink.values map {_.operation} should contain theSameElementsInOrderAs Vector(
