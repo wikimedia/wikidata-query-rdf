@@ -20,7 +20,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
       UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic",
-        "page-delete-topic", "page-undelete-topic", List(""), 3, 10, 10),
+        "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List(""), 3, 10, 10),
       "hostname",
       Clock.systemUTC()
     )
@@ -31,20 +31,22 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
       UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic",
-        "page-delete-topic", "page-undelete-topic", List(""), 1, 10, 10),
+        "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List(""), 1, 10, 10),
       "hostname",
       Clock.systemUTC()
     )
     stream.map(_.name) should contain only("Filtered(rev-create-topic == hostname)",
                                            "Filtered(page-delete-topic == hostname)",
-                                           "Filtered(page-undelete-topic == hostname)")
+                                           "Filtered(page-undelete-topic == hostname)",
+                                           "Filtered(suppressed-delete-topic == hostname)"
+    )
   }
 
   "IncomingStreams" should "create twice more incoming streams when using 2 prefixes" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
       UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic",
-        "page-delete-topic", "page-undelete-topic", List("cluster1.", "cluster2."), 1, 10, 10),
+        "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List("cluster1.", "cluster2."), 1, 10, 10),
       "hostname",
       Clock.systemUTC()
     )
@@ -52,9 +54,11 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
       "Filtered(cluster1.rev-create-topic == hostname)",
       "Filtered(cluster1.page-delete-topic == hostname)",
       "Filtered(cluster1.page-undelete-topic == hostname)",
+      "Filtered(cluster1.suppressed-delete-topic == hostname)",
       "Filtered(cluster2.rev-create-topic == hostname)",
       "Filtered(cluster2.page-delete-topic == hostname)",
-      "Filtered(cluster2.page-undelete-topic == hostname)"
+      "Filtered(cluster2.page-undelete-topic == hostname)",
+      "Filtered(cluster2.suppressed-delete-topic == hostname)"
     )
   }
 

@@ -35,7 +35,10 @@ object IncomingStreams {
           hostname, IncomingStreams.PAGE_DEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock),
         IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.pageUndeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[PageUndeleteEvent])),
-          hostname, IncomingStreams.PAGE_UNDEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock)
+          hostname, IncomingStreams.PAGE_UNDEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock),
+        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.suppressedDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
+          DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
+          hostname, IncomingStreams.PAGE_DEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock)
       )
     })
   }
