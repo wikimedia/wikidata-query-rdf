@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.CheckpointingMode
 import scala.language.{implicitConversions, postfixOps}
 import scala.concurrent.duration._
 
-class UpdaterConfig(args: Array[String]) extends BaseConfig()(ParameterTool.fromArgs(args)) {
+class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(args)) {
   private val hostName: String = getStringParam("hostname")
 
   val inputKafkaBrokers: String = getStringParam("brokers")

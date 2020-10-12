@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.updater.config
 
+import java.nio.file.{Files, Paths}
+
 import org.apache.flink.api.java.utils.ParameterTool
 
 class BaseConfig(protected implicit val params: ParameterTool) {
@@ -14,6 +16,17 @@ class BaseConfig(protected implicit val params: ParameterTool) {
       case Some(value) => value;
       case None => throw new IllegalArgumentException("missing param " + key)
     }
+}
+
+object BaseConfig {
+  def params(argv: Array[String]): ParameterTool = {
+    argv match {
+      case Array(filePath) if Files.isReadable(Paths.get(filePath)) =>
+        ParameterTool.fromPropertiesFile(filePath)
+      case _ =>
+        ParameterTool.fromArgs(argv)
+    }
+  }
 }
 
 
