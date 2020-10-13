@@ -49,6 +49,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     } else {
       CheckpointingMode.AT_LEAST_ONCE
     },
+    unalignedCheckpoints = params.getBoolean("unaligned_checkpoints", false),
     networkBufferTimeout = params.getInt("network_buffer_timeout", 100 millis),
     latencyTrackingInterval = optionalIntArg("latency_tracking_interval")
   )
@@ -114,5 +115,6 @@ sealed case class UpdaterExecutionEnvironmentConfig(checkpointDir: String,
                                                     minPauseBetweenCheckpoints: Int,
                                                     autoWMInterval: Int,
                                                     checkpointingMode: CheckpointingMode,
+                                                    unalignedCheckpoints: Boolean,
                                                     networkBufferTimeout: Int,
                                                     latencyTrackingInterval: Option[Int])

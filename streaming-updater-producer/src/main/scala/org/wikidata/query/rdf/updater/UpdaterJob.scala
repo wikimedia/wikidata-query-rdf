@@ -53,6 +53,7 @@ object UpdaterJob {
     env.getCheckpointConfig.setCheckpointTimeout(environmentOption.checkpointTimeout)
     env.getCheckpointConfig.setMinPauseBetweenCheckpoints(environmentOption.minPauseBetweenCheckpoints)
     env.getCheckpointConfig.setTolerableCheckpointFailureNumber(0)
+    env.getCheckpointConfig.enableUnalignedCheckpoints(environmentOption.unalignedCheckpoints)
     // FIXME Disable restarts for now, this is way easier to debug this way
     env.setRestartStrategy(new NoRestartStrategyConfiguration())
     env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
