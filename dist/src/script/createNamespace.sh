@@ -14,7 +14,8 @@ PROPS=`mktemp /tmp/wdqs.XXXXXX` || exit 1
 trap "rm -f $PROPS" EXIT
 
 if [ "x$3" != "x" ]; then
-  sed -e "s/\.$4\./.$NAMESPACE./" < "$3" > $PROPS
+  echo "com.bigdata.rdf.sail.namespace=$NAMESPACE" > $PROPS
+  sed -e "s/\.$4\./.$NAMESPACE./" < "$3" >> $PROPS
 
 else
   sed -e "s/{NAMESPACE}/$NAMESPACE/" < default.properties > $PROPS
