@@ -512,6 +512,11 @@
                 <version>1.10.0</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.xbean</groupId>
+                <artifactId>xbean-asm6-shaded</artifactId>
+                <version>4.10</version>
+            </dependency>
+            <dependency>
                 <groupId>org.clapper</groupId>
                 <artifactId>grizzled-slf4j_${scala.compat.version}</artifactId>
                 <version>${scala.grizzled.version}</version>

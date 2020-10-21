@@ -27,7 +27,6 @@
             <groupId>com.github.scopt</groupId>
             <artifactId>scopt_${scala.compat.version}</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.clapper</groupId>
             <artifactId>grizzled-slf4j_${scala.compat.version}</artifactId>
@@ -83,11 +82,21 @@
                     <groupId>javax.xml.bind</groupId>
                     <artifactId>jaxb-api</artifactId>
                 </exclusion>
+                <!-- spark included version is breaking builds on newer JDKs than 8 -->
+                <exclusion>
+                    <groupId>org.apache.xbean</groupId>
+                    <artifactId>xbean-asm6-shaded</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.compat.version}</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xbean</groupId>
+            <artifactId>xbean-asm6-shaded</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
