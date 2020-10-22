@@ -5,7 +5,7 @@ import java.util.Properties
 
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
-import org.apache.flink.api.common.restartstrategy.RestartStrategies.NoRestartStrategyConfiguration
+import org.apache.flink.api.common.restartstrategy.RestartStrategies.{FailureRateRestartStrategyConfiguration, NoRestartStrategyConfiguration}
 import org.apache.flink.api.common.time.Time
 import org.apache.flink.core.fs.Path
 import org.apache.flink.formats.avro.typeutils.GenericRecordAvroTypeInfo
@@ -54,8 +54,11 @@ object UpdaterJob {
     env.getCheckpointConfig.setMinPauseBetweenCheckpoints(environmentOption.minPauseBetweenCheckpoints)
     env.getCheckpointConfig.setTolerableCheckpointFailureNumber(0)
     env.getCheckpointConfig.enableUnalignedCheckpoints(environmentOption.unalignedCheckpoints)
-    // FIXME Disable restarts for now, this is way easier to debug this way
-    env.setRestartStrategy(new NoRestartStrategyConfiguration())
+    env.setRestartStrategy(new FailureRateRestartStrategyConfiguration(
+      environmentOption.restartFailureRateMaxPerInternal,
+      environmentOption.restartFailureRateInterval,
+      environmentOption.restartFailureRateDelay
+    ))
     env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
     env.getConfig.setAutoWatermarkInterval(environmentOption.autoWMInterval)
     env.setBufferTimeout(environmentOption.networkBufferTimeout)

@@ -2,10 +2,10 @@ package org.wikidata.query.rdf.updater.config
 
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.streaming.api.CheckpointingMode
-
-
 import scala.language.{implicitConversions, postfixOps}
 import scala.concurrent.duration._
+
+import org.apache.flink.api.common.time.Time
 
 class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(args)) {
   private val hostName: String = getStringParam("hostname")
@@ -51,7 +51,10 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     },
     unalignedCheckpoints = params.getBoolean("unaligned_checkpoints", false),
     networkBufferTimeout = params.getInt("network_buffer_timeout", 100 millis),
-    latencyTrackingInterval = optionalIntArg("latency_tracking_interval")
+    latencyTrackingInterval = optionalIntArg("latency_tracking_interval"),
+    restartFailureRateDelay = Time.milliseconds(params.getInt("restart_failures_rate_delay", 10 seconds)),
+    restartFailureRateInterval = Time.milliseconds(params.getInt("restart_failures_rate_interval", 30 minutes)),
+    restartFailureRateMaxPerInternal = params.getInt("restart_failures_rate_max_per_interval", 2)
   )
   val spuriousEventsDir: String = getStringParam("spurious_events_dir")
   val failedOpsDir: String = getStringParam("failed_ops_dir")
@@ -117,4 +120,8 @@ sealed case class UpdaterExecutionEnvironmentConfig(checkpointDir: String,
                                                     checkpointingMode: CheckpointingMode,
                                                     unalignedCheckpoints: Boolean,
                                                     networkBufferTimeout: Int,
-                                                    latencyTrackingInterval: Option[Int])
+                                                    latencyTrackingInterval: Option[Int],
+                                                    restartFailureRateDelay: Time,
+                                                    restartFailureRateInterval: Time,
+                                                    restartFailureRateMaxPerInternal: Int
+                                                   )
