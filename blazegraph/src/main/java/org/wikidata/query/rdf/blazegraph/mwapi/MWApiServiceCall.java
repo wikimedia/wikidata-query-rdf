@@ -215,6 +215,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
             return null;
         }
         Request request = client.newRequest(endpointURL);
+        request.timeout(requestTimeout, TimeUnit.MILLISECONDS);
         request.method(HttpMethod.GET);
         // Using XML for now to use XPath on responses
         request.param("format", "xml");
@@ -485,16 +486,25 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                 }
 
                 if (response.getStatus() != HttpStatus.OK_200) {
-                    throw new RuntimeException("Bad response status: " + response.getStatus());
+                    RuntimeException r = new RuntimeException("Bad response status: " + response.getStatus());
+                    response.abort(r);
+                    throw r;
                 }
-                return parseResponse(listener.getInputStream(), bindings, currentRecordsCount);
+                try (InputStream inputStream = listener.getInputStream()) {
+                    return parseResponse(inputStream, bindings, currentRecordsCount);
+                }
             } catch (InterruptedException e) {
+                log.debug("MWAPI REQUEST ERR: {}", req.getQuery(), e);
                 Thread.currentThread().interrupt();
                 throw new RuntimeException("MWAPI request failed", e);
             } catch (ExecutionException | TimeoutException  e) {
+                log.debug("MWAPI REQUEST ERR: {}", req.getQuery(), e);
                 throw new RuntimeException("MWAPI request failed", e);
             } catch (SAXException | IOException | XPathExpressionException e) {
+                log.debug("MWAPI REQUEST ERR: {}", req.getQuery(), e);
                 throw new RuntimeException("Failed to parse response", e);
+            } finally {
+                log.debug("MWAPI REQUEST END: {}", req.getQuery());
             }
         }
 
