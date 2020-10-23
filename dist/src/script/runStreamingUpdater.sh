@@ -67,7 +67,7 @@ if [ ! -z "$LOG_CONFIG" ]; then
 fi
 
 CP=`dirname $BASH_SOURCE`/lib/streaming-updater-consumer-*-jar-with-dependencies.jar
-MAIN=org.wikidata.query.rdf.tool.StreamingUpdate
+MAIN=org.wikidata.query.rdf.updater.consumer.StreamingUpdate
 SPARQL_URL=$HOST/$CONTEXT/namespace/$NAMESPACE/sparql
 echo "Updating via $SPARQL_URL"
 exec java -cp ${CP} ${MEMORY} ${GC_LOGS} ${LOG_OPTIONS} ${EXTRA_JVM_OPTS} \
