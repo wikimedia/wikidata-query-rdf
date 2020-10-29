@@ -5,9 +5,9 @@ import java.util.Collections.emptyList
 import java.util.concurrent.Executors
 
 import scala.collection.JavaConverters._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-import scala.concurrent.{ExecutionContext, Future}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.api.functions.ProcessFunction

@@ -1,13 +1,13 @@
 package org.wikidata.query.rdf.updater
 
-import org.apache.avro.SchemaBuilder.FieldAssembler
-import org.apache.avro.generic.{GenericData, GenericRecord, GenericRecordBuilder}
+import scala.language.implicitConversions
+
 import org.apache.avro.{Schema, SchemaBuilder}
+import org.apache.avro.SchemaBuilder.FieldAssembler
+import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
 import org.apache.flink.api.common.functions.MapFunction
 import org.wikidata.query.rdf.tool.change.events.EventsMeta
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException
-
-import scala.language.implicitConversions
 
 class AvroEncodersSchema(fieldAssembler: FieldAssembler[Schema]) {
   def originalEventMetatada(): FieldAssembler[Schema] = {

@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.updater
 
 import scala.math.abs
+
 import org.apache.flink.api.common.functions.{RichFunction, RichMapFunction}
 import org.apache.flink.api.common.state.ValueState
 import org.apache.flink.api.java.tuple.Tuple2

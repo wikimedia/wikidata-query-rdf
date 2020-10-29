@@ -5,7 +5,7 @@ import java.util.Properties
 
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
-import org.apache.flink.api.common.restartstrategy.RestartStrategies.{FailureRateRestartStrategyConfiguration, NoRestartStrategyConfiguration}
+import org.apache.flink.api.common.restartstrategy.RestartStrategies.FailureRateRestartStrategyConfiguration
 import org.apache.flink.api.common.time.Time
 import org.apache.flink.core.fs.Path
 import org.apache.flink.formats.avro.typeutils.GenericRecordAvroTypeInfo
