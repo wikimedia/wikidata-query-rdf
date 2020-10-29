@@ -48,12 +48,17 @@ public class PatchAccumulator {
     private void accumulate(String entityId, Collection<Statement> added, Collection<Statement> removed,
                             Collection<Statement> linkedSharedElts, Collection<Statement> unlinkedSharedElts) {
         totalAccumulated += added.size() + removed.size() + linkedSharedElts.size() + unlinkedSharedElts.size();
-        Map<Statement, String> newlyAdded = added.stream().collect(toMap(identity(), ei -> entityId));
+
+        Map<Statement, String> newlyAdded = added.stream()
+                .collect(toMap(identity(), ei -> entityId, (e1, e2) -> entityId));
         findInvalidStatements(newlyAdded, allAddedMap);
-        Map<Statement, String> newlyRemoved = removed.stream().collect(toMap(identity(), ei -> entityId));
+        Map<Statement, String> newlyRemoved = removed.stream()
+                .collect(toMap(identity(), ei -> entityId, (e1, e2) -> entityId));
         findInvalidStatements(newlyRemoved, allRemovedMap);
-        Map<Statement, String> newlyLinkedSharedElts = linkedSharedElts.stream().collect(toMap(identity(), ei -> entityId));
-        Map<Statement, String> newlyUnlinkedSharedElts = unlinkedSharedElts.stream().collect(toMap(identity(), ei -> entityId));
+        Map<Statement, String> newlyLinkedSharedElts = linkedSharedElts.stream()
+                .collect(toMap(identity(), ei -> entityId, (e1, e2) -> entityId));
+        Map<Statement, String> newlyUnlinkedSharedElts = unlinkedSharedElts.stream()
+                .collect(toMap(identity(), ei -> entityId, (e1, e2) -> entityId));
         removeIntersection(allAddedMap, newlyRemoved);
         removeIntersection(newlyAdded, allRemovedMap);
         removeIntersection(linkedSharedMap, newlyUnlinkedSharedElts);

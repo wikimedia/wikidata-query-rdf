@@ -284,14 +284,49 @@ public class UpdatePatchAccumulatorUnitTest {
         // It's OK to keep/not keep uri:unlinked-shared-only-for-Q1 here
     }
 
+    @Test
+    public void test_duplicated_values_can_be_accumulated() {
+        PatchAccumulator accumulator = new PatchAccumulator(deserializer);
+
+        MutationEventDataGenerator bigChunkEventGenerator = new MutationEventDataGenerator(
+                serializer, RDFFormat.TURTLE.getDefaultMIMEType(), Integer.MAX_VALUE);
+        accumulateDiff(accumulator, "Q1",
+                asList(stmt("uri:added-1"), stmt("uri:added-1")),
+                asList(stmt("uri:removed-1"), stmt("uri:removed-1")),
+                asList(stmt("uri:linked-shared"), stmt("uri:linked-shared")),
+                asList(stmt("uri:unlinked-shared"), stmt("uri:unlinked-shared")),
+                bigChunkEventGenerator
+        );
+        ConsumerPatch actual = accumulator.asPatch();
+
+        assertThat(actual.getAdded())
+                .containsExactlyInAnyOrder(stmt("uri:added-1"));
+        assertThat(actual.getRemoved())
+                .contains(stmt("uri:removed-1"));
+        assertThat(actual.getLinkedSharedElements())
+                .containsExactlyInAnyOrder(stmt("uri:linked-shared"));
+        assertThat(actual.getUnlinkedSharedElements())
+                .contains(stmt("uri:unlinked-shared"));
+    }
+
     private void accumulateDiff(PatchAccumulator accumulator,
                                 String entityId,
                                 List<Statement> added,
                                 List<Statement> removed,
                                 List<Statement> linkedSharedElts,
-                                List<Statement> unlinkedSharedElts
+                                List<Statement> unlinkedSharedElts) {
+        accumulateDiff(accumulator, entityId, added, removed, linkedSharedElts, unlinkedSharedElts, eventGenerator);
+    }
+
+    private void accumulateDiff(PatchAccumulator accumulator,
+                                String entityId,
+                                List<Statement> added,
+                                List<Statement> removed,
+                                List<Statement> linkedSharedElts,
+                                List<Statement> unlinkedSharedElts,
+                                MutationEventDataGenerator generator
     ) {
-        List<MutationEventData> events = eventGenerator.diffEvent(metaGenerator(entityId), entityId, 1, Instant.EPOCH,
+        List<MutationEventData> events = generator.diffEvent(metaGenerator(entityId), entityId, 1, Instant.EPOCH,
                 added, removed, linkedSharedElts, unlinkedSharedElts);
         events.forEach(accumulator::accumulate);
     }
