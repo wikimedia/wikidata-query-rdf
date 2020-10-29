@@ -86,21 +86,6 @@ public class KafkaStreamConsumerUnitTest {
             () -> new EventsMeta(Instant.EPOCH, UUID.randomUUID().toString(), TEST_DOMAIN, TESTED_STREAM, REQ_ID);
 
 
-    private List<ConsumerRecord<String, MutationEventData>> recordsList() {
-        List<MutationEventData> events = Stream.of(
-                genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris()),
-                genEvent("Q1", 2, uris("Q1-added-1", "Q1-added-2"), uris("Q1-removed-0"), uris(), uris()),
-                genEvent("Q1", 3, uris("Q1-added-3", "Q1-added-4", "Q1-added-5"), uris("Q1-added-1"), uris(), uris()),
-                genEvent("Q1", 4, uris("Q1-added-1"), uris("Q1-added-5"), uris("Q1-shared-2"), uris("Q1-shared", "Q1-shared-3")),
-                genEvent("Q2", 1, uris("Q2-added-0"), uris(), uris("Q1-shared"), uris()),
-                genDeleteEvent("Q2", 2)
-        ).flatMap(Collection::stream).collect(toList());
-
-        return IntStream.range(0, events.size())
-                .mapToObj(i -> new ConsumerRecord<String, MutationEventData>(TESTED_STREAM, TESTED_PARTITION, i, null, events.get(i)))
-                .collect(toList());
-    }
-
     @Test
     public void test_poll_accumulates_records_into_a_rdfpatch() {
         TopicPartition topicPartition = new TopicPartition("test", 0);
@@ -109,9 +94,9 @@ public class KafkaStreamConsumerUnitTest {
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
         List<ConsumerRecord<String, MutationEventData>> allRecords = recordsList();
         when(consumer.poll(anyLong())).thenReturn(
-            new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(0, 2))),
-            new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(2, allRecords.size()))),
-            new ConsumerRecords<>(emptyMap()));
+                new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(0, 2))),
+                new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(2, allRecords.size()))),
+                new ConsumerRecords<>(emptyMap()));
 
         while (true) {
             StreamConsumer.Batch b = streamConsumer.poll(100);
@@ -135,6 +120,40 @@ public class KafkaStreamConsumerUnitTest {
             assertThat(unlinkedSharedElts).containsExactlyInAnyOrderElementsOf(expectedUnlinkedEltsSingleOptimizedBatch);
         }
         assertThat(deletedEntityIds).containsOnly("Q2");
+    }
+
+    @Test
+    public void test_poll_accumulates_records_with_delete_into_a_rdfpatch() {
+        TopicPartition topicPartition = new TopicPartition("test", 0);
+
+        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, Integer.MAX_VALUE,
+                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
+        List<ConsumerRecord<String, MutationEventData>> allRecords = recordListWithDeleteAndAdd();
+        when(consumer.poll(anyLong())).thenReturn(
+            new ConsumerRecords<>(singletonMap(topicPartition, allRecords)),
+            new ConsumerRecords<>(emptyMap()));
+
+        Set<Statement> actualStoredData = new HashSet<>();
+        Set<String> actualDeletedEntities = new HashSet<>();
+        Set<Statement> expectedAddedData = new HashSet<>(statements(uris(
+                "Q1-added-0",
+                "Q1-shared"
+        )));
+        while (true) {
+            StreamConsumer.Batch b = streamConsumer.poll(100);
+            if (b == null) {
+                break;
+            }
+            ConsumerPatch patch = b.getPatch();
+            actualStoredData.addAll(patch.getAdded());
+            actualStoredData.removeAll(patch.getRemoved());
+            actualStoredData.addAll(patch.getLinkedSharedElements());
+            actualDeletedEntities.addAll(patch.getEntityIdsToDelete());
+            streamConsumer.acknowledge();
+        }
+        streamConsumer.close();
+        assertThat(actualStoredData).containsExactlyInAnyOrderElementsOf(expectedAddedData);
+        assertThat(actualDeletedEntities).containsOnly("Q1");
     }
 
     @Test
@@ -251,6 +270,33 @@ public class KafkaStreamConsumerUnitTest {
         streamConsumer.close();
         // verify that we commit synchronously since we did not receive yet the ack of our async commit
         verify(consumer, times(1)).commitSync(eq(thirdOffsets));
+    }
+
+    private List<ConsumerRecord<String, MutationEventData>> recordsList() {
+        List<MutationEventData> events = Stream.of(
+                genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris()),
+                genEvent("Q1", 2, uris("Q1-added-1", "Q1-added-2"), uris("Q1-removed-0"), uris(), uris()),
+                genEvent("Q1", 3, uris("Q1-added-3", "Q1-added-4", "Q1-added-5"), uris("Q1-added-1"), uris(), uris()),
+                genEvent("Q1", 4, uris("Q1-added-1"), uris("Q1-added-5"), uris("Q1-shared-2"), uris("Q1-shared", "Q1-shared-3")),
+                genEvent("Q2", 1, uris("Q2-added-0"), uris(), uris("Q1-shared"), uris()),
+                genDeleteEvent("Q2", 2)
+        ).flatMap(Collection::stream).collect(toList());
+
+        return IntStream.range(0, events.size())
+                .mapToObj(i -> new ConsumerRecord<String, MutationEventData>(TESTED_STREAM, TESTED_PARTITION, i, null, events.get(i)))
+                .collect(toList());
+    }
+
+    private List<ConsumerRecord<String, MutationEventData>> recordListWithDeleteAndAdd() {
+        List<MutationEventData> events = Stream.of(
+                genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris()),
+                genDeleteEvent("Q1", 1),
+                genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris())
+        ).flatMap(Collection::stream).collect(toList());
+
+        return IntStream.range(0, events.size())
+                .mapToObj(i -> new ConsumerRecord<String, MutationEventData>(TESTED_STREAM, TESTED_PARTITION, i, null, events.get(i)))
+                .collect(toList());
     }
 
     private String[] uris(String...uris) {

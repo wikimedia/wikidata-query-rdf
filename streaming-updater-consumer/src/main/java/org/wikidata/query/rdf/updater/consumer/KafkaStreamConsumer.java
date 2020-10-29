@@ -127,6 +127,9 @@ public class KafkaStreamConsumer implements StreamConsumer {
             if (entityChunks.isEmpty()) {
                 continue;
             }
+            if (entityChunks.stream().map(ConsumerRecord::value).anyMatch(m -> !accumulator.canAccumulate(m))) {
+                break;
+            }
             lastRecord = entityChunks.get(entityChunks.size() - 1);
             entityChunks.stream().map(ConsumerRecord::value).forEach(accumulator::accumulate);
             buffer.removeAll(entityChunks);
