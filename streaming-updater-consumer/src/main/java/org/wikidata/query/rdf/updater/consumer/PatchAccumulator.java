@@ -35,8 +35,6 @@ public class PatchAccumulator {
     private final Map<Statement, String> allRemovedMap = new HashMap<>();
     private final Map<Statement, Set<String>> linkedSharedMap = new HashMap<>();
     private final Map<Statement, String> unlinkedSharedMap = new HashMap<>();
-    private static final String duplicateErrorMessage = "Cannot add/delete the same triple for a different entity" +
-            " (should probably be considered as a shared statement)";
 
     public PatchAccumulator(RDFChunkDeserializer deser) {
         this.deser = deser;
@@ -71,7 +69,8 @@ public class PatchAccumulator {
         newItemsMap.forEach((statement, entityId) -> {
             String currentEntityId = allItemsMap.get(statement);
             if (currentEntityId != null && !currentEntityId.equals(entityId)) {
-                throw new IllegalArgumentException(duplicateErrorMessage);
+                throw new IllegalArgumentException("Cannot add/delete the same triple [" + statement + "] " +
+                        "for a different entities: [" + currentEntityId + "] and [" + entityId + "]");
             }
         });
     }
