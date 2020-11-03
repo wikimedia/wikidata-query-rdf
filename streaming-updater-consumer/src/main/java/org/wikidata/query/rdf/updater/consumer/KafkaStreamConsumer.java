@@ -135,7 +135,8 @@ public class KafkaStreamConsumer implements StreamConsumer {
             buffer.removeAll(entityChunks);
         }
         metrics.triplesAccum(accumulator.getTotalAccumulated());
-        metrics.triplesOffered(accumulator.weight());
+        metrics.triplesOffered(accumulator.getNumberOfTriples());
+        metrics.deletedEntities(accumulator.getNumberOfDeletedEntities());
         Map<TopicPartition, OffsetAndMetadata> offsetsAndMetadata;
         if (lastRecord != null) {
             offsetsAndMetadata = singletonMap(topicPartition, new OffsetAndMetadata(lastRecord.offset()));

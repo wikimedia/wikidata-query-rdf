@@ -46,8 +46,15 @@ public class PatchAccumulator {
     }
 
     public int weight() {
-        int approximateNumOfDeletedTriples = allEntitiesToDelete.size() * TRIPLES_PER_DELETE;
-        return allAddedMap.size() + allRemovedMap.size() + linkedSharedMap.size() + unlinkedSharedMap.size() + approximateNumOfDeletedTriples;
+        return getNumberOfTriples() + (allEntitiesToDelete.size() * TRIPLES_PER_DELETE);
+    }
+
+    public int getNumberOfTriples() {
+        return allAddedMap.size() + allRemovedMap.size() + linkedSharedMap.size() + unlinkedSharedMap.size();
+    }
+
+    public int getNumberOfDeletedEntities() {
+        return allEntitiesToDelete.size();
     }
 
     private void accumulate(String entityId, Collection<Statement> added, Collection<Statement> removed,

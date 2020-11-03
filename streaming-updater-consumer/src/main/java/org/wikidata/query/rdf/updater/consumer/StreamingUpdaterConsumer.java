@@ -10,7 +10,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 
 public class StreamingUpdaterConsumer implements Runnable {
-    public static final Duration TIMEOUT = Duration.ofMillis(100);
+    public static final Duration TIMEOUT = Duration.ofSeconds(3);
     private final StreamConsumer consumer;
     private final RdfRepositoryUpdater repository;
     private final Counter divergencesCnt;

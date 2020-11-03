@@ -11,12 +11,14 @@ import com.codahale.metrics.MetricRegistry;
 public class KafkaStreamConsumerMetricsListener {
     private final Counter triplesAccum;
     private final Counter triplesOffered;
+    private final Counter deletedEntities;
     private final AtomicLong lag = new AtomicLong();
     private final Clock clock;
 
     KafkaStreamConsumerMetricsListener(MetricRegistry registry, Clock clock) {
         triplesAccum = registry.counter("kafka-stream-consumer-triples-accumulated");
         triplesOffered = registry.counter("kafka-stream-consumer-triples-offered");
+        deletedEntities = registry.counter("kafka-stream-consumer-deleted-entities");
         registry.gauge("kafka-stream-consumer-lag", () -> lag::get);
         this.clock = clock;
     }
@@ -31,6 +33,10 @@ public class KafkaStreamConsumerMetricsListener {
 
     void triplesOffered(int triples) {
         triplesOffered.inc(triples);
+    }
+
+    void deletedEntities(int deletes) {
+        deletedEntities.inc(deletes);
     }
 
     void lag(Instant lastEventTime) {
