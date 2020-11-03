@@ -328,13 +328,12 @@ public class UpdatePatchAccumulatorUnitTest {
     ) {
         List<MutationEventData> events = generator.diffEvent(metaGenerator(entityId), entityId, 1, Instant.EPOCH,
                 added, removed, linkedSharedElts, unlinkedSharedElts);
-        events.forEach(accumulator::accumulate);
+        accumulator.accumulate(events);
     }
 
     private void accumulateDelete(PatchAccumulator accumulator, String entityId) {
         List<MutationEventData> events = eventGenerator.deleteEvent(metaGenerator(entityId), entityId, 1, Instant.EPOCH);
-        assertThat(events.size()).isEqualTo(1);
-        accumulator.accumulate(events.get(0));
+        accumulator.accumulate(events);
     }
 
     private Statement stmt(String s) {

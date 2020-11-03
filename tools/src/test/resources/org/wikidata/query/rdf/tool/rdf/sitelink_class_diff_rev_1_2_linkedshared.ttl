@@ -1,0 +1,17 @@
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix schema: <http://schema.org/> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+
+<https://hr.wikipedia.org/wiki/Zemlja> a schema:Article ;
+	schema:inLanguage "hr" ;
+	schema:isPartOf <https://hr.wikipedia.org/> ;
+	schema:name "Zemlja"@hr ;
+	wikibase:badge wd:Q17437796 .
+
+<https://simple.wikipedia.org/> wikibase:wikiGroup "wikipedia" .
+
+<https://simple.wikipedia.org/wiki/Earth> schema:inLanguage "en-simple" ;
+	wikibase:badge wd:Q17437798 ;
+	schema:name "Earth"@en-simple ;
+	schema:isPartOf <https://simple.wikipedia.org/> ;
+	a schema:Article .

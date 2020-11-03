@@ -64,4 +64,17 @@ public class StatementPredicatesUnitTest {
         assertThat(StatementPredicates.wikiGroupDefinition(statement("val:XYZ", Ontology.WIKIGROUP, "uri:foo"))).isTrue();
         assertThat(StatementPredicates.wikiGroupDefinition(statement("val:XYZ", RDF.TYPE, "uri:foo"))).isFalse();
     }
+
+    @Test
+    public void articleType() {
+        assertThat(StatementPredicates.articleType(statement("val:XYZ", RDF.TYPE, SchemaDotOrg.ARTICLE))).isTrue();
+        assertThat(StatementPredicates.articleType(statement("val:XYZ", RDF.TYPE, Ontology.BEST_RANK))).isFalse();
+    }
+
+    @Test
+    public void siteLink() {
+        assertThat(StatementPredicates.isPartOf(statement("val:XYZ", SchemaDotOrg.IS_PART_OF, "uri:foo"))).isTrue();
+        assertThat(StatementPredicates.isPartOf(statement("val:XYZ", SchemaDotOrg.IS_PART_OF, 1))).isFalse();
+        assertThat(StatementPredicates.isPartOf(statement("val:XYZ", RDF.TYPE, "uri:type"))).isFalse();
+    }
 }

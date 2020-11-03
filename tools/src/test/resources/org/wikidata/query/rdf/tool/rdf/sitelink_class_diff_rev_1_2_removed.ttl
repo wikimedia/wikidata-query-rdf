@@ -1,0 +1,15 @@
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix schema: <http://schema.org/> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+
+wd:Q2 schema:version 1 ;
+	schema:dateModified "2020-01-01T00:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
+
+<https://en.wikipedia.org/wiki/Earth> schema:about wd:Q2 .
+
+<https://hr.wikipedia.org/wiki/Zemlja_typo> schema:about wd:Q2 ;
+	wikibase:badge wd:Q17437796 ;
+	schema:inLanguage "hr" ;
+	schema:name "Zemlja"@hr ;
+	schema:isPartOf <https://hr.wikipedia.org/> ;
+	a schema:Article .

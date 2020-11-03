@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.updater.consumer;
 
+import java.time.Duration;
+
 import org.wikidata.query.rdf.common.TimerCounter;
 import org.wikidata.query.rdf.tool.rdf.RDFPatchResult;
 import org.wikidata.query.rdf.tool.rdf.RdfRepositoryUpdater;
@@ -8,6 +10,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 
 public class StreamingUpdaterConsumer implements Runnable {
+    public static final Duration TIMEOUT = Duration.ofMillis(100);
     private final StreamConsumer consumer;
     private final RdfRepositoryUpdater repository;
     private final Counter divergencesCnt;
@@ -43,7 +46,7 @@ public class StreamingUpdaterConsumer implements Runnable {
             // using interrupt() might mark some of the underlying IO resources
             // as unavailable preventing offsets to be committed.
             while (!stop) {
-                StreamConsumer.Batch b = pollTimeCnt.time(() -> consumer.poll(100));
+                StreamConsumer.Batch b = pollTimeCnt.time(() -> consumer.poll(TIMEOUT));
                 if (b == null) {
                     continue;
                 }

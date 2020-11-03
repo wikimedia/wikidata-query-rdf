@@ -5,13 +5,14 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.wikidata.query.rdf.test.StatementHelper.statements;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
@@ -93,13 +94,13 @@ public class KafkaStreamConsumerUnitTest {
         KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 20,
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
         List<ConsumerRecord<String, MutationEventData>> allRecords = recordsList();
-        when(consumer.poll(anyLong())).thenReturn(
+        when(consumer.poll(any())).thenReturn(
                 new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(0, 2))),
                 new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(2, allRecords.size()))),
                 new ConsumerRecords<>(emptyMap()));
 
         while (true) {
-            StreamConsumer.Batch b = streamConsumer.poll(100);
+            StreamConsumer.Batch b = streamConsumer.poll(Duration.ofMillis(100));
             if (b == null) {
                 break;
             }
@@ -129,7 +130,7 @@ public class KafkaStreamConsumerUnitTest {
         KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, Integer.MAX_VALUE,
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
         List<ConsumerRecord<String, MutationEventData>> allRecords = recordListWithDeleteAndAdd();
-        when(consumer.poll(anyLong())).thenReturn(
+        when(consumer.poll(any())).thenReturn(
             new ConsumerRecords<>(singletonMap(topicPartition, allRecords)),
             new ConsumerRecords<>(emptyMap()));
 
@@ -140,7 +141,7 @@ public class KafkaStreamConsumerUnitTest {
                 "Q1-shared"
         )));
         while (true) {
-            StreamConsumer.Batch b = streamConsumer.poll(100);
+            StreamConsumer.Batch b = streamConsumer.poll(Duration.ofMillis(100));
             if (b == null) {
                 break;
             }
@@ -166,19 +167,19 @@ public class KafkaStreamConsumerUnitTest {
                     null, null, null);
             return new ConsumerRecord<String, MutationEventData>(topicPartition.topic(), topicPartition.partition(), i, null, diff);
         }).collect(toList());
-        when(consumer.poll(anyLong())).thenReturn(
+        when(consumer.poll(any())).thenReturn(
                 new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(0, KafkaStreamConsumer.SOFT_BUFFER_CAP / 2))),
                 new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(KafkaStreamConsumer.SOFT_BUFFER_CAP / 2, allRecords.size()))),
                 new ConsumerRecords<>(emptyMap()));
 
         KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 10,
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
-        StreamConsumer.Batch b = streamConsumer.poll(100);
+        StreamConsumer.Batch b = streamConsumer.poll(Duration.ofMillis(100));
         assertThat(b).isNotNull();
         ConsumerPatch patch = b.getPatch();
         assertThat(patch.getAdded().size()).isEqualTo(KafkaStreamConsumer.SOFT_BUFFER_CAP);
         streamConsumer.acknowledge();
-        b = streamConsumer.poll(100);
+        b = streamConsumer.poll(Duration.ofMillis(100));
         assertThat(b).isNull();
     }
 
@@ -193,24 +194,24 @@ public class KafkaStreamConsumerUnitTest {
                    null, null, null);
            return new ConsumerRecord<String, MutationEventData>(topicPartition.topic(), topicPartition.partition(), i, null, diff);
         }).collect(toList());
-        when(consumer.poll(anyLong())).thenReturn(
+        when(consumer.poll(any())).thenReturn(
                 new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(0, KafkaStreamConsumer.SOFT_BUFFER_CAP))),
                 new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(KafkaStreamConsumer.SOFT_BUFFER_CAP, allRecords.size()))),
                 new ConsumerRecords<>(emptyMap()));
 
         KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 10,
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
-        StreamConsumer.Batch b = streamConsumer.poll(100);
+        StreamConsumer.Batch b = streamConsumer.poll(Duration.ofMillis(100));
         assertThat(b).isNotNull();
         ConsumerPatch patch = b.getPatch();
         assertThat(patch.getAdded().size()).isEqualTo(KafkaStreamConsumer.SOFT_BUFFER_CAP);
         streamConsumer.acknowledge();
-        b = streamConsumer.poll(100);
+        b = streamConsumer.poll(Duration.ofMillis(100));
         assertThat(b).isNotNull();
         patch = b.getPatch();
         assertThat(patch.getAdded().size()).isEqualTo(1);
         streamConsumer.acknowledge();
-        b = streamConsumer.poll(100);
+        b = streamConsumer.poll(Duration.ofMillis(100));
         assertThat(b).isNull();
     }
 
@@ -225,7 +226,7 @@ public class KafkaStreamConsumerUnitTest {
         Map<TopicPartition, OffsetAndMetadata> thirdOffsets = Collections.singletonMap(topicPartition, new OffsetAndMetadata(3));
         // we want real instances as we use AtomicReference
 
-        when(consumer.poll(anyLong())).thenReturn(
+        when(consumer.poll(any())).thenReturn(
                 new ConsumerRecords<>(singletonMap(topicPartition,
                         singletonList(new ConsumerRecord<>(TESTED_STREAM, 0, 1, null, firstEvent)))),
                 new ConsumerRecords<>(singletonMap(topicPartition,
@@ -238,11 +239,11 @@ public class KafkaStreamConsumerUnitTest {
 
         KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 1,
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()));
-        StreamConsumer.Batch b = streamConsumer.poll(10);
+        StreamConsumer.Batch b = streamConsumer.poll(Duration.ofMillis(10));
         streamConsumer.acknowledge();
         verify(consumer, times(1)).commitAsync(eq(firstOffsets), callback.capture());
 
-        streamConsumer.poll(10);
+        streamConsumer.poll(Duration.ofMillis(10));
 
         // fail the first commit and verify that we retry
         callback.getValue().onComplete(firstOffsets, new Exception("simulated failure"));
@@ -264,7 +265,7 @@ public class KafkaStreamConsumerUnitTest {
         // the retry succeeded
         callback.getValue().onComplete(secondOffsets, null);
 
-        streamConsumer.poll(10);
+        streamConsumer.poll(Duration.ofMillis(10));
         streamConsumer.acknowledge();
         verify(consumer, times(1)).commitAsync(eq(thirdOffsets), callback.capture());
         streamConsumer.close();

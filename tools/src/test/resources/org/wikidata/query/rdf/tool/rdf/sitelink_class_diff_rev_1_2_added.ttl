@@ -1,0 +1,10 @@
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix schema: <http://schema.org/> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+
+wd:Q2 schema:version 2 ;
+	schema:dateModified "2020-01-02T00:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
+
+<https://hr.wikipedia.org/wiki/Zemlja> schema:about wd:Q2 .
+
+<https://simple.wikipedia.org/wiki/Earth> schema:about wd:Q2 .

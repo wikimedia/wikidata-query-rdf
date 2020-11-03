@@ -2,7 +2,6 @@ package org.wikidata.query.rdf.updater.consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -39,7 +38,7 @@ public class StreamingUpdaterConsumerUnitTest {
         RDFPatchResult rdfPatchResult = new RDFPatchResult(2, 1, 2, 1, 1);
         LongAdder patchApplied = new LongAdder();
         CountDownLatch countdown = new CountDownLatch(5);
-        when(consumer.poll(anyLong())).thenAnswer((Answer<StreamConsumer.Batch>) invocationOnMock -> new StreamConsumer.Batch(patch));
+        when(consumer.poll(any())).thenAnswer((Answer<StreamConsumer.Batch>) invocationOnMock -> new StreamConsumer.Batch(patch));
         when(rdfRepositoryUpdater.applyPatch(any())).thenAnswer((Answer<RDFPatchResult>) i -> {
             countdown.countDown();
             patchApplied.increment();
@@ -56,7 +55,7 @@ public class StreamingUpdaterConsumerUnitTest {
         t.join();
         // Make sure that we called the methods the right number of times
         // This updater does not much other than bridging a consumer and a repository
-        verify(consumer, times(patchApplied.intValue())).poll(anyLong());
+        verify(consumer, times(patchApplied.intValue())).poll(any());
         verify(consumer, times(patchApplied.intValue())).acknowledge();
         verify(consumer, times(1)).close();
         verify(rdfRepositoryUpdater, times(patchApplied.intValue())).applyPatch(same(patch));

@@ -82,6 +82,14 @@ public final class StatementHelper {
         return st;
     }
 
+    public static ImmutableList<Statement> fullSiteLink(String entityId, String link, String site, String language) {
+        return ImmutableList.of(//
+                statement(link, RDF.TYPE, SchemaDotOrg.ARTICLE),
+                statement(link, SchemaDotOrg.ABOUT, entityId),
+                statement(link, SchemaDotOrg.IS_PART_OF, site),
+                statement(link, SchemaDotOrg.IN_LANGUAGE, new LiteralImpl(language)));
+    }
+
     /**
      * Build the statements describing a sitelink.
      *

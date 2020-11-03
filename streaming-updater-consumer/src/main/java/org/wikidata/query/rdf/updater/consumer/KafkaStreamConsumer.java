@@ -3,14 +3,15 @@ package org.wikidata.query.rdf.updater.consumer;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
+import static java.util.stream.Collectors.toList;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import javax.annotation.Nullable;
@@ -108,18 +109,17 @@ public class KafkaStreamConsumer implements StreamConsumer {
         this.preferredBatchLength = preferredBatchLength;
     }
 
-    public Batch poll(long timeout) {
+    public Batch poll(Duration timeout) {
         if (lastOfferedBatchOffsets != null) {
             throw new IllegalStateException("Last batch must be acknowledged before polling a new one.");
         }
         PatchAccumulator accumulator = new PatchAccumulator(rdfDeser);
         ConsumerRecord<String, MutationEventData> lastRecord = null;
-        long remaining = TimeUnit.MILLISECONDS.toNanos(timeout);
         long st = System.nanoTime();
-        while (remaining > 0 && accumulator.weight() < preferredBatchLength) {
+        while (!timeout.isNegative() && accumulator.weight() < preferredBatchLength) {
             if (buffer.size() < SOFT_BUFFER_CAP) {
-                ConsumerRecords<String, MutationEventData> records = consumer.poll(remaining);
-                remaining -= System.nanoTime() - st;
+                ConsumerRecords<String, MutationEventData> records = consumer.poll(timeout);
+                timeout = timeout.minusNanos(System.nanoTime() - st);
                 records.forEach(buffer::add);
             }
             // Accept partial messages if our buffer is already full
@@ -131,7 +131,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
                 break;
             }
             lastRecord = entityChunks.get(entityChunks.size() - 1);
-            entityChunks.stream().map(ConsumerRecord::value).forEach(accumulator::accumulate);
+            accumulator.accumulate(entityChunks.stream().map(ConsumerRecord::value).collect(toList()));
             buffer.removeAll(entityChunks);
         }
         metrics.triplesAccum(accumulator.getTotalAccumulated());

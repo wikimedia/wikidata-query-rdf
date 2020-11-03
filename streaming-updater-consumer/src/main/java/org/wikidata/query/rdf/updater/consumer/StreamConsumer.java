@@ -1,12 +1,14 @@
 package org.wikidata.query.rdf.updater.consumer;
 
+import java.time.Duration;
+
 import org.wikidata.query.rdf.tool.rdf.ConsumerPatch;
 
 import lombok.Value;
 
 public interface StreamConsumer extends AutoCloseable {
 
-    Batch poll(long timeout);
+    Batch poll(Duration timeout);
 
     void acknowledge();
 

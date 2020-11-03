@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.tool.rdf;
 
+import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.common.uri.OWL;
 import org.wikidata.query.rdf.common.uri.Ontology;
@@ -40,6 +41,30 @@ public final class StatementPredicates {
     public static boolean redirect(Statement statement) {
         // should we make sure that the subject and the object belong to the entity ns?
         return statement.getPredicate().stringValue().equals(OWL.SAME_AS);
+    }
+
+    /**
+     * Statement a schema:Article (a sitelink).
+     * &lt;https://ce.wikipedia.org/wiki/Foo&gt; a schema:Article
+     */
+    public static boolean articleType(Statement statement) {
+        return typeStatement(statement) && SchemaDotOrg.ARTICLE.equals(statement.getObject().stringValue());
+    }
+
+    /**
+     * resource schema:about resource.
+     * &lt;https://ce.wikipedia.org/wiki/Foo&gt; schema:about wd:Q4
+     */
+    public static boolean isAboutResource(Statement statement) {
+        return SchemaDotOrg.ABOUT.equals(statement.getPredicate().stringValue()) && statement.getObject() instanceof Resource;
+    }
+
+    /**
+     * Statement is declaring a isPartOf relationship.
+     * &lt;https://ce.wikipedia.org/wiki/Foo&gt; schema:isPartOf &lt;https://ce.wikipedia.org/&gt;
+     */
+    public static boolean isPartOf(Statement statement) {
+        return SchemaDotOrg.IS_PART_OF.equals(statement.getPredicate().stringValue()) && statement.getObject() instanceof Resource;
     }
 
     /**
