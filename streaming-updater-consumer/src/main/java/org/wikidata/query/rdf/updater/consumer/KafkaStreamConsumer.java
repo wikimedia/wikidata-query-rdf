@@ -71,6 +71,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
         props.put("group.id", consumerId);
         props.put("max.poll.interval.ms", "600000");
         props.put("enable.auto.commit", "false");
+        props.put("isolation.level", "read_committed");
         props.put("max.poll.records", SOFT_BUFFER_CAP);
         if (offsetReset == null) {
             props.put("auto.offset.reset", "earliest");
