@@ -140,7 +140,7 @@ public class PatchAccumulator {
                 throw new IllegalArgumentException("Inconsistent chunks provided, head class " +
                         head.getClass() + " does not match " + data.getClass());
             }
-            if (!head.getMeta().requestId().equals(head.getMeta().requestId())) {
+            if (!head.getMeta().requestId().equals(data.getMeta().requestId())) {
                 throw new IllegalArgumentException("Inconsistent chunks provided, head requestId " +
                         head.getMeta().requestId() + " does not match " + data.getMeta().requestId());
             }
