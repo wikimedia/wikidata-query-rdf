@@ -13,6 +13,9 @@ object UpdaterStateConfiguration {
   def newReorderingStateDesc(): ListStateDescriptor[InputEvent] = {
     new ListStateDescriptor[InputEvent]("re-ordering-state", TypeInformation.of(classOf[InputEvent]))
   }
+  def newPartialReorderingStateDesc(): ListStateDescriptor[InputEvent] = {
+    new ListStateDescriptor[InputEvent]("partial-re-ordering-state", TypeInformation.of(classOf[InputEvent]))
+  }
   def newStateBackend(checkpointDir: String, enableIncrementalCheckpoint: Boolean = true): StateBackend = {
     new RocksDBStateBackend(checkpointDir, enableIncrementalCheckpoint)
   }

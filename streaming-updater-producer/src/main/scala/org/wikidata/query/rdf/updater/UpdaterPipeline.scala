@@ -104,11 +104,15 @@ object UpdaterPipeline {
       case x :: Nil => x
       case x :: rest => x.union(rest: _*)
     }
-    val windowStream: DataStream[InputEvent] = EventReorderingWindowFunction.attach(incomingEventStream,
-      Time.milliseconds(opts.reorderingWindowLengthMs), opts.reorderingOpParallelism)
-    val lateEventsSideOutput: DataStream[InputEvent] = windowStream.getSideOutput(EventReorderingWindowFunction.LATE_EVENTS_SIDE_OUTPUT_TAG)
+    val reorderedStream: DataStream[InputEvent] = if (opts.partialOrdering) {
+      EventPartialReorderingProcessFunction.attach(incomingEventStream, opts.reorderingOpParallelism)
+    } else {
+      EventReorderingWindowFunction.attach(incomingEventStream,
+        Time.milliseconds(opts.reorderingWindowLengthMs), opts.reorderingOpParallelism)
+    }
+    val lateEventsSideOutput: DataStream[InputEvent] = reorderedStream.getSideOutput(EventReorderingWindowFunction.LATE_EVENTS_SIDE_OUTPUT_TAG)
 
-    val outputMutationStream: DataStream[MutationOperation] = rerouteIgnoredMutations(decideMutationOp(windowStream, opts))
+    val outputMutationStream: DataStream[MutationOperation] = rerouteIgnoredMutations(decideMutationOp(reorderedStream, opts))
     val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
 
     val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, outputMutationStream)
