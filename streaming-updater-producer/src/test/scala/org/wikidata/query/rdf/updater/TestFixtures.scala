@@ -45,17 +45,17 @@ trait TestFixtures extends TestEventGenerator {
   private val eventTimes = Map (
     ("Q1", 1L) -> instant(4),
     ("Q1", 2L) -> instant(3),
-    ("Q1", 5L) -> instant(WATERMARK_1 + 1),
-    ("Q1", 6L) -> instant(WATERMARK_2 + 1)
+    ("Q1", 5L) -> instant(WATERMARK_1),
+    ("Q1", 6L) -> instant(WATERMARK_2)
   )
 
   val revCreateEvents = Seq(
-        newRevCreateEvent("Q1", 2, eventTimes("Q1", 2), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+        newRevCreateEvent("Q1", 2, 1, eventTimes("Q1", 2), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
         newRevCreateEvent("Q1", 1, eventTimes("Q1", 1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
         newRevCreateEvent("Q2", -1, instant(WATERMARK_1), 0, WATERMARK_DOMAIN,
           STREAM, ORIG_REQUEST_ID), //unrelated event, test filtering and triggers watermark
-        newRevCreateEvent("Q1", 5, eventTimes("Q1", 5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
-        newRevCreateEvent("Q1", 3, instant(5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // ignored late event
+        newRevCreateEvent("Q1", 5, 4, eventTimes("Q1", 5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // skip rev 4
+        newRevCreateEvent("Q1", 3, instant(-1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // ignored late event
         newRevCreateEvent("Q2", -1, instant(WATERMARK_2), 0, WATERMARK_DOMAIN, STREAM,
           ORIG_REQUEST_ID), //unrelated event, test filter and triggers watermark
         newRevCreateEvent("Q1", 4, instant(WATERMARK_2 + 1), 0, DOMAIN, STREAM,
@@ -79,10 +79,10 @@ trait TestFixtures extends TestEventGenerator {
   private val mSt5 = metaStatements("Q1", 5L)
   private val mSt6 = metaStatements("Q1", 6L)
 
-  val ignoredRevision = RevCreate("Q1", instant(5), 3, instantNow, newEventMeta(instant(5), DOMAIN, STREAM, ORIG_REQUEST_ID))
+  val ignoredRevision = RevCreate("Q1", instant(-1), 3, None, instantNow, newEventMeta(instant(-1), DOMAIN, STREAM, ORIG_REQUEST_ID))
   val ignoredMutations = Set(
     IgnoredMutation("Q1", instant(WATERMARK_2 + 1), 4,
-      RevCreate("Q1", instant(WATERMARK_2 + 1), 4, instant(5),
+      RevCreate("Q1", instant(WATERMARK_2 + 1), 4, None, instant(5),
         newEventMeta(instant(WATERMARK_2 + 1), DOMAIN, STREAM, ORIG_REQUEST_ID)
       ), instantNow, NewerRevisionSeen, State(Some(5), CREATED)))
   val rdfChunkSer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())

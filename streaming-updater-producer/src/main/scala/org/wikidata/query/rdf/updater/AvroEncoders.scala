@@ -44,6 +44,7 @@ object AvroEncodersSchema {
   @transient lazy val input_event_schema: Schema = SchemaBuilder.record("input_event").fields()
     .commonMetadata()
     .requiredString("event_type")
+    .optionalLong("parent_revision")
     .originalEventMetatada()
     .endRecord()
 
@@ -125,6 +126,12 @@ trait AvroEncoders {
       case _: PageDelete => "page-delete"
       case _: PageUndelete => "page-undelete"
     })
+
+    in match {
+      case RevCreate(_, _, _, Some(parentRevision), _, _) => builder.set("parent_revision", parentRevision)
+      case _ =>
+    }
+
     builder.build()
   }
 

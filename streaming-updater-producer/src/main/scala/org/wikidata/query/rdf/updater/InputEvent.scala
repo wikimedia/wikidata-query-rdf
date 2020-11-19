@@ -18,6 +18,7 @@ sealed trait InputEvent extends BasicEventData
 final case class RevCreate(item: String,
                            eventTime: Instant,
                            revision: Long,
+                           parentRevision: Option[Long],
                            ingestionTime: Instant,
                            originalEventMetadata: EventsMeta
                     ) extends InputEvent

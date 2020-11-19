@@ -81,7 +81,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     streamingEnv.getJavaEnv.execute(graph)
     CollectSink.lateEvents shouldBe empty
     CollectSink.spuriousRevEvents should contain only IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
+      RevCreate("Q1", instant(3), 2, None, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
       instantNow, NewerRevisionSeen, State(Some(2), CREATED))
     //only change is the revision, lastmodified are identical
 

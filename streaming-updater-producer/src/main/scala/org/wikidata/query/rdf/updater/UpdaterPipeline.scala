@@ -104,15 +104,18 @@ object UpdaterPipeline {
       case x :: Nil => x
       case x :: rest => x.union(rest: _*)
     }
-    val reorderedStream: DataStream[InputEvent] = if (opts.partialOrdering) {
-      EventPartialReorderingProcessFunction.attach(incomingEventStream, opts.reorderingOpParallelism)
+    val (allMutationStream, lateEventsSideOutput): (DataStream[AllMutationOperation], DataStream[InputEvent]) = if (opts.optimizedReordering) {
+      val stream = ReorderAndDecideMutationOperation.attach(incomingEventStream, opts.reorderingWindowLengthMs)
+      (stream, stream.getSideOutput(EventReorderingWindowFunction.LATE_EVENTS_SIDE_OUTPUT_TAG))
     } else {
-      EventReorderingWindowFunction.attach(incomingEventStream,
+      val reorderedStream = EventReorderingWindowFunction.attach(incomingEventStream,
         Time.milliseconds(opts.reorderingWindowLengthMs), opts.reorderingOpParallelism)
+      val lateEventsSideOutput = reorderedStream.getSideOutput(EventReorderingWindowFunction.LATE_EVENTS_SIDE_OUTPUT_TAG)
+      (DecideMutationOperation.attach(reorderedStream), lateEventsSideOutput)
     }
-    val lateEventsSideOutput: DataStream[InputEvent] = reorderedStream.getSideOutput(EventReorderingWindowFunction.LATE_EVENTS_SIDE_OUTPUT_TAG)
 
-    val outputMutationStream: DataStream[MutationOperation] = rerouteIgnoredMutations(decideMutationOp(reorderedStream, opts))
+    val outputMutationStream: DataStream[MutationOperation] = rerouteIgnoredMutations(allMutationStream)
+
     val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
 
     val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, outputMutationStream)
@@ -186,15 +189,5 @@ object UpdaterPipeline {
       .name("RouteIgnoredMutationToSideOutput")
       .uid("RouteIgnoredMutationToSideOutput")
     outputMutationStream
-  }
-
-  private def decideMutationOp(windowStream: DataStream[InputEvent], opts: UpdaterPipelineGeneralConfig): DataStream[AllMutationOperation] = {
-    val allOutputMutationStream: DataStream[AllMutationOperation] = windowStream
-      .keyBy(_.item)
-      .map(new DecideMutationOperation())
-      .name("DecideMutationOperation")
-      .uid("DecideMutationOperation")
-    opts.decideMutationOpParallelism.foreach(allOutputMutationStream.setParallelism)
-    allOutputMutationStream
   }
 }

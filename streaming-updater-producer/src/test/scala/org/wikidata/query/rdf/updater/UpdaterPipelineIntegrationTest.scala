@@ -12,8 +12,17 @@ import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
 
 
 class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers {
-  private val pipelineOptions: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(DOMAIN, REORDERING_WINDOW_LENGTH, None, None, 2,
-    Int.MaxValue, 10, outputOperatorNameAndUuid = "test-output-name")
+  private val pipelineOptions: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
+    hostname = DOMAIN,
+    reorderingWindowLengthMs = REORDERING_WINDOW_LENGTH,
+    reorderingOpParallelism = None,
+    decideMutationOpParallelism = None,
+    generateDiffParallelism = 2,
+    generateDiffTimeout = Int.MaxValue,
+    wikibaseRepoThreadPoolSize = 10,
+    outputOperatorNameAndUuid = "test-output-name",
+    optimizedReordering = true
+  )
   "Updater job" should "work" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
 

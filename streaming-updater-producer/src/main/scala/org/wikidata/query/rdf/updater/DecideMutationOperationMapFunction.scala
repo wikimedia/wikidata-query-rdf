@@ -74,7 +74,11 @@ trait LastSeenRevState extends RichFunction {
   var entityState: EntityState = _
 
   override def open(parameters: Configuration): Unit = {
-    entityState = new EntityState(getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc()))
+    open(new EntityState(getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())))
+  }
+
+  def open(entityState: EntityState): Unit = {
+    this.entityState = entityState
   }
 }
 
@@ -95,13 +99,12 @@ sealed class RouteIgnoredMutationToSideOutput(ignoredEventTag: OutputTag[Ignored
 object DecideMutationOperation {
   val UID: String = "DecideMutationOperation"
   val SPURIOUS_REV_EVENTS = new OutputTag[IgnoredMutation]("spurious-rev-events")
-  def attach(stream: DataStream[InputEvent]): DataStream[MutationOperation] = {
+  def attach(stream: DataStream[InputEvent]): DataStream[AllMutationOperation] = {
     stream
       .keyBy(_.item)
       .map(new DecideMutationOperation())
       .uid(UID)
       .name(UID)
-      .process(new RouteIgnoredMutationToSideOutput())
   }
 }
 

@@ -25,7 +25,7 @@ class AvroEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
   val eventMeta: EventsMeta = new EventsMeta(eventTime, uuid, domain, stream, requestId)
 
   "IgnoredMutation" should "be encoded properly as an avro GenericRecord" in {
-    val inputEvent = RevCreate(item, eventTime, revision, ingestionTime, eventMeta)
+    val inputEvent = RevCreate(item, eventTime, revision, Some(revision-1), ingestionTime, eventMeta)
     val state = State(Some(revision), CREATED)
     val record = IgnoredMutationEncoder.map(IgnoredMutation("Q1", eventTime, revision, inputEvent, ingestionTime, NewerRevisionSeen, state))
     assertBasicMetadata(record)
@@ -44,14 +44,25 @@ class AvroEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
     }
     assertBasicMetadata(origEvent)
     origEvent.get("event_type") shouldBe "revision-create"
+    origEvent.get("parent_revision").asInstanceOf[Long] shouldBe revision-1
     GenericData.get().validate(IgnoredMutationEncoder.schema(), record) shouldBe true
   }
 
   "RevCreateEvent" should "be encoded properly as an avro GenericRecord" in {
-    val inputEvent = RevCreate(item, eventTime, revision, ingestionTime, eventMeta)
+    val inputEvent = RevCreate(item, eventTime, revision, Some(revision-1), ingestionTime, eventMeta)
     val record = InputEventEncoder.map(inputEvent)
     assertBasicMetadata(record)
     record.get("event_type") shouldBe "revision-create"
+    record.get("parent_revision").asInstanceOf[Long] shouldBe revision-1
+    GenericData.get().validate(InputEventEncoder.schema(), record) shouldBe true
+  }
+
+  "RevCreateEvent" should "be encoded properly as an avro GenericRecord even without a parent revision" in {
+    val inputEvent = RevCreate(item, eventTime, revision, None, ingestionTime, eventMeta)
+    val record = InputEventEncoder.map(inputEvent)
+    assertBasicMetadata(record)
+    record.get("event_type") shouldBe "revision-create"
+    Option(record.get("parent_revision")) shouldBe None
     GenericData.get().validate(InputEventEncoder.schema(), record) shouldBe true
   }
 

@@ -31,21 +31,21 @@ class EventReorderingWindowFunctionUnitTest extends FlatSpec with Matchers with 
     val expectedOutput = new ListBuffer[Any]
 
     operator.open()
-    operator.processElement(newRevCreateRecord("Q1", 2, 0, 5))
-    operator.processElement(newRevCreateRecord("Q1", 1, 1, 5))
+    operator.processElement(newRevCreateRecordNewPage("Q1", 2, 0, 5))
+    operator.processElement(newRevCreateRecordNewPage("Q1", 1, 1, 5))
     operator.processElement(newPageDeleteRecord("Q1", 2, 2, 5))
-    operator.processElement(newRevCreateRecord("Q2", 1, 0, 5))
+    operator.processElement(newRevCreateRecordNewPage("Q2", 1, 0, 5))
     operator.processElement(newPageDeleteRecord("Q2", 2, 1, 5))
-    operator.processElement(newRevCreateRecord("Q2", 2, 1, 5))
+    operator.processElement(newRevCreateRecordNewPage("Q2", 2, 1, 5))
     operator.processWatermark(new Watermark(1000))
-    operator.processElement(newRevCreateRecord("Q2", 3, 2, 5)) // Late event
+    operator.processElement(newRevCreateRecordNewPage("Q2", 3, 2, 5)) // Late event
 
-    expectedOutput += newRevCreateRecord("Q1", 1, 1, 5)
-    expectedOutput += newRevCreateRecord("Q1", 2, 0, 5)
+    expectedOutput += newRevCreateRecordNewPage("Q1", 1, 1, 5)
+    expectedOutput += newRevCreateRecordNewPage("Q1", 2, 0, 5)
     expectedOutput += newPageDeleteRecord("Q1", 2, 2, 5)
-    expectedOutput += newRevCreateRecord("Q2", 1, 0, 5)
+    expectedOutput += newRevCreateRecordNewPage("Q2", 1, 0, 5)
     expectedOutput += newPageDeleteRecord("Q2", 2, 1, 5)
-    expectedOutput += newRevCreateRecord("Q2", 2, 1, 5)
+    expectedOutput += newRevCreateRecordNewPage("Q2", 2, 1, 5)
     expectedOutput += new Watermark(1000)
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)

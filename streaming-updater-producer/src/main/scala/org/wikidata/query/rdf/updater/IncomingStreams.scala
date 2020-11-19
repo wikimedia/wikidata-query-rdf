@@ -14,7 +14,8 @@ import org.wikidata.query.rdf.updater.config.UpdaterPipelineInputEventStreamConf
 // FIXME rework parts this class do limit duplication
 object IncomingStreams {
   val REV_CREATE_CONV: (RevisionCreateEvent, Clock) => InputEvent =
-    (e, clock) => RevCreate(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
+    (e, clock) => RevCreate(cleanEntityId(e.title()), e.timestamp(), e.revision(),
+      Option(e.parentRevision(): java.lang.Long).map(_.toLong), clock.instant(), e.meta())
 
   val PAGE_DEL_CONV: (PageDeleteEvent, Clock) => InputEvent =
     (e, clock) => PageDelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
