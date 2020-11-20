@@ -38,6 +38,7 @@ public class SiteLinksReclassificationUnitTest {
     @Test
     public void test_add_rename_and_delete() {
         List<Statement> siteLink1Typo = new ArrayList<>(fullSiteLink("Q1", "http://en.mysitelink.test/Q1_typo", "https://en.mysitelink.test/", "en"));
+        Statement q1toLink1Typo = statement("http://en.mysitelink.test/Q1_typo", SchemaDotOrg.ABOUT, "Q1");
         List<Statement> siteLink1Renamed = new ArrayList<>(fullSiteLink("Q1", "http://en.mysitelink.test/Q1", "https://en.mysitelink.test/", "en"));
         Statement q1toLink1Renamed = statement("http://en.mysitelink.test/Q1", SchemaDotOrg.ABOUT, "Q1");
         List<Statement> siteLink2Added = new ArrayList<>(fullSiteLink("Q1", "http://de.mysitelink.test/Q1", "https://de.mysitelink.test/", "de"));
@@ -64,7 +65,8 @@ public class SiteLinksReclassificationUnitTest {
         expectedAdded.add(q1toLink2Added);
         expectedAdded.add(q1toLink1Renamed);
 
-        List<Statement> expectedRemoved = new ArrayList<>(siteLink1Typo);
+        List<Statement> expectedRemoved = new ArrayList<>();
+        expectedRemoved.add(q1toLink1Typo);
         expectedRemoved.add(statement("uri:removed-1", "uri:removed-1", "uri:removed-1"));
         expectedRemoved.add(q1toLink3Removed);
 
@@ -76,7 +78,9 @@ public class SiteLinksReclassificationUnitTest {
         assertThat(expectedLinkedShared.remove(q1toLink2Added)).isTrue();
 
         List<Statement> expectedUnlinkedShared = new ArrayList<>(siteLink3Removed);
+        expectedUnlinkedShared.addAll(siteLink1Typo);
         assertThat(expectedUnlinkedShared.remove(q1toLink3Removed)).isTrue();
+        assertThat(expectedUnlinkedShared.remove(q1toLink1Typo)).isTrue();
         expectedUnlinkedShared.add(statement("uri:unlinked-1", "uri:unlinked-1", "uri:unlinked-1"));
 
         Patch actualPatch = SiteLinksReclassification.reclassify(patch);

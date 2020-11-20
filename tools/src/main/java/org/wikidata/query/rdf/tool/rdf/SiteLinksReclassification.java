@@ -36,10 +36,8 @@ public final class SiteLinksReclassification {
     public static Patch reclassify(Patch inputPatch) {
         Map<Resource, SiteLinkBlock> addedSitelinks = extractSiteLinks(inputPatch.getAdded());
         Map<Resource, SiteLinkBlock> deletedSitelinks = extractSiteLinks(inputPatch.getRemoved());
-        Set<Resource> renames = Sets.intersection(addedSitelinks.keySet(), deletedSitelinks.keySet());
 
-        Set<Statement> deletedAndNotRenamed = deletedSitelinks.entrySet().stream()
-                .filter(e -> !renames.contains(e.getKey()))
+        Set<Statement> addToUnlinkedShared = deletedSitelinks.entrySet().stream()
                 .map(Map.Entry::getValue)
                 .flatMap(slb -> slb.getStatements().stream())
                 .collect(toSet());
@@ -53,9 +51,9 @@ public final class SiteLinksReclassification {
         List<Statement> linkedShared = new ArrayList<>(inputPatch.getLinkedSharedElements());
         linkedShared.addAll(addToLinkedShared);
 
-        List<Statement> deleted = new ArrayList<>(Sets.difference(new HashSet<>(inputPatch.getRemoved()), deletedAndNotRenamed));
+        List<Statement> deleted = new ArrayList<>(Sets.difference(new HashSet<>(inputPatch.getRemoved()), addToUnlinkedShared));
         List<Statement> unlinkedShared = new ArrayList<>(inputPatch.getUnlinkedSharedElements());
-        unlinkedShared.addAll(deletedAndNotRenamed);
+        unlinkedShared.addAll(addToUnlinkedShared);
 
         return new Patch(added, linkedShared, deleted, unlinkedShared);
     }

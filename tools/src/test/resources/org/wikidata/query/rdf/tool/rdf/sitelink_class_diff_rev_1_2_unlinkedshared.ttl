@@ -9,3 +9,9 @@
 	schema:isPartOf <https://en.wikipedia.org/> ;
 	wikibase:badge wd:Q17437796 ;
 	a schema:Article .
+
+<https://hr.wikipedia.org/wiki/Zemlja_typo> wikibase:badge wd:Q17437796 ;
+	schema:inLanguage "hr" ;
+	schema:name "Zemlja"@hr ;
+	schema:isPartOf <https://hr.wikipedia.org/> ;
+	a schema:Article .

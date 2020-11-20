@@ -7,9 +7,4 @@ wd:Q2 schema:version 1 ;
 
 <https://en.wikipedia.org/wiki/Earth> schema:about wd:Q2 .
 
-<https://hr.wikipedia.org/wiki/Zemlja_typo> schema:about wd:Q2 ;
-	wikibase:badge wd:Q17437796 ;
-	schema:inLanguage "hr" ;
-	schema:name "Zemlja"@hr ;
-	schema:isPartOf <https://hr.wikipedia.org/> ;
-	a schema:Article .
+<https://hr.wikipedia.org/wiki/Zemlja_typo> schema:about wd:Q2 .
