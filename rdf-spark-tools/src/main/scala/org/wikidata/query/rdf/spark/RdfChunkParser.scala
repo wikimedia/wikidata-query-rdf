@@ -107,10 +107,48 @@ object RdfChunkParser {
 
   def forWikidata(skolemize: Boolean = false): RdfChunkParser = {
     val urisScheme = UrisSchemeFactory.WIKIDATA
-    val munger = Munger.builder(urisScheme).convertBNodesToSkolemIRIs(skolemize).build()
+    new RdfChunkParser(urisScheme, buildMunger(skolemize, urisScheme), prefixes)
+  }
 
+  // TODO: stop hardcoding prefixes, either generate from the hostname
+  //  or read them from the dump
+  private val commons_prefixes = prefixes ++ Map[String, String](
+"sdc" -> "<https://commons.wikimedia.org/entity/>",
+    "sdcdata" -> "<https://commons.wikimedia.org/wiki/Special:EntityData/>",
+    "sdcs" -> "<https://commons.wikimedia.org/entity/statement/>",
+    "sdcref" -> "<https://commons.wikimedia.org/reference/>",
+    "sdcv" -> "<https://commons.wikimedia.org/value/>",
+    "sdct" -> "<https://commons.wikimedia.org/prop/direct/>",
+    "sdctn" -> "<https://commons.wikimedia.org/prop/direct-normalized/>",
+    "sdcp" -> "<https://commons.wikimedia.org/prop/>",
+    "sdcps" -> "<https://commons.wikimedia.org/prop/statement/>",
+    "sdcpsv" -> "<https://commons.wikimedia.org/prop/statement/value/>",
+    "sdcpsn" -> "<https://commons.wikimedia.org/prop/statement/value-normalized/>",
+    "sdcpq" -> "<https://commons.wikimedia.org/prop/qualifier/>",
+    "sdcpqv" -> "<https://commons.wikimedia.org/prop/qualifier/value/>",
+    "sdcpqn" -> "<https://commons.wikimedia.org/prop/qualifier/value-normalized/>",
+    "sdcpr" -> "<https://commons.wikimedia.org/prop/reference/>",
+    "sdcprv" -> "<https://commons.wikimedia.org/prop/reference/value/>",
+    "sdcprn" -> "<https://commons.wikimedia.org/prop/reference/value-normalized/>",
+    "sdcno" -> "<https://commons.wikimedia.org/prop/novalue/>"
+  )
+
+  def forCommons(skolemize: Boolean = false): RdfChunkParser = {
+    val urisScheme = UrisSchemeFactory.fromConceptUris("http://www.wikidata.org/", "https://commons.wikimedia.org")
+    new RdfChunkParser(urisScheme, buildMunger(skolemize, urisScheme), commons_prefixes)
+  }
+
+  def bySite(site: Site.Value, skolemize: Boolean): RdfChunkParser = {
+    site match {
+      case Site.wikidata => forWikidata(skolemize)
+      case Site.commons => forCommons(skolemize)
+    }
+  }
+
+  private def buildMunger(skolemize: Boolean, urisScheme: UrisScheme) = {
+    val munger = Munger.builder(urisScheme).convertBNodesToSkolemIRIs(skolemize).build()
     // also hardcode format version for now
     munger.setFormatVersion("1.0.0")
-    new RdfChunkParser(urisScheme, munger, prefixes)
+    munger
   }
 }

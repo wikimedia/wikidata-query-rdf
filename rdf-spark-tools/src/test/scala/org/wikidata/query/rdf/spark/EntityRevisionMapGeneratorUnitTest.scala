@@ -31,11 +31,17 @@ class EntityRevisionMapGeneratorUnitTest extends FlatSpec with SparkSessionProvi
     super.beforeEach()
     csvFile = newSparkSubDir("entity_rev_map.csv")
     val rdfData = newSparkSubDir("test_import_form_rev_map")
-    WikidataTurtleDumpConverterUnitTest.createTable("rdf_for_rev_map", rdfData, spark)
-    WikidataTurtleDumpConverter.importDump(paths_import_20200101, skolemizeBlankNodes = true, WikidataTurtleDumpConverter.rowEncoder(),
-      WikidataTurtleDumpConverter.getTableWriter("rdf_for_rev_map/date=20200101", 2, None))
-    WikidataTurtleDumpConverter.importDump(paths_import_20200102, skolemizeBlankNodes = true, WikidataTurtleDumpConverter.rowEncoder(),
-      WikidataTurtleDumpConverter.getTableWriter("rdf_for_rev_map/date=20200102", 2, None))
+    WikibaseRDFDumpConverterUnitTest.createTable("rdf_for_rev_map", rdfData, spark)
+
+    val params = Params(
+      inputPath = paths_import_20200101,
+      outputTable = Some("rdf_for_rev_map/date=20200101"),
+      outputPath = None,
+      numPartitions = 2,
+      skolemizeBlankNodes = true,
+      site = Site.wikidata)
+    TurtleImporter.importDump(params, None)
+    TurtleImporter.importDump(params.copy(inputPath = paths_import_20200102, outputTable = Some("rdf_for_rev_map/date=20200102")), None)
   }
 }
 

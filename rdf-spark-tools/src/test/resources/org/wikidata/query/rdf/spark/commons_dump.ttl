@@ -1,0 +1,196 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix data: <https://www.wikidata.org/wiki/Special:EntityData/> .
+@prefix s: <http://www.wikidata.org/entity/statement/> .
+@prefix ref: <http://www.wikidata.org/reference/> .
+@prefix v: <http://www.wikidata.org/value/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix wdtn: <http://www.wikidata.org/prop/direct-normalized/> .
+@prefix p: <http://www.wikidata.org/prop/> .
+@prefix ps: <http://www.wikidata.org/prop/statement/> .
+@prefix psv: <http://www.wikidata.org/prop/statement/value/> .
+@prefix psn: <http://www.wikidata.org/prop/statement/value-normalized/> .
+@prefix pq: <http://www.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://www.wikidata.org/prop/qualifier/value/> .
+@prefix pqn: <http://www.wikidata.org/prop/qualifier/value-normalized/> .
+@prefix pr: <http://www.wikidata.org/prop/reference/> .
+@prefix prv: <http://www.wikidata.org/prop/reference/value/> .
+@prefix prn: <http://www.wikidata.org/prop/reference/value-normalized/> .
+@prefix wdno: <http://www.wikidata.org/prop/novalue/> .
+@prefix sdc: <https://commons.wikimedia.org/entity/> .
+@prefix sdcdata: <https://commons.wikimedia.org/wiki/Special:EntityData/> .
+@prefix sdcs: <https://commons.wikimedia.org/entity/statement/> .
+@prefix sdcref: <https://commons.wikimedia.org/reference/> .
+@prefix sdcv: <https://commons.wikimedia.org/value/> .
+@prefix sdct: <https://commons.wikimedia.org/prop/direct/> .
+@prefix sdctn: <https://commons.wikimedia.org/prop/direct-normalized/> .
+@prefix sdcp: <https://commons.wikimedia.org/prop/> .
+@prefix sdcps: <https://commons.wikimedia.org/prop/statement/> .
+@prefix sdcpsv: <https://commons.wikimedia.org/prop/statement/value/> .
+@prefix sdcpsn: <https://commons.wikimedia.org/prop/statement/value-normalized/> .
+@prefix sdcpq: <https://commons.wikimedia.org/prop/qualifier/> .
+@prefix sdcpqv: <https://commons.wikimedia.org/prop/qualifier/value/> .
+@prefix sdcpqn: <https://commons.wikimedia.org/prop/qualifier/value-normalized/> .
+@prefix sdcpr: <https://commons.wikimedia.org/prop/reference/> .
+@prefix sdcprv: <https://commons.wikimedia.org/prop/reference/value/> .
+@prefix sdcprn: <https://commons.wikimedia.org/prop/reference/value-normalized/> .
+@prefix sdcno: <https://commons.wikimedia.org/prop/novalue/> .
+
+wikibase:Dump a schema:Dataset,
+                owl:Ontology ;
+        cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+        schema:softwareVersion "1.0.0" ;
+        schema:dateModified "2021-01-10T15:00:01Z"^^xsd:dateTime ;
+        owl:imports <http://wikiba.se/ontology-1.0.owl> .
+
+sdcdata:M6580719 a schema:Dataset ;
+	schema:about sdc:M6580719 ;
+	cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+	schema:softwareVersion "1.0.0" ;
+	schema:version "516563229"^^xsd:integer ;
+	schema:dateModified "2020-12-03T16:21:12Z"^^xsd:dateTime .
+
+sdc:M6580719 a wikibase:Mediainfo,
+		schema:MediaObject,
+		schema:ImageObject ;
+	schema:encodingFormat "image/jpeg" ;
+	schema:contentUrl <https://upload.wikimedia.org/wikipedia/commons/6/65/Torre_Bel%C3%A9m_April_2009-4a.jpg> ;
+	schema:contentSize "18475279"^^xsd:integer ;
+	schema:height "4805"^^xsd:integer ;
+	schema:width "5035"^^xsd:integer ;
+	schema:caption "Torre de Belém, Lisboa, Portugal vista contra o rio Tejo a partir do nordeste"@pt ;
+	rdfs:label "Torre de Belém, Lisboa, Portugal vista contra o rio Tejo a partir do nordeste"@pt ;
+	schema:caption "Tower of Belém, Lisbon, Portugal viewed against the Tagus River from the northeast"@en ;
+	rdfs:label "Tower of Belém, Lisbon, Portugal viewed against the Tagus River from the northeast"@en ;
+	wdt:P6731 wd:Q63348040,
+		wd:Q63348049 ;
+	wdt:P275 wd:Q50829104,
+		wd:Q14946043 ;
+	wdt:P6216 wd:Q50423863 ;
+	wdt:P170 _:4478b3bc5385fc0f59c9b8b927bedad9 ;
+	wdt:P7482 wd:Q66458942 ;
+	wdt:P571 "2009-04-01T00:00:00Z"^^xsd:dateTime ;
+	wdt:P1259 "Point(-9.215278 38.692167)"^^geo:wktLiteral ;
+	p:P6731 sdcs:M6580719-655486D9-D2CD-427E-99BD-BD5F8986FFDE .
+
+sdcs:M6580719-655486D9-D2CD-427E-99BD-BD5F8986FFDE a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6731 wd:Q63348040 ;
+	pq:P580 "2009-04-28T00:00:00Z"^^xsd:dateTime ;
+	pqv:P580 sdcv:08b24b95baaf27ece07aef344d8d8c18 .
+
+sdcv:08b24b95baaf27ece07aef344d8d8c18 a wikibase:TimeValue ;
+	wikibase:timeValue "2009-04-28T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix data: <https://www.wikidata.org/wiki/Special:EntityData/> .
+@prefix s: <http://www.wikidata.org/entity/statement/> .
+@prefix ref: <http://www.wikidata.org/reference/> .
+@prefix v: <http://www.wikidata.org/value/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix wdtn: <http://www.wikidata.org/prop/direct-normalized/> .
+@prefix p: <http://www.wikidata.org/prop/> .
+@prefix ps: <http://www.wikidata.org/prop/statement/> .
+@prefix psv: <http://www.wikidata.org/prop/statement/value/> .
+@prefix psn: <http://www.wikidata.org/prop/statement/value-normalized/> .
+@prefix pq: <http://www.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://www.wikidata.org/prop/qualifier/value/> .
+@prefix pqn: <http://www.wikidata.org/prop/qualifier/value-normalized/> .
+@prefix pr: <http://www.wikidata.org/prop/reference/> .
+@prefix prv: <http://www.wikidata.org/prop/reference/value/> .
+@prefix prn: <http://www.wikidata.org/prop/reference/value-normalized/> .
+@prefix wdno: <http://www.wikidata.org/prop/novalue/> .
+@prefix sdc: <https://commons.wikimedia.org/entity/> .
+@prefix sdcdata: <https://commons.wikimedia.org/wiki/Special:EntityData/> .
+@prefix sdcs: <https://commons.wikimedia.org/entity/statement/> .
+@prefix sdcref: <https://commons.wikimedia.org/reference/> .
+@prefix sdcv: <https://commons.wikimedia.org/value/> .
+@prefix sdct: <https://commons.wikimedia.org/prop/direct/> .
+@prefix sdctn: <https://commons.wikimedia.org/prop/direct-normalized/> .
+@prefix sdcp: <https://commons.wikimedia.org/prop/> .
+@prefix sdcps: <https://commons.wikimedia.org/prop/statement/> .
+@prefix sdcpsv: <https://commons.wikimedia.org/prop/statement/value/> .
+@prefix sdcpsn: <https://commons.wikimedia.org/prop/statement/value-normalized/> .
+@prefix sdcpq: <https://commons.wikimedia.org/prop/qualifier/> .
+@prefix sdcpqv: <https://commons.wikimedia.org/prop/qualifier/value/> .
+@prefix sdcpqn: <https://commons.wikimedia.org/prop/qualifier/value-normalized/> .
+@prefix sdcpr: <https://commons.wikimedia.org/prop/reference/> .
+@prefix sdcprv: <https://commons.wikimedia.org/prop/reference/value/> .
+@prefix sdcprn: <https://commons.wikimedia.org/prop/reference/value-normalized/> .
+@prefix sdcno: <https://commons.wikimedia.org/prop/novalue/> .
+
+wikibase:Dump a schema:Dataset,
+                owl:Ontology ;
+        cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+        schema:softwareVersion "1.0.0" ;
+        schema:dateModified "2021-01-10T15:00:01Z"^^xsd:dateTime ;
+        owl:imports <http://wikiba.se/ontology-1.0.owl> .
+
+sdcdata:M50827445 a schema:Dataset ;
+	schema:about sdc:M50827445 ;
+	cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+	schema:softwareVersion "1.0.0" ;
+	schema:version "522822130"^^xsd:integer ;
+	schema:dateModified "2020-12-31T17:38:43Z"^^xsd:dateTime .
+
+sdc:M50827445 a wikibase:Mediainfo,
+		schema:MediaObject,
+		schema:ImageObject ;
+	schema:encodingFormat "image/jpeg" ;
+	schema:contentUrl <https://upload.wikimedia.org/wikipedia/commons/4/46/RUS-2016-Aerial-SPB-Krestovsky_Stadium_01.jpg> ;
+	schema:contentSize "14597087"^^xsd:integer ;
+	schema:height "4792"^^xsd:integer ;
+	schema:width "7188"^^xsd:integer ;
+	schema:caption "An aerial view of the Krestovsky Stadium, Krestovsky Island, Saint Petersburg, Russia."@en ;
+	rdfs:label "An aerial view of the Krestovsky Stadium, Krestovsky Island, Saint Petersburg, Russia."@en ;
+	wdt:P6731 wd:Q63348049,
+		wd:Q63348040,
+		wd:Q63348069 ;
+	wdt:P1259 "Point(30.231898 59.963657)"^^geo:wktLiteral ;
+	wdt:P571 "2016-07-14T00:00:00Z"^^xsd:dateTime ;
+	wdt:P275 wd:Q18199165,
+		wd:Q98923445 ;
+	wdt:P6216 wd:Q50423863 ;
+	wdt:P170 _:0291af660e330fc466a9037d5eeef8fa ;
+	wdt:P4082 wd:Q18985697 ;
+	wdt:P7482 wd:Q66458942 ;
+	p:P6731 sdcs:M50827445-8C0465E0-3915-4BA9-8F95-4AE7A433E13B .
+
+sdcs:M50827445-8C0465E0-3915-4BA9-8F95-4AE7A433E13B a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6731 wd:Q63348049 .
+
+sdc:M50827445 p:P6731 sdcs:M50827445-6C95CC16-B28D-48B6-8557-9C0C718BE4DB .
+
+sdcs:M50827445-6C95CC16-B28D-48B6-8557-9C0C718BE4DB a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6731 wd:Q63348040 ;
+	pq:P580 "2016-11-09T00:00:00Z"^^xsd:dateTime ;
+	pqv:P580 sdcv:1b8d7d1328f935ebf2b64a88dc76723a .
+
+sdc:M50827445 p:P6731 sdcs:M50827445-6106A5CD-8369-4CB6-BCE5-3BD590E45760 .

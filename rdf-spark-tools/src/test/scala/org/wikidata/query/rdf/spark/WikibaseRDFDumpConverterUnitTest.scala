@@ -8,31 +8,32 @@ import org.openrdf.model.impl.ValueFactoryImpl
 import org.openrdf.rio.helpers.StatementCollector
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
-//import java.nio.file.{Files, Paths}
-//import java.util.zip.GZIPInputStream
 
-//import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import org.apache.spark.sql.SparkSession
-//import org.openrdf.model.impl.ValueFactoryImpl
-//import org.openrdf.rio.helpers.StatementCollector
 import org.scalatest.{FlatSpec, Matchers}
-//import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
-//import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
 
-class WikidataTurtleDumpConverterUnitTest extends FlatSpec with SparkSessionProvider with Matchers {
-  val paths = Seq(
+class WikibaseRDFDumpConverterUnitTest extends FlatSpec with SparkSessionProvider with Matchers {
+  val wikidataPaths = Seq(
     this.getClass.getResource("small_dump_chunk.ttl").toURI.toString,
     this.getClass.getResource("lexeme_dump.ttl").toURI.toString
+  )
+
+  val commonsPaths = Seq(
+    this.getClass.getResource("commons_dump.ttl").toURI.toString
   )
 
   override protected def afterAll(): Unit = {
     super.afterAll()
   }
 
-  "a rdf dump present" should "be converted as a table partition" in {
-    val writer = WikidataTurtleDumpConverter.getTableWriter("rdf/date=20200602", 2, None)
-    WikidataTurtleDumpConverter.importDump(paths, skolemizeBlankNodes = true,
-      WikidataTurtleDumpConverter.rowEncoder(), writer)
+  "a wikidata rdf dump present" should "be converted as a table partition" in {
+    TurtleImporter.importDump(Params(
+      inputPath = wikidataPaths,
+      outputTable = Some("rdf/date=20200602"),
+      outputPath = None,
+      numPartitions = 2,
+      skolemizeBlankNodes = true,
+      site = Site.wikidata), None)
     val rdfTable = spark.read.table("rdf")
     val existingContext = rdfTable
       .filter("date = '20200602'")
@@ -55,11 +56,39 @@ class WikidataTurtleDumpConverterUnitTest extends FlatSpec with SparkSessionProv
       .count() shouldEqual 1
   }
 
+  "a commons rdf dump present" should "be converted as a table partition" in {
+    TurtleImporter.importDump(Params(
+      inputPath = commonsPaths,
+      outputTable = Some("rdf/date=20200603"),
+      outputPath = None,
+      numPartitions = 2,
+      skolemizeBlankNodes = true,
+      site = Site.commons), None)
+    val rdfTable = spark.read.table("rdf")
+    val existingContext = rdfTable
+      .filter("date = '20200603'")
+      .select("context")
+      .distinct()
+      .collect()
+      .map(_.getAs("context"): String)
+      .toSet
+
+    existingContext should contain allOf(
+      "<https://commons.wikimedia.org/entity/M50827445>",
+      "<https://commons.wikimedia.org/entity/M6580719>",
+      "<http://wikiba.se/ontology#Dump>",
+      "<http://wikiba.se/ontology#Value>")
+  }
+
   "a rdf dump present" should "be converted as a parquet file" in {
     val rdfDir = newSparkSubDir("rdf_parquet")
-    val writer = WikidataTurtleDumpConverter.getDirectoryWriter(rdfDir, "parquet", 2)
-    WikidataTurtleDumpConverter.importDump(paths, skolemizeBlankNodes = true,
-      WikidataTurtleDumpConverter.rowEncoder(), writer)
+    TurtleImporter.importDump(Params(
+      inputPath = wikidataPaths,
+      outputTable = None,
+      outputPath = Some(rdfDir),
+      numPartitions = 2,
+      skolemizeBlankNodes = true,
+      site = Site.wikidata), None)
     val rdfDataframe = spark.read.parquet(rdfDir)
     val existingContext = rdfDataframe
       .select("context")
@@ -84,9 +113,14 @@ class WikidataTurtleDumpConverterUnitTest extends FlatSpec with SparkSessionProv
   "a rdf dump present" should "be converted as nt chunk files" in {
     val rdfDir = newSparkSubDir("nt_file")
 
-     val writer = WikidataTurtleDumpConverter.getTextFileDirectoryWriter(rdfDir, "nt.gz", 2)
-     WikidataTurtleDumpConverter.importDump(paths, skolemizeBlankNodes = true,
-       WikidataTurtleDumpConverter.rowEncoder(), writer)
+    TurtleImporter.importDump(Params(
+      inputPath = wikidataPaths,
+      outputTable = None,
+      outputPath = Some(rdfDir),
+      outputFormat = "nt.gz",
+      numPartitions = 2,
+      skolemizeBlankNodes = true,
+      site = Site.wikidata), None)
 
     val ntData = spark.read.text(rdfDir).collect().map(_.getString(0)).mkString("\n")
 
@@ -110,11 +144,11 @@ class WikidataTurtleDumpConverterUnitTest extends FlatSpec with SparkSessionProv
   override def beforeEach(): Unit = {
     super.beforeEach()
     val rdfData = newSparkSubDir("test_import")
-    WikidataTurtleDumpConverterUnitTest.createTable("rdf", rdfData, spark)
+    WikibaseRDFDumpConverterUnitTest.createTable("rdf", rdfData, spark)
   }
 }
 
-object WikidataTurtleDumpConverterUnitTest {
+object WikibaseRDFDumpConverterUnitTest {
   def createTable(tableName: String, dir: String, spark: SparkSession): Unit = {
     spark.sql(s"CREATE TABLE IF NOT EXISTS $tableName (" +
       "context STRING," +
