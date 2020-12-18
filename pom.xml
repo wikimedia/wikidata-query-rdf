@@ -75,7 +75,7 @@
 
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikidata/query/rdf</developerConnection>
 
-        <flink.version>1.11.2</flink.version>
+        <flink.version>1.12.0</flink.version>
         <hadoop.version>2.6.0-cdh5.15.0</hadoop.version>
         <!-- matching version used by Blazegraph here -->
         <jackson.version>2.6.7</jackson.version>
@@ -394,11 +394,6 @@
                 <artifactId>flink-avro</artifactId>
                 <version>${flink.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.apache.flink</groupId>
-                <artifactId>flink-connector-kafka-base_${scala.compat.version}</artifactId>
-                <version>${flink.version}</version>
-            </dependency>
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
@@ -509,7 +504,7 @@
             <dependency>
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-avro</artifactId>
-                <version>1.10.0</version>
+                <version>1.11.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.xbean</groupId>

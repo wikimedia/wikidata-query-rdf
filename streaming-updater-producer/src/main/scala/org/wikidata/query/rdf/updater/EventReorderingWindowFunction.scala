@@ -4,6 +4,7 @@ import scala.collection.mutable.ListBuffer
 
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.function.ProcessWindowFunction
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.util.Collector
@@ -28,7 +29,7 @@ object EventReorderingWindowFunction {
              uuid: String = "EventReordering"): DataStream[InputEvent] = {
     val reorderedStream = stream
       .keyBy(_.item)
-      .timeWindow(windowLength)
+      .window(TumblingEventTimeWindows.of(windowLength))
       // NOTE: allowing lateness here is tricky to handle as it might fire the same window multiple times
       // https://ci.apache.org/projects/flink/flink-docs-stable/dev/stream/operators/windows.html#late-elements-considerations
       // hoping that this is mitigated by using BoundedOutOfOrdernessTimestampExtractor which emits late watermark so that

@@ -42,7 +42,7 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
       val initialSize = allEvents.size
       // sort based on revision and then event time
       val sorted = allEvents.toList
-        .sortBy(e => (e.item, e.revision, e.eventTime));
+        .sortBy(e => (e.item, e.revision, e.eventTime))
 
       val toKeep: List[InputEvent] = fireBufferedEvents(sorted, timestamp, ctx, out)
       if (toKeep.isEmpty) {
@@ -71,7 +71,7 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
     // find the last element in the buffer that must be fired (timeout)
     for ((e, i) <- sortedEvents.zipWithIndex) {
       if (timeToKeep(e) <= timestamp) {
-        lastElementToFire = i;
+        lastElementToFire = i
       }
     }
 

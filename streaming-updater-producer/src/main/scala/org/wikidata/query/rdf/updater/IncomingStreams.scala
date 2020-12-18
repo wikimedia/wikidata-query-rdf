@@ -75,7 +75,7 @@ object IncomingStreams {
                                    filterParallelism: Option[Int] = None,
                                    mapperParallelism: Option[Int] = None)
                                   (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
-    val filteredStream = stream.filter(new EventWithMetadataHostFilter[E](hostname));
+    val filteredStream = stream.filter(new EventWithMetadataHostFilter[E](hostname))
     filterParallelism.foreach(filteredStream.setParallelism)
 
     val convertedStream = filteredStream

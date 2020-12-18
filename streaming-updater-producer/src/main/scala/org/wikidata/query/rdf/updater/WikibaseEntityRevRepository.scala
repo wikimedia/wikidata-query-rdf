@@ -12,7 +12,7 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 
 case class WikibaseEntityRevRepository(uris: Uris, metricGroup: MetricGroup) extends WikibaseEntityRevRepositoryTrait {
 
-  val LOG: Logger = LoggerFactory.getLogger(WikibaseEntityRevRepository.getClass);
+  val LOG: Logger = LoggerFactory.getLogger(WikibaseEntityRevRepository.getClass)
   private lazy val registry = {
     val metricRegistry = new MetricRegistry()
     metricRegistry.addListener(new DropwizardToFlinkListener(metricGroup))

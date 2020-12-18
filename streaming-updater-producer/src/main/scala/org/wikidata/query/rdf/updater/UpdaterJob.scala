@@ -10,7 +10,7 @@ import org.apache.flink.api.common.time.Time
 import org.apache.flink.core.fs.Path
 import org.apache.flink.formats.avro.typeutils.GenericRecordAvroTypeInfo
 import org.apache.flink.formats.parquet.avro.ParquetAvroWriters
-import org.apache.flink.streaming.api.{CheckpointingMode, TimeCharacteristic}
+import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
@@ -47,7 +47,6 @@ object UpdaterJob {
 
   private def prepareEnv(environmentOption: UpdaterExecutionEnvironmentConfig): StreamExecutionEnvironment = {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env.setStateBackend(UpdaterStateConfiguration.newStateBackend(environmentOption.checkpointDir))
     env.enableCheckpointing(environmentOption.checkpointInterval, environmentOption.checkpointingMode)
     env.getCheckpointConfig.setCheckpointTimeout(environmentOption.checkpointTimeout)

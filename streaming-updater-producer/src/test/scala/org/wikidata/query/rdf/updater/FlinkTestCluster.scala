@@ -9,9 +9,9 @@ import org.apache.flink.test.util.MiniClusterWithClientResource
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterEach, FlatSpec}
 
 trait FlinkTestCluster extends FlatSpec with BeforeAndAfterEach with BeforeAndAfter {
-  private val TASK_MANAGER_NO = 1;
-  private val TASK_MANAGER_SLOT_NO = 2;
-  val PARALLELISM: Int = TASK_MANAGER_NO * TASK_MANAGER_SLOT_NO;
+  private val TASK_MANAGER_NO = 1
+  private val TASK_MANAGER_SLOT_NO = 2
+  val PARALLELISM: Int = TASK_MANAGER_NO * TASK_MANAGER_SLOT_NO
 
   val flinkCluster = new MiniClusterWithClientResource(new MiniClusterResourceConfiguration.Builder()
     .setNumberSlotsPerTaskManager(TASK_MANAGER_NO)
@@ -35,7 +35,7 @@ trait FlinkTestCluster extends FlatSpec with BeforeAndAfterEach with BeforeAndAf
 }
 
 class CollectSink[E](func: E => Unit) extends SinkFunction[E] {
-  override def invoke(value: E, context: SinkFunction.Context[_]): Unit = {
+  override def invoke(value: E, context: SinkFunction.Context): Unit = {
     synchronized {
       func.apply(value)
     }

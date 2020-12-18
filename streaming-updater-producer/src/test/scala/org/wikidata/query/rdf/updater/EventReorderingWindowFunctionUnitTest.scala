@@ -21,7 +21,7 @@ class EventReorderingWindowFunctionUnitTest extends FlatSpec with Matchers with 
     val window = TumblingEventTimeWindows.of(Time.seconds(1))
     val stateDescr = UpdaterStateConfiguration.newReorderingStateDesc()
     stateDescr.initializeSerializerUnlessSet(new ExecutionConfig())
-    val function = new ScalaProcessWindowFunctionWrapper(new EventReorderingWindowFunction());
+    val function = new ScalaProcessWindowFunctionWrapper(new EventReorderingWindowFunction())
     val windowFunction = new InternalIterableProcessWindowFunction[InputEvent, InputEvent, String, TimeWindow](function)
     val windowOperator = new WindowOperator[String, InputEvent, java.lang.Iterable[InputEvent], InputEvent, TimeWindow](window,
       new TimeWindow.Serializer(), inputEventKeySelector, new StringSerializer(), stateDescr, windowFunction,

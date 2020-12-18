@@ -6,7 +6,6 @@ import java.nio.file.{Files, Paths}
 import org.apache.commons.io.FileUtils
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
-import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
@@ -42,7 +41,6 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
 
     // configure your test environment
     streamingEnv.setParallelism(PARALLELISM)
-    streamingEnv.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     streamingEnv.setStateBackend(UpdaterStateConfiguration.newStateBackend(checkPointDirInStream.toURI.toString))
     val repository: WikibaseEntityRevRepositoryTrait = MockWikibaseEntityRevRepository()
       .withResponse(("Q1", 2L) -> metaStatements("Q1", 2L, Some(3L)).entityDataNS)

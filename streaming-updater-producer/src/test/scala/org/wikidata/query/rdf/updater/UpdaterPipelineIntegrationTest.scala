@@ -3,7 +3,6 @@ package org.wikidata.query.rdf.updater
 import java.time.Instant
 
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
-import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala._
 import org.openrdf.model.Statement
 import org.scalatest._
@@ -28,7 +27,6 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
 
     // configure your test environment
     env.setParallelism(PARALLELISM)
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
     val revCreateSource: DataStream[InputEvent] = IncomingStreams.fromStream(env.fromCollection(revCreateEvents)
       // force 1 here so that we keep the sequence order and force Q1 rev 3 to be late
@@ -65,7 +63,6 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
 
     // configure your test environment
     env.setParallelism(PARALLELISM)
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
   val revCreateSourceForDeleteTest: DataStream[InputEvent] = IncomingStreams.fromStream(env.fromCollection(revCreateEventsForPageDeleteTest)
       // force 1 here so that we keep the sequence order and force Q1 rev 3 to be late

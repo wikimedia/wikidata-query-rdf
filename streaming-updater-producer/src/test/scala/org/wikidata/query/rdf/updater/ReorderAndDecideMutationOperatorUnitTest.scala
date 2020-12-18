@@ -214,7 +214,7 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
 
   it should "initial import -> early page delete -> dupped rev create" in {
     val ignoredRevCreate: StreamRecord[InputEvent] = newRevCreateRecordNewPage("Q1", 1, 20,
-      ingestionTs, testDomain, testStream, "dupped (backfill) rev create");
+      ingestionTs, testDomain, testStream, "dupped (backfill) rev create")
     val expectedOutput = new ListBuffer[Any]
 
     operator.processElement(newRevCreateRecordNewPage("Q1", 1, 0, ingestionTs, testDomain, testStream, "initial import (set state)"))
