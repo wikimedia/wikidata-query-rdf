@@ -137,6 +137,10 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.wikimedia</groupId>
+            <artifactId>eventutilities</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-scala_${scala.compat.version}</artifactId>
             <scope>provided</scope>
@@ -205,7 +209,6 @@
             <artifactId>scalatest_${scala.compat.version}</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.wikidata.query.rdf</groupId>
             <artifactId>testTools</artifactId>

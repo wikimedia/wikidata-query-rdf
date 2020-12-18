@@ -1,0 +1,20 @@
+{
+  "rdf-streaming-updater.lapsed-action": {
+    "schema_title": "rdf_streaming_updater/lapsed_action",
+    "stream": "rdf-streaming-updater.lapsed-action",
+    "topic_prefixes": ["eqiad", "codfw"],
+    "topics":["eqiad.rdf-streaming-updater.lapsed-action", "codfw.rdf-streaming-updater.lapsed-action"]
+  },
+  "rdf-streaming-updater.state-inconsistency": {
+    "schema_title": "rdf_streaming_updater/state_inconsistency",
+    "stream": "rdf-streaming-updater.state-inconsistency",
+    "topic_prefixes": ["eqiad", "codfw"],
+    "topics":["eqiad.rdf-streaming-updater.state-inconsistency", "codfw.rdf-streaming-updater.state-inconsistency"]
+  },
+  "rdf-streaming-updater.fetch-failure": {
+    "schema_title": "rdf_streaming_updater/fetch_failure",
+    "stream": "rdf-streaming-updater.fetch-failure",
+    "topic_prefixes": ["eqiad", "codfw"],
+    "topics":["eqiad.rdf-streaming-updater.fetch-failure", "codfw.rdf-streaming-updater.fetch-failure"]
+  }
+}

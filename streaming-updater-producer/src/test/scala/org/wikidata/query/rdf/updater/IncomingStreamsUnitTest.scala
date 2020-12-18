@@ -76,20 +76,27 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   }
 
   "RevCreateEvent" should "be convertible into InputEvent" in {
-    val event = IncomingStreams.REV_CREATE_CONV.apply(new RevisionCreateEvent(
-      new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "unused for now"),
-      1234,
+    val event: RevCreate = IncomingStreams.REV_CREATE_CONV.apply(new RevisionCreateEvent(
+      new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "my_request_id"),
+      "schema",
+      1234L,
+      1233L,
       "Q123",
       1),
-      Clock.systemUTC())
+      Clock.systemUTC()).asInstanceOf[RevCreate]
     event.eventTime should equal(Instant.ofEpochMilli(123))
     event.item should equal("Q123")
     event.revision should equal(1234)
+    event.parentRevision should equal(Some(1233))
+    event.originalEventInfo.schema() should equal("schema")
+    event.originalEventInfo.meta().requestId() should equal("my_request_id")
+    event.originalEventInfo.meta().domain() should equal("my-domain")
   }
 
   "PageDelEvent" should "be convertible into InputEvent" in {
     val event = IncomingStreams.PAGE_DEL_CONV.apply(new PageDeleteEvent(
-      new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "unused for now"),
+      new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "my_request_id"),
+      "schema",
       1234,
       "Q123",
       1),
@@ -97,11 +104,15 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     event.eventTime should equal(Instant.ofEpochMilli(123))
     event.item should equal("Q123")
     event.revision should equal(1234)
+    event.originalEventInfo.schema() should equal("schema")
+    event.originalEventInfo.meta().requestId() should equal("my_request_id")
+    event.originalEventInfo.meta().domain() should equal("my-domain")
   }
 
   "PageUndeleteEvent" should "be convertible into InputEvent" in {
     val event = IncomingStreams.PAGE_UNDEL_CONV.apply(new PageUndeleteEvent(
-      new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "unused for now"),
+      new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "my_request_id"),
+      "schema",
       1234,
       "Q123",
       1),
@@ -109,6 +120,9 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     event.eventTime should equal(Instant.ofEpochMilli(123))
     event.item should equal("Q123")
     event.revision should equal(1234)
+    event.originalEventInfo.schema() should equal("schema")
+    event.originalEventInfo.meta().requestId() should equal("my_request_id")
+    event.originalEventInfo.meta().domain() should equal("my-domain")
   }
 }
 

@@ -9,31 +9,32 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Base class for event that has metadata.
  */
 public abstract class EventWithMeta implements ChangeEvent {
-    /**
-     * Metadata record.
-     */
-    private final EventsMeta meta;
+    private final EventInfo eventInfo;
 
     @JsonCreator
-    EventWithMeta(@JsonProperty("meta") EventsMeta meta) {
-        this.meta = meta;
+    EventWithMeta(@JsonProperty("meta") EventsMeta meta, @JsonProperty(EventInfo.SCHEMA_FIELD) String schema) {
+        eventInfo = new EventInfo(meta, schema);
     }
 
-    public EventsMeta meta() {
-        return meta;
+    EventWithMeta(EventInfo info) {
+        this.eventInfo = info;
+    }
+
+    public EventInfo eventInfo() {
+        return eventInfo;
     }
 
     @Override
     public Instant timestamp() {
-        return meta.timestamp();
+        return eventInfo.meta().timestamp();
     }
 
     public String id() {
-        return meta.id();
+        return eventInfo.meta().id();
     }
 
     @Override
     public String domain() {
-        return meta.domain();
+        return eventInfo.meta().domain();
     }
 }

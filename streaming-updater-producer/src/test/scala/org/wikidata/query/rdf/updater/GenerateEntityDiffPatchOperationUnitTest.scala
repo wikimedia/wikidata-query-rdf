@@ -4,6 +4,7 @@ import java.time.Instant
 import java.util.Collections.emptyList
 
 import scala.collection.JavaConverters._
+
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.operators.testutils.MockEnvironment
 import org.apache.flink.streaming.api.datastream.AsyncDataStream.OutputMode
@@ -14,7 +15,7 @@ import org.apache.flink.streaming.util.{MockStreamingRuntimeContext, OneInputStr
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.test.StatementHelper.statements
-import org.wikidata.query.rdf.tool.change.events.EventsMeta
+import org.wikidata.query.rdf.tool.change.events.EventInfo
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
 import org.wikidata.query.rdf.tool.rdf.Patch
 
@@ -24,7 +25,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
   val REQ_ID = "tested.req.id"
   val EVT_ID = "my_id"
   val NOW: Instant = Instant.EPOCH
-  val INPUT_EVENT_META: EventsMeta = newEventMeta(NOW, DOMAIN, STREAM, REQ_ID)
+  val INPUT_EVENT_INFO: EventInfo = newEventInfo(NOW, DOMAIN, STREAM, REQ_ID)
 
   val repoMock: WikibaseEntityRevRepositoryTrait = mock[WikibaseEntityRevRepositoryTrait]
   private def testHarness[T <: Throwable](expectExternalFailure: Option[Class[T]] = None) = {
@@ -158,7 +159,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     harness.extractOutputValues() shouldBe empty
   }
   private def importOp = {
-    FullImport("Q1", NOW, 1, NOW, INPUT_EVENT_META)
+    FullImport("Q1", NOW, 1, NOW, INPUT_EVENT_INFO)
   }
 
   private def outputImportEvent(op: FullImport) = {
@@ -166,11 +167,11 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
   }
 
   private def inputDiffOp = {
-    Diff("Q1", NOW, 2, 1, NOW, INPUT_EVENT_META)
+    Diff("Q1", NOW, 2, 1, NOW, INPUT_EVENT_INFO)
   }
 
   private def inputDelOp = {
-    DeleteItem("Q1", NOW, 2, NOW, INPUT_EVENT_META)
+    DeleteItem("Q1", NOW, 2, NOW, INPUT_EVENT_INFO)
   }
 
   private def outputDiffEvent(op: Diff) = {

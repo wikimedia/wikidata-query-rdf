@@ -20,13 +20,13 @@ object IncomingStreams {
 
   val REV_CREATE_CONV: (RevisionCreateEvent, Clock) => InputEvent =
     (e, clock) => RevCreate(cleanEntityId(e.title()), e.timestamp(), e.revision(),
-      Option(e.parentRevision(): java.lang.Long).map(_.toLong), clock.instant(), e.meta())
+      Option(e.parentRevision(): java.lang.Long).map(_.toLong), clock.instant(), e.eventInfo())
 
   val PAGE_DEL_CONV: (PageDeleteEvent, Clock) => InputEvent =
-    (e, clock) => PageDelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
+    (e, clock) => PageDelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.eventInfo())
 
   val PAGE_UNDEL_CONV: (PageUndeleteEvent, Clock) => InputEvent =
-    (e, clock) => PageUndelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
+    (e, clock) => PageUndelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.eventInfo())
 
   def buildIncomingStreams(ievops: UpdaterPipelineInputEventStreamConfig,
                            uris: Uris, clock: Clock)

@@ -6,9 +6,10 @@ import java.util.UUID
 
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.scalatest.{FlatSpec, Matchers}
-import org.wikidata.query.rdf.tool.change.events.EventsMeta
+import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta}
 import org.wikidata.query.rdf.tool.exception.ContainedException
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException
+import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException.Type
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException.Type.ENTITY_NOT_FOUND
 import org.wikidata.query.rdf.updater.EntityStatus.CREATED
 
@@ -22,10 +23,10 @@ class AvroEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
   val stream: String = "tested.stream"
   val uuid: String = UUID.randomUUID().toString
   val requestId: String = UUID.randomUUID().toString
-  val eventMeta: EventsMeta = new EventsMeta(eventTime, uuid, domain, stream, requestId)
+  val eventInfo: EventInfo = new EventInfo(new EventsMeta(eventTime, uuid, domain, stream, requestId), "schema")
 
   "IgnoredMutation" should "be encoded properly as an avro GenericRecord" in {
-    val inputEvent = RevCreate(item, eventTime, revision, Some(revision-1), ingestionTime, eventMeta)
+    val inputEvent = RevCreate(item, eventTime, revision, Some(revision-1), ingestionTime, eventInfo)
     val state = State(Some(revision), CREATED)
     val record = IgnoredMutationEncoder.map(IgnoredMutation("Q1", eventTime, revision, inputEvent, ingestionTime, NewerRevisionSeen, state))
     assertBasicMetadata(record)
@@ -49,7 +50,7 @@ class AvroEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
   }
 
   "RevCreateEvent" should "be encoded properly as an avro GenericRecord" in {
-    val inputEvent = RevCreate(item, eventTime, revision, Some(revision-1), ingestionTime, eventMeta)
+    val inputEvent = RevCreate(item, eventTime, revision, Some(revision-1), ingestionTime, eventInfo)
     val record = InputEventEncoder.map(inputEvent)
     assertBasicMetadata(record)
     record.get("event_type") shouldBe "revision-create"
@@ -58,7 +59,7 @@ class AvroEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
   }
 
   "RevCreateEvent" should "be encoded properly as an avro GenericRecord even without a parent revision" in {
-    val inputEvent = RevCreate(item, eventTime, revision, None, ingestionTime, eventMeta)
+    val inputEvent = RevCreate(item, eventTime, revision, None, ingestionTime, eventInfo)
     val record = InputEventEncoder.map(inputEvent)
     assertBasicMetadata(record)
     record.get("event_type") shouldBe "revision-create"
@@ -67,7 +68,7 @@ class AvroEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
   }
 
   "PageDeleteEvent" should "be encoded properly as an avro GenericRecord" in {
-    val inputEvent = PageDelete(item, eventTime, revision, ingestionTime, eventMeta)
+    val inputEvent = PageDelete(item, eventTime, revision, ingestionTime, eventInfo)
     val record = InputEventEncoder.map(inputEvent)
     assertBasicMetadata(record)
     assertOriginalMeta(record.get("original_event_metadata"))
@@ -77,11 +78,11 @@ class AvroEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
 
   "FailedOp event" should "be encoded properly as an avro GenericRecord" in {
     val e = new ContainedException("problem")
-    val op = FailedOp(Diff(item, eventTime, revision, fromRevision, ingestionTime, eventMeta), e)
+    val op = FailedOp(Diff(item, eventTime, revision, fromRevision, ingestionTime, eventInfo), e)
     val record = FailedOpEncoder.map(op)
     record.get("exception_type") shouldBe e.getClass.getName
     record.get("exception_msg") shouldBe e.getMessage
-    record.get("fetch_error_type") should be
+    record.get("fetch_error_type") shouldBe Type.UNKNOWN.toString
     val opRecord = record.get("operation") match {
       case e: GenericRecord => e
       case _ => fail(s"invalid type ${record.get("operation").getClass}")
@@ -94,7 +95,7 @@ class AvroEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
 
   "FailedOp event on a fetch failure" should "be encoded properly as an avro GenericRecord" in {
     val e = new WikibaseEntityFetchException(new URI("http://foo.local"), ENTITY_NOT_FOUND)
-    val op = FailedOp(Diff(item, eventTime, revision, fromRevision, ingestionTime, eventMeta), e)
+    val op = FailedOp(Diff(item, eventTime, revision, fromRevision, ingestionTime, eventInfo), e)
     val record = FailedOpEncoder.map(op)
     record.get("exception_type") shouldBe e.getClass.getName
     record.get("exception_msg") shouldBe e.getMessage

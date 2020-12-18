@@ -4,31 +4,31 @@ import java.time.Instant
 
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
-import org.wikidata.query.rdf.tool.change.events.{EventsMeta, PageDeleteEvent, RevisionCreateEvent}
+import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, PageDeleteEvent, RevisionCreateEvent}
 
 trait TestEventGenerator {
   def newRevCreateRecordNewPage(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
                                 stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
     new StreamRecord[InputEvent](RevCreate(entity, instant(eventTime), revision, None, instant(ingestionTime),
-      newEventMeta(instant(eventTime), domain, stream, requestId)), eventTime)
+      newEventInfo(instant(eventTime), domain, stream, requestId)), eventTime)
   }
 
   def newRevCreateRecord(entity: String, revision: Long, fromRevision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
                          stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
     new StreamRecord[InputEvent](RevCreate(entity, instant(eventTime), revision, Some(fromRevision), instant(ingestionTime),
-      newEventMeta(instant(eventTime), domain, stream, requestId)), eventTime)
+      newEventInfo(instant(eventTime), domain, stream, requestId)), eventTime)
   }
 
   def newPageDeleteRecord(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
                           stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
     new StreamRecord[InputEvent](PageDelete(entity, instant(eventTime), revision, instant(ingestionTime),
-      newEventMeta(instant(eventTime), domain, stream, requestId)), eventTime)
+      newEventInfo(instant(eventTime), domain, stream, requestId)), eventTime)
   }
 
   def newPageUndeleteRecord(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
                             stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
     new StreamRecord[InputEvent](PageUndelete(entity, instant(eventTime), revision, instant(ingestionTime),
-      newEventMeta(instant(eventTime), domain, stream, requestId)), eventTime)
+      newEventInfo(instant(eventTime), domain, stream, requestId)), eventTime)
   }
 
   def instant(millis: Long): Instant = {
@@ -38,20 +38,23 @@ trait TestEventGenerator {
   def newRevCreateEvent(item: String, revision: Long, eventTime: Instant, namespace: Int,
                         domain: String, stream: String, requestId: String): RevisionCreateEvent = {
     new RevisionCreateEvent(
-      newEventMeta(eventTime, domain, stream, requestId),
+      newEventInfo(eventTime, domain, stream, requestId),
       revision, item, namespace)
   }
 
   def newRevCreateEvent(item: String, revision: Long, fromRevision: Long, eventTime: Instant, namespace: Int,
                         domain: String, stream: String, requestId: String): RevisionCreateEvent = {
     new RevisionCreateEvent(
-      newEventMeta(eventTime, domain, stream, requestId),
-      revision, fromRevision, item, namespace)
+      newEventMeta(eventTime, domain, stream, requestId), "schema", revision, fromRevision, item, namespace)
   }
 
   def newPageDeleteEvent(item: String, revision: Long, eventTime: Instant, namespace: Int,
                          domain: String, stream: String, requestId: String): PageDeleteEvent = {
-    new PageDeleteEvent(newEventMeta(eventTime, domain, stream, requestId), revision, item, namespace)
+    new PageDeleteEvent(newEventMeta(eventTime, domain, stream, requestId), "schema", revision, item, namespace)
+  }
+
+  def newEventInfo(eventTime: Instant, domain: String, stream: String, requestId: String, schema: String = "schema"): EventInfo = {
+    new EventInfo(newEventMeta(eventTime, domain, stream, requestId), schema)
   }
 
   def newEventMeta(eventTime: Instant, domain: String, stream: String, requestId: String): EventsMeta =

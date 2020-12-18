@@ -45,7 +45,7 @@ public final class ChangeEventFixtures {
     public static ChangeEvent makeDeleteEvent(Duration offset, String qid) {
         return new PageDeleteEvent(
                 new EventsMeta(START_TIME.plus(offset), "", DOMAIN, "", ""),
-                Change.NO_REVISION, qid, 0);
+                "schema", Change.NO_REVISION, qid, 0);
     }
 
     /**

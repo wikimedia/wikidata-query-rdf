@@ -6,8 +6,9 @@ import org.apache.avro.{Schema, SchemaBuilder}
 import org.apache.avro.SchemaBuilder.FieldAssembler
 import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
 import org.apache.flink.api.common.functions.MapFunction
-import org.wikidata.query.rdf.tool.change.events.EventsMeta
+import org.wikidata.query.rdf.tool.change.events.EventInfo
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException
+import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException.Type
 
 class AvroEncodersSchema(fieldAssembler: FieldAssembler[Schema]) {
   def originalEventMetatada(): FieldAssembler[Schema] = {
@@ -37,8 +38,8 @@ object AvroEncodersSchema {
     .requiredString("id")
     .requiredString("dt")
     .requiredString("stream")
-    .optionalString("request_id")
-    .optionalString("domain")
+    .requiredString("request_id")
+    .requiredString("domain")
     .endRecord()
 
   @transient lazy val input_event_schema: Schema = SchemaBuilder.record("input_event").fields()
@@ -100,20 +101,16 @@ trait AvroEncoders {
     builder.set("event_time", in.eventTime.toString)
     builder.set("ingestion_time", in.ingestionTime.toString)
     builder.set("revision", in.revision)
-    builder.set("original_event_metadata", writeMetadata(in.originalEventMetadata))
+    builder.set("original_event_metadata", writeMetadata(in.originalEventInfo))
   }
 
-  protected def writeMetadata(metadata: EventsMeta): GenericRecord = {
+  protected def writeMetadata(metadata: EventInfo): GenericRecord = {
     val builder = new GenericRecordBuilder(AvroEncodersSchema.events_metadata)
-    builder.set("id", metadata.id())
-    builder.set("dt", metadata.timestamp().toString)
-    builder.set("stream", metadata.stream())
-    if (metadata.requestId() != null) {
-      builder.set("request_id", metadata.requestId())
-    }
-    if (metadata.domain() != null) {
-      builder.set("domain", metadata.domain())
-    }
+    builder.set("id", metadata.meta().id())
+    builder.set("dt", metadata.meta().timestamp().toString)
+    builder.set("stream", metadata.meta().stream())
+    builder.set("request_id", metadata.meta().requestId())
+    builder.set("domain", metadata.meta().domain())
     builder.build()
   }
 
@@ -149,10 +146,10 @@ object FailedOpEncoder extends MapFunction[FailedOp, GenericRecord] with AvroEnc
     builder.set("operation", writeMutationOperation(in.operation))
     builder.set("exception_type", in.exception.getClass.getName)
     builder.set("exception_msg", in.exception.getMessage)
-    in.exception match {
-      case e: WikibaseEntityFetchException => builder.set("fetch_error_type", e.getErrorType.name())
-      case _ =>
-    }
+    builder.set("fetch_error_type", in.exception match {
+      case e: WikibaseEntityFetchException => e.getErrorType.toString
+      case _ => Type.UNKNOWN.toString
+    })
     builder.build()
   }
 

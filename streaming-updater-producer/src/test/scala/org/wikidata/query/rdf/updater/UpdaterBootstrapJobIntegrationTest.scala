@@ -65,22 +65,22 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
 
     val options = UpdaterPipelineGeneralConfig(DOMAIN, "test updater job", ENTITY_NAMESPACES, 60000, Int.MaxValue, 10, "test-output-name")
     val graph = UpdaterPipeline.build(options, List(source), _ => repository, clock = clock)
-      .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)), identityMapFunction(), None)
-      .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)), identityMapFunction(), None)
-      .saveTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))
+      .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
+      .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))
+      .saveMutationsTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))
       .streamGraph("test")
     graph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savePointDir.toURI.toString, false))
     streamingEnv.getJavaEnv.execute(graph)
     CollectSink.lateEvents shouldBe empty
     CollectSink.spuriousRevEvents should contain only IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, None, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
+      RevCreate("Q1", instant(3), 2, None, instantNow, newEventInfo(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
       instantNow, NewerRevisionSeen, State(Some(2), CREATED))
     //only change is the revision, lastmodified are identical
 
     CollectSink.values map {_.operation} should contain theSameElementsAs Vector(
-      Diff("Q1", instant(3), 3, 2, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
-      Diff("Q2", instant(3), 8, 4, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
-      Diff("Q3", instant(3), 101013, 101010, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID))
+      Diff("Q1", instant(3), 3, 2, instantNow, newEventInfo(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
+      Diff("Q2", instant(3), 8, 4, instantNow, newEventInfo(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
+      Diff("Q3", instant(3), 101013, 101010, instantNow, newEventInfo(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID))
     )
   }
 

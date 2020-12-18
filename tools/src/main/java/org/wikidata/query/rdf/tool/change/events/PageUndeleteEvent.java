@@ -15,11 +15,12 @@ public class PageUndeleteEvent extends EventWithMeta {
     @JsonCreator
     public PageUndeleteEvent(
             @JsonProperty("meta") EventsMeta meta,
+            @JsonProperty(EventInfo.SCHEMA_FIELD) String schema,
             @JsonProperty("rev_id") long revision,
             @JsonProperty("page_title") String title,
             @JsonProperty("page_namespace") long namespace
     ) {
-        super(meta);
+        super(meta, schema);
         this.revision = revision;
         this.title = title;
         this.namespace = namespace;

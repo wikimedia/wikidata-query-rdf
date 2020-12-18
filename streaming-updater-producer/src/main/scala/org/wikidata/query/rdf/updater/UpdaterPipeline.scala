@@ -4,9 +4,9 @@ import java.time.Clock
 import java.util.UUID
 
 import scala.concurrent.duration.MILLISECONDS
-import org.apache.flink.api.common.functions.{MapFunction, RuntimeContext}
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
+
+import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
@@ -32,42 +32,40 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
     env.getStreamGraph(appName)
   }
 
-  def saveLateEventsTo[O](sink: SinkFunction[O], map: MapFunction[InputEvent, O], parallelism: Option[Int] = Some(1))
-                         (implicit typeInformation: TypeInformation[O]): UpdaterPipeline = {
-
-    prepareSideOutputSink(sink, lateEventStream, "late-events-output", map, parallelism)
-  }
-
-  def saveSpuriousEventsTo[O](sink: SinkFunction[O], map: MapFunction[IgnoredMutation, O], parallelism: Option[Int] = Some(1))
-                             (implicit typeInformation: TypeInformation[O]): UpdaterPipeline = {
-    prepareSideOutputSink(sink, spuriousEventStream, "spurious-events-output", map, parallelism)
-  }
-
-  def saveFailedOpsTo[O](sink: SinkFunction[O], map: MapFunction[FailedOp, O], parallelism: Option[Int] = Some(1))
-                        (implicit typeInformation: TypeInformation[O]): UpdaterPipeline = {
-    prepareSideOutputSink(sink, failedOpsStream, "failed-ops-output", map, parallelism)
-  }
-
-  private def prepareSideOutputSink[E, O](sinkFunction: SinkFunction[O], sideOutputStream: DataStream[E], nameAndUuid: String, map: MapFunction[E, O],
-                                          parallelism: Option[Int] = Some(1)): UpdaterPipeline = {
-    val mappedStream = sideOutputStream
-      .javaStream.map(map)
-    parallelism.foreach(mappedStream.setParallelism)
-    val sink = mappedStream
-      .addSink(sinkFunction)
-      .uid(nameAndUuid)
-      .name(nameAndUuid)
-    parallelism.foreach(sink.setParallelism)
+  def saveLateEventsTo(sink: SinkFunction[InputEvent]): UpdaterPipeline = {
+    lateEventStream.addSink(sink)
+      .uid("late-events-output")
+      .name("late-events-output")
     this
   }
 
+  def saveSpuriousEventsTo(sink: SinkFunction[IgnoredMutation]): UpdaterPipeline = {
+    spuriousEventStream.addSink(sink)
+      .uid("spurious-events-output")
+      .name("spurious-events-output")
+    this
+  }
 
-  def saveTo(sink: SinkFunction[MutationDataChunk]): UpdaterPipeline = {
+  def saveFailedOpsTo(sink: SinkFunction[FailedOp]): UpdaterPipeline = {
+    failedOpsStream.addSink(sink)
+      .uid("failed-events-output")
+      .name("failed-events-output")
+    this
+  }
+
+  def saveMutationsTo(sink: SinkFunction[MutationDataChunk]): UpdaterPipeline = {
     tripleEventStream.addSink(sink)
       .uid(updaterPipelineOptions.outputOperatorNameAndUuid)
       .name(updaterPipelineOptions.outputOperatorNameAndUuid)
       .setParallelism(OUTPUT_PARALLELISM)
     this
+  }
+
+  def saveTo(sinks: (SinkFunction[MutationDataChunk], SinkFunction[InputEvent], SinkFunction[IgnoredMutation], SinkFunction[FailedOp])): UpdaterPipeline = {
+    saveMutationsTo(sinks._1)
+      .saveLateEventsTo(sinks._2)
+      .saveSpuriousEventsTo(sinks._3)
+      .saveFailedOpsTo(sinks._4)
   }
 }
 

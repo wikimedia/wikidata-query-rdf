@@ -11,8 +11,8 @@ import org.apache.flink.api.common.eventtime._
 import org.openrdf.model.Statement
 import org.openrdf.model.impl.{StatementImpl, ValueFactoryImpl}
 import org.openrdf.rio.{RDFFormat, RDFParserRegistry, RDFWriterRegistry}
-import org.wikidata.query.rdf.common.uri.{PropertyType, SchemaDotOrg, UrisSchemeFactory}
-import org.wikidata.query.rdf.tool.change.events.{EventsMeta, EventWithMeta}
+import org.wikidata.query.rdf.common.uri.{PropertyType, SchemaDotOrg, UrisScheme, UrisSchemeFactory}
+import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, EventWithMeta}
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.EntityStatus.CREATED
@@ -34,9 +34,9 @@ trait TestFixtures extends TestEventGenerator {
   val ORIG_REQUEST_ID: String = UUID.randomUUID().toString
 
 
-  val WATERMARK_1 = REORDERING_WINDOW_LENGTH
-  val WATERMARK_2 = REORDERING_WINDOW_LENGTH*2
-  val urisScheme = UrisSchemeFactory.forHost(DOMAIN)
+  val WATERMARK_1: Int = REORDERING_WINDOW_LENGTH
+  val WATERMARK_2: Int = REORDERING_WINDOW_LENGTH*2
+  val urisScheme: UrisScheme = UrisSchemeFactory.forHost(DOMAIN)
   val valueFactory = new ValueFactoryImpl()
   val instantNow: Instant = instant(5)
   val clock: Clock = Clock.fixed(instantNow, ZoneOffset.UTC)
@@ -83,11 +83,11 @@ trait TestFixtures extends TestEventGenerator {
   private val mSt5 = metaStatements("Q1", 5L)
   private val mSt6 = metaStatements("Q1", 6L)
 
-  val ignoredRevision = RevCreate("Q1", instant(-1), 3, None, instantNow, newEventMeta(instant(-1), DOMAIN, STREAM, ORIG_REQUEST_ID))
+  val ignoredRevision: RevCreate = RevCreate("Q1", instant(-1), 3, None, instantNow, newEventInfo(instant(-1), DOMAIN, STREAM, ORIG_REQUEST_ID))
   val ignoredMutations = Set(
     IgnoredMutation("Q1", instant(WATERMARK_2 + 1), 4,
       RevCreate("Q1", instant(WATERMARK_2 + 1), 4, None, instant(5),
-        newEventMeta(instant(WATERMARK_2 + 1), DOMAIN, STREAM, ORIG_REQUEST_ID)
+        newEventInfo(instant(WATERMARK_2 + 1), DOMAIN, STREAM, ORIG_REQUEST_ID)
       ), instantNow, NewerRevisionSeen, State(Some(5), CREATED)))
   val rdfChunkSer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())
   val rdfChunkDeser: RDFChunkDeserializer = new RDFChunkDeserializer(new RDFParserSuppliers(RDFParserRegistry.getInstance()))
@@ -126,11 +126,11 @@ trait TestFixtures extends TestEventGenerator {
   def getExpectedTripleDiff(entityId: String, revisionTo: Long, revisionFrom: Long = 0L): MutationDataChunk = {
     val data: RevisionData = testData((entityId, revisionTo))
     val eventTime: Instant = eventTimes(entityId, revisionTo)
-    val origEventMeta: EventsMeta = new EventsMeta(eventTime, "unused", DOMAIN, STREAM, ORIG_REQUEST_ID)
+    val origEventInfo: EventInfo = new EventInfo(new EventsMeta(eventTime, "unused", DOMAIN, STREAM, ORIG_REQUEST_ID), "schema")
     val operation: MutationOperation = if (revisionFrom == 0L) {
-      FullImport(entityId, eventTime, revisionTo, instantNow, origEventMeta)
+      FullImport(entityId, eventTime, revisionTo, instantNow, origEventInfo)
     } else {
-      Diff(entityId, eventTime, revisionTo, revisionFrom, instantNow, origEventMeta)
+      Diff(entityId, eventTime, revisionTo, revisionFrom, instantNow, origEventInfo)
     }
     val dataEvent = operation match {
       case _: FullImport =>
@@ -145,8 +145,8 @@ trait TestFixtures extends TestEventGenerator {
 
   def getExpectedDelete(entityId: String, revision: Long): MutationDataChunk = {
     val eventTime: Instant = instant(5)
-    val origEventMeta: EventsMeta = new EventsMeta(eventTime, "unused", DOMAIN, STREAM, ORIG_REQUEST_ID)
-    val operation = DeleteItem(entityId, eventTime, revision, instantNow, origEventMeta)
+    val origEventInfo: EventInfo = new EventInfo(new EventsMeta(eventTime, "unused", DOMAIN, STREAM, ORIG_REQUEST_ID), "schema")
+    val operation = DeleteItem(entityId, eventTime, revision, instantNow, origEventInfo)
     val dataEvent = dataEventGenerator.deleteEvent(eventsMetaData, entityId, revision, eventTime)
     MutationDataChunk(operation, dataEvent.get(0))
   }

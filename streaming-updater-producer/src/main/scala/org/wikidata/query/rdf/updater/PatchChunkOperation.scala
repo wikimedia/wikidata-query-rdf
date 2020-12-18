@@ -10,7 +10,7 @@ import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.util.Collector
 import org.openrdf.rio.{RDFFormat, RDFWriterRegistry}
-import org.wikidata.query.rdf.tool.change.events.EventsMeta
+import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta}
 
 
 sealed case class MutationDataChunk(
@@ -51,9 +51,9 @@ class PatchChunkOperation(domain: String,
   }
 
 
-  private def eventMetaSupplier(originalEventMeta: EventsMeta): Supplier[EventsMeta] = {
+  private def eventMetaSupplier(originalEventMeta: EventInfo): Supplier[EventsMeta] = {
     new Supplier[EventsMeta] {
-      override def get(): EventsMeta = new EventsMeta(clock.instant(), uniqueIdGenerator.apply(), domain, stream, originalEventMeta.requestId())
+      override def get(): EventsMeta = new EventsMeta(clock.instant(), uniqueIdGenerator.apply(), domain, stream, originalEventMeta.meta().requestId())
     }
   }
 }

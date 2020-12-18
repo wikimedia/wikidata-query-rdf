@@ -16,11 +16,12 @@ public class RecentChangeEvent extends EventWithMeta {
     @JsonCreator
     public RecentChangeEvent(
             @JsonProperty("meta") EventsMeta meta,
+            @JsonProperty(EventInfo.SCHEMA_FIELD) String schema,
             @JsonProperty("revision") RevisionOldNew revision,
             @JsonProperty("title") String title,
             @JsonProperty("namespace") long namespace
     ) {
-        super(meta);
+        super(meta, schema);
         this.revision = revision;
         this.title = title;
         this.namespace = namespace;

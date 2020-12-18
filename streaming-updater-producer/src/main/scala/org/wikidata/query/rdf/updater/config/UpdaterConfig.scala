@@ -9,6 +9,7 @@ import scala.concurrent.duration._
 
 import org.apache.flink.api.common.time.Time
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
+import org.wikimedia.eventutilities.core.event.WikimediaDefaults
 
 class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(args)) {
   private val defaultEntityNs: String = Uris.DEFAULT_ENTITY_NAMESPACES.asScala.mkString(",")
@@ -32,7 +33,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     outputOperatorNameAndUuid = s"$outputTopic:$outputPartition"
   )
 
-  val InputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
+  val inputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
     revisionCreateTopicName = getStringParam("rev_create_topic"),
     pageDeleteTopicName = getStringParam("page_delete_topic"),
     pageUndeleteTopicName = getStringParam("page_undelete_topic"),
@@ -61,9 +62,6 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     restartFailureRateMaxPerInternal = params.getInt("restart_failures_rate_max_per_interval", 2),
     parallelism = params.getInt("parallelism", 1)
   )
-  val spuriousEventsDir: String = getStringParam("spurious_events_dir")
-  val failedOpsDir: String = getStringParam("failed_ops_dir")
-  val lateEventsDir: String = getStringParam("late_events_dir")
 
   val checkpointingMode: CheckpointingMode = if (params.getBoolean("exactly_once", true)) {
     CheckpointingMode.EXACTLY_ONCE
@@ -71,13 +69,33 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     CheckpointingMode.AT_LEAST_ONCE
   }
   val outputStreamConfig: UpdaterPipelineOutputStreamConfig =
-    UpdaterPipelineOutputStreamConfig(outputKafkaBrokers, outputTopic, outputPartition, checkpointingMode)
+    UpdaterPipelineOutputStreamConfig(
+      kafkaBrokers = outputKafkaBrokers,
+      topic = outputTopic,
+      partition = outputPartition,
+      checkpointingMode = checkpointingMode,
+      eventStreamConfigEndpoint = params.get("event_stream_config_endpoint", WikimediaDefaults.EVENT_STREAM_CONFIG_URI),
+      outputTopicPrefix = optionalStringArg("output_topic_prefix"),
+      sideOutputsDomain = params.get("side_outputs_domain", hostName),
+      sideOutputsKafkaBrokers = optionalStringArg("side_outputs_kafka_brokers"),
+      lateEventOutputDir = optionalStringArg("late_events_dir"),
+      failedEventOutputDir = optionalStringArg("failed_ops_dir"),
+      spuriousEventOutputDir = optionalStringArg("spurious_events_dir")
+    )
 
   implicit def finiteDuration2Int(fd: FiniteDuration): Int = fd.toMillis.intValue
 
   private def optionalIntArg(paramName: String)(implicit params: ParameterTool): Option[Int] = {
     if (params.has(paramName)) {
       Some(params.getInt(paramName))
+    } else {
+      None
+    }
+  }
+
+  private def optionalStringArg(paramName: String)(implicit params: ParameterTool): Option[String] = {
+    if (params.has(paramName)) {
+      Some(params.get(paramName))
     } else {
       None
     }
@@ -111,7 +129,14 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      kafkaBrokers: String,
                                                      topic: String,
                                                      partition: Int,
-                                                     checkpointingMode: CheckpointingMode
+                                                     checkpointingMode: CheckpointingMode,
+                                                     eventStreamConfigEndpoint: String = WikimediaDefaults.EVENT_STREAM_CONFIG_URI,
+                                                     outputTopicPrefix: Option[String] = None,
+                                                     sideOutputsDomain: String,
+                                                     sideOutputsKafkaBrokers: Option[String],
+                                                     lateEventOutputDir: Option[String],
+                                                     spuriousEventOutputDir: Option[String],
+                                                     failedEventOutputDir: Option[String]
                                                    )
 
 sealed case class UpdaterExecutionEnvironmentConfig(checkpointDir: String,

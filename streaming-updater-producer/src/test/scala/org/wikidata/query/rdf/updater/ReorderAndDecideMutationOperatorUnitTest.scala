@@ -44,19 +44,19 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     operator.close()
     val expectedOutput = new ListBuffer[Any]
 
-    expectedOutput += newRecord(FullImport("Q1", instant(5), 1, ingestionInstant, newEventMeta(instant(5), testDomain, testStream, "1")))
-    expectedOutput += newRecord(Diff("Q1", instant(30), 3, 1, ingestionInstant, newEventMeta(instant(30), testDomain, testStream, "2")))
+    expectedOutput += newRecord(FullImport("Q1", instant(5), 1, ingestionInstant, newEventInfo(instant(5), testDomain, testStream, "1")))
+    expectedOutput += newRecord(Diff("Q1", instant(30), 3, 1, ingestionInstant, newEventInfo(instant(30), testDomain, testStream, "2")))
     expectedOutput += new Watermark(42)
-    expectedOutput += newRecord(FullImport("Q2", instant(100), 1, ingestionInstant, newEventMeta(instant(100), testDomain, testStream, "4")))
-    expectedOutput += newRecord(Diff("Q2", instant(102), 2, 1, ingestionInstant, newEventMeta(instant(102), testDomain, testStream, "5")))
-    expectedOutput += newRecord(DeleteItem("Q2", instant(103), 3, ingestionInstant, newEventMeta(instant(103), testDomain, testStream, "6")))
+    expectedOutput += newRecord(FullImport("Q2", instant(100), 1, ingestionInstant, newEventInfo(instant(100), testDomain, testStream, "4")))
+    expectedOutput += newRecord(Diff("Q2", instant(102), 2, 1, ingestionInstant, newEventInfo(instant(102), testDomain, testStream, "5")))
+    expectedOutput += newRecord(DeleteItem("Q2", instant(103), 3, ingestionInstant, newEventInfo(instant(103), testDomain, testStream, "6")))
     expectedOutput += new Watermark(200)
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
     decodeEvents(operator.getSideOutput(ReorderAndDecideMutationOperation.LATE_EVENTS_SIDE_OUTPUT_TAG).toArray()) should contain only decodeEvent(
       newRevCreateRecord("Q1", 2, 1, 4, ingestionTs, testDomain, testStream, "3"))
     decodeEvents(getSpuriousEvents) should contain only decodeEvent(newRecord(IgnoredMutation("Q1", instant(45), 2,
-      RevCreate("Q1", instant(45), 2, Some(1), ingestionInstant, newEventMeta(instant(45), testDomain, testStream, "3")),
+      RevCreate("Q1", instant(45), 2, Some(1), ingestionInstant, newEventInfo(instant(45), testDomain, testStream, "3")),
       ingestionInstant, NewerRevisionSeen, State(Some(3), CREATED))))
   }
 
@@ -66,8 +66,8 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
-    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
-    expectedOutput += newRecord(DeleteItem("Q1", instant(2), 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(DeleteItem("Q1", instant(2), 1, ingestionInstant, newEventInfo(instant(2), testDomain, testStream, "2")))
     expectedOutput += new Watermark(200)
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsAs decodeEvents(expectedOutput)
   }
@@ -77,11 +77,10 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
-
     expectedOutput += new Watermark(200)
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsAs decodeEvents(expectedOutput)
     decodeEvents(getSpuriousEvents) should contain only decodeEvent(newRecord(IgnoredMutation("Q1", instant(1), 1,
-      PageDelete("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")),
+      PageDelete("Q1", instant(1), 1, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "1")),
       ingestionInstant, NewerRevisionSeen,State(None, UNDEFINED))))
   }
 
@@ -92,13 +91,13 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
-    expectedOutput += newRecord(FullImport("Q1", instant(1), 2, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 2, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "1")))
     expectedOutput += new Watermark(20)
     expectedOutput += new Watermark(200)
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
     decodeEvents(getSpuriousEvents) should contain only decodeEvent(newRecord(IgnoredMutation("Q1", instant(25), 1,
-      PageDelete("Q1", instant(25), 1, ingestionInstant, newEventMeta(instant(25), testDomain, testStream, "2")),
+      PageDelete("Q1", instant(25), 1, ingestionInstant, newEventInfo(instant(25), testDomain, testStream, "2")),
       ingestionInstant, NewerRevisionSeen, State(Some(2), CREATED))))
   }
 
@@ -108,8 +107,8 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
-    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
-    expectedOutput += newRecord(DeleteItem("Q1", instant(2), 2, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(DeleteItem("Q1", instant(2), 2, ingestionInstant, newEventInfo(instant(2), testDomain, testStream, "2")))
     expectedOutput += new Watermark(200)
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
@@ -123,14 +122,14 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
-    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
-    expectedOutput += newRecord(DeleteItem("Q1", instant(2), 2, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(DeleteItem("Q1", instant(2), 2, ingestionInstant, newEventInfo(instant(2), testDomain, testStream, "2")))
     expectedOutput += new Watermark(25)
     expectedOutput += new Watermark(200)
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
     decodeEvents(getSpuriousEvents) should contain only decodeEvent(newRecord(IgnoredMutation("Q1", instant(40), 2,
-      RevCreate("Q1", instant(40), 2, Some(1), ingestionInstant, newEventMeta(instant(40), testDomain, testStream, "3")),
+      RevCreate("Q1", instant(40), 2, Some(1), ingestionInstant, newEventInfo(instant(40), testDomain, testStream, "3")),
       ingestionInstant, NewerRevisionSeen, State(Some(2), DELETED))))
   }
 
@@ -141,13 +140,13 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
-    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
-    expectedOutput += newRecord(DeleteItem("Q1", instant(2), 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(DeleteItem("Q1", instant(2), 1, ingestionInstant, newEventInfo(instant(2), testDomain, testStream, "2")))
     expectedOutput += new Watermark(200)
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
     decodeEvents(getSpuriousEvents) should contain only decodeEvent(newRecord(IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, Some(1), ingestionInstant, newEventMeta(instant(3), testDomain, testStream, "3")),
+      RevCreate("Q1", instant(3), 2, Some(1), ingestionInstant, newEventInfo(instant(3), testDomain, testStream, "3")),
       ingestionInstant, NewerRevisionSeen, State(Some(1), DELETED))))
   }
 
@@ -158,9 +157,9 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
-    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
-    expectedOutput += newRecord(DeleteItem("Q1", instant(2), 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
-    expectedOutput += newRecord(FullImport("Q1", instant(3), 1, ingestionInstant, newEventMeta(instant(3), testDomain, testStream, "3")))
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(DeleteItem("Q1", instant(2), 1, ingestionInstant, newEventInfo(instant(2), testDomain, testStream, "2")))
+    expectedOutput += newRecord(FullImport("Q1", instant(3), 1, ingestionInstant, newEventInfo(instant(3), testDomain, testStream, "3")))
     expectedOutput += new Watermark(200)
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
@@ -176,8 +175,8 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     operator.processElement(undeleteEventRecordToIgnore)
     operator.processWatermark(200)
     val expectedOutput = new ListBuffer[Any]
-    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
-    expectedOutput += newRecord(Diff("Q1", instant(2), 2, 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(Diff("Q1", instant(2), 2, 1, ingestionInstant, newEventInfo(instant(2), testDomain, testStream, "2")))
     expectedOutput += new Watermark(20)
     expectedOutput += new Watermark(200)
 
@@ -193,8 +192,8 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
 
     val expectedOutput = new ListBuffer[Any]
 
-    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
-    expectedOutput += newRecord(Diff("Q1", instant(2), 2, 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(Diff("Q1", instant(2), 2, 1, ingestionInstant, newEventInfo(instant(2), testDomain, testStream, "2")))
     expectedOutput += new Watermark(200)
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
@@ -207,7 +206,7 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
-    expectedOutput += newRecord(FullImport("Q1", instant(1), 2, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 2, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "1")))
     expectedOutput += new Watermark(200)
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
     decodeEvents(getSpuriousEvents) should contain only decodeEvent(newRecord(IgnoredMutation("Q1", instant(2), 2,
@@ -222,7 +221,7 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     operator.processElement(newRevCreateRecordNewPage("Q1", 1, 0, ingestionTs, testDomain, testStream, "initial import (set state)"))
     operator.processWatermark(20)
 
-    expectedOutput += newRecord(FullImport("Q1", instant(0), 1, ingestionInstant, newEventMeta(instant(0),
+    expectedOutput += newRecord(FullImport("Q1", instant(0), 1, ingestionInstant, newEventInfo(instant(0),
       testDomain, testStream, "initial import (set state)")))
     expectedOutput += new Watermark(20)
 
@@ -233,7 +232,7 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     operator.processElement(ignoredRevCreate)
     operator.processWatermark(200)
 
-    expectedOutput += newRecord(DeleteItem("Q1", instant(22), 1, ingestionInstant, newEventMeta(instant(22), testDomain, testStream, "delete")))
+    expectedOutput += newRecord(DeleteItem("Q1", instant(22), 1, ingestionInstant, newEventInfo(instant(22), testDomain, testStream, "delete")))
     expectedOutput += new Watermark(200)
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)

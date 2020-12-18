@@ -50,17 +50,17 @@ sealed class MutationResolver extends Serializable {
 
   private def emitFullImport(event: InputEvent, entityState: EntityState): FullImport = {
     entityState.updateRevCreate(event.revision)
-    FullImport(event.item, event.eventTime, event.revision, event.ingestionTime, event.originalEventMetadata)
+    FullImport(event.item, event.eventTime, event.revision, event.ingestionTime, event.originalEventInfo)
   }
 
   private def emitDiff(event: RevCreate, prevRevision: Long, entityState: EntityState): Diff = {
     entityState.updateRevCreate(event.revision)
-    Diff(event.item, event.eventTime, event.revision, prevRevision, event.ingestionTime, event.originalEventMetadata)
+    Diff(event.item, event.eventTime, event.revision, prevRevision, event.ingestionTime, event.originalEventInfo)
   }
 
   private def emitPageDelete(event: PageDelete, entityState: EntityState): DeleteItem = {
     entityState.updatePageDelete(event.revision)
-    DeleteItem(event.item, event.eventTime, event.revision, event.ingestionTime, event.originalEventMetadata)
+    DeleteItem(event.item, event.eventTime, event.revision, event.ingestionTime, event.originalEventInfo)
   }
 }
 

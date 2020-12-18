@@ -2,23 +2,23 @@ package org.wikidata.query.rdf.updater
 
 import java.time.Instant
 
-import org.wikidata.query.rdf.tool.change.events.EventsMeta
+import org.wikidata.query.rdf.tool.change.events.EventInfo
 
 /**
  * All mutations even the spurious one
  * match MutationOperation if only valid mutations are required
  */
 sealed trait AllMutationOperation extends BasicEventData {
-  val originalEventMetadata: EventsMeta
+  val originalEventInfo: EventInfo
 }
 
 sealed trait MutationOperation extends AllMutationOperation with Product with Serializable
 
-final case class Diff(item: String, eventTime: Instant, revision: Long, fromRev: Long, ingestionTime: Instant, originalEventMetadata: EventsMeta)
+final case class Diff(item: String, eventTime: Instant, revision: Long, fromRev: Long, ingestionTime: Instant, originalEventInfo: EventInfo)
   extends MutationOperation
-final case class FullImport(item: String, eventTime: Instant, revision: Long, ingestionTime: Instant, originalEventMetadata: EventsMeta)
+final case class FullImport(item: String, eventTime: Instant, revision: Long, ingestionTime: Instant, originalEventInfo: EventInfo)
   extends MutationOperation
-final case class DeleteItem(item: String, eventTime: Instant, revision: Long, ingestionTime: Instant, originalEventMetadata: EventsMeta)
+final case class DeleteItem(item: String, eventTime: Instant, revision: Long, ingestionTime: Instant, originalEventInfo: EventInfo)
   extends MutationOperation
 
 /**
@@ -32,7 +32,7 @@ final case class IgnoredMutation(item: String,
                                  inconsistencyType: Inconsistency,
                                  state: State
                                 ) extends AllMutationOperation {
-  override val originalEventMetadata: EventsMeta = inputEvent.originalEventMetadata
+  override val originalEventInfo: EventInfo = inputEvent.originalEventInfo
 }
 
 sealed trait Inconsistency {

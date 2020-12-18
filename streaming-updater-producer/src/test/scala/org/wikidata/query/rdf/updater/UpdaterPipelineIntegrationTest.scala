@@ -41,9 +41,9 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     UpdaterPipeline.build(pipelineOptions,
         List(revCreateSource), _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
         clock, OUTPUT_EVENT_STREAM_NAME)
-      .saveTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))
-      .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)), identityMapFunction(), None)
-      .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)), identityMapFunction(), None)
+      .saveMutationsTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))
+      .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
+      .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))
       .execute("test")
 
     CollectSink.lateEvents should contain only ignoredRevision
@@ -82,9 +82,9 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     UpdaterPipeline.build(pipelineOptions,
       List(revCreateSourceForDeleteTest, pageDeleteSource), _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
       clock, OUTPUT_EVENT_STREAM_NAME)
-      .saveTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))
-      .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)), identityMapFunction(), None)
-      .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)), identityMapFunction(), None)
+      .saveMutationsTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))
+      .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
+      .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))
       .execute("test")
 
     val expected = expectedOperationsForPageDeleteTest

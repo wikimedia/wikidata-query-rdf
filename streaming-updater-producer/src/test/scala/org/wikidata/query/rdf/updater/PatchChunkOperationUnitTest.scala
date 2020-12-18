@@ -6,10 +6,11 @@ import java.util.Collections.emptyList
 import java.util.function.Supplier
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
+
 import org.apache.flink.api.common.functions.util.ListCollector
 import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.test.StatementHelper.statements
-import org.wikidata.query.rdf.tool.change.events.EventsMeta
+import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta}
 import org.wikidata.query.rdf.tool.rdf.Patch
 
 class PatchChunkOperationUnitTest extends FlatSpec with Matchers with TestEventGenerator {
@@ -18,7 +19,7 @@ class PatchChunkOperationUnitTest extends FlatSpec with Matchers with TestEventG
   val REQ_ID = "tested.req.id"
   val EVT_ID = "my_id"
   val NOW: Instant = Instant.EPOCH
-  val INPUT_EVENT_META: EventsMeta = newEventMeta(NOW, DOMAIN, STREAM, REQ_ID)
+  val INPUT_EVENT_INFO: EventInfo = newEventInfo(NOW, DOMAIN, STREAM, REQ_ID)
   val OUTPUT_EVENT_META: EventsMeta = new EventsMeta(NOW, EVT_ID, DOMAIN, STREAM, REQ_ID)
   val outputMetaSupplier: Supplier[EventsMeta] = new Supplier[EventsMeta] {
     override def get(): EventsMeta = OUTPUT_EVENT_META
@@ -87,15 +88,15 @@ class PatchChunkOperationUnitTest extends FlatSpec with Matchers with TestEventG
   }
 
   private def importOp: FullImport = {
-    FullImport("Q1", NOW, 1, NOW, INPUT_EVENT_META)
+    FullImport("Q1", NOW, 1, NOW, INPUT_EVENT_INFO)
   }
 
   private def importDeleteOp: DeleteItem = {
-    DeleteItem("Q1", NOW, 1, NOW, INPUT_EVENT_META)
+    DeleteItem("Q1", NOW, 1, NOW, INPUT_EVENT_INFO)
   }
 
   private def inputDiffOp: Diff = {
-    Diff("Q1", NOW, 2, 1, NOW, INPUT_EVENT_META)
+    Diff("Q1", NOW, 2, 1, NOW, INPUT_EVENT_INFO)
   }
 
   private def outputDiffEvent(op: Diff): EntityPatchOp = {

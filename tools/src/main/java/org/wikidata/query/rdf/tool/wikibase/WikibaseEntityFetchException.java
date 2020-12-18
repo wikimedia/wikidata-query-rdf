@@ -23,6 +23,6 @@ public class WikibaseEntityFetchException extends ContainedException {
     }
 
     public enum Type {
-        ENTITY_NOT_FOUND, NO_CONTENT, EMPTY_RESPONSE, UNEXPECTED_RESPONSE
+        ENTITY_NOT_FOUND, NO_CONTENT, EMPTY_RESPONSE, UNEXPECTED_RESPONSE, UNKNOWN
     }
 }

@@ -35,7 +35,7 @@ class MeasureEventProcessingLatencyOperationUnitTest extends FlatSpec with TestF
     val secondsBeforeStartedProcessing = 5L
     val eventTime: Instant = instantNow.minusSeconds(secondsBeforeCreated)
     val processingTime: Instant = instantNow.minusSeconds(secondsBeforeStartedProcessing)
-    val input: FullImport = FullImport("Q1", eventTime, 1, processingTime, newEventMeta(eventTime, "tested.domain", "tested.stream", "tested.request.id"))
+    val input: FullImport = FullImport("Q1", eventTime, 1, processingTime, newEventInfo(eventTime, "tested.domain", "tested.stream", "tested.request.id"))
 
     eventProcessingMetricsOperation.map(MutationDataChunk(input,
       new DiffEventData(new EventsMeta(clock.instant(), "", "", "", ""),
