@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.updater
 import java.time.Instant
 
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
+
 import org.apache.flink.streaming.api.scala._
 import org.openrdf.model.Statement
 import org.scalatest._
@@ -13,6 +14,7 @@ import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
 class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers {
   private val pipelineOptions: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
     hostname = DOMAIN,
+    entityNamespaces = ENTITY_NAMESPACES,
     reorderingWindowLengthMs = REORDERING_WINDOW_LENGTH,
     reorderingOpParallelism = None,
     decideMutationOpParallelism = None,
@@ -33,7 +35,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       .setParallelism(1)
       // Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
-      DOMAIN,
+      URIS,
       IncomingStreams.REV_CREATE_CONV, clock,
       // Disable any parallelism for the input collection so that order of input events are kept intact
       // (does not affect the ordering but ensure that we can detect the late event
@@ -69,7 +71,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       .setParallelism(1)
       // Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
-      DOMAIN,
+      URIS,
       IncomingStreams.REV_CREATE_CONV, clock,
       // Disable any parallelism for the input collection so that order of input events are kept intact
       // (does not affect the ordering but ensure that we can detect the late event
@@ -79,7 +81,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       .setParallelism(1)
       //       Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[PageDeleteEvent]()),
-      DOMAIN,
+      URIS,
       IncomingStreams.PAGE_DEL_CONV, clock,
       // Disable any parallelism for the input collection so that order of input events are kept intact
       // (does not affect the ordering but ensure that we can detect the late event

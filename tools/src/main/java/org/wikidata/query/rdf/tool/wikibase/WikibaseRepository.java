@@ -236,8 +236,7 @@ public class WikibaseRepository implements Closeable {
     }
 
     public WikibaseRepository(URI baseUrl, Set<Long> entityNamespaces, MetricRegistry metricRegistry) {
-        this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
-        uris.setEntityNamespaces(entityNamespaces);
+        this(new Uris(baseUrl, entityNamespaces), false, metricRegistry, new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
     }
 
     public WikibaseRepository(Uris uris, boolean collectConstraints, MetricRegistry metricRegistry, StreamDumper streamDumper,
@@ -596,7 +595,6 @@ public class WikibaseRepository implements Closeable {
     /**
      * URIs used for accessing wikibase.
      */
-    @SuppressFBWarnings(value = {"EI_EXPOSE_REP2", "MS_MUTABLE_ARRAY"}, justification = "minor enough")
     public static class Uris implements Serializable {
         /**
          * URL which should be used to retrieve Entity data.
@@ -610,11 +608,11 @@ public class WikibaseRepository implements Closeable {
         /**
          * Item and Property namespaces.
          */
-        private Set<Long> entityNamespaces;
+        private final Set<Long> entityNamespaces;
         /**
          * Base URL for Wikibase.
          */
-        private URI baseUrl;
+        private final URI baseUrl;
 
         public Uris(URI baseUrl) {
             this(baseUrl, DEFAULT_ENTITY_NAMESPACES);
@@ -626,16 +624,15 @@ public class WikibaseRepository implements Closeable {
         }
 
         public static Uris fromString(String url) {
+            return fromString(url, DEFAULT_ENTITY_NAMESPACES);
+        }
+
+        public static Uris fromString(String url, Set<Long> entityNamespaces) {
             try {
-                return new Uris(new URI(url));
+                return new Uris(new URI(url), entityNamespaces);
             } catch (URISyntaxException e) {
                 throw new FatalException("Bad URL: " + url, e);
             }
-        }
-
-        public Uris setEntityNamespaces(Set<Long> entityNamespaces) {
-            this.entityNamespaces = copyOf(entityNamespaces);
-            return this;
         }
 
         /**

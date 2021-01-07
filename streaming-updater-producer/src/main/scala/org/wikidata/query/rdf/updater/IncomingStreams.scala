@@ -24,27 +24,27 @@ object IncomingStreams {
     (e, clock) => PageUndelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.meta())
 
   def buildIncomingStreams(ievops: UpdaterPipelineInputEventStreamConfig,
-                           hostname: String, clock: Clock)
+                           uris: Uris, clock: Clock)
                                   (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
     ievops.topicPrefixes.flatMap(prefix => {
       List(
         IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.revisionCreateTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-          hostname, IncomingStreams.REV_CREATE_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock),
+          uris, IncomingStreams.REV_CREATE_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock),
         IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.pageDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
-          hostname, IncomingStreams.PAGE_DEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock),
+          uris, IncomingStreams.PAGE_DEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock),
         IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.pageUndeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[PageUndeleteEvent])),
-          hostname, IncomingStreams.PAGE_UNDEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock),
+          uris, IncomingStreams.PAGE_UNDEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock),
         IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.suppressedDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
-          hostname, IncomingStreams.PAGE_DEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock)
+          uris, IncomingStreams.PAGE_DEL_CONV, ievops.parallelism, ievops.maxLateness, ievops.idleness, clock)
       )
     })
   }
 
-  def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], hostname: String,
+  def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], uris: Uris,
                                   conv: (E, Clock) => InputEvent, parallelism: Int,
                                   maxLatenessMs: Int, idlenessMs: Int, clock: Clock)
                                  (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
@@ -57,7 +57,7 @@ object IncomingStreams {
       .uid(nameAndUid)
       .name(nameAndUid)
       .setParallelism(parallelism)
-    fromStream(kafkaStream, hostname, conv, clock, Some(parallelism), Some(parallelism))
+    fromStream(kafkaStream, uris, conv, clock, Some(parallelism), Some(parallelism))
   }
 
   private def watermarkStrategy[E <: ChangeEvent](maxLatenessMs: Int, idlenessMs: Int): WatermarkStrategy[E] = {
@@ -69,26 +69,25 @@ object IncomingStreams {
   }
 
   def fromStream[E <: ChangeEvent](stream: DataStream[E],
-                                   hostname: String,
+                                   uris: Uris,
                                    conv: (E, Clock) => InputEvent,
                                    clock: Clock,
                                    filterParallelism: Option[Int] = None,
                                    mapperParallelism: Option[Int] = None)
                                   (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
-    val filteredStream = stream.filter(new EventWithMetadataHostFilter[E](hostname))
+    val filteredStream = stream.filter(new EventWithMetadataHostFilter[E](uris))
     filterParallelism.foreach(filteredStream.setParallelism)
 
     val convertedStream = filteredStream
       .map(conv(_, clock))
-      .name(s"Filtered(${stream.name} == $hostname)")
+      .name(s"Filtered(${stream.name} == ${uris.getHost})")
     mapperParallelism.foreach(convertedStream.setParallelism)
     convertedStream
   }
 }
 
-class EventWithMetadataHostFilter[E <: ChangeEvent](hostname: String) extends FilterFunction[E] {
-  lazy val uris = Uris.fromString(s"https://$hostname")
+class EventWithMetadataHostFilter[E <: ChangeEvent](uris: Uris) extends FilterFunction[E] {
   override def filter(e: E): Boolean = {
-    e.domain() == uris.getHost && uris.isEntityNamespace(e.namespace())
+    uris.getHost.equals(e.domain()) && uris.isEntityNamespace(e.namespace())
   }
 }

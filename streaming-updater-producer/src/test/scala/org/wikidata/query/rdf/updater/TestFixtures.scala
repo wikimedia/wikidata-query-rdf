@@ -6,13 +6,15 @@ import java.util.{Collections, UUID}
 import java.util.function.Supplier
 
 import scala.collection.JavaConverters._
+
 import org.apache.flink.api.common.eventtime._
 import org.openrdf.model.Statement
 import org.openrdf.model.impl.{StatementImpl, ValueFactoryImpl}
 import org.openrdf.rio.{RDFFormat, RDFParserRegistry, RDFWriterRegistry}
 import org.wikidata.query.rdf.common.uri.{PropertyType, SchemaDotOrg, UrisSchemeFactory}
-import org.wikidata.query.rdf.tool.change.events.{EventWithMeta, EventsMeta}
+import org.wikidata.query.rdf.tool.change.events.{EventsMeta, EventWithMeta}
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.EntityStatus.CREATED
 
 case class MetaStatement(entityDataNS: Statement, entityNS: Statement)
@@ -23,6 +25,8 @@ case class MetaStatements(revision: MetaStatement, lastModified: MetaStatement) 
 trait TestFixtures extends TestEventGenerator {
   val REORDERING_WINDOW_LENGTH = 60000
   val DOMAIN = "tested.domain"
+  val ENTITY_NAMESPACES: Set[Long] = Uris.DEFAULT_ENTITY_NAMESPACES.asScala.map(Long2long).toSet
+  val URIS: Uris = Uris.fromString(s"https://$DOMAIN", Uris.DEFAULT_ENTITY_NAMESPACES)
   val WATERMARK_DOMAIN = "generate.watermark"
   val OUTPUT_EVENT_UUID_GENERATOR: () => String = () => "UNIQUE FOR TESTING"
   val OUTPUT_EVENT_STREAM_NAME = "wdqs_streaming_updater_test_stream"

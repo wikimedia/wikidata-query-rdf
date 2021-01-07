@@ -69,8 +69,7 @@ public class KafkaPollerUnitTest {
 
     @Before
     public void setupUris() {
-        uris = Uris.fromString("https://" + DOMAIN);
-        uris.setEntityNamespaces(singleton(ENTITY_NS));
+        uris = Uris.fromString("https://" + DOMAIN, singleton(ENTITY_NS));
     }
 
     @Test

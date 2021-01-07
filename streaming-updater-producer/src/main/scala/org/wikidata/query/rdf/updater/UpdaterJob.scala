@@ -3,6 +3,8 @@ package org.wikidata.query.rdf.updater
 import java.time.Clock
 import java.util.Properties
 
+import scala.collection.JavaConverters.setAsJavaSetConverter
+
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.FailureRateRestartStrategyConfiguration
@@ -29,10 +31,10 @@ object UpdaterJob {
     val generalConfig = config.generalConfig
 
     val outputSink: SinkFunction[MutationDataChunk] = prepareKafkaSink(config.outputStreamConfig)
-    val uris: Uris = WikibaseRepository.Uris.fromString(s"https://${generalConfig.hostname}")
+    val uris: Uris = WikibaseRepository.Uris.fromString(s"https://${generalConfig.hostname}", generalConfig.entityNamespaces.map(long2Long).asJava)
     implicit val env: StreamExecutionEnvironment = prepareEnv(config.environmentConfig)
 
-    val incomingStreams = IncomingStreams.buildIncomingStreams(config.InputEventStreamConfig, generalConfig.hostname, DEFAULT_CLOCK)
+    val incomingStreams = IncomingStreams.buildIncomingStreams(config.InputEventStreamConfig, uris, DEFAULT_CLOCK)
     UpdaterPipeline.build(generalConfig, incomingStreams,
       rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup))
       .saveLateEventsTo(prepareErrorTrackingFileSink(config.lateEventsDir,

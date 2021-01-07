@@ -27,7 +27,7 @@ public class RdfKafkaRepositoryIntegrationTest {
 
     @Test
     public void readWriteOffsets() throws Exception {
-        Uris uris = Uris.fromString("https://acme.test").setEntityNamespaces(singleton(0L));
+        Uris uris = Uris.fromString("https://acme.test", singleton(0L));
 
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
 

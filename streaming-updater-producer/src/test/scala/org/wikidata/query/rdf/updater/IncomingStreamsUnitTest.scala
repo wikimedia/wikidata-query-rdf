@@ -1,18 +1,25 @@
 package org.wikidata.query.rdf.updater
 
+import java.lang
+import java.util
 import java.time.{Clock, Instant}
+
+import scala.collection.JavaConverters.setAsJavaSetConverter
 
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, EventsMeta, PageDeleteEvent, PageUndeleteEvent, RevisionCreateEvent}
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineInputEventStreamConfig
 
 class IncomingStreamsUnitTest extends FlatSpec with Matchers {
+
+  val uris: Uris = Uris.fromString("https://my-hostname", Set(0, 2, 3, 5).map(_.toLong).map(long2Long).asJava)
   "IncomingStreams" should "create properly named streams" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
       DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-      "my-hostname", IncomingStreams.REV_CREATE_CONV, 1, 40000, 40000, Clock.systemUTC())
+      uris, IncomingStreams.REV_CREATE_CONV, 1, 40000, 40000, Clock.systemUTC())
     stream.name should equal ("Filtered(my-topic == my-hostname)")
   }
 
@@ -21,9 +28,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     val stream = IncomingStreams.buildIncomingStreams(
       UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic",
         "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List(""), 3, 10, 10),
-      "hostname",
-      Clock.systemUTC()
-    )
+      uris, Clock.systemUTC())
     stream.map(_.parallelism).toSet should contain only 3
   }
 
@@ -32,13 +37,12 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     val stream = IncomingStreams.buildIncomingStreams(
       UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic",
         "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List(""), 1, 10, 10),
-      "hostname",
-      Clock.systemUTC()
+      uris, Clock.systemUTC()
     )
-    stream.map(_.name) should contain only("Filtered(rev-create-topic == hostname)",
-                                           "Filtered(page-delete-topic == hostname)",
-                                           "Filtered(page-undelete-topic == hostname)",
-                                           "Filtered(suppressed-delete-topic == hostname)"
+    stream.map(_.name) should contain only("Filtered(rev-create-topic == my-hostname)",
+                                           "Filtered(page-delete-topic == my-hostname)",
+                                           "Filtered(page-undelete-topic == my-hostname)",
+                                           "Filtered(suppressed-delete-topic == my-hostname)"
     )
   }
 
@@ -47,26 +51,30 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     val stream = IncomingStreams.buildIncomingStreams(
       UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic",
         "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List("cluster1.", "cluster2."), 1, 10, 10),
-      "hostname",
-      Clock.systemUTC()
-    )
+      uris, Clock.systemUTC())
     stream.map(_.name) should contain only(
-      "Filtered(cluster1.rev-create-topic == hostname)",
-      "Filtered(cluster1.page-delete-topic == hostname)",
-      "Filtered(cluster1.page-undelete-topic == hostname)",
-      "Filtered(cluster1.suppressed-delete-topic == hostname)",
-      "Filtered(cluster2.rev-create-topic == hostname)",
-      "Filtered(cluster2.page-delete-topic == hostname)",
-      "Filtered(cluster2.page-undelete-topic == hostname)",
-      "Filtered(cluster2.suppressed-delete-topic == hostname)"
+      "Filtered(cluster1.rev-create-topic == my-hostname)",
+      "Filtered(cluster1.page-delete-topic == my-hostname)",
+      "Filtered(cluster1.page-undelete-topic == my-hostname)",
+      "Filtered(cluster1.suppressed-delete-topic == my-hostname)",
+      "Filtered(cluster2.rev-create-topic == my-hostname)",
+      "Filtered(cluster2.page-delete-topic == my-hostname)",
+      "Filtered(cluster2.page-undelete-topic == my-hostname)",
+      "Filtered(cluster2.suppressed-delete-topic == my-hostname)"
     )
   }
 
   "EventWithMetadataHostFilter" should "filter events by hostname" in {
-    val filter = new EventWithMetadataHostFilter[FakeEvent]("my-host")
+    val filter = new EventWithMetadataHostFilter[FakeEvent](uris)
     filter.filter(FakeEvent("not-my-host", "Q123")) should equal(false)
-    filter.filter(FakeEvent("my-host", "Unrelated")) should equal(false)
-    filter.filter(FakeEvent("my-host", "Q123")) should equal(true)
+    filter.filter(FakeEvent("my-hostname", "Unrelated", 10)) should equal(false)
+    filter.filter(FakeEvent("my-hostname", "Q123")) should equal(true)
+  }
+
+  "EventWithMetadataHostFilter" should "filter events by namespace" in {
+    val filter = new EventWithMetadataHostFilter[FakeEvent](uris)
+    filter.filter(FakeEvent("my-hostname", "Q123", 2)) should equal(true)
+    filter.filter(FakeEvent("my-hostname", "Q123", 10)) should equal(false)
   }
 
   "RevCreateEvent" should "be convertible into InputEvent" in {
@@ -106,8 +114,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   }
 }
 
-sealed case class FakeEvent(domain: String, title: String) extends ChangeEvent {
+sealed case class FakeEvent(domain: String, title: String, namespace: Long = 0) extends ChangeEvent {
   override def revision(): Long = ???
-  override def namespace(): Long = if (title.startsWith("Q")) 0L else 1L
   override def timestamp(): Instant = ???
 }

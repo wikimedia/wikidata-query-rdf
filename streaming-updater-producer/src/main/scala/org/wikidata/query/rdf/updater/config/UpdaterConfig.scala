@@ -1,22 +1,28 @@
 package org.wikidata.query.rdf.updater.config
 
+import scala.collection.JavaConverters.iterableAsScalaIterableConverter
+
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.streaming.api.CheckpointingMode
 import scala.language.{implicitConversions, postfixOps}
 import scala.concurrent.duration._
 
 import org.apache.flink.api.common.time.Time
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 
 class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(args)) {
+  private val defaultEntityNs: String = Uris.DEFAULT_ENTITY_NAMESPACES.asScala.mkString(",")
   private val hostName: String = getStringParam("hostname")
 
   val inputKafkaBrokers: String = getStringParam("brokers")
   val outputKafkaBrokers: String = params.get("output_brokers", inputKafkaBrokers)
   val outputTopic: String = getStringParam("output_topic")
   val outputPartition: Int = params.getInt("output_topic_partition")
+  val entityNamespaces: Set[Long] = params.get("entity_namespaces", defaultEntityNs).split(",").map(_.trim.toLong).toSet
 
   val generalConfig: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
     hostname = hostName,
+    entityNamespaces = entityNamespaces,
     reorderingWindowLengthMs = params.getInt("reordering_window_length", 1 minute),
     reorderingOpParallelism = optionalIntArg("reordering_parallelism"),
     decideMutationOpParallelism = optionalIntArg("decide_mut_op_parallelism"),
@@ -85,6 +91,7 @@ object UpdaterConfig {
 }
 
 sealed case class UpdaterPipelineGeneralConfig(hostname: String,
+                                               entityNamespaces: Set[Long],
                                                reorderingWindowLengthMs: Int,
                                                reorderingOpParallelism: Option[Int],
                                                decideMutationOpParallelism: Option[Int],
