@@ -36,6 +36,6 @@ object UpdaterBootstrapJob {
 
   def newSavePoint(revFile: String, stateBackend: StateBackend, parallelism: Int)(implicit env: ExecutionEnvironment): NewSavepoint = {
     Savepoint.create(stateBackend, parallelism)
-      .withOperator(DecideMutationOperation.UID, dataSet(fromCsv(revFile)))
+      .withOperator(MutationResolver.UID, dataSet(fromCsv(revFile)))
   }
 }

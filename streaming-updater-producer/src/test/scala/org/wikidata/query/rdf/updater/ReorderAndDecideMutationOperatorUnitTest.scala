@@ -56,7 +56,7 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     expectedOutput += new Watermark(200)
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
-    decodeEvents(operator.getSideOutput(EventReorderingWindowFunction.LATE_EVENTS_SIDE_OUTPUT_TAG).toArray()) should contain only decodeEvent(
+    decodeEvents(operator.getSideOutput(ReorderAndDecideMutationOperation.LATE_EVENTS_SIDE_OUTPUT_TAG).toArray()) should contain only decodeEvent(
       newRevCreateRecord("Q1", 2, 1, 4, ingestionTs, testDomain, testStream, "3"))
   }
 

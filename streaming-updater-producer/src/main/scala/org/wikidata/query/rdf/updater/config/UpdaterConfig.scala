@@ -30,8 +30,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     generateDiffTimeout = params.getLong("generate_diff_timeout", 5.minutes.toMillis),
     wikibaseRepoThreadPoolSize = params.getInt("wikibase_repo_thread_pool_size", 30), // at most 60 concurrent requests to wikibase
     // T262020 and FLINK-11654 (might change to something more explicit on the KafkaProducer rather than reusing operator's name
-    outputOperatorNameAndUuid = s"$outputTopic:$outputPartition",
-    optimizedReordering = params.getBoolean("optimized_reordering", false)
+    outputOperatorNameAndUuid = s"$outputTopic:$outputPartition"
   )
 
   val InputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
@@ -99,8 +98,7 @@ sealed case class UpdaterPipelineGeneralConfig(hostname: String,
                                                generateDiffTimeout: Long,
                                                wikibaseRepoThreadPoolSize: Int,
                                                outputParallelism: Int = 1,
-                                               outputOperatorNameAndUuid: String,
-                                               optimizedReordering: Boolean = false
+                                               outputOperatorNameAndUuid: String
                                               )
 
 sealed case class UpdaterPipelineInputEventStreamConfig(kafkaBrokers: String,

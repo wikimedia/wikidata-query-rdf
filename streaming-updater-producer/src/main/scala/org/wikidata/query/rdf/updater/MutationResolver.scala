@@ -2,7 +2,7 @@ package org.wikidata.query.rdf.updater
 
 import scala.math.abs
 
-import org.apache.flink.api.common.functions.{RichFunction, RichMapFunction}
+import org.apache.flink.api.common.functions.RichFunction
 import org.apache.flink.api.common.state.ValueState
 import org.apache.flink.api.java.tuple.Tuple2
 import org.apache.flink.configuration.Configuration
@@ -12,35 +12,35 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
 import org.wikidata.query.rdf.updater.EntityStatus.{CREATED, DELETED, UNDEFINED}
 
-sealed class DecideMutationOperation extends RichMapFunction[InputEvent, AllMutationOperation] with LastSeenRevState {
-  override def map(event: InputEvent): AllMutationOperation = {
+sealed class MutationResolver extends Serializable {
+  def map(event: InputEvent, entityState: EntityState): AllMutationOperation = {
     event match {
-      case rev: RevCreate => mutationFromRevisionCreate(rev)
-      case del: PageDelete => mutationFromPageDelete(del)
-      case undel: PageUndelete => mutationFromPageUndelete(undel)
+      case rev: RevCreate => mutationFromRevisionCreate(rev, entityState)
+      case del: PageDelete => mutationFromPageDelete(del, entityState)
+      case undel: PageUndelete => mutationFromPageUndelete(undel, entityState)
       case unknown: InputEvent => emitIgnoredMutation(unknown, NotImplementedYet, entityState.getCurrentState)
     }
   }
 
-  private def mutationFromRevisionCreate(event: RevCreate): AllMutationOperation = {
+  private def mutationFromRevisionCreate(event: RevCreate, entityState: EntityState): AllMutationOperation = {
     entityState.getCurrentState match {
-      case State(None, _) => emitFullImport(event)
-      case State(Some(rev), CREATED) if rev < event.revision => emitDiff(event, rev)
+      case State(None, _) => emitFullImport(event, entityState)
+      case State(Some(rev), CREATED) if rev < event.revision => emitDiff(event, rev, entityState)
       case state: State =>  emitIgnoredMutation(event, NewerRevisionSeen, state)
     }
   }
 
-  private def mutationFromPageDelete(event: PageDelete): AllMutationOperation = {
+  private def mutationFromPageDelete(event: PageDelete, entityState: EntityState): AllMutationOperation = {
     entityState.getCurrentState match {
-      case State(Some(rev), CREATED) if rev <= event.revision => emitPageDelete(event)
+      case State(Some(rev), CREATED) if rev <= event.revision => emitPageDelete(event, entityState)
       case state: State => emitIgnoredMutation(event, NewerRevisionSeen, state)
     }
   }
 
-  private def mutationFromPageUndelete(event: PageUndelete): AllMutationOperation = {
+  private def mutationFromPageUndelete(event: PageUndelete, entityState: EntityState): AllMutationOperation = {
     entityState.getCurrentState match {
-      case State(None, _) => emitFullImport(event)
-      case State(Some(rev), DELETED) if rev == event.revision => emitFullImport(event)
+      case State(None, _) => emitFullImport(event, entityState)
+      case State(Some(rev), DELETED) if rev == event.revision => emitFullImport(event, entityState)
       case state @ State(Some(rev), DELETED) if rev != event.revision => emitIgnoredMutation(event, UnmatchedUndelete, state)
       case state @ State(Some(rev), CREATED) if rev == event.revision => emitIgnoredMutation(event, UnmatchedUndelete, state)
       case state: State => emitIgnoredMutation(event, NewerRevisionSeen, state)
@@ -51,23 +51,19 @@ sealed class DecideMutationOperation extends RichMapFunction[InputEvent, AllMuta
     IgnoredMutation(event.item, event.eventTime, event.revision, event, event.ingestionTime, inconsistencyType, state)
   }
 
-  private def emitFullImport(event: InputEvent): FullImport = {
+  private def emitFullImport(event: InputEvent, entityState: EntityState): FullImport = {
     entityState.updateRevCreate(event.revision)
     FullImport(event.item, event.eventTime, event.revision, event.ingestionTime, event.originalEventMetadata)
   }
 
-  private def emitDiff(event: RevCreate, prevRevision: Long): Diff = {
+  private def emitDiff(event: RevCreate, prevRevision: Long, entityState: EntityState): Diff = {
     entityState.updateRevCreate(event.revision)
     Diff(event.item, event.eventTime, event.revision, prevRevision, event.ingestionTime, event.originalEventMetadata)
   }
 
-  private def emitPageDelete(event: PageDelete): DeleteItem = {
+  private def emitPageDelete(event: PageDelete, entityState: EntityState): DeleteItem = {
     entityState.updatePageDelete(event.revision)
     DeleteItem(event.item, event.eventTime, event.revision, event.ingestionTime, event.originalEventMetadata)
-  }
-
-  override def open(parameters: Configuration): Unit = {
-    super.open(parameters)
   }
 }
 
@@ -83,7 +79,7 @@ trait LastSeenRevState extends RichFunction {
   }
 }
 
-sealed class RouteIgnoredMutationToSideOutput(ignoredEventTag: OutputTag[IgnoredMutation] = DecideMutationOperation.SPURIOUS_REV_EVENTS)
+sealed class RouteIgnoredMutationToSideOutput(ignoredEventTag: OutputTag[IgnoredMutation] = MutationResolver.SPURIOUS_REV_EVENTS)
   extends ProcessFunction[AllMutationOperation, MutationOperation]
 {
   override def processElement(i: AllMutationOperation,
@@ -97,16 +93,9 @@ sealed class RouteIgnoredMutationToSideOutput(ignoredEventTag: OutputTag[Ignored
   }
 }
 
-object DecideMutationOperation {
+object MutationResolver {
   val UID: String = "DecideMutationOperation"
   val SPURIOUS_REV_EVENTS = new OutputTag[IgnoredMutation]("spurious-rev-events")
-  def attach(stream: DataStream[InputEvent]): DataStream[AllMutationOperation] = {
-    stream
-      .keyBy(_.item)
-      .map(new DecideMutationOperation())
-      .uid(UID)
-      .name(UID)
-  }
 }
 
 class EntityState(revState: ValueState[java.lang.Long]) {

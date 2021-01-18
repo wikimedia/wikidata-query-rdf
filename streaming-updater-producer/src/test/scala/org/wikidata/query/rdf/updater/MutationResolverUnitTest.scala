@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.updater
 
 import java.time.Instant
 
+import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.operators.{ProcessOperator, StreamMap}
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
@@ -18,12 +19,12 @@ trait MutationFixtures extends TestEventGenerator {
   val ingestionInstant: Instant = instant(5)
 }
 
-class DecideMutationOperationUnitTest extends FlatSpec with Matchers with MutationFixtures with BeforeAndAfterEach {
+class MutationResolverUnitTest extends FlatSpec with Matchers with MutationFixtures with BeforeAndAfterEach {
   var operator: KeyedOneInputStreamOperatorTestHarness[String, InputEvent, AllMutationOperation] = _
 
   override def beforeEach(): Unit = {
     operator = new KeyedOneInputStreamOperatorTestHarness[String, InputEvent, AllMutationOperation](
-      new StreamMap[InputEvent, AllMutationOperation](new DecideMutationOperation()), inputEventKeySelector, TypeInformation.of(classOf[String]))
+      new StreamMap[InputEvent, AllMutationOperation](new DecideMutationWrapperOperation()), inputEventKeySelector, TypeInformation.of(classOf[String]))
     operator.open()
   }
 
@@ -175,6 +176,10 @@ class DecideMutationOperationUnitTest extends FlatSpec with Matchers with Mutati
       ingestionInstant, UnmatchedUndelete, State(Some(2), CREATED)))
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
+
+  class DecideMutationWrapperOperation extends RichMapFunction[InputEvent, AllMutationOperation] with LastSeenRevState {
+    override def map(in: InputEvent): AllMutationOperation = new MutationResolver().map(in, entityState)
+  }
 }
 
 class RouteIgnoredMutationToSideOutputUnitTest extends FlatSpec with Matchers with MutationFixtures {
@@ -197,7 +202,7 @@ class RouteIgnoredMutationToSideOutputUnitTest extends FlatSpec with Matchers wi
       ingestionInstant, NewerRevisionSeen, State(Some(2), CREATED)))
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsAs decodeEvents(expectedOutput)
-    (decodeEvents(operator.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS).toArray()) should contain
+    (decodeEvents(operator.getSideOutput(MutationResolver.SPURIOUS_REV_EVENTS).toArray()) should contain
       theSameElementsAs decodeEvents(expectedSideOutput))
   }
 }

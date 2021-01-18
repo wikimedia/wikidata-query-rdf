@@ -13,13 +13,13 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
   private val LOG = LoggerFactory.getLogger(getClass)
 
   var bufferedEvents: ListState[InputEvent] = _
-  var decideMutationOperation: DecideMutationOperation = new DecideMutationOperation()
+  var decideMutationOperation: MutationResolver = new MutationResolver()
 
   override def processElement(value: InputEvent,
                               ctx: KeyedProcessFunction[String, InputEvent, AllMutationOperation]#Context,
                               out: Collector[AllMutationOperation]): Unit = {
     if (timeToKeep(value) < ctx.timerService().currentWatermark()) {
-      ctx.output(EventReorderingWindowFunction.LATE_EVENTS_SIDE_OUTPUT_TAG, value)
+      ctx.output(ReorderAndDecideMutationOperation.LATE_EVENTS_SIDE_OUTPUT_TAG, value)
     } else {
       if (shouldBufferEvent(value)) {
         bufferEvent(value, ctx)
@@ -106,7 +106,7 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
   }
 
   private def fireEvent(out: Collector[AllMutationOperation], e: InputEvent): Unit = {
-    out.collect(decideMutationOperation.map(e))
+    out.collect(decideMutationOperation.map(e, entityState))
   }
 
   def shouldBufferEvent(value: InputEvent): Boolean = {
@@ -131,14 +131,14 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
     bufferedEvents = getRuntimeContext.getListState(UpdaterStateConfiguration.newPartialReorderingStateDesc())
     // FIXME: this is ugly
     open(new EntityState(getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())))
-    decideMutationOperation.open(entityState)
   }
 }
 
 object ReorderAndDecideMutationOperation {
+  val LATE_EVENTS_SIDE_OUTPUT_TAG = new OutputTag[InputEvent]("late-events")
   def attach(stream: DataStream[InputEvent],
              delay: Int,
-             uuid: String = DecideMutationOperation.UID): DataStream[AllMutationOperation] = {
+             uuid: String = MutationResolver.UID): DataStream[AllMutationOperation] = {
     stream
       .keyBy(_.item)
       .process(new ReorderAndDecideMutationOperation(delay))

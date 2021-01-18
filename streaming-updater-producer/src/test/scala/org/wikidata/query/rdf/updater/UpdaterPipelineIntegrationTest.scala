@@ -21,8 +21,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     generateDiffParallelism = 2,
     generateDiffTimeout = Int.MaxValue,
     wikibaseRepoThreadPoolSize = 10,
-    outputOperatorNameAndUuid = "test-output-name",
-    optimizedReordering = true
+    outputOperatorNameAndUuid = "test-output-name"
   )
   "Updater job" should "work" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment

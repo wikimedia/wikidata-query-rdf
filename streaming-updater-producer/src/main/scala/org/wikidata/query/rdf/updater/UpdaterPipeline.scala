@@ -9,7 +9,6 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
-import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
 import org.wikidata.query.rdf.tool.rdf.Patch
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
@@ -104,19 +103,13 @@ object UpdaterPipeline {
       case x :: Nil => x
       case x :: rest => x.union(rest: _*)
     }
-    val (allMutationStream, lateEventsSideOutput): (DataStream[AllMutationOperation], DataStream[InputEvent]) = if (opts.optimizedReordering) {
+    val (allMutationStream, lateEventsSideOutput): (DataStream[AllMutationOperation], DataStream[InputEvent]) = {
       val stream = ReorderAndDecideMutationOperation.attach(incomingEventStream, opts.reorderingWindowLengthMs)
-      (stream, stream.getSideOutput(EventReorderingWindowFunction.LATE_EVENTS_SIDE_OUTPUT_TAG))
-    } else {
-      val reorderedStream = EventReorderingWindowFunction.attach(incomingEventStream,
-        Time.milliseconds(opts.reorderingWindowLengthMs), opts.reorderingOpParallelism)
-      val lateEventsSideOutput = reorderedStream.getSideOutput(EventReorderingWindowFunction.LATE_EVENTS_SIDE_OUTPUT_TAG)
-      (DecideMutationOperation.attach(reorderedStream), lateEventsSideOutput)
+      (stream, stream.getSideOutput(ReorderAndDecideMutationOperation.LATE_EVENTS_SIDE_OUTPUT_TAG))
     }
 
     val outputMutationStream: DataStream[MutationOperation] = rerouteIgnoredMutations(allMutationStream)
-
-    val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(DecideMutationOperation.SPURIOUS_REV_EVENTS)
+    val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(MutationResolver.SPURIOUS_REV_EVENTS)
 
     val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, outputMutationStream)
     val patchStream: DataStream[SuccessfulOp] = rerouteFailedOps(resolvedOpStream, opts)
