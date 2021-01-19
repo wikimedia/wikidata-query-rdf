@@ -103,13 +103,12 @@ object UpdaterPipeline {
       case x :: Nil => x
       case x :: rest => x.union(rest: _*)
     }
-    val (allMutationStream, lateEventsSideOutput): (DataStream[AllMutationOperation], DataStream[InputEvent]) = {
+    val (outputMutationStream, lateEventsSideOutput, spuriousEventsLate):
+      (DataStream[MutationOperation], DataStream[InputEvent], DataStream[IgnoredMutation]) = {
       val stream = ReorderAndDecideMutationOperation.attach(incomingEventStream, opts.reorderingWindowLengthMs)
-      (stream, stream.getSideOutput(ReorderAndDecideMutationOperation.LATE_EVENTS_SIDE_OUTPUT_TAG))
+      (stream, stream.getSideOutput(ReorderAndDecideMutationOperation.LATE_EVENTS_SIDE_OUTPUT_TAG),
+        stream.getSideOutput(ReorderAndDecideMutationOperation.SPURIOUS_REV_EVENTS))
     }
-
-    val outputMutationStream: DataStream[MutationOperation] = rerouteIgnoredMutations(allMutationStream)
-    val spuriousEventsLate: DataStream[IgnoredMutation] = outputMutationStream.getSideOutput(MutationResolver.SPURIOUS_REV_EVENTS)
 
     val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, outputMutationStream)
     val patchStream: DataStream[SuccessfulOp] = rerouteFailedOps(resolvedOpStream, opts)
@@ -174,13 +173,5 @@ object UpdaterPipeline {
       .name("GenerateEntityDiffPatchOperation")
       .uid("GenerateEntityDiffPatchOperation")
       .setParallelism(opts.generateDiffParallelism)
-  }
-
-  private def rerouteIgnoredMutations(allOutputMutationStream: DataStream[AllMutationOperation]): DataStream[MutationOperation] = {
-    val outputMutationStream: DataStream[MutationOperation] = allOutputMutationStream
-      .process(new RouteIgnoredMutationToSideOutput())
-      .name("RouteIgnoredMutationToSideOutput")
-      .uid("RouteIgnoredMutationToSideOutput")
-    outputMutationStream
   }
 }

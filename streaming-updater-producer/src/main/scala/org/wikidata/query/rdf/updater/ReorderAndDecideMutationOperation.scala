@@ -9,29 +9,30 @@ import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 
-class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction[String, InputEvent, AllMutationOperation] with LastSeenRevState {
+class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction[String, InputEvent, MutationOperation] with LastSeenRevState {
   private val LOG = LoggerFactory.getLogger(getClass)
 
   var bufferedEvents: ListState[InputEvent] = _
   var decideMutationOperation: MutationResolver = new MutationResolver()
 
+
   override def processElement(value: InputEvent,
-                              ctx: KeyedProcessFunction[String, InputEvent, AllMutationOperation]#Context,
-                              out: Collector[AllMutationOperation]): Unit = {
+                              ctx: KeyedProcessFunction[String, InputEvent, MutationOperation]#Context,
+                              out: Collector[MutationOperation]): Unit = {
     if (timeToKeep(value) < ctx.timerService().currentWatermark()) {
       ctx.output(ReorderAndDecideMutationOperation.LATE_EVENTS_SIDE_OUTPUT_TAG, value)
     } else {
       if (shouldBufferEvent(value)) {
         bufferEvent(value, ctx)
       } else {
-        fireEvent(out, value)
+        fireEvent(out, ctx, value)
       }
     }
   }
 
   override def onTimer(timestamp: Long,
-                       ctx: KeyedProcessFunction[String, InputEvent, AllMutationOperation]#OnTimerContext,
-                       out: Collector[AllMutationOperation]): Unit = {
+                       ctx: KeyedProcessFunction[String, InputEvent, MutationOperation]#OnTimerContext,
+                       out: Collector[MutationOperation]): Unit = {
     val allEvents: Iterable[InputEvent] = Option(bufferedEvents.get()) match {
       case None => List.empty
       case Some(iterable) => iterable.asScala.toList
@@ -48,7 +49,7 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
       if (toKeep.isEmpty) {
         bufferedEvents.clear()
       } else if (initialSize != toKeep.size) {
-        // We made progress, update the sate
+        // We made progress, update the state
         bufferedEvents.update(toKeep.asJava)
       } else {
         LOG.warn(s"Made no progress for ${ctx.getCurrentKey} at time $timestamp")
@@ -63,8 +64,8 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
    */
   private def fireBufferedEvents(sortedEvents: List[InputEvent],
                                  timestamp: Long,
-                                 ctx: KeyedProcessFunction[String, InputEvent, AllMutationOperation]#OnTimerContext,
-                                 out: Collector[AllMutationOperation]
+                                 ctx: KeyedProcessFunction[String, InputEvent, MutationOperation]#OnTimerContext,
+                                 out: Collector[MutationOperation]
                                 ): List[InputEvent] = {
     var lastElementToFire: Int = -1
 
@@ -77,7 +78,7 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
 
     // fire all elements collected until now that are ordered before the lastElementToFire
     sortedEvents.slice(0, lastElementToFire + 1).foreach(e => {
-      fireEvent(out, e)
+      fireEvent(out, ctx, e)
       deleteUnnecessaryTimer(timestamp, ctx, e)
     })
     val toKeep = sortedEvents.slice(lastElementToFire + 1, sortedEvents.size)
@@ -88,7 +89,7 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
    * Drop a timer if it's scheduled in the future.
    */
   private def deleteUnnecessaryTimer(timestamp: Long,
-                                     ctx: KeyedProcessFunction[String, InputEvent, AllMutationOperation]#OnTimerContext,
+                                     ctx: KeyedProcessFunction[String, InputEvent, MutationOperation]#Context,
                                      e: InputEvent
                                     ): Unit = {
     val ttl = timeToKeep(e)
@@ -105,8 +106,14 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
     e.eventTime.toEpochMilli + delay
   }
 
-  private def fireEvent(out: Collector[AllMutationOperation], e: InputEvent): Unit = {
-    out.collect(decideMutationOperation.map(e, entityState))
+  private def fireEvent(out: Collector[MutationOperation],
+                        ctx: KeyedProcessFunction[String, InputEvent, MutationOperation]#Context,
+                        e: InputEvent): Unit = {
+    val mutationOperation = decideMutationOperation.map(e, entityState)
+    mutationOperation match {
+      case e: IgnoredMutation => ctx.output(ReorderAndDecideMutationOperation.SPURIOUS_REV_EVENTS, e)
+      case x: MutationOperation => out.collect(x)
+    }
   }
 
   def shouldBufferEvent(value: InputEvent): Boolean = {
@@ -122,7 +129,7 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
     }
   }
 
-  def bufferEvent(value: InputEvent, ctx: KeyedProcessFunction[String, InputEvent, AllMutationOperation]#Context): Unit = {
+  def bufferEvent(value: InputEvent, ctx: KeyedProcessFunction[String, InputEvent, MutationOperation]#Context): Unit = {
     bufferedEvents.add(value)
     ctx.timerService().registerEventTimeTimer(ctx.timestamp() + delay)
   }
@@ -136,9 +143,12 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
 
 object ReorderAndDecideMutationOperation {
   val LATE_EVENTS_SIDE_OUTPUT_TAG = new OutputTag[InputEvent]("late-events")
+  val SPURIOUS_REV_EVENTS = new OutputTag[IgnoredMutation]("spurious-rev-events")
+  val UID: String = "DecideMutationOperation"
+
   def attach(stream: DataStream[InputEvent],
              delay: Int,
-             uuid: String = MutationResolver.UID): DataStream[AllMutationOperation] = {
+             uuid: String = UID): DataStream[MutationOperation] = {
     stream
       .keyBy(_.item)
       .process(new ReorderAndDecideMutationOperation(delay))

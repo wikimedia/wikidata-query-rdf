@@ -2,15 +2,15 @@ package org.wikidata.query.rdf.updater
 
 import java.time.Instant
 
+import scala.collection.mutable.ListBuffer
+
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.operators.{ProcessOperator, StreamMap}
+import org.apache.flink.streaming.api.operators.StreamMap
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
-import org.apache.flink.streaming.util.{KeyedOneInputStreamOperatorTestHarness, OneInputStreamOperatorTestHarness}
+import org.apache.flink.streaming.util.KeyedOneInputStreamOperatorTestHarness
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import org.wikidata.query.rdf.updater.EntityStatus._
-
-import scala.collection.mutable.ListBuffer
 
 trait MutationFixtures extends TestEventGenerator {
   val testDomain = "tested.domain"
@@ -179,30 +179,5 @@ class MutationResolverUnitTest extends FlatSpec with Matchers with MutationFixtu
 
   class DecideMutationWrapperOperation extends RichMapFunction[InputEvent, AllMutationOperation] with LastSeenRevState {
     override def map(in: InputEvent): AllMutationOperation = new MutationResolver().map(in, entityState)
-  }
-}
-
-class RouteIgnoredMutationToSideOutputUnitTest extends FlatSpec with Matchers with MutationFixtures {
-  "RouteIgnoredMutationToSideOutput process function" should "re-route spurious events to a side output" in {
-    val operator = new OneInputStreamOperatorTestHarness[AllMutationOperation, MutationOperation](
-      new ProcessOperator[AllMutationOperation, MutationOperation](new RouteIgnoredMutationToSideOutput()))
-    operator.open()
-    operator.processElement(newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1"))))
-    operator.processElement(newRecord(Diff("Q1", instant(2), 3, 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2"))))
-    operator.processElement(newRecord(IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, None, instant(0), newEventMeta(instant(3), testDomain, testStream, "3")),
-      ingestionInstant, NewerRevisionSeen, State(Some(2), CREATED))))
-
-    val expectedOutput = new ListBuffer[Any]
-    val expectedSideOutput = new ListBuffer[Any]
-    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventMeta(instant(1), testDomain, testStream, "1")))
-    expectedOutput += newRecord(Diff("Q1", instant(2), 3, 1, ingestionInstant, newEventMeta(instant(2), testDomain, testStream, "2")))
-    expectedSideOutput += newRecord(IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, None, instant(0), newEventMeta(instant(3), testDomain, testStream, "3")),
-      ingestionInstant, NewerRevisionSeen, State(Some(2), CREATED)))
-
-    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsAs decodeEvents(expectedOutput)
-    (decodeEvents(operator.getSideOutput(MutationResolver.SPURIOUS_REV_EVENTS).toArray()) should contain
-      theSameElementsAs decodeEvents(expectedSideOutput))
   }
 }

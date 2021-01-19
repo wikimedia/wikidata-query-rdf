@@ -1,7 +1,5 @@
 package org.wikidata.query.rdf.updater
 
-import java.lang
-import java.util
 import java.time.{Clock, Instant}
 
 import scala.collection.JavaConverters.setAsJavaSetConverter

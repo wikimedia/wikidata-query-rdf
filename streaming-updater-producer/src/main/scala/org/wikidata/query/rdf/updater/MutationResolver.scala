@@ -7,9 +7,6 @@ import org.apache.flink.api.common.state.ValueState
 import org.apache.flink.api.java.tuple.Tuple2
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.state.api.functions.KeyedStateBootstrapFunction
-import org.apache.flink.streaming.api.functions.ProcessFunction
-import org.apache.flink.streaming.api.scala._
-import org.apache.flink.util.Collector
 import org.wikidata.query.rdf.updater.EntityStatus.{CREATED, DELETED, UNDEFINED}
 
 sealed class MutationResolver extends Serializable {
@@ -67,37 +64,6 @@ sealed class MutationResolver extends Serializable {
   }
 }
 
-trait LastSeenRevState extends RichFunction {
-  var entityState: EntityState = _
-
-  override def open(parameters: Configuration): Unit = {
-    open(new EntityState(getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())))
-  }
-
-  def open(entityState: EntityState): Unit = {
-    this.entityState = entityState
-  }
-}
-
-sealed class RouteIgnoredMutationToSideOutput(ignoredEventTag: OutputTag[IgnoredMutation] = MutationResolver.SPURIOUS_REV_EVENTS)
-  extends ProcessFunction[AllMutationOperation, MutationOperation]
-{
-  override def processElement(i: AllMutationOperation,
-                              context: ProcessFunction[AllMutationOperation, MutationOperation]#Context,
-                              collector: Collector[MutationOperation]
-                             ): Unit = {
-    i match {
-      case e: IgnoredMutation => context.output(ignoredEventTag, e)
-      case x: MutationOperation => collector.collect(x)
-    }
-  }
-}
-
-object MutationResolver {
-  val UID: String = "DecideMutationOperation"
-  val SPURIOUS_REV_EVENTS = new OutputTag[IgnoredMutation]("spurious-rev-events")
-}
-
 class EntityState(revState: ValueState[java.lang.Long]) {
   def updatePageDelete(revision: Long): Unit = revState.update(-revision)
   def updateRevCreate(revision: Long): Unit = revState.update(revision)
@@ -116,4 +82,19 @@ class DecideMutationOperationBootstrap extends KeyedStateBootstrapFunction[Strin
     entityState.updateRevCreate(rev.f1)
   }
 }
+
+trait LastSeenRevState extends RichFunction {
+  var entityState: EntityState = _
+
+  override def open(parameters: Configuration): Unit = {
+    open(new EntityState(getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())))
+  }
+
+  def open(entityState: EntityState): Unit = {
+    this.entityState = entityState
+  }
+}
+
+
+
 
