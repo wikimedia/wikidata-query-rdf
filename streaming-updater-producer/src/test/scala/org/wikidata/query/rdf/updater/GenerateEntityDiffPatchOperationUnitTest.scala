@@ -4,6 +4,7 @@ import java.time.Instant
 import java.util.Collections.emptyList
 
 import scala.collection.JavaConverters._
+
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.operators.testutils.MockEnvironment
 import org.apache.flink.streaming.api.datastream.AsyncDataStream.OutputMode
@@ -17,6 +18,7 @@ import org.wikidata.query.rdf.test.StatementHelper.statements
 import org.wikidata.query.rdf.tool.change.events.EventsMeta
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
 import org.wikidata.query.rdf.tool.rdf.Patch
+import org.wikidata.query.rdf.updater.UpdaterPipeline.initializeKryoSerializers
 
 class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers with MockFactory with TestEventGenerator with BeforeAndAfter {
   val DOMAIN = "tested.domain"
@@ -48,7 +50,9 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     val operatorFactory = new AsyncWaitOperatorFactory[MutationOperation, ResolvedOp](operator, 5L, 10, OutputMode.ORDERED)
     val env = MockEnvironment.builder().build()
     genDiff.setRuntimeContext(new MockStreamingRuntimeContext(false, 1, 1))
-    env.getExecutionConfig.registerTypeWithKryoSerializer(classOf[Patch], classOf[RDFPatchSerializer])
+
+    initializeKryoSerializers(env.getExecutionConfig)
+
     // AsyncAwaitOperator will always throw Exception wrapping our own
     expectExternalFailure map { _ => classOf[Exception] } foreach env.setExpectedExternalFailureCause
     val harness = new OneInputStreamOperatorTestHarness[MutationOperation, ResolvedOp](operatorFactory, typeInfo.createSerializer(env.getExecutionConfig), env)

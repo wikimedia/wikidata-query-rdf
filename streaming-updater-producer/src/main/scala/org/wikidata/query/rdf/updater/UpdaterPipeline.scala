@@ -1,16 +1,19 @@
 package org.wikidata.query.rdf.updater
 
 import java.time.Clock
-import java.util.UUID
+import java.util
+import java.util.{Collections, UUID}
 
 import scala.concurrent.duration.MILLISECONDS
+
+import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.{MapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
-import org.wikidata.query.rdf.tool.rdf.Patch
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
 
 sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
@@ -97,7 +100,7 @@ object UpdaterPipeline {
             clock: Clock = Clock.systemUTC(),
             outputStreamName: String = "wdqs_streaming_updater")
            (implicit env: StreamExecutionEnvironment): UpdaterPipeline = {
-    env.getConfig.registerTypeWithKryoSerializer(classOf[Patch], classOf[RDFPatchSerializer])
+    initializeKryoSerializers(env.getConfig)
     val incomingEventStream: DataStream[InputEvent] = incomingStreams match {
       case Nil => throw new NoSuchElementException("at least one stream is needed")
       case x :: Nil => x
@@ -118,6 +121,11 @@ object UpdaterPipeline {
       rdfPatchChunkOp(patchStream, opts, uniqueIdGenerator, clock, outputStreamName), clock, opts)
 
     new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, failedOpsToSideOutput, tripleStream, updaterPipelineOptions = opts)
+  }
+
+  def initializeKryoSerializers(see: ExecutionConfig): Unit = {
+    val unmodColl: Class[_] = Collections.unmodifiableCollection(util.Arrays.asList("")).getClass
+    see.addDefaultKryoSerializer(unmodColl, classOf[UnmodifiableCollectionsSerializer])
   }
 
   private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp], opts: UpdaterPipelineGeneralConfig): DataStream[SuccessfulOp] = {
