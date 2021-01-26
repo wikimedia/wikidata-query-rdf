@@ -1,8 +1,7 @@
 package org.wikidata.query.rdf.updater
 
 import java.time.Clock
-import java.util
-import java.util.{Collections, UUID}
+import java.util.{Arrays, Collections, UUID}
 
 import scala.concurrent.duration.MILLISECONDS
 
@@ -101,11 +100,14 @@ object UpdaterPipeline {
             outputStreamName: String = "wdqs_streaming_updater")
            (implicit env: StreamExecutionEnvironment): UpdaterPipeline = {
     initializeKryoSerializers(env.getConfig)
-    val incomingEventStream: DataStream[InputEvent] = incomingStreams match {
-      case Nil => throw new NoSuchElementException("at least one stream is needed")
-      case x :: Nil => x
-      case x :: rest => x.union(rest: _*)
-    }
+    val incomingEventStream: KeyedStream[InputEvent, String] =
+      (incomingStreams match {
+        case Nil => throw new NoSuchElementException("at least one stream is needed")
+        case x :: Nil => x
+        case x :: rest => x.union(rest: _*)
+      }).keyBy(_.item)
+
+
     val (outputMutationStream, lateEventsSideOutput, spuriousEventsLate):
       (DataStream[MutationOperation], DataStream[InputEvent], DataStream[IgnoredMutation]) = {
       val stream = ReorderAndDecideMutationOperation.attach(incomingEventStream, opts.reorderingWindowLengthMs)
@@ -124,7 +126,7 @@ object UpdaterPipeline {
   }
 
   def initializeKryoSerializers(see: ExecutionConfig): Unit = {
-    val unmodColl: Class[_] = Collections.unmodifiableCollection(util.Arrays.asList("")).getClass
+    val unmodColl: Class[_] = Collections.unmodifiableCollection(Arrays.asList("")).getClass
     see.addDefaultKryoSerializer(unmodColl, classOf[UnmodifiableCollectionsSerializer])
   }
 
@@ -168,7 +170,7 @@ object UpdaterPipeline {
                                         wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
                                         outputMutationStream: DataStream[MutationOperation]
                                        ): DataStream[ResolvedOp] = {
-    val streamToResolve: KeyedStream[MutationOperation, String] = outputMutationStream.keyBy(_.item)
+    val streamToResolve: KeyedStream[MutationOperation, String] = new DataStreamUtils(outputMutationStream).reinterpretAsKeyedStream(_.item)
 
     val genDiffOperator: AsyncFunction[MutationOperation, ResolvedOp] = GenerateEntityDiffPatchOperation(
       domain = opts.hostname,

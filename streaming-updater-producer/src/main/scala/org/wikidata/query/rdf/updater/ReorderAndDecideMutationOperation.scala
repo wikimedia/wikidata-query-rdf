@@ -146,14 +146,13 @@ object ReorderAndDecideMutationOperation {
   val SPURIOUS_REV_EVENTS = new OutputTag[IgnoredMutation]("spurious-rev-events")
   val UID: String = "DecideMutationOperation"
 
-  def attach(stream: DataStream[InputEvent],
+  def attach(stream: KeyedStream[InputEvent, String],
              delay: Int,
              uuid: String = UID): DataStream[MutationOperation] = {
-    stream
-      .keyBy(_.item)
-      .process(new ReorderAndDecideMutationOperation(delay))
-      // make sure to use the same UUID used by the boostrap job
-      .uid(uuid)
-      .name("ReorderAndDecideMutationOperation")
+      stream
+        .process(new ReorderAndDecideMutationOperation(delay))
+        // make sure to use the same UUID used by the boostrap job
+        .uid(uuid)
+        .name("ReorderAndDecideMutationOperation")
   }
 }
