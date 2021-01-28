@@ -355,6 +355,10 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
                 if (!uris.isEntityNamespace(event.namespace())) {
                     continue;
                 }
+                if (!(event instanceof RevisionCreateEvent)) {
+                    log.info("Got non revision create event class:{}, domain:{}, t:{}, revision:{}",
+                            event.getClass().getSimpleName(), event.title(), event.domain(), event.revision());
+                }
                 // Now we have event that we want to process
                 foundSomething = true;
                 topicCounts.getAndIncrement(record.topic());
