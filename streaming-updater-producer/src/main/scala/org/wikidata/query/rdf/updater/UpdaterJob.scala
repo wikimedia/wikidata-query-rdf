@@ -64,6 +64,7 @@ object UpdaterJob {
     env.getConfig.setAutoWatermarkInterval(environmentOption.autoWMInterval)
     env.setBufferTimeout(environmentOption.networkBufferTimeout)
     environmentOption.latencyTrackingInterval.foreach(l => env.getConfig.setLatencyTrackingInterval(l))
+    env.setParallelism(environmentOption.parallelism)
     env
   }
 

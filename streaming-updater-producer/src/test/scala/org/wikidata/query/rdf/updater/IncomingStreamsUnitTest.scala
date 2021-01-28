@@ -17,7 +17,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
       DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-      uris, IncomingStreams.REV_CREATE_CONV, 1, 40000, 40000, Clock.systemUTC())
+      uris, IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC())
     stream.name should equal ("Filtered(my-topic == my-hostname)")
   }
 
@@ -25,16 +25,16 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
       UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic",
-        "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List(""), 3, 10, 10),
+        "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List(""), 10, 10),
       uris, Clock.systemUTC())
-    stream.map(_.parallelism).toSet should contain only 3
+    stream.map(_.parallelism).toSet should contain only 1
   }
 
   "IncomingStreams" should "create regular incoming streams when using no prefixes" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
       UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic",
-        "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List(""), 1, 10, 10),
+        "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List(""), 10, 10),
       uris, Clock.systemUTC()
     )
     stream.map(_.name) should contain only("Filtered(rev-create-topic == my-hostname)",
@@ -48,7 +48,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
       UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic",
-        "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List("cluster1.", "cluster2."), 1, 10, 10),
+        "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List("cluster1.", "cluster2."), 10, 10),
       uris, Clock.systemUTC())
     stream.map(_.name) should contain only(
       "Filtered(cluster1.rev-create-topic == my-hostname)",

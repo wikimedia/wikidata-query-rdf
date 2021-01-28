@@ -16,9 +16,6 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     hostname = DOMAIN,
     entityNamespaces = ENTITY_NAMESPACES,
     reorderingWindowLengthMs = REORDERING_WINDOW_LENGTH,
-    reorderingOpParallelism = None,
-    decideMutationOpParallelism = None,
-    generateDiffParallelism = 2,
     generateDiffTimeout = Int.MaxValue,
     wikibaseRepoThreadPoolSize = 10,
     outputOperatorNameAndUuid = "test-output-name"
@@ -35,10 +32,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       // Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
       URIS,
-      IncomingStreams.REV_CREATE_CONV, clock,
-      // Disable any parallelism for the input collection so that order of input events are kept intact
-      // (does not affect the ordering but ensure that we can detect the late event
-      Some(1), Some(1))
+      IncomingStreams.REV_CREATE_CONV, clock)
 
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
@@ -71,20 +65,14 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       // Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
       URIS,
-      IncomingStreams.REV_CREATE_CONV, clock,
-      // Disable any parallelism for the input collection so that order of input events are kept intact
-      // (does not affect the ordering but ensure that we can detect the late event
-      Some(1), Some(1))
+      IncomingStreams.REV_CREATE_CONV, clock)
 
   val pageDeleteSource: DataStream[InputEvent] = IncomingStreams.fromStream(env.fromCollection(pageDeleteEvents)
       .setParallelism(1)
       //       Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[PageDeleteEvent]()),
       URIS,
-      IncomingStreams.PAGE_DEL_CONV, clock,
-      // Disable any parallelism for the input collection so that order of input events are kept intact
-      // (does not affect the ordering but ensure that we can detect the late event
-      Some(1), Some(1))
+      IncomingStreams.PAGE_DEL_CONV, clock)
 
 
     //this needs to be evaluated before the lambda below because of serialization issues

@@ -24,9 +24,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     hostname = hostName,
     entityNamespaces = entityNamespaces,
     reorderingWindowLengthMs = params.getInt("reordering_window_length", 1 minute),
-    reorderingOpParallelism = optionalIntArg("reordering_parallelism"),
-    decideMutationOpParallelism = optionalIntArg("decide_mut_op_parallelism"),
-    generateDiffParallelism = params.getInt("generate_diff_parallelism", 2),
+
     generateDiffTimeout = params.getLong("generate_diff_timeout", 5.minutes.toMillis),
     wikibaseRepoThreadPoolSize = params.getInt("wikibase_repo_thread_pool_size", 30), // at most 60 concurrent requests to wikibase
     // T262020 and FLINK-11654 (might change to something more explicit on the KafkaProducer rather than reusing operator's name
@@ -40,7 +38,6 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     suppressedDeleteTopicName = getStringParam("suppressed_delete_topic"),
     topicPrefixes = params.get("topic_prefixes", "").split(",").toList,
     consumerGroup = params.get("consumer_group", "wdqs_streaming_updater"),
-    parallelism = params.getInt("consumer_parallelism", 1),
     maxLateness = params.getInt("max_lateness", 1 minute),
     idleness = params.getInt("input_idleness", 1 minute)
   )
@@ -60,7 +57,8 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     latencyTrackingInterval = optionalIntArg("latency_tracking_interval"),
     restartFailureRateDelay = Time.milliseconds(params.getInt("restart_failures_rate_delay", 10 seconds)),
     restartFailureRateInterval = Time.milliseconds(params.getInt("restart_failures_rate_interval", 30 minutes)),
-    restartFailureRateMaxPerInternal = params.getInt("restart_failures_rate_max_per_interval", 2)
+    restartFailureRateMaxPerInternal = params.getInt("restart_failures_rate_max_per_interval", 2),
+    parallelism = params.getInt("parallelism", 1)
   )
   val spuriousEventsDir: String = getStringParam("spurious_events_dir")
   val failedOpsDir: String = getStringParam("failed_ops_dir")
@@ -92,12 +90,8 @@ object UpdaterConfig {
 sealed case class UpdaterPipelineGeneralConfig(hostname: String,
                                                entityNamespaces: Set[Long],
                                                reorderingWindowLengthMs: Int,
-                                               reorderingOpParallelism: Option[Int],
-                                               decideMutationOpParallelism: Option[Int],
-                                               generateDiffParallelism: Int,
                                                generateDiffTimeout: Long,
                                                wikibaseRepoThreadPoolSize: Int,
-                                               outputParallelism: Int = 1,
                                                outputOperatorNameAndUuid: String
                                               )
 
@@ -108,7 +102,6 @@ sealed case class UpdaterPipelineInputEventStreamConfig(kafkaBrokers: String,
                                                         pageUndeleteTopicName: String,
                                                         suppressedDeleteTopicName: String,
                                                         topicPrefixes: List[String],
-                                                        parallelism: Int,
                                                         maxLateness: Int,
                                                         idleness: Int)
 
@@ -130,5 +123,6 @@ sealed case class UpdaterExecutionEnvironmentConfig(checkpointDir: String,
                                                     latencyTrackingInterval: Option[Int],
                                                     restartFailureRateDelay: Time,
                                                     restartFailureRateInterval: Time,
-                                                    restartFailureRateMaxPerInternal: Int
+                                                    restartFailureRateMaxPerInternal: Int,
+                                                    parallelism: Int
                                                    )

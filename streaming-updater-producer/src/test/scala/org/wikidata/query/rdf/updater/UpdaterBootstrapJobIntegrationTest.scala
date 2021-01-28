@@ -64,12 +64,9 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
       URIS,
       IncomingStreams.REV_CREATE_CONV,
-      clock,
-      // Disable any parallelism for the input collection so that order of input events are kept intact
-      // (does not affect the ordering but ensure that we can detect the late event
-      Some(1), Some(1))
+      clock)
 
-    val options = UpdaterPipelineGeneralConfig(DOMAIN, ENTITY_NAMESPACES, 60000, None, None, 2, Int.MaxValue, 10, 1, "test-output-name")
+    val options = UpdaterPipelineGeneralConfig(DOMAIN, ENTITY_NAMESPACES, 60000, Int.MaxValue, 10, "test-output-name")
     val graph = UpdaterPipeline.build(options, List(source), _ => repository, clock = clock)
       .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)), identityMapFunction(), None)
       .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)), identityMapFunction(), None)

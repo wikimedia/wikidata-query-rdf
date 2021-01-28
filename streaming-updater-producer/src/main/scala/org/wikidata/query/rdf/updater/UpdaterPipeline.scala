@@ -14,6 +14,7 @@ import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
+import org.wikidata.query.rdf.updater.UpdaterPipeline.OUTPUT_PARALLELISM
 
 sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
                              spuriousEventStream: DataStream[IgnoredMutation],
@@ -67,7 +68,7 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
     tripleEventStream.addSink(sink)
       .uid(updaterPipelineOptions.outputOperatorNameAndUuid)
       .name(updaterPipelineOptions.outputOperatorNameAndUuid)
-      .setParallelism(updaterPipelineOptions.outputParallelism)
+      .setParallelism(OUTPUT_PARALLELISM)
     this
   }
 }
@@ -93,6 +94,9 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
  *  output of the stream is a MutationDataChunk
  */
 object UpdaterPipeline {
+  // Enforce output parallelism of 1 ( to ensure proper ordering of the output patches
+  private val OUTPUT_PARALLELISM = 1
+
   def build(opts: UpdaterPipelineGeneralConfig, incomingStreams: List[DataStream[InputEvent]],
             wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
             uniqueIdGenerator: () => String = UUID.randomUUID().toString,
@@ -116,11 +120,11 @@ object UpdaterPipeline {
     }
 
     val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, outputMutationStream)
-    val patchStream: DataStream[SuccessfulOp] = rerouteFailedOps(resolvedOpStream, opts)
+    val patchStream: DataStream[SuccessfulOp] = rerouteFailedOps(resolvedOpStream)
     val failedOpsToSideOutput: DataStream[FailedOp] = patchStream.getSideOutput(RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
 
     val tripleStream: DataStream[MutationDataChunk] = measureLatency(
-      rdfPatchChunkOp(patchStream, opts, uniqueIdGenerator, clock, outputStreamName), clock, opts)
+      rdfPatchChunkOp(patchStream, opts, uniqueIdGenerator, clock, outputStreamName), clock)
 
     new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, failedOpsToSideOutput, tripleStream, updaterPipelineOptions = opts)
   }
@@ -130,12 +134,11 @@ object UpdaterPipeline {
     see.addDefaultKryoSerializer(unmodColl, classOf[UnmodifiableCollectionsSerializer])
   }
 
-  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp], opts: UpdaterPipelineGeneralConfig): DataStream[SuccessfulOp] = {
+  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp]): DataStream[SuccessfulOp] = {
     resolvedOpStream
       .process(new RouteFailedOpsToSideOutput())
       .name("RouteFailedOpsToSideOutput")
       .uid("RouteFailedOpsToSideOutput")
-      .setParallelism(opts.outputParallelism)
   }
 
   private def rdfPatchChunkOp(dataStream: DataStream[SuccessfulOp],
@@ -153,17 +156,17 @@ object UpdaterPipeline {
       ))
       .name("RDFPatchChunkOperation")
       .uid("RDFPatchChunkOperation")
-      .setParallelism(opts.outputParallelism)
+      .setParallelism(OUTPUT_PARALLELISM)
   }
 
+
+
   private def measureLatency(dataStream: DataStream[MutationDataChunk],
-                             clock: Clock,
-                             updaterPipelineOptions: UpdaterPipelineGeneralConfig
-                            ): DataStream[MutationDataChunk] = {
+                             clock: Clock): DataStream[MutationDataChunk] = {
     dataStream.map(MeasureEventProcessingLatencyOperation(clock))
       .name("MeasureEventProcessingLatencyOperation")
       .uid("MeasureEventProcessingLatencyOperation")
-      .setParallelism(updaterPipelineOptions.outputParallelism)
+      .setParallelism(OUTPUT_PARALLELISM)
   }
 
   private def resolveMutationOperations(opts: UpdaterPipelineGeneralConfig,
@@ -182,6 +185,5 @@ object UpdaterPipeline {
     AsyncDataStream.orderedWait(streamToResolve, genDiffOperator, opts.generateDiffTimeout, MILLISECONDS,  opts.wikibaseRepoThreadPoolSize * 2)
       .name("GenerateEntityDiffPatchOperation")
       .uid("GenerateEntityDiffPatchOperation")
-      .setParallelism(opts.generateDiffParallelism)
   }
 }
