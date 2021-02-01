@@ -1,18 +1,16 @@
 package org.wikidata.query.rdf.updater
 
 import java.time.Clock
-import java.util.{Arrays, Collections, UUID}
+import java.util.UUID
 
 import scala.concurrent.duration.MILLISECONDS
-
-import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.{MapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
+import org.wikidata.query.rdf.tool.rdf.Patch
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
 import org.wikidata.query.rdf.updater.UpdaterPipeline.OUTPUT_PARALLELISM
 
@@ -103,7 +101,6 @@ object UpdaterPipeline {
             clock: Clock = Clock.systemUTC(),
             outputStreamName: String = "wdqs_streaming_updater")
            (implicit env: StreamExecutionEnvironment): UpdaterPipeline = {
-    initializeKryoSerializers(env.getConfig)
     val incomingEventStream: KeyedStream[InputEvent, String] =
       (incomingStreams match {
         case Nil => throw new NoSuchElementException("at least one stream is needed")
@@ -112,6 +109,7 @@ object UpdaterPipeline {
       }).keyBy(_.item)
 
 
+    env.getConfig.registerTypeWithKryoSerializer(classOf[Patch], classOf[RDFPatchSerializer])
     val (outputMutationStream, lateEventsSideOutput, spuriousEventsLate):
       (DataStream[MutationOperation], DataStream[InputEvent], DataStream[IgnoredMutation]) = {
       val stream = ReorderAndDecideMutationOperation.attach(incomingEventStream, opts.reorderingWindowLengthMs)
@@ -127,11 +125,6 @@ object UpdaterPipeline {
       rdfPatchChunkOp(patchStream, opts, uniqueIdGenerator, clock, outputStreamName), clock)
 
     new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, failedOpsToSideOutput, tripleStream, updaterPipelineOptions = opts)
-  }
-
-  def initializeKryoSerializers(see: ExecutionConfig): Unit = {
-    val unmodColl: Class[_] = Collections.unmodifiableCollection(Arrays.asList("")).getClass
-    see.addDefaultKryoSerializer(unmodColl, classOf[UnmodifiableCollectionsSerializer])
   }
 
   private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp]): DataStream[SuccessfulOp] = {
