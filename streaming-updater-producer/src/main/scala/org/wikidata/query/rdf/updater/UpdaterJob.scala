@@ -62,6 +62,7 @@ object UpdaterJob {
     ))
     env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
     env.getConfig.setAutoWatermarkInterval(environmentOption.autoWMInterval)
+    env.getConfig.enableObjectReuse()
     env.setBufferTimeout(environmentOption.networkBufferTimeout)
     environmentOption.latencyTrackingInterval.foreach(l => env.getConfig.setLatencyTrackingInterval(l))
     env.setParallelism(environmentOption.parallelism)
