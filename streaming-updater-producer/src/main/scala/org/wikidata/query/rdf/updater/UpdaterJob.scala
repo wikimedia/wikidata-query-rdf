@@ -44,7 +44,7 @@ object UpdaterJob {
       .saveFailedOpsTo(prepareErrorTrackingFileSink(config.failedOpsDir, FailedOpEncoder.schema()),
         FailedOpEncoder)(new GenericRecordAvroTypeInfo(FailedOpEncoder.schema()))
       .saveTo(outputSink)
-      .execute("WDQS Streaming Updater POC")
+      .execute(generalConfig.jobName)
   }
 
   private def prepareEnv(environmentOption: UpdaterExecutionEnvironmentConfig): StreamExecutionEnvironment = {

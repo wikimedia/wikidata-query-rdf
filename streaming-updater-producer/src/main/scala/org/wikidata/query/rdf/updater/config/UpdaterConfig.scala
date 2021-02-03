@@ -13,7 +13,7 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(args)) {
   private val defaultEntityNs: String = Uris.DEFAULT_ENTITY_NAMESPACES.asScala.mkString(",")
   private val hostName: String = getStringParam("hostname")
-
+  val jobName: String = getStringParam("job_name")
   val inputKafkaBrokers: String = getStringParam("brokers")
   val outputKafkaBrokers: String = params.get("output_brokers", inputKafkaBrokers)
   val outputTopic: String = getStringParam("output_topic")
@@ -22,6 +22,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
 
   val generalConfig: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
     hostname = hostName,
+    jobName = jobName,
     entityNamespaces = entityNamespaces,
     reorderingWindowLengthMs = params.getInt("reordering_window_length", 1 minute),
 
@@ -88,6 +89,7 @@ object UpdaterConfig {
 }
 
 sealed case class UpdaterPipelineGeneralConfig(hostname: String,
+                                               jobName: String,
                                                entityNamespaces: Set[Long],
                                                reorderingWindowLengthMs: Int,
                                                generateDiffTimeout: Long,

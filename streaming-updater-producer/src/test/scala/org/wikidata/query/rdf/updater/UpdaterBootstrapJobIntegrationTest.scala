@@ -66,7 +66,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       IncomingStreams.REV_CREATE_CONV,
       clock)
 
-    val options = UpdaterPipelineGeneralConfig(DOMAIN, ENTITY_NAMESPACES, 60000, Int.MaxValue, 10, "test-output-name")
+    val options = UpdaterPipelineGeneralConfig(DOMAIN, "test updater job", ENTITY_NAMESPACES, 60000, Int.MaxValue, 10, "test-output-name")
     val graph = UpdaterPipeline.build(options, List(source), _ => repository, clock = clock)
       .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)), identityMapFunction(), None)
       .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)), identityMapFunction(), None)

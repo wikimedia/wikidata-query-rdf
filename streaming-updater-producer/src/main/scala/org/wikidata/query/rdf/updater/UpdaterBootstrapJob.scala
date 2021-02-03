@@ -17,7 +17,7 @@ object UpdaterBootstrapJob {
     env.setParallelism(settings.parallelism)
     newSavePoint(settings.revisionsFile, UpdaterStateConfiguration.newStateBackend(settings.checkpointDir), settings.parallelism)
       .write(settings.savepointDir)
-    env.execute("WDQS Updater Bootstrap Job")
+    env.execute(settings.jobName)
   }
 
   private def dataSet(dataSet: JavaDataSet[Tuple2[String, java.lang.Long]])

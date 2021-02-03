@@ -14,6 +14,7 @@ import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
 class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers {
   private val pipelineOptions: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
     hostname = DOMAIN,
+    jobName = "test updater job",
     entityNamespaces = ENTITY_NAMESPACES,
     reorderingWindowLengthMs = REORDERING_WINDOW_LENGTH,
     generateDiffTimeout = Int.MaxValue,
