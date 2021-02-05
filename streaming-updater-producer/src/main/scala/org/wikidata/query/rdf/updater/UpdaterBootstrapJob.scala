@@ -6,7 +6,7 @@ import org.apache.flink.api.java.{DataSet => JavaDataSet}
 import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.runtime.state.StateBackend
 import org.apache.flink.state.api._
-import org.wikidata.query.rdf.updater.config.BootstrapConfig
+import org.wikidata.query.rdf.updater.config.{BaseConfig, BootstrapConfig}
 
 object UpdaterBootstrapJob {
   def main(args: Array[String]): Unit = {
@@ -15,7 +15,7 @@ object UpdaterBootstrapJob {
     // match the parallelism of the stream operation when building the initial savepoint
     implicit val env = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(settings.parallelism)
-    newSavePoint(settings.revisionsFile, UpdaterStateConfiguration.newStateBackend(settings.checkpointDir), settings.parallelism)
+    newSavePoint(settings.revisionsFile, UpdaterStateConfiguration.newStateBackend(settings.checkpointDir))
       .write(settings.savepointDir)
     env.execute(settings.jobName)
   }
@@ -34,8 +34,8 @@ object UpdaterBootstrapJob {
       .types(classOf[String], classOf[java.lang.Long])
   }
 
-  def newSavePoint(revFile: String, stateBackend: StateBackend, parallelism: Int)(implicit env: ExecutionEnvironment): NewSavepoint = {
-    Savepoint.create(stateBackend, parallelism)
+  def newSavePoint(revFile: String, stateBackend: StateBackend)(implicit env: ExecutionEnvironment): NewSavepoint = {
+    Savepoint.create(stateBackend, BaseConfig.MAX_PARALLELISM)
       .withOperator(ReorderAndDecideMutationOperation.UID, dataSet(fromCsv(revFile)))
   }
 }

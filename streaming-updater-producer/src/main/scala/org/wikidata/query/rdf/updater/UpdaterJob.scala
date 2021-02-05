@@ -21,7 +21,7 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
-import org.wikidata.query.rdf.updater.config.{UpdaterConfig, UpdaterExecutionEnvironmentConfig, UpdaterPipelineOutputStreamConfig}
+import org.wikidata.query.rdf.updater.config.{BaseConfig, UpdaterConfig, UpdaterExecutionEnvironmentConfig, UpdaterPipelineOutputStreamConfig}
 
 object UpdaterJob {
   val DEFAULT_CLOCK: Clock = Clock.systemUTC()
@@ -49,6 +49,7 @@ object UpdaterJob {
 
   private def prepareEnv(environmentOption: UpdaterExecutionEnvironmentConfig): StreamExecutionEnvironment = {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+    env.setMaxParallelism(BaseConfig.MAX_PARALLELISM)
     env.setStateBackend(UpdaterStateConfiguration.newStateBackend(environmentOption.checkpointDir))
     env.enableCheckpointing(environmentOption.checkpointInterval, environmentOption.checkpointingMode)
     env.getCheckpointConfig.setCheckpointTimeout(environmentOption.checkpointTimeout)

@@ -19,6 +19,7 @@ class BaseConfig(protected implicit val params: ParameterTool) {
 }
 
 object BaseConfig {
+  val MAX_PARALLELISM: Int = 1024
   def params(argv: Array[String]): ParameterTool = {
     argv match {
       case Array(filePath) if Files.isReadable(Paths.get(filePath)) =>

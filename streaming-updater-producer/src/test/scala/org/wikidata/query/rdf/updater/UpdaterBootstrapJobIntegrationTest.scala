@@ -31,7 +31,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     env.setParallelism(PARALLELISM)
 
     val csvFile = this.getClass.getResource("/bootstrap_revisions.csv").toString
-    UpdaterBootstrapJob.newSavePoint(csvFile, UpdaterStateConfiguration.newStateBackend(checkPointDir.toURI.toString), PARALLELISM)
+    UpdaterBootstrapJob.newSavePoint(csvFile, UpdaterStateConfiguration.newStateBackend(checkPointDir.toURI.toString))
       .write(savePointDir.getAbsolutePath)
     env.execute("write savepoint")
     val metatadaFile = Paths.get(savePointDir.getAbsolutePath, "_metadata").toFile
@@ -58,9 +58,6 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     )
 
     val source: DataStream[InputEvent] = IncomingStreams.fromStream(streamingEnv.fromCollection(input)
-      // force 1 here so that we keep the sequence order and force Q1 rev 3 to be late
-      .setParallelism(1)
-      // Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
       URIS,
       IncomingStreams.REV_CREATE_CONV,
@@ -80,7 +77,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       instantNow, NewerRevisionSeen, State(Some(2), CREATED))
     //only change is the revision, lastmodified are identical
 
-    CollectSink.values map {_.operation} should contain theSameElementsInOrderAs Vector(
+    CollectSink.values map {_.operation} should contain theSameElementsAs Vector(
       Diff("Q1", instant(3), 3, 2, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
       Diff("Q2", instant(3), 8, 4, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID)),
       Diff("Q3", instant(3), 101013, 101010, instantNow, newEventMeta(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID))
