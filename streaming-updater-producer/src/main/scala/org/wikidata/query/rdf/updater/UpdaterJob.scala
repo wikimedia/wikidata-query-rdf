@@ -18,14 +18,17 @@ object UpdaterJob {
     val config = UpdaterConfig(args)
     val generalConfig = config.generalConfig
 
-    val outputStreams: OutputStreams = new OutputStreams(config.outputStreamConfig)
+    val outputStreamsBuilder: OutputStreamsBuilder = new OutputStreamsBuilder(config.outputStreamConfig)
     val uris: Uris = WikibaseRepository.Uris.fromString(s"https://${generalConfig.hostname}", generalConfig.entityNamespaces.map(long2Long).asJava)
     implicit val env: StreamExecutionEnvironment = prepareEnv(config.environmentConfig)
 
     val incomingStreams = IncomingStreams.buildIncomingStreams(config.inputEventStreamConfig, uris, DEFAULT_CLOCK)
-    UpdaterPipeline.build(generalConfig, incomingStreams, rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup))
-      .saveTo(outputStreams.pipelineSinks)
-      .execute(generalConfig.jobName)
+    UpdaterPipeline.configure(
+        opts = generalConfig,
+        incomingStreams = incomingStreams,
+        outputStreams = outputStreamsBuilder.build,
+        wikibaseRepositoryGenerator = rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup))
+    env.execute(generalConfig.jobName)
   }
 
   private def prepareEnv(environmentOption: UpdaterExecutionEnvironmentConfig): StreamExecutionEnvironment = {

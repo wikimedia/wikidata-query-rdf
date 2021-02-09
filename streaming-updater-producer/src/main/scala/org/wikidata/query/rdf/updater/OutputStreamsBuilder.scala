@@ -7,17 +7,25 @@ import java.util.function.Supplier
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 import org.apache.flink.api.common.time.Time
+import org.apache.flink.api.java.io.DiscardingOutputFormat
 import org.apache.flink.core.fs.Path
 import org.apache.flink.formats.parquet.avro.ParquetAvroWriters
 import org.apache.flink.streaming.api.CheckpointingMode
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.OnCheckpointRollingPolicy
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineOutputStreamConfig
 import org.wikimedia.eventutilities.core.event.{EventStreamConfig, JsonEventGenerator}
 
-class OutputStreams(outputStreamsConfig: UpdaterPipelineOutputStreamConfig) {
+case class OutputStreams(
+                          mutationSink: SinkFunction[MutationDataChunk],
+                          lateEventsSink: SinkFunction[InputEvent] = new DiscardingSink[InputEvent],
+                          spuriousEventsSink: SinkFunction[IgnoredMutation] = new DiscardingSink[IgnoredMutation],
+                          failedOpsSink: SinkFunction[FailedOp] = new DiscardingSink[FailedOp]
+                        )
+
+class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig) {
   private val eventStreamConfig: EventStreamConfig = EventStreamConfig.builder()
     .setEventStreamConfigLoader(outputStreamsConfig.eventStreamConfigEndpoint)
     .build()
@@ -52,8 +60,8 @@ class OutputStreams(outputStreamsConfig: UpdaterPipelineOutputStreamConfig) {
     }
   }
 
-  def pipelineSinks: (SinkFunction[MutationDataChunk], SinkFunction[InputEvent], SinkFunction[IgnoredMutation], SinkFunction[FailedOp]) = {
-    (mutationOutput, lateEventsOutput, spuriousEventsOutput, failedOpOutput)
+  def build: OutputStreams = {
+    OutputStreams(mutationOutput, lateEventsOutput, spuriousEventsOutput, failedOpOutput)
   }
 
   private def prepareSideOutputStream[E](stream: String, schema: String): SinkFunction[E] = {

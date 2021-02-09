@@ -38,13 +38,17 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
 
-    UpdaterPipeline.build(pipelineOptions,
-        List(revCreateSource), _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
+    UpdaterPipeline.configure(pipelineOptions,
+        List(revCreateSource),
+        OutputStreams(
+          new CollectSink[MutationDataChunk](CollectSink.values.append(_)),
+          new CollectSink[InputEvent](CollectSink.lateEvents.append(_)),
+          new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_))
+        ),
+        _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
         clock, OUTPUT_EVENT_STREAM_NAME)
-      .saveMutationsTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))
-      .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
-      .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))
-      .execute("test")
+
+    env.execute("test")
 
     CollectSink.lateEvents should contain only ignoredRevision
     CollectSink.spuriousRevEvents should contain theSameElementsAs ignoredMutations
@@ -79,13 +83,16 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
 
-    UpdaterPipeline.build(pipelineOptions,
-      List(revCreateSourceForDeleteTest, pageDeleteSource), _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
+    UpdaterPipeline.configure(pipelineOptions,
+      List(revCreateSourceForDeleteTest, pageDeleteSource),
+      OutputStreams(
+        new CollectSink[MutationDataChunk](CollectSink.values.append(_)),
+        new CollectSink[InputEvent](CollectSink.lateEvents.append(_)),
+        new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_))
+      ),
+      _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
       clock, OUTPUT_EVENT_STREAM_NAME)
-      .saveMutationsTo(new CollectSink[MutationDataChunk](CollectSink.values.append(_)))
-      .saveSpuriousEventsTo(new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_)))
-      .saveLateEventsTo(new CollectSink[InputEvent](CollectSink.lateEvents.append(_)))
-      .execute("test")
+    env.execute("test")
 
     val expected = expectedOperationsForPageDeleteTest
 

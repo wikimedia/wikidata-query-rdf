@@ -12,62 +12,6 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
 import org.wikidata.query.rdf.tool.rdf.Patch
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
-import org.wikidata.query.rdf.updater.UpdaterPipeline.OUTPUT_PARALLELISM
-
-sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
-                             spuriousEventStream: DataStream[IgnoredMutation],
-                             failedOpsStream: DataStream[FailedOp],
-                             tripleEventStream: DataStream[MutationDataChunk],
-                             updaterPipelineOptions: UpdaterPipelineGeneralConfig
-                            )
-                            (implicit env: StreamExecutionEnvironment)
-{
-  val defaultAppName = "WDQS Updater Stream Updater"
-
-  def execute(appName: String = defaultAppName): Unit = {
-    env.execute(appName)
-  }
-
-  def streamGraph(appName: String = defaultAppName): StreamGraph = {
-    env.getStreamGraph(appName)
-  }
-
-  def saveLateEventsTo(sink: SinkFunction[InputEvent]): UpdaterPipeline = {
-    lateEventStream.addSink(sink)
-      .uid("late-events-output")
-      .name("late-events-output")
-    this
-  }
-
-  def saveSpuriousEventsTo(sink: SinkFunction[IgnoredMutation]): UpdaterPipeline = {
-    spuriousEventStream.addSink(sink)
-      .uid("spurious-events-output")
-      .name("spurious-events-output")
-    this
-  }
-
-  def saveFailedOpsTo(sink: SinkFunction[FailedOp]): UpdaterPipeline = {
-    failedOpsStream.addSink(sink)
-      .uid("failed-events-output")
-      .name("failed-events-output")
-    this
-  }
-
-  def saveMutationsTo(sink: SinkFunction[MutationDataChunk]): UpdaterPipeline = {
-    tripleEventStream.addSink(sink)
-      .uid(updaterPipelineOptions.outputOperatorNameAndUuid)
-      .name(updaterPipelineOptions.outputOperatorNameAndUuid)
-      .setParallelism(OUTPUT_PARALLELISM)
-    this
-  }
-
-  def saveTo(sinks: (SinkFunction[MutationDataChunk], SinkFunction[InputEvent], SinkFunction[IgnoredMutation], SinkFunction[FailedOp])): UpdaterPipeline = {
-    saveMutationsTo(sinks._1)
-      .saveLateEventsTo(sinks._2)
-      .saveSpuriousEventsTo(sinks._3)
-      .saveFailedOpsTo(sinks._4)
-  }
-}
 
 /**
  * Current state
@@ -78,27 +22,29 @@ sealed class UpdaterPipeline(lateEventStream: DataStream[InputEvent],
  *
  * union of all streams
  *  => keyBy (used as a partitioner to reduce cardinality)
- *  => timeWindow(1min)
- *  => late events goes to LATE_EVENTS_SIDE_OUPUT_TAG
- *  => process(reorder the events within the window) see EventReordering
- *  => keyBy item
- *  => map(decide mutation ope) see DecideMutationOperation
- *  => process(remove spurious events) see RouteIgnoredMutationToSideOutput
- *  => map(fetch data from wikibase and diff) see GenerateEntityDiffPatchOperation
- *  => process(remove failed ops) see RouteFailedOpsToSideOutput
+ *  => process(partial reordering and decide mutation op) see ReorderAndDecideMutationOperation
+ *  |=> side output 1: late events
+ *  |=> side output 2: spurious events
+ *  => process(fetch data from wikibase and diff) see GenerateEntityDiffPatchOperation
+ *  |=> side output: failed ops
  *  => flatMap(split large patches into chunks) see RDFPatchChunkOperation
+ *  => measure latency
  *  output of the stream is a MutationDataChunk
  */
 object UpdaterPipeline {
   // Enforce output parallelism of 1 ( to ensure proper ordering of the output patches
   private val OUTPUT_PARALLELISM = 1
+  val defaultAppName = "WDQS Updater Stream Updater"
 
-  def build(opts: UpdaterPipelineGeneralConfig, incomingStreams: List[DataStream[InputEvent]],
-            wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
-            uniqueIdGenerator: () => String = UUID.randomUUID().toString,
-            clock: Clock = Clock.systemUTC(),
-            outputStreamName: String = "wdqs_streaming_updater")
-           (implicit env: StreamExecutionEnvironment): UpdaterPipeline = {
+  def configure(opts: UpdaterPipelineGeneralConfig,
+                incomingStreams: List[DataStream[InputEvent]],
+                outputStreams: OutputStreams,
+                wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
+                uniqueIdGenerator: () => String = UUID.randomUUID().toString,
+                clock: Clock = Clock.systemUTC(),
+                outputStreamName: String = "wdqs_streaming_updater"
+           )
+               (implicit env: StreamExecutionEnvironment): Unit = {
     val incomingEventStream: KeyedStream[InputEvent, String] =
       (incomingStreams match {
         case Nil => throw new NoSuchElementException("at least one stream is needed")
@@ -108,7 +54,7 @@ object UpdaterPipeline {
 
 
     env.getConfig.registerTypeWithKryoSerializer(classOf[Patch], classOf[RDFPatchSerializer])
-    val (outputMutationStream, lateEventsSideOutput, spuriousEventsLate):
+    val (outputMutationStream, lateEventsSideOutput, spuriousEventsSideOutput):
       (DataStream[MutationOperation], DataStream[InputEvent], DataStream[IgnoredMutation]) = {
       val stream = ReorderAndDecideMutationOperation.attach(incomingEventStream, opts.reorderingWindowLengthMs)
       (stream, stream.getSideOutput(ReorderAndDecideMutationOperation.LATE_EVENTS_SIDE_OUTPUT_TAG),
@@ -122,7 +68,31 @@ object UpdaterPipeline {
     val tripleStream: DataStream[MutationDataChunk] = measureLatency(
       rdfPatchChunkOp(patchStream, opts, uniqueIdGenerator, clock, outputStreamName), clock)
 
-    new UpdaterPipeline(lateEventsSideOutput, spuriousEventsLate, failedOpsToSideOutput, tripleStream, updaterPipelineOptions = opts)
+    attachSinks(opts, outputStreams, lateEventsSideOutput, spuriousEventsSideOutput, failedOpsToSideOutput, tripleStream)
+  }
+
+  private def attachSinks(opts: UpdaterPipelineGeneralConfig,
+                          outputStreams: OutputStreams,
+                          lateEventsSideOutput: DataStream[InputEvent],
+                          spuriousEventsSideOutput: DataStream[IgnoredMutation],
+                          failedOpsToSideOutput: DataStream[FailedOp],
+                          tripleStream: DataStream[MutationDataChunk]): Unit = {
+    lateEventsSideOutput.addSink(outputStreams.lateEventsSink)
+      .uid("late-events-output")
+      .name("late-events-output")
+
+    spuriousEventsSideOutput.addSink(outputStreams.spuriousEventsSink)
+      .uid("spurious-events-output")
+      .name("spurious-events-output")
+
+    failedOpsToSideOutput.addSink(outputStreams.failedOpsSink)
+      .uid("failed-events-output")
+      .name("failed-events-output")
+
+    tripleStream.addSink(outputStreams.mutationSink)
+      .uid(opts.outputOperatorNameAndUuid)
+      .name(opts.outputOperatorNameAndUuid)
+      .setParallelism(OUTPUT_PARALLELISM)
   }
 
   private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp]): DataStream[SuccessfulOp] = {
