@@ -15,7 +15,7 @@ class SparkUtilsUnitTest extends SparkSessionProvider with Matchers {
   }
 
   "when I want to read a table and a partition both" should "be specifiable" in {
-    val rows = SparkUtils.readTablePartition(s"$dbName.$tableName/year=2020,day=1,hour=0,month=07")
+    val rows = SparkUtils.readTablePartition(s"$dbName.$tableName/year=2020/day=1/hour=0/month=07")
       .select("data").take(2)
     rows.length shouldBe 1
     rows(0).getString(0) shouldBe "jul first at noon"
@@ -26,7 +26,7 @@ class SparkUtilsUnitTest extends SparkSessionProvider with Matchers {
       Row.fromSeq(Seq("jul second at noon event 1")),
       Row.fromSeq(Seq("jul second at noon event 2"))
     )), StructType(Seq(StructField("data", StringType, nullable = false))))
-    SparkUtils.insertIntoTablePartition(s"$dbName.$tableName/year=2020,day=02,month=07,hour=0000", df)
+    SparkUtils.insertIntoTablePartition(s"$dbName.$tableName/year=2020/day=02/month=07/hour=0000", df)
 
     val dfT = spark.read.table(s"$dbName.$tableName")
 
@@ -47,7 +47,7 @@ class SparkUtilsUnitTest extends SparkSessionProvider with Matchers {
       Row.fromSeq(Seq("jul second at noon event 3")),
       Row.fromSeq(Seq("jul second at noon event 4"))
     )), StructType(Seq(StructField("data", StringType, nullable = false))))
-    SparkUtils.insertIntoTablePartition(s"$dbName.$tableName/year=2020,day=2,month=07,hour=0", dfRewritten)
+    SparkUtils.insertIntoTablePartition(s"$dbName.$tableName/year=2020/day=2/month=07/hour=0", dfRewritten)
 
     val rowsRewritten = rowsDf.take(10)
 

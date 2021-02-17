@@ -58,7 +58,7 @@ object SparkUtils {
 
   private def applyPartitions[E](input: E, partitionSpec: String, func: (String, String, E) => E): E = {
     var df = input
-    partitionSpec.split(",") foreach {
+    partitionSpec.split("/") foreach {
       partitionRegex.findFirstMatchIn(_) match {
         case Some(m) =>
           df = func(m.group(1), m.group(2), df)
