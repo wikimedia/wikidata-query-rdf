@@ -31,18 +31,18 @@ object IncomingStreams {
   def buildIncomingStreams(ievops: UpdaterPipelineInputEventStreamConfig,
                            uris: Uris, clock: Clock)
                                   (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
-    ievops.topicPrefixes.flatMap(prefix => {
+    ievops.inputKafkaTopics.topicPrefixes.flatMap(prefix => {
       List(
-        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.revisionCreateTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
+        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.inputKafkaTopics.revisionCreateTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
           uris, IncomingStreams.REV_CREATE_CONV, ievops.maxLateness, ievops.idleness, clock),
-        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.pageDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
+        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.inputKafkaTopics.pageDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
           uris, IncomingStreams.PAGE_DEL_CONV, ievops.maxLateness, ievops.idleness, clock),
-        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.pageUndeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
+        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.inputKafkaTopics.pageUndeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[PageUndeleteEvent])),
           uris, IncomingStreams.PAGE_UNDEL_CONV, ievops.maxLateness, ievops.idleness, clock),
-        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.suppressedDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
+        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.inputKafkaTopics.suppressedDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
           DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
           uris, IncomingStreams.PAGE_DEL_CONV, ievops.maxLateness, ievops.idleness, clock)
       )
@@ -53,8 +53,7 @@ object IncomingStreams {
                                   conv: (E, Clock) => InputEvent,
                                   maxLatenessMs: Int, idlenessMs: Int, clock: Clock)
                                  (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
-
-    val nameAndUid = s"${kafkaProps.topic}"
+    val nameAndUid = operatorUUID(kafkaProps.topic)
     val kafkaStream = env
       .addSource(new FlinkKafkaConsumer[E](kafkaProps.topic, kafkaProps.schema, kafkaProps.asProperties()))(kafkaProps.schema.getProducedType)
       .setParallelism(INPUT_PARALLELISM)
@@ -63,6 +62,10 @@ object IncomingStreams {
       .name(nameAndUid)
       .setParallelism(INPUT_PARALLELISM)
     fromStream(kafkaStream, uris, conv, clock)
+  }
+
+  def operatorUUID[E <: ChangeEvent](topic: String): String = {
+    topic
   }
 
   private def watermarkStrategy[E <: ChangeEvent](maxLatenessMs: Int, idlenessMs: Int): WatermarkStrategy[E] = {

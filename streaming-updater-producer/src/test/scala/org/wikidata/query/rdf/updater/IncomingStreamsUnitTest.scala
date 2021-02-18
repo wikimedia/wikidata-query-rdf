@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, EventsMeta, PageDeleteEvent, PageUndeleteEvent, RevisionCreateEvent}
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
-import org.wikidata.query.rdf.updater.config.UpdaterPipelineInputEventStreamConfig
+import org.wikidata.query.rdf.updater.config.{InputKafkaTopics, UpdaterPipelineInputEventStreamConfig}
 
 class IncomingStreamsUnitTest extends FlatSpec with Matchers {
 
@@ -24,8 +24,14 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   "IncomingStreams" should "create regular incoming streams proper parallelism" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
-      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic",
-        "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List(""), 10, 10),
+      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1",
+        InputKafkaTopics(
+          revisionCreateTopicName = "rev-create-topic",
+          pageDeleteTopicName = "page-delete-topic",
+          pageUndeleteTopicName = "page-undelete-topic",
+          suppressedDeleteTopicName = "suppressed-delete-topic",
+          topicPrefixes = List("")),
+        10, 10),
       uris, Clock.systemUTC())
     stream.map(_.parallelism).toSet should contain only 1
   }
@@ -33,8 +39,14 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   "IncomingStreams" should "create regular incoming streams when using no prefixes" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
-      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic",
-        "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List(""), 10, 10),
+      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1",
+        InputKafkaTopics(
+          revisionCreateTopicName = "rev-create-topic",
+          pageDeleteTopicName = "page-delete-topic",
+          pageUndeleteTopicName = "page-undelete-topic",
+          suppressedDeleteTopicName = "suppressed-delete-topic",
+          topicPrefixes = List("")),
+        10, 10),
       uris, Clock.systemUTC()
     )
     stream.map(_.name) should contain only("Filtered(rev-create-topic == my-hostname)",
@@ -47,8 +59,14 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
   "IncomingStreams" should "create twice more incoming streams when using 2 prefixes" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
-      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1", "rev-create-topic",
-        "page-delete-topic", "page-undelete-topic", "suppressed-delete-topic", List("cluster1.", "cluster2."), 10, 10),
+      UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1",
+      InputKafkaTopics(
+          revisionCreateTopicName = "rev-create-topic",
+          pageDeleteTopicName = "page-delete-topic",
+          pageUndeleteTopicName = "page-undelete-topic",
+          suppressedDeleteTopicName = "suppressed-delete-topic",
+          topicPrefixes = List("cluster1.", "cluster2.")),
+        10, 10),
       uris, Clock.systemUTC())
     stream.map(_.name) should contain only(
       "Filtered(cluster1.rev-create-topic == my-hostname)",
@@ -125,6 +143,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     event.originalEventInfo.meta().domain() should equal("my-domain")
   }
 }
+
 
 sealed case class FakeEvent(domain: String, title: String, namespace: Long = 0) extends ChangeEvent {
   override def revision(): Long = ???

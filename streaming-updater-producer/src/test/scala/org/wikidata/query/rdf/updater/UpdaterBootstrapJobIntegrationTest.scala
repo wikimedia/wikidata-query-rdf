@@ -10,7 +10,7 @@ import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironm
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
 import org.wikidata.query.rdf.updater.EntityStatus.CREATED
-import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
+import org.wikidata.query.rdf.updater.config.{BootstrapConfig, UpdaterPipelineGeneralConfig}
 
 
 class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers with BeforeAndAfter {
@@ -26,12 +26,20 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
   }
 
   "a savepoint" should "created by loading a csv file with entity revisions" in {
-    implicit val env = ExecutionEnvironment.getExecutionEnvironment
+    implicit val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
     // configure your test environment
     env.setParallelism(PARALLELISM)
 
     val csvFile = this.getClass.getResource("/bootstrap_revisions.csv").toString
-    UpdaterBootstrapJob.newSavePoint(csvFile, UpdaterStateConfiguration.newStateBackend(checkPointDir.toURI.toString))
+
+    val config = BootstrapConfig(Seq[String](
+    "--job_name", "bootstrap",
+      "--checkpoint_dir", "file:///unused",
+      "--revisions_file", csvFile,
+      "--savepoint_dir", savePointDir.getAbsolutePath,
+      "--parallelism", String.valueOf(PARALLELISM)
+    ).toArray)
+    UpdaterBootstrapJob.newSavepoint(config)
       .write(savePointDir.getAbsolutePath)
     env.execute("write savepoint")
     val metatadaFile = Paths.get(savePointDir.getAbsolutePath, "_metadata").toFile
@@ -86,6 +94,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       Diff("Q3", instant(3), 101013, 101010, instantNow, newEventInfo(instant(3), DOMAIN, STREAM, ORIG_REQUEST_ID))
     )
   }
+
 
   after {
     FileUtils.forceDelete(savePointDir)

@@ -1,13 +1,11 @@
 package org.wikidata.query.rdf.updater.config
 
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
-
-import org.apache.flink.api.java.utils.ParameterTool
-import org.apache.flink.streaming.api.CheckpointingMode
-import scala.language.{implicitConversions, postfixOps}
 import scala.concurrent.duration._
+import scala.language.{implicitConversions, postfixOps}
 
 import org.apache.flink.api.common.time.Time
+import org.apache.flink.streaming.api.CheckpointingMode
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikimedia.eventutilities.core.event.WikimediaDefaults
 
@@ -34,11 +32,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
   )
 
   val inputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
-    revisionCreateTopicName = getStringParam("rev_create_topic"),
-    pageDeleteTopicName = getStringParam("page_delete_topic"),
-    pageUndeleteTopicName = getStringParam("page_undelete_topic"),
-    suppressedDeleteTopicName = getStringParam("suppressed_delete_topic"),
-    topicPrefixes = params.get("topic_prefixes", "").split(",").toList,
+    inputKafkaTopics = getInputKafkaTopics,
     consumerGroup = params.get("consumer_group", "wdqs_streaming_updater"),
     maxLateness = params.getInt("max_lateness", 1 minute),
     idleness = params.getInt("input_idleness", 1 minute)
@@ -84,22 +78,6 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     )
 
   implicit def finiteDuration2Int(fd: FiniteDuration): Int = fd.toMillis.intValue
-
-  private def optionalIntArg(paramName: String)(implicit params: ParameterTool): Option[Int] = {
-    if (params.has(paramName)) {
-      Some(params.getInt(paramName))
-    } else {
-      None
-    }
-  }
-
-  private def optionalStringArg(paramName: String)(implicit params: ParameterTool): Option[String] = {
-    if (params.has(paramName)) {
-      Some(params.get(paramName))
-    } else {
-      None
-    }
-  }
 }
 
 object UpdaterConfig {
@@ -117,11 +95,7 @@ sealed case class UpdaterPipelineGeneralConfig(hostname: String,
 
 sealed case class UpdaterPipelineInputEventStreamConfig(kafkaBrokers: String,
                                                         consumerGroup: String,
-                                                        revisionCreateTopicName: String,
-                                                        pageDeleteTopicName: String,
-                                                        pageUndeleteTopicName: String,
-                                                        suppressedDeleteTopicName: String,
-                                                        topicPrefixes: List[String],
+                                                        inputKafkaTopics: InputKafkaTopics,
                                                         maxLateness: Int,
                                                         idleness: Int)
 

@@ -58,13 +58,13 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     CollectSink.values map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
   }
 
-"Updater job" should "work with deletes" in {
+  "Updater job" should "work with deletes" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
 
     // configure your test environment
     env.setParallelism(PARALLELISM)
 
-  val revCreateSourceForDeleteTest: DataStream[InputEvent] = IncomingStreams.fromStream(env.fromCollection(revCreateEventsForPageDeleteTest)
+    val revCreateSourceForDeleteTest: DataStream[InputEvent] = IncomingStreams.fromStream(env.fromCollection(revCreateEventsForPageDeleteTest)
       // force 1 here so that we keep the sequence order and force Q1 rev 3 to be late
       .setParallelism(1)
       // Use punctuated WM instead of periodic in test
@@ -72,7 +72,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       URIS,
       IncomingStreams.REV_CREATE_CONV, clock)
 
-  val pageDeleteSource: DataStream[InputEvent] = IncomingStreams.fromStream(env.fromCollection(pageDeleteEvents)
+    val pageDeleteSource: DataStream[InputEvent] = IncomingStreams.fromStream(env.fromCollection(pageDeleteEvents)
       .setParallelism(1)
       //       Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[PageDeleteEvent]()),

@@ -16,7 +16,39 @@ class BaseConfig(protected implicit val params: ParameterTool) {
       case Some(value) => value;
       case None => throw new IllegalArgumentException("missing param " + key)
     }
+
+  def getInputKafkaTopics: InputKafkaTopics = {
+    InputKafkaTopics(
+      revisionCreateTopicName = getStringParam("rev_create_topic"),
+      pageDeleteTopicName = getStringParam("page_delete_topic"),
+      pageUndeleteTopicName = getStringParam("page_undelete_topic"),
+      suppressedDeleteTopicName = getStringParam("suppressed_delete_topic"),
+      topicPrefixes = params.get("topic_prefixes", "").split(",").toList
+    )
+  }
+
+  def optionalIntArg(paramName: String)(implicit params: ParameterTool): Option[Int] = {
+    if (params.has(paramName)) {
+      Some(params.getInt(paramName))
+    } else {
+      None
+    }
+  }
+
+  def optionalStringArg(paramName: String)(implicit params: ParameterTool): Option[String] = {
+    if (params.has(paramName)) {
+      Some(params.get(paramName))
+    } else {
+      None
+    }
+  }
 }
+
+sealed case class InputKafkaTopics(revisionCreateTopicName: String,
+                                   pageDeleteTopicName: String,
+                                   pageUndeleteTopicName: String,
+                                   suppressedDeleteTopicName: String,
+                                   topicPrefixes: List[String])
 
 object BaseConfig {
   val MAX_PARALLELISM: Int = 1024
@@ -29,5 +61,3 @@ object BaseConfig {
     }
   }
 }
-
-
