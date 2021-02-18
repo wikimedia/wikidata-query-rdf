@@ -44,6 +44,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
@@ -239,7 +240,7 @@ public class WikibaseRepository implements Closeable {
         this.rdfFetchTimer = metricRegistry.timer("rdf-fetch-timer");
         this.entityFetchTimer = metricRegistry.timer("entity-fetch-timer");
         this.constraintFetchTimer = metricRegistry.timer("constraint-fetch-timer");
-        connectionManager = createConnectionManager(metricRegistry);
+        connectionManager = createConnectionManager(metricRegistry, requestTimeout);
         client = createHttpClient(connectionManager);
         this.streamDumper = streamDumper;
         this.revisionCutoff = revisionCutoff;
@@ -548,12 +549,14 @@ public class WikibaseRepository implements Closeable {
         return System.getProperty("http.userAgent", "Wikidata Query Service Updater Bot");
     }
 
-    private static InstrumentedHttpClientConnectionManager createConnectionManager(MetricRegistry registry) {
+    private static InstrumentedHttpClientConnectionManager createConnectionManager(MetricRegistry registry, int soTimeout) {
         InstrumentedHttpClientConnectionManager connectionManager = new InstrumentedHttpClientConnectionManager(registry);
         connectionManager.setDefaultMaxPerRoute(100);
         connectionManager.setMaxTotal(100);
         IdleConnectionEvictor connectionEvictor = new IdleConnectionEvictor(connectionManager, 1L, SECONDS);
         connectionEvictor.start();
+        // workaround issue https://issues.apache.org/jira/browse/HTTPCLIENT-1478 when using a proxy (not fixed in 4.4)
+        connectionManager.setDefaultSocketConfig(SocketConfig.copy(SocketConfig.DEFAULT).setSoTimeout(soTimeout).build());
         return connectionManager;
     }
 
