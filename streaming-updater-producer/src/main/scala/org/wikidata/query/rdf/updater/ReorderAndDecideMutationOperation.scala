@@ -33,10 +33,7 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
   override def onTimer(timestamp: Long,
                        ctx: KeyedProcessFunction[String, InputEvent, MutationOperation]#OnTimerContext,
                        out: Collector[MutationOperation]): Unit = {
-    val allEvents: Iterable[InputEvent] = Option(bufferedEvents.get()) match {
-      case None => List.empty
-      case Some(iterable) => iterable.asScala.toList
-    }
+    val allEvents: Iterable[InputEvent] = bufferedEvents.get().asScala.toList
     if (allEvents.isEmpty) {
       LOG.warn("Received spurious timer on {} at {}", ctx.getCurrentKey, timestamp)
     } else {
@@ -122,7 +119,7 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
       case RevCreate(_, _, toRevision, Some(parentRevision), _, _) =>
         state match {
           case State(Some(lastRevision), EntityStatus.CREATED) if lastRevision >= toRevision => false
-          case State(Some(lastRevision), EntityStatus.CREATED) if lastRevision == parentRevision && Option(bufferedEvents.get()).isEmpty => false
+          case State(Some(lastRevision), EntityStatus.CREATED) if lastRevision == parentRevision => bufferedEvents.get().iterator().hasNext
           case _ => true
         }
       case _ => true
@@ -131,7 +128,7 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
 
   def bufferEvent(value: InputEvent, ctx: KeyedProcessFunction[String, InputEvent, MutationOperation]#Context): Unit = {
     bufferedEvents.add(value)
-    ctx.timerService().registerEventTimeTimer(ctx.timestamp() + delay)
+    ctx.timerService().registerEventTimeTimer(timeToKeep(value))
   }
 
   override def open(parameters: Configuration): Unit = {

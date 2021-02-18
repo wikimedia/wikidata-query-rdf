@@ -47,8 +47,13 @@ case class GenerateEntityDiffPatchOperation(
   lazy val scheme: UrisScheme = UrisSchemeFactory.forHost(domain)
   lazy val diff: EntityDiff = EntityDiff.withWikibaseSharedElements(scheme)
 
-  implicit lazy val executionContext: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(poolSize,
-    new ThreadFactoryBuilder().setNameFormat("GenerateEntityDiffPatchOperation-fetcher-%d").build()))
+  implicit lazy val executionContext: ExecutionContext = buildExecContext
+
+  private def buildExecContext = {
+    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(poolSize,
+      new ThreadFactoryBuilder().setNameFormat("GenerateEntityDiffPatchOperation-fetcher-%d-" + getRuntimeContext.getIndexOfThisSubtask).build()))
+  }
+
   lazy val mungeOperation: (String, util.Collection[Statement]) => Long = mungeOperationProvider.apply(scheme)
 
   override def asyncInvoke(op: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = {
