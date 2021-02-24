@@ -75,7 +75,7 @@
 
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikidata/query/rdf</developerConnection>
 
-        <flink.version>1.12.0</flink.version>
+        <flink.version>1.12.1</flink.version>
         <hadoop.version>2.6.0-cdh5.15.0</hadoop.version>
         <!-- matching version used by Blazegraph here -->
         <jackson.version>2.6.7</jackson.version>
