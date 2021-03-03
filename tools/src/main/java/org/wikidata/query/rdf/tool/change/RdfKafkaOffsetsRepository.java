@@ -62,7 +62,7 @@ public class RdfKafkaOffsetsRepository implements KafkaOffsetsRepository {
                             String[] parts = e.getKey().split(":", 2);
                             return new TopicPartition(parts[0], Integer.parseInt(parts[1]));
                         },
-                        e -> new OffsetAndTimestamp(Integer.parseInt(e.getValue()), firstStartTime.toEpochMilli())
+                        e -> new OffsetAndTimestamp(Long.parseLong(e.getValue()), firstStartTime.toEpochMilli())
                 ));
     }
 

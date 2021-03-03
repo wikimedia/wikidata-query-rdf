@@ -39,7 +39,7 @@ public class RdfKafkaOffsetsRepositoryUnitTest {
     private final Map<TopicPartition, OffsetAndMetadata> offsets = ImmutableMap.of(
             new TopicPartition("topic-1", 2), new OffsetAndMetadata(3L),
             new TopicPartition("topic-4", 5), new OffsetAndMetadata(6L),
-            new TopicPartition("topic-7", 8), new OffsetAndMetadata(9L)
+            new TopicPartition("topic-7", 8), new OffsetAndMetadata(2149809252L)
     );
 
     @Before
@@ -71,7 +71,7 @@ public class RdfKafkaOffsetsRepositoryUnitTest {
                 .thenReturn(ImmutableSetMultimap.of(
                         "topic-1:2", "3",
                         "topic-4:5", "6",
-                        "topic-7:8", "9"
+                        "topic-7:8", "2149809252"
                 ));
 
         Map<TopicPartition, OffsetAndTimestamp> loadedOffsets = repository.load(startTime);
@@ -87,7 +87,7 @@ public class RdfKafkaOffsetsRepositoryUnitTest {
                 )
                 .containsEntry(
                         new TopicPartition("topic-7", 8),
-                        new OffsetAndTimestamp(9, startTimestamp)
+                        new OffsetAndTimestamp(2149809252L, startTimestamp)
                 );
     }
 
@@ -115,7 +115,7 @@ public class RdfKafkaOffsetsRepositoryUnitTest {
                         "INSERT DATA {",
                         "  <https://acme.test> wikibase:kafka ( \"topic-1:2\" 3 ) .",
                         "<https://acme.test> wikibase:kafka ( \"topic-4:5\" 6 ) .",
-                        "<https://acme.test> wikibase:kafka ( \"topic-7:8\" 9 ) .",
+                        "<https://acme.test> wikibase:kafka ( \"topic-7:8\" 2149809252 ) .",
                         "}"
                 );
     }
