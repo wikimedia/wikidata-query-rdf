@@ -65,7 +65,7 @@ public class KafkaStreamConsumerMetricsListenerUnitTest {
 
         MetricRegistry registry = new MetricRegistry();
         KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 1,
-                new KafkaStreamConsumerMetricsListener(registry, fixedClock));
+                new KafkaStreamConsumerMetricsListener(registry, fixedClock), 250);
         streamConsumer.poll(Duration.ofMillis(9));
         Gauge<Long> lag = registry.getGauges().get("kafka-stream-consumer-lag");
         Counter offered = registry.getCounters().get("kafka-stream-consumer-triples-offered");

@@ -32,6 +32,9 @@ public interface StreamingUpdateOptions extends OptionsUtils.BasicOptions {
     @Option(longName = "metricDomain", defaultValue = "wdqs-streaming-updater", description = "JMX metrics domain")
     String metricDomain();
 
+    @Option(defaultValue = "250", description = "Ideal number of input messages to buffer")
+    int bufferedInputMessages();
+
     static URI sparqlUri(StreamingUpdateOptions options) {
         URI sparqlUri;
         try {

@@ -34,12 +34,12 @@ import org.wikidata.query.rdf.updater.RDFChunkDeserializer;
 
 @NotThreadSafe
 public class KafkaStreamConsumer implements StreamConsumer {
-    static final int SOFT_BUFFER_CAP = 1000;
     private static final Logger LOG = LoggerFactory.getLogger(KafkaStreamConsumer.class);
     private final Consumer<String, MutationEventData> consumer;
     private final TopicPartition topicPartition;
-    private final LinkedHashSet<ConsumerRecord<String, MutationEventData>> buffer = new LinkedHashSet<>(SOFT_BUFFER_CAP);
+    private final LinkedHashSet<ConsumerRecord<String, MutationEventData>> buffer;
     private final RDFChunkDeserializer rdfDeser;
+    private final int bufferedInputMessages;
     private final int preferredBatchLength;
     private final KafkaStreamConsumerMetricsListener metrics;
 
@@ -65,14 +65,14 @@ public class KafkaStreamConsumer implements StreamConsumer {
 
     public static KafkaStreamConsumer build(String brokers, String topic, int partition, String consumerId, int maxBatchLength, RDFChunkDeserializer deser,
                                             @Nullable BiConsumer<Consumer<String, MutationEventData>, TopicPartition> offsetReset,
-                                            KafkaStreamConsumerMetricsListener metrics) {
+                                            KafkaStreamConsumerMetricsListener metrics, int bufferedInputMessages) {
         Map<String, Object> props = new HashMap<>();
         props.put("bootstrap.servers", brokers);
         props.put("group.id", consumerId);
         props.put("max.poll.interval.ms", "600000");
         props.put("enable.auto.commit", "false");
         props.put("isolation.level", "read_committed");
-        props.put("max.poll.records", SOFT_BUFFER_CAP);
+        props.put("max.poll.records", bufferedInputMessages);
         if (offsetReset == null) {
             props.put("auto.offset.reset", "earliest");
         } else {
@@ -95,19 +95,21 @@ public class KafkaStreamConsumer implements StreamConsumer {
             }
             offsetReset.accept(consumer, topicPartition);
         }
-        return new KafkaStreamConsumer(consumer, topicPartition, deser, maxBatchLength, metrics);
+        return new KafkaStreamConsumer(consumer, topicPartition, deser, maxBatchLength, metrics, bufferedInputMessages);
     }
 
     public KafkaStreamConsumer(KafkaConsumer<String, MutationEventData> consumer, TopicPartition topicPartition,
-                               RDFChunkDeserializer rdfDeser, int preferredBatchLength, KafkaStreamConsumerMetricsListener metrics) {
+                               RDFChunkDeserializer rdfDeser, int preferredBatchLength, KafkaStreamConsumerMetricsListener metrics, int bufferedInputMessages) {
         this.consumer = consumer;
         this.topicPartition = topicPartition;
         this.rdfDeser = rdfDeser;
         if (preferredBatchLength <= 0) {
             throw new IllegalArgumentException("preferredBatchLength must be strictly positive: " + preferredBatchLength + " given");
         }
-        this.metrics = metrics;
         this.preferredBatchLength = preferredBatchLength;
+        this.metrics = metrics;
+        this.bufferedInputMessages = bufferedInputMessages;
+        buffer = new LinkedHashSet<>(bufferedInputMessages);
     }
 
     public Batch poll(Duration timeout) {
@@ -118,13 +120,13 @@ public class KafkaStreamConsumer implements StreamConsumer {
         ConsumerRecord<String, MutationEventData> lastRecord = null;
         long st = System.nanoTime();
         while (!timeout.isNegative() && accumulator.weight() < preferredBatchLength) {
-            if (buffer.size() < SOFT_BUFFER_CAP) {
+            if (buffer.size() < bufferedInputMessages) {
                 ConsumerRecords<String, MutationEventData> records = consumer.poll(timeout);
                 timeout = timeout.minusNanos(System.nanoTime() - st);
                 records.forEach(buffer::add);
             }
             // Accept partial messages if our buffer is already full
-            List<ConsumerRecord<String, MutationEventData>> entityChunks = reassembleMessage(buffer, buffer.size() >= SOFT_BUFFER_CAP);
+            List<ConsumerRecord<String, MutationEventData>> entityChunks = reassembleMessage(buffer, buffer.size() >= bufferedInputMessages);
             if (entityChunks.isEmpty()) {
                 continue;
             }

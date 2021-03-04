@@ -75,7 +75,8 @@ public final class StreamingUpdate {
                 options.batchSize(),
                 deser,
                 parseInitialOffset(options),
-                KafkaStreamConsumerMetricsListener.forRegistry(metrics));
+                KafkaStreamConsumerMetricsListener.forRegistry(metrics),
+                options.bufferedInputMessages());
 
         HttpClient httpClient = buildHttpClient(getHttpProxyHost(), getHttpProxyPort());
         Retryer<ContentResponse> retryer = buildHttpClientRetryer();
