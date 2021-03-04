@@ -1,22 +1,18 @@
 package org.wikidata.query.rdf.updater
 
-import java.time.{Clock, Instant}
 import java.util.Properties
-import java.util.function.Supplier
 
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 import org.apache.flink.api.common.time.Time
-import org.apache.flink.api.java.io.DiscardingOutputFormat
 import org.apache.flink.core.fs.Path
 import org.apache.flink.formats.parquet.avro.ParquetAvroWriters
 import org.apache.flink.streaming.api.CheckpointingMode
-import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.OnCheckpointRollingPolicy
+import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineOutputStreamConfig
-import org.wikimedia.eventutilities.core.event.{EventStreamConfig, JsonEventGenerator}
 
 case class OutputStreams(
                           mutationSink: SinkFunction[MutationDataChunk],
@@ -26,19 +22,6 @@ case class OutputStreams(
                         )
 
 class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig) {
-  private val eventStreamConfig: EventStreamConfig = EventStreamConfig.builder()
-    .setEventStreamConfigLoader(outputStreamsConfig.eventStreamConfigEndpoint)
-    .build()
-  private val clock = new Supplier[Instant] {
-    private val utcClock = Clock.systemUTC()
-    override def get(): Instant = utcClock.instant()
-  }
-  private val jsonEventGenerator: JsonEventGenerator = JsonEventGenerator.builder()
-    .eventStreamConfig(eventStreamConfig)
-    .ingestionTimeClock(clock)
-    .build()
-  private val jsonEncoders = new JsonEncoders(jsonEventGenerator, outputStreamsConfig.sideOutputsDomain)
-
   def lateEventsOutput: SinkFunction[InputEvent] = {
     outputStreamsConfig.lateEventOutputDir match {
       case Some(dir) => wrapGenericRecordSinkFunction(prepareErrorTrackingFileSink(dir, InputEventEncoder.schema()), InputEventEncoder.map)
@@ -68,7 +51,10 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
     val producerConfig = new Properties()
     producerConfig.setProperty("bootstrap.servers", outputStreamsConfig.sideOutputsKafkaBrokers.getOrElse(outputStreamsConfig.kafkaBrokers))
     val topic = outputStreamsConfig.outputTopicPrefix.getOrElse("") + stream
-    new FlinkKafkaProducer[E](topic, jsonEncoders.getSerializationSchema[E](topic, stream, schema, clock),
+    new FlinkKafkaProducer[E](
+      topic,
+      new SideOutputSerializationSchema[E](None, topic, stream, schema, outputStreamsConfig.sideOutputsDomain,
+        outputStreamsConfig.eventStreamConfigEndpoint),
       producerConfig,
       // force at least once semantic (WMF event platform does not seem to support kafka transactions yet)
       FlinkKafkaProducer.Semantic.AT_LEAST_ONCE)

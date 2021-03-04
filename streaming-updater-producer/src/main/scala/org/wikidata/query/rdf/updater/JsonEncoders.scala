@@ -1,17 +1,13 @@
 package org.wikidata.query.rdf.updater
 
-import java.lang
-import java.time.Instant
-import java.util.function.{Consumer, Supplier}
+import java.util.function.Consumer
 
 import com.fasterxml.jackson.databind.node.ObjectNode
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
-import org.apache.kafka.clients.producer.ProducerRecord
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException.Type
 import org.wikimedia.eventutilities.core.event.JsonEventGenerator
 
-class JsonEncoders(jsonEventGenerator: JsonEventGenerator, sideOutputDomain: String) {
+class JsonEncoders(sideOutputDomain: String) {
   def lapsedActionEvent(inputEvent: InputEvent): Consumer[ObjectNode] = {
     new Consumer[ObjectNode] {
       override def accept(root: ObjectNode): Unit = {
@@ -84,22 +80,6 @@ class JsonEncoders(jsonEventGenerator: JsonEventGenerator, sideOutputDomain: Str
     parentRevision.foreach(r => objectNode.put("parent_revision_id", r))
   }
 
-  def getSerializationSchema[E](topic: String, stream: String, schema: String, recordTimeClock: Supplier[Instant]): KafkaSerializationSchema[E] = {
-    new KafkaSerializationSchema[E] {
-      override def serialize(element: E, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
-        val recordTime: Instant = recordTimeClock.get()
-        val eventCreator: Consumer[ObjectNode] = element match {
-          case e: InputEvent => lapsedActionEvent(e)
-          case e: FailedOp => fetchFailureEvent(e)
-          case e: IgnoredMutation => stateInconsistencyEvent(e)
-          case _ => throw new IllegalArgumentException("Unknown input type [" + element.getClass + "]")
-        }
-        val jsonEvent: ObjectNode = jsonEventGenerator.generateEvent(stream, schema, eventCreator, recordTime)
-        val eventData: Array[Byte] = jsonEventGenerator.serializeAsBytes(jsonEvent)
-        new ProducerRecord[Array[Byte], Array[Byte]](topic, null, recordTime.toEpochMilli, null, eventData) // scalastyle:ignore null
-      }
-    }
-  }
 }
 
 object JsonEncoders {
