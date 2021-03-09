@@ -9,6 +9,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
@@ -76,7 +78,8 @@ public final class StreamingUpdate {
                 deser,
                 parseInitialOffset(options),
                 KafkaStreamConsumerMetricsListener.forRegistry(metrics),
-                options.bufferedInputMessages());
+                options.bufferedInputMessages(),
+                buildFilter(StreamingUpdateOptions.entityFilterPattern(options)));
 
         HttpClient httpClient = buildHttpClient(getHttpProxyHost(), getHttpProxyPort());
         Retryer<ContentResponse> retryer = buildHttpClientRetryer();
@@ -102,5 +105,9 @@ public final class StreamingUpdate {
             throw new IllegalArgumentException("Cannot parse initial offset: [" + initialOffsets + "], " +
                     "must be 'earliest', a number or a date", iae);
         }
+    }
+
+    static Predicate<MutationEventData> buildFilter(Pattern pattern) {
+        return (m) -> pattern.matcher(m.getEntity()).find();
     }
 }

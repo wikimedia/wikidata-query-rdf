@@ -13,6 +13,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -39,6 +40,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
     private final TopicPartition topicPartition;
     private final LinkedHashSet<ConsumerRecord<String, MutationEventData>> buffer;
     private final RDFChunkDeserializer rdfDeser;
+    private final Predicate<MutationEventData> messageFilter;
     private final int bufferedInputMessages;
     private final int preferredBatchLength;
     private final KafkaStreamConsumerMetricsListener metrics;
@@ -65,7 +67,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
 
     public static KafkaStreamConsumer build(String brokers, String topic, int partition, String consumerId, int maxBatchLength, RDFChunkDeserializer deser,
                                             @Nullable BiConsumer<Consumer<String, MutationEventData>, TopicPartition> offsetReset,
-                                            KafkaStreamConsumerMetricsListener metrics, int bufferedInputMessages) {
+                                            KafkaStreamConsumerMetricsListener metrics, int bufferedInputMessages, Predicate<MutationEventData> filter) {
         Map<String, Object> props = new HashMap<>();
         props.put("bootstrap.servers", brokers);
         props.put("group.id", consumerId);
@@ -95,11 +97,12 @@ public class KafkaStreamConsumer implements StreamConsumer {
             }
             offsetReset.accept(consumer, topicPartition);
         }
-        return new KafkaStreamConsumer(consumer, topicPartition, deser, maxBatchLength, metrics, bufferedInputMessages);
+        return new KafkaStreamConsumer(consumer, topicPartition, deser, maxBatchLength, metrics, bufferedInputMessages, filter);
     }
 
     public KafkaStreamConsumer(KafkaConsumer<String, MutationEventData> consumer, TopicPartition topicPartition,
-                               RDFChunkDeserializer rdfDeser, int preferredBatchLength, KafkaStreamConsumerMetricsListener metrics, int bufferedInputMessages) {
+                               RDFChunkDeserializer rdfDeser, int preferredBatchLength, KafkaStreamConsumerMetricsListener metrics,
+                               int bufferedInputMessages, Predicate<MutationEventData> filter) {
         this.consumer = consumer;
         this.topicPartition = topicPartition;
         this.rdfDeser = rdfDeser;
@@ -110,6 +113,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
         this.metrics = metrics;
         this.bufferedInputMessages = bufferedInputMessages;
         buffer = new LinkedHashSet<>(bufferedInputMessages);
+        messageFilter = filter;
     }
 
     public Batch poll(Duration timeout) {
@@ -123,7 +127,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
             if (buffer.size() < bufferedInputMessages) {
                 ConsumerRecords<String, MutationEventData> records = consumer.poll(timeout);
                 timeout = timeout.minusNanos(System.nanoTime() - st);
-                records.forEach(buffer::add);
+                records.forEach(this::filterAndBufferMessage);
             }
             // Accept partial messages if our buffer is already full
             List<ConsumerRecord<String, MutationEventData>> entityChunks = reassembleMessage(buffer, buffer.size() >= bufferedInputMessages);
@@ -148,6 +152,15 @@ public class KafkaStreamConsumer implements StreamConsumer {
             return new Batch(accumulator.asPatch());
         } else {
             return null;
+        }
+    }
+
+    /**
+     * Buffers the message if it passes the mutationFilter predicate.
+     */
+    private void filterAndBufferMessage(ConsumerRecord<String, MutationEventData> message) {
+        if (messageFilter.test(message.value())) {
+            buffer.add(message);
         }
     }
 

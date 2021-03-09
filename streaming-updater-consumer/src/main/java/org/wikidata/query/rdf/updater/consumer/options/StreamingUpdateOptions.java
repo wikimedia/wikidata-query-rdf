@@ -2,6 +2,8 @@ package org.wikidata.query.rdf.updater.consumer.options;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.wikidata.query.rdf.tool.options.OptionsUtils;
 
@@ -35,6 +37,16 @@ public interface StreamingUpdateOptions extends OptionsUtils.BasicOptions {
     @Option(defaultValue = "250", description = "Ideal number of input messages to buffer")
     int bufferedInputMessages();
 
+    @Option(defaultValue = ".*", description = "Filter entities matching this regex")
+    String entityFilter();
+
+    static Pattern entityFilterPattern(StreamingUpdateOptions options) {
+        try {
+            return Pattern.compile(options.entityFilter());
+        } catch (PatternSyntaxException pse) {
+            throw new IllegalArgumentException("Invalid entity filter --entityFilter " + options.entityFilter(), pse);
+        }
+    }
     static URI sparqlUri(StreamingUpdateOptions options) {
         URI sparqlUri;
         try {
