@@ -14,6 +14,7 @@ import static org.wikidata.query.rdf.test.StatementHelper.statements;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -92,20 +93,24 @@ public class KafkaStreamConsumerUnitTest {
     public void test_poll_accumulates_records_into_a_rdfpatch() {
         TopicPartition topicPartition = new TopicPartition("test", 0);
 
-        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 20,
+        // preferredBatchLength set to 4 end when reading event n°4 and not rely on timeouts to batch 5 and 6
+        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 8,
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), 250, m -> true);
-        List<ConsumerRecord<String, MutationEventData>> allRecords = recordsList();
+        List<ConsumerRecord<String, MutationEventData>> allRecords = recordsList(Instant.EPOCH, Duration.ofMinutes(2));
         when(consumer.poll(any())).thenReturn(
                 new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(0, 2))),
                 new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(2, allRecords.size()))),
                 new ConsumerRecords<>(emptyMap()));
 
+        List<Instant> eventTimes = new ArrayList<>();
+
         while (true) {
-            StreamConsumer.Batch b = streamConsumer.poll(Duration.ofMillis(100));
+            StreamConsumer.Batch b = streamConsumer.poll(Duration.ofMillis(1000));
             if (b == null) {
                 break;
             }
             ConsumerPatch patch = b.getPatch();
+            eventTimes.add(b.getAverageEventTime());
             storedData.addAll(patch.getAdded());
             storedData.removeAll(patch.getRemoved());
             storedData.addAll(patch.getLinkedSharedElements());
@@ -113,7 +118,12 @@ public class KafkaStreamConsumerUnitTest {
             deletedEntityIds.addAll(patch.getEntityIdsToDelete());
             streamConsumer.acknowledge();
         }
+
         streamConsumer.close();
+        assertThat(eventTimes).containsExactly(
+            Instant.EPOCH.plus(Duration.ofMinutes((2 + 2 * 2 + 2 * 3 + 2 * 4) / 4)),
+            Instant.EPOCH.plus(Duration.ofMinutes((2 * 5 + 2 * 6) / 2))
+        );
         assertThat(storedData).containsExactlyInAnyOrderElementsOf(expectedData);
         assertThat(unlinkedSharedElts.size()).isBetween(1, 2);
         if (unlinkedSharedElts.size() == 1) {
@@ -219,9 +229,9 @@ public class KafkaStreamConsumerUnitTest {
     @Test
     public void test_commit_offsets() {
         TopicPartition topicPartition = new TopicPartition("topic", 0);
-        MutationEventData firstEvent = genEvent("Q1", 0, uris("uri:1"), uris(), uris(), uris()).get(0);
-        MutationEventData secondEvent = genEvent("Q1", 1, uris("uri:2"), uris(), uris(), uris()).get(0);
-        MutationEventData thirdEvent = genEvent("Q1", 2, uris("uri:3"), uris(), uris(), uris()).get(0);
+        MutationEventData firstEvent = genEvent("Q1", 0, uris("uri:1"), uris(), uris(), uris(), Instant.EPOCH).get(0);
+        MutationEventData secondEvent = genEvent("Q1", 1, uris("uri:2"), uris(), uris(), uris(), Instant.EPOCH).get(0);
+        MutationEventData thirdEvent = genEvent("Q1", 2, uris("uri:3"), uris(), uris(), uris(), Instant.EPOCH).get(0);
         Map<TopicPartition, OffsetAndMetadata> firstOffsets = Collections.singletonMap(topicPartition, new OffsetAndMetadata(1));
         Map<TopicPartition, OffsetAndMetadata> secondOffsets = Collections.singletonMap(topicPartition, new OffsetAndMetadata(2));
         Map<TopicPartition, OffsetAndMetadata> thirdOffsets = Collections.singletonMap(topicPartition, new OffsetAndMetadata(3));
@@ -277,8 +287,8 @@ public class KafkaStreamConsumerUnitTest {
     @Test
     public void test_messages_can_be_filtered() {
         TopicPartition topicPartition = new TopicPartition("topic", 0);
-        MutationEventData event1 = genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris()).get(0);
-        MutationEventData event2 = genEvent("L1", 1, uris("L1-added-0"), uris(), uris("L1-shared"), uris()).get(0);
+        MutationEventData event1 = genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris(), Instant.EPOCH).get(0);
+        MutationEventData event2 = genEvent("L1", 1, uris("L1-added-0"), uris(), uris("L1-shared"), uris(), Instant.EPOCH).get(0);
 
         when(consumer.poll(any())).thenReturn(
                 new ConsumerRecords<>(singletonMap(topicPartition,
@@ -298,14 +308,18 @@ public class KafkaStreamConsumerUnitTest {
         assertThat(b.getPatch().getLinkedSharedElements()).containsExactlyElementsOf(statements(uris("L1-shared")));
     }
 
-    private List<ConsumerRecord<String, MutationEventData>> recordsList() {
+    private List<ConsumerRecord<String, MutationEventData>> recordsList(Instant  eventTimeBase, Duration eventTimeIncrease) {
         List<MutationEventData> events = Stream.of(
-                genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris()),
-                genEvent("Q1", 2, uris("Q1-added-1", "Q1-added-2"), uris("Q1-removed-0"), uris(), uris()),
-                genEvent("Q1", 3, uris("Q1-added-3", "Q1-added-4", "Q1-added-5"), uris("Q1-added-1"), uris(), uris()),
-                genEvent("Q1", 4, uris("Q1-added-1"), uris("Q1-added-5"), uris("Q1-shared-2"), uris("Q1-shared", "Q1-shared-3")),
-                genEvent("Q2", 1, uris("Q2-added-0"), uris(), uris("Q1-shared"), uris()),
-                genDeleteEvent("Q2", 2)
+                genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris(),
+                        eventTimeBase.plus(eventTimeIncrease.multipliedBy(1))),
+                genEvent("Q1", 2, uris("Q1-added-1", "Q1-added-2"), uris("Q1-removed-0"), uris(), uris(),
+                        eventTimeBase.plus(eventTimeIncrease.multipliedBy(2))),
+                genEvent("Q1", 3, uris("Q1-added-3", "Q1-added-4", "Q1-added-5"), uris("Q1-added-1"), uris(), uris(),
+                        eventTimeBase.plus(eventTimeIncrease.multipliedBy(3))),
+                genEvent("Q1", 4, uris("Q1-added-1"), uris("Q1-added-5"), uris("Q1-shared-2"), uris("Q1-shared", "Q1-shared-3"),
+                        eventTimeBase.plus(eventTimeIncrease.multipliedBy(4))),
+                genEvent("Q2", 1, uris("Q2-added-0"), uris(), uris("Q1-shared"), uris(), eventTimeBase.plus(eventTimeIncrease.multipliedBy(5))),
+                genDeleteEvent("Q2", 2, eventTimeBase.plus(eventTimeIncrease.multipliedBy(6)))
         ).flatMap(Collection::stream).collect(toList());
 
         return IntStream.range(0, events.size())
@@ -315,9 +329,9 @@ public class KafkaStreamConsumerUnitTest {
 
     private List<ConsumerRecord<String, MutationEventData>> recordListWithDeleteAndAdd() {
         List<MutationEventData> events = Stream.of(
-                genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris()),
-                genDeleteEvent("Q1", 1),
-                genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris())
+                genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris(), Instant.EPOCH),
+                genDeleteEvent("Q1", 1, Instant.EPOCH),
+                genEvent("Q1", 1, uris("Q1-added-0"), uris(), uris("Q1-shared"), uris(), Instant.EPOCH)
         ).flatMap(Collection::stream).collect(toList());
 
         return IntStream.range(0, events.size())
@@ -330,16 +344,16 @@ public class KafkaStreamConsumerUnitTest {
     }
 
     private List<? extends MutationEventData> genEvent(String entity, int rev, String[] added, String[] deleted,
-                                                       String[] linkedSharedElt, String[] unlinkedSharedElts) {
+                                                       String[] linkedSharedElt, String[] unlinkedSharedElts, Instant eventTime) {
         if (deleted.length == 0) {
-            return generator.fullImportEvent(EVENTS_META_SUPPLIER, entity, rev, Instant.EPOCH, statements(added), statements(linkedSharedElt));
+            return generator.fullImportEvent(EVENTS_META_SUPPLIER, entity, rev, eventTime, statements(added), statements(linkedSharedElt));
         } else {
-            return generator.diffEvent(EVENTS_META_SUPPLIER, entity, rev, Instant.EPOCH, statements(added), statements(deleted),
+            return generator.diffEvent(EVENTS_META_SUPPLIER, entity, rev, eventTime, statements(added), statements(deleted),
                     statements(linkedSharedElt), statements(unlinkedSharedElts));
         }
     }
 
-    private List<? extends MutationEventData> genDeleteEvent(String entity, int rev) {
-        return generator.deleteEvent(EVENTS_META_SUPPLIER, entity, rev, Instant.EPOCH);
+    private List<? extends MutationEventData> genDeleteEvent(String entity, int rev, Instant eventTime) {
+        return generator.deleteEvent(EVENTS_META_SUPPLIER, entity, rev, eventTime);
     }
 }

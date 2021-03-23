@@ -50,7 +50,7 @@ public class StreamingUpdaterConsumer implements Runnable {
                 if (b == null) {
                     continue;
                 }
-                RDFPatchResult result = rdfStoreTimeCnt.time(() -> repository.applyPatch(b.getPatch()));
+                RDFPatchResult result = rdfStoreTimeCnt.time(() -> repository.applyPatch(b.getPatch(), b.getAverageEventTime()));
                 updateCounters(result);
                 consumer.acknowledge();
             }

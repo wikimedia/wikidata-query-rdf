@@ -123,6 +123,9 @@ public class KafkaStreamConsumer implements StreamConsumer {
         PatchAccumulator accumulator = new PatchAccumulator(rdfDeser);
         ConsumerRecord<String, MutationEventData> lastRecord = null;
         long st = System.nanoTime();
+        // latency on the average of the event dates is similar to the average of the latencies
+        long sumEvenTimes = 0;
+        long nbEvents = 0;
         while (!timeout.isNegative() && accumulator.weight() < preferredBatchLength) {
             if (buffer.size() < bufferedInputMessages) {
                 ConsumerRecords<String, MutationEventData> records = consumer.poll(timeout);
@@ -137,7 +140,10 @@ public class KafkaStreamConsumer implements StreamConsumer {
             if (entityChunks.stream().map(ConsumerRecord::value).anyMatch(m -> !accumulator.canAccumulate(m))) {
                 break;
             }
+
+            nbEvents++;
             lastRecord = entityChunks.get(entityChunks.size() - 1);
+            sumEvenTimes += lastRecord.value().getEventTime().toEpochMilli();
             accumulator.accumulate(entityChunks.stream().map(ConsumerRecord::value).collect(toList()));
             buffer.removeAll(entityChunks);
         }
@@ -147,9 +153,9 @@ public class KafkaStreamConsumer implements StreamConsumer {
         Map<TopicPartition, OffsetAndMetadata> offsetsAndMetadata;
         if (lastRecord != null) {
             offsetsAndMetadata = singletonMap(topicPartition, new OffsetAndMetadata(lastRecord.offset()));
-            lastBatchEventTime = lastRecord.value().getEventTime();
+            lastBatchEventTime = Instant.ofEpochMilli(sumEvenTimes / nbEvents);
             lastOfferedBatchOffsets = offsetsAndMetadata;
-            return new Batch(accumulator.asPatch());
+            return new Batch(accumulator.asPatch(), lastBatchEventTime);
         } else {
             return null;
         }

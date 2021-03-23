@@ -11,6 +11,8 @@ import static org.wikidata.query.rdf.tool.RdfRepositoryForTesting.url;
 import static org.wikidata.query.rdf.tool.Update.getRdfClientTimeout;
 
 import java.net.URL;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,17 +44,18 @@ public class RdfRepositoryUpdaterIntegrationTest {
         RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, uris);
         ConsumerPatch patch = new ConsumerPatch(statements("uri:b"), statements("uri:shared-0", "uri:shared-1"),
                 statements("uri:a", "uri:x"), statements("uri:ignored"), entityIdsToDelete);
-
-        RDFPatchResult rdfPatchResult = rdfRepositoryUpdater.applyPatch(patch);
+        Instant avgEventTime = Instant.EPOCH.plus(1, ChronoUnit.MINUTES);
+        RDFPatchResult rdfPatchResult = rdfRepositoryUpdater.applyPatch(patch, avgEventTime);
         assertThat(rdfPatchResult.getActualMutations()).isEqualTo(2);
         assertThat(rdfPatchResult.getExpectedMutations()).isEqualTo(3);
-        assertThat(rdfPatchResult.getActualSharedElementsMutations()).isEqualTo(1);
-        assertThat(rdfPatchResult.getPossibleSharedElementMutations()).isEqualTo(2);
+        assertThat(rdfPatchResult.getActualSharedElementsMutations()).isEqualTo(2);
+        assertThat(rdfPatchResult.getPossibleSharedElementMutations()).isEqualTo(3);
         assertThat(rdfPatchResult.getDeleteMutations()).isEqualTo(0);
         assertThat(client.ask("ask {<uri:a> <uri:a> <uri:a>}")).isFalse();
         assertThat(client.ask("ask {<uri:b> <uri:b> <uri:b>}")).isTrue();
         assertThat(client.ask("ask {<uri:shared-0> <uri:shared-0> <uri:shared-0>}")).isTrue();
         assertThat(client.ask("ask {<uri:shared-1> <uri:shared-1> <uri:shared-1>}")).isTrue();
+        assertThat(client.ask("ask {<" + uris.root() + "> schema:dateModified  \"1970-01-01T00:01:00Z\"^^xsd:dateTime}")).isTrue();
     }
 
     @Test
@@ -70,12 +73,13 @@ public class RdfRepositoryUpdaterIntegrationTest {
         RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, uris);
         entityIdsToDelete.add("Q513");
         ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(), entityIdsToDelete);
-        RDFPatchResult rdfPatchResult = rdfRepositoryUpdater.applyPatch(patch);
+        Instant avgEventTime = Instant.EPOCH.plus(2, ChronoUnit.MINUTES);
+        RDFPatchResult rdfPatchResult = rdfRepositoryUpdater.applyPatch(patch, avgEventTime);
 
         assertThat(rdfPatchResult.getActualMutations()).isEqualTo(0);
         assertThat(rdfPatchResult.getExpectedMutations()).isEqualTo(0);
-        assertThat(rdfPatchResult.getActualSharedElementsMutations()).isEqualTo(0);
-        assertThat(rdfPatchResult.getPossibleSharedElementMutations()).isEqualTo(0);
+        assertThat(rdfPatchResult.getActualSharedElementsMutations()).isEqualTo(2);
+        assertThat(rdfPatchResult.getPossibleSharedElementMutations()).isEqualTo(1);
         assertThat(rdfPatchResult.getDeleteMutations()).isEqualTo(1880);
 
         assertThat(client.ask("ask { ?x <http://schema.org/about> <http://www.wikidata.org/entity/Q42>}")).isTrue();
@@ -87,5 +91,6 @@ public class RdfRepositoryUpdaterIntegrationTest {
         assertThat(client.ask("ask { <https://en.wikipedia.org/wiki/Mount_Everest> ?x ?y}")).isFalse();
         assertThat(client.ask("ask { <https://en.wikipedia.org/> wikibase:wikiGroup \"wikipedia\"}")).isTrue();
         assertThat(client.ask("ask { <https://en.wikipedia.org/wiki/Douglas_Adams> ?x ?y}")).isTrue();
+        assertThat(client.ask("ask {<" + uris.root() + "> schema:dateModified  \"1970-01-01T00:02:00Z\"^^xsd:dateTime}")).isTrue();
     }
 }

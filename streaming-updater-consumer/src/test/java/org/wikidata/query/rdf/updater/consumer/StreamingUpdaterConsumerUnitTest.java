@@ -8,6 +8,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.wikidata.query.rdf.test.StatementHelper.statements;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -35,11 +37,12 @@ public class StreamingUpdaterConsumerUnitTest {
     public void test() throws InterruptedException {
         List<String> entityIdsToDelete = new ArrayList<String>();
         ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(), entityIdsToDelete);
+        Instant avgEventTime = Instant.EPOCH.plus(4, ChronoUnit.MINUTES);
         RDFPatchResult rdfPatchResult = new RDFPatchResult(2, 1, 2, 1, 1);
         LongAdder patchApplied = new LongAdder();
         CountDownLatch countdown = new CountDownLatch(5);
-        when(consumer.poll(any())).thenAnswer((Answer<StreamConsumer.Batch>) invocationOnMock -> new StreamConsumer.Batch(patch));
-        when(rdfRepositoryUpdater.applyPatch(any())).thenAnswer((Answer<RDFPatchResult>) i -> {
+        when(consumer.poll(any())).thenAnswer((Answer<StreamConsumer.Batch>) invocationOnMock -> new StreamConsumer.Batch(patch, avgEventTime));
+        when(rdfRepositoryUpdater.applyPatch(any(), any())).thenAnswer((Answer<RDFPatchResult>) i -> {
             countdown.countDown();
             patchApplied.increment();
             return rdfPatchResult;
@@ -58,7 +61,7 @@ public class StreamingUpdaterConsumerUnitTest {
         verify(consumer, times(patchApplied.intValue())).poll(any());
         verify(consumer, times(patchApplied.intValue())).acknowledge();
         verify(consumer, times(1)).close();
-        verify(rdfRepositoryUpdater, times(patchApplied.intValue())).applyPatch(same(patch));
+        verify(rdfRepositoryUpdater, times(patchApplied.intValue())).applyPatch(same(patch), same(avgEventTime));
         verify(rdfRepositoryUpdater, times(1)).close();
 
         assertThat(registry.counter("mutations").getCount()).isEqualTo(patchApplied.intValue());

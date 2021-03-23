@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.updater.consumer;
 
 import java.time.Duration;
+import java.time.Instant;
 
 import org.wikidata.query.rdf.tool.rdf.ConsumerPatch;
 
@@ -17,5 +18,6 @@ public interface StreamConsumer extends AutoCloseable {
     @Value
     class Batch {
         ConsumerPatch patch;
+        Instant averageEventTime;
     }
 }
