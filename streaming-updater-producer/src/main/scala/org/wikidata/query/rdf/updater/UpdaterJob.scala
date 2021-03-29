@@ -19,7 +19,7 @@ object UpdaterJob {
     val config = UpdaterConfig(args)
     val generalConfig = config.generalConfig
 
-    val outputStreamsBuilder: OutputStreamsBuilder = new OutputStreamsBuilder(config.outputStreamConfig)
+    val outputStreamsBuilder: OutputStreamsBuilder = new OutputStreamsBuilder(config.outputStreamConfig, generalConfig.httpClientConfig)
     val uris: Uris = new WikibaseRepository.Uris(new URI(s"https://${generalConfig.hostname}"),
       generalConfig.entityNamespaces.map(long2Long).asJava,
       WikibaseRepository.Uris.DEFAULT_ENTITY_DATA_PATH, // unused by the pipeline
@@ -31,7 +31,7 @@ object UpdaterJob {
         opts = generalConfig,
         incomingStreams = incomingStreams,
         outputStreams = outputStreamsBuilder.build,
-        wikibaseRepositoryGenerator = rc => WikibaseEntityRevRepository(uris, rc.getMetricGroup))
+        wikibaseRepositoryGenerator = rc => WikibaseEntityRevRepository(uris, generalConfig.httpClientConfig, rc.getMetricGroup))
     env.execute(generalConfig.jobName)
   }
 

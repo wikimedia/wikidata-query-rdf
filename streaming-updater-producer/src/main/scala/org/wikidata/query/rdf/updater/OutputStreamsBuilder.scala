@@ -8,11 +8,11 @@ import org.apache.flink.api.common.time.Time
 import org.apache.flink.core.fs.Path
 import org.apache.flink.formats.parquet.avro.ParquetAvroWriters
 import org.apache.flink.streaming.api.CheckpointingMode
+import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.OnCheckpointRollingPolicy
-import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
-import org.wikidata.query.rdf.updater.config.UpdaterPipelineOutputStreamConfig
+import org.wikidata.query.rdf.updater.config.{HttpClientConfig, UpdaterPipelineOutputStreamConfig}
 
 case class OutputStreams(
                           mutationSink: SinkFunction[MutationDataChunk],
@@ -21,25 +21,28 @@ case class OutputStreams(
                           failedOpsSink: SinkFunction[FailedOp] = new DiscardingSink[FailedOp]
                         )
 
-class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig) {
+class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig, httpClientConfig: HttpClientConfig) {
   def lateEventsOutput: SinkFunction[InputEvent] = {
     outputStreamsConfig.lateEventOutputDir match {
       case Some(dir) => wrapGenericRecordSinkFunction(prepareErrorTrackingFileSink(dir, InputEventEncoder.schema()), InputEventEncoder.map)
-      case _ => prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema)
+      case _ => prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema,
+        outputStreamsConfig.schemaRepos, httpClientConfig)
     }
   }
 
   def spuriousEventsOutput: SinkFunction[IgnoredMutation] = {
     outputStreamsConfig.spuriousEventOutputDir match {
       case Some(dir) => wrapGenericRecordSinkFunction(prepareErrorTrackingFileSink(dir, IgnoredMutationEncoder.schema()), IgnoredMutationEncoder.map)
-      case _ => prepareSideOutputStream[IgnoredMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema)
+      case _ => prepareSideOutputStream[IgnoredMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
+        outputStreamsConfig.schemaRepos, httpClientConfig)
     }
   }
 
   def failedOpOutput: SinkFunction[FailedOp] = {
     outputStreamsConfig.failedEventOutputDir match {
       case Some(dir) => wrapGenericRecordSinkFunction(prepareErrorTrackingFileSink(dir, FailedOpEncoder.schema()), FailedOpEncoder.map)
-      case _ => prepareSideOutputStream[FailedOp](JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema)
+      case _ => prepareSideOutputStream[FailedOp](JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema,
+        outputStreamsConfig.schemaRepos, httpClientConfig)
     }
   }
 
@@ -47,14 +50,14 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
     OutputStreams(mutationOutput, lateEventsOutput, spuriousEventsOutput, failedOpOutput)
   }
 
-  private def prepareSideOutputStream[E](stream: String, schema: String): SinkFunction[E] = {
+  private def prepareSideOutputStream[E](stream: String, schema: String, schemaRepos: List[String], httpClientConfig: HttpClientConfig): SinkFunction[E] = {
     val producerConfig = new Properties()
     producerConfig.setProperty("bootstrap.servers", outputStreamsConfig.sideOutputsKafkaBrokers.getOrElse(outputStreamsConfig.kafkaBrokers))
     val topic = outputStreamsConfig.outputTopicPrefix.getOrElse("") + stream
     new FlinkKafkaProducer[E](
       topic,
       new SideOutputSerializationSchema[E](None, topic, stream, schema, outputStreamsConfig.sideOutputsDomain,
-        outputStreamsConfig.eventStreamConfigEndpoint),
+        outputStreamsConfig.eventStreamConfigEndpoint, schemaRepos, httpClientConfig),
       producerConfig,
       // force at least once semantic (WMF event platform does not seem to support kafka transactions yet)
       FlinkKafkaProducer.Semantic.AT_LEAST_ONCE)

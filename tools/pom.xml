@@ -150,6 +150,10 @@
             <artifactId>common</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wikimedia.utils</groupId>
+            <artifactId>http-client-utils</artifactId>
+        </dependency>
+        <dependency>
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
             <scope>runtime</scope>

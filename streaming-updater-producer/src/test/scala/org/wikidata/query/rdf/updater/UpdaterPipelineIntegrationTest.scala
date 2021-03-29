@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.scala._
 import org.openrdf.model.Statement
 import org.scalatest._
 import org.wikidata.query.rdf.tool.change.events.{EventsMeta, PageDeleteEvent, RevisionCreateEvent}
-import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
+import org.wikidata.query.rdf.updater.config.{HttpClientConfig, UpdaterPipelineGeneralConfig}
 
 
 class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers {
@@ -20,7 +20,8 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     reorderingWindowLengthMs = REORDERING_WINDOW_LENGTH,
     generateDiffTimeout = Int.MaxValue,
     wikibaseRepoThreadPoolSize = 10,
-    outputOperatorNameAndUuid = "test-output-name"
+    outputOperatorNameAndUuid = "test-output-name",
+    httpClientConfig = HttpClientConfig(None, None, "my user-agent")
   )
   "Updater job" should "work" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment

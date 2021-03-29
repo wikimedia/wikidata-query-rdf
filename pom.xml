@@ -806,7 +806,12 @@
             <dependency>
                 <groupId>org.wikimedia</groupId>
                 <artifactId>eventutilities</artifactId>
-                <version>1.0.3</version>
+                <version>1.0.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wikimedia.utils</groupId>
+                <artifactId>http-client-utils</artifactId>
+                <version>1.0.0</version>
             </dependency>
             <dependency>
                 <groupId>xml-apis</groupId>

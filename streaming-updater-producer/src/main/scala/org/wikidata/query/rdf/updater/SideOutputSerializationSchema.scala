@@ -1,17 +1,32 @@
 package org.wikidata.query.rdf.updater
 
 import java.lang
+import java.net.{URI, URL}
 import java.time.{Clock, Instant}
 import java.util.function.{Consumer, Supplier}
+import java.util.Collections
+
+import scala.collection.JavaConverters.seqAsJavaListConverter
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
+import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.wikimedia.eventutilities.core.event.{EventStreamConfig, JsonEventGenerator}
+import org.wikidata.query.rdf.tool.HttpClientUtils
+import org.wikidata.query.rdf.updater.config.HttpClientConfig
+import org.wikimedia.eventutilities.core.event.{EventSchemaLoader, EventStreamConfig, JsonEventGenerator, WikimediaDefaults}
+import org.wikimedia.eventutilities.core.http.BasicHttpClient
+import org.wikimedia.eventutilities.core.json.{JsonLoader, JsonSchemaLoader}
+import org.wikimedia.eventutilities.core.util.ResourceLoader
 
-class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant], topic: String,
-                                       stream: String, schema: String, sideOutputsDomain: String,
-                                       eventStreamConfigEndpoint: String) extends KafkaSerializationSchema[E] {
+class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant],
+                                       topic: String,
+                                       stream: String,
+                                       schema: String,
+                                       sideOutputsDomain: String,
+                                       eventStreamConfigEndpoint: String,
+                                       schemaRepos: List[String],
+                                       httpClientConfig: HttpClientConfig) extends KafkaSerializationSchema[E] {
 
   private def getRecordClock(): () => Instant = {
     recordTimeClock match {
@@ -26,11 +41,29 @@ class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant], t
   lazy val clock: () => Instant = getRecordClock()
 
   private def getEventGenerator(): JsonEventGenerator = {
-   JsonEventGenerator.builder()
+    val timeout: Int = httpClientConfig.httpTimeout.getOrElse(HttpClientUtils.TIMEOUT.toMillis.intValue())
+    val client: CloseableHttpClient = HttpClientUtils.createHttpClient(
+      HttpClientUtils.createPooledConnectionManager(timeout),
+      None.orNull,
+      httpClientConfig.httpRoutes.orNull,
+      timeout,
+      httpClientConfig.userAgent)
+
+    val resLoader: ResourceLoader = ResourceLoader.builder()
+      .withHttpClient(new BasicHttpClient(client))
+      .setBaseUrls(schemaRepos.map(new URL(_)).asJava)
+      .build()
+    val jsonLoader = new JsonLoader(resLoader)
+    JsonEventGenerator.builder()
+      .schemaLoader(EventSchemaLoader.builder()
+        .setJsonSchemaLoader(new JsonSchemaLoader(jsonLoader))
+        .build())
       .eventStreamConfig(EventStreamConfig.builder()
         .setEventStreamConfigLoader(eventStreamConfigEndpoint)
+        .setEventServiceToUriMap(Collections.emptyMap(): java.util.Map[String, URI])
+        .setJsonLoader(new JsonLoader(resLoader))
         .build())
-      .ingestionTimeClock(new Supplier[Instant] {
+     .ingestionTimeClock(new Supplier[Instant] {
         override def get(): Instant = clock()
       }).build()
   }

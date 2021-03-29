@@ -7,6 +7,7 @@ import scala.language.{implicitConversions, postfixOps}
 import org.apache.flink.api.common.time.Time
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
+import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikimedia.eventutilities.core.event.WikimediaDefaults
 
 class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(args)) {
@@ -30,7 +31,12 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     generateDiffTimeout = params.getLong("generate_diff_timeout", 5.minutes.toMillis),
     wikibaseRepoThreadPoolSize = params.getInt("wikibase_repo_thread_pool_size", 30), // at most 60 concurrent requests to wikibase
     // T262020 and FLINK-11654 (might change to something more explicit on the KafkaProducer rather than reusing operator's name
-    outputOperatorNameAndUuid = s"$outputTopic:$outputPartition"
+    outputOperatorNameAndUuid = s"$outputTopic:$outputPartition",
+    httpClientConfig = HttpClientConfig(
+      httpRoutes = optionalStringArg("http_routes"),
+      httpTimeout = optionalIntArg("http_timeout"),
+      userAgent = params.get("user_agent", HttpClientUtils.WDQS_DEFAULT_UA)
+    )
   )
 
   val inputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
@@ -76,7 +82,13 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       sideOutputsKafkaBrokers = optionalStringArg("side_outputs_kafka_brokers"),
       lateEventOutputDir = optionalStringArg("late_events_dir"),
       failedEventOutputDir = optionalStringArg("failed_ops_dir"),
-      spuriousEventOutputDir = optionalStringArg("spurious_events_dir")
+      spuriousEventOutputDir = optionalStringArg("spurious_events_dir"),
+      schemaRepos = params.get(
+        "schema_repositories",
+        "https://schema.wikimedia.org/repositories/primary/jsonschema,https://schema.wikimedia.org/repositories/secondary/jsonschema"
+      ).split(",")
+        .map(_.trim)
+        .toList
     )
 
   implicit def finiteDuration2Int(fd: FiniteDuration): Int = fd.toMillis.intValue
@@ -93,8 +105,15 @@ sealed case class UpdaterPipelineGeneralConfig(hostname: String,
                                                reorderingWindowLengthMs: Int,
                                                generateDiffTimeout: Long,
                                                wikibaseRepoThreadPoolSize: Int,
-                                               outputOperatorNameAndUuid: String
+                                               outputOperatorNameAndUuid: String,
+                                               httpClientConfig: HttpClientConfig
                                               )
+
+sealed case class HttpClientConfig(
+                                    httpRoutes: Option[String],
+                                    httpTimeout: Option[Int],
+                                    userAgent: String
+                                  )
 
 sealed case class UpdaterPipelineInputEventStreamConfig(kafkaBrokers: String,
                                                         consumerGroup: String,
@@ -113,7 +132,8 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      sideOutputsKafkaBrokers: Option[String],
                                                      lateEventOutputDir: Option[String],
                                                      spuriousEventOutputDir: Option[String],
-                                                     failedEventOutputDir: Option[String]
+                                                     failedEventOutputDir: Option[String],
+                                                     schemaRepos: List[String]
                                                    )
 
 sealed case class UpdaterExecutionEnvironmentConfig(checkpointDir: String,

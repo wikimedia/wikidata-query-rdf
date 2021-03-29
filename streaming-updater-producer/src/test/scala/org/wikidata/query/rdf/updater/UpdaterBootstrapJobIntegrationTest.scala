@@ -10,7 +10,7 @@ import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironm
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
 import org.wikidata.query.rdf.updater.EntityStatus.CREATED
-import org.wikidata.query.rdf.updater.config.{BootstrapConfig, UpdaterPipelineGeneralConfig}
+import org.wikidata.query.rdf.updater.config.{BootstrapConfig, HttpClientConfig, UpdaterPipelineGeneralConfig}
 
 
 class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers with BeforeAndAfter {
@@ -79,7 +79,9 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       reorderingWindowLengthMs = 60000,
       generateDiffTimeout = Int.MaxValue,
       wikibaseRepoThreadPoolSize = 10,
-      outputOperatorNameAndUuid = "test-output-name")
+      outputOperatorNameAndUuid = "test-output-name",
+      httpClientConfig = HttpClientConfig(None, None, "my user-agent")
+    )
     UpdaterPipeline.configure(options, List(source),
       OutputStreams(
         new CollectSink[MutationDataChunk](CollectSink.values.append(_)),

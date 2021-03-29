@@ -2,14 +2,12 @@ package org.wikidata.query.rdf.tool.wikibase;
 
 import static com.google.common.collect.ImmutableSet.copyOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.InterruptedIOException;
 import java.io.PushbackInputStream;
 import java.io.Serializable;
 import java.net.SocketException;
@@ -28,31 +26,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
-import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpRequestRetryHandler;
-import org.apache.http.client.ServiceUnavailableRetryStrategy;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.config.SocketConfig;
-import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.client.IdleConnectionEvictor;
-import org.apache.http.protocol.HttpContext;
 import org.openrdf.model.Statement;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
@@ -60,6 +42,7 @@ import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.helpers.StatementCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.tool.HttpClientUtils;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
@@ -69,7 +52,6 @@ import org.wikidata.query.rdf.tool.utils.StreamDumper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.codahale.metrics.httpclient.InstrumentedHttpClientConnectionManager;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -81,7 +63,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 /**
  * Wraps Wikibase api.
  */
-// TODO fan out complexity
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class WikibaseRepository implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(WikibaseRepository.class);
@@ -89,7 +70,7 @@ public class WikibaseRepository implements Closeable {
     /**
      * Timeout for communications to Wikidata, in ms.
      */
-    private static final String TIMEOUT_MILLIS = "5000";
+    private static final String TIMEOUT_MILLIS = String.valueOf(HttpClientUtils.TIMEOUT.toMillis());
     /**
      * Request timeout property.
      */
@@ -99,15 +80,9 @@ public class WikibaseRepository implements Closeable {
      */
     private static final String PROXY_PROPERTY = WikibaseRepository.class.getName() + ".proxy";
     /**
-     * How many retries allowed on error.
+     * Request proxy map property. Can only set Proxy property or proxy map property, not both.
      */
-    private static final int RETRIES = 3;
-
-    /**
-     * Retry interval, in ms.
-     */
-    private static final int RETRY_INTERVAL = 500;
-
+    private static final String PROXY_MAP_PROPERTY = WikibaseRepository.class.getName() + ".proxyMap";
     /**
      * Standard representation of dates in Mediawiki API (ISO 8601).
      */
@@ -134,46 +109,10 @@ public class WikibaseRepository implements Closeable {
             .withZone(ZoneId.of("Z"));
 
     /**
-     * Configured proxy for requests.
-     */
-    private static final String PROXY_HOST;
-    private static final int PROXY_PORT;
-
-    static {
-        String proxy = System.getProperty(PROXY_PROPERTY);
-        if (proxy != null) {
-            String[] split = proxy.split(":");
-            PROXY_HOST = split[0];
-            PROXY_PORT = Integer.parseInt(split[1]);
-        } else {
-            PROXY_HOST = null;
-            PROXY_PORT = -1;
-        }
-    }
-
-    /**
      * HTTP client for wikibase.
      */
     private final CloseableHttpClient client;
 
-    /**
-     * Connection manager for Wikibase.
-     */
-    private final HttpClientConnectionManager connectionManager;
-
-    /**
-     * Configured timeout for requests.
-     */
-    private final int requestTimeout = Integer
-            .parseInt(System.getProperty(TIMEOUT_PROPERTY, TIMEOUT_MILLIS));
-
-    /**
-     * Request configuration including timeout.
-     */
-    private final RequestConfig configWithTimeout = RequestConfig.custom()
-            .setSocketTimeout(requestTimeout)
-            .setConnectTimeout(requestTimeout)
-            .setConnectionRequestTimeout(requestTimeout).build();
     /**
      * Builds uris to get stuff from wikibase.
      */
@@ -216,75 +155,42 @@ public class WikibaseRepository implements Closeable {
 
     private final RDFParserSupplier rdfParserSupplier;
 
+    private static int getDefaultTimeout() {
+        return Integer.parseInt(System.getProperty(TIMEOUT_PROPERTY, TIMEOUT_MILLIS));
+    }
+
     public WikibaseRepository(Uris uris, boolean collectConstraints, MetricRegistry metricRegistry, StreamDumper streamDumper,
-                              @Nullable Duration revisionCutoff, RDFParserSupplier rdfParserSupplier) {
+                              @Nullable Duration revisionCutoff, RDFParserSupplier rdfParserSupplier, CloseableHttpClient client) {
         this.uris = uris;
         this.collectConstraints = collectConstraints;
         this.rdfFetchTimer = metricRegistry.timer("rdf-fetch-timer");
         this.entityFetchTimer = metricRegistry.timer("entity-fetch-timer");
         this.constraintFetchTimer = metricRegistry.timer("constraint-fetch-timer");
-        connectionManager = createConnectionManager(metricRegistry, requestTimeout);
-        client = createHttpClient(connectionManager);
         this.streamDumper = streamDumper;
         this.revisionCutoff = revisionCutoff;
         this.rdfParserSupplier = rdfParserSupplier;
+
+        this.client = client;
     }
 
     /**
-     * Return retry strategy for "service unavailable".
-     * This one handles 503 and 429 by retrying it after a fixed period.
-     * TODO: 429 may contain header that we may want to use for retrying?
-     * @param max Maximum number of retries.
-     * @param interval Interval between retries, ms.
-     * @see DefaultServiceUnavailableRetryStrategy
+     * Create a new wikibase repose using system defaults for the underlying http client.
      */
-    private static ServiceUnavailableRetryStrategy getRetryStrategy(final int max, final int interval) {
-        // This is the same as DefaultServiceUnavailableRetryStrategy but also handles 429
-        return new ServiceUnavailableRetryStrategy() {
-            @Override
-            public boolean retryRequest(final HttpResponse response, final int executionCount, final HttpContext context) {
-                return executionCount <= max &&
-                    (response.getStatusLine().getStatusCode() == HttpStatus.SC_SERVICE_UNAVAILABLE ||
-                    response.getStatusLine().getStatusCode() == 429);
-            }
-
-            @Override
-            public long getRetryInterval() {
-                return interval;
-            }
-        };
-    }
-
-    /**
-     * Create retry handler.
-     * Note: this is for retrying I/O exceptions.
-     * @param max Maximum retries number.
-     */
-    private static HttpRequestRetryHandler getRetryHandler(final int max) {
-        return (exception, executionCount, context) -> {
-            log.debug("Exception in attempt {}", executionCount, exception);
-            if (executionCount >= max) {
-                // Do not retry if over max retry count
-                return false;
-            }
-            if (exception instanceof InterruptedIOException) {
-                // Timeout - also includes ConnectTimeoutException
-                return true;
-            }
-            if (exception instanceof UnknownHostException) {
-                // Unknown host
-                return false;
-            }
-            if (exception instanceof SSLException) {
-                // SSL handshake exception
-                return false;
-            }
-
-            HttpClientContext clientContext = HttpClientContext.adapt(context);
-            HttpRequest request = clientContext.getRequest();
-            // Retry if the request is considered idempotent
-            return !(request instanceof HttpEntityEnclosingRequest);
-        };
+    public WikibaseRepository(Uris uris, boolean collectConstraints, MetricRegistry metricRegistry, StreamDumper streamDumper,
+                              @Nullable Duration revisionCutoff, RDFParserSupplier rdfParserSupplier) {
+        this(
+                uris,
+                collectConstraints,
+                metricRegistry,
+                streamDumper,
+                revisionCutoff,
+                rdfParserSupplier,
+                HttpClientUtils.createHttpClient(
+                        HttpClientUtils.createConnectionManager(metricRegistry, getDefaultTimeout()),
+                        System.getProperty(PROXY_PROPERTY),
+                        System.getProperty(PROXY_MAP_PROPERTY),
+                        getDefaultTimeout()
+                ));
     }
 
     /**
@@ -321,7 +227,6 @@ public class WikibaseRepository implements Closeable {
         URI uri = uris.recentChanges(nextStartTime, lastContinue, batchSize);
         log.debug("Polling for changes from {}", uri);
         HttpGet request = new HttpGet(uri);
-        request.setConfig(configWithTimeout);
         try {
             return checkApi(getJson(request, RecentChangeResponse.class));
         } catch (UnknownHostException | SocketException e) {
@@ -360,7 +265,6 @@ public class WikibaseRepository implements Closeable {
     private void collectStatementsFromUrl(URI uri, StatementCollector collector, Timer timer) throws RetryableException {
         RDFParser parser = this.rdfParserSupplier.get(collector);
         HttpGet request = new HttpGet(uri);
-        request.setConfig(configWithTimeout);
         log.debug("Fetching rdf from {}", uri);
         try (Timer.Context timerContext = timer.time()) {
             try (CloseableHttpResponse response = client.execute(request)) {
@@ -509,39 +413,9 @@ public class WikibaseRepository implements Closeable {
 
     @Override
     public void close() throws IOException {
-        try {
-            client.close();
-        } finally {
-            connectionManager.shutdown();
-        }
+        client.close();
     }
 
-    private static CloseableHttpClient createHttpClient(HttpClientConnectionManager connectionManager) {
-        HttpClientBuilder httpClientBuilder = HttpClients.custom()
-                .setConnectionManager(connectionManager)
-                .setRetryHandler(getRetryHandler(RETRIES))
-                .setServiceUnavailableRetryStrategy(getRetryStrategy(RETRIES, RETRY_INTERVAL))
-                .disableCookieManagement()
-                .setUserAgent(getUserAgent());
-
-        return (PROXY_HOST != null ? httpClientBuilder.setProxy(new HttpHost(PROXY_HOST, PROXY_PORT)) : httpClientBuilder)
-                .build();
-    }
-
-    private static String getUserAgent() {
-        return System.getProperty("http.userAgent", "Wikidata Query Service Updater Bot");
-    }
-
-    private static InstrumentedHttpClientConnectionManager createConnectionManager(MetricRegistry registry, int soTimeout) {
-        InstrumentedHttpClientConnectionManager connectionManager = new InstrumentedHttpClientConnectionManager(registry);
-        connectionManager.setDefaultMaxPerRoute(100);
-        connectionManager.setMaxTotal(100);
-        IdleConnectionEvictor connectionEvictor = new IdleConnectionEvictor(connectionManager, 1L, SECONDS);
-        connectionEvictor.start();
-        // workaround issue https://issues.apache.org/jira/browse/HTTPCLIENT-1478 when using a proxy (not fixed in 4.4)
-        connectionManager.setDefaultSocketConfig(SocketConfig.copy(SocketConfig.DEFAULT).setSoTimeout(soTimeout).build());
-        return connectionManager;
-    }
 
     /**
      * URIs used for accessing wikibase.

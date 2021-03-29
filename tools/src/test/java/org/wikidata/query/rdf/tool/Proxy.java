@@ -11,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.http.StatusLine;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -150,6 +152,14 @@ public class Proxy extends NanoHTTPD {
         log.info("Started proxy to {} on {}", wikibase.getHost(), getListeningPort());
     }
 
+    /**
+     * Configure request to ignore cookies.
+     */
+    public static void ignoreCookies(HttpRequestBase request) {
+        RequestConfig noCookiesConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.IGNORE_COOKIES).build();
+        request.setConfig(noCookiesConfig);
+    }
+
     @Override
     public Response serve(IHTTPSession session) {
         log.debug("Serving {} {}", session.getMethod(), session.getUri());
@@ -164,7 +174,7 @@ public class Proxy extends NanoHTTPD {
             log.debug("Proxying to {}", uri);
             HttpRequestBase request = buildRequest(session.getMethod(), uri);
             // TODO we totally ignore headers
-            HttpClientUtils.ignoreCookies(request);
+            ignoreCookies(request);
             CloseableHttpResponse response = client.execute(request);
             /*
              * Note that I'm intentionally not closing the response because the

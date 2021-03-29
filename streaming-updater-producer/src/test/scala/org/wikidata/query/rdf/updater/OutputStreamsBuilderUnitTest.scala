@@ -1,9 +1,11 @@
 package org.wikidata.query.rdf.updater
 
+import scala.math.Numeric.Implicits.infixNumericOps
+
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.util.InstantiationUtil
 import org.scalatest.{FlatSpec, Matchers}
-import org.wikidata.query.rdf.updater.config.UpdaterPipelineOutputStreamConfig
+import org.wikidata.query.rdf.updater.config.{HttpClientConfig, UpdaterPipelineOutputStreamConfig}
 import org.wikimedia.eventutilities.core.event.WikimediaDefaults
 
 class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
@@ -20,9 +22,10 @@ class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
       sideOutputsKafkaBrokers = None,
       lateEventOutputDir = None,
       failedEventOutputDir = None,
-      spuriousEventOutputDir = None
+      spuriousEventOutputDir = None,
+      schemaRepos = List("https://schema.wikimedia.org/repositories/primary/jsonschema", "https://schema.wikimedia.org/repositories/secondary/jsonschema")
     )
-    val outputStreams: OutputStreams = new OutputStreamsBuilder(outputStreamConfig).build
+    val outputStreams: OutputStreams = new OutputStreamsBuilder(outputStreamConfig, HttpClientConfig(None, None, "My agent")).build
     InstantiationUtil.serializeObject(outputStreams.failedOpsSink).length should not be 0
     InstantiationUtil.serializeObject(outputStreams.lateEventsSink).length should not be 0
     InstantiationUtil.serializeObject(outputStreams.spuriousEventsSink).length should not be 0
