@@ -162,6 +162,8 @@ public class BlazegraphBasedTPFRequestProcessor extends
 
             if (count == 0L) {
                 return createEmptyTriplePatternFragment();
+            } else if (offset >= count) {
+                return createEmptyTriplePatternFragment();
             } else {
                 return new BlazegraphBasedTPF(ap, store, count, offset, limit,
                         request.getFragmentURL(), request.getDatasetURL(),

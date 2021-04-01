@@ -34,7 +34,7 @@ public class BlazegraphBasedTPF extends TriplePatternFragmentBase {
                 : store.asStatementIterator(ap.iterator(offset, limit, 0)),
                 // capacity=0, i.e., default capacity will be used
                 count, // totalSize
-                fragmentURL, datasetURL, pageNumber, count < offset + limit); // isLastPage
+                fragmentURL, datasetURL, pageNumber, count <= (offset + limit)); // isLastPage
     }
 
     protected BlazegraphBasedTPF(final BigdataStatementIterator blzgStmtIt,
