@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.updater
 
+import java.net.URI
 import java.time.{Clock, Instant}
 
 import scala.collection.JavaConverters.setAsJavaSetConverter
@@ -12,7 +13,7 @@ import org.wikidata.query.rdf.updater.config.{InputKafkaTopics, UpdaterPipelineI
 
 class IncomingStreamsUnitTest extends FlatSpec with Matchers {
 
-  val uris: Uris = Uris.fromString("https://my-hostname", Set(0, 2, 3, 5).map(_.toLong).map(long2Long).asJava)
+  val uris: Uris = new Uris(new URI("https://my-hostname"), Set(0, 2, 3, 5).map(_.toLong).map(long2Long).asJava, "/unused", "/wiki/Special:EntityData/")
   "IncomingStreams" should "create properly named streams" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",

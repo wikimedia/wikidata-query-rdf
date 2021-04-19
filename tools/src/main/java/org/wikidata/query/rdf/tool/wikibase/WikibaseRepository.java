@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
@@ -64,8 +65,6 @@ import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.RDFParserSupplier;
-import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
-import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
 import org.wikidata.query.rdf.tool.utils.StreamDumper;
 
 import com.codahale.metrics.MetricRegistry;
@@ -217,24 +216,8 @@ public class WikibaseRepository implements Closeable {
 
     private final RDFParserSupplier rdfParserSupplier;
 
-    public WikibaseRepository(URI baseUrl, MetricRegistry metricRegistry) {
-        this(new Uris(baseUrl), false, metricRegistry, new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
-    }
-
-    public WikibaseRepository(Uris uris, MetricRegistry metricRegistry) {
-        this(uris, false, metricRegistry, new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
-    }
-
-    public WikibaseRepository(String baseUrl, MetricRegistry metricRegistry) {
-        this(Uris.fromString(baseUrl), false, metricRegistry, new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
-    }
-
-    public WikibaseRepository(URI baseUrl, Set<Long> entityNamespaces, MetricRegistry metricRegistry) {
-        this(new Uris(baseUrl, entityNamespaces), false, metricRegistry, new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
-    }
-
     public WikibaseRepository(Uris uris, boolean collectConstraints, MetricRegistry metricRegistry, StreamDumper streamDumper,
-                              Duration revisionCutoff, RDFParserSupplier rdfParserSupplier) {
+                              @Nullable Duration revisionCutoff, RDFParserSupplier rdfParserSupplier) {
         this.uris = uris;
         this.collectConstraints = collectConstraints;
         this.rdfFetchTimer = metricRegistry.timer("rdf-fetch-timer");
@@ -565,13 +548,13 @@ public class WikibaseRepository implements Closeable {
      */
     public static class Uris implements Serializable {
         /**
-         * URL which should be used to retrieve Entity data.
+         * Path which should be used to retrieve Entity data.
          */
-        private static final String ENTITY_DATA_URL = "/wiki/Special:EntityData/";
+        public static final String DEFAULT_ENTITY_DATA_PATH = "/wiki/Special:EntityData/";
         /**
          * URL of the API endpoint.
          */
-        public static final String API_URL = "/w/api.php";
+        public static final String DEFAULT_API_PATH = "/w/api.php";
         public static final Set<Long> DEFAULT_ENTITY_NAMESPACES = ImmutableSet.of(0L, 120L);
         /**
          * Item and Property namespaces.
@@ -582,22 +565,23 @@ public class WikibaseRepository implements Closeable {
          */
         private final URI baseUrl;
 
-        public Uris(URI baseUrl) {
-            this(baseUrl, DEFAULT_ENTITY_NAMESPACES);
-        }
+        private final String apiBasePath;
+        private final String entityDataPath;
 
-        public Uris(URI baseUrl, Set<Long> entityNamespaces) {
+        public Uris(URI baseUrl, Set<Long> entityNamespaces, String apiBasePath, String entityDataPath) {
             this.baseUrl = baseUrl;
             this.entityNamespaces = copyOf(entityNamespaces);
+            this.apiBasePath = apiBasePath;
+            this.entityDataPath = entityDataPath;
         }
 
-        public static Uris fromString(String url) {
-            return fromString(url, DEFAULT_ENTITY_NAMESPACES);
+        public static Uris withWikidataDefaults(URI baseUrl) {
+            return new Uris(baseUrl, DEFAULT_ENTITY_NAMESPACES, DEFAULT_API_PATH, DEFAULT_ENTITY_DATA_PATH);
         }
 
-        public static Uris fromString(String url, Set<Long> entityNamespaces) {
+        public static Uris withWikidataDefaults(String url) {
             try {
-                return new Uris(new URI(url), entityNamespaces);
+                return withWikidataDefaults(new URI(url));
             } catch (URISyntaxException e) {
                 throw new FatalException("Bad URL: " + url, e);
             }
@@ -636,7 +620,7 @@ public class WikibaseRepository implements Closeable {
              * not all Wikibase instances have the rewrite rule set up. I'm
              * looking at you test.wikidata.org
              */
-            builder.setPath(baseUrl.getPath() + ENTITY_DATA_URL + entityId + ".ttl");
+            builder.setPath(baseUrl.getPath() + entityDataPath + entityId + ".ttl");
             builder.addParameter("flavor", "dump");
             return builder;
         }
@@ -694,7 +678,7 @@ public class WikibaseRepository implements Closeable {
          */
         private URIBuilder apiBuilder() {
             URIBuilder builder = builder();
-            builder.setPath(baseUrl.getPath() + API_URL);
+            builder.setPath(baseUrl.getPath() + apiBasePath);
             builder.addParameter("format", "json");
             return builder;
         }

@@ -44,7 +44,7 @@ public class RdfKafkaOffsetsRepositoryUnitTest {
 
     @Before
     public void setupRepositoryUnderTest() throws URISyntaxException {
-        URI root = Uris.fromString("https://acme.test").builder().build();
+        URI root = Uris.withWikidataDefaults("https://acme.test").builder().build();
         repository = new RdfKafkaOffsetsRepository(root, rdfClient);
     }
 

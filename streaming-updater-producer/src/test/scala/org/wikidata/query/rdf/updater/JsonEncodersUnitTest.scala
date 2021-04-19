@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.updater
 
-import java.time.{Clock, Duration, Instant}
+import java.time.{Duration, Instant}
 import java.util
 import java.util.UUID
 import java.util.function.Supplier

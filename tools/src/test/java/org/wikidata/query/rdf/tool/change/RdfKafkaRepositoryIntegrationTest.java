@@ -9,6 +9,7 @@ import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyHost;
 import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyPort;
 import static org.wikidata.query.rdf.tool.RdfRepositoryForTesting.url;
 
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -27,7 +28,7 @@ public class RdfKafkaRepositoryIntegrationTest {
 
     @Test
     public void readWriteOffsets() throws Exception {
-        Uris uris = Uris.fromString("https://acme.test", singleton(0L));
+        Uris uris = new Uris(new URI("https://acme.test"), singleton(0L), "/api.php", "/entitydata");
 
         Instant startTime = Instant.ofEpochMilli(BEGIN_DATE);
 

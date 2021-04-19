@@ -12,7 +12,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.wikidata.query.rdf.test.CloseableRule.autoClose;
-import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris.API_URL;
+import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris.DEFAULT_API_PATH;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,15 +36,21 @@ import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.test.CloseableRule;
+import org.wikidata.query.rdf.tool.AbstractUpdaterIntegrationTestBase;
 import org.wikidata.query.rdf.tool.MapperUtils;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
+import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
+import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
 import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse.RecentChange;
 
 import com.codahale.metrics.MetricRegistry;
 import com.github.tomakehurst.wiremock.common.ClasspathFileSource;
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
+import com.google.common.collect.ImmutableSet;
+
+import lombok.SneakyThrows;
 
 /**
  * Tests WikibaseRepository using the recorded responses from test instance of Wikidata. Note that we
@@ -63,8 +69,15 @@ public class WikibaseRepositoryIntegrationTest {
                     .dynamicPort()
                     .fileSource(new ClasspathFileSource("WikibaseRepositoryIntegrationTest")));
     @Rule
-    public final CloseableRule<WikibaseRepository> repo = autoClose(new WikibaseRepository(wireMockRule.baseUrl(), new MetricRegistry()));
+    public final CloseableRule<WikibaseRepository> repo = autoClose(constructRepository(wireMockRule.baseUrl()));
 
+
+    @SneakyThrows
+    private static WikibaseRepository constructRepository(String uri) {
+        return new WikibaseRepository(
+                new WikibaseRepository.Uris(new URI(uri), ImmutableSet.of(0L, 120L), "/w/api.php", "/wiki/Special:EntityData/"),
+                false, new MetricRegistry(), new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
+    }
 
     private final UrisScheme uris = UrisSchemeFactory.forHost("test.wikidata.org");
 
@@ -163,7 +176,7 @@ public class WikibaseRepositoryIntegrationTest {
 
     @Test
     public void fetchIsNormalized() throws RetryableException, ContainedException, IOException, URISyntaxException {
-        try (WikibaseRepository proxyRepo = new WikibaseRepository(new URI(wireMockRule.baseUrl()), new MetricRegistry())) {
+        try (WikibaseRepository proxyRepo = AbstractUpdaterIntegrationTestBase.constructWikibaseRepository(wireMockRule.baseUrl())) {
             String entityId = firstEntityIdForLabelStartingWith(baseUri, "QueryTestItem", "en", "item");
             Collection<Statement> statements = proxyRepo.fetchRdfForEntity(entityId);
             boolean foundBad = false;
@@ -235,7 +248,7 @@ public class WikibaseRepositoryIntegrationTest {
     private String firstEntityIdForLabelStartingWith(URI baseURI, String label, String language, String type) throws URISyntaxException, IOException {
 
         URIBuilder builder = new URIBuilder(baseURI);
-        builder.setPath(baseURI.getPath() + API_URL);
+        builder.setPath(baseURI.getPath() + DEFAULT_API_PATH);
         builder.addParameter("format", "json");
         builder.addParameter("action", "wbsearchentities");
         builder.addParameter("search", label);

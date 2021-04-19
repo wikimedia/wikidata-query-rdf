@@ -187,7 +187,7 @@ public class KafkaPollerEventConsumptionUnitTest {
     }
 
     private void initPoller(String...clusterNames) {
-        Uris uris = Uris.fromString("https://acme.test");
+        Uris uris = Uris.withWikidataDefaults("https://acme.test");
         URI root = null;
         try {
             root = uris.builder().build();

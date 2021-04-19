@@ -71,7 +71,15 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       IncomingStreams.REV_CREATE_CONV,
       clock)
 
-    val options = UpdaterPipelineGeneralConfig(DOMAIN, "test updater job", ENTITY_NAMESPACES, 60000, Int.MaxValue, 10, "test-output-name")
+    val options = UpdaterPipelineGeneralConfig(
+      hostname = DOMAIN,
+      jobName = "test updater job",
+      entityNamespaces = ENTITY_NAMESPACES,
+      entityDataPath = "/Special:EntityData",
+      reorderingWindowLengthMs = 60000,
+      generateDiffTimeout = Int.MaxValue,
+      wikibaseRepoThreadPoolSize = 10,
+      outputOperatorNameAndUuid = "test-output-name")
     UpdaterPipeline.configure(options, List(source),
       OutputStreams(
         new CollectSink[MutationDataChunk](CollectSink.values.append(_)),

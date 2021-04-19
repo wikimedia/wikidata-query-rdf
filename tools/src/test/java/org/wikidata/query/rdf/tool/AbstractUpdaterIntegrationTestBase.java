@@ -14,6 +14,8 @@ import org.wikidata.query.rdf.test.CloseableRule;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.change.IdRangeChangeSource;
 import org.wikidata.query.rdf.tool.rdf.Munger;
+import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
+import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.codahale.metrics.MetricRegistry;
@@ -26,7 +28,13 @@ public class AbstractUpdaterIntegrationTestBase {
      * Wikibase test against.
      */
     @Rule
-    public final CloseableRule<WikibaseRepository> wikibaseRepository = autoClose(new WikibaseRepository("https://www.wikidata.org", new MetricRegistry()));
+    public final CloseableRule<WikibaseRepository> wikibaseRepository = autoClose(constructWikibaseRepository("https://www.wikidata.org"));
+
+    public static WikibaseRepository constructWikibaseRepository(String url) {
+        return new WikibaseRepository(WikibaseRepository.Uris.withWikidataDefaults(url), false,
+                new MetricRegistry(), new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
+    }
+
     /**
      * Munger to test against.
      */

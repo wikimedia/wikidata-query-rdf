@@ -17,6 +17,7 @@ import static org.hamcrest.Matchers.hasSize;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -29,10 +30,15 @@ import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.test.SystemPropertyContext;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
+import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
+import org.wikidata.query.rdf.tool.utils.NullStreamDumper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
+
+import lombok.SneakyThrows;
 
 public class WikibaseRepositoryWireIntegrationTest {
 
@@ -44,9 +50,12 @@ public class WikibaseRepositoryWireIntegrationTest {
         WireMock.configureFor("localhost", wiremockPort);
     }
 
+    @SneakyThrows
     @Before
     public void createWikibaseRepository() {
-        repository = new WikibaseRepository("http://localhost:" + wiremockPort, new MetricRegistry());
+        repository = new WikibaseRepository(
+                new WikibaseRepository.Uris(new URI("http://localhost:" + wiremockPort), ImmutableSet.of(0L, 120L), "/w/api.php", "/wiki/Special:EntityData/"),
+                false, new MetricRegistry(), new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
     }
 
     @After

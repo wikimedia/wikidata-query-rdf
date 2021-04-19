@@ -16,6 +16,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     hostname = DOMAIN,
     jobName = "test updater job",
     entityNamespaces = ENTITY_NAMESPACES,
+    entityDataPath = "/wiki/Special:EntityData/",
     reorderingWindowLengthMs = REORDERING_WINDOW_LENGTH,
     generateDiffTimeout = Int.MaxValue,
     wikibaseRepoThreadPoolSize = 10,

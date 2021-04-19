@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.updater
 
+import java.net.URI
 import java.time.Clock
 
 import scala.collection.JavaConverters.setAsJavaSetConverter
@@ -19,7 +20,10 @@ object UpdaterJob {
     val generalConfig = config.generalConfig
 
     val outputStreamsBuilder: OutputStreamsBuilder = new OutputStreamsBuilder(config.outputStreamConfig)
-    val uris: Uris = WikibaseRepository.Uris.fromString(s"https://${generalConfig.hostname}", generalConfig.entityNamespaces.map(long2Long).asJava)
+    val uris: Uris = new WikibaseRepository.Uris(new URI(s"https://${generalConfig.hostname}"),
+      generalConfig.entityNamespaces.map(long2Long).asJava,
+      WikibaseRepository.Uris.DEFAULT_ENTITY_DATA_PATH, // unused by the pipeline
+      generalConfig.entityDataPath)
     implicit val env: StreamExecutionEnvironment = prepareEnv(config.environmentConfig)
 
     val incomingStreams = IncomingStreams.buildIncomingStreams(config.inputEventStreamConfig, uris, DEFAULT_CLOCK)

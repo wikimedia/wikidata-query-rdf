@@ -65,7 +65,7 @@ public class Proxy extends NanoHTTPD {
      */
     public static void main(String[] args) throws IOException, URISyntaxException {
         ProxyOptions options = OptionsUtils.handleOptions(ProxyOptions.class, args);
-        WikibaseRepository.Uris wikibase = new WikibaseRepository.Uris(new URI(options.wikibaseUrl()));
+        WikibaseRepository.Uris wikibase = WikibaseRepository.Uris.withWikidataDefaults(new URI(options.wikibaseUrl()));
         // Create status objects for errors
         IStatus[] statuses = options.error().stream().map(Proxy::buildErrorStatus)
                 .toArray(IStatus[]::new);

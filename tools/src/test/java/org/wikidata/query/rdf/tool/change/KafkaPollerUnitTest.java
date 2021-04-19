@@ -17,6 +17,8 @@ import static org.wikidata.query.rdf.tool.change.events.ChangeEventFixtures.STAR
 import static org.wikidata.query.rdf.tool.change.events.ChangeEventFixtures.makeDeleteEvent;
 import static org.wikidata.query.rdf.tool.change.events.ChangeEventFixtures.makeRCEvent;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,8 +70,8 @@ public class KafkaPollerUnitTest {
     private static final int BATCH_SIZE = 5;
 
     @Before
-    public void setupUris() {
-        uris = Uris.fromString("https://" + DOMAIN, singleton(ENTITY_NS));
+    public void setupUris() throws URISyntaxException {
+        uris = new Uris(new URI("https://" + DOMAIN), singleton(ENTITY_NS), "/api.php", "/entitydata");
     }
 
     @Test

@@ -6,8 +6,6 @@ import java.util.UUID
 import scala.concurrent.duration.MILLISECONDS
 
 import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
-import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
 import org.wikidata.query.rdf.tool.rdf.Patch

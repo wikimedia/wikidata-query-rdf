@@ -103,6 +103,12 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     @Option(defaultValue = "0", description = "How old (hours) should revision be to start using latest revision fetch")
     int oldRevision();
 
+    @Option(defaultValue = WikibaseRepository.Uris.DEFAULT_API_PATH, description = "Path to mediawiki api.php")
+    String apiPath();
+
+    @Option(defaultValue = WikibaseRepository.Uris.DEFAULT_ENTITY_DATA_PATH, description = "Path to Special:EntityData")
+    String entityDataPath();
+
     static Set<Long> longEntityNamespaces(UpdateOptions updateOptions) {
         if (updateOptions.entityNamespaces() == null) return DEFAULT_ENTITY_NAMESPACES;
         return splitByComma(singletonList(updateOptions.entityNamespaces()))
@@ -166,7 +172,11 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     }
 
     static WikibaseRepository.Uris uris(UpdateOptions updateOptions) {
-        return new WikibaseRepository.Uris(getWikibaseUrl(updateOptions), UpdateOptions.longEntityNamespaces(updateOptions));
+        return new WikibaseRepository.Uris(
+                getWikibaseUrl(updateOptions),
+                UpdateOptions.longEntityNamespaces(updateOptions),
+                updateOptions.apiPath(),
+                updateOptions.entityDataPath());
     }
 
     static List<String> clusterNames(UpdateOptions updateOptions) {

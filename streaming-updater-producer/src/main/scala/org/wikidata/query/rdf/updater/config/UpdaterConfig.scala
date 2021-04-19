@@ -18,11 +18,13 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
   val outputTopic: String = getStringParam("output_topic")
   val outputPartition: Int = params.getInt("output_topic_partition")
   val entityNamespaces: Set[Long] = params.get("entity_namespaces", defaultEntityNs).split(",").map(_.trim.toLong).toSet
+  val entityDataPath: String = params.get("wikibase_entitydata_path", Uris.DEFAULT_ENTITY_DATA_PATH)
 
   val generalConfig: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
     hostname = hostName,
     jobName = jobName,
     entityNamespaces = entityNamespaces,
+    entityDataPath = entityDataPath,
     reorderingWindowLengthMs = params.getInt("reordering_window_length", 1 minute),
 
     generateDiffTimeout = params.getLong("generate_diff_timeout", 5.minutes.toMillis),
@@ -87,6 +89,7 @@ object UpdaterConfig {
 sealed case class UpdaterPipelineGeneralConfig(hostname: String,
                                                jobName: String,
                                                entityNamespaces: Set[Long],
+                                               entityDataPath: String,
                                                reorderingWindowLengthMs: Int,
                                                generateDiffTimeout: Long,
                                                wikibaseRepoThreadPoolSize: Int,

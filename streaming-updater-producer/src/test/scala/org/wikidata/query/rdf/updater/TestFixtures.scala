@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.updater
 
+import java.net.URI
 import java.time.{Clock, Instant, ZoneOffset}
 import java.util
 import java.util.{Collections, UUID}
@@ -26,7 +27,7 @@ trait TestFixtures extends TestEventGenerator {
   val REORDERING_WINDOW_LENGTH = 60000
   val DOMAIN = "tested.domain"
   val ENTITY_NAMESPACES: Set[Long] = Uris.DEFAULT_ENTITY_NAMESPACES.asScala.map(Long2long).toSet
-  val URIS: Uris = Uris.fromString(s"https://$DOMAIN", Uris.DEFAULT_ENTITY_NAMESPACES)
+  val URIS: Uris = new Uris(new URI(s"https://$DOMAIN"), Uris.DEFAULT_ENTITY_NAMESPACES, "/unused", "/wiki/SpecialEntity:Data/")
   val WATERMARK_DOMAIN = "generate.watermark"
   val OUTPUT_EVENT_UUID_GENERATOR: () => String = () => "UNIQUE FOR TESTING"
   val OUTPUT_EVENT_STREAM_NAME = "wdqs_streaming_updater_test_stream"
