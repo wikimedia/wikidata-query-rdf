@@ -1,0 +1,89 @@
+@startuml
+cloud k8s {
+    component Flink {
+        component "WDQS\nStreaming\nUpdater" as updater
+    }
+    storage "rocksdb" as disk
+    note left of disk
+        temporary state is
+        stored by Flink component
+        local disk, this can be
+        lost at any time and recovered
+        from checkpoint.
+    end note
+    database configmap {
+        artifact configs
+        note bottom of configs
+            config stores the path
+            to the latest valid checkpoint,
+            path to binaries of applications
+            deployed on the Flink cluster
+            and a few other information.
+        end note
+    }
+}
+database Swift {
+    artifact checkpoint
+    artifact "application binaries" as binaries
+}
+component "Kafka (in)" as kafka_in {
+    queue edits
+    queue deletes
+}
+note bottom of kafka_in
+    Streaming Updater consumes updates
+    from both datacenters to provide a
+    consolidate view of all state changes.
+end note
+component "Kafka (out)" as kafka_out {
+    queue "RDF Stream" as rdf
+}
+note bottom of rdf
+    Streaming Updater in each DC provides
+    a stream of RDF changes that reflects the
+    global state change. This stream should
+    only be consumed by downstream applications
+    in the same datacenter. While streams
+    generated in different datacenters are
+    functionally identical, minor differences in
+    timing or ordering means that consumer
+    offsets are not interchangeable. A consumer
+    cannot change the stream being consumed
+    without data loss.
+end note
+
+component WDQS as wdqs
+
+component "Other services" {
+    interface schema.wikimedia.org as schema
+    interface meta.wikimedia.org as meta
+    interface wikidata.org as wikidata
+}
+
+updater --> edits: consumes
+updater --> deletes: consumes
+updater --> rdf: produces
+
+updater -up-> schema: stream config
+updater -up-> meta: stream config
+updater -up-> wikidata: read EntityData
+
+wdqs --> rdf: consumes
+
+Flink --> checkpoint: saves
+Flink --> binaries: saves
+Flink --> configs: saves
+Flink --> disk: stores state
+
+card Notes [
+    <b>General notes</b>
+    ===
+    Arrow direction represent
+    dependencies, not data flow
+    ---
+    Connections to external services
+    all go through proxies.
+]
+
+
+@enduml
