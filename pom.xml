@@ -800,6 +800,11 @@
             </dependency>
             <dependency>
                 <groupId>org.wikidata.query.rdf</groupId>
+                <artifactId>streaming-updater-producer</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wikidata.query.rdf</groupId>
                 <artifactId>tools</artifactId>
                 <version>${project.version}</version>
             </dependency>

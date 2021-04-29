@@ -40,6 +40,10 @@
         </dependency>
         <dependency>
             <groupId>org.wikidata.query.rdf</groupId>
+            <artifactId>streaming-updater-producer</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wikidata.query.rdf</groupId>
             <artifactId>tools</artifactId>
         </dependency>
     </dependencies>

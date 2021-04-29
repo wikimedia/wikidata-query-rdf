@@ -34,6 +34,14 @@
     </fileSet>
 
     <fileSet>
+      <outputDirectory>lib</outputDirectory>
+      <directory>${project.basedir}/../streaming-updater-producer/target</directory>
+      <includes>
+        <include>streaming-updater-producer-${project.version}-jar-with-dependencies.jar</include>
+      </includes>
+    </fileSet>
+
+    <fileSet>
       <outputDirectory>docs</outputDirectory>
       <directory>${project.basedir}/../docs</directory>
     </fileSet>
