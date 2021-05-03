@@ -6,6 +6,7 @@ import org.apache.jena.shared.PrefixMapping
 
 import scala.collection.mutable
 
+case class NodeInfo(nodeType: String, nodeValue: String)
 
 class AnalyzeNodeVisitor(
   prefixMapping: PrefixMapping
@@ -29,22 +30,22 @@ class AnalyzeNodeVisitor(
     prefixesCount(s) = prefixesCount(s) + 1L
   }
 
-  override def visitAny(nodeAny: Node_ANY): AnyRef = {
+  override def visitAny(nodeAny: Node_ANY): NodeInfo = {
     incNode("NODE_ANY")
-    nullRes
+    NodeInfo("NODE_ANY", "")
   }
 
-  override def visitBlank(nodeBlank: Node_Blank, blankNodeId: BlankNodeId): AnyRef = {
+  override def visitBlank(nodeBlank: Node_Blank, blankNodeId: BlankNodeId): NodeInfo = {
     incNode(s"NODE_BLANK[${blankNodeId.getLabelString}]")
-    nullRes
+    NodeInfo("NODE_BLANK", blankNodeId.getLabelString)
   }
 
-  override def visitLiteral(nodeLiteral: Node_Literal, literalLabel: LiteralLabel): AnyRef = {
+  override def visitLiteral(nodeLiteral: Node_Literal, literalLabel: LiteralLabel): NodeInfo = {
     incNode(s"NODE_LITERAL[${literalLabel.toString()}]")
-    nullRes
+    NodeInfo("NODE_LITERAL", literalLabel.toString())
   }
 
-  override def visitURI(nodeUri: Node_URI, s: String): AnyRef = {
+  override def visitURI(nodeUri: Node_URI, s: String): NodeInfo = {
     val shortForm = prefixMapping.shortForm(s)
     val (prefix, qname) = {
       val colonIdx = shortForm.indexOf(':')
@@ -64,11 +65,11 @@ class AnalyzeNodeVisitor(
     }
     prefix.foreach(p => incPrefix(p))
     incNode(s"NODE_URI[$shortForm]")
-    nullRes
+    NodeInfo("NODE_URI", shortForm)
   }
 
-  override def visitVariable(nodeVariable: Node_Variable, s: String): AnyRef = {
+  override def visitVariable(nodeVariable: Node_Variable, s: String): NodeInfo = {
     incNode(s"NODE_VAR[$s]")
-    nullRes
+    NodeInfo("NODE_VAR", s)
   }
 }

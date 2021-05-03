@@ -8,16 +8,19 @@ import org.apache.jena.sparql.core.Var
 import scala.collection.mutable
 import collection.JavaConverters._
 
+case class TripleInfo(subjectNode: NodeInfo, predicateNode: NodeInfo, objectNode: NodeInfo)
+
 // Number of methods is defined by parent class - turning off scalastyle check
 // scalastyle:off number.of.methods
 class AnalyzeOpVisitor(
   prefixMapping: PrefixMapping
 ) extends OpVisitor {
 
-  var tripleCount = 0L
+  var tripleGlobalCount = 0L
   var triplePathCount = 0L
   val opCount: mutable.Map[String, Long] = new mutable.HashMap[String, Long]().withDefaultValue(0L)
   val opList: mutable.Buffer[String] = new mutable.ArrayBuffer[String]()
+  val triples: mutable.Buffer[TripleInfo] = new mutable.ArrayBuffer[TripleInfo]()
 
   val nodeVisitor = new AnalyzeNodeVisitor(prefixMapping)
   val serviceVisitor = new AnalyzeNodeVisitor(prefixMapping)
@@ -27,6 +30,10 @@ class AnalyzeOpVisitor(
   private def inc(s: String): Unit = {
     opCount(s) = opCount(s) + 1L
     opList += s
+  }
+
+  private def incTriple(s: TripleInfo): Unit = {
+    triples += s
   }
 
   private def notWorked(op: Op): Unit ={
@@ -41,10 +48,11 @@ class AnalyzeOpVisitor(
   override def visit(opBGP: OpBGP): Unit = {
     inc(opBGP.getName)
     opBGP.getPattern.getList.asScala.foreach(t => {
-      tripleCount += 1
-      t.getSubject.visitWith(nodeVisitor)
-      t.getPredicate.visitWith(nodeVisitor)
-      t.getObject.visitWith(nodeVisitor)
+      tripleGlobalCount += 1
+      val subNode = t.getSubject.visitWith(nodeVisitor).asInstanceOf[NodeInfo]
+      val predNode = t.getPredicate.visitWith(nodeVisitor).asInstanceOf[NodeInfo]
+      val objNode = t.getObject.visitWith(nodeVisitor).asInstanceOf[NodeInfo]
+      incTriple(TripleInfo(subNode, predNode, objNode))
     })
   }
 
@@ -70,14 +78,17 @@ class AnalyzeOpVisitor(
   override def visit(opPath: OpPath): Unit = {
     inc(opPath.getName)
     val triplePath = opPath.getTriplePath
-    triplePath.getSubject.visitWith(nodeVisitor)
-    triplePath.getObject.visitWith(nodeVisitor)
+    val subNode = triplePath.getSubject.visitWith(nodeVisitor).asInstanceOf[NodeInfo]
+    val objNode = triplePath.getObject.visitWith(nodeVisitor).asInstanceOf[NodeInfo]
     if (triplePath.getPath != null) {
       triplePathCount += 1
       triplePath.getPath.visit(pathVisitor)
+      val predNode = NodeInfo("PATH", triplePath.getPath.toString())
+      incTriple(TripleInfo(subNode, predNode, objNode))
     } else {
-      tripleCount += 1
-      triplePath.getPredicate.visitWith(nodeVisitor)
+      tripleGlobalCount += 1
+      val predNode = triplePath.getPredicate.visitWith(nodeVisitor).asInstanceOf[NodeInfo]
+      incTriple(TripleInfo(subNode, predNode, objNode))
     }
   }
 

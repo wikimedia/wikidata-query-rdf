@@ -1,0 +1,547 @@
+SELECT ?q { ?q wdt:P31/wdt:P279* wd:Q16521 . { { VALUES ?prop { wdt:P225 wdt:P1420 } . ?q ?prop 'uncultured bacterium adhufec420' } UNION { ?q skos:altLabel 'uncultured bacterium adhufec420'@en } UNION { ?q skos:altLabel 'uncultured bacterium var. adhufec420'@en } }  }
+#TOOL: mix-n-match
+##SAMPLEQUERY##
+SELECT ?person ?personLabel ?givenNameLabel ?familyNameLabel ?countryLabel ?personDesc ?article
+WHERE
+{
+    VALUES ?person { wd:Q82939128 wd:Q15713495 wd:Q60439029 wd:Q82736987 wd:Q82749827 wd:Q82778173 wd:Q82816509 wd:Q82834064 wd:Q82834222 wd:Q82859998 wd:Q82922056 wd:Q82962720 wd:Q9092010 wd:Q47672112 wd:Q47672211 wd:Q47672617 wd:Q48936253 wd:Q60991687 wd:Q63378795 wd:Q78116841  }
+    ?person wdt:P27 ?country;
+         #wdt:P734 ?familyName;
+         #wdt:P735 ?givenName;
+         rdfs:label ?personLabel;
+         schema:description ?personDesc.
+    OPTIONAL {
+        ?person wdt:P734 ?familyName.
+        ?familyName rdfs:label ?familyNameLabel FILTER(LANG(?familyNameLabel) = "en").  
+    }
+    OPTIONAL {
+        ?person wdt:P735 ?givenName.
+        ?givenName rdfs:label ?givenNameLabel FILTER(LANG(?givenNameLabel) = "en").  
+    }    
+     
+    
+    ?country rdfs:label ?countryLabel.
+    #?givenName rdfs:label ?givenNameLabel.
+    
+    ?article schema:about ?person;
+             schema:inLanguage "en";
+             schema:isPartOf <https://en.wikipedia.org/> .
+  
+    FILTER(LANG(?personLabel) = "en").
+    FILTER(LANG(?countryLabel) = "en").
+    #FILTER(LANG(?givenNameLabel) = "en").
+    FILTER(LANG(?personDesc) = "en").
+}
+##SAMPLEQUERY##
+
+    SELECT DISTINCT ?aspect 
+    WHERE {
+    { [] wdt:P50 wd:Q1079140 . BIND("author" AS ?aspect) }
+    UNION 
+    { [] wdt:P166 wd:Q1079140 . BIND("award" AS ?aspect) }
+    UNION 
+    { [] wdt:P17 wd:Q1079140 . BIND("country" AS ?aspect) }
+    UNION
+    { [] wdt:P972 wd:Q1079140 . BIND("catalogue" AS ?aspect) }
+    UNION
+    { wd:Q1079140 wdt:P159? / wdt:P625 [] . BIND("location" AS ?aspect) } 
+    UNION 
+    { [] wdt:P1416 | wdt:P108 wd:Q1079140 . BIND("organization" AS ?aspect) }
+    UNION 
+    { [] wdt:P123 wd:Q1079140 . BIND("publisher" AS ?aspect) }
+    UNION 
+    { [] wdt:P872 wd:Q1079140 . BIND("printer" AS ?aspect) }
+    UNION 
+    { [] wdt:P179 wd:Q1079140 . BIND("series" AS ?aspect) }
+    UNION 
+    { [] wdt:P859 wd:Q1079140 . BIND("sponsor" AS ?aspect) }
+    UNION
+    { [] wdt:P921 wd:Q1079140 . BIND("topic" AS ?aspect) }
+    UNION
+    { [] wdt:P4510 wd:Q1079140 . BIND("use" AS ?aspect) } 
+    UNION
+    { [] wdt:P1433 wd:Q1079140 . BIND("venue" AS ?aspect) } 
+    UNION
+    { wd:Q1079140 wdt:P235 [] . BIND("chemical" AS ?aspect) }
+    UNION
+    { wd:Q1079140 ^wdt:P31/wdt:P235 [] . BIND("chemical-class" AS ?aspect) }
+    UNION
+    { wd:Q1079140 wdt:P644 [] . BIND("gene" AS ?aspect) }
+    UNION
+    { wd:Q1079140 wdt:P50 | wdt:P2093 [] . BIND("work" AS ?aspect) }
+    }
+    
+##SAMPLEQUERY##
+SELECT  *
+WHERE
+  { <http://www.wikidata.org/entity/Q258>
+              <http://www.w3.org/2000/01/rdf-schema#label>  ?oLabel
+    FILTER ( lang(?oLabel) = "en" )
+  }
+
+##SAMPLEQUERY##
+
+        SELECT ?birthDateLabel ?birthPlaceLabel ?nameLabel ?occupationLabel ?deathDateLabel
+            WHERE
+            {
+                 wd:Q6154225 p:P569 ?birthDateStatement.
+                 ?birthDateStatement ps:P569 ?birthDate.
+                 wd:Q6154225 p:P19 ?placeStatement.
+                 ?placeStatement ps:P19 ?birthPlace.
+                 wd:Q6154225 p:P734 ?nameStatement.
+                 ?nameStatement ps:P734 ?name.
+                 wd:Q6154225 p:P106 ?occupationStatement.
+                 ?occupationStatement ps:P106 ?occupation.
+                 OPTIONAL{wd:Q6154225 p:P570 ?deathDateStatement.
+                 ?deathDateStatement ps:P570 ?deathDate.}
+                 SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+            }
+        
+##SAMPLEQUERY##
+SELECT DISTINCT ?subject WHERE { ?subject wdt:P691 'uk20211112558' .
+     } LIMIT 1
+##SAMPLEQUERY##
+ SELECT ?nameLabel
+        WHERE
+        {
+             wd:Q5644670 p:P735 ?statement.
+             ?statement ps:P735 ?name.
+             OPTIONAL{?statement pq:P1545 ?rank}
+             SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+        }
+        ORDER BY ?rank
+
+##SAMPLEQUERY##
+
+        SELECT DISTINCT ?eventLabel ?propLabel ?item ?itemLabel
+        WHERE 
+        {
+        {
+          wd:Q15515 ?property ?item.
+          wd:Q15515 rdfs:label ?eventLabel .
+          ?prop wikibase:directClaim ?property .
+          ?prop rdfs:label ?propLabel.  
+          ?item rdfs:label ?itemLabel .
+         }
+         UNION
+         {
+          wd:Q15515 owl:sameAs ?resource2.
+          ?resource2 ?property ?item.
+          ?resource2 rdfs:label ?eventLabel .
+          ?prop wikibase:directClaim ?property .
+          ?prop rdfs:label ?propLabel.  
+          ?item rdfs:label ?itemLabel .
+          }
+          FILTER (lang(?propLabel) = "en")
+          FILTER (lang(?eventLabel) = 'en')
+          FILTER (lang(?itemLabel) = 'en')
+        }
+##SAMPLEQUERY##
+SELECT DISTINCT ?subject WHERE { ?subject wdt:P691 'xx0260060' .
+     } LIMIT 1
+##SAMPLEQUERY##
+SELECT DISTINCT ?item ?itemLabel ?itemDescription ?connection ?connectionLabel ?connectionValue ?connectionValueLabel WHERE {  VALUES ?connection {wdt:P108 wdt:P106 wdt:P39 wdt:P21 wdt:P40 wdt:P1971}  VALUES ?itemId {wd:Q6260049}  {  ?item wdt:P279* ?itemId.  ?item ?connection ?connectionValue.  }  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" .} }
+##SAMPLEQUERY##
+SELECT ?q { ?q wdt:P31/wdt:P279* wd:Q16521 . { { VALUES ?prop { wdt:P225 wdt:P1420 } . ?q ?prop 'Influenza A virus (A/Netherlands/5/93(H3N2))' } UNION { ?q skos:altLabel 'Influenza A virus (A/Netherlands/5/93(H3N2))'@en } }  }
+#TOOL: mix-n-match
+##SAMPLEQUERY##
+SELECT ?person ?personLabel ?givenNameLabel ?familyNameLabel ?countryLabel ?personDesc ?article
+WHERE
+{
+    VALUES ?person { wd:Q11533354 wd:Q11533360 wd:Q11533361 wd:Q11533370 wd:Q11533374 wd:Q11533375 wd:Q11533372 wd:Q11533373 wd:Q11533378 wd:Q11533379 wd:Q11533377 wd:Q11533382 wd:Q11533380 wd:Q11533381 wd:Q11533391 wd:Q11533388 wd:Q11533503 wd:Q11533500 wd:Q11533516 wd:Q11533517  }
+    ?person wdt:P27 ?country;
+         #wdt:P734 ?familyName;
+         #wdt:P735 ?givenName;
+         rdfs:label ?personLabel;
+         schema:description ?personDesc.
+    OPTIONAL {
+        ?person wdt:P734 ?familyName.
+        ?familyName rdfs:label ?familyNameLabel FILTER(LANG(?familyNameLabel) = "it").  
+    }
+    OPTIONAL {
+        ?person wdt:P735 ?givenName.
+        ?givenName rdfs:label ?givenNameLabel FILTER(LANG(?givenNameLabel) = "it").  
+    }    
+     
+    
+    ?country rdfs:label ?countryLabel.
+    #?givenName rdfs:label ?givenNameLabel.
+    
+    ?article schema:about ?person;
+             schema:inLanguage "it";
+             schema:isPartOf <https://it.wikipedia.org/> .
+  
+    FILTER(LANG(?personLabel) = "it").
+    FILTER(LANG(?countryLabel) = "it").
+    #FILTER(LANG(?givenNameLabel) = "en").
+    FILTER(LANG(?personDesc) = "it").
+}
+##SAMPLEQUERY##
+SELECT ?q { ?q wdt:P31/wdt:P279* wd:Q16521 . { { VALUES ?prop { wdt:P225 wdt:P1420 } . ?q ?prop 'Borrelia sp. TA1' } UNION { ?q skos:altLabel 'Borrelia sp. TA1'@en } UNION { ?q skos:altLabel 'Borrelia sp. var. TA1'@en } }  }
+#TOOL: mix-n-match
+##SAMPLEQUERY##
+ SELECT ?nameLabel
+        WHERE
+        {
+             wd:Q480170 p:P735 ?statement.
+             ?statement ps:P735 ?name.
+             OPTIONAL{?statement pq:P1545 ?rank}
+             SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+        }
+        ORDER BY ?rank
+        
+##SAMPLEQUERY##
+ SELECT ?nameLabel
+        WHERE
+        {
+             wd:Q272234 p:P735 ?statement.
+             ?statement ps:P735 ?name.
+             OPTIONAL{?statement pq:P1545 ?rank}
+             SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+        }
+        ORDER BY ?rank
+        
+##SAMPLEQUERY##
+SELECT ?person ?personLabel ?givenNameLabel ?familyNameLabel ?countryLabel ?personDesc ?article
+WHERE
+{
+    VALUES ?person { wd:Q87361438 wd:Q87361440 wd:Q87361441 wd:Q87361447 wd:Q87361444 wd:Q87361449 wd:Q87361452 wd:Q87361459 wd:Q87361457 wd:Q87361461 wd:Q87361466 wd:Q87361467 wd:Q87361464 wd:Q87361470 wd:Q87361475 wd:Q87361473 wd:Q87361478 wd:Q87361479 wd:Q87361482 wd:Q87361494  }
+    ?person wdt:P27 ?country;
+         #wdt:P734 ?familyName;
+         #wdt:P735 ?givenName;
+         rdfs:label ?personLabel;
+         schema:description ?personDesc.
+    OPTIONAL {
+        ?person wdt:P734 ?familyName.
+        ?familyName rdfs:label ?familyNameLabel FILTER(LANG(?familyNameLabel) = "en").  
+    }
+    OPTIONAL {
+        ?person wdt:P735 ?givenName.
+        ?givenName rdfs:label ?givenNameLabel FILTER(LANG(?givenNameLabel) = "en").  
+    }    
+     
+    
+    ?country rdfs:label ?countryLabel.
+    #?givenName rdfs:label ?givenNameLabel.
+    
+    ?article schema:about ?person;
+             schema:inLanguage "en";
+             schema:isPartOf <https://en.wikipedia.org/> .
+  
+    FILTER(LANG(?personLabel) = "en").
+    FILTER(LANG(?countryLabel) = "en").
+    #FILTER(LANG(?givenNameLabel) = "en").
+    FILTER(LANG(?personDesc) = "en").
+}
+##SAMPLEQUERY##
+SELECT ?person ?personLabel ?givenNameLabel ?familyNameLabel ?countryLabel ?personDesc ?article
+WHERE
+{
+    VALUES ?person { wd:Q28699254 wd:Q28699252 wd:Q28699256 wd:Q28699257 wd:Q28699266 wd:Q28699267 wd:Q28699286 wd:Q28699284 wd:Q28699290 wd:Q28699291 wd:Q28699289 wd:Q28699294 wd:Q28699292 wd:Q28699402 wd:Q28699451 wd:Q28699455 wd:Q28699470 wd:Q28699480 wd:Q28699491 wd:Q28699597  }
+    ?person wdt:P27 ?country;
+         #wdt:P734 ?familyName;
+         #wdt:P735 ?givenName;
+         rdfs:label ?personLabel;
+         schema:description ?personDesc.
+    OPTIONAL {
+        ?person wdt:P734 ?familyName.
+        ?familyName rdfs:label ?familyNameLabel FILTER(LANG(?familyNameLabel) = "en").  
+    }
+    OPTIONAL {
+        ?person wdt:P735 ?givenName.
+        ?givenName rdfs:label ?givenNameLabel FILTER(LANG(?givenNameLabel) = "en").  
+    }    
+     
+    
+    ?country rdfs:label ?countryLabel.
+    #?givenName rdfs:label ?givenNameLabel.
+    
+    ?article schema:about ?person;
+             schema:inLanguage "en";
+             schema:isPartOf <https://en.wikipedia.org/> .
+  
+    FILTER(LANG(?personLabel) = "en").
+    FILTER(LANG(?countryLabel) = "en").
+    #FILTER(LANG(?givenNameLabel) = "en").
+    FILTER(LANG(?personDesc) = "en").
+}
+##SAMPLEQUERY##
+SELECT ?q { ?q wdt:P31/wdt:P279* wd:Q16521 . { { VALUES ?prop { wdt:P225 wdt:P1420 } . ?q ?prop 'Pseudoalteromonas sp. MED7' } UNION { ?q skos:altLabel 'Pseudoalteromonas sp. MED7'@en } UNION { ?q skos:altLabel 'Pseudoalteromonas sp. var. MED7'@en } }  }
+#TOOL: mix-n-match
+##SAMPLEQUERY##
+
+            SELECT DISTINCT ?item   ?itemLabel_en WHERE {
+            ?item ?label "PERiSCOPE"@en;
+            wdt:P31 wd:Q7397 .
+            ?item rdfs:label ?itemLabel_en . FILTER(lang(?itemLabel_en)='en')
+            }
+##SAMPLEQUERY##
+SELECT  *
+WHERE
+  { <http://www.wikidata.org/entity/Q7792455>
+              <http://www.w3.org/2000/01/rdf-schema#label>  ?oLabel
+    FILTER ( lang(?oLabel) = "en" )
+  }
+
+##SAMPLEQUERY##
+
+SELECT ?label_sv ?label_en ?art_sv ?art_en {
+  VALUES (?person) {(wd:Q1385460)}
+
+  OPTIONAL {
+   ?person rdfs:label ?label_en.
+   FILTER(LANG(?label_en) = ""||LANGMATCHES(LANG(?label_en), "en")).
+  }
+  OPTIONAL {
+   FILTER(LANG(?label_sv) = ""||LANGMATCHES(LANG(?label_sv), "sv")).
+   ?person rdfs:label ?label_sv.
+  }
+  OPTIONAL {
+   ?art_sv schema:about ?person ; schema:isPartOf <https://sv.wikipedia.org/> .
+  }
+  OPTIONAL {
+   ?art_en schema:about ?person ; schema:isPartOf <https://en.wikipedia.org/> .
+  }
+}
+
+##SAMPLEQUERY##
+CONSTRUCT {?s ?p ?o.} WHERE { VALUES ?s {wd:Q57663648 wd:Q57663546 wd:Q57663511 wd:Q57663441 wd:Q57663439 wd:Q57663426 wd:Q57663420 wd:Q57663406 wd:Q57663400 wd:Q57663396 wd:Q57663384 wd:Q57663368 wd:Q57663361 wd:Q57663358 wd:Q57663338 wd:Q57663331 wd:Q57663262 wd:Q57663245 wd:Q57663239 wd:Q57663234 wd:Q57663230 wd:Q57663228 wd:Q57663227 wd:Q57663208 wd:Q57663203 wd:Q57663194 wd:Q57663188 wd:Q57663148 wd:Q57663143 wd:Q57663139 wd:Q57663135 wd:Q57663127 wd:Q57663104 wd:Q57663098 wd:Q57663094 wd:Q57663093 wd:Q57663089 wd:Q57663044 wd:Q57663024 wd:Q57663020 wd:Q57663019 wd:Q57662980 wd:Q57662978 wd:Q57662971 wd:Q57662960 wd:Q57662958 wd:Q57662946 wd:Q57662944 wd:Q57662940 wd:Q57662896 wd:Q57662881 wd:Q57662880 wd:Q57662762 wd:Q57662722 wd:Q57662662 wd:Q57662645 wd:Q57662642 wd:Q57662601 wd:Q57662572 wd:Q57662546 wd:Q57662536 wd:Q57662533 wd:Q57662530 wd:Q57662525 wd:Q57662518 wd:Q57662515 wd:Q57662499 wd:Q57662452 wd:Q57662446 wd:Q57662445 wd:Q57662440 wd:Q57662423 wd:Q57662415 wd:Q57662407 wd:Q57662376 wd:Q57662358 wd:Q57662357 wd:Q57662351 wd:Q57662335 wd:Q57662321 wd:Q57662295 wd:Q57662261 wd:Q57662180 wd:Q57662173 wd:Q57662148 wd:Q57662140 wd:Q57662116 wd:Q57662111 wd:Q57662110 wd:Q57662095 wd:Q57662093 wd:Q57662081 wd:Q57662073 wd:Q57662071 wd:Q57662067 wd:Q57662058 wd:Q57662050 wd:Q57662045 wd:Q57662037 wd:Q57662027 wd:Q57662017 wd:Q57661972 wd:Q57661961 wd:Q57661932 wd:Q57661926 wd:Q57661918 wd:Q57661915 wd:Q57661896 wd:Q57661895 wd:Q57661887 wd:Q57661855 wd:Q57661825 wd:Q57661819 wd:Q57661811 wd:Q57661782 wd:Q57661780 wd:Q57661778 wd:Q57661776 wd:Q57661774 wd:Q57661772 wd:Q5766176 wd:Q57661754 wd:Q57661751 wd:Q57661744 wd:Q5766173 wd:Q57661684 wd:Q57661618 wd:Q57661617 wd:Q57661608 wd:Q57661605 wd:Q57661595 wd:Q57661594 wd:Q57661570 wd:Q57661569 wd:Q57661557 wd:Q57661528 wd:Q57661468 wd:Q57661410 wd:Q57661349 wd:Q57661308 wd:Q57661197 wd:Q57661184 wd:Q57661180 wd:Q57661175 wd:Q57661141 wd:Q57661123 wd:Q57661077 wd:Q57661038 wd:Q57661012 wd:Q57661008 wd:Q57660989 wd:Q57660964 wd:Q57660940 wd:Q57660927 wd:Q57660925 wd:Q57660921 wd:Q57660914 wd:Q57660908 wd:Q57660884 wd:Q57660879 wd:Q57660874 wd:Q57660871 wd:Q57660869 wd:Q57660860 wd:Q57660856 wd:Q57660848 wd:Q57660836 wd:Q57660833 wd:Q57660830 wd:Q57660829 wd:Q57660827 wd:Q57660826 wd:Q57660825 wd:Q57660817 wd:Q57660809} { ?s ?p ?o. }{[] wikibase:claim ?p }  FILTER (?p = p:P31).}
+##SAMPLEQUERY##
+SELECT ?item WHERE {wd:Q2415821 wdt:P106 ?item}
+##SAMPLEQUERY##
+SELECT ?item ?pic ?name ?wdpage WHERE {
+  ?wdpage wdt:P18 ?pic .
+  ?wdpage wdt:P5055 "10370507" .
+  SERVICE wikibase:label {
+   bd:serviceParam wikibase:language "en" .
+   ?wdpage wdt:P1843 ?name .
+  }
+} limit 1
+##SAMPLEQUERY##
+ SELECT ?nameLabel
+        WHERE
+        {
+             wd:Q19874405 p:P735 ?statement.
+             ?statement ps:P735 ?name.
+             OPTIONAL{?statement pq:P1545 ?rank}
+             SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+        }
+        ORDER BY ?rank
+        
+##SAMPLEQUERY##
+SELECT ?person ?personLabel ?givenNameLabel ?familyNameLabel ?countryLabel ?personDesc ?article
+WHERE
+{
+    VALUES ?person { wd:Q26924626 wd:Q26924700 wd:Q26924716 wd:Q26924746 wd:Q26924765 wd:Q26924792 wd:Q26925245 wd:Q26925664 wd:Q26926915 wd:Q26927708 wd:Q26927751 wd:Q29387064 wd:Q29387086 wd:Q29387258 wd:Q29387316 wd:Q29387343 wd:Q29387439 wd:Q29387485 wd:Q29387492 wd:Q29387588  }
+    ?person wdt:P27 ?country;
+         #wdt:P734 ?familyName;
+         #wdt:P735 ?givenName;
+         rdfs:label ?personLabel;
+         schema:description ?personDesc.
+    OPTIONAL {
+        ?person wdt:P734 ?familyName.
+        ?familyName rdfs:label ?familyNameLabel FILTER(LANG(?familyNameLabel) = "it").  
+    }
+    OPTIONAL {
+        ?person wdt:P735 ?givenName.
+        ?givenName rdfs:label ?givenNameLabel FILTER(LANG(?givenNameLabel) = "it").  
+    }    
+     
+    
+    ?country rdfs:label ?countryLabel.
+    #?givenName rdfs:label ?givenNameLabel.
+    
+    ?article schema:about ?person;
+             schema:inLanguage "it";
+             schema:isPartOf <https://it.wikipedia.org/> .
+  
+    FILTER(LANG(?personLabel) = "it").
+    FILTER(LANG(?countryLabel) = "it").
+    #FILTER(LANG(?givenNameLabel) = "en").
+    FILTER(LANG(?personDesc) = "it").
+}
+##SAMPLEQUERY##
+SELECT DISTINCT ?subject WHERE { ?subject wdt:P846 '9807306' .
+     }
+##SAMPLEQUERY##
+
+        SELECT ?birthDateLabel ?birthPlaceLabel ?nameLabel ?occupationLabel ?deathDateLabel
+            WHERE
+            {
+                 wd:Q6210353 p:P569 ?birthDateStatement.
+                 ?birthDateStatement ps:P569 ?birthDate.
+                 wd:Q6210353 p:P19 ?placeStatement.
+                 ?placeStatement ps:P19 ?birthPlace.
+                 wd:Q6210353 p:P734 ?nameStatement.
+                 ?nameStatement ps:P734 ?name.
+                 wd:Q6210353 p:P106 ?occupationStatement.
+                 ?occupationStatement ps:P106 ?occupation.
+                 OPTIONAL{wd:Q6210353 p:P570 ?deathDateStatement.
+                 ?deathDateStatement ps:P570 ?deathDate.}
+                 SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+            }
+        
+##SAMPLEQUERY##
+PREFIX wd: <http://www.wikidata.org/entity/> PREFIX ps: <http://www.wikidata.org/prop/statement/> ASK {  wd:Q7374 p:P598 ?e1 . ?e1 ps:P598 ?value .  } 
+##SAMPLEQUERY##
+SELECT ?person ?personLabel ?givenNameLabel ?familyNameLabel ?countryLabel ?personDesc ?article
+WHERE
+{
+    VALUES ?person { wd:Q3568677 wd:Q3568692 wd:Q3568705 wd:Q3568710 wd:Q3568718 wd:Q3568726 wd:Q3568735 wd:Q3568738 wd:Q3568736 wd:Q3568778 wd:Q3568781 wd:Q3568819 wd:Q3568822 wd:Q3568823 wd:Q3568826 wd:Q3568829 wd:Q3568833 wd:Q3568838 wd:Q3568853 wd:Q3568861  }
+    ?person wdt:P27 ?country;
+         #wdt:P734 ?familyName;
+         #wdt:P735 ?givenName;
+         rdfs:label ?personLabel;
+         schema:description ?personDesc.
+    OPTIONAL {
+        ?person wdt:P734 ?familyName.
+        ?familyName rdfs:label ?familyNameLabel FILTER(LANG(?familyNameLabel) = "it").  
+    }
+    OPTIONAL {
+        ?person wdt:P735 ?givenName.
+        ?givenName rdfs:label ?givenNameLabel FILTER(LANG(?givenNameLabel) = "it").  
+    }    
+     
+    
+    ?country rdfs:label ?countryLabel.
+    #?givenName rdfs:label ?givenNameLabel.
+    
+    ?article schema:about ?person;
+             schema:inLanguage "it";
+             schema:isPartOf <https://it.wikipedia.org/> .
+  
+    FILTER(LANG(?personLabel) = "it").
+    FILTER(LANG(?countryLabel) = "it").
+    #FILTER(LANG(?givenNameLabel) = "en").
+    FILTER(LANG(?personDesc) = "it").
+}
+##SAMPLEQUERY##
+SELECT ?person ?personLabel ?givenNameLabel ?familyNameLabel ?countryLabel ?personDesc ?article
+WHERE
+{
+    VALUES ?person { wd:Q5237510 wd:Q5237511 wd:Q5237508 wd:Q5237512 wd:Q5237522 wd:Q5237548 wd:Q5237549 wd:Q5237557 wd:Q5237571 wd:Q5237568 wd:Q5237577 wd:Q5237583 wd:Q5237585 wd:Q5237594 wd:Q5237613 wd:Q5237619 wd:Q5237621 wd:Q5237625 wd:Q5237629 wd:Q5237641  }
+    ?person wdt:P27 ?country;
+         #wdt:P734 ?familyName;
+         #wdt:P735 ?givenName;
+         rdfs:label ?personLabel;
+         schema:description ?personDesc.
+    OPTIONAL {
+        ?person wdt:P734 ?familyName.
+        ?familyName rdfs:label ?familyNameLabel FILTER(LANG(?familyNameLabel) = "it").  
+    }
+    OPTIONAL {
+        ?person wdt:P735 ?givenName.
+        ?givenName rdfs:label ?givenNameLabel FILTER(LANG(?givenNameLabel) = "it").  
+    }    
+     
+    
+    ?country rdfs:label ?countryLabel.
+    #?givenName rdfs:label ?givenNameLabel.
+    
+    ?article schema:about ?person;
+             schema:inLanguage "it";
+             schema:isPartOf <https://it.wikipedia.org/> .
+  
+    FILTER(LANG(?personLabel) = "it").
+    FILTER(LANG(?countryLabel) = "it").
+    #FILTER(LANG(?givenNameLabel) = "en").
+    FILTER(LANG(?personDesc) = "it").
+}
+##SAMPLEQUERY##
+SELECT ?person ?personLabel ?givenNameLabel ?familyNameLabel ?countryLabel ?personDesc ?article
+WHERE
+{
+    VALUES ?person { wd:Q19260847 wd:Q19261076 wd:Q19266815 wd:Q20021145 wd:Q20021240 wd:Q20028289 wd:Q20028460 wd:Q20028482 wd:Q20028802 wd:Q20028807 wd:Q20028838 wd:Q20028853 wd:Q20028922 wd:Q20028995 wd:Q16610183 wd:Q19267391 wd:Q19268922 wd:Q19269638 wd:Q19273918 wd:Q19286021  }
+    ?person wdt:P27 ?country;
+         #wdt:P734 ?familyName;
+         #wdt:P735 ?givenName;
+         rdfs:label ?personLabel;
+         schema:description ?personDesc.
+    OPTIONAL {
+        ?person wdt:P734 ?familyName.
+        ?familyName rdfs:label ?familyNameLabel FILTER(LANG(?familyNameLabel) = "en").  
+    }
+    OPTIONAL {
+        ?person wdt:P735 ?givenName.
+        ?givenName rdfs:label ?givenNameLabel FILTER(LANG(?givenNameLabel) = "en").  
+    }    
+     
+    
+    ?country rdfs:label ?countryLabel.
+    #?givenName rdfs:label ?givenNameLabel.
+    
+    ?article schema:about ?person;
+             schema:inLanguage "en";
+             schema:isPartOf <https://en.wikipedia.org/> .
+  
+    FILTER(LANG(?personLabel) = "en").
+    FILTER(LANG(?countryLabel) = "en").
+    #FILTER(LANG(?givenNameLabel) = "en").
+    FILTER(LANG(?personDesc) = "en").
+}
+##SAMPLEQUERY##
+SELECT ?person ?personLabel ?givenNameLabel ?familyNameLabel ?countryLabel ?personDesc ?article
+WHERE
+{
+    VALUES ?person { wd:Q45536076 wd:Q45536082 wd:Q45536083 wd:Q45536087 wd:Q45536084 wd:Q45536094 wd:Q45536095 wd:Q45536093 wd:Q45536098 wd:Q45536097 wd:Q45536103 wd:Q45536100 wd:Q45536107 wd:Q45536104 wd:Q45536108 wd:Q45536109 wd:Q45536114 wd:Q45536113 wd:Q45536118 wd:Q45536119  }
+    ?person wdt:P27 ?country;
+         #wdt:P734 ?familyName;
+         #wdt:P735 ?givenName;
+         rdfs:label ?personLabel;
+         schema:description ?personDesc.
+    OPTIONAL {
+        ?person wdt:P734 ?familyName.
+        ?familyName rdfs:label ?familyNameLabel FILTER(LANG(?familyNameLabel) = "en").  
+    }
+    OPTIONAL {
+        ?person wdt:P735 ?givenName.
+        ?givenName rdfs:label ?givenNameLabel FILTER(LANG(?givenNameLabel) = "en").  
+    }    
+     
+    
+    ?country rdfs:label ?countryLabel.
+    #?givenName rdfs:label ?givenNameLabel.
+    
+    ?article schema:about ?person;
+             schema:inLanguage "en";
+             schema:isPartOf <https://en.wikipedia.org/> .
+  
+    FILTER(LANG(?personLabel) = "en").
+    FILTER(LANG(?countryLabel) = "en").
+    #FILTER(LANG(?givenNameLabel) = "en").
+    FILTER(LANG(?personDesc) = "en").
+}
+##SAMPLEQUERY##
+select  *
+where{ wd:Q61712 wdt:P1412 wd:Q397}
+##SAMPLEQUERY##
+SELECT DISTINCT ?item ?itemLabel ?pic ?commonName WHERE {
+    { ?item wdt:P685 "9599". }
+    UNION
+    { ?item wdt:P225 "Pongo". }
+    OPTIONAL { ?item wdt:P18 ?pic. }
+    OPTIONAL { ?item wdt:P1843 ?commonName FILTER (lang(?commonName) = 'en'). }
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+  }
+  LIMIT 10
+##SAMPLEQUERY##
+SELECT ?q { ?q wdt:P31/wdt:P279* wd:Q16521 . { { VALUES ?prop { wdt:P225 wdt:P1420 } . ?q ?prop 'aquatic bacterium RUB_GSP_01' } UNION { ?q skos:altLabel 'aquatic bacterium RUB_GSP_01'@en } UNION { ?q skos:altLabel 'aquatic bacterium var. RUB_GSP_01'@en } }  }
+#TOOL: mix-n-match
+##SAMPLEQUERY##
+
+        SELECT ?birthDateLabel ?birthPlaceLabel ?nameLabel ?occupationLabel ?deathDateLabel
+            WHERE
+            {
+                 wd:Q10828738 p:P569 ?birthDateStatement.
+                 ?birthDateStatement ps:P569 ?birthDate.
+                 wd:Q10828738 p:P19 ?placeStatement.
+                 ?placeStatement ps:P19 ?birthPlace.
+                 wd:Q10828738 p:P734 ?nameStatement.
+                 ?nameStatement ps:P734 ?name.
+                 wd:Q10828738 p:P106 ?occupationStatement.
+                 ?occupationStatement ps:P106 ?occupation.
+                 OPTIONAL{wd:Q10828738 p:P570 ?deathDateStatement.
+                 ?deathDateStatement ps:P570 ?deathDate.}
+                 SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+            }
+        

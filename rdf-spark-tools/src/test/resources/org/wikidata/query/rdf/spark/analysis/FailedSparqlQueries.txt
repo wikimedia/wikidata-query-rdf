@@ -1,0 +1,465 @@
+SELECT ?item ?itemLabel ?itemDescription ?lat ?long ?P571 ?P571timePrecision ?P571timeZone ?P571timeCalendar ?P576 ?P576timePrecision ?P576timeZone ?P576timeCalendar ?P580 ?P580timePrecision ?P580timeZone ?P580timeCalendar ?P582 ?P582timePrecision ?P582timeZone ?P582timeCalendar ?P569 ?P569timePrecision ?P569timeZone ?P569timeCalendar ?P570 ?P570timePrecision ?P570timeZone ?P570timeCalendar ?P619 ?P619timePrecision ?P619timeZone ?P619timeCalendar ?P620 ?P620timePrecision ?P620timeZone ?P620timeCalendar (group_concat(distinct ?P27Label;separator=", ") as ?P27Labels) (group_concat(distinct ?P495Label;separator=", ") as ?P495Labels) (group_concat(distinct ?P17Label;separator=", ") as ?P17Labels) (group_concat(distinct ?P159Label;separator=", ") as ?P159Labels) (group_concat(distinct ?P36Label;separator=", ") as ?P36Labels) (group_concat(distinct ?P35Label;separator=", ") as ?P35Labels) (group_concat(distinct ?P6Label;separator=", ") as ?P6Labels) (group_concat(distinct ?P122Label;separator=", ") as ?P122Labels) (group_concat(distinct ?P37Label;separator=", ") as ?P37Labels) (group_concat(distinct ?P1082;separator=", ") as ?P1082s) ?P2046 ?P2046Unit ?P281 ?P281Unit (group_concat(distinct ?P38Label;separator=", ") as ?P38Labels) ?P2048 ?P2048Unit (group_concat(distinct ?P400Label;separator=", ") as ?P400Labels) (group_concat(distinct ?P50Label;separator=", ") as ?P50Labels) (group_concat(distinct ?P170Label;separator=", ") as ?P170Labels) (group_concat(distinct ?P57Label;separator=", ") as ?P57Labels) (group_concat(distinct ?P175Label;separator=", ") as ?P175Labels) (group_concat(distinct ?P178Label;separator=", ") as ?P178Labels) (group_concat(distinct ?P162Label;separator=", ") as ?P162Labels) (group_concat(distinct ?P176Label;separator=", ") as ?P176Labels) (group_concat(distinct ?P58Label;separator=", ") as ?P58Labels) (group_concat(distinct ?P272Label;separator=", ") as ?P272Labels) (group_concat(distinct ?P264Label;separator=", ") as ?P264Labels) (group_concat(distinct ?P123Label;separator=", ") as ?P123Labels) (group_concat(distinct ?P449Label;separator=", ") as ?P449Labels) (group_concat(distinct ?P750Label;separator=", ") as ?P750Labels) (group_concat(distinct ?P86Label;separator=", ") as ?P86Labels) ?P577 ?P577timePrecision ?P577timeZone ?P577timeCalendar (group_concat(distinct ?P136Label;separator=", ") as ?P136Labels) (group_concat(distinct ?P364Label;separator=", ") as ?P364Labels) (group_concat(distinct ?P212;separator=", ") as ?P212s) (group_concat(distinct ?P957;separator=", ") as ?P957s) (group_concat(distinct ?P275Label;separator=", ") as ?P275Labels) (group_concat(distinct ?P277Label;separator=", ") as ?P277Labels) (group_concat(distinct ?P348;separator=", ") as ?P348s) (group_concat(distinct ?P840Label;separator=", ") as ?P840Labels) (group_concat(distinct ?P1098;separator=", ") as ?P1098s) (group_concat(distinct ?P282Label;separator=", ") as ?P282Labels) (group_concat(distinct ?P1018Label;separator=", ") as ?P1018Labels) (group_concat(distinct ?P218;separator=", ") as ?P218s) (group_concat(distinct ?P169Label;separator=", ") as ?P169Labels) (group_concat(distinct ?P112Label;separator=", ") as ?P112Labels) (group_concat(distinct ?P1454Label;separator=", ") as ?P1454Labels) (group_concat(distinct ?P137Label;separator=", ") as ?P137Labels) (group_concat(distinct ?P1029Label;separator=", ") as ?P1029Labels) (group_concat(distinct ?P225Label;separator=", ") as ?P225Labels) (group_concat(distinct ?P274;separator=", ") as ?P274s) (group_concat(distinct ?P1346Label;separator=", ") as ?P1346Labels) (group_concat(distinct ?P1120;separator=", ") as ?P1120s) (group_concat(distinct ?P498;separator=", ") as ?P498s) (group_concat(distinct ?P856;separator=", ") as ?P856s) ?articleen ?articleNameen (group_concat(distinct ?P1324;separator=", ") as ?P1324s) (group_concat(distinct ?P1581;separator=", ") as ?P1581s) (group_concat(distinct ?P434;separator=", ") as ?P434s) (group_concat(distinct ?P435;separator=", ") as ?P435s) (group_concat(distinct ?P436;separator=", ") as ?P436s) (group_concat(distinct ?P966;separator=", ") as ?P966s) (group_concat(distinct ?P345;separator=", ") as ?P345s) (group_concat(distinct ?P2397;separator=", ") as ?P2397s) (group_concat(distinct ?P1651;separator=", ") as ?P1651s) (group_concat(distinct ?P2002;separator=", ") as ?P2002s) (group_concat(distinct ?P2013;separator=", ") as ?P2013s) (group_concat(distinct ?P2003;separator=", ") as ?P2003s) ?P625Lat ?P625Long (group_concat(distinct ?P15;separator=", ") as ?P15s) (group_concat(distinct ?P242;separator=", ") as ?P242s) (group_concat(distinct ?P154;separator=", ") as ?P154s) (group_concat(distinct ?P18;separator=", ") as ?P18s) (group_concat(distinct ?P41;separator=", ") as ?P41s) (group_concat(distinct ?P2716;separator=", ") as ?P2716s) (group_concat(distinct ?P2910;separator=", ") as ?P2910s)
+WHERE
+{
+  SERVICE wikibase:mwapi {
+        bd:serviceParam wikibase:endpoint "www.wikidata.org";
+        wikibase:api "EntitySearch";
+        wikibase:limit 1;
+        mwapi:search "humble bundle downloader";
+        mwapi:language "en".
+        ?item wikibase:apiOutputItem mwapi:item.
+  }
+
+  OPTIONAL { ?item p:P571/psv:P571 [
+    wikibase:timeValue ?P571 ;
+    wikibase:timePrecision ?P571timePrecision ;
+    wikibase:timeTimezone ?P571timeZone ;
+    wikibase:timeCalendarModel ?P571timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P576/psv:P576 [
+    wikibase:timeValue ?P576 ;
+    wikibase:timePrecision ?P576timePrecision ;
+    wikibase:timeTimezone ?P576timeZone ;
+    wikibase:timeCalendarModel ?P576timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P580/psv:P580 [
+    wikibase:timeValue ?P580 ;
+    wikibase:timePrecision ?P580timePrecision ;
+    wikibase:timeTimezone ?P580timeZone ;
+    wikibase:timeCalendarModel ?P580timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P582/psv:P582 [
+    wikibase:timeValue ?P582 ;
+    wikibase:timePrecision ?P582timePrecision ;
+    wikibase:timeTimezone ?P582timeZone ;
+    wikibase:timeCalendarModel ?P582timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P569/psv:P569 [
+    wikibase:timeValue ?P569 ;
+    wikibase:timePrecision ?P569timePrecision ;
+    wikibase:timeTimezone ?P569timeZone ;
+    wikibase:timeCalendarModel ?P569timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P570/psv:P570 [
+    wikibase:timeValue ?P570 ;
+    wikibase:timePrecision ?P570timePrecision ;
+    wikibase:timeTimezone ?P570timeZone ;
+    wikibase:timeCalendarModel ?P570timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P619/psv:P619 [
+    wikibase:timeValue ?P619 ;
+    wikibase:timePrecision ?P619timePrecision ;
+    wikibase:timeTimezone ?P619timeZone ;
+    wikibase:timeCalendarModel ?P619timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P620/psv:P620 [
+    wikibase:timeValue ?P620 ;
+    wikibase:timePrecision ?P620timePrecision ;
+    wikibase:timeTimezone ?P620timeZone ;
+    wikibase:timeCalendarModel ?P620timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item wdt:P27 ?P27 . }
+  OPTIONAL { ?item wdt:P495 ?P495 . }
+  OPTIONAL { ?item wdt:P17 ?P17 . }
+  OPTIONAL { ?item wdt:P159 ?P159 . }
+  OPTIONAL { ?item wdt:P36 ?P36 . }
+  OPTIONAL { ?item wdt:P35 ?P35 . }
+  OPTIONAL { ?item wdt:P6 ?P6 . }
+  OPTIONAL { ?item wdt:P122 ?P122 . }
+  OPTIONAL { ?item wdt:P37 ?P37 . }
+  OPTIONAL { ?item wdt:P1082 ?P1082 . }
+    OPTIONAL { ?item p:P2046 ?P2046Node .
+    ?P2046Node rdf:type wikibase:BestRank ; ps:P2046 ?P2046 .
+    OPTIONAL { ?P2046Node psv:P2046/wikibase:quantityUnit ?P2046Unit. } }
+    OPTIONAL { ?item p:P281 ?P281Node .
+    ?P281Node rdf:type wikibase:BestRank ; ps:P281 ?P281 .
+    OPTIONAL { ?P281Node psv:P281/wikibase:quantityUnit ?P281Unit. } }
+  OPTIONAL { ?item wdt:P38 ?P38 . }
+    OPTIONAL { ?item p:P2048 ?P2048Node .
+    ?P2048Node rdf:type wikibase:BestRank ; ps:P2048 ?P2048 .
+    OPTIONAL { ?P2048Node psv:P2048/wikibase:quantityUnit ?P2048Unit. } }
+  OPTIONAL { ?item wdt:P400 ?P400 . }
+  OPTIONAL { ?item wdt:P50 ?P50 . }
+  OPTIONAL { ?item wdt:P170 ?P170 . }
+  OPTIONAL { ?item wdt:P57 ?P57 . }
+  OPTIONAL { ?item wdt:P175 ?P175 . }
+  OPTIONAL { ?item wdt:P178 ?P178 . }
+  OPTIONAL { ?item wdt:P162 ?P162 . }
+  OPTIONAL { ?item wdt:P176 ?P176 . }
+  OPTIONAL { ?item wdt:P58 ?P58 . }
+  OPTIONAL { ?item wdt:P272 ?P272 . }
+  OPTIONAL { ?item wdt:P264 ?P264 . }
+  OPTIONAL { ?item wdt:P123 ?P123 . }
+  OPTIONAL { ?item wdt:P449 ?P449 . }
+  OPTIONAL { ?item wdt:P750 ?P750 . }
+  OPTIONAL { ?item wdt:P86 ?P86 . }
+  OPTIONAL { ?item p:P577/psv:P577 [
+    wikibase:timeValue ?P577 ;
+    wikibase:timePrecision ?P577timePrecision ;
+    wikibase:timeTimezone ?P577timeZone ;
+    wikibase:timeCalendarModel ?P577timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item wdt:P136 ?P136 . }
+  OPTIONAL { ?item wdt:P364 ?P364 . }
+  OPTIONAL { ?item wdt:P212 ?P212 . }
+  OPTIONAL { ?item wdt:P957 ?P957 . }
+  OPTIONAL { ?item wdt:P275 ?P275 . }
+  OPTIONAL { ?item wdt:P277 ?P277 . }
+  OPTIONAL { ?item wdt:P348 ?P348 . }
+  OPTIONAL { ?item wdt:P840 ?P840 . }
+  OPTIONAL { ?item wdt:P1098 ?P1098 . }
+  OPTIONAL { ?item wdt:P282 ?P282 . }
+  OPTIONAL { ?item wdt:P1018 ?P1018 . }
+  OPTIONAL { ?item wdt:P218 ?P218 . }
+  OPTIONAL { ?item wdt:P169 ?P169 . }
+  OPTIONAL { ?item wdt:P112 ?P112 . }
+  OPTIONAL { ?item wdt:P1454 ?P1454 . }
+  OPTIONAL { ?item wdt:P137 ?P137 . }
+  OPTIONAL { ?item wdt:P1029 ?P1029 . }
+  OPTIONAL { ?item wdt:P225 ?P225 . }
+  OPTIONAL { ?item wdt:P274 ?P274 . }
+  OPTIONAL { ?item wdt:P1346 ?P1346 . }
+  OPTIONAL { ?item wdt:P1120 ?P1120 . }
+  OPTIONAL { ?item wdt:P498 ?P498 . }
+  OPTIONAL { ?item wdt:P856 ?P856 . }
+  OPTIONAL { ?articleen schema:about ?item ;
+             schema:inLanguage "en" ;
+             schema:isPartOf <https://en.wikipedia.org/> ;
+             schema:name ?articleNameen . }
+  OPTIONAL { ?item wdt:P1324 ?P1324 . }
+  OPTIONAL { ?item wdt:P1581 ?P1581 . }
+  OPTIONAL { ?item wdt:P434 ?P434 . }
+  OPTIONAL { ?item wdt:P435 ?P435 . }
+  OPTIONAL { ?item wdt:P436 ?P436 . }
+  OPTIONAL { ?item wdt:P966 ?P966 . }
+  OPTIONAL { ?item wdt:P345 ?P345 . }
+  OPTIONAL { ?item wdt:P2397 ?P2397 . }
+  OPTIONAL { ?item wdt:P1651 ?P1651 . }
+  OPTIONAL { ?item wdt:P2002 ?P2002 . }
+  OPTIONAL { ?item wdt:P2013 ?P2013 . }
+  OPTIONAL { ?item wdt:P2003 ?P2003 . }
+  OPTIONAL { ?item p:P625/psv:P625 [
+    wikibase:geoLatitude ?P625Lat ;
+    wikibase:geoLongitude ?P625Long ] }
+  OPTIONAL { ?item wdt:P15 ?P15 . }
+  OPTIONAL { ?item wdt:P242 ?P242 . }
+  OPTIONAL { ?item wdt:P154 ?P154 . }
+  OPTIONAL { ?item wdt:P18 ?P18 . }
+  OPTIONAL { ?item wdt:P41 ?P41 . }
+  OPTIONAL { ?item wdt:P2716 ?P2716 . }
+  OPTIONAL { ?item wdt:P2910 ?P2910 . }
+
+  SERVICE wikibase:label {
+      bd:serviceParam wikibase:language "en,en".
+      ?item rdfs:label ?itemLabel .
+      ?item schema:description ?itemDescription .
+      ?P27 rdfs:label ?P27Label .
+      ?P495 rdfs:label ?P495Label .
+      ?P17 rdfs:label ?P17Label .
+      ?P159 rdfs:label ?P159Label .
+      ?P36 rdfs:label ?P36Label .
+      ?P35 rdfs:label ?P35Label .
+      ?P6 rdfs:label ?P6Label .
+      ?P122 rdfs:label ?P122Label .
+      ?P37 rdfs:label ?P37Label .
+      ?P38 rdfs:label ?P38Label .
+      ?P400 rdfs:label ?P400Label .
+      ?P50 rdfs:label ?P50Label .
+      ?P170 rdfs:label ?P170Label .
+      ?P57 rdfs:label ?P57Label .
+      ?P175 rdfs:label ?P175Label .
+      ?P178 rdfs:label ?P178Label .
+      ?P162 rdfs:label ?P162Label .
+      ?P176 rdfs:label ?P176Label .
+      ?P58 rdfs:label ?P58Label .
+      ?P272 rdfs:label ?P272Label .
+      ?P264 rdfs:label ?P264Label .
+      ?P123 rdfs:label ?P123Label .
+      ?P449 rdfs:label ?P449Label .
+      ?P750 rdfs:label ?P750Label .
+      ?P86 rdfs:label ?P86Label .
+      ?P136 rdfs:label ?P136Label .
+      ?P364 rdfs:label ?P364Label .
+      ?P275 rdfs:label ?P275Label .
+      ?P277 rdfs:label ?P277Label .
+      ?P840 rdfs:label ?P840Label .
+      ?P282 rdfs:label ?P282Label .
+      ?P1018 rdfs:label ?P1018Label .
+      ?P169 rdfs:label ?P169Label .
+      ?P112 rdfs:label ?P112Label .
+      ?P1454 rdfs:label ?P1454Label .
+      ?P137 rdfs:label ?P137Label .
+      ?P1029 rdfs:label ?P1029Label .
+      ?P225 rdfs:label ?P225Label .
+      ?P1346 rdfs:label ?P1346Label .
+  }
+
+}
+GROUP BY ?item ?itemLabel ?itemDescription ?lat ?long ?P571 ?P571timePrecision ?P571timeZone ?P571timeCalendar ?P576 ?P576timePrecision ?P576timeZone ?P576timeCalendar ?P580 ?P580timePrecision ?P580timeZone ?P580timeCalendar ?P582 ?P582timePrecision ?P582timeZone ?P582timeCalendar ?P569 ?P569timePrecision ?P569timeZone ?P569timeCalendar ?P570 ?P570timePrecision ?P570timeZone ?P570timeCalendar ?P619 ?P619timePrecision ?P619timeZone ?P619timeCalendar ?P620 ?P620timePrecision ?P620timeZone ?P620timeCalendar ?P2046 ?P2046Unit ?P281 ?P281Unit ?P2048 ?P2048Unit ?P577 ?P577timePrecision ?P577timeZone ?P577timeCalendar ?articleen ?articleNameen ?P625Lat ?P625Long
+
+##SAMPLEQUERY##
+
+SELECT ?item ?itemLabel ?itemDescription ?lat ?long ?P571 ?P571timePrecision ?P571timeZone ?P571timeCalendar ?P576 ?P576timePrecision ?P576timeZone ?P576timeCalendar ?P580 ?P580timePrecision ?P580timeZone ?P580timeCalendar ?P582 ?P582timePrecision ?P582timeZone ?P582timeCalendar ?P569 ?P569timePrecision ?P569timeZone ?P569timeCalendar ?P570 ?P570timePrecision ?P570timeZone ?P570timeCalendar ?P619 ?P619timePrecision ?P619timeZone ?P619timeCalendar ?P620 ?P620timePrecision ?P620timeZone ?P620timeCalendar (group_concat(distinct ?P27Label;separator=", ") as ?P27Labels) (group_concat(distinct ?P495Label;separator=", ") as ?P495Labels) (group_concat(distinct ?P17Label;separator=", ") as ?P17Labels) (group_concat(distinct ?P159Label;separator=", ") as ?P159Labels) (group_concat(distinct ?P36Label;separator=", ") as ?P36Labels) (group_concat(distinct ?P35Label;separator=", ") as ?P35Labels) (group_concat(distinct ?P6Label;separator=", ") as ?P6Labels) (group_concat(distinct ?P122Label;separator=", ") as ?P122Labels) (group_concat(distinct ?P37Label;separator=", ") as ?P37Labels) (group_concat(distinct ?P1082;separator=", ") as ?P1082s) ?P2046 ?P2046Unit ?P281 ?P281Unit (group_concat(distinct ?P38Label;separator=", ") as ?P38Labels) ?P2048 ?P2048Unit (group_concat(distinct ?P400Label;separator=", ") as ?P400Labels) (group_concat(distinct ?P50Label;separator=", ") as ?P50Labels) (group_concat(distinct ?P170Label;separator=", ") as ?P170Labels) (group_concat(distinct ?P57Label;separator=", ") as ?P57Labels) (group_concat(distinct ?P175Label;separator=", ") as ?P175Labels) (group_concat(distinct ?P178Label;separator=", ") as ?P178Labels) (group_concat(distinct ?P162Label;separator=", ") as ?P162Labels) (group_concat(distinct ?P176Label;separator=", ") as ?P176Labels) (group_concat(distinct ?P58Label;separator=", ") as ?P58Labels) (group_concat(distinct ?P272Label;separator=", ") as ?P272Labels) (group_concat(distinct ?P264Label;separator=", ") as ?P264Labels) (group_concat(distinct ?P123Label;separator=", ") as ?P123Labels) (group_concat(distinct ?P449Label;separator=", ") as ?P449Labels) (group_concat(distinct ?P750Label;separator=", ") as ?P750Labels) (group_concat(distinct ?P86Label;separator=", ") as ?P86Labels) ?P577 ?P577timePrecision ?P577timeZone ?P577timeCalendar (group_concat(distinct ?P136Label;separator=", ") as ?P136Labels) (group_concat(distinct ?P364Label;separator=", ") as ?P364Labels) (group_concat(distinct ?P212;separator=", ") as ?P212s) (group_concat(distinct ?P957;separator=", ") as ?P957s) (group_concat(distinct ?P275Label;separator=", ") as ?P275Labels) (group_concat(distinct ?P277Label;separator=", ") as ?P277Labels) (group_concat(distinct ?P348;separator=", ") as ?P348s) (group_concat(distinct ?P840Label;separator=", ") as ?P840Labels) (group_concat(distinct ?P1098;separator=", ") as ?P1098s) (group_concat(distinct ?P282Label;separator=", ") as ?P282Labels) (group_concat(distinct ?P1018Label;separator=", ") as ?P1018Labels) (group_concat(distinct ?P218;separator=", ") as ?P218s) (group_concat(distinct ?P169Label;separator=", ") as ?P169Labels) (group_concat(distinct ?P112Label;separator=", ") as ?P112Labels) (group_concat(distinct ?P1454Label;separator=", ") as ?P1454Labels) (group_concat(distinct ?P137Label;separator=", ") as ?P137Labels) (group_concat(distinct ?P1029Label;separator=", ") as ?P1029Labels) (group_concat(distinct ?P225Label;separator=", ") as ?P225Labels) (group_concat(distinct ?P274;separator=", ") as ?P274s) (group_concat(distinct ?P1346Label;separator=", ") as ?P1346Labels) (group_concat(distinct ?P1120;separator=", ") as ?P1120s) (group_concat(distinct ?P498;separator=", ") as ?P498s) (group_concat(distinct ?P856;separator=", ") as ?P856s) ?articlede ?articleNamede ?articleen ?articleNameen (group_concat(distinct ?P1324;separator=", ") as ?P1324s) (group_concat(distinct ?P1581;separator=", ") as ?P1581s) (group_concat(distinct ?P434;separator=", ") as ?P434s) (group_concat(distinct ?P435;separator=", ") as ?P435s) (group_concat(distinct ?P436;separator=", ") as ?P436s) (group_concat(distinct ?P966;separator=", ") as ?P966s) (group_concat(distinct ?P345;separator=", ") as ?P345s) (group_concat(distinct ?P2397;separator=", ") as ?P2397s) (group_concat(distinct ?P1651;separator=", ") as ?P1651s) (group_concat(distinct ?P2002;separator=", ") as ?P2002s) (group_concat(distinct ?P2013;separator=", ") as ?P2013s) (group_concat(distinct ?P2003;separator=", ") as ?P2003s) ?P625Lat ?P625Long (group_concat(distinct ?P15;separator=", ") as ?P15s) (group_concat(distinct ?P242;separator=", ") as ?P242s) (group_concat(distinct ?P154;separator=", ") as ?P154s) (group_concat(distinct ?P18;separator=", ") as ?P18s) (group_concat(distinct ?P41;separator=", ") as ?P41s) (group_concat(distinct ?P2716;separator=", ") as ?P2716s) (group_concat(distinct ?P2910;separator=", ") as ?P2910s)
+WHERE
+{
+  SERVICE wikibase:mwapi {
+        bd:serviceParam wikibase:endpoint "www.wikidata.org";
+        wikibase:api "EntitySearch";
+        wikibase:limit 1;
+        mwapi:search "%s";
+        mwapi:language "de".
+        ?item wikibase:apiOutputItem mwapi:item.
+  }
+
+  OPTIONAL { ?item p:P571/psv:P571 [
+    wikibase:timeValue ?P571 ;
+    wikibase:timePrecision ?P571timePrecision ;
+    wikibase:timeTimezone ?P571timeZone ;
+    wikibase:timeCalendarModel ?P571timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P576/psv:P576 [
+    wikibase:timeValue ?P576 ;
+    wikibase:timePrecision ?P576timePrecision ;
+    wikibase:timeTimezone ?P576timeZone ;
+    wikibase:timeCalendarModel ?P576timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P580/psv:P580 [
+    wikibase:timeValue ?P580 ;
+    wikibase:timePrecision ?P580timePrecision ;
+    wikibase:timeTimezone ?P580timeZone ;
+    wikibase:timeCalendarModel ?P580timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P582/psv:P582 [
+    wikibase:timeValue ?P582 ;
+    wikibase:timePrecision ?P582timePrecision ;
+    wikibase:timeTimezone ?P582timeZone ;
+    wikibase:timeCalendarModel ?P582timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P569/psv:P569 [
+    wikibase:timeValue ?P569 ;
+    wikibase:timePrecision ?P569timePrecision ;
+    wikibase:timeTimezone ?P569timeZone ;
+    wikibase:timeCalendarModel ?P569timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P570/psv:P570 [
+    wikibase:timeValue ?P570 ;
+    wikibase:timePrecision ?P570timePrecision ;
+    wikibase:timeTimezone ?P570timeZone ;
+    wikibase:timeCalendarModel ?P570timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P619/psv:P619 [
+    wikibase:timeValue ?P619 ;
+    wikibase:timePrecision ?P619timePrecision ;
+    wikibase:timeTimezone ?P619timeZone ;
+    wikibase:timeCalendarModel ?P619timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item p:P620/psv:P620 [
+    wikibase:timeValue ?P620 ;
+    wikibase:timePrecision ?P620timePrecision ;
+    wikibase:timeTimezone ?P620timeZone ;
+    wikibase:timeCalendarModel ?P620timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item wdt:P27 ?P27 . }
+  OPTIONAL { ?item wdt:P495 ?P495 . }
+  OPTIONAL { ?item wdt:P17 ?P17 . }
+  OPTIONAL { ?item wdt:P159 ?P159 . }
+  OPTIONAL { ?item wdt:P36 ?P36 . }
+  OPTIONAL { ?item wdt:P35 ?P35 . }
+  OPTIONAL { ?item wdt:P6 ?P6 . }
+  OPTIONAL { ?item wdt:P122 ?P122 . }
+  OPTIONAL { ?item wdt:P37 ?P37 . }
+  OPTIONAL { ?item wdt:P1082 ?P1082 . }
+    OPTIONAL { ?item p:P2046 ?P2046Node .
+    ?P2046Node rdf:type wikibase:BestRank ; ps:P2046 ?P2046 .
+    OPTIONAL { ?P2046Node psv:P2046/wikibase:quantityUnit ?P2046Unit. } }
+    OPTIONAL { ?item p:P281 ?P281Node .
+    ?P281Node rdf:type wikibase:BestRank ; ps:P281 ?P281 .
+    OPTIONAL { ?P281Node psv:P281/wikibase:quantityUnit ?P281Unit. } }
+  OPTIONAL { ?item wdt:P38 ?P38 . }
+    OPTIONAL { ?item p:P2048 ?P2048Node .
+    ?P2048Node rdf:type wikibase:BestRank ; ps:P2048 ?P2048 .
+    OPTIONAL { ?P2048Node psv:P2048/wikibase:quantityUnit ?P2048Unit. } }
+  OPTIONAL { ?item wdt:P400 ?P400 . }
+  OPTIONAL { ?item wdt:P50 ?P50 . }
+  OPTIONAL { ?item wdt:P170 ?P170 . }
+  OPTIONAL { ?item wdt:P57 ?P57 . }
+  OPTIONAL { ?item wdt:P175 ?P175 . }
+  OPTIONAL { ?item wdt:P178 ?P178 . }
+  OPTIONAL { ?item wdt:P162 ?P162 . }
+  OPTIONAL { ?item wdt:P176 ?P176 . }
+  OPTIONAL { ?item wdt:P58 ?P58 . }
+  OPTIONAL { ?item wdt:P272 ?P272 . }
+  OPTIONAL { ?item wdt:P264 ?P264 . }
+  OPTIONAL { ?item wdt:P123 ?P123 . }
+  OPTIONAL { ?item wdt:P449 ?P449 . }
+  OPTIONAL { ?item wdt:P750 ?P750 . }
+  OPTIONAL { ?item wdt:P86 ?P86 . }
+  OPTIONAL { ?item p:P577/psv:P577 [
+    wikibase:timeValue ?P577 ;
+    wikibase:timePrecision ?P577timePrecision ;
+    wikibase:timeTimezone ?P577timeZone ;
+    wikibase:timeCalendarModel ?P577timeCalendar ] . }
+    hint:Prior hint:rangeSafe true;
+  OPTIONAL { ?item wdt:P136 ?P136 . }
+  OPTIONAL { ?item wdt:P364 ?P364 . }
+  OPTIONAL { ?item wdt:P212 ?P212 . }
+  OPTIONAL { ?item wdt:P957 ?P957 . }
+  OPTIONAL { ?item wdt:P275 ?P275 . }
+  OPTIONAL { ?item wdt:P277 ?P277 . }
+  OPTIONAL { ?item wdt:P348 ?P348 . }
+  OPTIONAL { ?item wdt:P840 ?P840 . }
+  OPTIONAL { ?item wdt:P1098 ?P1098 . }
+  OPTIONAL { ?item wdt:P282 ?P282 . }
+  OPTIONAL { ?item wdt:P1018 ?P1018 . }
+  OPTIONAL { ?item wdt:P218 ?P218 . }
+  OPTIONAL { ?item wdt:P169 ?P169 . }
+  OPTIONAL { ?item wdt:P112 ?P112 . }
+  OPTIONAL { ?item wdt:P1454 ?P1454 . }
+  OPTIONAL { ?item wdt:P137 ?P137 . }
+  OPTIONAL { ?item wdt:P1029 ?P1029 . }
+  OPTIONAL { ?item wdt:P225 ?P225 . }
+  OPTIONAL { ?item wdt:P274 ?P274 . }
+  OPTIONAL { ?item wdt:P1346 ?P1346 . }
+  OPTIONAL { ?item wdt:P1120 ?P1120 . }
+  OPTIONAL { ?item wdt:P498 ?P498 . }
+  OPTIONAL { ?item wdt:P856 ?P856 . }
+  OPTIONAL { ?articlede schema:about ?item ;
+             schema:inLanguage "de" ;
+             schema:isPartOf <https://de.wikipedia.org/> ;
+             schema:name ?articleNamede . }
+  OPTIONAL { ?articleen schema:about ?item ;
+             schema:inLanguage "en" ;
+             schema:isPartOf <https://en.wikipedia.org/> ;
+             schema:name ?articleNameen . }
+  OPTIONAL { ?item wdt:P1324 ?P1324 . }
+  OPTIONAL { ?item wdt:P1581 ?P1581 . }
+  OPTIONAL { ?item wdt:P434 ?P434 . }
+  OPTIONAL { ?item wdt:P435 ?P435 . }
+  OPTIONAL { ?item wdt:P436 ?P436 . }
+  OPTIONAL { ?item wdt:P966 ?P966 . }
+  OPTIONAL { ?item wdt:P345 ?P345 . }
+  OPTIONAL { ?item wdt:P2397 ?P2397 . }
+  OPTIONAL { ?item wdt:P1651 ?P1651 . }
+  OPTIONAL { ?item wdt:P2002 ?P2002 . }
+  OPTIONAL { ?item wdt:P2013 ?P2013 . }
+  OPTIONAL { ?item wdt:P2003 ?P2003 . }
+  OPTIONAL { ?item p:P625/psv:P625 [
+    wikibase:geoLatitude ?P625Lat ;
+    wikibase:geoLongitude ?P625Long ] }
+  OPTIONAL { ?item wdt:P15 ?P15 . }
+  OPTIONAL { ?item wdt:P242 ?P242 . }
+  OPTIONAL { ?item wdt:P154 ?P154 . }
+  OPTIONAL { ?item wdt:P18 ?P18 . }
+  OPTIONAL { ?item wdt:P41 ?P41 . }
+  OPTIONAL { ?item wdt:P2716 ?P2716 . }
+  OPTIONAL { ?item wdt:P2910 ?P2910 . }
+
+  SERVICE wikibase:label {
+      bd:serviceParam wikibase:language "de,en".
+      ?item rdfs:label ?itemLabel .
+      ?item schema:description ?itemDescription .
+      ?P27 rdfs:label ?P27Label .
+      ?P495 rdfs:label ?P495Label .
+      ?P17 rdfs:label ?P17Label .
+      ?P159 rdfs:label ?P159Label .
+      ?P36 rdfs:label ?P36Label .
+      ?P35 rdfs:label ?P35Label .
+      ?P6 rdfs:label ?P6Label .
+      ?P122 rdfs:label ?P122Label .
+      ?P37 rdfs:label ?P37Label .
+      ?P38 rdfs:label ?P38Label .
+      ?P400 rdfs:label ?P400Label .
+      ?P50 rdfs:label ?P50Label .
+      ?P170 rdfs:label ?P170Label .
+      ?P57 rdfs:label ?P57Label .
+      ?P175 rdfs:label ?P175Label .
+      ?P178 rdfs:label ?P178Label .
+      ?P162 rdfs:label ?P162Label .
+      ?P176 rdfs:label ?P176Label .
+      ?P58 rdfs:label ?P58Label .
+      ?P272 rdfs:label ?P272Label .
+      ?P264 rdfs:label ?P264Label .
+      ?P123 rdfs:label ?P123Label .
+      ?P449 rdfs:label ?P449Label .
+      ?P750 rdfs:label ?P750Label .
+      ?P86 rdfs:label ?P86Label .
+      ?P136 rdfs:label ?P136Label .
+      ?P364 rdfs:label ?P364Label .
+      ?P275 rdfs:label ?P275Label .
+      ?P277 rdfs:label ?P277Label .
+      ?P840 rdfs:label ?P840Label .
+      ?P282 rdfs:label ?P282Label .
+      ?P1018 rdfs:label ?P1018Label .
+      ?P169 rdfs:label ?P169Label .
+      ?P112 rdfs:label ?P112Label .
+      ?P1454 rdfs:label ?P1454Label .
+      ?P137 rdfs:label ?P137Label .
+      ?P1029 rdfs:label ?P1029Label .
+      ?P225 rdfs:label ?P225Label .
+      ?P1346 rdfs:label ?P1346Label .
+  }
+
+}
+GROUP BY ?item ?itemLabel ?itemDescription ?lat ?long ?P571 ?P571timePrecision ?P571timeZone ?P571timeCalendar ?P576 ?P576timePrecision ?P576timeZone ?P576timeCalendar ?P580 ?P580timePrecision ?P580timeZone ?P580timeCalendar ?P582 ?P582timePrecision ?P582timeZone ?P582timeCalendar ?P569 ?P569timePrecision ?P569timeZone ?P569timeCalendar ?P570 ?P570timePrecision ?P570timeZone ?P570timeCalendar ?P619 ?P619timePrecision ?P619timeZone ?P619timeCalendar ?P620 ?P620timePrecision ?P620timeZone ?P620timeCalendar ?P2046 ?P2046Unit ?P281 ?P281Unit ?P2048 ?P2048Unit ?P577 ?P577timePrecision ?P577timeZone ?P577timeCalendar ?articlede ?articleNamede ?articleen ?articleNameen ?P625Lat ?P625Long
+
+##SAMPLEQUERY##
+# Scroll down and hit blue arrow down to run and see the results + the sources
+SELECT ?year ?item ?itemLabel (MAX(?number) AS ?passengers)
+  (SAMPLE(COALESCE(?reference_URL, ?monthly_reference_URL2)) AS ?sample_reference_URL)
+WITH
+{
+  SELECT ?item ?statement ?date ?year ?timevalue ?numberperperiod ?reference_URL
+  WHERE
+  {
+    ?item wdt:P238 ?airport_code
+    VALUES ?airport_code 
+    {
+ "CGN"
+    }
+    ?item p:P3872 ?statement.
+    ?statement pqv:P585 ?timevalue;
+               ps:P3872 ?numberperperiod.
+    ?timevalue wikibase:timeValue ?date.
+    OPTIONAL { ?statement pq:P518 ?applies. }
+    OPTIONAL { ?statement prov:wasDerivedFrom / (pr:P854|pr:P4656) ?reference_URL. }
+    FILTER (BOUND(?applies)=false || ?applies = wd:Q2165236 )
+    MINUS { ?statement wikibase:rank wikibase:DeprecatedRank }
+    BIND (YEAR(?date) AS ?year)
+    FILTER (?year >1949).
+    FILTER (?year < YEAR(NOW()))
+  }
+} AS %airport
+WHERE
+{
+  {
+    # Get the sum of monthly values within a year
+    SELECT ?item ?year (SUM(?max_numberperperiod) AS ?number) (SAMPLE(?monthly_reference_URL) AS ?monthly_reference_URL2)
+    WHERE
+    {
+      # Get the maximal value and a sample reference URL for each unique month
+      {
+        SELECT ?item ?year (MAX(?numberperperiod) AS ?max_numberperperiod) (SAMPLE(?reference_URL) AS ?monthly_reference_URL)
+        WHERE
+        {
+          INCLUDE %airport
+          ?timevalue wikibase:timePrecision ?prec.
+          FILTER (?prec > 9)# precision more precise or equal to month
+        }
+        GROUP BY ?item ?year ?date
+      }
+    }
+    GROUP BY ?item ?year
+  }
+  UNION
+  {
+    ?timevalue wikibase:timePrecision 9 .
+    BIND (?numberperperiod AS ?number)
+    BIND (?reference_URL AS ?sample_reference_URL)
+    INCLUDE %airport
+  }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+GROUP BY ?item ?itemLabel ?year
+ORDER BY ?item DESC (?year)
+##SAMPLEQUERY##
+CONSTRUCT {?s ?p ?o.} WHERE { VALUES ?s {wds:Q47161107-EB223C64-C2EF-4928-94AD-5149C4A2AFB8 wds:Q47161103-33583F9E-34DB-42C8-9D4D-4D9FD84F50D8 wds:Q47161130-A429B78A-6356-4971-A93E-9972C783E64A wds:Q47161184-44D81DD6-BFA9-4824-9D05-AFF4A7C89BC7 wds:Q47161131-21166F2E-E960-4F24-86D7-F49EB4FCEED8 wds:Q47161179-A3F0526A-6E5B-427B-9F52-FD0EA2F1F8A4 wds:Q47161222-E78EB0D1-2EF7-4A2D-B166-68C0318B9245 wds:Q47161249-429C13F8-3076-4B93-8824-868179A79E1D wds:Q47157847-F7E1374E-1E84-44B8-9F47-DC2C710DAB71 wds:Q47158134-376F53FB-E4E9-40DE-BF14-C82E874231F5 wds:Q47158166-B2B2B6A9-94AD-417A-A990-4073A1ADE835 wds:Q47158536-0af68cd2-c736-439f-bcdf-344fefa13eee wds:Q47158536-2015B68C-AE76-4D48-AAE0-A9DBD709FCB3 wds:Q47158595-AB6E6F89-5C46-4932-A002-1F294FD37BC6 wds:Q47158894-32F17010-2DD2-4A4C-9A41-5B5344E02FE3 wds:Q47159158-FB637536-A43D-4E84-B59E-0DF0030AA316 wds:Q47159329-1966AE1C-8910-4E86-B819-9FC33A4EADBF wds:Q47159329-E6A605A7-C91B-428D-BFB4-BF542B23671B wds:Q471593-D8D2C346-8944-4673-8E28-7ED8B498FEC2 wds:Q47157448-7500B3B8-E605-4171-8F8E-7AD703055D59 wds:Q47157448-de81c84b-19a6-4b3b-9d7b-c418af645970 wds:Q47157497-C18F8181-555C-4737-BB16-4A9755909089 wds:Q47157900-9B79E2EF-2347-42B2-B959-2AFA3447DC6A wds:Q47157978-88E7A1A9-B120-43EC-BD21-AC9461C40001 wds:Q47158212-D563F73B-1FDF-4CAB-88DE-D95DBD20C912 wds:Q47158254-1FA79D18-57F7-47C8-AE38-B8BCF04F6C3F wds:Q47158308-4904D7AA-A474-4325-99CD-9BE16F102F1F wds:Q47158547-2010EE79-7E30-4BC6-B8FA-C577CBB06CD0 wds:Q47159164-07E9FD1C-5BC5-47DA-B53A-2C831A5AAC7D wds:Q47159180-5BCF41B2-A04B-4AC0-8C5C-44D9ED5A1280 wds:Q47159277-3F8E83BA-313F-4BD8-A899-40D486060548 wds:Q47157811-3B1D5745-C74C-4D24-8151-633CD1B79D2D wds:Q47157839-0E82B6E0-296A-4127-BA2E-DEE74C60A27C wds:Q47158037-8D7A0579-1BBD-42B1-A7F4-F567C558D280 wds:Q47158369-1ed3ae68-9e43-4298-b4f7-1f4dab6f94d6 wds:Q47158369-717171A9-3129-47DF-BADA-66D44E8676E0 wds:Q47158471-903C2B11-76BB-4C27-AD7A-4F24BF8135B8 wds:Q47157500-E532E256-D752-4858-B9DF-162246035EE0 wds:Q47158259-87BB79EA-959A-4A31-8A7B-F79B6A1AD230 wds:Q47158285-9C545723-6063-4E1C-8289-630D28DBEF77 wds:Q47158367-46230F4D-5511-4855-91BE-B62ABAFEBD44 wds:Q47158588-BDE2518C-FE7A-4676-B7E7-24CE73FAFEB5 wds:Q47158684-1C4D8060-DB9C-4349-BBCA-C2488C4C0191 wds:Q47158812-8E70DF60-E100-45CC-8606-607165092533 wds:Q47158812-DB910CDA-02D7-4855-99FB-8351D29F8B6E wds:Q47158830-099593CA-6F99-4D2D-93A6-2929F174034B wds:Q47158878-0736969E-99EA-49D4-843C-0E34F8747B97 wds:Q47159227-BC1BF472-7010-4B20-B708-84723B7D04F5 wds:Q47159293-CB90FEDB-7CDD-4DB1-ABCF-E52CC8894384 wds:Q47157570-D2F9A2DA-6982-40E9-A4B5-8C648662B0B3 wds:Q47157645-59651EA9-E1A1-4D5F-94D5-D7808B7E05AF wds:Q47157793-354CC68A-747C-443C-81BE-C1960048F20D wds:Q47158052-110BF579-2BCC-4A56-B39E-D016AFC3DFB2 wds:Q47158081-3F9EA5C5-4347-4651-83E4-1693CE408857 wds:Q47158221-929865EC-A767-425E-9C25-F68F0C5814D2 wds:Q47158235-08EB6B13-EDBD-4617-AA89-7DED5932AAA3 wds:Q47158787-276E4318-EE33-49DB-9616-DB74AAE1E2BD wds:Q47158925-49C06D07-3E91-47F3-865D-543E1C911260 wds:Q47158941-622EE027-3709-49D2-8824-5DC582CE3080 wds:Q47158997-E23E1E0C-AB59-49F0-B73A-D7CB2954C80C wds:Q47159056-B99B1DD7-C2E2-4869-B7C4-DFC12AC6E725 wds:Q47159326-8ADE7800-C586-4858-A4E7-4AE02335176B wds:Q47157650-8EE2490A-6BC2-4DEB-AA45-A8EC6E9ACAAE wds:Q47158266-62530DB9-DEB5-4FC9-BD3F-78EBEF7C800B wds:Q47158326-B6B626BE-7A65-4690-8EDC-85CA470F60AF wds:Q47158525-58022A89-BA6F-4CD9-BD11-AF69570A4CEE wds:Q47158663-BBCB27A4-2D3F-4245-9E55-9EF8517C30F5 wds:Q47157691-9ACC03B7-625F-4C75-91F5-79C20D1E9554 wds:Q47157990-68393F1E-A3F8-45B5-A9E4-264F20A00335 wds:Q47158094-53E0928D-AFB1-49A1-A343-FAE896E00873 wds:Q47158291-0F178B4A-C92D-478A-B202-B3501B8ED757 wds:Q47158435-1062BE95-A3A2-4557-B298-0561944B34B5 wds:Q47158736-9C6CB672-ACB0-4B83-B462-27E6ABDB9F70 wds:Q47158823-17246B66-7CCB-44BA-A0A9-C7A11411ECCF wds:Q47157910-3EF399C8-3FF1-43B4-ACB8-627BAEB6D971 wds:Q47157964-B5AE1223-8747-4215-BEA6-A2B6E0D9817C wds:Q47158144-470CFA4A-81DA-4DB1-8B9A-055AA3F78F3B wds:Q47158213-D9361EBA-D3E7-4105-9D60-5AC3DFA23F53 wds:Q47158387-4FE73E6C-D063-400A-B4B4-451030540BD2 wds:Q47158505-771007B9-2991-4956-945C-26B5DF001E1A wds:Q47158618-776a7e2c-db98-4bac-90b2-5b9ce2562a78 wds:Q47158618-CDE01AFE-9C1D-48B5-AFCB-2967D1EE784B wds:Q47158630-6E59E002-0149-40F5-82F2-A047F4BC8ED7 wds:Q47158694-4A0D5B4B-DC88-476C-8002-2D08620302B5 wds:Q47158958-1A4C417F-1378-4094-9AA6-B664FA668CBA wds:Q47159167-BBAFCB79-E8E5-452E-A576-A7334E5A20A2 wds:Q47159179-AFD0FA7E-0398-4649-8CAB-59AB9BA8F442 wds:Q47159218-560AE4AA-8093-4C9A-AE13-68D4F568AF3A wds:Q47159289-9AAD3942-34B6-4DA7-90E1-A833BDA8A596 wds:Q47160148-1D64B827-1143-45EA-9F76-0DA9A7343ABD wds:Q47160276-426EF975-32F2-43AD-895D-2A41AE4304D5 wds:Q47160639-82589502-F86D-4AD7-8999-D297D14D2413 wds:Q47160640-C268E896-9CB2-46FD-A6A3-7358BD3BFAC6 wds:Q47160919-4613F92D-5EDA-4018-9F6D-D3E32286ACFD wds:Q47160922-CFE10E9B-4E4A-4578-8598-D7171714B962 wds:Q47161088-BAA5FBA4-01E7-4E9F-87BF-0FB8952FEA33 wds:Q4716037-8E7CF1BA-6B73-4325-924D-1F4B57A1023C wds:Q47159356-8D2AE69F-64C8-4B08-8FBF-BB156DF742E1 wds:Q47159371-84EE810F-BF1B-4C7D-A8DF-FA5BC8279914 wds:Q47159630-2BE05547-E047-4044-ADB1-287E0FCA3EEA wds:Q47159690-73FF5BE1-3B94-41E3-B6A5-3842FE0C44BE wds:Q47159698-74D7949C-5B24-4C08-BD36-B6FD73B591D1 wds:Q47159828-D4A1B24C-6A1F-4BBC-B8D1-4A653FFBD818 wds:Q47159911-070868C8-5BC6-46C0-8B88-334725D3F685 wds:Q47160085-3074D6C0-83E4-4CD5-9D4D-C3F020C6B619 wds:Q47160173-1326b5d2-9e5f-4f17-ba2f-faedb58ab6bd wds:Q47160173-4A02A5C6-684F-49FE-A044-C981AF4E1ADC wds:Q47160480-AD8C198E-166B-4754-B8C3-94A62517F4A7 wds:Q47160629-50F3989E-738D-4B28-9E5D-9D14A066FE34 wds:Q47160632-C81B089C-B0B9-4367-B0E8-F8D9DE81D416 wds:Q47161083-76baff9d-6d03-4e41-9305-4b7a828ccad5 wds:Q47161083-C944ED9A-9E25-463C-B5F7-10516BF9BC40 wds:Q47159561-41849D60-99D4-4825-BC44-9B6DC18B2D28 wds:Q47159660-207892D1-985A-4028-9F5C-EDDA3D7011BA wds:Q47159915-F1F3BAE8-2106-4FE3-A151-7E57E848CEDC wds:Q47160144-B9D1A315-1ABC-48B6-A911-C17470C4D806 wds:Q47160347-9A077B95-FA37-42F2-B17D-8ECDB318355B wds:Q47160393-F5D40430-CD2F-4218-B176-1B8FDD50A995 wds:Q47160942-CB354759-2783-48FA-9989-782AAF13ACCF wds:Q47160964-46254EEC-4B22-42D8-8757-45F02E4F7A14 wds:Q47159384-9B0EC0E7-2983-4518-A57C-C0D0B1FEB785 wds:Q47159425-B1380A1F-9F30-4330-B09E-4D732FD75EEF wds:Q47159491-0EBC15D1-3022-4761-9292-45C496D7FFB1 wds:Q47159724-E59F3162-8CD9-4261-B117-A416E9C1506F wds:Q47159729-C80EC882-188B-40EF-A50C-28E41C299F7F wds:Q47159862-B358F592-5D80-4FF3-9B64-DA9A5F68DDD8 wds:Q47159876-8B85441F-E23F-4A1F-83F6-1D5F9D0C2EEF wds:Q47160126-cd0edd9c-50d3-4f75-b804-2749c7c1590f wds:Q47160126-CD71A71F-6045-445E-A443-3FFE04FCBEA0 wds:Q47160179-1F5B6C63-59F5-406A-BCF9-56EBEBEABD58 wds:Q47160211-18162F23-94C7-4DB2-8F96-3714EF5F9026 wds:Q47160434-005E6C0F-4DAD-4E74-9701-088E429D3FEF wds:Q47160493-CDD6E51F-7F4E-455F-A038-0D077D33384E wds:Q47160542-C0DBDA52-CA49-4D5B-AB9C-45229B0A0DD7 wds:Q47160589-4A57545E-E0DD-4FAC-B12F-4A2D79E17A3E wds:Q47159486-647A7456-F04B-45CD-BC81-133B181E0C5B wds:Q47159596-5D194B65-2F98-40D5-B17C-CA414D602383 wds:Q47159620-D485FA85-6E24-45EA-B318-0C3354A862D7 wds:Q47159769-8912AC00-98B2-46A2-AC02-8C99E4F8296A wds:Q47160023-D12F0F2D-8C14-41E3-B4C5-74957CA6AFF8 wds:Q47160348-3385C0E7-F9D0-4A31-A134-84D2F3D16220 wds:Q47160372-5228CC6B-0452-45AB-9960-6AADC3607465 wds:Q47160503-092AFF4D-174A-4BD3-B0B7-0BC24FC71BA3 wds:Q47160557-037E49CA-C67C-4409-8F06-77E912DD1667 wds:Q47160576-1007AFC5-F49A-4BD3-A7B7-B93705B2DF75 wds:Q47160794-E27109DE-E9C7-4FB7-9AEB-E6A0E01402DA wds:Q47160801-273D5B19-0418-4DA7-8102-CC483209D56C wds:Q47160840-BD3B35C3-1DD0-4B2D-9D5F-A2BCFDFC2AE0 wds:Q47161081-AB7EEEA1-A8AD-45A7-BEA9-3B195E4E37A4 wds:Q47159353-FA60E8B1-D95E-4279-B899-AA3033C38763 wds:Q47159415-65169B9B-521F-48A1-B5C6-76F5A86D3982 wds:Q47159446-52A881E7-737C-44AA-B5BB-079418FE7BAA wds:Q47159810-736B3546-C3E9-4C3D-8E4B-DA613416B094 wds:Q47159810-d2106c03-28cd-47f4-9e9d-15ca696a5d26 wds:Q47159872-3C53FE72-D3B8-469C-821C-4E620E909C77 wds:Q47159872-4cd59cd6-fc8a-452f-9fe6-fb37af9b0273 wds:Q47160105-4705A641-1203-435C-89B9-8D1C1339EDE4 wds:Q47160208-A309EB19-00C8-4DB6-BA12-EFB8C00185F9 wds:Q47160659-E2E0E944-5EF7-4AE7-A8DD-D6E9E24D6E4F wds:Q47161087-1B033D75-959C-4CB1-8C08-03B065FF3CD7 wds:Q47159422-E6BA350C-20A1-48AD-B4D1-3922828998A1 wds:Q47159503-c0b2a658-6d6b-45cb-a76e-28208f3d1a9d wds:Q47159503-FF248108-F58A-4F7C-BCED-E188FDFA12F5 wds:Q47159859-CD586194-EA74-47AC-BD30-35EE02D9FE11 wds:Q47159979-DE27A89D-E767-457B-9385-B89266C70437 wds:Q47160020-D62CE196-A45A-4451-9EFF-36A26940E07D wds:Q47160264-34C1DBED-070B-4ABC-B05F-BCA5CB2BDFA0 wds:Q47160710-F86BD883-D5FB-4BB0-9B53-DAB7527A2DD2 wds:Q47160813-0E1365B4-8719-4698-88D1-26FB21478BB8 wds:Q47160816-3F8988FD-5EAE-4656-8EAA-D6C0EA85D9C1 wds:Q47160914-4106691F-AD60-4E73-A882-BB14EF6AF508 wds:Q47160971-B7CB2298-8F06-4AF9-9756-41B79BD5C925 wds:Q47161100-071ED302-F0F1-4B96-A3AD-A2A5D57E8FFA wds:Q47161100-d54994be-264e-492a-93a6-5fb19eb4bb71 wds:Q47159363-3947A7B2-1204-4B9A-94EF-ECCD6F01DD1C wds:Q47159416-87D9C249-22D5-4115-8A81-93AA458E0622 wds:Q47159870-2329718A-1BA3-4D8F-9826-D4E21C03171D wds:Q47160291-A30E8F74-7772-48D9-B2C3-AB296C6B5501 wds:Q47160330-8FD1443F-FC56-48FD-8FE8-8FC973ACE5F0 wds:Q47160405-D41A8412-D12A-4938-ADFE-8F996E5CD841 wds:Q47160469-DB3D2AF5-FFD4-4BEA-9AB5-BFF92E6B60D9 wds:Q47160573-5C969BD9-0156-44BE-AA38-90B313D7E659 wds:Q47160660-48f6bba1-fbeb-4934-ada0-1c76f6246449 wds:Q47160660-92BBB29D-9419-4E5F-A03A-12778DB46389 wds:Q47160669-2845ACDF-E5F6-4709-A8E0-230FFB45CCD7 wds:Q47160812-D838C51D-5868-40FB-9705-7A4CFDC087AF wds:Q47160827-2A6825E2-8152-411A-8062-A56E7456CCDA wds:Q47160947-8106E37F-8485-4FDF-AD04-0EE4412DC106 wds:Q47161058-5780BAD6-0B9C-4D7F-BB31-015191F80F2D} ?s ?p ?o.}

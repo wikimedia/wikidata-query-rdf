@@ -3,20 +3,17 @@ package org.wikidata.query.rdf.spark.analysis
 import org.apache.spark.sql.functions.{col, count, desc, hash, lit, sum, udf}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
-import scala.util.Try
-
-
 /**
  * This class is a wrapper over code run in a notebook,
  * it probably doesn't work as-is.
  */
-class QueriesProcessor(spark: SparkSession) {
+class QueriesProcessor(spark: SparkSession, year: String, month: String, day: String) {
 
-  val dateClause = "year = 2020 and month = 11"
+  val dateClause = "year = " + year + " and month = " + month + " and day = " + day
   val nbParts = 1024
 
   // UDF getting QueryInfo from query string (or null if it fails)
-  val makeQueryInfoUdf = udf((queryString: String) => Try(QueryInfo(queryString)).toOption)
+  val makeQueryInfoUdf = udf((queryString: String) => QueryInfo(queryString))
   // UDF getting a subset of a map where keys have the requested prefix (useful for nodes-map parsing)
   val filterMapKeysUdf = udf((map: Map[String, Long], prefix: String) => map.filterKeys(k => k.startsWith(prefix)))
 
@@ -85,12 +82,29 @@ class QueriesProcessor(spark: SparkSession) {
 }
 
 object QueriesProcessor {
-  def main(args: Array[String]): Unit = {
-    val spark = SparkSession.builder().appName("triples-analyzer").getOrCreate()
-    val processor = new QueriesProcessor(spark)
+  /**
+   * Get DataFrame of processed Sparql Queries
+   *
+   * @param year optional argument year number
+   * @param month optional argument month number
+   * @param day optional argument day of month
+   * @return a spark DataFrame containing the processed Sparql Queries
+   */
+  def getSparqlDf(year: String = "2021", month: String = "5", day: String = "10"): DataFrame = {
+    val spark = SparkSession.builder().appName("sparql-analyzer").getOrCreate()
+    val processor = new QueriesProcessor(spark, year, month, day)
     val baseData = processor.getBaseData()
     val processedData = processor.getProcessedQueries(baseData)
-    // showing 10 lines for demo
-    processedData.show(10)
+    processedData
+  }
+
+  def main(args: Array[String]): Unit = {
+    // show 10 rows for demo
+    if (args.length == 3) {
+      getSparqlDf(args(0), args(1), args(2)).show(10)
+    }
+    else {
+      getSparqlDf().show(10)
+    }
   }
 }

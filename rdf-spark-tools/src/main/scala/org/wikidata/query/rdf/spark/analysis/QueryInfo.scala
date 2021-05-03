@@ -3,9 +3,10 @@ package org.wikidata.query.rdf.spark.analysis
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.sparql.algebra.Algebra
 import org.apache.jena.sparql.algebra.walker.Walker
-import org.wikidata.query.rdf.spark.analysis.visitors.AnalyzeOpVisitor
+import org.wikidata.query.rdf.spark.analysis.visitors.{AnalyzeOpVisitor,TripleInfo}
 
 import scala.collection.mutable
+import scala.util.Try
 
 case class QueryInfo(
   queryReprinted: String,
@@ -16,7 +17,8 @@ case class QueryInfo(
   services: mutable.Map[String, Long],
   wikidataNames: mutable.Map[String, Long],
   expressions: mutable.Map[String, Long],
-  paths: mutable.Map[String, Long]
+  paths: mutable.Map[String, Long],
+  triples: mutable.Buffer[TripleInfo]
 )
 
 object QueryInfo {
@@ -56,7 +58,7 @@ object QueryInfo {
     PREFIX hint: <http://www.bigdata.com/queryHints#>
   """
 
-  def apply(queryString: String): QueryInfo = {
+  def apply(queryString: String): Option[QueryInfo] = Try{
     val queryWithNamespaces = QueryFactory.create(prefixes + queryString)
     val prefixMapping = queryWithNamespaces.getPrologue.getPrefixMapping
     val ast = Algebra.compile(queryWithNamespaces)
@@ -74,7 +76,9 @@ object QueryInfo {
       opAnalyzer.serviceVisitor.nodeCount,
       opAnalyzer.nodeVisitor.wdNodeCount,
       opAnalyzer.exprVisitor.exprVisited,
-      opAnalyzer.pathVisitor.pathVisited
+      opAnalyzer.pathVisitor.pathVisited,
+      opAnalyzer.triples
     )
-  }
+
+  }.toOption
 }
