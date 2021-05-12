@@ -12,11 +12,14 @@ import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 
 /**
  * Minimal replacement of Randomized Testing.
  */
 @NotThreadSafe
+@SuppressFBWarnings(value = "DMI_RANDOM_USED_ONLY_ONCE", justification = "We don't care much about micro optimization here")
 public class Randomizer implements TestRule {
 
     private static final String SEED_PROPERTY = Randomizer.class.getName() + ".seed";
