@@ -6,7 +6,13 @@ import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 
 import org.apache.flink.api.common.state.{ListState, ValueState}
 import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
+import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.typeutils.base.LongSerializer
+import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.tuple
+import org.apache.flink.api.java.tuple.Tuple2
+import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
+import org.apache.flink.api.java.typeutils.runtime.TupleSerializer
 import org.apache.flink.api.scala.{ExecutionEnvironment, DataSet => ScalaDataSet}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.state.StateBackend
@@ -35,7 +41,7 @@ object StateExtractionJob {
   def configure(config: StateExtractionConfig)(implicit env: ExecutionEnvironment): Unit = {
     val stateBackend: StateBackend = UpdaterStateConfiguration.newStateBackend(config.checkpointDir)
     val point: ExistingSavepoint = Savepoint.load(env.getJavaEnv, config.inputSavepoint, stateBackend)
-    saveRevisionsAsCsv(point, config.outputRevisionPath, config.verify)
+    config.outputRevisionPath.foreach(saveRevisionsAsCsv(point, _, config.verify))
     config.outputKafkaOffsets match {
       case Some(outputPath) =>
         config.inputKafkaTopics match {
@@ -84,12 +90,19 @@ object StateExtractionJob {
     } map IncomingStreams.operatorUUID
 
     opIds map { uuid =>
-      (uuid, new ScalaDataSet(savepoint.readUnionState(uuid, offsetsStateName, offsetsTypeInfo)) map { t =>
+      (uuid, kafkaOffsetsDataset(savepoint, uuid) map { t =>
         (t.f0.getTopic, String.valueOf(t.f0.getPartition), String.valueOf(t.f1))
       })} foreach { d =>
-        d._2.writeAsCsv(outputPath + "/" + d._1 + ".csv")
+        d._2.setParallelism(1).writeAsCsv(outputPath + "/" + d._1 + ".csv").setParallelism(1)
     }
   }
+
+  def kafkaOffsetsDataset(savepoint: ExistingSavepoint, uuid: String)
+                         (implicit env: ExecutionEnvironment): ScalaDataSet[Tuple2[KafkaTopicPartition, lang.Long]] = {
+    // FIXME: this does not work, this dataset remains empty when applied to current savepoints
+    new ScalaDataSet(savepoint.readUnionState(uuid, offsetsStateName, offsetsTypeInfo, createStateSerializer(env.getConfig))).setParallelism(1)
+  }
+
   case class RevMap(key: String, revision: java.lang.Long)
   case class FullDecideMutationState(revMap: RevMap, bufferedEvents: List[InputEvent])
 
@@ -119,4 +132,14 @@ object StateExtractionJob {
       collector.collect(FullDecideMutationState(revMap, bufferedEvents.get().asScala.toList))
     }
   }
+
+
+  private def createStateSerializer(executionConfig: ExecutionConfig): TupleSerializer[Tuple2[KafkaTopicPartition, lang.Long]] = {
+    val fieldSerializers = Array[TypeSerializer[_]](new KryoSerializer[KafkaTopicPartition](classOf[KafkaTopicPartition], executionConfig),
+      LongSerializer.INSTANCE)
+    val tupleClass = classOf[Tuple2[KafkaTopicPartition, lang.Long]]
+    new TupleSerializer[Tuple2[KafkaTopicPartition, lang.Long]](tupleClass, fieldSerializers)
+  }
+
+
 }
