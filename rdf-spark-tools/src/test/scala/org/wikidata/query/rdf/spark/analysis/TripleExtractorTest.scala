@@ -87,7 +87,7 @@ class TripleExtractorTest extends FlatSpec with Matchers{
 object TripleExtractorTest{
 
   def getTriples(queries: Array[String]): Array[Seq[TripleInfo]] ={
-    queries.map(QueryInfo(_).map(_.triples).getOrElse(Seq.empty))
+    queries.map(QueryInfo(_).map(_.triples.getOrElse(Seq.empty)).getOrElse(Seq.empty))
   }
 
   def getQueries(filename: String): Array[String] = {

@@ -2,15 +2,10 @@ package org.wikidata.query.rdf.spark.analysis
 
 import org.apache.spark.sql.functions.{col, count, desc, hash, lit, sum, udf}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.SaveMode.Overwrite
+import org.wikidata.query.rdf.spark.SparkUtils
 
-/**
- * This class is a wrapper over code run in a notebook,
- * it probably doesn't work as-is.
- */
-class QueriesProcessor(spark: SparkSession, year: String, month: String, day: String) {
-
-  val dateClause = "year = " + year + " and month = " + month + " and day = " + day
-  val nbParts = 1024
+class QueriesProcessor(tableAndPartitionSpec: String, numPartitions: Int)(implicit spark: SparkSession) {
 
   // UDF getting QueryInfo from query string (or null if it fails)
   val makeQueryInfoUdf = udf((queryString: String) => QueryInfo(queryString))
@@ -18,10 +13,10 @@ class QueriesProcessor(spark: SparkSession, year: String, month: String, day: St
   val filterMapKeysUdf = udf((map: Map[String, Long], prefix: String) => map.filterKeys(k => k.startsWith(prefix)))
 
   /**
-   * Setup spark to use nbParts parallelism default is SQL mode
+   * Setup spark to use numPartitions parallelism default is SQL mode
    */
   def initSpark: Unit = {
-    spark.sql(s"SET spark.sql.shuffle.partitions = $nbParts")
+    spark.sql(s"SET spark.sql.shuffle.partitions = $numPartitions")
   }
 
   /**
@@ -31,29 +26,29 @@ class QueriesProcessor(spark: SparkSession, year: String, month: String, day: St
    *  - query time
    *  - query time class (to facilitate analysis by groups)
    *  - query user-agent
-   * @return a spark DataFrame containing the data, explicitly repartitioned to nbPart
+   * @return a spark DataFrame containing the data, explicitly repartitioned to numPartitions
    */
   def getBaseData(): DataFrame = {
-    spark.sql(s"""
-      SELECT
-        meta.id as id,
-        query,
-        query_time,
+    SparkUtils.readTablePartition(tableAndPartitionSpec)
+      .selectExpr(
+        "meta.id as id",
+        "query",
+        "query_time",
+        """
         CASE
           WHEN query_time < 10 THEN '1_less_10ms'
           WHEN query_time < 100 THEN '2_10ms_to_100ms'
           WHEN query_time < 1000 THEN '3_100ms_to_1s'
           WHEN query_time < 10000 THEN '4_1s_to_10s'
           ELSE '5_more_10s'
-        END AS query_time_class,
-        http.request_headers['user-agent'] as ua
-      FROM event.wdqs_external_sparql_query
-      WHERE ${dateClause}
-        -- Accepting 500 as they are likely to be timeout
-        AND http.status_code IN (500, 200)
-        -- Removing monitoring queries
-        AND query != ' ASK{ ?x ?y ?z }'
-      """).repartition(nbParts)
+          END AS query_time_class
+        """,
+        "http.request_headers['user-agent'] as ua"
+        )
+      //Accepting 500 as they are likely to be timeout
+      .filter("http.status_code IN (500, 200)")
+      //Removing monitoring queries
+      .filter("query != ' ASK{ ?x ?y ?z }'")
   }
 
   def getProcessedQueries(baseData: DataFrame): DataFrame = {
@@ -82,29 +77,38 @@ class QueriesProcessor(spark: SparkSession, year: String, month: String, day: St
 }
 
 object QueriesProcessor {
-  /**
-   * Get DataFrame of processed Sparql Queries
-   *
-   * @param year optional argument year number
-   * @param month optional argument month number
-   * @param day optional argument day of month
-   * @return a spark DataFrame containing the processed Sparql Queries
-   */
-  def getSparqlDf(year: String = "2021", month: String = "5", day: String = "10"): DataFrame = {
-    val spark = SparkSession.builder().appName("sparql-analyzer").getOrCreate()
-    val processor = new QueriesProcessor(spark, year, month, day)
+
+  def sparkSession: SparkSession = {
+    SparkSession
+      .builder()
+      // required because spark would fail with:
+      // Exception in thread "main" org.apache.spark.SparkException: Dynamic partition strict mode requires
+      // at least one static partition column. To turn this off set // hive.exec.dynamic.partition.mode=nonstrict
+      .config("hive.exec.dynamic.partition", value = true)
+      .config("hive.exec.dynamic.partition.mode", "non-strict")
+      // Allows overwriting the target partitions
+      .config("spark.sql.sources.partitionOverwriteMode", "dynamic")
+      .appName("SparqlExtractor")
+      .getOrCreate()
+  }
+
+  def getSparqlDf(tableAndPartitionSpec: String, numPartitions: Int)(implicit spark: SparkSession): DataFrame = {
+    val processor = new QueriesProcessor(tableAndPartitionSpec, numPartitions)
     val baseData = processor.getBaseData()
     val processedData = processor.getProcessedQueries(baseData)
     processedData
   }
 
-  def main(args: Array[String]): Unit = {
-    // show 10 rows for demo
-    if (args.length == 3) {
-      getSparqlDf(args(0), args(1), args(2)).show(10)
-    }
-    else {
-      getSparqlDf().show(10)
-    }
+  def extractAndSaveQuery(params: Params): Unit = {
+    implicit val spark: SparkSession = sparkSession
+
+    // Get the data
+    val data = getSparqlDf(params.inputTable, params.numPartitions)
+
+    // Save the data
+    SparkUtils.insertIntoTablePartition(params.outputTable,
+                                        data,
+                                        saveMode = Overwrite,
+                                        format = Some("hive"))
   }
 }

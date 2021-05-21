@@ -3,22 +3,22 @@ package org.wikidata.query.rdf.spark.analysis
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.sparql.algebra.Algebra
 import org.apache.jena.sparql.algebra.walker.Walker
-import org.wikidata.query.rdf.spark.analysis.visitors.{AnalyzeOpVisitor,TripleInfo}
+import org.wikidata.query.rdf.spark.analysis.visitors.{AnalyzeOpVisitor, TripleInfo}
 
 import scala.collection.mutable
 import scala.util.Try
 
 case class QueryInfo(
   queryReprinted: String,
-  opList: mutable.Buffer[String],
-  operators: mutable.Map[String, Long],
-  prefixes: mutable.Map[String, Long],
-  nodes: mutable.Map[String, Long],
-  services: mutable.Map[String, Long],
-  wikidataNames: mutable.Map[String, Long],
-  expressions: mutable.Map[String, Long],
-  paths: mutable.Map[String, Long],
-  triples: mutable.Buffer[TripleInfo]
+  opList: Option[mutable.Buffer[String]],
+  operators: Option[mutable.Map[String, Long]],
+  prefixes: Option[mutable.Map[String, Long]],
+  nodes: Option[mutable.Map[String, Long]],
+  services: Option[mutable.Map[String, Long]],
+  wikidataNames: Option[mutable.Map[String, Long]],
+  expressions: Option[mutable.Map[String, Long]],
+  paths: Option[mutable.Map[String, Long]],
+  triples: Option[mutable.Buffer[TripleInfo]]
 )
 
 object QueryInfo {
@@ -65,19 +65,21 @@ object QueryInfo {
     val opAnalyzer = new AnalyzeOpVisitor(prefixMapping)
     Walker.walk(ast, opAnalyzer)
 
+    // Hive complains with empty arrays and maps,
+    // so they are converted to 'null' using Options.
     QueryInfo(
       //queryId,
       //queryString,
       ast.toString,
-      opAnalyzer.opList,
-      opAnalyzer.opCount,
-      opAnalyzer.nodeVisitor.prefixesCount,
-      opAnalyzer.nodeVisitor.nodeCount,
-      opAnalyzer.serviceVisitor.nodeCount,
-      opAnalyzer.nodeVisitor.wdNodeCount,
-      opAnalyzer.exprVisitor.exprVisited,
-      opAnalyzer.pathVisitor.pathVisited,
-      opAnalyzer.triples
+      Option(opAnalyzer.opList).filterNot(_.isEmpty),
+      Option(opAnalyzer.opCount).filterNot(_.isEmpty),
+      Option(opAnalyzer.nodeVisitor.prefixesCount).filterNot(_.isEmpty),
+      Option(opAnalyzer.nodeVisitor.nodeCount).filterNot(_.isEmpty),
+      Option(opAnalyzer.serviceVisitor.nodeCount).filterNot(_.isEmpty),
+      Option(opAnalyzer.nodeVisitor.wdNodeCount).filterNot(_.isEmpty),
+      Option(opAnalyzer.exprVisitor.exprVisited).filterNot(_.isEmpty),
+      Option(opAnalyzer.pathVisitor.pathVisited).filterNot(_.isEmpty),
+      Option(opAnalyzer.triples).filterNot(_.isEmpty)
     )
 
   }.toOption
