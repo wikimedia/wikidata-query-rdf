@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.updater
 
 import scala.math.Numeric.Implicits.infixNumericOps
 
+import org.apache.flink.formats.parquet.avro.ParquetAvroWriters
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.util.InstantiationUtil
 import org.scalatest.{FlatSpec, Matchers}
@@ -29,6 +30,15 @@ class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
     InstantiationUtil.serializeObject(outputStreams.failedOpsSink).length should not be 0
     InstantiationUtil.serializeObject(outputStreams.lateEventsSink).length should not be 0
     InstantiationUtil.serializeObject(outputStreams.spuriousEventsSink).length should not be 0
+  }
+
+  "Avro generic record wrapper" should "be serializable" in {
+    InstantiationUtil.serializeObject(new GenericRecordWrapperFactory[InputEvent](InputEventEncoder.map,
+      ParquetAvroWriters.forGenericRecord(InputEventEncoder.schema())))
+    InstantiationUtil.serializeObject(new GenericRecordWrapperFactory[FailedOp](FailedOpEncoder.map,
+      ParquetAvroWriters.forGenericRecord(FailedOpEncoder.schema())))
+    InstantiationUtil.serializeObject(new GenericRecordWrapperFactory[IgnoredMutation](IgnoredMutationEncoder.map,
+      ParquetAvroWriters.forGenericRecord(IgnoredMutationEncoder.schema())))
   }
 
 }

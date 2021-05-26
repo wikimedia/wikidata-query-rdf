@@ -4,8 +4,10 @@ import java.util.Properties
 
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
+import org.apache.flink.api.common.serialization.BulkWriter
+import org.apache.flink.api.common.serialization.BulkWriter.Factory
 import org.apache.flink.api.common.time.Time
-import org.apache.flink.core.fs.Path
+import org.apache.flink.core.fs.{FSDataOutputStream, Path}
 import org.apache.flink.formats.parquet.avro.ParquetAvroWriters
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
@@ -24,7 +26,7 @@ case class OutputStreams(
 class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig, httpClientConfig: HttpClientConfig) {
   def lateEventsOutput: SinkFunction[InputEvent] = {
     outputStreamsConfig.lateEventOutputDir match {
-      case Some(dir) => wrapGenericRecordSinkFunction(prepareErrorTrackingFileSink(dir, InputEventEncoder.schema()), InputEventEncoder.map)
+      case Some(dir) => prepareErrorTrackingFileSink(dir, InputEventEncoder.schema(), InputEventEncoder.map)
       case _ => prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema,
         outputStreamsConfig.schemaRepos, httpClientConfig)
     }
@@ -32,7 +34,7 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
 
   def spuriousEventsOutput: SinkFunction[IgnoredMutation] = {
     outputStreamsConfig.spuriousEventOutputDir match {
-      case Some(dir) => wrapGenericRecordSinkFunction(prepareErrorTrackingFileSink(dir, IgnoredMutationEncoder.schema()), IgnoredMutationEncoder.map)
+      case Some(dir) => prepareErrorTrackingFileSink(dir, IgnoredMutationEncoder.schema(), IgnoredMutationEncoder.map)
       case _ => prepareSideOutputStream[IgnoredMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
         outputStreamsConfig.schemaRepos, httpClientConfig)
     }
@@ -40,7 +42,7 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
 
   def failedOpOutput: SinkFunction[FailedOp] = {
     outputStreamsConfig.failedEventOutputDir match {
-      case Some(dir) => wrapGenericRecordSinkFunction(prepareErrorTrackingFileSink(dir, FailedOpEncoder.schema()), FailedOpEncoder.map)
+      case Some(dir) => prepareErrorTrackingFileSink(dir, FailedOpEncoder.schema(), FailedOpEncoder.map)
       case _ => prepareSideOutputStream[FailedOp](JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema,
         outputStreamsConfig.schemaRepos, httpClientConfig)
     }
@@ -82,15 +84,19 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
       })
   }
 
-  private def wrapGenericRecordSinkFunction[I](sinkFunction: SinkFunction[GenericRecord], mapper: I => GenericRecord): SinkFunction[I] = {
-    new SinkFunction[I] {
-      override def invoke(value: I, ctx: SinkFunction.Context): Unit = sinkFunction.invoke(mapper.apply(value), ctx)
-    }
-  }
-
-  private def prepareErrorTrackingFileSink(outputPath: String, schema: Schema): SinkFunction[GenericRecord] = {
-    StreamingFileSink.forBulkFormat(new Path(outputPath), ParquetAvroWriters.forGenericRecord(schema))
+  private def prepareErrorTrackingFileSink[I](outputPath: String, schema: Schema, mapper: I => GenericRecord): SinkFunction[I] = {
+    StreamingFileSink.forBulkFormat(new Path(outputPath), new GenericRecordWrapperFactory[I](mapper, ParquetAvroWriters.forGenericRecord(schema)))
       .withRollingPolicy(OnCheckpointRollingPolicy.build())
       .build()
   }
+}
+
+class GenericRecordWrapperFactory[I](mapper: I => GenericRecord, factory: BulkWriter.Factory[GenericRecord]) extends Factory[I] with Serializable {
+  override def create(fsDataOutputStream: FSDataOutputStream): BulkWriter[I] = new GenericRecordWrapper(mapper, factory.create(fsDataOutputStream))
+}
+
+private class GenericRecordWrapper[I](mapper: I => GenericRecord, bulkWriter: BulkWriter[GenericRecord]) extends BulkWriter[I] {
+  override def addElement(t: I): Unit = bulkWriter.addElement(mapper.apply(t))
+  override def flush(): Unit = bulkWriter.flush()
+  override def finish(): Unit = bulkWriter.finish()
 }
