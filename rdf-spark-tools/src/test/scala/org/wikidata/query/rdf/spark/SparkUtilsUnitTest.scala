@@ -15,7 +15,7 @@ class SparkUtilsUnitTest extends SparkSessionProvider with Matchers {
   }
 
   "when I want to read a table and a partition both" should "be specifiable" in {
-    val rows = SparkUtils.readTablePartition(s"$dbName.$tableName/year=2020/day=1/hour=0/month=07")
+    val rows = SparkUtils.readTablePartition(s"$dbName.$tableName/year=2020/day=01/hour=0/month=07")
       .select("data").take(2)
     rows.length shouldBe 1
     rows(0).getString(0) shouldBe "jul first at noon"

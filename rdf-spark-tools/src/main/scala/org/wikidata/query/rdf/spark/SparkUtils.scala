@@ -13,7 +13,7 @@ object SparkUtils {
   def readTablePartition(tableAndPartitionSpecs: String)(implicit spark: SparkSession): DataFrame = {
     applyTablePartitions[DataFrame, DataFrame](tableAndPartitionSpecs,
       spark.read.table,
-      (column, value, df) => df.filter(df(column).cast(StringType).equalTo(lit(value))),
+      (column, value, df) => df.filter(df(column).equalTo(lit(value))),
       (_, df) => df)
   }
 
