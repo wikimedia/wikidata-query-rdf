@@ -6,6 +6,7 @@ import java.util.UUID
 import scala.concurrent.duration.MILLISECONDS
 
 import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.streaming.api.scala
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
 import org.wikidata.query.rdf.tool.rdf.Patch
@@ -54,7 +55,7 @@ object UpdaterPipeline {
     env.getConfig.registerTypeWithKryoSerializer(classOf[Patch], classOf[RDFPatchSerializer])
     val (outputMutationStream, lateEventsSideOutput, spuriousEventsSideOutput):
       (DataStream[MutationOperation], DataStream[InputEvent], DataStream[IgnoredMutation]) = {
-      val stream = ReorderAndDecideMutationOperation.attach(incomingEventStream, opts.reorderingWindowLengthMs)
+      val stream = ReorderAndDecideMutationOperation.attach(incomingEventStream, opts.reorderingWindowLengthMs, opts.useVersionedSerializers)
       (stream, stream.getSideOutput(ReorderAndDecideMutationOperation.LATE_EVENTS_SIDE_OUTPUT_TAG),
         stream.getSideOutput(ReorderAndDecideMutationOperation.SPURIOUS_REV_EVENTS))
     }
@@ -132,7 +133,12 @@ object UpdaterPipeline {
                                         wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
                                         outputMutationStream: DataStream[MutationOperation]
                                        ): DataStream[ResolvedOp] = {
-    val streamToResolve: KeyedStream[MutationOperation, String] = new DataStreamUtils(outputMutationStream).reinterpretAsKeyedStream(_.item)
+    val streamToResolve: KeyedStream[MutationOperation, String] = if (opts.useVersionedSerializers) {
+      new scala.DataStreamUtils[MutationOperation](outputMutationStream.map(e => e)(MutationOperationSerializer.typeInfo())).reinterpretAsKeyedStream(_.item)
+    } else {
+      new scala.DataStreamUtils[MutationOperation](outputMutationStream).reinterpretAsKeyedStream(_.item)
+    }
+
 
     val genDiffOperator: AsyncFunction[MutationOperation, ResolvedOp] = GenerateEntityDiffPatchOperation(
       domain = opts.hostname,
@@ -141,7 +147,8 @@ object UpdaterPipeline {
     )
 
     // poolSize * 2 for the number of inflight items is a random guess
-    AsyncDataStream.orderedWait(streamToResolve, genDiffOperator, opts.generateDiffTimeout, MILLISECONDS,  opts.wikibaseRepoThreadPoolSize * 2)
+    AsyncDataStream.orderedWait(streamToResolve,
+        genDiffOperator, opts.generateDiffTimeout, MILLISECONDS, opts.wikibaseRepoThreadPoolSize * 2)
       .name("GenerateEntityDiffPatchOperation")
       .uid("GenerateEntityDiffPatchOperation")
   }

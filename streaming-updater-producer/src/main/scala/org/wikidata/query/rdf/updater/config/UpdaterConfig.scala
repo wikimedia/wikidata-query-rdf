@@ -20,6 +20,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
   val outputPartition: Int = params.getInt("output_topic_partition")
   val entityNamespaces: Set[Long] = params.get("entity_namespaces", defaultEntityNs).split(",").map(_.trim.toLong).toSet
   val entityDataPath: String = params.get("wikibase_entitydata_path", Uris.DEFAULT_ENTITY_DATA_PATH)
+  val useVersionedSerializers: Boolean = params.getBoolean("use_versioned_serializers", false)
 
   val generalConfig: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
     hostname = hostName,
@@ -36,7 +37,8 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       httpRoutes = optionalStringArg("http_routes"),
       httpTimeout = optionalIntArg("http_timeout"),
       userAgent = params.get("user_agent", HttpClientUtils.WDQS_DEFAULT_UA)
-    )
+    ),
+    useVersionedSerializers = useVersionedSerializers
   )
 
   val inputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
@@ -106,7 +108,8 @@ sealed case class UpdaterPipelineGeneralConfig(hostname: String,
                                                generateDiffTimeout: Long,
                                                wikibaseRepoThreadPoolSize: Int,
                                                outputOperatorNameAndUuid: String,
-                                               httpClientConfig: HttpClientConfig
+                                               httpClientConfig: HttpClientConfig,
+                                               useVersionedSerializers: Boolean
                                               )
 
 sealed case class HttpClientConfig(

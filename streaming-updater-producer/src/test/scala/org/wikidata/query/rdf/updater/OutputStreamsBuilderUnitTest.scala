@@ -1,7 +1,5 @@
 package org.wikidata.query.rdf.updater
 
-import scala.math.Numeric.Implicits.infixNumericOps
-
 import org.apache.flink.formats.parquet.avro.ParquetAvroWriters
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.util.InstantiationUtil

@@ -7,4 +7,5 @@ case class StateExtractionConfig(args: Array[String]) extends BaseConfig()(BaseC
   val verify: Boolean = params.getBoolean("verify", false)
   val outputKafkaOffsets: Option[String] = optionalStringArg("kafka_offsets_output")
   val inputKafkaTopics: Option[InputKafkaTopics] = if (outputKafkaOffsets.isDefined) Some(getInputKafkaTopics) else None
+  val useVersionedSerializers: Boolean = params.getBoolean("use_versioned_serializers", false)
 }

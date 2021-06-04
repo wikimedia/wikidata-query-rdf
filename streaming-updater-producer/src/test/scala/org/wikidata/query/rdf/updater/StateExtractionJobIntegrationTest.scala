@@ -38,7 +38,7 @@ class StateExtractionJobIntegrationTest extends FlatSpec with FlinkTestCluster w
     val bufferedEventOp: OneInputOperatorTransformation[InputEvent] = OperatorTransformation
       .bootstrapWith(env.getJavaEnv.fromCollection(
         Seq[InputEvent](RevCreate("Q1", instant(0), 124, Some(123), instant(1), newEventInfo(instant(0), DOMAIN, STREAM, "REQ_ID"))).asJava,
-        TypeInformation.of(classOf[InputEvent])
+        InputEventSerializer.typeInfo()
       ))
 
     val bufferedEventOpTr = bufferedEventOp.keyBy(new KeySelector[InputEvent, String] {
@@ -48,7 +48,7 @@ class StateExtractionJobIntegrationTest extends FlatSpec with FlinkTestCluster w
       var revMap: ValueState[lang.Long] = _
       override def open(parameters: Configuration): Unit = {
         revMap = getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())
-        state = getRuntimeContext.getListState(UpdaterStateConfiguration.newPartialReorderingStateDesc())
+        state = getRuntimeContext.getListState(UpdaterStateConfiguration.newPartialReorderingStateDesc(true))
       }
       override def processElement(in: InputEvent, context: KeyedStateBootstrapFunction[String, InputEvent]#Context): Unit = {
         state.add(in)
@@ -67,7 +67,8 @@ class StateExtractionJobIntegrationTest extends FlatSpec with FlinkTestCluster w
       "--input_savepoint", savePointDir.getAbsolutePath,
       "--rev_map_output", revMapOutput.toString,
       "--verify", "true", // do not verify as we don't have the buffered events here
-      "--job_name", "state inspection").toArray)
+      "--job_name", "state inspection",
+      "--use_versioned_serializers", "true").toArray)
     StateExtractionJob.configure(stateInspectionConfig)
 
     try {

@@ -2,6 +2,8 @@ package org.wikidata.query.rdf.updater
 
 import java.lang
 
+import scala.language.postfixOps
+
 import org.apache.flink.api.common.functions.MapFunction
 import org.apache.flink.api.common.state.{ListState, ListStateDescriptor}
 import org.apache.flink.api.java.{DataSet => JavaDataSet}

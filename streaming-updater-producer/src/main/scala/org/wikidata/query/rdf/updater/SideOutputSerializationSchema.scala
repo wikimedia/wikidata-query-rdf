@@ -14,7 +14,7 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.updater.config.HttpClientConfig
-import org.wikimedia.eventutilities.core.event.{EventSchemaLoader, EventStreamConfig, JsonEventGenerator, WikimediaDefaults}
+import org.wikimedia.eventutilities.core.event.{EventSchemaLoader, EventStreamConfig, JsonEventGenerator}
 import org.wikimedia.eventutilities.core.http.BasicHttpClient
 import org.wikimedia.eventutilities.core.json.{JsonLoader, JsonSchemaLoader}
 import org.wikimedia.eventutilities.core.util.ResourceLoader

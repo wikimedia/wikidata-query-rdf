@@ -22,9 +22,9 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   var operator: KeyedOneInputStreamOperatorTestHarness[String, InputEvent, MutationOperation] = _
 
   override def beforeEach(): Unit = {
-    val stateDescr = UpdaterStateConfiguration.newPartialReorderingStateDesc()
+    val stateDescr = UpdaterStateConfiguration.newPartialReorderingStateDesc(true)
     stateDescr.initializeSerializerUnlessSet(new ExecutionConfig())
-    val processFunction = new ReorderAndDecideMutationOperation(10)
+    val processFunction = new ReorderAndDecideMutationOperation(10, true )
     operator = new KeyedOneInputStreamOperatorTestHarness[String, InputEvent, MutationOperation](new KeyedProcessOperator(processFunction),
       inputEventKeySelector,
       TypeInformation.of(classOf[String]))

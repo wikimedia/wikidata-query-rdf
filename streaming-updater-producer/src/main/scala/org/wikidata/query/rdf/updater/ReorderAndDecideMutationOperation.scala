@@ -9,7 +9,8 @@ import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 
-class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction[String, InputEvent, MutationOperation] with LastSeenRevState {
+class ReorderAndDecideMutationOperation(delay: Int, useVersionedSerializers: Boolean) extends KeyedProcessFunction[String, InputEvent, MutationOperation]
+    with LastSeenRevState {
   private val LOG = LoggerFactory.getLogger(getClass)
 
   var bufferedEvents: ListState[InputEvent] = _
@@ -132,7 +133,7 @@ class ReorderAndDecideMutationOperation(delay: Int) extends KeyedProcessFunction
   }
 
   override def open(parameters: Configuration): Unit = {
-    bufferedEvents = getRuntimeContext.getListState(UpdaterStateConfiguration.newPartialReorderingStateDesc())
+    bufferedEvents = getRuntimeContext.getListState(UpdaterStateConfiguration.newPartialReorderingStateDesc(useVersionedSerializers))
     // FIXME: this is ugly
     open(new EntityState(getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())))
   }
@@ -145,9 +146,10 @@ object ReorderAndDecideMutationOperation {
 
   def attach(stream: KeyedStream[InputEvent, String],
              delay: Int,
+             useVersionedSerializers: Boolean,
              uuid: String = UID): DataStream[MutationOperation] = {
       stream
-        .process(new ReorderAndDecideMutationOperation(delay))
+        .process(new ReorderAndDecideMutationOperation(delay, useVersionedSerializers))
         // make sure to use the same UUID used by the boostrap job
         .uid(uuid)
         .name("ReorderAndDecideMutationOperation")

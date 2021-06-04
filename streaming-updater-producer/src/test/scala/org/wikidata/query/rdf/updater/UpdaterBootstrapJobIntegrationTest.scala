@@ -80,7 +80,8 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       generateDiffTimeout = Int.MaxValue,
       wikibaseRepoThreadPoolSize = 10,
       outputOperatorNameAndUuid = "test-output-name",
-      httpClientConfig = HttpClientConfig(None, None, "my user-agent")
+      httpClientConfig = HttpClientConfig(None, None, "my user-agent"),
+      useVersionedSerializers = true
     )
     UpdaterPipeline.configure(options, List(source),
       OutputStreams(
