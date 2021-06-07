@@ -16,7 +16,7 @@ ENDPOINT="http://localhost:9999"
 
 log "Download latest dump"
 curl -o ${DATA_DIR}/${DUMP_FILENAME} \
-https://dumps.wikimedia.org/other/wikibase/commonswiki/${DUMP_FILENAME}
+https://dumps.wikimedia.your.org/other/wikibase/commonswiki/${DUMP_FILENAME}
 
 log "Running munge script"
 ${DEPLOY_DIR}/munge.sh \
@@ -26,7 +26,8 @@ ${DEPLOY_DIR}/munge.sh \
 -- \
 --wikibaseHost commons.wikimedia.org \
 --conceptUri http://www.wikidata.org \
---commonsUri https://commons.wikimedia.org
+--commonsUri https://commons.wikimedia.org \
+--skolemize
 
 # added for debugging purposes - see https://phabricator.wikimedia.org/T251515#6393397
 log "Munged dir - ${MUNGED_DIR}"
