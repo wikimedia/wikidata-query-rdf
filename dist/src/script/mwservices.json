@@ -110,6 +110,7 @@
 	"test.wikidata.org",
 	".wiktionary.org",
 	".wikisource.org",
+	"wikisource.org",
 	".wikibooks.org",
 	".wikinews.org",
 	".wikiquote.org",
@@ -117,7 +118,8 @@
 	".wikiversity.org",
 	".wikivoyage.org",
 	"species.wikimedia.org",
-	"wikimania.wikimedia.org"
+	"wikimania.wikimedia.org",
+	"meta.wikimedia.org"
 ]
 }
 

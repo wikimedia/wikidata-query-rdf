@@ -90,7 +90,8 @@ public class ServiceConfig {
             return false;
         }
         for (String allowedEndpoint: endpoints) {
-            if (endpointHost.endsWith(allowedEndpoint)) {
+            if ((allowedEndpoint.startsWith(".") && endpointHost.endsWith(allowedEndpoint))
+                    || endpointHost.equals(allowedEndpoint)) {
                 return true;
             }
         }

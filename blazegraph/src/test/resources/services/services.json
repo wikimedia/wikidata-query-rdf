@@ -21,6 +21,6 @@
 		}
 	}
 },
-"endpoints": [".wikipedia.org", "www.mediawiki.org", "www.wikidata.org"]
+"endpoints": [".wikipedia.org", "www.mediawiki.org", "www.wikidata.org", "wikisource.org"]
 }
 

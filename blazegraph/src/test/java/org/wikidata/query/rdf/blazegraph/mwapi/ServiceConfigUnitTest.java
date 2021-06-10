@@ -53,6 +53,8 @@ public class ServiceConfigUnitTest {
         assertTrue(config.validEndpoint("en.wikipedia.org"));
         assertTrue(config.validEndpoint("ru.wikipedia.org"));
         assertTrue(config.validEndpoint("www.mediawiki.org"));
+        assertTrue(config.validEndpoint("wikisource.org"));
+        assertFalse(config.validEndpoint("notwikisource.org"));
         assertFalse(config.validEndpoint("wikileaks.org"));
         assertFalse(config.validEndpoint("fakewikipedia.org"));
         assertFalse(config.validEndpoint("fake#en.wikipedia.org"));
