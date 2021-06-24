@@ -40,6 +40,9 @@ public interface StreamingUpdateOptions extends OptionsUtils.BasicOptions {
     @Option(defaultValue = ".*", description = "Filter entities matching this regex")
     String entityFilter();
 
+    @Option(defaultValue = "0.01", description = "Threshold for inconsistencies for a batch to be logged as a warning")
+    float inconsistenciesWarningThreshold();
+
     static Pattern entityFilterPattern(StreamingUpdateOptions options) {
         try {
             return Pattern.compile(options.entityFilter());

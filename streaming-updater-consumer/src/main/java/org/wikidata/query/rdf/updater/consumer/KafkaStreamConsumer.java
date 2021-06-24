@@ -54,7 +54,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
             Map<TopicPartition, OffsetAndTimestamp> offsetAndTimestampMap = consumer.offsetsForTimes(singletonMap(topic, time.getEpochSecond()));
             OffsetAndTimestamp offsetAndTimestamp = offsetAndTimestampMap.get(topic);
             if (offsetAndTimestamp == null) {
-                throw new IllegalStateException("Cannot reset kafka offsets to " + time.toString() + ". This position has been found in the stream.");
+                throw new IllegalStateException("Cannot reset kafka offsets to " + time + ". This position has been found in the stream.");
             }
             BiConsumer<Consumer<String, MutationEventData>, TopicPartition> offsetReset = resetToOffset(offsetAndTimestamp.offset());
             offsetReset.accept(consumer, topic);
@@ -121,6 +121,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
             throw new IllegalStateException("Last batch must be acknowledged before polling a new one.");
         }
         PatchAccumulator accumulator = new PatchAccumulator(rdfDeser);
+        ConsumerRecord<String, MutationEventData> firstRecord = null;
         ConsumerRecord<String, MutationEventData> lastRecord = null;
         long st = System.nanoTime();
         // latency on the average of the event dates is similar to the average of the latencies
@@ -143,22 +144,31 @@ public class KafkaStreamConsumer implements StreamConsumer {
 
             nbEvents++;
             lastRecord = entityChunks.get(entityChunks.size() - 1);
+            if (firstRecord == null) {
+                firstRecord = entityChunks.get(0);
+            }
             sumEvenTimes += lastRecord.value().getEventTime().toEpochMilli();
             accumulator.accumulate(entityChunks.stream().map(ConsumerRecord::value).collect(toList()));
-            buffer.removeAll(entityChunks);
+            entityChunks.forEach(buffer::remove);
         }
         metrics.triplesAccum(accumulator.getTotalAccumulated());
         metrics.triplesOffered(accumulator.getNumberOfTriples());
         metrics.deletedEntities(accumulator.getNumberOfDeletedEntities());
         Map<TopicPartition, OffsetAndMetadata> offsetsAndMetadata;
-        if (lastRecord != null) {
-            offsetsAndMetadata = singletonMap(topicPartition, new OffsetAndMetadata(lastRecord.offset()));
-            lastBatchEventTime = Instant.ofEpochMilli(sumEvenTimes / nbEvents);
-            lastOfferedBatchOffsets = offsetsAndMetadata;
-            return new Batch(accumulator.asPatch(), lastBatchEventTime);
-        } else {
+        if (lastRecord == null) {
             return null;
         }
+        offsetsAndMetadata = singletonMap(topicPartition, new OffsetAndMetadata(lastRecord.offset()));
+        lastBatchEventTime = Instant.ofEpochMilli(sumEvenTimes / nbEvents);
+        lastOfferedBatchOffsets = offsetsAndMetadata;
+        return new Batch(
+                accumulator.asPatch(),
+                lastBatchEventTime,
+                firstRecord.value().getMeta().id(),
+                firstRecord.value().getMeta().timestamp(),
+                lastRecord.value().getMeta().id(),
+                lastRecord.value().getMeta().timestamp()
+        );
     }
 
     /**

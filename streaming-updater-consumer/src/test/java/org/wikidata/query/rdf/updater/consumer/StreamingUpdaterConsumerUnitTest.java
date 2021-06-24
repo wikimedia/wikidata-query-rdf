@@ -7,6 +7,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.wikidata.query.rdf.test.StatementHelper.statements;
+import static org.wikidata.query.rdf.updater.consumer.StreamingUpdaterConsumer.passInconsistencyThreshold;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -41,14 +42,15 @@ public class StreamingUpdaterConsumerUnitTest {
         RDFPatchResult rdfPatchResult = new RDFPatchResult(2, 1, 2, 1, 1);
         LongAdder patchApplied = new LongAdder();
         CountDownLatch countdown = new CountDownLatch(5);
-        when(consumer.poll(any())).thenAnswer((Answer<StreamConsumer.Batch>) invocationOnMock -> new StreamConsumer.Batch(patch, avgEventTime));
+        Answer<StreamConsumer.Batch> batchSupplier = (i) -> new StreamConsumer.Batch(patch, avgEventTime, "1", Instant.now(), "2", Instant.now());
+        when(consumer.poll(any())).thenAnswer(batchSupplier);
         when(rdfRepositoryUpdater.applyPatch(any(), any())).thenAnswer((Answer<RDFPatchResult>) i -> {
             countdown.countDown();
             patchApplied.increment();
             return rdfPatchResult;
         });
         MetricRegistry registry = new MetricRegistry();
-        StreamingUpdaterConsumer updater = new StreamingUpdaterConsumer(consumer, rdfRepositoryUpdater, registry);
+        StreamingUpdaterConsumer updater = new StreamingUpdaterConsumer(consumer, rdfRepositoryUpdater, registry, 1F);
         Thread t = new Thread(updater);
         t.start();
         // Wait for five patches to be applied and stop the updater
@@ -69,5 +71,15 @@ public class StreamingUpdaterConsumerUnitTest {
         assertThat(registry.counter("divergences").getCount()).isEqualTo(patchApplied.intValue());
         assertThat(registry.counter("shared-element-mutations").getCount()).isEqualTo(patchApplied.intValue());
         assertThat(registry.counter("shared-element-redundant-mutations").getCount()).isEqualTo(patchApplied.intValue());
+    }
+
+    @Test
+    public void testInconsistenciesThreshold() {
+        RDFPatchResult res = new RDFPatchResult(100, 98, 0, 0, 0);
+        assertThat(passInconsistencyThreshold(res, 0.02F)).isFalse();
+        assertThat(passInconsistencyThreshold(res, 0.01F)).isTrue();
+
+        res = new RDFPatchResult(0, 99, 0, 0, 0);
+        assertThat(passInconsistencyThreshold(res, 0.01F)).isFalse();
     }
 }

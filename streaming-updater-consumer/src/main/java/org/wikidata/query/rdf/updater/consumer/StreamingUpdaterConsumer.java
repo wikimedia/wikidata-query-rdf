@@ -2,15 +2,19 @@ package org.wikidata.query.rdf.updater.consumer;
 
 import java.time.Duration;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.common.TimerCounter;
 import org.wikidata.query.rdf.tool.rdf.RDFPatchResult;
 import org.wikidata.query.rdf.tool.rdf.RdfRepositoryUpdater;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.annotations.VisibleForTesting;
 
 public class StreamingUpdaterConsumer implements Runnable {
     public static final Duration TIMEOUT = Duration.ofSeconds(3);
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final StreamConsumer consumer;
     private final RdfRepositoryUpdater repository;
     private final Counter divergencesCnt;
@@ -20,10 +24,14 @@ public class StreamingUpdaterConsumer implements Runnable {
     private final Counter deleteMutationsCnt;
     private final TimerCounter pollTimeCnt;
     private final TimerCounter rdfStoreTimeCnt;
+    private final float inconsistencyWarningThreshold;
 
     private volatile boolean stop;
 
-    public StreamingUpdaterConsumer(StreamConsumer consumer, RdfRepositoryUpdater repository, MetricRegistry registry) {
+    public StreamingUpdaterConsumer(StreamConsumer consumer,
+                                    RdfRepositoryUpdater repository,
+                                    MetricRegistry registry,
+                                    float inconsistencyWarningThreshold) {
         this.consumer = consumer;
         this.repository = repository;
         this.mutationsCnt = registry.counter("mutations");
@@ -33,6 +41,7 @@ public class StreamingUpdaterConsumer implements Runnable {
         this.redundantSharedEltTriplesCnt = registry.counter("shared-element-redundant-mutations");
         this.pollTimeCnt = TimerCounter.counter(registry.counter("poll-time-cnt"));
         this.rdfStoreTimeCnt = TimerCounter.counter(registry.counter("rdf-store-time-cnt"));
+        this.inconsistencyWarningThreshold = inconsistencyWarningThreshold;
     }
 
     public void run() {
@@ -52,9 +61,25 @@ public class StreamingUpdaterConsumer implements Runnable {
                 }
                 RDFPatchResult result = rdfStoreTimeCnt.time(() -> repository.applyPatch(b.getPatch(), b.getAverageEventTime()));
                 updateCounters(result);
+                if (passInconsistencyThreshold(result, inconsistencyWarningThreshold)) {
+                    logger.warn("Applied batch with too many inconsistencies. {} for {}.", result, b);
+                }
                 consumer.acknowledge();
             }
         }
+    }
+
+    /**
+     * @return true if the pct of actual mutations minus expected ones is greater than the threshold
+     */
+    @VisibleForTesting
+    public static boolean passInconsistencyThreshold(RDFPatchResult result, float inconsistencyWarningThreshold) {
+        float expected = result.getExpectedMutations();
+        float actual = result.getActualMutations();
+        if (expected <= 0) {
+            return false;
+        }
+        return (Math.abs(expected - actual) / expected) > inconsistencyWarningThreshold;
     }
 
     private void updateCounters(RDFPatchResult result) {

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Supplier;
+import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -85,8 +85,8 @@ public class KafkaStreamConsumerUnitTest {
     )));
     private final Set<String> deletedEntityIds = new HashSet<>();
     private static final String REQ_ID = UUID.randomUUID().toString();
-    private static final Supplier<EventsMeta> EVENTS_META_SUPPLIER =
-            () -> new EventsMeta(Instant.EPOCH, UUID.randomUUID().toString(), TEST_DOMAIN, TESTED_STREAM, REQ_ID);
+    private static final BiFunction<String, Instant, EventsMeta> EVENTS_META_SUPPLIER =
+            (id, dt) -> new EventsMeta(dt, id, TEST_DOMAIN, TESTED_STREAM, REQ_ID);
 
 
     @Test
@@ -96,19 +96,22 @@ public class KafkaStreamConsumerUnitTest {
         // preferredBatchLength set to 4 end when reading event n°4 and not rely on timeouts to batch 5 and 6
         KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 8,
                 KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), 250, m -> true);
-        List<ConsumerRecord<String, MutationEventData>> allRecords = recordsList(Instant.EPOCH, Duration.ofMinutes(2));
+        Instant evtTimeBase = Instant.EPOCH;
+        Duration evtTimeIncrement = Duration.ofMinutes(2);
+        List<ConsumerRecord<String, MutationEventData>> allRecords = recordsList(evtTimeBase, evtTimeIncrement);
         when(consumer.poll(any())).thenReturn(
                 new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(0, 2))),
                 new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(2, allRecords.size()))),
                 new ConsumerRecords<>(emptyMap()));
 
         List<Instant> eventTimes = new ArrayList<>();
-
+        List<StreamConsumer.Batch> batches = new ArrayList<>();
         while (true) {
             StreamConsumer.Batch b = streamConsumer.poll(Duration.ofMillis(1000));
             if (b == null) {
                 break;
             }
+            batches.add(b);
             ConsumerPatch patch = b.getPatch();
             eventTimes.add(b.getAverageEventTime());
             storedData.addAll(patch.getAdded());
@@ -132,6 +135,14 @@ public class KafkaStreamConsumerUnitTest {
             assertThat(unlinkedSharedElts).containsExactlyInAnyOrderElementsOf(expectedUnlinkedEltsSingleOptimizedBatch);
         }
         assertThat(deletedEntityIds).containsOnly("Q2");
+        assertThat(batches.stream().map(StreamConsumer.Batch::getBatchStartMsgId))
+                .containsExactly("IMP-Q1-1", "IMP-Q2-1");
+        assertThat(batches.stream().map(StreamConsumer.Batch::getBatchEndMsgId))
+                .containsExactly("DIF-Q1-4", "DEL-Q2-2");
+        assertThat(batches.stream().map(StreamConsumer.Batch::getBatchStartDt))
+                .containsExactly(evtTimeBase.plus(evtTimeIncrement.multipliedBy(1)), evtTimeBase.plus(evtTimeIncrement.multipliedBy(5)));
+        assertThat(batches.stream().map(StreamConsumer.Batch::getBatchEndDt))
+                .containsExactly(evtTimeBase.plus(evtTimeIncrement.multipliedBy(4)), evtTimeBase.plus(evtTimeIncrement.multipliedBy(6)));
     }
 
     @Test
@@ -346,14 +357,15 @@ public class KafkaStreamConsumerUnitTest {
     private List<? extends MutationEventData> genEvent(String entity, int rev, String[] added, String[] deleted,
                                                        String[] linkedSharedElt, String[] unlinkedSharedElts, Instant eventTime) {
         if (deleted.length == 0) {
-            return generator.fullImportEvent(EVENTS_META_SUPPLIER, entity, rev, eventTime, statements(added), statements(linkedSharedElt));
+            return generator.fullImportEvent(() -> EVENTS_META_SUPPLIER.apply("IMP-" + entity + "-" + rev, eventTime), entity, rev,
+                    eventTime, statements(added), statements(linkedSharedElt));
         } else {
-            return generator.diffEvent(EVENTS_META_SUPPLIER, entity, rev, eventTime, statements(added), statements(deleted),
-                    statements(linkedSharedElt), statements(unlinkedSharedElts));
+            return generator.diffEvent(() -> EVENTS_META_SUPPLIER.apply("DIF-" + entity + "-" + rev, eventTime), entity, rev,
+                    eventTime, statements(added), statements(deleted), statements(linkedSharedElt), statements(unlinkedSharedElts));
         }
     }
 
     private List<? extends MutationEventData> genDeleteEvent(String entity, int rev, Instant eventTime) {
-        return generator.deleteEvent(EVENTS_META_SUPPLIER, entity, rev, eventTime);
+        return generator.deleteEvent(() -> EVENTS_META_SUPPLIER.apply("DEL-" + entity + "-" + rev, eventTime), entity, rev, eventTime);
     }
 }

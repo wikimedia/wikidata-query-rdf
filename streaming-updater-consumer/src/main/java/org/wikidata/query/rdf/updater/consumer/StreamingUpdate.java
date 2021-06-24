@@ -86,7 +86,7 @@ public final class StreamingUpdate {
         Duration rdfClientTimeout = RdfRepositoryUpdater.getRdfClientTimeout();
         RdfClient rdfClient = new RdfClient(httpClient, StreamingUpdateOptions.sparqlUri(options), retryer, rdfClientTimeout);
         UrisScheme uris = UrisSchemeFactory.getURISystem();
-        return new StreamingUpdaterConsumer(consumer, new RdfRepositoryUpdater(rdfClient, uris), metrics);
+        return new StreamingUpdaterConsumer(consumer, new RdfRepositoryUpdater(rdfClient, uris), metrics, options.inconsistenciesWarningThreshold());
     }
 
     static String RESET_OFFSETS_TO_EARLIEST = "earliest";

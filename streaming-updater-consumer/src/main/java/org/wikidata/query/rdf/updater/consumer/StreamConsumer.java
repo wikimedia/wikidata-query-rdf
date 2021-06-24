@@ -19,5 +19,9 @@ public interface StreamConsumer extends AutoCloseable {
     class Batch {
         ConsumerPatch patch;
         Instant averageEventTime;
+        String batchStartMsgId;
+        Instant batchStartDt;
+        String batchEndMsgId;
+        Instant batchEndDt;
     }
 }

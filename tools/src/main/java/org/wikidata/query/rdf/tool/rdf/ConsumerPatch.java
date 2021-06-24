@@ -13,4 +13,12 @@ public class ConsumerPatch {
     List<Statement> removed;
     List<Statement> unlinkedSharedElements;
     List<String> entityIdsToDelete;
+
+    public String toString() {
+        return "ConsumerPatch(added=" + added.size() +
+                ", linkedSharedElements=" + linkedSharedElements.size() +
+                ", removed=" + removed.size() +
+                ", unlinkedSharedElements=" + unlinkedSharedElements.size() +
+                ", entityIdsToDelete=" + entityIdsToDelete.size() + ")";
+    }
 }
