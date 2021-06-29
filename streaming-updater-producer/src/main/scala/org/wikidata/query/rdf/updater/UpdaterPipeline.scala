@@ -39,7 +39,7 @@ object UpdaterPipeline {
                 incomingStreams: List[DataStream[InputEvent]],
                 outputStreams: OutputStreams,
                 wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
-                uniqueIdGenerator: () => String = UUID.randomUUID().toString,
+                uniqueIdGenerator: () => String = () => UUID.randomUUID().toString,
                 clock: Clock = Clock.systemUTC(),
                 outputStreamName: String = "wdqs_streaming_updater"
            )

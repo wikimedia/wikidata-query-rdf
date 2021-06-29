@@ -21,10 +21,10 @@ sealed case class MutationDataChunk(
 class PatchChunkOperation(domain: String,
                           mimeType: String = RDFFormat.TURTLE.getDefaultMIMEType,
                           chunkSoftMaxSize: Int = 128000, // ~max 128k chars, can be slightly more
-                          clock: Clock = Clock.systemUTC(),
-                          uniqueIdGenerator: () => String = () => UUID.randomUUID().toString,
-                          stream: String = "wdqs_streaming_updater"
-                            )
+                          clock: Clock,
+                          uniqueIdGenerator: () => String,
+                          stream: String
+                         )
   extends FlatMapFunction[SuccessfulOp, MutationDataChunk] {
 
   lazy val rdfSerializer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())
