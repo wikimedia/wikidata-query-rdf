@@ -75,6 +75,7 @@ object TurtleImporter {
           Seq.empty[Row]
         }
       })
+      .distinct()
     dataWriter(rdd)
   }
 

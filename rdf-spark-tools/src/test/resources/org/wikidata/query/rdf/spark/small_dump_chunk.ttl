@@ -51,6 +51,14 @@ wd:Q31 a wikibase:Item .
         schema:inLanguage "it" ;
         schema:isPartOf <https://it.wikivoyage.org/> ;
         schema:name "Belgio"@it .
+        
+wd:Q31 a wikibase:Item .
+
+<https://it.wikivoyage.org/wiki/Belgio> a schema:Article ;
+        schema:about wd:Q31 ;
+        schema:inLanguage "it" ;
+        schema:isPartOf <https://it.wikivoyage.org/> ;
+        schema:name "Belgio"@it .
 
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
@@ -107,6 +115,26 @@ wd:Q8 a wikibase:Item ;
         schema:isPartOf <https://fr.wikiquote.org/> ;
         schema:name "Bonheur"@fr .
 
+wd:Q8 p:P646 s:Q8-63214A9F-B2C8-42F9-8DA0-B046A989DDCF .
+
+s:Q8-63214A9F-B2C8-42F9-8DA0-B046A989DDCF a wikibase:Statement,
+                wikibase:BestRank ;
+        wikibase:rank wikibase:NormalRank ;
+        ps:P646 "/m/016pp7" ;
+        psn:P646 <http://g.co/kg/m/016pp7> ;
+        prov:wasDerivedFrom ref:2b00cb481cddcac7623114367489b5c194901c4a .
+
+ref:2b00cb481cddcac7623114367489b5c194901c4a a wikibase:Reference ;
+        pr:P248 wd:Q15241312 ;
+        pr:P577 "2013-10-28T00:00:00Z"^^xsd:dateTime ;
+        prv:P577 v:f987783e1f9c9fa0cb0b774d330af52d .
+
+v:f987783e1f9c9fa0cb0b774d330af52d a wikibase:TimeValue ;
+        wikibase:timeValue "2013-10-28T00:00:00Z"^^xsd:dateTime ;
+        wikibase:timePrecision "11"^^xsd:integer ;
+        wikibase:timeTimezone "0"^^xsd:integer ;
+        wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+        
 wd:Q8 p:P646 s:Q8-63214A9F-B2C8-42F9-8DA0-B046A989DDCF .
 
 s:Q8-63214A9F-B2C8-42F9-8DA0-B046A989DDCF a wikibase:Statement,

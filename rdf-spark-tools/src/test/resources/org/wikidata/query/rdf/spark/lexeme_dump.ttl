@@ -107,3 +107,15 @@ s:L4696-S3-601a4002-4c3d-7b4c-1463-64a5ff969386 a wikibase:Statement,
                 wikibase:BestRank ;
         wikibase:rank wikibase:NormalRank ;
         ps:P5137 wd:Q613299 .
+        
+wd:L4696-S3 a wikibase:Sense,
+                ontolex:LexicalSense ;
+        rdfs:label "element in programming language"@en ;
+        skos:definition "element in programming language"@en ;
+        wdt:P5137 wd:Q613299 ;
+        p:P5137 s:L4696-S3-601a4002-4c3d-7b4c-1463-64a5ff969386 .
+
+s:L4696-S3-601a4002-4c3d-7b4c-1463-64a5ff969386 a wikibase:Statement,
+                wikibase:BestRank ;
+        wikibase:rank wikibase:NormalRank ;
+        ps:P5137 wd:Q613299 .

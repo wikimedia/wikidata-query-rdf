@@ -54,6 +54,8 @@ class WikibaseRDFDumpConverterUnitTest extends FlatSpec with SparkSessionProvide
     rdfTable
       .filter("object = '<http://www.wikidata.org/.well-known/genid/e39d2a834262fbd171919ab2c038c9fb>'")
       .count() shouldEqual 1
+
+    rdfTable.count() shouldEqual rdfTable.distinct().count()
   }
 
   "a commons rdf dump present" should "be converted as a table partition" in {
@@ -78,6 +80,8 @@ class WikibaseRDFDumpConverterUnitTest extends FlatSpec with SparkSessionProvide
       "<https://commons.wikimedia.org/entity/M6580719>",
       "<http://wikiba.se/ontology#Dump>",
       "<http://wikiba.se/ontology#Value>")
+
+    rdfTable.count() shouldEqual rdfTable.distinct().count()
   }
 
   "a rdf dump present" should "be converted as a parquet file" in {
@@ -108,6 +112,8 @@ class WikibaseRDFDumpConverterUnitTest extends FlatSpec with SparkSessionProvide
     rdfDataframe
       .filter("object = '<http://www.wikidata.org/.well-known/genid/e39d2a834262fbd171919ab2c038c9fb>'")
       .count() shouldEqual 1
+
+    rdfDataframe.count() shouldEqual rdfDataframe.distinct().count()
   }
 
   "a rdf dump present" should "be converted as nt chunk files" in {

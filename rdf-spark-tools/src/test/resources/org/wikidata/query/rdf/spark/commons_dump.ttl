@@ -186,6 +186,13 @@ sdcs:M50827445-8C0465E0-3915-4BA9-8F95-4AE7A433E13B a wikibase:Statement,
 
 sdc:M50827445 p:P6731 sdcs:M50827445-6C95CC16-B28D-48B6-8557-9C0C718BE4DB .
 
+sdcs:M50827445-8C0465E0-3915-4BA9-8F95-4AE7A433E13B a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6731 wd:Q63348049 .
+
+sdc:M50827445 p:P6731 sdcs:M50827445-6C95CC16-B28D-48B6-8557-9C0C718BE4DB .
+
 sdcs:M50827445-6C95CC16-B28D-48B6-8557-9C0C718BE4DB a wikibase:Statement,
 		wikibase:BestRank ;
 	wikibase:rank wikibase:NormalRank ;
