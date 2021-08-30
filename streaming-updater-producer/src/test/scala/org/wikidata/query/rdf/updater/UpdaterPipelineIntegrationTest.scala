@@ -24,6 +24,9 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     httpClientConfig = HttpClientConfig(None, None, "my user-agent"),
     useVersionedSerializers = true
   )
+
+  private val resolver: IncomingStreams.EntityResolver = (_, title, _) => title
+
   "Updater job" should "work" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
 
@@ -36,7 +39,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       // Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
       URIS,
-      IncomingStreams.REV_CREATE_CONV, clock)
+      IncomingStreams.REV_CREATE_CONV, clock, resolver)
 
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
@@ -73,14 +76,14 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       // Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
       URIS,
-      IncomingStreams.REV_CREATE_CONV, clock)
+      IncomingStreams.REV_CREATE_CONV, clock, resolver)
 
     val pageDeleteSource: DataStream[InputEvent] = IncomingStreams.fromStream(env.fromCollection(pageDeleteEvents)
       .setParallelism(1)
       //       Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[PageDeleteEvent]()),
       URIS,
-      IncomingStreams.PAGE_DEL_CONV, clock)
+      IncomingStreams.PAGE_DEL_CONV, clock, resolver)
 
 
     //this needs to be evaluated before the lambda below because of serialization issues

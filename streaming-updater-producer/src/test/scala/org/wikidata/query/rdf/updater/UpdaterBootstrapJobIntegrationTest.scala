@@ -65,11 +65,12 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       newRevCreateEvent("Q3", 3, 101013, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
     )
 
+    val resolver: IncomingStreams.EntityResolver = (_, title, _) => title
     val source: DataStream[InputEvent] = IncomingStreams.fromStream(streamingEnv.fromCollection(input)
       .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
       URIS,
       IncomingStreams.REV_CREATE_CONV,
-      clock)
+      clock, resolver)
 
     val options = UpdaterPipelineGeneralConfig(
       hostname = DOMAIN,

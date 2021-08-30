@@ -13,12 +13,14 @@ import org.wikidata.query.rdf.updater.config.{InputKafkaTopics, UpdaterPipelineI
 
 class IncomingStreamsUnitTest extends FlatSpec with Matchers {
 
+  val resolver: IncomingStreams.EntityResolver = (_, title, _) => title
+
   val uris: Uris = new Uris(new URI("https://my-hostname"), Set(0, 2, 3, 5).map(_.toLong).map(long2Long).asJava, "/unused", "/wiki/Special:EntityData/")
   "IncomingStreams" should "create properly named streams" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
       DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-      uris, IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC())
+      uris, IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC(), resolver)
     stream.name should equal ("Filtered(my-topic == my-hostname)")
   }
 
@@ -32,7 +34,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
           pageUndeleteTopicName = "page-undelete-topic",
           suppressedDeleteTopicName = "suppressed-delete-topic",
           topicPrefixes = List("")),
-        10, 10),
+        10, 10, Set()),
       uris, Clock.systemUTC())
     stream.map(_.parallelism).toSet should contain only 1
   }
@@ -47,7 +49,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
           pageUndeleteTopicName = "page-undelete-topic",
           suppressedDeleteTopicName = "suppressed-delete-topic",
           topicPrefixes = List("")),
-        10, 10),
+        10, 10, Set()),
       uris, Clock.systemUTC()
     )
     stream.map(_.name) should contain only("Filtered(rev-create-topic == my-hostname)",
@@ -67,7 +69,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
           pageUndeleteTopicName = "page-undelete-topic",
           suppressedDeleteTopicName = "suppressed-delete-topic",
           topicPrefixes = List("cluster1.", "cluster2.")),
-        10, 10),
+        10, 10, Set()),
       uris, Clock.systemUTC())
     stream.map(_.name) should contain only(
       "Filtered(cluster1.rev-create-topic == my-hostname)",
@@ -103,7 +105,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
       1233L,
       "Q123",
       1),
-      Clock.systemUTC()).asInstanceOf[RevCreate]
+      resolver, Clock.systemUTC()).asInstanceOf[RevCreate]
     event.eventTime should equal(Instant.ofEpochMilli(123))
     event.item should equal("Q123")
     event.revision should equal(1234)
@@ -121,7 +123,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
       1234,
       "Q123",
       1),
-      Clock.systemUTC())
+      resolver, Clock.systemUTC())
     event.eventTime should equal(Instant.ofEpochMilli(123))
     event.item should equal("Q123")
     event.revision should equal(1234)
@@ -138,7 +140,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
       1234,
       "Q123",
       1),
-      Clock.systemUTC())
+      resolver, Clock.systemUTC())
     event.eventTime should equal(Instant.ofEpochMilli(123))
     event.item should equal("Q123")
     event.revision should equal(1234)

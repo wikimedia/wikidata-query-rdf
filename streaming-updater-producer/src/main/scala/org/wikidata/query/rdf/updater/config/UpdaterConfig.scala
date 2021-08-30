@@ -3,7 +3,6 @@ package org.wikidata.query.rdf.updater.config
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.concurrent.duration._
 import scala.language.{implicitConversions, postfixOps}
-
 import org.apache.flink.api.common.time.Time
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
@@ -45,7 +44,9 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     inputKafkaTopics = getInputKafkaTopics,
     consumerGroup = params.get("consumer_group", "wdqs_streaming_updater"),
     maxLateness = params.getInt("max_lateness", 1 minute),
-    idleness = params.getInt("input_idleness", 1 minute)
+    idleness = params.getInt("input_idleness", 1 minute),
+    mediaInfoEntityNamespaces = params.get("mediainfo_entity_namespaces", "3,5,6")
+      .split(',').map(_.toLong).toSet
   )
 
   val environmentConfig: UpdaterExecutionEnvironmentConfig = UpdaterExecutionEnvironmentConfig(checkpointDir = checkpointDir,
@@ -122,7 +123,9 @@ sealed case class UpdaterPipelineInputEventStreamConfig(kafkaBrokers: String,
                                                         consumerGroup: String,
                                                         inputKafkaTopics: InputKafkaTopics,
                                                         maxLateness: Int,
-                                                        idleness: Int)
+                                                        idleness: Int,
+                                                        mediaInfoEntityNamespaces: Set[Long]
+                                                       )
 
 sealed case class UpdaterPipelineOutputStreamConfig(
                                                      kafkaBrokers: String,

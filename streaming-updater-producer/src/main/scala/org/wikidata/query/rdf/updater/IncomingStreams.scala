@@ -18,40 +18,48 @@ object IncomingStreams {
   // the stream.
   private val INPUT_PARALLELISM = 1;
 
-  val REV_CREATE_CONV: (RevisionCreateEvent, Clock) => InputEvent =
-    (e, clock) => RevCreate(cleanEntityId(e.title()), e.timestamp(), e.revision(),
+  type EntityResolver = (Long, String, Long) => String
+  type Converter[E] = (E, EntityResolver, Clock) => InputEvent
+
+  val REV_CREATE_CONV: Converter[RevisionCreateEvent] =
+    (e, resolver, clock) => RevCreate(resolver(e.namespace(), e.title(), e.pageId()), e.timestamp(), e.revision(),
       Option(e.parentRevision(): java.lang.Long).map(_.toLong), clock.instant(), e.eventInfo())
 
-  val PAGE_DEL_CONV: (PageDeleteEvent, Clock) => InputEvent =
-    (e, clock) => PageDelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.eventInfo())
+  val PAGE_DEL_CONV: Converter[PageDeleteEvent] =
+    (e, resolver, clock) => PageDelete(resolver(e.namespace(), e.title(), e.pageId()), e.timestamp(), e.revision(), clock.instant(), e.eventInfo())
 
-  val PAGE_UNDEL_CONV: (PageUndeleteEvent, Clock) => InputEvent =
-    (e, clock) => PageUndelete(cleanEntityId(e.title()), e.timestamp(), e.revision(), clock.instant(), e.eventInfo())
+  val PAGE_UNDEL_CONV: Converter[PageUndeleteEvent] =
+    (e, resolver, clock) => PageUndelete(resolver(e.namespace(), e.title(), e.pageId()), e.timestamp(), e.revision(), clock.instant(), e.eventInfo())
 
   def buildIncomingStreams(ievops: UpdaterPipelineInputEventStreamConfig,
                            uris: Uris, clock: Clock)
                                   (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
+
+    val resolver: EntityResolver = (ns, title, pageId) => if (ievops.mediaInfoEntityNamespaces.contains(ns)) {
+      // TODO: Where should the M come from?
+      'M' + pageId.toString
+    } else {
+      cleanEntityId(title)
+    }
+
+    def build[E <: ChangeEvent](topic: String, clazz: Class[E], conv: Converter[E]) = {
+      fromKafka(KafkaConsumerProperties(topic, ievops.kafkaBrokers, ievops.consumerGroup, DeserializationSchemaFactory.getDeserializationSchema(clazz)),
+        uris, conv, ievops.maxLateness, ievops.idleness, clock, resolver)
+    }
+
     ievops.inputKafkaTopics.topicPrefixes.flatMap(prefix => {
       List(
-        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.inputKafkaTopics.revisionCreateTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
-          DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-          uris, IncomingStreams.REV_CREATE_CONV, ievops.maxLateness, ievops.idleness, clock),
-        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.inputKafkaTopics.pageDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
-          DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
-          uris, IncomingStreams.PAGE_DEL_CONV, ievops.maxLateness, ievops.idleness, clock),
-        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.inputKafkaTopics.pageUndeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
-          DeserializationSchemaFactory.getDeserializationSchema(classOf[PageUndeleteEvent])),
-          uris, IncomingStreams.PAGE_UNDEL_CONV, ievops.maxLateness, ievops.idleness, clock),
-        IncomingStreams.fromKafka(KafkaConsumerProperties(prefix + ievops.inputKafkaTopics.suppressedDeleteTopicName, ievops.kafkaBrokers, ievops.consumerGroup,
-          DeserializationSchemaFactory.getDeserializationSchema(classOf[PageDeleteEvent])),
-          uris, IncomingStreams.PAGE_DEL_CONV, ievops.maxLateness, ievops.idleness, clock)
+        build(prefix + ievops.inputKafkaTopics.revisionCreateTopicName, classOf[RevisionCreateEvent], REV_CREATE_CONV),
+        build(prefix + ievops.inputKafkaTopics.pageDeleteTopicName, classOf[PageDeleteEvent], PAGE_DEL_CONV),
+        build(prefix + ievops.inputKafkaTopics.pageUndeleteTopicName, classOf[PageUndeleteEvent], PAGE_UNDEL_CONV),
+        build(prefix + ievops.inputKafkaTopics.suppressedDeleteTopicName, classOf[PageDeleteEvent], PAGE_DEL_CONV)
       )
     })
   }
 
   def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], uris: Uris,
-                                  conv: (E, Clock) => InputEvent,
-                                  maxLatenessMs: Int, idlenessMs: Int, clock: Clock)
+                                  conv: Converter[E],
+                                  maxLatenessMs: Int, idlenessMs: Int, clock: Clock, resolver: EntityResolver)
                                  (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
     val nameAndUid = operatorUUID(kafkaProps.topic)
     val kafkaStream = env
@@ -61,7 +69,7 @@ object IncomingStreams {
       .uid(nameAndUid)
       .name(nameAndUid)
       .setParallelism(INPUT_PARALLELISM)
-    fromStream(kafkaStream, uris, conv, clock)
+    fromStream(kafkaStream, uris, conv, clock, resolver)
   }
 
   def operatorUUID[E <: ChangeEvent](topic: String): String = {
@@ -78,15 +86,16 @@ object IncomingStreams {
 
   def fromStream[E <: ChangeEvent](stream: DataStream[E],
                                    uris: Uris,
-                                   conv: (E, Clock) => InputEvent,
-                                   clock: Clock
+                                   conv: Converter[E],
+                                   clock: Clock,
+                                   resolver: EntityResolver
                                   )(implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
     val filteredStream = stream.filter(new EventWithMetadataHostFilter[E](uris))
     // force parallelism to one (mostly for unit tests here so that we don't mess-up their ordering)
     // filtering is also very simple
     filteredStream.setParallelism(INPUT_PARALLELISM)
     val convertedStream = filteredStream
-      .map(conv(_, clock))
+      .map(conv(_, resolver, clock))
       .name(s"Filtered(${stream.name} == ${uris.getHost})")
     // for parallelism to 1 again for the same reasons
     convertedStream.setParallelism(INPUT_PARALLELISM)
