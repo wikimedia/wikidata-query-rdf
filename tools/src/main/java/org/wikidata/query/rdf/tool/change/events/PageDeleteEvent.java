@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * See: https://schema.wikimedia.org/repositories/primary/jsonschema/mediawiki/page/delete/latest
  */
 public class PageDeleteEvent extends EventWithMeta {
+    private final long pageId;
     private final long revision;
     private final String title;
     private final long namespace;
@@ -16,14 +17,20 @@ public class PageDeleteEvent extends EventWithMeta {
     public PageDeleteEvent(
             @JsonProperty("meta") EventsMeta meta,
             @JsonProperty(EventInfo.SCHEMA_FIELD) String schema,
+            @JsonProperty("page_id") long pageId,
             @JsonProperty("rev_id") long revision,
             @JsonProperty("page_title") String title,
             @JsonProperty("page_namespace") long namespace
     ) {
         super(meta, schema);
+        this.pageId = pageId;
         this.revision = revision;
         this.title = title;
         this.namespace = namespace;
+    }
+
+    public long pageId() {
+        return pageId;
     }
 
     @Override

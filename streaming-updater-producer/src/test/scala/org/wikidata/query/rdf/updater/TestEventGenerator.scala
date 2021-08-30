@@ -35,22 +35,22 @@ trait TestEventGenerator {
     Instant.ofEpochMilli(millis)
   }
 
-  def newRevCreateEvent(item: String, revision: Long, eventTime: Instant, namespace: Int,
+  def newRevCreateEvent(item: String, pageId: Long, revision: Long, eventTime: Instant, namespace: Int,
                         domain: String, stream: String, requestId: String): RevisionCreateEvent = {
     new RevisionCreateEvent(
       newEventInfo(eventTime, domain, stream, requestId),
-      revision, item, namespace)
+      pageId, revision, item, namespace)
   }
 
-  def newRevCreateEvent(item: String, revision: Long, fromRevision: Long, eventTime: Instant, namespace: Int,
+  def newRevCreateEvent(item: String, pageId: Long, revision: Long, fromRevision: Long, eventTime: Instant, namespace: Int, // scalastyle:ignore
                         domain: String, stream: String, requestId: String): RevisionCreateEvent = {
     new RevisionCreateEvent(
-      newEventMeta(eventTime, domain, stream, requestId), "schema", revision, fromRevision, item, namespace)
+      newEventMeta(eventTime, domain, stream, requestId), "schema", pageId, revision, fromRevision, item, namespace)
   }
 
-  def newPageDeleteEvent(item: String, revision: Long, eventTime: Instant, namespace: Int,
+  def newPageDeleteEvent(item: String, pageId: Long, revision: Long, eventTime: Instant, namespace: Int,
                          domain: String, stream: String, requestId: String): PageDeleteEvent = {
-    new PageDeleteEvent(newEventMeta(eventTime, domain, stream, requestId), "schema", revision, item, namespace)
+    new PageDeleteEvent(newEventMeta(eventTime, domain, stream, requestId), "schema", pageId, revision, item, namespace)
   }
 
   def newEventInfo(eventTime: Instant, domain: String, stream: String, requestId: String, schema: String = "schema"): EventInfo = {

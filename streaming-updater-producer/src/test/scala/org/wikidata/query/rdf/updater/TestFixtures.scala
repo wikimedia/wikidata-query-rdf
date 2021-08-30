@@ -55,25 +55,25 @@ trait TestFixtures extends TestEventGenerator {
   )
 
   val revCreateEvents = Seq(
-        newRevCreateEvent("Q1", 2, 1, eventTimes("Q1", 2), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
-        newRevCreateEvent("Q1", 1, eventTimes("Q1", 1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
-        newRevCreateEvent("Q2", -1, instant(WATERMARK_1), 0, WATERMARK_DOMAIN,
+        newRevCreateEvent("Q1", 1, 2, 1, eventTimes("Q1", 2), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+        newRevCreateEvent("Q1", 1, 1, eventTimes("Q1", 1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+        newRevCreateEvent("Q2", 2, -1, instant(WATERMARK_1), 0, WATERMARK_DOMAIN,
           STREAM, ORIG_REQUEST_ID), //unrelated event, test filtering and triggers watermark
-        newRevCreateEvent("Q1", 5, 4, eventTimes("Q1", 5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // skip rev 4
-        newRevCreateEvent("Q1", 3, instant(-1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // ignored late event
-        newRevCreateEvent("Q2", -1, instant(WATERMARK_2), 0, WATERMARK_DOMAIN, STREAM,
+        newRevCreateEvent("Q1", 1, 5, 4, eventTimes("Q1", 5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // skip rev 4
+        newRevCreateEvent("Q1", 1, 3, instant(-1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // ignored late event
+        newRevCreateEvent("Q2", 2, -1, instant(WATERMARK_2), 0, WATERMARK_DOMAIN, STREAM,
           ORIG_REQUEST_ID), //unrelated event, test filter and triggers watermark
-        newRevCreateEvent("Q1", 4, instant(WATERMARK_2 + 1), 0, DOMAIN, STREAM,
+        newRevCreateEvent("Q1", 1, 4, instant(WATERMARK_2 + 1), 0, DOMAIN, STREAM,
           ORIG_REQUEST_ID), // spurious event, rev 4 arrived after WM2 but rev5 was handled at WM1
-        newRevCreateEvent("Q1", 6, eventTimes("Q1", 6), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
+        newRevCreateEvent("Q1", 1, 6, eventTimes("Q1", 6), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
   )
 
   val revCreateEventsForPageDeleteTest = Seq(
-    newRevCreateEvent("Q1", 1, instant(4), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
+    newRevCreateEvent("Q1", 1, 1, instant(4), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
   )
 
   val pageDeleteEvents = Seq(
-    newPageDeleteEvent("Q1", 1, instant(5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
+    newPageDeleteEvent("Q1", 1, 1, instant(5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
   )
   private val statement1: Statement = createStatement("Q1", PropertyType.QUALIFIER, "Statement_1")
   private val statement2: Statement = createStatement("Q1", PropertyType.QUALIFIER, "Statement_2")

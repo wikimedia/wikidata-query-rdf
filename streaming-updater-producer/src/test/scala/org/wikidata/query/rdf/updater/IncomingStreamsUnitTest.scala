@@ -98,6 +98,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     val event: RevCreate = IncomingStreams.REV_CREATE_CONV.apply(new RevisionCreateEvent(
       new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "my_request_id"),
       "schema",
+      1L,
       1234L,
       1233L,
       "Q123",
@@ -116,6 +117,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     val event = IncomingStreams.PAGE_DEL_CONV.apply(new PageDeleteEvent(
       new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "my_request_id"),
       "schema",
+      1,
       1234,
       "Q123",
       1),
@@ -132,6 +134,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     val event = IncomingStreams.PAGE_UNDEL_CONV.apply(new PageUndeleteEvent(
       new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "my_request_id"),
       "schema",
+      1,
       1234,
       "Q123",
       1),

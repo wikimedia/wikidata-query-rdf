@@ -33,8 +33,8 @@ public final class ChangeEventFixtures {
      * @param revid Revision ID
      * @param qid Title (Q-id)
      */
-    public static ChangeEvent makeRCEvent(Duration offset, long revid, String qid) {
-        return makeRCEvent(offset, revid, qid, 0, DOMAIN);
+    public static ChangeEvent makeRCEvent(Duration offset, long pageid, long revid, String qid) {
+        return makeRCEvent(offset, pageid, revid, qid, 0, DOMAIN);
     }
 
     /**
@@ -42,10 +42,10 @@ public final class ChangeEventFixtures {
      * @param offset Duration from start time to event's time
      * @param qid Title (Q-id)
      */
-    public static ChangeEvent makeDeleteEvent(Duration offset, String qid) {
+    public static ChangeEvent makeDeleteEvent(Duration offset, long pageid, String qid) {
         return new PageDeleteEvent(
                 new EventsMeta(START_TIME.plus(offset), "", DOMAIN, "", ""),
-                "schema", Change.NO_REVISION, qid, 0);
+                "schema", pageid, Change.NO_REVISION, qid, 0);
     }
 
     /**
@@ -54,10 +54,10 @@ public final class ChangeEventFixtures {
      * @param revid Revision ID
      * @param qid Title (Q-id)
      */
-    public static ChangeEvent makeRCEvent(Duration offset, long revid, String qid, int ns, String domain) {
+    public static ChangeEvent makeRCEvent(Duration offset, long pageid, long revid, String qid, int ns, String domain) {
         return new RevisionCreateEvent(
                 new EventsMeta(START_TIME.plus(offset), "", domain, "", ""),
-                revid, qid, ns);
+                pageid, revid, qid, ns);
     }
 
     public static EventsMeta makeEventMeta() {

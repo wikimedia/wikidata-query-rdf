@@ -59,10 +59,10 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       .withResponse(("Q3", 101013L) -> metaStatements("Q3", 101013L, Some(3L)).entityDataNS)
 
     val input = Seq(
-      newRevCreateEvent("Q1", 2, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // dupped event, currently treated as spurious
-      newRevCreateEvent("Q1", 3, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
-      newRevCreateEvent("Q2", 8, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
-      newRevCreateEvent("Q3", 101013, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
+      newRevCreateEvent("Q1", 1, 2, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // dupped event, currently treated as spurious
+      newRevCreateEvent("Q1", 1, 3, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+      newRevCreateEvent("Q2", 2, 8, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+      newRevCreateEvent("Q3", 3, 101013, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
     )
 
     val source: DataStream[InputEvent] = IncomingStreams.fromStream(streamingEnv.fromCollection(input)

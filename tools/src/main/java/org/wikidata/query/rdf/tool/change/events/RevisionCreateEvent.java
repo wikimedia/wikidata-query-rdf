@@ -11,19 +11,21 @@ import com.google.common.annotations.VisibleForTesting;
  * See: https://schema.wikimedia.org/repositories/primary/jsonschema/mediawiki/revision/create/latest
  */
 public class RevisionCreateEvent extends EventWithMeta {
+    private final long pageId;
     private final long revision;
     private final Long parentRevision;
     private final String title;
     private final long namespace;
 
     @VisibleForTesting
-    public RevisionCreateEvent(EventsMeta meta, long revision, String title, long namespace) {
-        this(meta, "", revision, null, title, namespace);
+    public RevisionCreateEvent(EventsMeta meta, long pageId, long revision, String title, long namespace) {
+        this(meta, "", pageId, revision, null, title, namespace);
     }
 
     @VisibleForTesting
-    public RevisionCreateEvent(EventInfo eventInfo, long revision, String title, long namespace) {
+    public RevisionCreateEvent(EventInfo eventInfo, long pageId, long revision, String title, long namespace) {
         super(eventInfo);
+        this.pageId = pageId;
         this.revision = revision;
         this.parentRevision = null;
         this.title = title;
@@ -34,16 +36,22 @@ public class RevisionCreateEvent extends EventWithMeta {
     public RevisionCreateEvent(
             @JsonProperty("meta") EventsMeta meta,
             @JsonProperty(EventInfo.SCHEMA_FIELD) String schema,
+            @JsonProperty("page_id") long pageId,
             @JsonProperty("rev_id") long revision,
             @JsonProperty("rev_parent_id") @Nullable Long parentRevision,
             @JsonProperty("page_title") String title,
             @JsonProperty("page_namespace") long namespace
     ) {
         super(meta, schema);
+        this.pageId = pageId;
         this.revision = revision;
         this.parentRevision = parentRevision;
         this.title = title;
         this.namespace = namespace;
+    }
+
+    public long pageId() {
+        return pageId;
     }
 
     @Override

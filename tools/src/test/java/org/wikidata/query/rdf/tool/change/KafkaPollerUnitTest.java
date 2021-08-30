@@ -86,9 +86,9 @@ public class KafkaPollerUnitTest {
     @Test
     public void changesFromTopics() throws RetryableException {
         ConsumerRecords<String, ChangeEvent> rs = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, "Q123"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(21), 1, "Q234"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, "Q567"), "topictest", Duration.ofMillis(20))
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, 1, "Q123"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(21), 2, 1, "Q234"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 3, 1, "Q567"), "topictest", Duration.ofMillis(20))
         );
         Batch batch = getBatchFromRecords(rs);
 
@@ -102,10 +102,10 @@ public class KafkaPollerUnitTest {
     @Test
     public void changesOrder() throws RetryableException {
         ConsumerRecords<String, ChangeEvent> rs = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 5, "Q123"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q123"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(25), 10, "Q123"), "othertopic", Duration.ofMillis(15)),
-                makeRecord(makeRCEvent(Duration.ofMillis(35), 7, "Q123"), "topictest", Duration.ofMillis(25))
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, 5, "Q123"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 1, 2, "Q123"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(25), 1, 10, "Q123"), "othertopic", Duration.ofMillis(15)),
+                makeRecord(makeRCEvent(Duration.ofMillis(35), 1, 7, "Q123"), "topictest", Duration.ofMillis(25))
         );
         Batch batch = getBatchFromRecords(rs);
 
@@ -118,9 +118,9 @@ public class KafkaPollerUnitTest {
     @Test
     public void filterOtherChanges() throws RetryableException {
         ConsumerRecords<String, ChangeEvent> rs = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 5, "Q123"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q666", 1, DOMAIN), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(25), 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20))
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, 5, "Q123"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, 2, "Q666", 1, DOMAIN), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(25), 3, 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20))
         );
         Batch batch = getBatchFromRecords(rs);
 
@@ -135,19 +135,19 @@ public class KafkaPollerUnitTest {
         KafkaPoller poller = makePoller();
 
         ConsumerRecords<String, ChangeEvent> rs1 = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 5, "Q123"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q666", 1, DOMAIN), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(25), 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20))
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, 5, "Q123"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, 2, "Q666", 1, DOMAIN), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(25), 3, 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20))
         );
         ConsumerRecords<String, ChangeEvent> rs2 = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q666", 1, DOMAIN), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(25), 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20))
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, 2, "Q666", 1, DOMAIN), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(25), 3, 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20))
         );
         ConsumerRecords<String, ChangeEvent> rs3 = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q234"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(25), 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 10, "Q123"), "othertopic", Duration.ofMillis(31)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 21, "Q245"), "topictest", Duration.ofMillis(40))
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 4, 2, "Q234"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(25), 3, 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 1, 10, "Q123"), "othertopic", Duration.ofMillis(31)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 5, 21, "Q245"), "topictest", Duration.ofMillis(40))
         );
 
         when(consumer.poll(anyLong())).thenReturn(rs1, rs2, rs3, EMPTY_CHANGES);
@@ -171,20 +171,20 @@ public class KafkaPollerUnitTest {
         KafkaPoller poller = makePoller();
 
         ConsumerRecords<String, ChangeEvent> rs1 = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 5, "Q123"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q666", 1, DOMAIN), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(25), 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20))
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, 5, "Q123"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, 2, "Q666", 1, DOMAIN), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(25), 3, 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20))
         );
         ConsumerRecords<String, ChangeEvent> rs2 = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 1, "Q234"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q666", 1, DOMAIN), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(25), 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20))
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 4, 1, "Q234"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, 2, "Q666", 1, DOMAIN), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(25), 3, 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20))
         );
         ConsumerRecords<String, ChangeEvent> rs3 = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q234"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(25), 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 10, "Q123"), "othertopic", Duration.ofMillis(31)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 21, "Q245"), "topictest", Duration.ofMillis(40))
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 4, 2, "Q234"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(25), 3, 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 1, 10, "Q123"), "othertopic", Duration.ofMillis(31)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 5, 21, "Q245"), "topictest", Duration.ofMillis(40))
         );
 
         when(consumer.poll(anyLong())).thenReturn(rs1, rs2, rs3, EMPTY_CHANGES);
@@ -203,30 +203,30 @@ public class KafkaPollerUnitTest {
         KafkaPoller poller = makePoller();
 
         ConsumerRecords<String, ChangeEvent> rs1 = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 5, "Q1"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q666", 1, DOMAIN), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(25), 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 5, "Q2"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 5, "Q3"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 5, "Q4"), "topictest", Duration.ofMillis(20))
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, 5, "Q1"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, 2, "Q666", 1, DOMAIN), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(25), 3, 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 4, 5, "Q2"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 5, 5, "Q3"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 6, 5, "Q4"), "topictest", Duration.ofMillis(20))
         );
         ConsumerRecords<String, ChangeEvent> rs2 = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 10, "Q3"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 20, "Q1"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(25), 100, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 20, "Q2"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 20, "Q1"), "othertopic", Duration.ofMillis(21))
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 5, 10, "Q3"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 1, 20, "Q1"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(25), 3, 100, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 4, 20, "Q2"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 1, 20, "Q1"), "othertopic", Duration.ofMillis(21))
         );
         ConsumerRecords<String, ChangeEvent> rs3 = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 100, "Q3"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 200, "Q1"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(25), 100, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 200, "Q5"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 200, "Q6"), "othertopic", Duration.ofMillis(21))
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 5, 100, "Q3"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 1, 200, "Q1"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(25), 3, 100, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 7, 200, "Q5"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 8, 200, "Q6"), "othertopic", Duration.ofMillis(21))
         );
         ConsumerRecords<String, ChangeEvent> rs4 = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q7"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(25), 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20))
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 9, 2, "Q7"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(25), 3, 10, "Q6666", 0, "acme.wrong"), "topictest", Duration.ofMillis(20))
         );
 
         when(consumer.poll(anyLong())).thenReturn(rs1, rs2, rs3, rs4, EMPTY_CHANGES);
@@ -247,9 +247,9 @@ public class KafkaPollerUnitTest {
     @Test
     public void deleteRevision() throws RetryableException {
         ConsumerRecords<String, ChangeEvent> rs = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, "Q123"), "topictest", Duration.ofMillis(20)),
-                makeRecord(makeDeleteEvent(Duration.ofMillis(21), "Q123"), "othertopic", Duration.ofMillis(21)),
-                makeRecord(makeRCEvent(Duration.ofMillis(22), 2, "Q123"), "topictest", Duration.ofMillis(22))
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, 1, "Q123"), "topictest", Duration.ofMillis(20)),
+                makeRecord(makeDeleteEvent(Duration.ofMillis(21), 1, "Q123"), "othertopic", Duration.ofMillis(21)),
+                makeRecord(makeRCEvent(Duration.ofMillis(22), 1, 2, "Q123"), "topictest", Duration.ofMillis(22))
         );
         Batch batch = getBatchFromRecords(rs);
         // Delete revision should always win
@@ -261,11 +261,11 @@ public class KafkaPollerUnitTest {
     @Test
     public void advanceTimestamp() throws RetryableException {
         ConsumerRecords<String, ChangeEvent> rs = makeRecords(
-                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, "Q123"), "mediawiki.revision-create", Duration.ofMillis(120000)),
-                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, "Q234"), "mediawiki.revision-create", Duration.ofMillis(122000)),
-                makeRecord(makeDeleteEvent(Duration.ofMillis(21), "Q123"), "othertopic", Duration.ofMillis(121000)),
-                makeRecord(makeDeleteEvent(Duration.ofMillis(22), "Q234"), "othertopic", Duration.ofMillis(122000)),
-                makeRecord(makeDeleteEvent(Duration.ofMillis(31), "Q123"), "othertopic", Duration.ofMillis(123000))
+                makeRecord(makeRCEvent(Duration.ofMillis(20), 1, 1, "Q123"), "mediawiki.revision-create", Duration.ofMillis(120000)),
+                makeRecord(makeRCEvent(Duration.ofMillis(30), 2, 2, "Q234"), "mediawiki.revision-create", Duration.ofMillis(122000)),
+                makeRecord(makeDeleteEvent(Duration.ofMillis(21), 1, "Q123"), "othertopic", Duration.ofMillis(121000)),
+                makeRecord(makeDeleteEvent(Duration.ofMillis(22), 2, "Q234"), "othertopic", Duration.ofMillis(122000)),
+                makeRecord(makeDeleteEvent(Duration.ofMillis(31), 1, "Q123"), "othertopic", Duration.ofMillis(123000))
         );
         Batch batch = getBatchFromRecords(rs);
         // Advancement is minimum over maximal times of the topics
