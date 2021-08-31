@@ -14,6 +14,7 @@ import org.apache.flink.streaming.api.scala.async
 import org.apache.flink.streaming.util.{MockStreamingRuntimeContext, OneInputStreamOperatorTestHarness}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
 import org.wikidata.query.rdf.test.StatementHelper.statements
 import org.wikidata.query.rdf.tool.change.events.EventInfo
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
@@ -31,7 +32,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
   private def testHarness[T <: Throwable](expectExternalFailure: Option[Class[T]] = None) = {
     val genDiff = GenerateEntityDiffPatchOperation(
       wikibaseRepositoryGenerator = _ => repoMock,
-      domain = DOMAIN,
+      scheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
       mungeOperationProvider = _ => (_, _) => 1)
 
     val operator: AsyncFunction[MutationOperation, ResolvedOp] = new AsyncFunction[MutationOperation, ResolvedOp] {

@@ -16,7 +16,7 @@ import org.apache.flink.streaming.api.scala.async.{ResultFuture, RichAsyncFuncti
 import org.apache.flink.util.Collector
 import org.openrdf.model.Statement
 import org.slf4j.LoggerFactory
-import org.wikidata.query.rdf.common.uri.{UrisScheme, UrisSchemeFactory}
+import org.wikidata.query.rdf.common.uri.UrisScheme
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
 import org.wikidata.query.rdf.tool.rdf.{EntityDiff, Munger, Patch}
 import org.wikidata.query.rdf.updater.GenerateEntityDiffPatchOperation.mungerOperationProvider
@@ -34,7 +34,7 @@ case class FailedOp(operation: MutationOperation, exception: ContainedException)
 case class DeleteOp(override val operation: MutationOperation) extends SuccessfulOp
 
 case class GenerateEntityDiffPatchOperation(
-                                             domain: String,
+                                             scheme: UrisScheme,
                                              wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
                                              mungeOperationProvider: UrisScheme => (String, util.Collection[Statement]) => Long = mungerOperationProvider,
                                              poolSize: Int = 10
@@ -44,7 +44,6 @@ case class GenerateEntityDiffPatchOperation(
   private val LOG = LoggerFactory.getLogger(getClass)
 
   lazy val repository: WikibaseEntityRevRepositoryTrait =  wikibaseRepositoryGenerator(this.getRuntimeContext)
-  lazy val scheme: UrisScheme = UrisSchemeFactory.forWikidataHost(domain)
   lazy val diff: EntityDiff = EntityDiff.withWikibaseSharedElements(scheme)
 
   implicit lazy val executionContext: ExecutionContext = buildExecContext

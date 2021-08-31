@@ -141,7 +141,7 @@ object UpdaterPipeline {
 
 
     val genDiffOperator: AsyncFunction[MutationOperation, ResolvedOp] = GenerateEntityDiffPatchOperation(
-      domain = opts.hostname,
+      scheme = opts.urisScheme,
       wikibaseRepositoryGenerator = wikibaseRepositoryGenerator,
       poolSize = opts.wikibaseRepoThreadPoolSize
     )

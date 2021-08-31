@@ -7,6 +7,7 @@ import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import org.apache.flink.streaming.api.scala._
 import org.openrdf.model.Statement
 import org.scalatest._
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
 import org.wikidata.query.rdf.tool.change.events.{EventsMeta, PageDeleteEvent, RevisionCreateEvent}
 import org.wikidata.query.rdf.updater.config.{HttpClientConfig, UpdaterPipelineGeneralConfig}
 
@@ -22,7 +23,8 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     wikibaseRepoThreadPoolSize = 10,
     outputOperatorNameAndUuid = "test-output-name",
     httpClientConfig = HttpClientConfig(None, None, "my user-agent"),
-    useVersionedSerializers = true
+    useVersionedSerializers = true,
+    urisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN)
   )
 
   private val resolver: IncomingStreams.EntityResolver = (_, title, _) => title

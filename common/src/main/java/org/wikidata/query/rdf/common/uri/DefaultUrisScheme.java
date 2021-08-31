@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.common.uri;
 
 import static com.google.common.collect.ImmutableList.copyOf;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,7 +21,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format
  */
 @Immutable
-public class DefaultUrisScheme implements UrisScheme {
+public class DefaultUrisScheme implements Serializable, UrisScheme {
 
     /**
      * The root of the wikibase uris - http://www.wikidata.org for Wikidata.

@@ -8,6 +8,7 @@ import org.apache.flink.api.scala._
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
 import org.wikidata.query.rdf.updater.EntityStatus.CREATED
 import org.wikidata.query.rdf.updater.config.{BootstrapConfig, HttpClientConfig, UpdaterPipelineGeneralConfig}
@@ -82,7 +83,8 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       wikibaseRepoThreadPoolSize = 10,
       outputOperatorNameAndUuid = "test-output-name",
       httpClientConfig = HttpClientConfig(None, None, "my user-agent"),
-      useVersionedSerializers = true
+      useVersionedSerializers = true,
+      UrisSchemeFactory.forWikidataHost(DOMAIN)
     )
     UpdaterPipeline.configure(options, List(source),
       OutputStreams(

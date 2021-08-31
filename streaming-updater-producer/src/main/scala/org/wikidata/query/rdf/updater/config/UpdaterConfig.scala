@@ -5,6 +5,7 @@ import scala.language.{implicitConversions, postfixOps}
 
 import org.apache.flink.api.common.time.Time
 import org.apache.flink.streaming.api.CheckpointingMode
+import org.wikidata.query.rdf.common.uri.{UrisScheme, UrisSchemeFactory}
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikimedia.eventutilities.core.event.WikimediaDefaults
@@ -40,7 +41,12 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       httpTimeout = optionalIntArg("http_timeout"),
       userAgent = params.get("user_agent", HttpClientUtils.WDQS_DEFAULT_UA)
     ),
-    useVersionedSerializers = useVersionedSerializers
+    useVersionedSerializers = useVersionedSerializers,
+    urisScheme = params.get("uris_scheme") match {
+      case "commons" => UrisSchemeFactory.COMMONS
+      case "wikidata" => UrisSchemeFactory.WIKIDATA
+      case _ => throw new IllegalArgumentException("Unknown uris_scheme: " + params.get("uris_scheme"))
+    }
   )
 
   val inputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
@@ -110,7 +116,8 @@ sealed case class UpdaterPipelineGeneralConfig(hostname: String,
                                                wikibaseRepoThreadPoolSize: Int,
                                                outputOperatorNameAndUuid: String,
                                                httpClientConfig: HttpClientConfig,
-                                               useVersionedSerializers: Boolean
+                                               useVersionedSerializers: Boolean,
+                                               urisScheme: UrisScheme
                                               )
 
 sealed case class HttpClientConfig(

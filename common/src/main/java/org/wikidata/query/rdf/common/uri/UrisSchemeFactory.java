@@ -26,6 +26,13 @@ public final class UrisSchemeFactory {
      * A WikibaseUris instance for wikidata.org.
      */
     public static final UrisScheme WIKIDATA = forWikidataHost("www.wikidata.org");
+
+    /**
+     * A UrisScheme instance for commons.wikimedia.org. Supports
+     * federation to wikidata.
+     */
+    public static final UrisScheme COMMONS = new FederatedUrisScheme(forCommonsHost("commons.wikimedia.org"), WIKIDATA);
+
     /**
      * Current URI system. This is static since each instance has only one URI
      * system.
@@ -67,7 +74,6 @@ public final class UrisSchemeFactory {
      */
     public static UrisScheme fromConceptUris(@Nonnull String wikidataConceptUri, @Nullable String commonsConceptUri) {
         try {
-
             UrisScheme wikidataUris = forWikidata(new URI(wikidataConceptUri));
             if (commonsConceptUri != null) {
                 UrisScheme sdcUris = forCommons(new URI(commonsConceptUri));
@@ -82,12 +88,24 @@ public final class UrisSchemeFactory {
 
 
     /**
-     * Build for a specific wikibase host. See the WIKIDATA constant for how you
-     * can use this.
+     * Build for a specific wikidata host.
      */
     public static UrisScheme forWikidataHost(@Nonnull String host) {
         try {
             return forWikidata(new URI("http://" + host));
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Bad URI host: " + host, e);
+        }
+    }
+
+    /**
+     * Build for a specific commons host. Does not build a complete
+     * scheme, commons also requires federation to wikidata. See
+     * self::COMMONS for usage.
+     */
+    protected static UrisScheme forCommonsHost(@Nonnull String host) {
+        try {
+            return forCommons(new URI("https://" + host));
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Bad URI host: " + host, e);
         }
