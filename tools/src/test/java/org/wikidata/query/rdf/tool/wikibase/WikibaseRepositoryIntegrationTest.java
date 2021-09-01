@@ -79,7 +79,7 @@ public class WikibaseRepositoryIntegrationTest {
                 false, new MetricRegistry(), new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
     }
 
-    private final UrisScheme uris = UrisSchemeFactory.forHost("test.wikidata.org");
+    private final UrisScheme uris = UrisSchemeFactory.forWikidataHost("test.wikidata.org");
 
     private final URI baseUri;
 

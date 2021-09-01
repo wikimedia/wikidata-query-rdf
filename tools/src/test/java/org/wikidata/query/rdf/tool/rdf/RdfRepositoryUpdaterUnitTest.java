@@ -26,7 +26,7 @@ public class RdfRepositoryUpdaterUnitTest {
     @Mock
     RdfClient client;
 
-    private UrisScheme urisScheme = UrisSchemeFactory.forHost("acme.test");
+    private UrisScheme urisScheme = UrisSchemeFactory.forWikidataHost("acme.test");
     List<String> entityIdsToDelete = new ArrayList<>();
 
     private final String avgEventTimeUpdate = "\nDELETE {\n  <http://acme.test> <http://schema.org/dateModified> ?o .\n}\n" +

@@ -56,7 +56,7 @@ public class AbstractUpdaterIntegrationTestBase {
     @SuppressWarnings("checkstyle:IllegalCatch")
     public void update(int from, int to) {
         ExecutorService executorService = new ThreadPoolExecutor(0, 10, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-        UrisScheme uris = UrisSchemeFactory.forHost("www.wikidata.org");
+        UrisScheme uris = UrisSchemeFactory.forWikidataHost("www.wikidata.org");
         try (
             Change.Source<?> source = IdRangeChangeSource.forItems(from, to, 30);
             Updater<?> updater = new Updater<>(

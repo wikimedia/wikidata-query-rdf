@@ -58,7 +58,7 @@ object EntityRevisionMapGenerator {
 
         // Make spark read text with dedicated separator instead of end-of-line
         generateMap(spark, params.table, params.numPartitions,
-          params.outputPath, () => UrisSchemeFactory.forHost(params.hostname))
+          params.outputPath, () => UrisSchemeFactory.forWikidataHost(params.hostname))
 
       case None => sys.exit(1) // If args parsing fail (parser prints nice error)
     }

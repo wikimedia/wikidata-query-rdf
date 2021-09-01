@@ -35,7 +35,7 @@ public class MungeIntegrationTest {
     /**
      * Wikibase uris to test with.
      */
-    private final UrisScheme uris = UrisSchemeFactory.forHost("test.wikidata.org");
+    private final UrisScheme uris = UrisSchemeFactory.forWikidataHost("test.wikidata.org");
 
     @Rule
     public RdfRepositoryForTesting rdfRepository = new RdfRepositoryForTesting("wdq");

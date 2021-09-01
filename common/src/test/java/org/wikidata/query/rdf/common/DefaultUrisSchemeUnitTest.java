@@ -27,7 +27,7 @@ public class DefaultUrisSchemeUnitTest {
 
     @Test
     public void fromHost() {
-        UrisScheme uris = UrisSchemeFactory.forHost("acme.test");
+        UrisScheme uris = UrisSchemeFactory.forWikidataHost("acme.test");
         assertThat(uris.entityURIs()).contains("http://acme.test/entity/");
         assertThat(uris.entityIdToURI("Q1")).isEqualTo("http://acme.test/entity/Q1");
         assertThat(uris.entityIdToURI("P1")).isEqualTo("http://acme.test/entity/P1");

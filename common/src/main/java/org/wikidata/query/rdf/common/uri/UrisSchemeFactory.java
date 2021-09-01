@@ -25,7 +25,7 @@ public final class UrisSchemeFactory {
     /**
      * A WikibaseUris instance for wikidata.org.
      */
-    public static final UrisScheme WIKIDATA = forHost("www.wikidata.org");
+    public static final UrisScheme WIKIDATA = forWikidataHost("www.wikidata.org");
     /**
      * Current URI system. This is static since each instance has only one URI
      * system.
@@ -46,13 +46,14 @@ public final class UrisSchemeFactory {
     }
 
     private static UrisScheme initializeURISystem() {
+        // The strings say wikibase for historical reasons, but this means wikidata.
         String wikibaseUriProperty = System.getProperty(WIKIBASE_CONCEPT_URI);
         if (wikibaseUriProperty != null) {
             return fromConceptUris(wikibaseUriProperty, System.getProperty(COMMONS_CONCEPT_URI));
         }
         String wikibaseHostProperty = System.getProperty(WIKIBASE_HOST_PROPERTY);
         if (wikibaseHostProperty != null) {
-            return forHost(wikibaseHostProperty);
+            return forWikidataHost(wikibaseHostProperty);
         } else {
             return WIKIDATA;
         }
@@ -60,27 +61,22 @@ public final class UrisSchemeFactory {
 
     /**
      * Create URI scheme from pair of concept URIs.
-     * @param wikibaseConceptUri Wikibase URI
+     * @param wikidataConceptUri Wikidata URI
      * @param commonsConceptUri Commons URI, can be NULL if we're not dealing with SDC
      * @return URI scheme
      */
-    public static UrisScheme fromConceptUris(@Nonnull String wikibaseConceptUri, @Nullable String commonsConceptUri) {
+    public static UrisScheme fromConceptUris(@Nonnull String wikidataConceptUri, @Nullable String commonsConceptUri) {
         try {
+
+            UrisScheme wikidataUris = forWikidata(new URI(wikidataConceptUri));
             if (commonsConceptUri != null) {
-                UrisScheme sdcUris = new DefaultUrisScheme(
-                        new URI(commonsConceptUri),
-                        SDC_ENTITY_PREFIX, SDC_ENTITY_DATA_PREFIX, singletonList(MEDIAINFO_INITIAL));
-                UrisScheme wikibaseUris = new DefaultUrisScheme(
-                        new URI(wikibaseConceptUri),
-                        WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
-                return new FederatedUrisScheme(sdcUris, wikibaseUris);
+                UrisScheme sdcUris = forCommons(new URI(commonsConceptUri));
+                return new FederatedUrisScheme(sdcUris, wikidataUris);
             } else {
-                return new DefaultUrisScheme(
-                        new URI(wikibaseConceptUri),
-                        WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
+                return wikidataUris;
             }
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Bad URI: " + wikibaseConceptUri + (commonsConceptUri != null ? ", " + commonsConceptUri : ""), e);
+            throw new IllegalArgumentException("Bad URI: " + wikidataConceptUri + (commonsConceptUri != null ? ", " + commonsConceptUri : ""), e);
         }
     }
 
@@ -89,12 +85,19 @@ public final class UrisSchemeFactory {
      * Build for a specific wikibase host. See the WIKIDATA constant for how you
      * can use this.
      */
-    public static UrisScheme forHost(@Nonnull String host) {
+    public static UrisScheme forWikidataHost(@Nonnull String host) {
         try {
-            return new DefaultUrisScheme(new URI("http://" + host),
-                    WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
+            return forWikidata(new URI("http://" + host));
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Bad URI host: " + host, e);
         }
+    }
+
+    private static UrisScheme forWikidata(@Nonnull URI uri) {
+        return new DefaultUrisScheme(uri, WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
+    }
+
+    private static UrisScheme forCommons(@Nonnull URI uri) {
+        return new DefaultUrisScheme(uri, SDC_ENTITY_PREFIX, SDC_ENTITY_DATA_PREFIX, singletonList(MEDIAINFO_INITIAL));
     }
 }

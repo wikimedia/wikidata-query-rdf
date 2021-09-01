@@ -51,7 +51,7 @@ public class MultiSyncUpdateQueryFactoryUnitTest {
     public MultiSyncUpdateQueryFactoryUnitTest(Set<String> values, Set<String> refs, String queryFile) throws IOException {
         this.values = values;
         this.refs = refs;
-        urisScheme = UrisSchemeFactory.forHost("acme.test");
+        urisScheme = UrisSchemeFactory.forWikidataHost("acme.test");
         expectedQuery = IOUtils.toString(getClass().getResourceAsStream(queryFile), UTF_8);
     }
 

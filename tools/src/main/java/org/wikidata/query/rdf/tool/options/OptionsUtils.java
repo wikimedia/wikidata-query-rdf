@@ -84,7 +84,7 @@ public final class OptionsUtils {
             if (conceptUri != null) {
                 return UrisSchemeFactory.fromConceptUris(conceptUri, wikibaseOptions.commonsUri());
             }
-            return UrisSchemeFactory.forHost(wikibaseOptions.wikibaseHost());
+            return UrisSchemeFactory.forWikidataHost(wikibaseOptions.wikibaseHost());
         }
 
     }

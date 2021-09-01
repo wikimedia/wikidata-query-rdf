@@ -37,7 +37,7 @@ trait TestFixtures extends TestEventGenerator {
 
   val WATERMARK_1: Int = REORDERING_WINDOW_LENGTH
   val WATERMARK_2: Int = REORDERING_WINDOW_LENGTH*2
-  val urisScheme: UrisScheme = UrisSchemeFactory.forHost(DOMAIN)
+  val urisScheme: UrisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN)
   val valueFactory = new ValueFactoryImpl()
   val instantNow: Instant = instant(5)
   val clock: Clock = Clock.fixed(instantNow, ZoneOffset.UTC)
