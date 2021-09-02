@@ -20,6 +20,8 @@ import org.wikidata.query.rdf.blazegraph.JacksonUtil;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class EventHttpSender implements EventSender, AutoCloseable {
     public static final int DEFAULT_CON_TIMEOUT = 5000;
     public static final int DEFAULT_READ_TIMEOUT = 5000;
@@ -49,6 +51,8 @@ public class EventHttpSender implements EventSender, AutoCloseable {
         return push(Collections.singletonList(event)) > 0;
     }
 
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
+            justification = "false positive - known issue with try-with-resources and spotbugs")
     public int push(Collection<Event> events) {
         HttpPost post = new HttpPost(eventGateUri);
         try {
