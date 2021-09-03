@@ -6,6 +6,7 @@ import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, Wat
 import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
+import org.wikidata.query.rdf.common.uri.UrisConstants
 import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, PageDeleteEvent, PageUndeleteEvent, RevisionCreateEvent}
 import org.wikidata.query.rdf.tool.utils.EntityUtil.cleanEntityId
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
@@ -36,8 +37,7 @@ object IncomingStreams {
                                   (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
 
     val resolver: EntityResolver = (ns, title, pageId) => if (ievops.mediaInfoEntityNamespaces.contains(ns)) {
-      // TODO: Where should the M come from?
-      'M' + pageId.toString
+      UrisConstants.MEDIAINFO_INITIAL + pageId
     } else {
       cleanEntityId(title)
     }

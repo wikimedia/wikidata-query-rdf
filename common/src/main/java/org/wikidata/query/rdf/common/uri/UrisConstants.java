@@ -24,7 +24,7 @@ public final class UrisConstants {
     /**
      * Initial letter for mediainfo items.
      */
-    public static final List<String> MEDIAINFO_INITIAL = ImmutableList.of("M");
+    public static final String MEDIAINFO_INITIAL = "M";
     /**
      * Prefix for entity URI.
      */

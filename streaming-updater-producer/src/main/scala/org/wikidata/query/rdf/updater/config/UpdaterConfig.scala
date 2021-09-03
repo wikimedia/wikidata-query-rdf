@@ -10,21 +10,24 @@ import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikimedia.eventutilities.core.event.WikimediaDefaults
 
 class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(args)) {
-  private val defaultEntityNs: String = Uris.DEFAULT_ENTITY_NAMESPACES.asScala.mkString(",")
   private val hostName: String = getStringParam("hostname")
   val jobName: String = getStringParam("job_name")
   val inputKafkaBrokers: String = getStringParam("brokers")
   val outputKafkaBrokers: String = params.get("output_brokers", inputKafkaBrokers)
   val outputTopic: String = getStringParam("output_topic")
   val outputPartition: Int = params.getInt("output_topic_partition")
-  val entityNamespaces: Set[Long] = params.get("entity_namespaces", defaultEntityNs).split(",").map(_.trim.toLong).toSet
+  val entityNamespaces: Set[Long] = params.get("entity_namespaces", "").split(",").map(_.trim.toLong).toSet
+  val mediaInfoEntityNamespaces: Set[Long] = params.get("mediainfo_entity_namespaces", "").split(",").map(_.trim.toLong).toSet
   val entityDataPath: String = params.get("wikibase_entitydata_path", Uris.DEFAULT_ENTITY_DATA_PATH)
   val useVersionedSerializers: Boolean = params.getBoolean("use_versioned_serializers", false)
+  if (entityNamespaces.isEmpty && mediaInfoEntityNamespaces.isEmpty) {
+    throw new IllegalArgumentException("entity_namespaces and/or mediainfo_entity_namespaces")
+  }
 
   val generalConfig: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
     hostname = hostName,
     jobName = jobName,
-    entityNamespaces = entityNamespaces,
+    entityNamespaces = entityNamespaces ++ mediaInfoEntityNamespaces,
     entityDataPath = entityDataPath,
     reorderingWindowLengthMs = params.getInt("reordering_window_length", 1 minute),
 

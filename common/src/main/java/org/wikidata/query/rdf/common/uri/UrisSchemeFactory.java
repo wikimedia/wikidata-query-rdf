@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.common.uri;
 
+import static java.util.Collections.singletonList;
 import static org.wikidata.query.rdf.common.uri.UrisConstants.COMMONS_CONCEPT_URI;
 import static org.wikidata.query.rdf.common.uri.UrisConstants.MEDIAINFO_INITIAL;
 import static org.wikidata.query.rdf.common.uri.UrisConstants.SDC_ENTITY_DATA_PREFIX;
@@ -68,7 +69,7 @@ public final class UrisSchemeFactory {
             if (commonsConceptUri != null) {
                 UrisScheme sdcUris = new DefaultUrisScheme(
                         new URI(commonsConceptUri),
-                        SDC_ENTITY_PREFIX, SDC_ENTITY_DATA_PREFIX, MEDIAINFO_INITIAL);
+                        SDC_ENTITY_PREFIX, SDC_ENTITY_DATA_PREFIX, singletonList(MEDIAINFO_INITIAL));
                 UrisScheme wikibaseUris = new DefaultUrisScheme(
                         new URI(wikibaseConceptUri),
                         WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);

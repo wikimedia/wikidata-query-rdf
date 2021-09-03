@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.common.log;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.wikidata.query.rdf.common.uri.UrisConstants.MEDIAINFO_INITIAL;
 import static org.wikidata.query.rdf.common.uri.UrisConstants.SDC_ENTITY_DATA_PREFIX;
@@ -13,8 +14,8 @@ import java.net.URISyntaxException;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.wikidata.query.rdf.common.uri.FederatedUrisScheme;
 import org.wikidata.query.rdf.common.uri.DefaultUrisScheme;
+import org.wikidata.query.rdf.common.uri.FederatedUrisScheme;
 import org.wikidata.query.rdf.common.uri.PropertyType;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 
@@ -25,7 +26,7 @@ public class FederatedUrisSchemeUnitTest {
     public void initURIs() throws URISyntaxException {
         final URI commonsUrl = new URI("http://acme.commons/something");
         final URI wikidataUrl = new URI("http://acme.test/prefix");
-        DefaultUrisScheme sdcUris = new DefaultUrisScheme(commonsUrl, SDC_ENTITY_PREFIX, SDC_ENTITY_DATA_PREFIX, MEDIAINFO_INITIAL);
+        DefaultUrisScheme sdcUris = new DefaultUrisScheme(commonsUrl, SDC_ENTITY_PREFIX, SDC_ENTITY_DATA_PREFIX, singletonList(MEDIAINFO_INITIAL));
         DefaultUrisScheme wikibaseUris = new DefaultUrisScheme(wikidataUrl, WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
         uris = new FederatedUrisScheme(sdcUris, wikibaseUris);
     }
