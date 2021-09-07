@@ -2,7 +2,7 @@ package org.wikidata.query.rdf.updater
 
 import org.apache.flink.api.common.state.{ListStateDescriptor, ValueStateDescriptor}
 import org.apache.flink.api.scala._
-import org.apache.flink.contrib.streaming.state.RocksDBStateBackend
+import org.apache.flink.contrib.streaming.state.EmbeddedRocksDBStateBackend
 import org.apache.flink.runtime.state.StateBackend
 
 object UpdaterStateConfiguration {
@@ -17,7 +17,7 @@ object UpdaterStateConfiguration {
         createTypeInformation[InputEvent]
       })
   }
-  def newStateBackend(checkpointDir: String, enableIncrementalCheckpoint: Boolean = true): StateBackend = {
-    new RocksDBStateBackend(checkpointDir, enableIncrementalCheckpoint)
+  def newStateBackend(enableIncrementalCheckpoint: Boolean = true): StateBackend = {
+    new EmbeddedRocksDBStateBackend(enableIncrementalCheckpoint)
   }
 }

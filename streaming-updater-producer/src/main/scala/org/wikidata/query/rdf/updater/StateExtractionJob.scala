@@ -39,7 +39,7 @@ object StateExtractionJob {
   }
 
   def configure(config: StateExtractionConfig)(implicit env: ExecutionEnvironment): Unit = {
-    val stateBackend: StateBackend = UpdaterStateConfiguration.newStateBackend(config.checkpointDir)
+    val stateBackend: StateBackend = UpdaterStateConfiguration.newStateBackend()
     val point: ExistingSavepoint = Savepoint.load(env.getJavaEnv, config.inputSavepoint, stateBackend)
     config.outputRevisionPath.foreach(saveRevisionsAsCsv(point, _, config.verify, config.useVersionedSerializers))
     config.outputKafkaOffsets match {

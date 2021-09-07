@@ -11,6 +11,7 @@ import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikimedia.eventutilities.core.event.WikimediaDefaults
 
 class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(args)) {
+  val checkpointDir: String = getStringParam("checkpoint_dir")
   private val hostName: String = getStringParam("hostname")
   val jobName: String = getStringParam("job_name")
   val inputKafkaBrokers: String = getStringParam("brokers")

@@ -32,7 +32,7 @@ class StateExtractionJobIntegrationTest extends FlatSpec with FlinkTestCluster w
   "StateExtractionJob" should "fail if buffered events are found" in {
     implicit val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(PARALLELISM)
-    val newSavepoint = Savepoint.create(UpdaterStateConfiguration.newStateBackend("file:///unused"),
+    val newSavepoint = Savepoint.create(UpdaterStateConfiguration.newStateBackend(),
       BaseConfig.MAX_PARALLELISM)
     val bufferedEventOp: OneInputOperatorTransformation[InputEvent] = OperatorTransformation
       .bootstrapWith(env.getJavaEnv.fromCollection(
@@ -62,7 +62,6 @@ class StateExtractionJobIntegrationTest extends FlatSpec with FlinkTestCluster w
 
     val revMapOutput = new File(stateInspectionOutput, "rev_map")
     val stateInspectionConfig = StateExtractionConfig(Seq[String](
-      "--checkpoint_dir", "file:///unused",
       "--input_savepoint", savePointDir.getAbsolutePath,
       "--rev_map_output", revMapOutput.toString,
       "--verify", "true", // do not verify as we don't have the buffered events here

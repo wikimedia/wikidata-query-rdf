@@ -38,7 +38,8 @@ object UpdaterJob {
   private def prepareEnv(environmentOption: UpdaterExecutionEnvironmentConfig): StreamExecutionEnvironment = {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     env.setMaxParallelism(BaseConfig.MAX_PARALLELISM)
-    env.setStateBackend(UpdaterStateConfiguration.newStateBackend(environmentOption.checkpointDir))
+    env.setStateBackend(UpdaterStateConfiguration.newStateBackend())
+    env.getCheckpointConfig.setCheckpointStorage(environmentOption.checkpointDir)
     env.enableCheckpointing(environmentOption.checkpointInterval, environmentOption.checkpointingMode)
     env.getCheckpointConfig.setCheckpointTimeout(environmentOption.checkpointTimeout)
     env.getCheckpointConfig.setMinPauseBetweenCheckpoints(environmentOption.minPauseBetweenCheckpoints)
@@ -49,7 +50,7 @@ object UpdaterJob {
       environmentOption.restartFailureRateInterval,
       environmentOption.restartFailureRateDelay
     ))
-    env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
+    env.getCheckpointConfig.setExternalizedCheckpointCleanup(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
     env.getConfig.setAutoWatermarkInterval(environmentOption.autoWMInterval)
     env.getConfig.enableObjectReuse()
     env.setBufferTimeout(environmentOption.networkBufferTimeout)
