@@ -76,7 +76,7 @@
 
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikidata/query/rdf</developerConnection>
 
-        <flink.version>1.12.1</flink.version>
+        <flink.version>1.14.6</flink.version>
         <hadoop.version>2.10.1</hadoop.version>
         <!-- matching version used by Blazegraph here -->
         <jackson.version>2.6.7</jackson.version>
@@ -415,7 +415,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-runtime_${scala.compat.version}</artifactId>
+                <artifactId>flink-runtime</artifactId>
                 <version>${flink.version}</version>
                 <classifier>tests</classifier>
             </dependency>
@@ -850,7 +850,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-runtime_${scala.compat.version}</artifactId>
+                <artifactId>flink-runtime</artifactId>
                 <version>${flink.version}</version>
                 <scope>provided</scope>
             </dependency>

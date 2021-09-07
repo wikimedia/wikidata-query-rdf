@@ -7,7 +7,8 @@ import com.codahale.metrics.SlidingWindowReservoir
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
-import org.apache.flink.metrics.{Histogram, MetricGroup}
+import org.apache.flink.metrics.Histogram
+import org.apache.flink.metrics.groups.OperatorMetricGroup
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events.EventsMeta
@@ -21,7 +22,7 @@ class MeasureEventProcessingLatencyOperationUnitTest extends FlatSpec with TestF
     val eventProcessingMetricsOperation: MeasureEventProcessingLatencyOperation =
       MeasureEventProcessingLatencyOperation(Clock.fixed(instantNow, ZoneId.systemDefault()))
     val context: RuntimeContext = mock[RuntimeContext]
-    val metricGroup: MetricGroup = mock[MetricGroup]
+    val metricGroup: OperatorMetricGroup = mock[OperatorMetricGroup]
     val eventTimeHistogram = new DropwizardHistogramWrapper(new com.codahale.metrics.Histogram(new SlidingWindowReservoir(500)))
     val processingTimeHistogram = new DropwizardHistogramWrapper(new com.codahale.metrics.Histogram(new SlidingWindowReservoir(500)))
 

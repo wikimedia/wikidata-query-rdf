@@ -37,7 +37,7 @@ object UpdaterBootstrapJob {
       case None => Map.empty[String, JavaDataSet[Tuple3[String, Integer, lang.Long]]]
     }
 
-    val newSavepoint = Savepoint.create(UpdaterStateConfiguration.newStateBackend(settings.checkpointDir),
+    val newSavepoint = Savepoint.create(UpdaterStateConfiguration.newStateBackend(),
       BaseConfig.MAX_PARALLELISM)
 
     withRevMap(newSavepoint, settings.revisionsFile)

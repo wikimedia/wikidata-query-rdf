@@ -6,8 +6,6 @@ import java.nio.file.{Files, Paths}
 import org.apache.flink.api.java.utils.ParameterTool
 
 class BaseConfig(protected implicit val params: ParameterTool) {
-  val checkpointDir: String = getStringParam("checkpoint_dir")
-
   def getStringParam(key: String)(implicit parameterTool: ParameterTool): String = getParam(parameterTool.get, key)
 
   def getIntParam(key: String)(implicit parameterTool: ParameterTool): Int = getParam(parameterTool.getInt, key)

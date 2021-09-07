@@ -53,7 +53,8 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
 
     // configure your test environment
     streamingEnv.setParallelism(PARALLELISM)
-    streamingEnv.setStateBackend(UpdaterStateConfiguration.newStateBackend(checkPointDirInStream.toURI.toString))
+    streamingEnv.setStateBackend(UpdaterStateConfiguration.newStateBackend())
+    streamingEnv.getCheckpointConfig.setCheckpointStorage(checkPointDirInStream.toURI)
     val repository: WikibaseEntityRevRepositoryTrait = MockWikibaseEntityRevRepository()
       .withResponse(("Q1", 2L) -> metaStatements("Q1", 2L, Some(3L)).entityDataNS)
       .withResponse(("Q1", 3L) -> metaStatements("Q1", 3L, Some(3L)).entityDataNS)
@@ -97,7 +98,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
         new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))
       ),
       _ => repository, clock = clock)
-    val graph = streamingEnv.getStreamGraph("test")
+    val graph = streamingEnv.getStreamGraph(true)
     graph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savePointDir.toURI.toString, false))
     streamingEnv.getJavaEnv.execute(graph)
     CollectSink.lateEvents shouldBe empty
