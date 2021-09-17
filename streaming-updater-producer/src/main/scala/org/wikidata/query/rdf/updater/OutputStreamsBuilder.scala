@@ -2,17 +2,9 @@ package org.wikidata.query.rdf.updater
 
 import java.util.Properties
 
-import org.apache.avro.Schema
-import org.apache.avro.generic.GenericRecord
-import org.apache.flink.api.common.serialization.BulkWriter
-import org.apache.flink.api.common.serialization.BulkWriter.Factory
 import org.apache.flink.api.common.time.Time
-import org.apache.flink.core.fs.{FSDataOutputStream, Path}
-import org.apache.flink.formats.parquet.avro.ParquetAvroWriters
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
-import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
-import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.OnCheckpointRollingPolicy
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.wikidata.query.rdf.updater.config.{HttpClientConfig, UpdaterPipelineOutputStreamConfig}
 
@@ -24,32 +16,15 @@ case class OutputStreams(
                         )
 
 class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig, httpClientConfig: HttpClientConfig) {
-  def lateEventsOutput: SinkFunction[InputEvent] = {
-    outputStreamsConfig.lateEventOutputDir match {
-      case Some(dir) => prepareErrorTrackingFileSink(dir, InputEventEncoder.schema(), InputEventEncoder.map)
-      case _ => prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema,
-        outputStreamsConfig.schemaRepos, httpClientConfig)
-    }
-  }
-
-  def spuriousEventsOutput: SinkFunction[IgnoredMutation] = {
-    outputStreamsConfig.spuriousEventOutputDir match {
-      case Some(dir) => prepareErrorTrackingFileSink(dir, IgnoredMutationEncoder.schema(), IgnoredMutationEncoder.map)
-      case _ => prepareSideOutputStream[IgnoredMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
-        outputStreamsConfig.schemaRepos, httpClientConfig)
-    }
-  }
-
-  def failedOpOutput: SinkFunction[FailedOp] = {
-    outputStreamsConfig.failedEventOutputDir match {
-      case Some(dir) => prepareErrorTrackingFileSink(dir, FailedOpEncoder.schema(), FailedOpEncoder.map)
-      case _ => prepareSideOutputStream[FailedOp](JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema,
-        outputStreamsConfig.schemaRepos, httpClientConfig)
-    }
-  }
-
   def build: OutputStreams = {
-    OutputStreams(mutationOutput, lateEventsOutput, spuriousEventsOutput, failedOpOutput)
+    OutputStreams(
+      mutationOutput,
+      prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema,
+        outputStreamsConfig.schemaRepos, httpClientConfig),
+      prepareSideOutputStream[IgnoredMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
+        outputStreamsConfig.schemaRepos, httpClientConfig),
+      prepareSideOutputStream[FailedOp](JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema,
+        outputStreamsConfig.schemaRepos, httpClientConfig))
   }
 
   private def prepareSideOutputStream[E](stream: String, schema: String, schemaRepos: List[String], httpClientConfig: HttpClientConfig): SinkFunction[E] = {
@@ -83,20 +58,4 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
         case CheckpointingMode.AT_LEAST_ONCE => FlinkKafkaProducer.Semantic.AT_LEAST_ONCE
       })
   }
-
-  private def prepareErrorTrackingFileSink[I](outputPath: String, schema: Schema, mapper: I => GenericRecord): SinkFunction[I] = {
-    StreamingFileSink.forBulkFormat(new Path(outputPath), new GenericRecordWrapperFactory[I](mapper, ParquetAvroWriters.forGenericRecord(schema)))
-      .withRollingPolicy(OnCheckpointRollingPolicy.build())
-      .build()
-  }
-}
-
-class GenericRecordWrapperFactory[I](mapper: I => GenericRecord, factory: BulkWriter.Factory[GenericRecord]) extends Factory[I] with Serializable {
-  override def create(fsDataOutputStream: FSDataOutputStream): BulkWriter[I] = new GenericRecordWrapper(mapper, factory.create(fsDataOutputStream))
-}
-
-private class GenericRecordWrapper[I](mapper: I => GenericRecord, bulkWriter: BulkWriter[GenericRecord]) extends BulkWriter[I] {
-  override def addElement(t: I): Unit = bulkWriter.addElement(mapper.apply(t))
-  override def flush(): Unit = bulkWriter.flush()
-  override def finish(): Unit = bulkWriter.finish()
 }

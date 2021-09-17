@@ -1,8 +1,8 @@
 package org.wikidata.query.rdf.updater.config
 
-import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.concurrent.duration._
 import scala.language.{implicitConversions, postfixOps}
+
 import org.apache.flink.api.common.time.Time
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
@@ -86,9 +86,6 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       outputTopicPrefix = optionalStringArg("output_topic_prefix"),
       sideOutputsDomain = params.get("side_outputs_domain", hostName),
       sideOutputsKafkaBrokers = optionalStringArg("side_outputs_kafka_brokers"),
-      lateEventOutputDir = optionalStringArg("late_events_dir"),
-      failedEventOutputDir = optionalStringArg("failed_ops_dir"),
-      spuriousEventOutputDir = optionalStringArg("spurious_events_dir"),
       schemaRepos = params.get(
         "schema_repositories",
         "https://schema.wikimedia.org/repositories/primary/jsonschema,https://schema.wikimedia.org/repositories/secondary/jsonschema"
@@ -139,9 +136,6 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      outputTopicPrefix: Option[String] = None,
                                                      sideOutputsDomain: String,
                                                      sideOutputsKafkaBrokers: Option[String],
-                                                     lateEventOutputDir: Option[String],
-                                                     spuriousEventOutputDir: Option[String],
-                                                     failedEventOutputDir: Option[String],
                                                      schemaRepos: List[String]
                                                    )
 

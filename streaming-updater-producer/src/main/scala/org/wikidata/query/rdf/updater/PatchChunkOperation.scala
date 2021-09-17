@@ -2,7 +2,6 @@ package org.wikidata.query.rdf.updater
 
 import java.time.Clock
 import java.util
-import java.util.UUID
 import java.util.function.Supplier
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
