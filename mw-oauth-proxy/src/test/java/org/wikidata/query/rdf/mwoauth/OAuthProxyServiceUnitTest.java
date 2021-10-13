@@ -45,15 +45,17 @@ public class OAuthProxyServiceUnitTest {
     private static final String OAUTH_VERIFIER_STR = "oauth_verifying_string";
     public static final String WIKI_LOGOUT_LINK = "https://commons.wikimedia.org/w/index.php?title=Special:UserLogout";
 
+
     private OAuthProxyService sut;
     private OAuth10aService mwoauthServiceMock;
 
     @Before
     public void setUp() throws Exception {
+        sut = new OAuthProxyService();
         mwoauthServiceMock = getMockedMWOAuthService();
         sut = new OAuthProxyService();
-        sut.init(getMockedMWOAuthConfig(ImmutableMap.of(
-            OAuthProxyConfig.SESSIONS_STORE_LIMIT_PROPERTY, "1",
+        sut.init(getMockedConfig(ImmutableMap.of(
+            OAuthProxyConfig.ACCESS_TOKEN_SECRET, "not_secret",
             OAuthProxyConfig.SESSION_STORE_KEY_PREFIX, "dummy:prefix",
             OAuthProxyConfig.WIKI_LOGOUT_LINK_PROPERTY, WIKI_LOGOUT_LINK
         )), mwoauthServiceMock, getMockedSessionStore(1));
@@ -110,7 +112,9 @@ public class OAuthProxyServiceUnitTest {
 
 
         Response logoutResponse = sut.logout(wikiSession);
-        assertThat(sut.checkUser(wikiSession).getStatus()).isEqualTo(FORBIDDEN.getStatusCode());
+
+        // Expected limitation, access tokens are irrevocable.
+        assertThat(sut.checkUser(wikiSession).getStatus()).isEqualTo(OK.getStatusCode());
 
         assertThat(logoutResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
         assertThat(extractRedirectLocation(logoutResponse))
@@ -126,10 +130,30 @@ public class OAuthProxyServiceUnitTest {
         return (URI) verifyResponse.getHeaders().get("location").get(0);
     }
 
-    private OAuthProxyConfig getMockedMWOAuthConfig(Map<String, String> values) {
+    private OAuthProxyConfig getMockedConfig(Map<String, String> values) {
         ServletConfig servletConfig = mock(ServletConfig.class);
         values.forEach((k, v) -> when(servletConfig.getInitParameter(k)).thenReturn(v));
         return new OAuthProxyConfig(servletConfig);
+    }
+
+    private KaskSessionStore<OAuth1RequestToken> getMockedSessionStore() throws IOException {
+        Cache<String, OAuth1RequestToken> cache = CacheBuilder.newBuilder().build();
+        KaskSessionStore<OAuth1RequestToken> sessionStore = mock(KaskSessionStore.class);
+
+        when(sessionStore.getIfPresent(anyString())).then((args) ->
+            cache.getIfPresent(args.getArgumentAt(0, String.class)));
+
+        doAnswer((args) -> {
+            cache.put(args.getArgumentAt(0, String.class), args.getArgumentAt(1, OAuth1RequestToken.class));
+            return null;
+        }).when(sessionStore).put(anyString(), isA(OAuth1RequestToken.class));
+
+        doAnswer((args) -> {
+            cache.invalidate(args.getArgumentAt(0, String.class));
+            return null;
+        }).when(sessionStore).invalidate(anyString());
+
+        return sessionStore;
     }
 
     private OAuth10aService getMockedMWOAuthService() throws IOException, InterruptedException, ExecutionException {
@@ -163,7 +187,4 @@ public class OAuthProxyServiceUnitTest {
 
         return sessionStore;
     }
-
-
-
 }

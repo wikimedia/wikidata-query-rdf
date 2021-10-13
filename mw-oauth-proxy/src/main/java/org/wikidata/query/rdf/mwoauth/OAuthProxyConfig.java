@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.mwoauth;
 
+import java.time.Duration;
+
 import javax.servlet.ServletConfig;
 
 import org.apache.http.HttpHost;
@@ -9,9 +11,10 @@ public final class OAuthProxyConfig {
     private final ServletConfig servletConfig;
 
     static final String SYSTEM_PROPERTY_PREFIX = OAuthProxyConfig.class.getName() + ".";
+    static final String ACCESS_TOKEN_DURATION_HOURS = "accessTokenDurationHours";
+    static final String ACCESS_TOKEN_SECRET = "accessTokenSecret";
     static final String CONSUMER_KEY_PROPERTY = "consumerKey";
     static final String CONSUMER_SECRET_PROPERTY = "consumerSecret";
-    static final String SESSIONS_STORE_LIMIT_PROPERTY = "sessionStoreLimit";
     static final String INDEX_URL_PROPERTY = "indexUrl";
     static final String NICE_URL_BASE_PROPERTY = "niceUrlBase";
     static final String WIKI_LOGOUT_LINK_PROPERTY = "wikiLogoutLink";
@@ -33,16 +36,21 @@ public final class OAuthProxyConfig {
         return loadStringParam(CONSUMER_SECRET_PROPERTY);
     }
 
-    public int sessionStoreLimit() {
-        return Integer.parseInt(loadStringParam(SESSIONS_STORE_LIMIT_PROPERTY));
-    }
-
     public String indexUrl() {
         return loadStringParam(INDEX_URL_PROPERTY);
     }
 
     public String niceUrlBase() {
         return loadStringParam(NICE_URL_BASE_PROPERTY);
+    }
+
+    public String accessTokenSecret() {
+        return loadStringParam(ACCESS_TOKEN_SECRET);
+    }
+
+    public Duration accessTokenDuration() {
+        return Duration.ofHours(Integer.parseInt(loadStringParam(
+            ACCESS_TOKEN_DURATION_HOURS, "2")));
     }
 
     public String sessionStoreScheme() {

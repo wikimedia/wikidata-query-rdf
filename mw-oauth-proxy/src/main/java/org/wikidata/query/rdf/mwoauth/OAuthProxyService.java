@@ -9,6 +9,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
@@ -30,13 +31,27 @@ import org.apache.http.impl.client.HttpClients;
 
 import com.github.scribejava.apis.MediaWikiApi;
 import com.github.scribejava.core.builder.ServiceBuilder;
-import com.github.scribejava.core.model.OAuth1AccessToken;
 import com.github.scribejava.core.model.OAuth1RequestToken;
 import com.github.scribejava.core.oauth.OAuth10aService;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 
+/**
+ * Provides an authentication workflow via mediawiki OAuth 1.0
+ *
+ * Authorizing a request:
+ *  - Auth request comes in to /check_auth. Looks for SESSION_COOKIE_NAME in
+ *    the http cookies, if available we attempt to validate as a JWT token.
+ *    If valid responds 200 ok, all other conditions return 403 not-authorized.
+ *
+ *  Creating a new authentication token:
+ *  - Initial request comes in to /check_login.  The proxy creates a unique
+ *    request token, caches it, and then provides the user a redirect to MW
+ *    oauth api including the request token.
+ *  - MW will, on successful auth, send the user back to /oauth_verify. The proxy
+ *    will lookup the cached request token and provide it along with mw provided
+ *    params to the oauth service for verification. On success issues an
+ *    irrevocable time-limited access token.
+ */
 //Multiple classes and annotations from both auth and jax-rs are needed,
 // I don't see much point in splitting the service
 @SuppressWarnings({"checkstyle:classfanoutcomplexity"})
@@ -46,15 +61,16 @@ public class OAuthProxyService {
 
     public static final String SESSION_COOKIE_NAME = "wcqsSession";
     public static final int SESSION_MAX_AGE = Integer.MAX_VALUE;
+    public static final Duration AUTH_TOKEN_MAX_AGE = Duration.ofHours(2);
 
     @Context
     private ServletConfig servletConfig;
 
     private OAuth10aService service;
     private KaskSessionStore<OAuth1RequestToken> requestTokens;
-    private Cache<String, OAuth1AccessToken> accessTokens;
     private String wikiLogoutLink;
     private String sessionKeyPrefix;
+    private TimeLimitedAccessToken authToken;
 
     @PostConstruct
     public void init() {
@@ -69,9 +85,9 @@ public class OAuthProxyService {
     @VisibleForTesting
     public void init(OAuthProxyConfig config, OAuth10aService service, KaskSessionStore<OAuth1RequestToken> sessionStore) {
         requestTokens = sessionStore;
-        accessTokens = buildCache(config.sessionStoreLimit());
         sessionKeyPrefix = config.sessionStoreKeyPrefix();
         wikiLogoutLink = config.wikiLogoutLink();
+        authToken = new TimeLimitedAccessToken(config.accessTokenSecret(), config.accessTokenDuration());
         this.service = service;
     }
 
@@ -85,6 +101,10 @@ public class OAuthProxyService {
         return temporaryRedirect(getAuthenticationURI(authorizationUrl)).build();
     }
 
+    private NewCookie sessionCookie(String value, int maxAge) {
+        return new NewCookie(SESSION_COOKIE_NAME, value, "/", null, null, maxAge, true, true);
+    }
+
     @GET
     @Path("/oauth_verify")
     public Response oauthVerify(@QueryParam ("oauth_verifier") String oauthVerifier,
@@ -96,44 +116,35 @@ public class OAuthProxyService {
             return status(FORBIDDEN).build();
         }
         requestTokens.invalidate(oauthToken);
-        OAuth1AccessToken accessToken = service.getAccessToken(requestToken, oauthVerifier);
-        accessTokens.put(accessToken.getToken(), accessToken);
-        NewCookie sessionCookie = new NewCookie(SESSION_COOKIE_NAME,
-                accessToken.getToken(), "/", null, null, SESSION_MAX_AGE, true, true);
-
-        return temporaryRedirect(new URI(redirectUrl)).cookie(sessionCookie).build();
+        // We don't actually need the access token, we aren't trying to do anything on behalf
+        // of the user. We still request it to trigger the flow that verifies oauthToken is valid.
+        // TODO: What we do need is a username to satisfy the requirement to allow blocking. The
+        // username can be requested with the access token at Special:OAuth/identity, but need to impl that.
+        service.getAccessToken(requestToken, oauthVerifier);
+        NewCookie cookie = sessionCookie(authToken.create(), SESSION_MAX_AGE);
+        return temporaryRedirect(new URI(redirectUrl)).cookie(cookie).build();
     }
 
     @GET
     @Path("/check_auth")
     public Response checkUser(@CookieParam(SESSION_COOKIE_NAME) String session) {
-        if (checkSession(session)) {
-            return Response.ok().build();
-        } else {
-            return status(FORBIDDEN).build();
-        }
+        return authToken.decide(
+            session,
+            () -> Response.ok().build(),
+            () -> status(FORBIDDEN).build());
     }
 
     @GET
     @Path("/logout")
-    public Response logout(@CookieParam(SESSION_COOKIE_NAME) String session) throws URISyntaxException {
-        if (checkSession(session)) {
-            accessTokens.invalidate(session);
-        }
+    public Response logout(String session) throws URISyntaxException {
+        // The token itself can't be expired, all we can do is remove the cookie holding it.
+        // If the token was captured somewhere else it is still valid for the token duration.
+        // Accordingly, durations should be kept short. Minutes or hours not days or weeks.
+        // Re-auth should be transparent and safe to re-check.
         return temporaryRedirect(new URI(wikiLogoutLink))
-                .cookie(new NewCookie(new Cookie(SESSION_COOKIE_NAME, "deleted"),
-                        "", 0, new Date(0), true, true))
-                .build();
-    }
-
-    private boolean checkSession(@CookieParam(SESSION_COOKIE_NAME) String session) {
-        return session != null && accessTokens.getIfPresent(session) != null;
-    }
-
-    private <T> Cache<String, T> buildCache(int maximumSize) {
-        return CacheBuilder.newBuilder()
-                .maximumSize(maximumSize)
-                .build();
+            .cookie(new NewCookie(new Cookie(SESSION_COOKIE_NAME, "deleted"),
+                "", 0, new Date(0), true, true))
+            .build();
     }
 
     // ScribeJava doesn't not provide mw-oauth authentication url (it's not part of oauth1.0a standard),
@@ -171,4 +182,5 @@ public class OAuthProxyService {
                 }
             });
     }
+
 }
