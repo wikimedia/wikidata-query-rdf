@@ -4,6 +4,8 @@ import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.status;
 import static javax.ws.rs.core.Response.temporaryRedirect;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -22,6 +24,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
+
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.HttpClients;
 
 import com.github.scribejava.apis.MediaWikiApi;
 import com.github.scribejava.core.builder.ServiceBuilder;
@@ -46,9 +51,10 @@ public class OAuthProxyService {
     private ServletConfig servletConfig;
 
     private OAuth10aService service;
-    private Cache<String, OAuth1RequestToken> requestTokens;
+    private KaskSessionStore<OAuth1RequestToken> requestTokens;
     private Cache<String, OAuth1AccessToken> accessTokens;
     private String wikiLogoutLink;
+    private String sessionKeyPrefix;
 
     @PostConstruct
     public void init() {
@@ -56,13 +62,15 @@ public class OAuthProxyService {
         OAuth10aService oauthService = new ServiceBuilder(oauthConfig.consumerKey())
             .apiSecret(oauthConfig.consumerSecret())
             .build(new MediaWikiApi(oauthConfig.indexUrl(), oauthConfig.niceUrlBase()));
-        init(oauthConfig, oauthService);
+        KaskSessionStore<OAuth1RequestToken> sessionStore = buildSessionStore(oauthConfig, HttpClients.createDefault());
+        init(oauthConfig, oauthService, sessionStore);
     }
 
     @VisibleForTesting
-    public void init(OAuthProxyConfig config, OAuth10aService service) {
-        requestTokens = buildCache(config.sessionStoreLimit());
+    public void init(OAuthProxyConfig config, OAuth10aService service, KaskSessionStore<OAuth1RequestToken> sessionStore) {
+        requestTokens = sessionStore;
         accessTokens = buildCache(config.sessionStoreLimit());
+        sessionKeyPrefix = config.sessionStoreKeyPrefix();
         wikiLogoutLink = config.wikiLogoutLink();
         this.service = service;
     }
@@ -132,5 +140,35 @@ public class OAuthProxyService {
     // which is used for authentication only consumers. Fortunately, url is almost the same.
     private URI getAuthenticationURI(String authorizationUrl) throws URISyntaxException {
         return new URI(authorizationUrl.replace("authorize", "authenticate"));
+    }
+
+    private KaskSessionStore<OAuth1RequestToken> buildSessionStore(OAuthProxyConfig config, HttpClient httpClient) {
+        return new KaskSessionStore<>(
+            httpClient,
+            config.sessionStoreHost(),
+            new KaskSessionStore.Serde<OAuth1RequestToken>() {
+                @Override
+                public String keyEncoder(String key) {
+                    return sessionKeyPrefix + key;
+                }
+
+                @Override
+                public void valueEncoder(DataOutput out, OAuth1RequestToken token) throws IOException {
+                    // Is a serialization version necessary? Shouldn't hurt.
+                    out.writeShort(0);
+                    // Write out constructor args, rather than full object serialization,
+                    // to get better guarantees about what we are doing with what we read back.
+                    out.writeUTF(token.getToken());
+                    out.writeUTF(token.getTokenSecret());
+                }
+
+                @Override
+                public OAuth1RequestToken valueDecoder(DataInput in) throws IOException {
+                    if (in.readShort() != 0) {
+                        throw new IllegalStateException("serialization version mismatch");
+                    }
+                    return new OAuth1RequestToken(in.readUTF(), in.readUTF());
+                }
+            });
     }
 }

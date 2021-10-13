@@ -5,6 +5,9 @@ import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.TEMPORARY_REDIRECT;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.wikidata.query.rdf.mwoauth.OAuthProxyService.SESSION_COOKIE_NAME;
@@ -29,6 +32,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.github.scribejava.core.model.OAuth1AccessToken;
 import com.github.scribejava.core.model.OAuth1RequestToken;
 import com.github.scribejava.core.oauth.OAuth10aService;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -49,11 +54,10 @@ public class OAuthProxyServiceUnitTest {
         sut = new OAuthProxyService();
         sut.init(getMockedMWOAuthConfig(ImmutableMap.of(
             OAuthProxyConfig.SESSIONS_STORE_LIMIT_PROPERTY, "1",
+            OAuthProxyConfig.SESSION_STORE_KEY_PREFIX, "dummy:prefix",
             OAuthProxyConfig.WIKI_LOGOUT_LINK_PROPERTY, WIKI_LOGOUT_LINK
-        )), mwoauthServiceMock);
+        )), mwoauthServiceMock, getMockedSessionStore(1));
     }
-
-
 
     @Test
     public void shouldForbidNonLoggedUser() {
@@ -86,7 +90,8 @@ public class OAuthProxyServiceUnitTest {
     public void shouldReturnForbiddenIfTokenWasCleared() throws Exception {
         //1st user request for request token
         sut.checkLogin();
-        //2nd user request for request token
+        // 2nd user request for request token. Token clearing is simulated here because our cache is
+        // only allowed to hold a single value during test.
         OAuth1RequestToken requestToken = new OAuth1RequestToken("new token", "tokenSecret");
         when(mwoauthServiceMock.getRequestToken()).thenReturn(requestToken);
         when(mwoauthServiceMock.getAuthorizationUrl(requestToken)).thenReturn(AUTHORIZE_URL);
@@ -138,6 +143,27 @@ public class OAuthProxyServiceUnitTest {
 
         return mwoauthServiceMock;
     }
+
+    private KaskSessionStore<OAuth1RequestToken> getMockedSessionStore(long maximumSize) throws IOException {
+        Cache<String, OAuth1RequestToken> cache = CacheBuilder.newBuilder().maximumSize(maximumSize).build();
+        KaskSessionStore<OAuth1RequestToken> sessionStore = mock(KaskSessionStore.class);
+
+        when(sessionStore.getIfPresent(anyString())).then((args) ->
+            cache.getIfPresent(args.getArgumentAt(0, String.class)));
+
+        doAnswer((args) -> {
+            cache.put(args.getArgumentAt(0, String.class), args.getArgumentAt(1, OAuth1RequestToken.class));
+            return null;
+        }).when(sessionStore).put(anyString(), isA(OAuth1RequestToken.class));
+
+        doAnswer((args) -> {
+            cache.invalidate(args.getArgumentAt(0, String.class));
+            return null;
+        }).when(sessionStore).invalidate(anyString());
+
+        return sessionStore;
+    }
+
 
 
 }
