@@ -13,8 +13,10 @@ import static org.wikidata.query.rdf.mwoauth.OAuthProxyService.SESSION_COOKIE_NA
 import java.io.IOException;
 import java.net.URI;
 import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import javax.servlet.ServletConfig;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
@@ -27,6 +29,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.github.scribejava.core.model.OAuth1AccessToken;
 import com.github.scribejava.core.model.OAuth1RequestToken;
 import com.github.scribejava.core.oauth.OAuth10aService;
+import com.google.common.collect.ImmutableMap;
 
 @RunWith(MockitoJUnitRunner.class)
 public class OAuthProxyServiceUnitTest {
@@ -43,8 +46,14 @@ public class OAuthProxyServiceUnitTest {
     @Before
     public void setUp() throws Exception {
         mwoauthServiceMock = getMockedMWOAuthService();
-        sut = new OAuthProxyService(mwoauthServiceMock, 1, WIKI_LOGOUT_LINK);
+        sut = new OAuthProxyService();
+        sut.init(getMockedMWOAuthConfig(ImmutableMap.of(
+            OAuthProxyConfig.SESSIONS_STORE_LIMIT_PROPERTY, "1",
+            OAuthProxyConfig.WIKI_LOGOUT_LINK_PROPERTY, WIKI_LOGOUT_LINK
+        )), mwoauthServiceMock);
     }
+
+
 
     @Test
     public void shouldForbidNonLoggedUser() {
@@ -110,6 +119,12 @@ public class OAuthProxyServiceUnitTest {
 
     private URI extractRedirectLocation(Response verifyResponse) {
         return (URI) verifyResponse.getHeaders().get("location").get(0);
+    }
+
+    private OAuthProxyConfig getMockedMWOAuthConfig(Map<String, String> values) {
+        ServletConfig servletConfig = mock(ServletConfig.class);
+        values.forEach((k, v) -> when(servletConfig.getInitParameter(k)).thenReturn(v));
+        return new OAuthProxyConfig(servletConfig);
     }
 
     private OAuth10aService getMockedMWOAuthService() throws IOException, InterruptedException, ExecutionException {

@@ -50,25 +50,21 @@ public class OAuthProxyService {
     private Cache<String, OAuth1AccessToken> accessTokens;
     private String wikiLogoutLink;
 
-    public OAuthProxyService() {}
-
-    @VisibleForTesting
-    OAuthProxyService(OAuth10aService oauthService, int sessionStoreLimit, String wikiLogoutLink) {
-        requestTokens = buildCache(sessionStoreLimit);
-        accessTokens = buildCache(sessionStoreLimit);
-        service = oauthService;
-        this.wikiLogoutLink = wikiLogoutLink;
-    }
-
     @PostConstruct
     public void init() {
-        OAuthProxyConfig oauthProxyConfig = new OAuthProxyConfig(servletConfig);
-        requestTokens = buildCache(oauthProxyConfig.sessionStoreLimit());
-        accessTokens = buildCache(oauthProxyConfig.sessionStoreLimit());
-        wikiLogoutLink = oauthProxyConfig.wikiLogoutLink();
-        service = new ServiceBuilder(oauthProxyConfig.consumerKey())
-                .apiSecret(oauthProxyConfig.consumerSecret())
-                .build(new MediaWikiApi(oauthProxyConfig.indexUrl(), oauthProxyConfig.niceUrlBase()));
+        OAuthProxyConfig oauthConfig = new OAuthProxyConfig(servletConfig);
+        OAuth10aService oauthService = new ServiceBuilder(oauthConfig.consumerKey())
+            .apiSecret(oauthConfig.consumerSecret())
+            .build(new MediaWikiApi(oauthConfig.indexUrl(), oauthConfig.niceUrlBase()));
+        init(oauthConfig, oauthService);
+    }
+
+    @VisibleForTesting
+    public void init(OAuthProxyConfig config, OAuth10aService service) {
+        requestTokens = buildCache(config.sessionStoreLimit());
+        accessTokens = buildCache(config.sessionStoreLimit());
+        wikiLogoutLink = config.wikiLogoutLink();
+        this.service = service;
     }
 
     @GET
