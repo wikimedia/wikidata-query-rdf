@@ -70,6 +70,7 @@ public class OAuthProxyService {
     private KaskSessionStore<OAuth1RequestToken> requestTokens;
     private String wikiLogoutLink;
     private String sessionKeyPrefix;
+    private String successRedirect;
     private TimeLimitedAccessToken authToken;
 
     @PostConstruct
@@ -87,6 +88,7 @@ public class OAuthProxyService {
         requestTokens = sessionStore;
         sessionKeyPrefix = config.sessionStoreKeyPrefix();
         wikiLogoutLink = config.wikiLogoutLink();
+        successRedirect = config.successRedirect();
         authToken = new TimeLimitedAccessToken(config.accessTokenSecret(), config.accessTokenDuration());
         this.service = service;
     }
@@ -122,6 +124,9 @@ public class OAuthProxyService {
         // username can be requested with the access token at Special:OAuth/identity, but need to impl that.
         service.getAccessToken(requestToken, oauthVerifier);
         NewCookie cookie = sessionCookie(authToken.create(), SESSION_MAX_AGE);
+        if (redirectUrl == null) {
+            redirectUrl = successRedirect;
+        }
         return temporaryRedirect(new URI(redirectUrl)).cookie(cookie).build();
     }
 

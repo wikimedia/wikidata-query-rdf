@@ -1,0 +1,44 @@
+version: '3.4'
+services:
+    cassandra:
+        image: cassandra:3.11
+        container_name: cassandra
+        ports:
+          - 9092:9092
+        volumes:
+          - ./mediawiki-services-kask:/etc/mediawiki-services-kask
+    kask:
+        image: docker-registry.wikimedia.org/wikimedia/mediawiki-services-kask:v1.0.9
+        container_name: kask
+        depends_on:
+          # TODO: Insuficient, wait for port to be available?
+          - cassandra
+        ports:
+          - 8081:8081
+        volumes:
+          - ./mediawiki-services-kask:/etc/mediawiki-services-kask
+    nginx:
+        image: nginx:1.21
+        container_name: nginx
+        volumes:
+          - ./nginx:/etc/nginx/templates
+        ports:
+          - 8082:80
+        environment:
+          - JETTY_URI=http://jetty:8080
+    jetty:
+        build: ./jetty
+        image: jetty:9.4-jdk8-slim
+        container_name: jetty
+        ports:
+          - 8080:8080
+        environment:
+            - "JAVA_OPTIONS=-Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.consumerKey=${OAUTH_CONSUMER_KEY} -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.consumerSecret=${OAUTH_CONSUMER_SECRET} -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.niceUrlBase=${OAUTH_NICE_URL_BASE} -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.indexUrl=${OAUTH_INDEX_URL} -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.successRedirect=http://localhost:8082 -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.sessionStoreHostname=kask -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.sessionStorePort=8081 -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.sessionStoreScheme=http -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.sessionStoreKeyPrefix=mwoauth:dev -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.accessTokenSecret=not_secret -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.SimpleLog -Dorg.apache.commons.logging.simplelog.showdatetime=true -Dorg.apache.commons.logging.simplelog.log.org.apache.http=DEBUG"
+        volumes:
+          - ./jetty/webapps:/var/lib/jetty/webapps
+    mediawiki:
+        build: ./mediawiki
+        container_name: mediawiki
+        restart: always
+        ports:
+          -  8083:80

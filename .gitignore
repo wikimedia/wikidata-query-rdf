@@ -11,3 +11,4 @@ target/
 .execution-hints-*.log
 node_modules
 war/overlays
+/mw-oauth-proxy/docker/jetty/webapps/ROOT.war

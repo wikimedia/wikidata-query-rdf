@@ -1,0 +1,32 @@
+server {
+    listen 80 default_server;
+
+    location /error403 {
+        internal;
+        proxy_pass ${JETTY_URI}/oauth/check_login;
+    }
+
+    location /_check_auth {
+        internal;
+        if ($request_uri = '/passthru') {
+            return 200;
+        }
+        proxy_pass ${JETTY_URI}/oauth/check_auth;
+    }
+
+    location /_oauth_token_verify {
+        error_page 403 = /error403;
+        proxy_pass ${JETTY_URI}/oauth/oauth_verify$is_args$args;
+    }
+
+    location /_logout {
+        proxy_pass ${JETTY_URI}/oauth/logout;
+    }
+
+    location / {
+        root /usr/share/nginx/html;
+        auth_request /_check_auth;
+        error_page 403 = /error403;
+    }
+}
+

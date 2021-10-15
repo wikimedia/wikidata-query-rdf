@@ -1,0 +1,35 @@
+Provides a minimal test environment to start mw-oauth-proxy and
+the kask service it uses for shared session state and a mediawiki
+instance to auth against.
+
+Ports
+===
+
+localhost:8080 - http / jetty running mw-oauth-proxy
+localhost:8081 - http / kask
+localhost:8082 - http / nginx fronting jetty
+localhost:8083 - http / mediawiki
+localhost:9092 - ??? / cassandra
+
+Passwords
+===
+
+Mediawiki Credentials:
+
+    u: Admin
+    p: adminpassword
+
+Manual test process:
+===
+
+Start mediawiki, propose and approve an oauth consumer,
+cassandra, kask, and mw-oauth-proxy:
+
+    $ ./start.sh
+
+The nginx site should be fully protected by mw-oauth-proxy. It has a single
+URL available at root. Visiting should send you to mediawiki to login, and
+then present the nginx default page on success.
+
+    http://localhost:8082
+

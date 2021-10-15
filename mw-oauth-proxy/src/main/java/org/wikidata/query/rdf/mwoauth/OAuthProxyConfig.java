@@ -18,6 +18,7 @@ public final class OAuthProxyConfig {
     static final String INDEX_URL_PROPERTY = "indexUrl";
     static final String NICE_URL_BASE_PROPERTY = "niceUrlBase";
     static final String WIKI_LOGOUT_LINK_PROPERTY = "wikiLogoutLink";
+    static final String SUCCESS_REDIRECT_PROPERTY = "successRedirect";
 
     static final String SESSION_STORE_HOSTNAME = "sessionStoreHostname";
     static final String SESSION_STORE_PORT = "sessionStorePort";
@@ -42,6 +43,10 @@ public final class OAuthProxyConfig {
 
     public String niceUrlBase() {
         return loadStringParam(NICE_URL_BASE_PROPERTY);
+    }
+
+    public String successRedirect() {
+        return loadStringParam(SUCCESS_REDIRECT_PROPERTY, "/");
     }
 
     public String accessTokenSecret() {
