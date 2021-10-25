@@ -5,6 +5,7 @@ import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.TEMPORARY_REDIRECT;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.doAnswer;
@@ -48,17 +49,24 @@ public class OAuthProxyServiceUnitTest {
 
     private OAuthProxyService sut;
     private OAuth10aService mwoauthServiceMock;
+    private OAuthIdentifyService identifyMock;
 
     @Before
     public void setUp() throws Exception {
-        sut = new OAuthProxyService();
         mwoauthServiceMock = getMockedMWOAuthService();
-        sut = new OAuthProxyService();
-        sut.init(getMockedConfig(ImmutableMap.of(
+        identifyMock = mock(OAuthIdentifyService.class);
+        sut = makeService("banned,also_banned");
+    }
+
+    private OAuthProxyService makeService(String bannedUsernames) throws Exception {
+        OAuthProxyService service = new OAuthProxyService();
+        service.init(getMockedConfig(ImmutableMap.of(
             OAuthProxyConfig.ACCESS_TOKEN_SECRET, "not_secret",
             OAuthProxyConfig.SESSION_STORE_KEY_PREFIX, "dummy:prefix",
-            OAuthProxyConfig.WIKI_LOGOUT_LINK_PROPERTY, WIKI_LOGOUT_LINK
-        )), mwoauthServiceMock, getMockedSessionStore(1));
+            OAuthProxyConfig.WIKI_LOGOUT_LINK_PROPERTY, WIKI_LOGOUT_LINK,
+            OAuthProxyConfig.BANNED_USERNAMES_CSV_PROPERTY, bannedUsernames
+        )), mwoauthServiceMock, identifyMock, getMockedSessionStore(1));
+        return service;
     }
 
     @Test
@@ -69,6 +77,7 @@ public class OAuthProxyServiceUnitTest {
 
     @Test
     public void shouldAllowLoggedInUser() throws Exception {
+        when(identifyMock.getUsername(any())).thenReturn("fake_username");
         Response checkLoginResponse = sut.checkLogin();
 
         assertThat(checkLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
@@ -105,6 +114,7 @@ public class OAuthProxyServiceUnitTest {
 
     @Test
     public void logoutShouldDeleteCookieAndRedirect() throws Exception {
+        when(identifyMock.getUsername(any())).thenReturn("fake_username");
         sut.checkLogin();
         String redirectUrl = "http://localhost/redirect";
         Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, redirectUrl);
@@ -124,6 +134,50 @@ public class OAuthProxyServiceUnitTest {
                 .extractingByKey(SESSION_COOKIE_NAME)
                 .isEqualTo(new NewCookie(new Cookie(SESSION_COOKIE_NAME, "deleted"),
                         "", 0, new Date(0), true, true));
+    }
+
+    @Test
+    public void noSessionCookieForBannedUsers() throws Exception {
+        when(identifyMock.getUsername(any())).thenReturn("banned");
+        Response checkLoginResponse = sut.checkLogin();
+
+        assertThat(checkLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
+        assertThat(extractRedirectLocation(checkLoginResponse)).isEqualTo(new URI(AUTHENTICATE_URL));
+
+        //at this time user would authenticate with MediaWiki...
+
+
+        String redirectUrl = "http://localhost/redirect";
+        Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, redirectUrl);
+
+        assertThat(verifyResponse.getStatus()).isEqualTo(FORBIDDEN.getStatusCode());
+        assertThat(verifyResponse.getCookies().get(SESSION_COOKIE_NAME)).isNull();
+    }
+
+    @Test
+    public void validTokensWithBannedUsernamesAreRejected() throws Exception {
+        when(identifyMock.getUsername(any())).thenReturn("not_banned_yet");
+        Response checkLoginResponse = sut.checkLogin();
+
+        assertThat(checkLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
+        assertThat(extractRedirectLocation(checkLoginResponse)).isEqualTo(new URI(AUTHENTICATE_URL));
+
+        //at this time user would authenticate with MediaWiki...
+
+        String redirectUrl = "http://localhost/redirect";
+        Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, redirectUrl);
+        assertThat(verifyResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
+        String wikiSession = verifyResponse.getCookies().get(SESSION_COOKIE_NAME).getValue();
+
+        // A valid token is issued for that user
+        Response checkUserResponse = sut.checkUser(wikiSession);
+        assertThat(checkUserResponse.getStatus()).isEqualTo(OK.getStatusCode());
+
+        // When we restart the instance with a new ban list including the username
+        // that token will no longer validate.
+        OAuthProxyService serviceIncludingBan = makeService("also_banned,not_banned_yet");
+        Response checkBannedResponse = serviceIncludingBan.checkUser(wikiSession);
+        assertThat(checkBannedResponse.getStatus()).isEqualTo(FORBIDDEN.getStatusCode());
     }
 
     private URI extractRedirectLocation(Response verifyResponse) {

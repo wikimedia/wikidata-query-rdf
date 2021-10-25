@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.Date;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.annotation.PostConstruct;
@@ -31,6 +32,7 @@ import org.apache.http.impl.client.HttpClients;
 
 import com.github.scribejava.apis.MediaWikiApi;
 import com.github.scribejava.core.builder.ServiceBuilder;
+import com.github.scribejava.core.model.OAuth1AccessToken;
 import com.github.scribejava.core.model.OAuth1RequestToken;
 import com.github.scribejava.core.oauth.OAuth10aService;
 import com.google.common.annotations.VisibleForTesting;
@@ -67,11 +69,13 @@ public class OAuthProxyService {
     private ServletConfig servletConfig;
 
     private OAuth10aService service;
+    private OAuthIdentifyService identify;
     private KaskSessionStore<OAuth1RequestToken> requestTokens;
     private String wikiLogoutLink;
     private String sessionKeyPrefix;
     private String successRedirect;
     private TimeLimitedAccessToken authToken;
+    private Set<String> bannedUsernames;
 
     @PostConstruct
     public void init() {
@@ -80,17 +84,20 @@ public class OAuthProxyService {
             .apiSecret(oauthConfig.consumerSecret())
             .build(new MediaWikiApi(oauthConfig.indexUrl(), oauthConfig.niceUrlBase()));
         KaskSessionStore<OAuth1RequestToken> sessionStore = buildSessionStore(oauthConfig, HttpClients.createDefault());
-        init(oauthConfig, oauthService, sessionStore);
+        OAuthIdentifyService identify = new OAuthIdentifyService(oauthService, oauthConfig.indexUrl(), oauthConfig.consumerSecret());
+        init(oauthConfig, oauthService, identify, sessionStore);
     }
 
     @VisibleForTesting
-    public void init(OAuthProxyConfig config, OAuth10aService service, KaskSessionStore<OAuth1RequestToken> sessionStore) {
+    public void init(OAuthProxyConfig config, OAuth10aService service, OAuthIdentifyService identify, KaskSessionStore<OAuth1RequestToken> sessionStore) {
         requestTokens = sessionStore;
         sessionKeyPrefix = config.sessionStoreKeyPrefix();
         wikiLogoutLink = config.wikiLogoutLink();
         successRedirect = config.successRedirect();
-        authToken = new TimeLimitedAccessToken(config.accessTokenSecret(), config.accessTokenDuration());
+        bannedUsernames = config.bannedUsernames();
+        authToken = new TimeLimitedAccessToken(config.accessTokenSecret(), config.accessTokenDuration(), bannedUsernames);
         this.service = service;
+        this.identify = identify;
     }
 
     @GET
@@ -118,12 +125,12 @@ public class OAuthProxyService {
             return status(FORBIDDEN).build();
         }
         requestTokens.invalidate(oauthToken);
-        // We don't actually need the access token, we aren't trying to do anything on behalf
-        // of the user. We still request it to trigger the flow that verifies oauthToken is valid.
-        // TODO: What we do need is a username to satisfy the requirement to allow blocking. The
-        // username can be requested with the access token at Special:OAuth/identity, but need to impl that.
-        service.getAccessToken(requestToken, oauthVerifier);
-        NewCookie cookie = sessionCookie(authToken.create(), SESSION_MAX_AGE);
+        OAuth1AccessToken accessToken = service.getAccessToken(requestToken, oauthVerifier);
+        String username = identify.getUsername(accessToken);
+        if (bannedUsernames.contains(username)) {
+            return status(FORBIDDEN).build();
+        }
+        NewCookie cookie = sessionCookie(authToken.create(username), SESSION_MAX_AGE);
         if (redirectUrl == null) {
             redirectUrl = successRedirect;
         }

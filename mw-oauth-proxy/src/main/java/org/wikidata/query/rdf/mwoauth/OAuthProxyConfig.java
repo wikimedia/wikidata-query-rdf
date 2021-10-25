@@ -1,6 +1,10 @@
 package org.wikidata.query.rdf.mwoauth;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletConfig;
 
@@ -19,6 +23,7 @@ public final class OAuthProxyConfig {
     static final String NICE_URL_BASE_PROPERTY = "niceUrlBase";
     static final String WIKI_LOGOUT_LINK_PROPERTY = "wikiLogoutLink";
     static final String SUCCESS_REDIRECT_PROPERTY = "successRedirect";
+    static final String BANNED_USERNAMES_CSV_PROPERTY = "bannedUsernamesCsv";
 
     static final String SESSION_STORE_HOSTNAME = "sessionStoreHostname";
     static final String SESSION_STORE_PORT = "sessionStorePort";
@@ -82,6 +87,13 @@ public final class OAuthProxyConfig {
         return loadStringParam(WIKI_LOGOUT_LINK_PROPERTY);
     }
 
+    public Set<String> bannedUsernames() {
+        String banned = loadStringParam(BANNED_USERNAMES_CSV_PROPERTY);
+        if (banned == null || banned.length() == 0) {
+            return Collections.emptySet();
+        }
+        return Arrays.stream(banned.split(",")).collect(Collectors.toSet());
+    }
 
     private String loadStringParam(String property) {
         return loadStringParam(property, null);

@@ -7,7 +7,9 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.Date;
+import java.util.Set;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,8 +29,15 @@ public class TimeLimitedAccessTokenUnitTest {
     @Test
     public void generatesValidToken() {
         TimeLimitedAccessToken model = buildModel(duration.getSeconds() - 1);
-        assertThat(isValid(model, model.create())).isTrue();
+        assertThat(isValid(model, model.create(""))).isTrue();
+    }
 
+    @Test
+    public void bannedUsernamesAreRejected() {
+        TimeLimitedAccessToken model = buildModel(
+            duration.getSeconds() - 1, Collections.singleton("banned"));
+        assertThat(isValid(model, model.create("not_banned"))).isTrue();
+        assertThat(isValid(model, model.create("banned"))).isFalse();
     }
 
     @Test
@@ -46,11 +55,15 @@ public class TimeLimitedAccessTokenUnitTest {
     @Test
     public void tokenInvalidatesAfterDuration() {
         TimeLimitedAccessToken model = buildModel(duration.getSeconds() + 1);
-        assertThat(isValid(model, model.create())).isFalse();
+        assertThat(isValid(model, model.create(""))).isFalse();
     }
 
     private TimeLimitedAccessToken buildModel(long verifyAtEpochSecond) {
-        return new TimeLimitedAccessToken(algo, timeControlledVerifier(verifyAtEpochSecond), duration, epoch);
+        return buildModel(verifyAtEpochSecond, Collections.emptySet());
+    }
+
+    private TimeLimitedAccessToken buildModel(long verifyAtEpochSecond, Set<String> bannedUsers) {
+        return new TimeLimitedAccessToken(algo, timeControlledVerifier(verifyAtEpochSecond), duration, bannedUsers, epoch);
     }
 
     private JWTVerifier timeControlledVerifier(long verifyAtEpochSecond) {
