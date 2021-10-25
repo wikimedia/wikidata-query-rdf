@@ -6,6 +6,11 @@ git_root="$(git rev-parse --show-toplevel)"
 
 export OAUTH_SUCCESS_REDIRECT
 
+if [ "${REBUILD_EVERYTHING}" = "yes" ]; then
+    REBUILD_OAUTH_WAR=yes
+    docker-compose down --rmi local
+fi
+
 if [ -z "${OAUTH_CONSUMER_KEY}" ]; then
     if [ ! -z "${OAUTH_CONSUMER_SECRET}" ]; then
         echo "Both OAUTH_CONSUMER_KEY and OAUTH_CONSUMER_SECRET must be set"
@@ -36,10 +41,10 @@ fi
 echo "Moving to $script_root"
 cd $script_root
 
-MW_OAUTH_VERSION=0.3.90
-MW_OAUTH_WAR="${MW_OAUTH_WAR:-../target/mw-oauth-proxy-${MW_OAUTH_VERSION}-SNAPSHOT.war}"
-if [ ! -f "${MW_OAUTH_WAR}" ]; then
-    echo "Didn't find war at ${MW_OAUTH_WAR}, triggering build"
+MW_OAUTH_VERSION="$(cd "${git_root}"; ./mvnw -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)"
+MW_OAUTH_WAR="${MW_OAUTH_WAR:-../target/mw-oauth-proxy-${MW_OAUTH_VERSION}.war}"
+if [ ! -f "${MW_OAUTH_WAR}" -o "${REBUILD_OAUTH_WAR}" = "yes" ]; then
+    echo "Triggering build"
     echo ${MW_OAUTH_WAR}
     pushd "${git_root}"
     sleep 5
@@ -47,7 +52,7 @@ if [ ! -f "${MW_OAUTH_WAR}" ]; then
     popd
 fi
 if [ ! -f "${MW_OAUTH_WAR}" ]; then
-    echo "Couldn't locate mw-oauth-proxy WAR"
+    echo "Couldn't locate mw-oauth-proxy WAR at: ${MW_OAUTH_WAR}"
     exit 1
 fi
 

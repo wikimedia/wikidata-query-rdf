@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 
 
 BASE_URL = 'http://localhost:8083/index.php'
-CALLBACK_URL = 'http://localhost:8080/oauth/oauth_verify', # TODO: inject
+CALLBACK_URL = 'http://localhost:8082/_oauth_token_verify', # TODO: inject
 USERNAME = 'Admin'
 PASSWORD = 'adminpassword'
 
@@ -68,7 +68,7 @@ def propose_consumer(session):
         'wpversion': '1.0', # consume version
         'wpoauthVersion': '1', # protocol version
         'wpdescription': '...',
-        'wpcallbackUrl': 'http://localhost:8080/oauth/oauth_verify', # TODO: inject
+        'wpcallbackUrl': CALLBACK_URL,
         'wpemail':  default_params['wpemail'],
         'wpwiki': '*',
         'wpgranttype': 'authonly',
