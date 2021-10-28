@@ -97,7 +97,6 @@ public class QueryEventSenderFilter implements Filter {
             return e -> true; // /dev/null
         }
         return EventHttpSender.build(httpEndPoint, httpReadTimeout, httpConTimeout);
-
     }
 
     @Override

@@ -52,7 +52,7 @@ public final class EventTestUtils {
         params.put("param-name", "param-value");
         return new QueryEvent(newEventMetadata(id), newEventHttpMetadata(), "backend_host",
                 "namespace", "select ...", "json", params, Duration.ofMillis(100),
-                new SystemRuntimeMetrics(2, 1, 1d));
+                new SystemRuntimeMetrics(2, 1, 1d), null);
     }
 
     private static EventHttpMetadata newEventHttpMetadata() {

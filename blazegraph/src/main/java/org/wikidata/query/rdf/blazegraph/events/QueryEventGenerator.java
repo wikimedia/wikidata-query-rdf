@@ -76,6 +76,10 @@ public class QueryEventGenerator {
         if (namespace == null) {
             namespace = defaultNamespace;
         }
+        EventPerformer performer = null;
+        if (request.getRemoteUser() != null) {
+            performer = new EventPerformer(request.getRemoteUser());
+        }
 
         return new QueryEvent(metadata,
                 httpMetadata,
@@ -85,7 +89,8 @@ public class QueryEventGenerator {
                 format,
                 extractRequestParams(request),
                 duration,
-                new SystemRuntimeMetrics(queriesRunningBefore, queriesRunningAfter, systemLoadSupplier.get()));
+                new SystemRuntimeMetrics(queriesRunningBefore, queriesRunningAfter, systemLoadSupplier.get()),
+                performer);
     }
 
     private EventMetadata generateEventMetadata(HttpServletRequest request, Instant queryStartTime) {

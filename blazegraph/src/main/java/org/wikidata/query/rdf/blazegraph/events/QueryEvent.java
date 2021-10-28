@@ -14,9 +14,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 /**
  * Event describing a sparql query.
  *
- * https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/event-schemas/+/master/jsonschema/sparql/query/1.0.0.yaml
+ * https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/event-schemas/+/master/jsonschema/sparql/query/1.2.0.yaml
  */
-@JsonPropertyOrder({"$schema", "meta", "http", "backend_host", "namespace", "query", "format", "params", "query_time", "system_runtime_metrics"})
+@JsonPropertyOrder({"$schema", "meta", "http", "backend_host", "namespace", "query", "format", "params", "query_time", "system_runtime_metrics", "performer"})
 public class QueryEvent implements Event {
     private static final String SCHEMA = "/sparql/query/1.1.0";
     private final EventMetadata metadata;
@@ -28,9 +28,11 @@ public class QueryEvent implements Event {
     private final Map<String, String> params;
     private final Duration queryTime;
     private final SystemRuntimeMetrics systemRuntimeMetrics;
+    private final EventPerformer performer;
 
     public QueryEvent(EventMetadata metadata, EventHttpMetadata http, String backendHost, String namespace, String query,
-                      @Nullable String format, Map<String, String> params, Duration queryTime, SystemRuntimeMetrics systemRuntimeMetrics) {
+                      @Nullable String format, Map<String, String> params, Duration queryTime, SystemRuntimeMetrics systemRuntimeMetrics,
+                      @Nullable EventPerformer performer) {
         this.metadata = metadata;
         this.httpMetadata = http;
         this.backendHost = backendHost;
@@ -40,6 +42,7 @@ public class QueryEvent implements Event {
         this.params = params;
         this.queryTime = queryTime;
         this.systemRuntimeMetrics = systemRuntimeMetrics;
+        this.performer = performer;
     }
 
     public EventMetadata getMetadata() {
@@ -88,4 +91,8 @@ public class QueryEvent implements Event {
         return systemRuntimeMetrics;
     }
 
+    @JsonInclude(NON_NULL)
+    public EventPerformer getPerformer() {
+        return performer;
+    }
 }

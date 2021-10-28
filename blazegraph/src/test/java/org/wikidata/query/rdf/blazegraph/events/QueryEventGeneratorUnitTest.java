@@ -30,6 +30,7 @@ public class QueryEventGeneratorUnitTest {
         String clientIp = "10.1.2.3";
         String method = "POST";
         String defaultNS = "defaultNS";
+        String username = "the_user";
         int statusCode = 200;
         int queriesRunningBefore = 3;
         int queriesRunningAfter = 1;
@@ -54,6 +55,7 @@ public class QueryEventGeneratorUnitTest {
         request.setContextPath(contextPath);
         request.setRemoteAddr(clientIp);
         request.setServerName(hostname);
+        request.setRemoteUser(username);
 
         QueryEventGenerator generator = new QueryEventGenerator(uniqueIdGenerator, clock, hostname, "mystream.name", SYSTEM_LOAD_SUPPLIER);
         assertThat(generator.instant()).isEqualTo(Instant.EPOCH);
@@ -78,6 +80,7 @@ public class QueryEventGeneratorUnitTest {
         assertThat(event.getHttpMetadata().hasCookies()).isTrue();
         assertThat(event.getHttpMetadata().getStatusCode()).isEqualTo(statusCode);
         assertThat(event.getSystemRuntimeMetrics()).isEqualTo(systemRuntimeMetrics);
+        assertThat(event.getPerformer().getUserText()).isEqualTo(username);
         request.setRequestURI(contextPath + "/sparql");
         QueryEvent eventDefaultNS = generator.generateQueryEvent(request, statusCode, Duration.ofSeconds(1),
                 Instant.EPOCH, defaultNS, queriesRunningBefore, queriesRunningAfter);
