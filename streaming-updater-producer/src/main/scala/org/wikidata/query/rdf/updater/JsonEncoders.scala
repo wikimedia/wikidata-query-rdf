@@ -1,13 +1,14 @@
 package org.wikidata.query.rdf.updater
 
 import java.util.function.Consumer
+import java.util.UUID
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException.Type
 import org.wikimedia.eventutilities.core.event.JsonEventGenerator
 
-class JsonEncoders(sideOutputDomain: String) {
+class JsonEncoders(sideOutputDomain: String, uidGenerator: () => String = () => UUID.randomUUID().toString)  {
   def lapsedActionEvent(inputEvent: InputEvent): Consumer[ObjectNode] = {
     new Consumer[ObjectNode] {
       override def accept(root: ObjectNode): Unit = {
@@ -55,6 +56,7 @@ class JsonEncoders(sideOutputDomain: String) {
   private def basicEventData(basicEventData: BasicEventData, root: ObjectNode): Unit = {
     val meta = root.putObject(JsonEventGenerator.META_FIELD)
     meta.put("domain", sideOutputDomain)
+    meta.put("id", uidGenerator())
 
     root.put("item", basicEventData.item)
     root.put("original_ingestion_dt", basicEventData.ingestionTime.toString)

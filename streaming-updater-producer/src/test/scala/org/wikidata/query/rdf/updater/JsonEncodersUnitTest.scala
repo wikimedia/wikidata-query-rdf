@@ -20,6 +20,7 @@ import org.wikimedia.eventutilities.core.util.ResourceLoader
 
 class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerator {
   private val item: String = "Q1"
+  private val uniqueId: String = UUID.randomUUID().toString
   private val revision: Long = 123
   private val fromRevision: Long = 122
   private val eventTime: Instant = Instant.now().minus(Duration.ofHours(2))
@@ -58,7 +59,7 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
   private val sideOutputDomain = "sideOutputDomain"
   private val eventStreamConfigEndpoint = WikimediaDefaults.EVENT_STREAM_CONFIG_URI
   private val httpClientConfig = HttpClientConfig(httpRoutes = None, httpTimeout = None, HttpClientUtils.WDQS_DEFAULT_UA)
-  private val jsonEncoder = new JsonEncoders(sideOutputDomain)
+  private val jsonEncoder = new JsonEncoders(sideOutputDomain, () => uniqueId)
 
   "RevCreateEvent" should "be encoded properly as a json record" in {
     val inputEvent = RevCreate(item, eventTime, revision, Some(revision-1), ingestionTime, eventInfo)
@@ -209,6 +210,7 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
   def assertNewMetadata(v: Any, newStream: String): Unit = {
     v match {
       case value: util.Map[_, _] =>
+        value.get("id") shouldBe uniqueId
         value.get("dt") shouldBe processingTime.toString
         value.get("stream") shouldBe newStream
         value.get("domain") shouldBe sideOutputDomain
