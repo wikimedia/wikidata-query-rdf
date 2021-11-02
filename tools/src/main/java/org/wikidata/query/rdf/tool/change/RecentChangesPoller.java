@@ -346,6 +346,10 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             // Does not matter if the change matters for us or not, it
             // still advances the time since we've seen it.
             nextStartTime = Utils.max(nextStartTime, rc.getTimestamp());
+            if (rc.getNs() == null) {
+                log.warn("Skipping change without a namespace:  {}", rc);
+                continue;
+            }
             if (!wikibase.isEntityNamespace(rc.getNs())) {
                 log.info("Skipping change in irrelevant namespace:  {}", rc);
                 continue;
