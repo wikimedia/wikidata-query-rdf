@@ -8,7 +8,6 @@ import scala.collection.JavaConverters.seqAsJavaListConverter
 
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.flink.api.common.state.{ListState, ValueState}
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.configuration.Configuration

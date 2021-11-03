@@ -28,7 +28,7 @@ public class WikibaseUrisVocabularyDecl extends BaseVocabularyDecl {
          * IntegerSuffixInlineUriHandler which is required so we can
          * store entities as unsigned integers.
          */
-        uris.entityInitials().forEach(s -> uriList.add(uris.entityIdToURI(s)));
+        uris.inlinableEntityInitials().forEach(s -> uriList.add(uris.entityIdToURI(s)));
         uriList.add(uris.statement());
         uriList.add(uris.reference());
         uriList.add(uris.value());

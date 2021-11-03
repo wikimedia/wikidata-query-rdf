@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.updater.config
 
+import java.net.URI
 import java.nio.file.{Files, Paths}
 
 import org.apache.flink.api.java.utils.ParameterTool
@@ -41,6 +42,10 @@ class BaseConfig(protected implicit val params: ParameterTool) {
     } else {
       None
     }
+  }
+
+  def optionalUriArg(paramName: String)(implicit params: ParameterTool): Option[URI] = {
+    optionalStringArg(paramName).map(URI.create)
   }
 }
 

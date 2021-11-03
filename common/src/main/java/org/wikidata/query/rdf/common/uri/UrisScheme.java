@@ -60,8 +60,10 @@ public interface UrisScheme extends Serializable {
 
     /**
      * Get the list of letters that can start entities.
+     * NOTE: this is not the exhaustive list of initials that may appear but the initials for which
+     * blazegraph can do URI inlining. In other words, this methods should not be used for other purposes
      */
-    Collection<String> entityInitials();
+    Collection<String> inlinableEntityInitials();
 
     /**
      * Prefix wikibase uses for statements.
@@ -97,6 +99,4 @@ public interface UrisScheme extends Serializable {
     String wellKnownBNodeIRIPrefix();
 
     boolean supportsUri(String uri);
-
-    boolean supportsInitial(String entityId);
 }

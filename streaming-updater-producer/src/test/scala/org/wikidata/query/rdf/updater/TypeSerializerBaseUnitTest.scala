@@ -53,7 +53,7 @@ class TypeSerializerBaseUnitTest extends FlatSpec with Matchers {
     myTypeInfo == InstantiationUtil.clone(myTypeInfo) shouldBe true
     myTypeInfo.hashCode shouldEqual InstantiationUtil.clone(myTypeInfo).hashCode
     val serHelper = new SerializerHelper(1)
-    serHelper.equals(InstantiationUtil.clone(serHelper)) shouldBe true
+    serHelper shouldEqual InstantiationUtil.clone(serHelper)
     serHelper.hashCode shouldEqual InstantiationUtil.clone(serHelper).hashCode
   }
 

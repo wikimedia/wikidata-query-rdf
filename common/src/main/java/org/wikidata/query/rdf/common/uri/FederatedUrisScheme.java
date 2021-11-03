@@ -29,7 +29,7 @@ public class FederatedUrisScheme implements UrisScheme {
      *
      * Operations are done on those URIs first if supported.
      */
-    private final UrisScheme mainUris;
+    private final DefaultUrisScheme mainUris;
 
     /**
      * Federated (Wikidata) URI scheme.
@@ -41,7 +41,7 @@ public class FederatedUrisScheme implements UrisScheme {
     private final Map<String, String> entityPrefixes;
     private final List<String> entityInitials;
 
-    public FederatedUrisScheme(UrisScheme mainUris, UrisScheme federatedUris) {
+    public FederatedUrisScheme(DefaultUrisScheme mainUris, UrisScheme federatedUris) {
         this.mainUris = mainUris;
         this.federatedUris = federatedUris;
         entityURIs = ImmutableList.<String>builder()
@@ -53,8 +53,8 @@ public class FederatedUrisScheme implements UrisScheme {
                 .putAll(mainUris.entityPrefixes())
                 .build();
         entityInitials = ImmutableList.<String>builder()
-                .addAll(federatedUris.entityInitials())
-                .addAll(mainUris.entityInitials())
+                .addAll(federatedUris.inlinableEntityInitials())
+                .addAll(mainUris.inlinableEntityInitials())
                 .build();
     }
 
@@ -80,8 +80,13 @@ public class FederatedUrisScheme implements UrisScheme {
 
     @Override
     public String entityIdToURI(String entityId) {
-        if (mainUris.supportsInitial(entityId)) {
-            return mainUris.entityIdToURI(entityId);
+        // FIXME: this is really fragile as entityInitials should only be used to detect inlinable URIs in blazegraph
+        // Here we assume that mainUris always provides entityInitials that are "inline-able" by blazegraph.
+        // By chance this only used by commons where MediaInfo entities are inline-able
+        for (String initial : mainUris.inlinableEntityInitials()) {
+            if (entityId.startsWith(initial)) {
+                return mainUris.entityIdToURI(entityId);
+            }
         }
         return federatedUris.entityIdToURI(entityId);
     }
@@ -113,7 +118,7 @@ public class FederatedUrisScheme implements UrisScheme {
     }
 
     @Override
-    public Collection<String> entityInitials() {
+    public Collection<String> inlinableEntityInitials() {
         return entityInitials;
     }
 
@@ -149,10 +154,5 @@ public class FederatedUrisScheme implements UrisScheme {
     @Override
     public boolean supportsUri(String uri) {
         return mainUris.supportsUri(uri) || federatedUris.supportsUri(uri);
-    }
-
-    @Override
-    public boolean supportsInitial(String entityId) {
-        return mainUris.supportsUri(entityId) || federatedUris.supportsUri(entityId);
     }
 }

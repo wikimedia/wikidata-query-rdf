@@ -47,11 +47,11 @@ public final class UrisConstants {
     /**
      * Configuration for wikibase host.
      */
-    static final String WIKIBASE_CONCEPT_URI = "wikibaseConceptUri";
+    static final String WIKIBASE_CONCEPT_URI_PROPERTY = "wikibaseConceptUri";
     /**
      * Configuration for Commons URI sceme - for SDC.
      */
-    static final String COMMONS_CONCEPT_URI = "commonsConceptUri";
+    static final String COMMONS_CONCEPT_URI_PROPERTY = "commonsConceptUri";
 
     private UrisConstants() {
         // Should never be constructed

@@ -73,7 +73,7 @@ public class FederatedUrisSchemeUnitTest {
 
     @Test
     public void entityInitials() {
-        assertThat(uris.entityInitials()).contains("Q", "P", "M");
+        assertThat(uris.inlinableEntityInitials()).contains("Q", "P", "M");
     }
 
     @Test

@@ -1,0 +1,87 @@
+package org.wikidata.query.rdf.updater.config
+
+import org.apache.flink.streaming.api.CheckpointingMode
+import org.scalatest.{FlatSpec, Matchers}
+import org.wikidata.query.rdf.tool.HttpClientUtils
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
+
+class UpdaterConfigUnitTest extends FlatSpec with Matchers {
+  private val baseConfig = Array(
+      "--job_name", "my job",
+      "--checkpoint_dir", "fs://my_checkpoint",
+      "--brokers", "broker1,broker2",
+      "--output_topic", "my.output-topic",
+      "--output_topic_partition", "1",
+      "--entity_namespaces", "0,120",
+      "--rev_create_topic", "mediawiki.revision-create",
+      "--page_delete_topic", "mediawiki.page-delete",
+      "--suppressed_delete_topic", "mediawiki.page-suppress",
+      "--page_undelete_topic", "mediawiki.page-undelete",
+      "--consumer_group", "my_consumer_group"
+    )
+
+  "UpdaterConfig" should "build a config when passing minimal arguments" in {
+    val config = UpdaterConfig(baseConfig ++ Array(
+      "--hostname", "my.wikidata.org",
+      "--uris_scheme", "wikidata"
+    ))
+
+    config.entityNamespaces should contain only (0, 120)
+    config.mediaInfoEntityNamespaces shouldBe empty
+    config.inputKafkaBrokers shouldBe "broker1,broker2"
+    config.outputPartition shouldBe 1
+    config.outputTopic shouldBe "my.output-topic"
+    config.checkpointingMode shouldBe CheckpointingMode.EXACTLY_ONCE
+    config.checkpointDir shouldBe "fs://my_checkpoint"
+
+    config.environmentConfig.checkpointDir shouldBe "fs://my_checkpoint"
+    config.environmentConfig.checkpointingMode shouldBe CheckpointingMode.EXACTLY_ONCE
+    config.environmentConfig.parallelism shouldBe 1
+
+    config.inputEventStreamConfig.mediaInfoEntityNamespaces shouldBe empty
+    config.inputEventStreamConfig.consumerGroup shouldBe "my_consumer_group"
+    config.inputEventStreamConfig.kafkaBrokers shouldBe "broker1,broker2"
+    config.inputEventStreamConfig.idleness shouldBe 60000
+    config.inputEventStreamConfig.maxLateness shouldBe 60000
+    config.inputEventStreamConfig.inputKafkaTopics shouldBe InputKafkaTopics(
+      revisionCreateTopicName = "mediawiki.revision-create",
+      pageDeleteTopicName = "mediawiki.page-delete",
+      pageUndeleteTopicName = "mediawiki.page-undelete",
+      suppressedDeleteTopicName = "mediawiki.page-suppress",
+      topicPrefixes = List("")
+    )
+
+    config.generalConfig.jobName shouldBe "my job"
+    config.generalConfig.hostname shouldBe "my.wikidata.org"
+    config.generalConfig.entityDataPath shouldBe WikibaseRepository.Uris.DEFAULT_ENTITY_DATA_PATH
+    config.generalConfig.entityNamespaces should contain only(0, 120)
+    config.generalConfig.useVersionedSerializers shouldBe false
+    config.generalConfig.generateDiffTimeout shouldBe 300000
+    config.generalConfig.outputOperatorNameAndUuid shouldBe "my.output-topic:1"
+    config.generalConfig.reorderingWindowLengthMs shouldBe 60000
+    config.generalConfig.wikibaseRepoThreadPoolSize shouldBe 30
+    config.generalConfig.urisScheme.entityData() shouldBe "http://my.wikidata.org/wiki/Special:EntityData/"
+    config.generalConfig.urisScheme.entityIdToURI("Q123") shouldBe "http://my.wikidata.org/entity/Q123"
+
+    config.generalConfig.httpClientConfig.httpRoutes shouldBe None
+    config.generalConfig.httpClientConfig.httpTimeout shouldBe None
+    config.generalConfig.httpClientConfig.userAgent shouldBe HttpClientUtils.WDQS_DEFAULT_UA
+  }
+
+  "UpdaterConfig" should "build a config suited for commons with wikidata federation" in {
+    val config = UpdaterConfig(baseConfig ++ Array(
+      "--hostname", "my-commons.wikimedia.org",
+      "--mediainfo_entity_namespaces", "6",
+      "--uris_scheme", "commons",
+      "--wikidata_concept_uri", "https://my.wikidata.org"
+    ))
+
+    config.generalConfig.entityNamespaces should contain only(0, 120, 6)
+    config.entityNamespaces should contain only(0, 120)
+    config.mediaInfoEntityNamespaces should contain only(6)
+    config.inputEventStreamConfig.mediaInfoEntityNamespaces should contain only(6)
+    config.generalConfig.urisScheme.entityData() shouldBe "https://my-commons.wikimedia.org/wiki/Special:EntityData/"
+    config.generalConfig.urisScheme.entityIdToURI("Q123") shouldBe "https://my.wikidata.org/entity/Q123"
+    config.generalConfig.urisScheme.entityIdToURI("M123") shouldBe "https://my-commons.wikimedia.org/entity/M123"
+  }
+}

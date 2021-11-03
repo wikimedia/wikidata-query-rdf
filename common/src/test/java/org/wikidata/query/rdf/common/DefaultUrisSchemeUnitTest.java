@@ -69,7 +69,7 @@ public class DefaultUrisSchemeUnitTest {
     public void initialsOrder() throws URISyntaxException {
         UrisScheme uris = new DefaultUrisScheme(new URI("https://acme2.test"), WIKIBASE_ENTITY_PREFIX, WIKIBASE_ENTITY_DATA_PREFIX, WIKIBASE_INITIALS);
         // See https://phabricator.wikimedia.org/T230588 for reasons for this order
-        assertThat(uris.entityInitials()).containsExactly("P", "Q");
+        assertThat(uris.inlinableEntityInitials()).containsExactly("P", "Q");
     }
 
     @Test

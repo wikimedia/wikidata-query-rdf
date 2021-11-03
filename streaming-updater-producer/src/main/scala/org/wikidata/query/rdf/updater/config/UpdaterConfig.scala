@@ -5,7 +5,7 @@ import scala.language.{implicitConversions, postfixOps}
 
 import org.apache.flink.api.common.time.Time
 import org.apache.flink.streaming.api.CheckpointingMode
-import org.wikidata.query.rdf.common.uri.{UrisScheme, UrisSchemeFactory}
+import org.wikidata.query.rdf.common.uri.{FederatedUrisScheme, UrisScheme, UrisSchemeFactory}
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikimedia.eventutilities.core.event.WikimediaDefaults
@@ -17,8 +17,8 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
   val outputKafkaBrokers: String = params.get("output_brokers", inputKafkaBrokers)
   val outputTopic: String = getStringParam("output_topic")
   val outputPartition: Int = params.getInt("output_topic_partition")
-  val entityNamespaces: Set[Long] = params.get("entity_namespaces", "").split(",").map(_.trim.toLong).toSet
-  val mediaInfoEntityNamespaces: Set[Long] = params.get("mediainfo_entity_namespaces", "").split(",").map(_.trim.toLong).toSet
+  val entityNamespaces: Set[Long] = params.get("entity_namespaces", "").split(",").map(_.trim).filterNot(_.isEmpty).map(_.toLong).toSet
+  val mediaInfoEntityNamespaces: Set[Long] = params.get("mediainfo_entity_namespaces", "").split(",").map(_.trim).filterNot(_.isEmpty).map(_.toLong).toSet
   val entityDataPath: String = params.get("wikibase_entitydata_path", Uris.DEFAULT_ENTITY_DATA_PATH)
   val useVersionedSerializers: Boolean = params.getBoolean("use_versioned_serializers", false)
   if (entityNamespaces.isEmpty && mediaInfoEntityNamespaces.isEmpty) {
@@ -42,20 +42,23 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       userAgent = params.get("user_agent", HttpClientUtils.WDQS_DEFAULT_UA)
     ),
     useVersionedSerializers = useVersionedSerializers,
-    urisScheme = params.get("uris_scheme") match {
-      case "commons" => UrisSchemeFactory.COMMONS
-      case "wikidata" => UrisSchemeFactory.WIKIDATA
-      case _ => throw new IllegalArgumentException("Unknown uris_scheme: " + params.get("uris_scheme"))
+    urisScheme = getStringParam("uris_scheme") match {
+      case "commons" =>
+        new FederatedUrisScheme(
+          UrisSchemeFactory.forCommons(optionalUriArg("commons_concept_uri").getOrElse(UrisSchemeFactory.commonsUri(hostName))),
+          UrisSchemeFactory.forWikidata(optionalUriArg("wikidata_concept_uri").getOrElse(UrisSchemeFactory.wikidataUri(UrisSchemeFactory.WIKIDATA_HOSTNAME))))
+      case "wikidata" =>
+        UrisSchemeFactory.forWikidata(optionalUriArg("wikidata_concept_uri").getOrElse(UrisSchemeFactory.wikidataUri(hostName)))
+      case scheme: Any => throw new IllegalArgumentException(s"Unknown uris_scheme: $scheme")
     }
   )
 
   val inputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
     inputKafkaTopics = getInputKafkaTopics,
-    consumerGroup = params.get("consumer_group", "wdqs_streaming_updater"),
+    consumerGroup = getStringParam("consumer_group"),
     maxLateness = params.getInt("max_lateness", 1 minute),
     idleness = params.getInt("input_idleness", 1 minute),
-    mediaInfoEntityNamespaces = params.get("mediainfo_entity_namespaces", "3,5,6")
-      .split(',').map(_.toLong).toSet
+    mediaInfoEntityNamespaces = mediaInfoEntityNamespaces
   )
 
   val environmentConfig: UpdaterExecutionEnvironmentConfig = UpdaterExecutionEnvironmentConfig(checkpointDir = checkpointDir,

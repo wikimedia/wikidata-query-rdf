@@ -39,7 +39,7 @@ public class WikibaseInlineUriFactory extends InlineURIFactory {
         for (PropertyType p: PropertyType.values()) {
             addHandler(new InlineUnsignedIntegerURIHandler(uris.property(p) + "P"));
         }
-        uris.entityInitials().forEach(s -> addHandler(new InlineUnsignedIntegerURIHandler(uris.entityIdToURI(s))));
+        uris.inlinableEntityInitials().forEach(s -> addHandler(new InlineUnsignedIntegerURIHandler(uris.entityIdToURI(s))));
         // Lexemes TODO: can't really do it because of Forms: L1-F1
 
         /*

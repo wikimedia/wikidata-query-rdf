@@ -174,7 +174,7 @@ public class DefaultUrisScheme implements UrisScheme {
     }
 
     @Override
-    public List<String> entityInitials() {
+    public List<String> inlinableEntityInitials() {
         return initials;
     }
 
@@ -212,15 +212,4 @@ public class DefaultUrisScheme implements UrisScheme {
     public boolean supportsUri(String uri) {
         return uri.startsWith(root());
     }
-
-    @Override
-    public boolean supportsInitial(String entityId) {
-        for (String initial : entityInitials()) {
-            if (entityId.startsWith(initial)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
 }
