@@ -1,12 +1,13 @@
 package org.wikidata.query.rdf.common.uri;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
-public interface UrisScheme {
+public interface UrisScheme extends Serializable {
     /**
      * Add the prefixes for all related uris.
      */
