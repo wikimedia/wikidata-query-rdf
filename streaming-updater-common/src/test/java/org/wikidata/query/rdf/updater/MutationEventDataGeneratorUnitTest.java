@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.updater;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -44,6 +45,23 @@ public class MutationEventDataGeneratorUnitTest {
                 null,
                 chunk(linkedData),
                 null));
+    }
+
+    @Test
+    public void testSimpleReconciliation() {
+        MutationEventDataGenerator eventDataGenerator = buildEventGenerator(Integer.MAX_VALUE);
+        EventsMeta meta = EventMetaUtil.makeEventMeta();
+        Instant eventTime = Instant.EPOCH;
+        List<Statement> stmts = asList(statement("uri:a", "uri:b", "uri:c"),
+                statement("uri:x", "uri:y", "uri:z"));
+
+        List<MutationEventData> events = eventDataGenerator.reconcile(() -> meta, "Q123", 123L, eventTime, stmts);
+        assertThat(events).containsExactly(new DiffEventData(meta, "Q123", 123L, eventTime, 0, 1, MutationEventData.RECONCILE_OPERATION,
+                chunk(stmts),
+                null,
+                null,
+                null));
+
     }
 
     @Test

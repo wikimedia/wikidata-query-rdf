@@ -24,6 +24,7 @@ import lombok.experimental.NonFinal;
 @JsonSubTypes({
         @JsonSubTypes.Type(value = DiffEventData.class, name = "diff"),
         @JsonSubTypes.Type(value = DiffEventData.class, name = "import"),
+        @JsonSubTypes.Type(value = DiffEventData.class, name = "reconcile"),
         @JsonSubTypes.Type(value = MutationEventData.class, name = "delete"),
 })
 @Value
@@ -42,6 +43,7 @@ public class MutationEventData implements Serializable {
     public static final String DIFF_OPERATION = "diff";
     public static final String IMPORT_OPERATION = "import";
     public static final String DELETE_OPERATION = "delete";
+    public static final String RECONCILE_OPERATION = "reconcile";
     private static final String SCHEMA = "/wikibase/rdf/update_stream/1.0.0";
 
     @JsonProperty("$schema")

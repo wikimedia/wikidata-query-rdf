@@ -32,6 +32,12 @@ public class MutationEventDataGenerator {
                 emptyList(), linkedValuesAndRefs, emptyList());
     }
 
+    public List<MutationEventData> reconcile(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
+                                                   List<Statement> statements) {
+        return createChunks(meta, entity, revision, eventTime, MutationEventData.RECONCILE_OPERATION, statements,
+                emptyList(), emptyList(), emptyList());
+    }
+
     public List<MutationEventData> diffEvent(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
                                          List<Statement> added, List<Statement> deleted,
                                          List<Statement> linkedValuesAndRefs, List<Statement> unlinkedValuesAndRefs) {
