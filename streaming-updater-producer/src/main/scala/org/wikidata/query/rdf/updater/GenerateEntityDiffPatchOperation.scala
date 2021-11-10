@@ -3,9 +3,11 @@ package org.wikidata.query.rdf.updater
 import java.util
 import java.util.Collections.emptyList
 import java.util.concurrent.Executors
+import java.util.{Timer, TimerTask}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.{Failure, Success}
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
@@ -37,7 +39,9 @@ case class GenerateEntityDiffPatchOperation(
                                              scheme: UrisScheme,
                                              wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
                                              mungeOperationProvider: UrisScheme => (String, util.Collection[Statement]) => Long = mungerOperationProvider,
-                                             poolSize: Int = 10
+                                             poolSize: Int = 10,
+                                             fetchAttempts: Int = 4,
+                                             fetchRetryDelay: FiniteDuration = 1.seconds
                                            )
   extends RichAsyncFunction[MutationOperation, ResolvedOp] {
 
@@ -77,22 +81,21 @@ case class GenerateEntityDiffPatchOperation(
     }
   }
 
-  private def fetchAsync(item: String, revision: Long): Future[Iterable[Statement]] = {
-    @scala.annotation.tailrec
-    def retryableFetch(attempt: Int = 1, maxAttempt: Int = 4): Iterable[Statement] = {
-      try {
-        repository.getEntityByRevision(item, revision)
-      } catch {
-        case exception: RetryableException =>
-          if (attempt >= maxAttempt) {
-            throw new ContainedException(s"Cannot fetch entity $item revision $revision failed $maxAttempt times, abandoning.")
-          } else {
-            LOG.warn(s"Exception thrown fetching $item, $revision, retrying ($attempt/$maxAttempt): ${exception.getMessage}.")
-            retryableFetch(attempt + 1, maxAttempt)
-          }
+  private def isRetryable(attempts: Int, t: Throwable): Boolean = t match {
+    case _: RetryableException => attempts < fetchAttempts
+    case _ => false
+  }
+
+  private def fetchAsync(item: String, revision: Long, isRecent: Boolean = false): Future[Iterable[Statement]] = {
+    RetryingFuture(fetchRetryDelay, isRetryable) {
+      repository.getEntityByRevision(item, revision)
+    } recoverWith {
+      case e: FailedRetryException => e.getCause match {
+        case cause: RetryableException => Future.failed(
+          new ContainedException(s"Cannot fetch entity $item revision $revision failed ${e.attempts} times, abandoning.", cause))
+        case cause: Throwable => Future.failed(cause)
       }
     }
-    Future { retryableFetch() }
   }
 
   private def getDiff(item: String, revision: Long, fromRev: Long): Future[Patch] = {
@@ -145,6 +148,27 @@ case class GenerateEntityDiffPatchOperation(
 
     diff.diff(emptyList(), toList)
   }
+
+  object RetryingFuture {
+    private val timer = new Timer(true)
+
+    private def after[T](delay: FiniteDuration)(op: => Future[T]): Future[T] = {
+      val promise: Promise[T] = Promise()
+      timer.schedule(new TimerTask {
+        override def run(): Unit = promise completeWith op
+      }, delay.toMillis)
+      promise.future
+    }
+
+    def apply[T](delay: FiniteDuration, canRetry: (Int, Throwable) => Boolean)(op: => T): Future[T] = {
+      def attempt(attempts: Int): Future[T] =
+        Future(op) recoverWith {
+          case e: Throwable if canRetry(attempts, e) => after(delay)(attempt(attempts + 1))
+          case e: Throwable => Future.failed(new FailedRetryException(attempts, e))
+        }
+      attempt(1)
+    }
+  }
 }
 
 object GenerateEntityDiffPatchOperation {
@@ -171,4 +195,6 @@ sealed class RouteFailedOpsToSideOutput(ignoredEventTag: OutputTag[FailedOp] = R
 object RouteFailedOpsToSideOutput {
   val FAILED_OPS_TAG: OutputTag[FailedOp] = new OutputTag[FailedOp]("failed-ops-events")
 }
+
+class FailedRetryException(val attempts: Int, cause: Throwable) extends RuntimeException(cause)
 

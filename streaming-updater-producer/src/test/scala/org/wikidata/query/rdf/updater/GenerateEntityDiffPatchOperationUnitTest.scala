@@ -4,6 +4,7 @@ import java.time.Instant
 import java.util.Collections.emptyList
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.DurationInt
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.operators.testutils.MockEnvironment
@@ -33,7 +34,8 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     val genDiff = GenerateEntityDiffPatchOperation(
       wikibaseRepositoryGenerator = _ => repoMock,
       scheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
-      mungeOperationProvider = _ => (_, _) => 1)
+      mungeOperationProvider = _ => (_, _) => 1,
+      fetchRetryDelay = 1.milliseconds)
 
     val operator: AsyncFunction[MutationOperation, ResolvedOp] = new AsyncFunction[MutationOperation, ResolvedOp] {
       override def asyncInvoke(input: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = genDiff.asyncInvoke(input,
