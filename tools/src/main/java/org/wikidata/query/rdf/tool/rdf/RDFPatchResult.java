@@ -9,4 +9,5 @@ public class RDFPatchResult {
     int possibleSharedElementMutations;
     int actualSharedElementsMutations;
     int deleteMutations;
+    int reconciliationMutations;
 }

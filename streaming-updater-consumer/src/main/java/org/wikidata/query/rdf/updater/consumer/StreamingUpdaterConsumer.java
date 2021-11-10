@@ -22,6 +22,7 @@ public class StreamingUpdaterConsumer implements Runnable {
     private final Counter redundantSharedEltTriplesCnt;
     private final Counter mutationsCnt;
     private final Counter deleteMutationsCnt;
+    private final Counter reconciliationMutationCnt;
     private final TimerCounter pollTimeCnt;
     private final TimerCounter rdfStoreTimeCnt;
     private final float inconsistencyWarningThreshold;
@@ -36,6 +37,7 @@ public class StreamingUpdaterConsumer implements Runnable {
         this.repository = repository;
         this.mutationsCnt = registry.counter("mutations");
         this.deleteMutationsCnt = registry.counter("delete-mutations");
+        this.reconciliationMutationCnt = registry.counter("reconciliation-mutations");
         this.divergencesCnt = registry.counter("divergences");
         this.actualSharedMutationsCnt = registry.counter("shared-element-mutations");
         this.redundantSharedEltTriplesCnt = registry.counter("shared-element-redundant-mutations");
@@ -88,6 +90,7 @@ public class StreamingUpdaterConsumer implements Runnable {
         actualSharedMutationsCnt.inc(result.getActualSharedElementsMutations());
         redundantSharedEltTriplesCnt.inc(result.getPossibleSharedElementMutations() - result.getActualSharedElementsMutations());
         deleteMutationsCnt.inc(result.getDeleteMutations());
+        reconciliationMutationCnt.inc(result.getReconciliationMutations());
     }
 
     public void close() {

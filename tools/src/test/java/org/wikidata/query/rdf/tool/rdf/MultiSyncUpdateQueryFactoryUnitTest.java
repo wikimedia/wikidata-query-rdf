@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -76,7 +77,7 @@ public class MultiSyncUpdateQueryFactoryUnitTest {
                 values,
                 refs,
                 newArrayList("lex1", "lex2"),
-                TIMESTAMP_PARAM
+                Optional.of(TIMESTAMP_PARAM)
         );
 
         assertThat(query).isEqualTo(expectedQuery);

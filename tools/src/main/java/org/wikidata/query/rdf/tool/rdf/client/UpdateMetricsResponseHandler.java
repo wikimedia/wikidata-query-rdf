@@ -28,8 +28,8 @@ public class UpdateMetricsResponseHandler implements ResponseHandler<CollectedUp
 
     private final List<MultiSyncStep> requiredSteps;
 
-    public UpdateMetricsResponseHandler(boolean cleanUpRefs, boolean cleanUpValues) {
-        requiredSteps = getRequiredSteps(cleanUpRefs, cleanUpValues);
+    public UpdateMetricsResponseHandler(boolean cleanUpRefs, boolean cleanUpValues, boolean withTimestamp) {
+        requiredSteps = getRequiredSteps(cleanUpRefs, cleanUpValues, withTimestamp);
     }
 
     @Override
@@ -75,10 +75,11 @@ public class UpdateMetricsResponseHandler implements ResponseHandler<CollectedUp
         return collectedUpdateMetrics;
     }
 
-    private List<MultiSyncStep> getRequiredSteps(boolean cleanUpRefs, boolean cleanUpValues) {
+    private List<MultiSyncStep> getRequiredSteps(boolean cleanUpRefs, boolean cleanUpValues, boolean withTimestamp) {
         List<MultiSyncStep> requiredSteps = new ArrayList<>(Arrays.asList(MultiSyncStep.values()));
         if (!cleanUpRefs) requiredSteps.remove(MultiSyncStep.CLEANUP_REFERENCES);
         if (!cleanUpValues) requiredSteps.remove(MultiSyncStep.CLEANUP_VALUES);
+        if (!withTimestamp) requiredSteps.remove(MultiSyncStep.ADD_TIMESTAMPS);
         return requiredSteps;
     }
 

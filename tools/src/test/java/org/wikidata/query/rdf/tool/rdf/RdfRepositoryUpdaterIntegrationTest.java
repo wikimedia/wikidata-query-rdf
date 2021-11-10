@@ -10,13 +10,21 @@ import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyPort;
 import static org.wikidata.query.rdf.tool.RdfRepositoryForTesting.url;
 import static org.wikidata.query.rdf.tool.Update.getRdfClientTimeout;
 
+import java.io.IOException;
 import java.net.URL;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
+import org.openrdf.model.Statement;
+import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.RDFParseException;
+import org.openrdf.rio.helpers.StatementCollector;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
@@ -30,6 +38,7 @@ public class RdfRepositoryUpdaterIntegrationTest {
 
     private final UrisScheme uris = UrisSchemeFactory.getURISystem();
     List<String> entityIdsToDelete = new ArrayList<>();
+    Map<String, Collection<Statement>> entitiesToReconcile = new HashMap<>();
 
     @Test
     public void testSimplePatch() {
@@ -43,14 +52,14 @@ public class RdfRepositoryUpdaterIntegrationTest {
 
         RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, uris);
         ConsumerPatch patch = new ConsumerPatch(statements("uri:b"), statements("uri:shared-0", "uri:shared-1"),
-                statements("uri:a", "uri:x"), statements("uri:ignored"), entityIdsToDelete);
+                statements("uri:a", "uri:x"), statements("uri:ignored"), entityIdsToDelete, entitiesToReconcile);
         Instant avgEventTime = Instant.EPOCH.plus(1, ChronoUnit.MINUTES);
         RDFPatchResult rdfPatchResult = rdfRepositoryUpdater.applyPatch(patch, avgEventTime);
         assertThat(rdfPatchResult.getActualMutations()).isEqualTo(2);
         assertThat(rdfPatchResult.getExpectedMutations()).isEqualTo(3);
         assertThat(rdfPatchResult.getActualSharedElementsMutations()).isEqualTo(2);
         assertThat(rdfPatchResult.getPossibleSharedElementMutations()).isEqualTo(3);
-        assertThat(rdfPatchResult.getDeleteMutations()).isEqualTo(0);
+        assertThat(rdfPatchResult.getDeleteMutations()).isZero();
         assertThat(client.ask("ask {<uri:a> <uri:a> <uri:a>}")).isFalse();
         assertThat(client.ask("ask {<uri:b> <uri:b> <uri:b>}")).isTrue();
         assertThat(client.ask("ask {<uri:shared-0> <uri:shared-0> <uri:shared-0>}")).isTrue();
@@ -63,23 +72,24 @@ public class RdfRepositoryUpdaterIntegrationTest {
         URL q513Location = getResource(RdfRepositoryUpdaterIntegrationTest.class,
                 RdfRepositoryUpdaterIntegrationTest.class.getSimpleName() + "." + "Q513-munged.ttl");
         Integer q513mutations = client.loadUrl(q513Location.toString());
-        assertThat(q513mutations).isGreaterThan(0);
+        assertThat(q513mutations).isPositive();
 
         URL q42Location = getResource(RdfRepositoryUpdaterIntegrationTest.class,
                 RdfRepositoryUpdaterIntegrationTest.class.getSimpleName() + "." + "Q42-munged.ttl");
         Integer q42Mutations = client.loadUrl(q42Location.toString());
-        assertThat(q42Mutations).isGreaterThan(0);
+        assertThat(q42Mutations).isPositive();
 
         RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, uris);
         entityIdsToDelete.add("Q513");
-        ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(), entityIdsToDelete);
+        ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(),
+                entityIdsToDelete, entitiesToReconcile);
         Instant avgEventTime = Instant.EPOCH.plus(2, ChronoUnit.MINUTES);
         RDFPatchResult rdfPatchResult = rdfRepositoryUpdater.applyPatch(patch, avgEventTime);
 
-        assertThat(rdfPatchResult.getActualMutations()).isEqualTo(0);
-        assertThat(rdfPatchResult.getExpectedMutations()).isEqualTo(0);
+        assertThat(rdfPatchResult.getActualMutations()).isZero();
+        assertThat(rdfPatchResult.getExpectedMutations()).isZero();
         assertThat(rdfPatchResult.getActualSharedElementsMutations()).isEqualTo(2);
-        assertThat(rdfPatchResult.getPossibleSharedElementMutations()).isEqualTo(1);
+        assertThat(rdfPatchResult.getPossibleSharedElementMutations()).isOne();
         assertThat(rdfPatchResult.getDeleteMutations()).isEqualTo(1880);
 
         assertThat(client.ask("ask { ?x <http://schema.org/about> <http://www.wikidata.org/entity/Q42>}")).isTrue();
@@ -92,5 +102,46 @@ public class RdfRepositoryUpdaterIntegrationTest {
         assertThat(client.ask("ask { <https://en.wikipedia.org/> wikibase:wikiGroup \"wikipedia\"}")).isTrue();
         assertThat(client.ask("ask { <https://en.wikipedia.org/wiki/Douglas_Adams> ?x ?y}")).isTrue();
         assertThat(client.ask("ask {<" + uris.root() + "> schema:dateModified  \"1970-01-01T00:02:00Z\"^^xsd:dateTime}")).isTrue();
+    }
+
+    @Test
+    public void testReconcileEntities() throws RDFHandlerException, IOException, RDFParseException {
+        // Import a valid version of the Q42 entity
+        URL q42Location = getResource(RdfRepositoryUpdaterIntegrationTest.class,
+                RdfRepositoryUpdaterIntegrationTest.class.getSimpleName() + "." + "Q42-munged.ttl");
+        Integer q42Mutations = client.loadUrl(q42Location.toString());
+        assertThat(q42Mutations).isPositive();
+
+        // Distort it
+        q42Location = getResource(RdfRepositoryUpdaterIntegrationTest.class,
+                RdfRepositoryUpdaterIntegrationTest.class.getSimpleName() + "." + "Q42-borked.ttl");
+        q42Mutations += client.loadUrl(q42Location.toString());
+        client.update("DELETE DATA { wds:Q42-b47f944e-409a-8c99-5191-d27a1dd1ac38 ps:P4326 \"215854\" . }");
+        assertThat(q42Mutations).isPositive();
+
+        // Make sure we actually messed-up the entity
+        assertThat(client.ask("ask { wd:Q42 schema:version \"1276705613\"^^xsd:integer}")).isTrue();
+        assertThat(client.ask("ask { wd:Q42 schema:version \"1276705620\"^^xsd:integer}")).isTrue();
+        StatementCollector collector = new StatementCollector();
+        RDFParserSuppliers.defaultRdfParser().get(collector).parse(
+                this.getClass().getResourceAsStream(RdfRepositoryUpdaterIntegrationTest.class.getSimpleName() + "." + "Q42-munged.ttl"),
+                "uri:unused");
+        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, uris);
+        entitiesToReconcile.put("Q42", collector.getStatements());
+        ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(),
+                entityIdsToDelete, entitiesToReconcile);
+        Instant avgEventTime = Instant.EPOCH.plus(2, ChronoUnit.MINUTES);
+        RDFPatchResult rdfPatchResult = rdfRepositoryUpdater.applyPatch(patch, avgEventTime);
+        assertThat(rdfPatchResult.getActualMutations()).isZero();
+        assertThat(rdfPatchResult.getExpectedMutations()).isZero();
+        assertThat(rdfPatchResult.getReconciliationMutations()).isPositive();
+
+        assertThat(client.ask("ask { wd:Q42 schema:version \"1276705613\"^^xsd:integer}")).isFalse();
+        assertThat(client.ask("ask { wd:Q42 schema:version \"1276705620\"^^xsd:integer}")).isTrue();
+        assertThat(client.ask("ask { wd:Q42 schema:dateModified \"2020-09-12T16:11:27Z\"^^xsd:dateTime}")).isFalse();
+        assertThat(client.ask("ask { wd:Q42 schema:dateModified \"2020-09-13T16:11:27Z\"^^xsd:dateTime}")).isTrue();
+        assertThat(client.ask("ask { wds:Q42-b47f944e-409a-8c99-5191-d27a1dd1ac38 ps:P4326 \"215853\" }")).isTrue();
+        assertThat(client.ask("ask { wds:Q42-b47f944e-409a-8c99-5191-d27a1dd1ac38 ps:P4326 \"215854\" }")).isFalse();
+        assertThat(client.ask("ask { wds:Q42-f03a5d7b-4ca7-a069-76fc-c864090ce051 a wikibase:BestRank }")).isFalse();
     }
 }

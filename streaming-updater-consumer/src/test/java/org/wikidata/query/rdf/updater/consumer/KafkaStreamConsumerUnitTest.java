@@ -59,7 +59,6 @@ public class KafkaStreamConsumerUnitTest {
     private static final String TEST_DOMAIN = "tested.unittest.local";
     private static final String TESTED_STREAM = "tested_stream";
     private static final int TESTED_PARTITION = 0;
-    public static final int BUFFERED_INPUT_MESSAGES = 250;
     @Mock
     private KafkaConsumer<String, MutationEventData> consumer;
     private final RDFChunkDeserializer chunkDeser = new RDFChunkDeserializer(new RDFParserSuppliers(RDFParserRegistry.getInstance()));
@@ -95,7 +94,7 @@ public class KafkaStreamConsumerUnitTest {
 
         // preferredBatchLength set to 4 end when reading event n°4 and not rely on timeouts to batch 5 and 6
         KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 8,
-                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), 250, m -> true);
+                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), m -> true);
         Instant evtTimeBase = Instant.EPOCH;
         Duration evtTimeIncrement = Duration.ofMinutes(2);
         List<ConsumerRecord<String, MutationEventData>> allRecords = recordsList(evtTimeBase, evtTimeIncrement);
@@ -150,7 +149,7 @@ public class KafkaStreamConsumerUnitTest {
         TopicPartition topicPartition = new TopicPartition("test", 0);
 
         KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, Integer.MAX_VALUE,
-                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), 250, m -> true);
+                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), m -> true);
         List<ConsumerRecord<String, MutationEventData>> allRecords = recordListWithDeleteAndAdd();
         when(consumer.poll(any())).thenReturn(
             new ConsumerRecords<>(singletonMap(topicPartition, allRecords)),
@@ -181,57 +180,26 @@ public class KafkaStreamConsumerUnitTest {
 
     @Test
     public void test_prefer_reassembled_message() {
+        int bufferedMessages = 250;
         TopicPartition topicPartition = new TopicPartition("test", 0);
-        List<ConsumerRecord<String, MutationEventData>> allRecords = IntStream.range(0, BUFFERED_INPUT_MESSAGES).mapToObj(i -> {
+        List<ConsumerRecord<String, MutationEventData>> allRecords = IntStream.range(0, bufferedMessages).mapToObj(i -> {
             EventsMeta meta = new EventsMeta(Instant.EPOCH, UUID.randomUUID().toString(), TEST_DOMAIN, TESTED_STREAM, "unused");
-            MutationEventData diff = new DiffEventData(meta, "Q1", 1, Instant.EPOCH, i, BUFFERED_INPUT_MESSAGES, MutationEventData.DIFF_OPERATION,
+            MutationEventData diff = new DiffEventData(meta, "Q1", 1, Instant.EPOCH, i, bufferedMessages, MutationEventData.DIFF_OPERATION,
                     new RDFDataChunk("<uri:a> <uri:a> <uri:" + i + "> .\n", RDFFormat.TURTLE.getDefaultMIMEType()),
                     null, null, null);
             return new ConsumerRecord<String, MutationEventData>(topicPartition.topic(), topicPartition.partition(), i, null, diff);
         }).collect(toList());
         when(consumer.poll(any())).thenReturn(
-                new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(0, BUFFERED_INPUT_MESSAGES / 2))),
-                new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(BUFFERED_INPUT_MESSAGES / 2, allRecords.size()))),
+                new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(0, bufferedMessages / 2))),
+                new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(bufferedMessages / 2, allRecords.size()))),
                 new ConsumerRecords<>(emptyMap()));
 
         KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 10,
-                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), 250, m -> true);
+                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), m -> true);
         StreamConsumer.Batch b = streamConsumer.poll(Duration.ofMillis(100));
         assertThat(b).isNotNull();
         ConsumerPatch patch = b.getPatch();
-        assertThat(patch.getAdded().size()).isEqualTo(BUFFERED_INPUT_MESSAGES);
-        streamConsumer.acknowledge();
-        b = streamConsumer.poll(Duration.ofMillis(100));
-        assertThat(b).isNull();
-    }
-
-    @Test
-    public void test_allow_large_partial_message() {
-        TopicPartition topicPartition = new TopicPartition("test", 0);
-        int l = BUFFERED_INPUT_MESSAGES + 1;
-        List<ConsumerRecord<String, MutationEventData>> allRecords = IntStream.range(0, l).mapToObj(i -> {
-           EventsMeta meta = new EventsMeta(Instant.EPOCH, UUID.randomUUID().toString(), TEST_DOMAIN, TESTED_STREAM, "unused");
-           MutationEventData diff = new DiffEventData(meta, "Q1", 1, Instant.EPOCH, i, l, MutationEventData.DIFF_OPERATION,
-                   new RDFDataChunk("<uri:a> <uri:a> <uri:" + i + "> .\n", RDFFormat.TURTLE.getDefaultMIMEType()),
-                   null, null, null);
-           return new ConsumerRecord<String, MutationEventData>(topicPartition.topic(), topicPartition.partition(), i, null, diff);
-        }).collect(toList());
-        when(consumer.poll(any())).thenReturn(
-                new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(0, BUFFERED_INPUT_MESSAGES))),
-                new ConsumerRecords<>(singletonMap(topicPartition, allRecords.subList(BUFFERED_INPUT_MESSAGES, allRecords.size()))),
-                new ConsumerRecords<>(emptyMap()));
-
-        KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 10,
-                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), BUFFERED_INPUT_MESSAGES, m -> true);
-        StreamConsumer.Batch b = streamConsumer.poll(Duration.ofMillis(100));
-        assertThat(b).isNotNull();
-        ConsumerPatch patch = b.getPatch();
-        assertThat(patch.getAdded().size()).isEqualTo(BUFFERED_INPUT_MESSAGES);
-        streamConsumer.acknowledge();
-        b = streamConsumer.poll(Duration.ofMillis(100));
-        assertThat(b).isNotNull();
-        patch = b.getPatch();
-        assertThat(patch.getAdded().size()).isEqualTo(1);
+        assertThat(patch.getAdded().size()).isEqualTo(bufferedMessages);
         streamConsumer.acknowledge();
         b = streamConsumer.poll(Duration.ofMillis(100));
         assertThat(b).isNull();
@@ -260,7 +228,7 @@ public class KafkaStreamConsumerUnitTest {
         ArgumentCaptor<OffsetCommitCallback> callback = ArgumentCaptor.forClass(OffsetCommitCallback.class);
 
         KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 1,
-                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), 250, m -> true);
+                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), m -> true);
         StreamConsumer.Batch b = streamConsumer.poll(Duration.ofMillis(10));
         streamConsumer.acknowledge();
         verify(consumer, times(1)).commitAsync(eq(firstOffsets), callback.capture());
@@ -310,7 +278,7 @@ public class KafkaStreamConsumerUnitTest {
 
 
         KafkaStreamConsumer streamConsumer = new KafkaStreamConsumer(consumer, topicPartition, chunkDeser, 10,
-                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), BUFFERED_INPUT_MESSAGES, m -> m.getEntity().matches("^L.*"));
+                KafkaStreamConsumerMetricsListener.forRegistry(new MetricRegistry()), m -> m.getEntity().matches("^L.*"));
         StreamConsumer.Batch b = streamConsumer.poll(Duration.ofMillis(100));
         assertThat(b).isNotNull();
         assertThat(b.getPatch().getRemoved()).isEmpty();

@@ -32,7 +32,7 @@ public class UpdateMetricsResponseHandlerUnitTest {
     @Mock
     private ContentResponse response;
 
-    private final UpdateMetricsResponseHandler responseHandler = new UpdateMetricsResponseHandler(true, true);
+    private final UpdateMetricsResponseHandler responseHandler = new UpdateMetricsResponseHandler(true, true, true);
 
     private final Map<MultiSyncStep, List<Integer>> expectedMetrics = new HashMap<>();
 

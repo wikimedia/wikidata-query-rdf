@@ -41,7 +41,6 @@ public class KafkaStreamConsumer implements StreamConsumer {
     private final LinkedHashSet<ConsumerRecord<String, MutationEventData>> buffer;
     private final RDFChunkDeserializer rdfDeser;
     private final Predicate<MutationEventData> messageFilter;
-    private final int bufferedInputMessages;
     private final int preferredBatchLength;
     private final KafkaStreamConsumerMetricsListener metrics;
 
@@ -97,12 +96,12 @@ public class KafkaStreamConsumer implements StreamConsumer {
             }
             offsetReset.accept(consumer, topicPartition);
         }
-        return new KafkaStreamConsumer(consumer, topicPartition, deser, maxBatchLength, metrics, bufferedInputMessages, filter);
+        return new KafkaStreamConsumer(consumer, topicPartition, deser, maxBatchLength, metrics, filter);
     }
 
     public KafkaStreamConsumer(KafkaConsumer<String, MutationEventData> consumer, TopicPartition topicPartition,
                                RDFChunkDeserializer rdfDeser, int preferredBatchLength, KafkaStreamConsumerMetricsListener metrics,
-                               int bufferedInputMessages, Predicate<MutationEventData> filter) {
+                               Predicate<MutationEventData> filter) {
         this.consumer = consumer;
         this.topicPartition = topicPartition;
         this.rdfDeser = rdfDeser;
@@ -111,8 +110,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
         }
         this.preferredBatchLength = preferredBatchLength;
         this.metrics = metrics;
-        this.bufferedInputMessages = bufferedInputMessages;
-        buffer = new LinkedHashSet<>(bufferedInputMessages);
+        buffer = new LinkedHashSet<>();
         messageFilter = filter;
     }
 
@@ -125,41 +123,35 @@ public class KafkaStreamConsumer implements StreamConsumer {
         ConsumerRecord<String, MutationEventData> lastRecord = null;
         long st = System.nanoTime();
         // latency on the average of the event dates is similar to the average of the latencies
-        long sumEvenTimes = 0;
-        long nbEvents = 0;
+        long sumUserEventTimes = 0;
+        // live events are the ones that comes from users (edits on wikidata) as opposed to reconciliations
+        long nbUserEvents = 0;
         while (!timeout.isNegative() && accumulator.weight() < preferredBatchLength) {
-            if (buffer.size() < bufferedInputMessages) {
-                ConsumerRecords<String, MutationEventData> records = consumer.poll(timeout);
-                timeout = timeout.minusNanos(System.nanoTime() - st);
-                records.forEach(this::filterAndBufferMessage);
-            }
-            // Accept partial messages if our buffer is already full
-            List<ConsumerRecord<String, MutationEventData>> entityChunks = reassembleMessage(buffer, buffer.size() >= bufferedInputMessages);
-            if (entityChunks.isEmpty()) {
-                continue;
-            }
-            if (entityChunks.stream().map(ConsumerRecord::value).anyMatch(m -> !accumulator.canAccumulate(m))) {
-                break;
-            }
+            List<ConsumerRecord<String, MutationEventData>> entityChunks = innerPoll(timeout, accumulator::canAccumulate);
+            timeout = timeout.minusNanos(System.nanoTime() - st);
+            if (entityChunks.isEmpty()) continue;
 
-            nbEvents++;
             lastRecord = entityChunks.get(entityChunks.size() - 1);
             if (firstRecord == null) {
                 firstRecord = entityChunks.get(0);
             }
-            sumEvenTimes += lastRecord.value().getEventTime().toEpochMilli();
+            if (!lastRecord.value().getOperation().equals(MutationEventData.RECONCILE_OPERATION)) {
+                nbUserEvents++;
+                sumUserEventTimes += lastRecord.value().getEventTime().toEpochMilli();
+            }
             accumulator.accumulate(entityChunks.stream().map(ConsumerRecord::value).collect(toList()));
-            entityChunks.forEach(buffer::remove);
+        }
+        if (lastRecord == null) {
+            // We might have reached the timeout without getting any data, return null
+            return null;
         }
         metrics.triplesAccum(accumulator.getTotalAccumulated());
         metrics.triplesOffered(accumulator.getNumberOfTriples());
         metrics.deletedEntities(accumulator.getNumberOfDeletedEntities());
         Map<TopicPartition, OffsetAndMetadata> offsetsAndMetadata;
-        if (lastRecord == null) {
-            return null;
-        }
         offsetsAndMetadata = singletonMap(topicPartition, new OffsetAndMetadata(lastRecord.offset()));
-        lastBatchEventTime = Instant.ofEpochMilli(sumEvenTimes / nbEvents);
+        // Only update the event time when we have actual user events, counting event time of reconciliations would make no sense
+        lastBatchEventTime = nbUserEvents > 0 ? Instant.ofEpochMilli(sumUserEventTimes / nbUserEvents) : lastBatchEventTime;
         lastOfferedBatchOffsets = offsetsAndMetadata;
         return new Batch(
                 accumulator.asPatch(),
@@ -172,6 +164,31 @@ public class KafkaStreamConsumer implements StreamConsumer {
     }
 
     /**
+     * fetch from the buffer or poll the underlying kafka consumer if we don't have enough
+     * data in our buffer.
+     */
+    private List<ConsumerRecord<String, MutationEventData>> innerPoll(Duration timeout, Predicate<MutationEventData> acceptable) {
+        List<ConsumerRecord<String, MutationEventData>> entityChunks = reassembleMessage(buffer);
+        // poll if we have nothing ready in our buffer
+        if (entityChunks.isEmpty()) {
+            ConsumerRecords<String, MutationEventData> records = consumer.poll(timeout);
+            records.forEach(this::filterAndBufferMessage);
+            // Retry right away to avoid hitting the timeout and returning null to the caller while we might have data
+            entityChunks = reassembleMessage(buffer);
+        }
+        if (entityChunks.isEmpty()) {
+            // Loop again and check timeout
+            return emptyList();
+        }
+        if (entityChunks.stream().map(ConsumerRecord::value).anyMatch(acceptable.negate())) {
+            // This chunk is not acceptable return null before removing them from the buffer
+            return emptyList();
+        }
+        entityChunks.forEach(buffer::remove);
+        return entityChunks;
+    }
+
+    /**
      * Buffers the message if it passes the mutationFilter predicate.
      */
     private void filterAndBufferMessage(ConsumerRecord<String, MutationEventData> message) {
@@ -180,8 +197,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
         }
     }
 
-    private List<ConsumerRecord<String, MutationEventData>> reassembleMessage(Iterable<ConsumerRecord<String, MutationEventData>> records,
-                                                                              boolean acceptPartial) {
+    private List<ConsumerRecord<String, MutationEventData>> reassembleMessage(Iterable<ConsumerRecord<String, MutationEventData>> records) {
         List<ConsumerRecord<String, MutationEventData>> entityChunks = new ArrayList<>();
         for (ConsumerRecord<String, MutationEventData> record : records) {
             entityChunks.add(record);
@@ -189,14 +205,18 @@ public class KafkaStreamConsumer implements StreamConsumer {
                 return entityChunks;
             }
         }
-        return acceptPartial ? entityChunks : emptyList();
+        return emptyList();
     }
 
     @Override
     public void acknowledge() {
         if (lastOfferedBatchOffsets != null) {
-            metrics.lag(lastBatchEventTime);
-            lastBatchEventTime = null;
+            // lastOfferedBatchOffsets might be null if we only received reconciliation events
+            // do not update the metrics in that case.
+            if (lastBatchEventTime != null) {
+                metrics.lag(lastBatchEventTime);
+                lastBatchEventTime = null;
+            }
             lastPendingOffsets = lastOfferedBatchOffsets;
             consumer.commitAsync(lastPendingOffsets, this::offsetCommitCallback);
             lastOfferedBatchOffsets = null;

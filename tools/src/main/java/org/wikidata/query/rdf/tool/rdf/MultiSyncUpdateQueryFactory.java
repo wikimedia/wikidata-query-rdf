@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,7 +30,7 @@ final class MultiSyncUpdateQueryFactory {
                       Set<String> valueSet,
                       Set<String> refSet,
                       List<String> lexemeSubIds,
-                      Instant timestamp) {
+                      Optional<Instant> timestamp) {
 
         Set<String> entityIdsWithLexemes = new LinkedHashSet<>();
         entityIdsWithLexemes.addAll(entityIds);
@@ -38,6 +39,7 @@ final class MultiSyncUpdateQueryFactory {
         return Arrays.stream(MultiSyncStep.values())
                 .filter(step -> step != MultiSyncStep.CLEANUP_REFERENCES || !refSet.isEmpty())
                 .filter(step -> step != MultiSyncStep.CLEANUP_VALUES || !valueSet.isEmpty())
+                .filter(step -> step != MultiSyncStep.ADD_TIMESTAMPS  || timestamp.isPresent())
                 .map(step -> prepareQuery(step,
                         entityIds,
                         entityIdsWithLexemes,
@@ -56,7 +58,7 @@ final class MultiSyncUpdateQueryFactory {
                                 ClassifiedStatements classifiedStatements,
                                 Set<String> refSet,
                                 Set<String> valueSet,
-                                Instant timestamp) {
+                                Optional<Instant> timestamp) {
         switch (step) {
             case CLEAR_OOD_SITE_LINKS:
                 return MultiSyncStep.createClearOodLinksQuery(entityTopIds, classifiedStatements, uris);
@@ -67,7 +69,7 @@ final class MultiSyncUpdateQueryFactory {
             case INSERT_NEW_DATA:
                 return MultiSyncStep.createInsertNewDataQuery(insertStatements);
             case ADD_TIMESTAMPS:
-                return MultiSyncStep.createAddTimestampsQuery(entityTopIds, timestamp, uris);
+                return MultiSyncStep.createAddTimestampsQuery(entityTopIds, timestamp.orElseThrow(IllegalStateException::new), uris);
             case CLEANUP_REFERENCES:
                 return MultiSyncStep.createCleanupReferencesQuery(refSet);
             case CLEANUP_VALUES:

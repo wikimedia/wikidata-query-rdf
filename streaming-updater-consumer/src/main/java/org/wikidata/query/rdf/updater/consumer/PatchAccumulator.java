@@ -4,8 +4,14 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkPositionIndex;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.wikidata.query.rdf.updater.MutationEventData.DELETE_OPERATION;
+import static org.wikidata.query.rdf.updater.MutationEventData.DIFF_OPERATION;
+import static org.wikidata.query.rdf.updater.MutationEventData.IMPORT_OPERATION;
+import static org.wikidata.query.rdf.updater.MutationEventData.RECONCILE_OPERATION;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -24,11 +31,30 @@ import org.wikidata.query.rdf.tool.rdf.SiteLinksReclassification;
 import org.wikidata.query.rdf.updater.DiffEventData;
 import org.wikidata.query.rdf.updater.MutationEventData;
 import org.wikidata.query.rdf.updater.RDFChunkDeserializer;
+import org.wikidata.query.rdf.updater.RDFDataChunk;
 
 import com.google.common.collect.Sets;
 
 import lombok.Getter;
 
+/**
+ * Accumulates a collection of {@link MutationEventData} that can then be transformed into {@link ConsumerPatch} which
+ * is then applied to a triple store.
+ *
+ * <p>The main principle is to collect {@link MutationEventData} and apply various optimizations to compress/drop
+ * unnecessary mutations.
+ *
+ * <p>Order in which the data is collected is very important as the compression is done on the fly.
+ * <p>Import and diff operations can be collected without restriction (except size considerations)
+ * <p>Delete and Reconciliation operations might drop all the data collected, collecting subsequent operations on the same entity are
+ * not possible and the patch must be materialized and applied
+ *
+ * <p>The impact of the resulting patch can be estimated using {@link #weight()} which will try to estimate the impact
+ * (number of mutations) of the patch when applied to the store.
+ *
+ * <p>{@link #canAccumulate(MutationEventData)} must always be checked prior collecting more data, an exception will be
+ * thrown otherwise.
+ */
 @Getter
 @NotThreadSafe
 public class PatchAccumulator {
@@ -40,6 +66,7 @@ public class PatchAccumulator {
     private final Map<Statement, String> allRemovedMap = new HashMap<>();
     private final Map<Statement, Set<String>> linkedSharedMap = new HashMap<>();
     private final Map<Statement, String> unlinkedSharedMap = new HashMap<>();
+    private final Map<String, Collection<Statement>> reconciliations = new HashMap<>();
 
     public PatchAccumulator(RDFChunkDeserializer deser) {
         this.deser = deser;
@@ -50,7 +77,8 @@ public class PatchAccumulator {
     }
 
     public int getNumberOfTriples() {
-        return allAddedMap.size() + allRemovedMap.size() + linkedSharedMap.size() + unlinkedSharedMap.size();
+        return allAddedMap.size() + allRemovedMap.size() + linkedSharedMap.size() + unlinkedSharedMap.size() +
+                reconciliations.values().stream().mapToInt(Collection::size).sum();
     }
 
     public int getNumberOfDeletedEntities() {
@@ -96,9 +124,18 @@ public class PatchAccumulator {
      * Whether or not the patch given as argument can be accumulated in this accumulator.
      */
     public boolean canAccumulate(MutationEventData data) {
-        if (!data.getOperation().equals(DiffEventData.DELETE_OPERATION))
-            return !allEntitiesToDelete.contains(data.getEntity());
-        return true;
+        switch (data.getOperation()) {
+            case DELETE_OPERATION:
+                // We could possibly skip the reconciliation?
+                return !reconciliations.containsKey(data.getEntity());
+            case RECONCILE_OPERATION:
+                return !allEntitiesToDelete.contains(data.getEntity());
+            case IMPORT_OPERATION:
+            case DIFF_OPERATION:
+                return !allEntitiesToDelete.contains(data.getEntity()) && !reconciliations.containsKey(data.getEntity());
+            default:
+                throw new UnsupportedOperationException("Unsupported operation [" + data.getOperation() + "]");
+        }
     }
 
     private void removeIntersection(Map<Statement, ?> map1, Map<Statement, String> map2) {
@@ -112,20 +149,57 @@ public class PatchAccumulator {
                 unmodifiableList(new ArrayList<>(linkedSharedMap.keySet())),
                 unmodifiableList(new ArrayList<>(allRemovedMap.keySet())),
                 unmodifiableList(new ArrayList<>(unlinkedSharedMap.keySet())),
-                unmodifiableList(new ArrayList<>(allEntitiesToDelete)));
+                unmodifiableList(new ArrayList<>(allEntitiesToDelete)),
+                unmodifiableMap(reconciliations));
     }
 
     public void accumulate(List<MutationEventData> sequence) {
         checkPositionIndex(0, sequence.size(), "Received empty sequence");
         MutationEventData head = sequence.get(0);
         checkArgument(canAccumulate(head), "Cannot accumulate data for entity: " + head.getEntity());
-        if (MutationEventData.DELETE_OPERATION.equals(head.getOperation())) {
-            checkArgument(sequence.size() == 1, "Inconsistent delete mutation (" + sequence.size() + " chunks)");
-            accumulateDelete(head);
-        } else {
-            checkArgument(head instanceof DiffEventData, "Unsupported MutationEventData of type " + head.getOperation());
-            accumulateDiff(sequence);
+
+        switch (head.getOperation()) {
+            case DELETE_OPERATION:
+                checkArgument(sequence.size() == 1, "Inconsistent delete mutation (" + sequence.size() + " chunks)");
+                accumulateDelete(head);
+                break;
+            case IMPORT_OPERATION:
+            case DIFF_OPERATION:
+                checkArgument(head instanceof DiffEventData, "Unsupported MutationEventData of type " + head.getOperation());
+                accumulateDiff(sequence);
+                break;
+            case RECONCILE_OPERATION:
+                checkArgument(head instanceof DiffEventData, "Unsupported MutationEventData of type " + head.getOperation());
+                accumulateReconciliation(sequence);
+                break;
+            default:
+                throw new UnsupportedOperationException("Unsupported operation [" + head.getOperation() + "]");
         }
+    }
+
+    private void accumulateReconciliation(List<MutationEventData> sequence) {
+        checkPositionIndex(0, sequence.size(), "Received empty sequence");
+        MutationEventData head = sequence.get(0);
+        Optional<MutationEventData> inconsistentBlock = sequence.stream().filter(m -> {
+            if (!head.getEntity().equals(m.getEntity())) {
+                return true;
+            } else if (!m.getMeta().requestId().equals(head.getMeta().requestId())) {
+                return true;
+            } else return !head.getOperation().equals(m.getOperation());
+        }).findFirst();
+        if (inconsistentBlock.isPresent()) {
+            throw new IllegalArgumentException("Inconsistent sequence of events: " + inconsistentBlock.get() + " does not belong to " + head);
+        }
+        List<Statement> allStmts = sequence.stream()
+                .map(DiffEventData.class::cast)
+                .map(DiffEventData::getRdfAddedData)
+                .flatMap(c -> deserChunk(c).stream())
+                .collect(toList());
+
+        reconciliations.put(head.getEntity(), allStmts);
+        // Drop patch data from this entity since we are reconciling it we will reset all that anyways
+        removeDataFromEntity(head.getEntity());
+        totalAccumulated += allStmts.size();
     }
 
     private void accumulateDiff(List<MutationEventData> sequence) {
@@ -146,16 +220,16 @@ public class PatchAccumulator {
             }
             DiffEventData diff = (DiffEventData) data;
             if (diff.getRdfAddedData() != null) {
-                added.addAll(deser.deser(diff.getRdfAddedData(), "unused"));
+                added.addAll(deserChunk(diff.getRdfAddedData()));
             }
             if (diff.getRdfDeletedData() != null) {
-                removed.addAll(deser.deser(diff.getRdfDeletedData(), "unused"));
+                removed.addAll(deserChunk(diff.getRdfDeletedData()));
             }
             if (diff.getRdfLinkedSharedData() != null) {
-                linkedShared.addAll(deser.deser(diff.getRdfLinkedSharedData(), "unused"));
+                linkedShared.addAll(deserChunk(diff.getRdfLinkedSharedData()));
             }
             if (diff.getRdfUnlinkedSharedData() != null) {
-                unlinkedShared.addAll(deser.deser(diff.getRdfUnlinkedSharedData(), "unused"));
+                unlinkedShared.addAll(deserChunk(diff.getRdfUnlinkedSharedData()));
             }
         }
 
@@ -167,6 +241,10 @@ public class PatchAccumulator {
         totalAccumulated += TRIPLES_PER_DELETE;
         String entityId = delete.getEntity();
         allEntitiesToDelete.add(entityId);
+        removeDataFromEntity(entityId);
+    }
+
+    private void removeDataFromEntity(String entityId) {
         allAddedMap.entrySet().removeIf(entry -> entry.getValue().equals(entityId));
         allRemovedMap.entrySet().removeIf(entry -> entry.getValue().equals(entityId));
         linkedSharedMap.entrySet().removeIf(entry -> entry.getValue().contains(entityId) && entry.getValue().size() <= 1);
@@ -174,5 +252,9 @@ public class PatchAccumulator {
 
     public void accumulate(MutationEventData value) {
         accumulate(singletonList(value));
+    }
+
+    private List<Statement> deserChunk(RDFDataChunk chunk) {
+        return deser.deser(chunk, "unused");
     }
 }

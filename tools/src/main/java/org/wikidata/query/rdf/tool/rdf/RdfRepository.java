@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool.rdf;
 
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.wikidata.query.rdf.tool.rdf.CollectedUpdateMetrics.getMutationCountOnlyMetrics;
 
@@ -13,6 +14,7 @@ import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -39,6 +41,7 @@ import org.wikidata.query.rdf.tool.rdf.client.UpdateMetricsResponseHandler;
 import com.google.common.collect.ImmutableSetMultimap;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.Value;
 
 /**
  * Wrapper for communicating with the RDF repository.
@@ -194,6 +197,14 @@ public class RdfRepository {
      * @return Number of triples modified.
      */
     public CollectedUpdateMetrics syncFromChanges(Collection<Change> changes, boolean verifyResult) {
+        Collection<EntityData> data = changes.stream()
+                .map(c -> new EntityData(c.entityId(), c.getStatements(), c.getValueCleanupList(), c.getRefCleanupList()))
+                .collect(toList());
+        return syncFromEntityData(new EntityDataUpdateBatch(true, data), verifyResult);
+    }
+
+    public CollectedUpdateMetrics syncFromEntityData(EntityDataUpdateBatch updateBatch, boolean verifyResult) {
+        Collection<EntityData> changes = updateBatch.batch;
         if (changes.isEmpty()) {
             // no changes, we're done
             return getMutationCountOnlyMetrics(0);
@@ -207,24 +218,24 @@ public class RdfRepository {
         Set<String> refSet = new HashSet<>();
 
         CollectedUpdateMetrics collectedMetrics = new CollectedUpdateMetrics();
-        for (final Change change : changes) {
+        for (final EntityData change : changes) {
             if (change.getStatements() == null) {
                 // broken change, probably failed retrieval
                 continue;
             }
-            entityIds.add(change.entityId());
+            entityIds.add(change.entityId);
             insertStatements.addAll(change.getStatements());
-            classifiedStatements.classify(change.getStatements(), change.entityId());
-            valueSet.addAll(change.getValueCleanupList());
-            refSet.addAll(change.getRefCleanupList());
+            classifiedStatements.classify(change.getStatements(), change.entityId);
+            valueSet.addAll(change.valuesToCleanup);
+            refSet.addAll(change.refsToCleanup);
             // If current batch data has grown too big, we send it out and start the new one.
             if (insertStatements.size() > maxStatementsPerBatch || classifiedStatements.getDataSize() > maxPostDataSize) {
                 // Send the batch out and clean up
                 // Logging as info for now because I want to know how many split batches we get. I don't want too many.
-                log.info("Too much data with {} bytes - sending batch out, last ID {}", classifiedStatements.getDataSize(), change.entityId());
+                log.info("Too much data with {} bytes - sending batch out, last ID {}", classifiedStatements.getDataSize(), change.entityId);
 
                 collectedMetrics.merge(sendUpdateBatch(entityIds, insertStatements, classifiedStatements,
-                        valueSet, refSet, verifyResult));
+                        valueSet, refSet, verifyResult, updateBatch.withTimestamp));
                 entityIds.clear();
                 insertStatements.clear();
                 classifiedStatements.clear();
@@ -236,10 +247,24 @@ public class RdfRepository {
         if (!entityIds.isEmpty()) {
             collectedMetrics.merge(sendUpdateBatch(entityIds,
                                         insertStatements, classifiedStatements,
-                    valueSet, refSet, verifyResult));
+                    valueSet, refSet, verifyResult, updateBatch.withTimestamp));
         }
 
         return collectedMetrics;
+    }
+
+    @Value
+    public static class EntityData {
+        String entityId;
+        Collection<Statement> statements;
+        Collection<String> valuesToCleanup;
+        Collection<String> refsToCleanup;
+    }
+
+    @Value
+    public static class EntityDataUpdateBatch {
+        boolean withTimestamp;
+        Collection<EntityData> batch;
     }
 
     private CollectedUpdateMetrics sendUpdateBatch(Set<String> entityIds,
@@ -247,7 +272,8 @@ public class RdfRepository {
                                 ClassifiedStatements classifiedStatements,
                                 Set<String> valueSet,
                                 Set<String> refSet,
-                                boolean verifyResult) {
+                                boolean verifyResult,
+                                boolean withTimestamp) {
         log.debug("Processing {} IDs and {} statements", entityIds.size(), insertStatements.size());
 
         String query = multiSyncUpdateQueryFactory.buildQuery(entityIds,
@@ -256,11 +282,12 @@ public class RdfRepository {
                 valueSet,
                 refSet,
                 fetchLexemeSubIds(entityIds),
-                Instant.now());
+                withTimestamp ? Optional.of(Instant.now()) : Optional.empty());
 
         log.debug("Sending query {} bytes", query.length());
         long start = System.nanoTime();
-        CollectedUpdateMetrics collectedUpdateMetrics = rdfClient.update(query, new UpdateMetricsResponseHandler(!refSet.isEmpty(), !valueSet.isEmpty()));
+        CollectedUpdateMetrics collectedUpdateMetrics = rdfClient.update(query,
+                new UpdateMetricsResponseHandler(!refSet.isEmpty(), !valueSet.isEmpty(), withTimestamp));
         log.debug("Update query took {} nanos and modified {} statements",
                 System.nanoTime() - start, collectedUpdateMetrics.getMutationCount());
 

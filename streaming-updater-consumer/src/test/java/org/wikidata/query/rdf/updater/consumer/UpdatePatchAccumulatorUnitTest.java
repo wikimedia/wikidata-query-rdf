@@ -3,14 +3,19 @@ package org.wikidata.query.rdf.updater.consumer;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.wikidata.query.rdf.test.StatementHelper.statement;
 import static org.wikidata.query.rdf.test.StatementHelper.uri;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 import org.openrdf.model.Statement;
@@ -152,7 +157,8 @@ public class UpdatePatchAccumulatorUnitTest {
                 singletonList(stmt("uri:linked-shared")),
                 singletonList(stmt("uri:deleted-unrelated-entity")),
                 singletonList(stmt("uri:unlinked-shared")),
-                singletonList("Q1")
+                singletonList("Q1"),
+                Collections.emptyMap()
         );
         assertThat(accumulator.asPatch())
                 .withFailMessage("Deleting an entity should create a patch without any triples for this entity")
@@ -160,7 +166,7 @@ public class UpdatePatchAccumulatorUnitTest {
     }
 
     @Test
-    public void test_remove_then_add_should_not_be_supported_in_the_same_patch() {
+    public void test_remove_then_add_or_reconcile_should_not_be_supported_in_the_same_patch() {
         PatchAccumulator accumulator = new PatchAccumulator(deserializer);
 
         accumulateDiff(accumulator, "UNRELATED",
@@ -192,6 +198,13 @@ public class UpdatePatchAccumulatorUnitTest {
                 emptyList()
         ), "Caller should call canAccumulate and not try to 'force-add' triples for an entity that is already accumulated as 'deleted'")
                 .isInstanceOf(IllegalArgumentException.class);
+
+        MutationEventData reconcile = eventGenerator.reconcile(metaGenerator("Q1"), "Q1", 1, Instant.EPOCH,
+                singletonList(stmt("uri:added-for-Q1"))).get(0);
+
+        assertThat(accumulator.canAccumulate(reconcile))
+                .withFailMessage("Reconciling the same entity after a delete in the same accumulator should not be supported")
+                .isFalse();
     }
 
     @Test
@@ -222,7 +235,8 @@ public class UpdatePatchAccumulatorUnitTest {
                 singletonList(stmt("uri:linked-shared")),
                 singletonList(stmt("uri:deleted-unrelated-entity")),
                 singletonList(stmt("uri:unlinked-shared")),
-                singletonList("Q1")
+                singletonList("Q1"),
+                Collections.emptyMap()
         );
         assertThat(accumulator.asPatch())
                 .withFailMessage("Deleting an entity should create a patch without any triples for this entity even shared ones")
@@ -309,6 +323,68 @@ public class UpdatePatchAccumulatorUnitTest {
                 .contains(stmt("uri:unlinked-shared"));
     }
 
+    @Test
+    public void test_reconcile_operation_can_be_accumulated() {
+        PatchAccumulator accumulator = new PatchAccumulator(deserializer);
+
+        MutationEventDataGenerator bigChunkEventGenerator = new MutationEventDataGenerator(
+                serializer, RDFFormat.TURTLE.getDefaultMIMEType(), Integer.MAX_VALUE);
+        accumulateDiff(accumulator, "Q1",
+                asList(stmt("uri:added-1"), stmt("uri:added-1")),
+                asList(stmt("uri:removed-1"), stmt("uri:removed-1")),
+                asList(stmt("uri:linked-shared"), stmt("uri:linked-shared-1")),
+                asList(stmt("uri:unlinked-shared"), stmt("uri:unlinked-shared-1")),
+                bigChunkEventGenerator
+        );
+
+        accumulateDiff(accumulator, "Q2",
+                asList(stmt("uri:added-2"), stmt("uri:added-2")),
+                asList(stmt("uri:removed-2"), stmt("uri:removed-2")),
+                asList(stmt("uri:linked-shared"), stmt("uri:linked-shared-2")),
+                asList(stmt("uri:unlinked-shared"), stmt("uri:unlinked-shared-2")),
+                bigChunkEventGenerator
+        );
+
+        accumulateReconciliation(accumulator, "Q1", singletonList(stmt("uri:reconciled-1")));
+        ConsumerPatch consumerPatch = accumulator.asPatch();
+        assertThat(consumerPatch.getAdded())
+                .containsExactlyInAnyOrder(stmt("uri:added-2"));
+        assertThat(consumerPatch.getRemoved())
+                .containsExactlyInAnyOrder(stmt("uri:removed-2"));
+        assertThat(consumerPatch.getLinkedSharedElements())
+                .containsExactlyInAnyOrder(stmt("uri:linked-shared"), stmt("uri:linked-shared-2"));
+        assertThat(consumerPatch.getUnlinkedSharedElements())
+                .contains(stmt("uri:unlinked-shared"), stmt("uri:unlinked-shared-2"));
+        assertThat(consumerPatch.getReconciliations()).containsOnlyKeys("Q1");
+        assertThat(consumerPatch.getReconciliations()).containsValue(singletonList(stmt("uri:reconciled-1")));
+    }
+
+    @Test
+    public void test_reconcile_operation_fails_with_unrelated_sequence() {
+        PatchAccumulator accumulator = new PatchAccumulator(deserializer);
+        List<Statement> stmts = IntStream.range(0, 100).mapToObj(i -> stmt("uri:stmt-" + i)).collect(toList());
+        List<MutationEventData> events = eventGenerator.reconcile(metaGenerator("Q1"), "Q1", 1, Instant.EPOCH, stmts);
+        accumulator.accumulate(events);
+        List<MutationEventData> wrongBatch = new ArrayList<>(events);
+        wrongBatch.addAll(eventGenerator.reconcile(metaGenerator("Q1"), "Q1", 1, Instant.EPOCH, stmts));
+        assertThatThrownBy(() -> accumulator.accumulate(wrongBatch))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageStartingWith("Inconsistent sequence of events:");
+    }
+
+    @Test
+    public void test_patch_cannot_be_accumulated_with_reconciliation() {
+        PatchAccumulator accumulator = new PatchAccumulator(deserializer);
+        List<MutationEventData> events = eventGenerator.reconcile(metaGenerator("Q1"), "Q1", 1, Instant.EPOCH,
+                singletonList(stmt("uri:stmt")));
+        accumulator.accumulate(events);
+        List<MutationEventData> diff = eventGenerator.diffEvent(metaGenerator("Q1"), "Q1", 1, Instant.EPOCH,
+                singletonList(stmt("uri:added-1")), singletonList(stmt("uri:removed-1")), emptyList(), emptyList());
+        assertThat(accumulator.canAccumulate(diff.get(0))).isFalse();
+        List<MutationEventData> del = eventGenerator.deleteEvent(metaGenerator("Q1"), "Q1", 1, Instant.EPOCH);
+        assertThat(accumulator.canAccumulate(del.get(0))).isFalse();
+    }
+
     private void accumulateDiff(PatchAccumulator accumulator,
                                 String entityId,
                                 List<Statement> added,
@@ -336,11 +412,17 @@ public class UpdatePatchAccumulatorUnitTest {
         accumulator.accumulate(events);
     }
 
+    private void accumulateReconciliation(PatchAccumulator accumulator, String entityId, List<Statement> stmts) {
+        List<MutationEventData> events = eventGenerator.reconcile(metaGenerator(entityId), entityId, 1, Instant.EPOCH, stmts);
+        accumulator.accumulate(events);
+    }
+
     private Statement stmt(String s) {
         return statement(s, s, uri(s));
     }
 
     private Supplier<EventsMeta> metaGenerator(String entityId) {
-        return () -> new EventsMeta(Instant.EPOCH, entityId, "", "", "");
+        String requestId = UUID.randomUUID().toString();
+        return () -> new EventsMeta(Instant.EPOCH, entityId, "", "", requestId);
     }
 }

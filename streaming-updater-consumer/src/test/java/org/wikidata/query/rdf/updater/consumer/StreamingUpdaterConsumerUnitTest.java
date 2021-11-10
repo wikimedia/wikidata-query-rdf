@@ -12,7 +12,10 @@ import static org.wikidata.query.rdf.updater.consumer.StreamingUpdaterConsumer.p
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -21,6 +24,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.tool.rdf.ConsumerPatch;
 import org.wikidata.query.rdf.tool.rdf.RDFPatchResult;
 import org.wikidata.query.rdf.tool.rdf.RdfRepositoryUpdater;
@@ -37,9 +41,10 @@ public class StreamingUpdaterConsumerUnitTest {
     @Test
     public void test() throws InterruptedException {
         List<String> entityIdsToDelete = new ArrayList<String>();
-        ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(), entityIdsToDelete);
+        Map<String, Collection<Statement>> reconciliations = new HashMap<>();
+        ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(), entityIdsToDelete, reconciliations);
         Instant avgEventTime = Instant.EPOCH.plus(4, ChronoUnit.MINUTES);
-        RDFPatchResult rdfPatchResult = new RDFPatchResult(2, 1, 2, 1, 1);
+        RDFPatchResult rdfPatchResult = new RDFPatchResult(2, 1, 2, 1, 1, 1);
         LongAdder patchApplied = new LongAdder();
         CountDownLatch countdown = new CountDownLatch(5);
         Answer<StreamConsumer.Batch> batchSupplier = (i) -> new StreamConsumer.Batch(patch, avgEventTime, "1", Instant.now(), "2", Instant.now());
@@ -68,6 +73,7 @@ public class StreamingUpdaterConsumerUnitTest {
 
         assertThat(registry.counter("mutations").getCount()).isEqualTo(patchApplied.intValue());
         assertThat(registry.counter("delete-mutations").getCount()).isEqualTo(patchApplied.intValue());
+        assertThat(registry.counter("reconciliation-mutations").getCount()).isEqualTo(patchApplied.intValue());
         assertThat(registry.counter("divergences").getCount()).isEqualTo(patchApplied.intValue());
         assertThat(registry.counter("shared-element-mutations").getCount()).isEqualTo(patchApplied.intValue());
         assertThat(registry.counter("shared-element-redundant-mutations").getCount()).isEqualTo(patchApplied.intValue());
@@ -75,11 +81,11 @@ public class StreamingUpdaterConsumerUnitTest {
 
     @Test
     public void testInconsistenciesThreshold() {
-        RDFPatchResult res = new RDFPatchResult(100, 98, 0, 0, 0);
+        RDFPatchResult res = new RDFPatchResult(100, 98, 0, 0, 0, 0);
         assertThat(passInconsistencyThreshold(res, 0.02F)).isFalse();
         assertThat(passInconsistencyThreshold(res, 0.01F)).isTrue();
 
-        res = new RDFPatchResult(0, 99, 0, 0, 0);
+        res = new RDFPatchResult(0, 99, 0, 0, 0, 0);
         assertThat(passInconsistencyThreshold(res, 0.01F)).isFalse();
     }
 }
