@@ -1,10 +1,12 @@
 package org.wikidata.query.rdf.updater
 
+import java.net.URI
 import java.time.Instant
 import java.util.Collections.emptyList
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.operators.testutils.MockEnvironment
@@ -20,6 +22,7 @@ import org.wikidata.query.rdf.test.StatementHelper.statements
 import org.wikidata.query.rdf.tool.change.events.EventInfo
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
 import org.wikidata.query.rdf.tool.rdf.Patch
+import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException
 
 class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers with MockFactory with TestEventGenerator with BeforeAndAfter {
   val DOMAIN = "tested.domain"
@@ -30,12 +33,15 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
   val INPUT_EVENT_INFO: EventInfo = newEventInfo(NOW, DOMAIN, STREAM, REQ_ID)
 
   val repoMock: WikibaseEntityRevRepositoryTrait = mock[WikibaseEntityRevRepositoryTrait]
+  val subjectiveClock: () => Instant = mock[() => Instant]
   private def testHarness[T <: Throwable](expectExternalFailure: Option[Class[T]] = None) = {
     val genDiff = GenerateEntityDiffPatchOperation(
       wikibaseRepositoryGenerator = _ => repoMock,
       scheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
       mungeOperationProvider = _ => (_, _) => 1,
-      fetchRetryDelay = 1.milliseconds)
+      fetchRetryDelay = 1.milliseconds,
+      now = subjectiveClock
+    )
 
     val operator: AsyncFunction[MutationOperation, ResolvedOp] = new AsyncFunction[MutationOperation, ResolvedOp] {
       override def asyncInvoke(input: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = genDiff.asyncInvoke(input,
@@ -144,6 +150,32 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     val op = inputDiffOp
     val harness = sendData(op)
     harness.extractOutputValues() should contain only outputDiffEvent(op)
+  }
+
+  "a 404" should "be retried while the entity is considered new" in {
+    val notFoundException = new WikibaseEntityFetchException(URI.create("https://www.wikidata.org/wiki/Special:EntityData/Q1.ttl?flavor=dump&revision=1"),
+      WikibaseEntityFetchException.Type.ENTITY_NOT_FOUND)
+    (repoMock.getEntityByRevision _).expects("Q1", 1) throwing notFoundException noMoreThanOnce()
+    (repoMock.getEntityByRevision _).expects("Q1", 1) throwing notFoundException noMoreThanOnce()
+    (repoMock.getEntityByRevision _).expects("Q1", 1) throwing notFoundException noMoreThanOnce()
+    (repoMock.getEntityByRevision _).expects("Q1", 1) returning statements("uri:a").asScala
+    val op = importOp
+    (subjectiveClock.apply _).expects() returning NOW noMoreThanOnce()
+    (subjectiveClock.apply _).expects() returning NOW.plusSeconds(1) noMoreThanOnce()
+    (subjectiveClock.apply _).expects() returning NOW.plusSeconds(2)
+    val harness = sendData(op)
+    harness.extractOutputValues() should contain only outputImportEvent(op)
+  }
+
+  "a 404" should "be retried only while the entity is considered new" in {
+    val notFoundException = new WikibaseEntityFetchException(URI.create("https://www.wikidata.org/wiki/Special:EntityData/Q1.ttl?flavor=dump&revision=1"),
+      WikibaseEntityFetchException.Type.ENTITY_NOT_FOUND)
+    (repoMock.getEntityByRevision _).expects("Q1", 1) throwing notFoundException anyNumberOfTimes()
+    val op = importOp
+    (subjectiveClock.apply _).expects() returning NOW noMoreThanOnce()
+    (subjectiveClock.apply _).expects() returning NOW.plusSeconds(1) noMoreThanOnce()
+    (subjectiveClock.apply _).expects() returning NOW.plusSeconds(11)
+    assertFailure(notFoundException, op, sendData(op))
   }
 
   "an unexpected failure fetching one of the two revisions" should "break the pipeline" in {

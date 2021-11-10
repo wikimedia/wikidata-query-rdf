@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.updater
 
+import java.time.{Clock, Duration, Instant}
 import java.util
 import java.util.Collections.emptyList
 import java.util.concurrent.Executors
@@ -21,6 +22,8 @@ import org.slf4j.LoggerFactory
 import org.wikidata.query.rdf.common.uri.UrisScheme
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
 import org.wikidata.query.rdf.tool.rdf.{EntityDiff, Munger, Patch}
+import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException
+import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException.Type.ENTITY_NOT_FOUND
 import org.wikidata.query.rdf.updater.GenerateEntityDiffPatchOperation.mungerOperationProvider
 
 sealed trait ResolvedOp {
@@ -41,7 +44,8 @@ case class GenerateEntityDiffPatchOperation(
                                              mungeOperationProvider: UrisScheme => (String, util.Collection[Statement]) => Long = mungerOperationProvider,
                                              poolSize: Int = 10,
                                              fetchAttempts: Int = 4,
-                                             fetchRetryDelay: FiniteDuration = 1.seconds
+                                             fetchRetryDelay: FiniteDuration = 1.seconds,
+                                             now: () => Instant = () => Clock.systemUTC.instant
                                            )
   extends RichAsyncFunction[MutationOperation, ResolvedOp] {
 
@@ -67,12 +71,16 @@ case class GenerateEntityDiffPatchOperation(
     }
   }
 
+  private val recentEventCutoffDuration = Duration.ofSeconds(10)
+  private def recentEventCutoff = now().minus(recentEventCutoffDuration)
+  private def isRecent(eventTime: Instant): Boolean = eventTime.isAfter(recentEventCutoff)
+
   private def completeDiffPatch(op: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = {
     val future: Future[Patch] = op match {
-      case Diff(item, _, revision, fromRev, _, _) =>
-        getDiff(item, revision, fromRev)
-      case FullImport(item, _, revision, _, _) =>
-        getImport(item, revision)
+      case Diff(item, eventTime, revision, fromRev, _, _) =>
+        getDiff(item, revision, fromRev, eventTime)
+      case FullImport(item, eventTime, revision, _, _) =>
+        getImport(item, revision, eventTime)
     }
     future.onComplete {
       case Success(patch) => resultFuture.complete(EntityPatchOp(op, patch) :: Nil)
@@ -81,13 +89,14 @@ case class GenerateEntityDiffPatchOperation(
     }
   }
 
-  private def isRetryable(attempts: Int, t: Throwable): Boolean = t match {
+  private def isRetryable(eventTime: Option[Instant], attempts: Int, t: Throwable): Boolean = t match {
     case _: RetryableException => attempts < fetchAttempts
-    case _ => false
+    case e: WikibaseEntityFetchException => e.getErrorType == ENTITY_NOT_FOUND && eventTime.exists(isRecent)
+    case _: Throwable => false
   }
 
-  private def fetchAsync(item: String, revision: Long, isRecent: Boolean = false): Future[Iterable[Statement]] = {
-    RetryingFuture(fetchRetryDelay, isRetryable) {
+  private def fetchAsync(item: String, revision: Long, eventTime: Option[Instant] = None): Future[Iterable[Statement]] = {
+    RetryingFuture(fetchRetryDelay, isRetryable(eventTime, _, _)) {
       repository.getEntityByRevision(item, revision)
     } recoverWith {
       case e: FailedRetryException => e.getCause match {
@@ -98,9 +107,9 @@ case class GenerateEntityDiffPatchOperation(
     }
   }
 
-  private def getDiff(item: String, revision: Long, fromRev: Long): Future[Patch] = {
+  private def getDiff(item: String, revision: Long, fromRev: Long, eventTime: Instant): Future[Patch] = {
     val from: Future[Iterable[Statement]] = fetchAsync(item, fromRev)
-    val to: Future[Iterable[Statement]] = fetchAsync(item, revision)
+    val to: Future[Iterable[Statement]] = fetchAsync(item, revision, Some(eventTime))
 
     from flatMap { fromIt =>
       to map {
@@ -109,8 +118,8 @@ case class GenerateEntityDiffPatchOperation(
     }
   }
 
-  private def getImport(item: String, revision: Long): Future[Patch] = {
-    val stmts: Future[Iterable[Statement]] = fetchAsync(item, revision)
+  private def getImport(item: String, revision: Long, eventTime: Instant): Future[Patch] = {
+    val stmts: Future[Iterable[Statement]] = fetchAsync(item, revision, Some(eventTime))
     stmts map { sendImport(item, _, revision) }
   }
 
