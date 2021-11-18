@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.wikidata.query.rdf.mwoauth.OAuthProxyService.SessionState;
 
 import com.github.scribejava.core.model.OAuth1AccessToken;
 import com.github.scribejava.core.model.OAuth1RequestToken;
@@ -65,7 +66,7 @@ public class OAuthProxyServiceUnitTest {
             OAuthProxyConfig.SESSION_STORE_KEY_PREFIX, "dummy:prefix",
             OAuthProxyConfig.WIKI_LOGOUT_LINK_PROPERTY, WIKI_LOGOUT_LINK,
             OAuthProxyConfig.BANNED_USERNAMES_CSV_PROPERTY, bannedUsernames
-        )), mwoauthServiceMock, identifyMock, getMockedSessionStore(1));
+        )), mwoauthServiceMock, identifyMock, getMockedSessionStore(1, SessionState.class));
         return service;
     }
 
@@ -78,7 +79,7 @@ public class OAuthProxyServiceUnitTest {
     @Test
     public void shouldAllowLoggedInUser() throws Exception {
         when(identifyMock.getUsername(any())).thenReturn("fake_username");
-        Response checkLoginResponse = sut.checkLogin();
+        Response checkLoginResponse = sut.checkLogin(null);
 
         assertThat(checkLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
         assertThat(extractRedirectLocation(checkLoginResponse)).isEqualTo(new URI(AUTHENTICATE_URL));
@@ -98,15 +99,23 @@ public class OAuthProxyServiceUnitTest {
     }
 
     @Test
+    public void shouldRememberReturnUrl() throws Exception {
+        String url = "http://some.where/";
+        sut.checkLogin(url);
+        Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, null);
+        assertThat(verifyResponse.getLocation()).hasToString(url);
+    }
+
+    @Test
     public void shouldReturnForbiddenIfTokenWasCleared() throws Exception {
         //1st user request for request token
-        sut.checkLogin();
+        sut.checkLogin(null);
         // 2nd user request for request token. Token clearing is simulated here because our cache is
         // only allowed to hold a single value during test.
         OAuth1RequestToken requestToken = new OAuth1RequestToken("new token", "tokenSecret");
         when(mwoauthServiceMock.getRequestToken()).thenReturn(requestToken);
         when(mwoauthServiceMock.getAuthorizationUrl(requestToken)).thenReturn(AUTHORIZE_URL);
-        sut.checkLogin();
+        sut.checkLogin(null);
         //1st user request for session verification
         Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, "http://localhost");
         assertThat(verifyResponse.getStatus()).isEqualTo(FORBIDDEN.getStatusCode());
@@ -115,7 +124,7 @@ public class OAuthProxyServiceUnitTest {
     @Test
     public void logoutShouldDeleteCookieAndRedirect() throws Exception {
         when(identifyMock.getUsername(any())).thenReturn("fake_username");
-        sut.checkLogin();
+        sut.checkLogin(null);
         String redirectUrl = "http://localhost/redirect";
         Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, redirectUrl);
         String wikiSession = verifyResponse.getCookies().get(SESSION_COOKIE_NAME).getValue();
@@ -139,7 +148,7 @@ public class OAuthProxyServiceUnitTest {
     @Test
     public void noSessionCookieForBannedUsers() throws Exception {
         when(identifyMock.getUsername(any())).thenReturn("banned");
-        Response checkLoginResponse = sut.checkLogin();
+        Response checkLoginResponse = sut.checkLogin(null);
 
         assertThat(checkLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
         assertThat(extractRedirectLocation(checkLoginResponse)).isEqualTo(new URI(AUTHENTICATE_URL));
@@ -157,7 +166,7 @@ public class OAuthProxyServiceUnitTest {
     @Test
     public void validTokensWithBannedUsernamesAreRejected() throws Exception {
         when(identifyMock.getUsername(any())).thenReturn("not_banned_yet");
-        Response checkLoginResponse = sut.checkLogin();
+        Response checkLoginResponse = sut.checkLogin(null);
 
         assertThat(checkLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
         assertThat(extractRedirectLocation(checkLoginResponse)).isEqualTo(new URI(AUTHENTICATE_URL));
@@ -190,26 +199,6 @@ public class OAuthProxyServiceUnitTest {
         return new OAuthProxyConfig(servletConfig);
     }
 
-    private KaskSessionStore<OAuth1RequestToken> getMockedSessionStore() throws IOException {
-        Cache<String, OAuth1RequestToken> cache = CacheBuilder.newBuilder().build();
-        KaskSessionStore<OAuth1RequestToken> sessionStore = mock(KaskSessionStore.class);
-
-        when(sessionStore.getIfPresent(anyString())).then((args) ->
-            cache.getIfPresent(args.getArgumentAt(0, String.class)));
-
-        doAnswer((args) -> {
-            cache.put(args.getArgumentAt(0, String.class), args.getArgumentAt(1, OAuth1RequestToken.class));
-            return null;
-        }).when(sessionStore).put(anyString(), isA(OAuth1RequestToken.class));
-
-        doAnswer((args) -> {
-            cache.invalidate(args.getArgumentAt(0, String.class));
-            return null;
-        }).when(sessionStore).invalidate(anyString());
-
-        return sessionStore;
-    }
-
     private OAuth10aService getMockedMWOAuthService() throws IOException, InterruptedException, ExecutionException {
         OAuth10aService mwoauthServiceMock = mock(OAuth10aService.class);
 
@@ -222,17 +211,17 @@ public class OAuthProxyServiceUnitTest {
         return mwoauthServiceMock;
     }
 
-    private KaskSessionStore<OAuth1RequestToken> getMockedSessionStore(long maximumSize) throws IOException {
-        Cache<String, OAuth1RequestToken> cache = CacheBuilder.newBuilder().maximumSize(maximumSize).build();
-        KaskSessionStore<OAuth1RequestToken> sessionStore = mock(KaskSessionStore.class);
+    private <T> KaskSessionStore<T> getMockedSessionStore(long maximumSize, Class<T> clazz) throws IOException {
+        Cache<String, T> cache = CacheBuilder.newBuilder().maximumSize(maximumSize).build();
+        KaskSessionStore<T> sessionStore = mock(KaskSessionStore.class);
 
         when(sessionStore.getIfPresent(anyString())).then((args) ->
             cache.getIfPresent(args.getArgumentAt(0, String.class)));
 
         doAnswer((args) -> {
-            cache.put(args.getArgumentAt(0, String.class), args.getArgumentAt(1, OAuth1RequestToken.class));
+            cache.put(args.getArgumentAt(0, String.class), args.getArgumentAt(1, clazz));
             return null;
-        }).when(sessionStore).put(anyString(), isA(OAuth1RequestToken.class));
+        }).when(sessionStore).put(anyString(), isA(clazz));
 
         doAnswer((args) -> {
             cache.invalidate(args.getArgumentAt(0, String.class));

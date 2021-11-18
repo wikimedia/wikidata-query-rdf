@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.Date;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -70,12 +71,22 @@ public class OAuthProxyService {
 
     private OAuth10aService service;
     private OAuthIdentifyService identify;
-    private KaskSessionStore<OAuth1RequestToken> requestTokens;
+    private KaskSessionStore<SessionState> sessions;
     private String wikiLogoutLink;
     private String sessionKeyPrefix;
     private String successRedirect;
     private TimeLimitedAccessToken authToken;
     private Set<String> bannedUsernames;
+
+    static class SessionState {
+        public final OAuth1RequestToken token;
+        public final Optional<URI> returnUri;
+
+        SessionState(OAuth1RequestToken token, Optional<URI> returnUri) {
+            this.token = token;
+            this.returnUri = returnUri;
+        }
+    }
 
     @PostConstruct
     public void init() {
@@ -83,14 +94,14 @@ public class OAuthProxyService {
         OAuth10aService oauthService = new ServiceBuilder(oauthConfig.consumerKey())
             .apiSecret(oauthConfig.consumerSecret())
             .build(new MediaWikiApi(oauthConfig.indexUrl(), oauthConfig.niceUrlBase()));
-        KaskSessionStore<OAuth1RequestToken> sessionStore = buildSessionStore(oauthConfig, HttpClients.createDefault());
+        KaskSessionStore<SessionState> sessionStore = buildSessionStore(oauthConfig, HttpClients.createDefault());
         OAuthIdentifyService identify = new OAuthIdentifyService(oauthService, oauthConfig.indexUrl(), oauthConfig.consumerSecret());
         init(oauthConfig, oauthService, identify, sessionStore);
     }
 
     @VisibleForTesting
-    public void init(OAuthProxyConfig config, OAuth10aService service, OAuthIdentifyService identify, KaskSessionStore<OAuth1RequestToken> sessionStore) {
-        requestTokens = sessionStore;
+    public void init(OAuthProxyConfig config, OAuth10aService service, OAuthIdentifyService identify, KaskSessionStore<SessionState> sessionStore) {
+        sessions = sessionStore;
         sessionKeyPrefix = config.sessionStoreKeyPrefix();
         wikiLogoutLink = config.wikiLogoutLink();
         successRedirect = config.successRedirect();
@@ -102,11 +113,13 @@ public class OAuthProxyService {
 
     @GET
     @Path("/check_login")
-    public Response checkLogin() throws InterruptedException, ExecutionException, IOException, URISyntaxException {
+    public Response checkLogin(
+        @HeaderParam("X-redirect-url") String redirectUrl
+    ) throws InterruptedException, ExecutionException, IOException, URISyntaxException {
         final OAuth1RequestToken requestToken = service.getRequestToken();
-        requestTokens.put(requestToken.getToken(), requestToken);
+        sessions.put(requestToken.getToken(),
+            new SessionState(requestToken, Optional.ofNullable(redirectUrl).map(URI::create)));
         String authorizationUrl = service.getAuthorizationUrl(requestToken);
-
         return temporaryRedirect(getAuthenticationURI(authorizationUrl)).build();
     }
 
@@ -119,22 +132,21 @@ public class OAuthProxyService {
     public Response oauthVerify(@QueryParam ("oauth_verifier") String oauthVerifier,
                                 @QueryParam ("oauth_token") String oauthToken,
                                 @HeaderParam("X-redirect-url") String redirectUrl
-    ) throws InterruptedException, ExecutionException, IOException, URISyntaxException {
-        OAuth1RequestToken requestToken = requestTokens.getIfPresent(oauthToken);
-        if (requestToken == null) {
+    ) throws InterruptedException, ExecutionException, IOException {
+        SessionState state = sessions.getIfPresent(oauthToken);
+        if (state == null) {
             return status(FORBIDDEN).build();
         }
-        requestTokens.invalidate(oauthToken);
-        OAuth1AccessToken accessToken = service.getAccessToken(requestToken, oauthVerifier);
+        sessions.invalidate(oauthToken);
+        OAuth1AccessToken accessToken = service.getAccessToken(state.token, oauthVerifier);
         String username = identify.getUsername(accessToken);
         if (bannedUsernames.contains(username)) {
             return status(FORBIDDEN).build();
         }
         NewCookie cookie = sessionCookie(authToken.create(username), SESSION_MAX_AGE);
-        if (redirectUrl == null) {
-            redirectUrl = successRedirect;
-        }
-        return temporaryRedirect(new URI(redirectUrl)).cookie(cookie).build();
+        // prefer the uri from initial request, then from current request, and finally the system default.
+        URI finalRedirect = state.returnUri.orElseGet(() -> URI.create(redirectUrl != null ? redirectUrl : successRedirect));
+        return temporaryRedirect(finalRedirect).cookie(cookie).build();
     }
 
     @GET
@@ -165,32 +177,41 @@ public class OAuthProxyService {
         return new URI(authorizationUrl.replace("authorize", "authenticate"));
     }
 
-    private KaskSessionStore<OAuth1RequestToken> buildSessionStore(OAuthProxyConfig config, HttpClient httpClient) {
+    private KaskSessionStore<SessionState> buildSessionStore(OAuthProxyConfig config, HttpClient httpClient) {
         return new KaskSessionStore<>(
             httpClient,
             config.sessionStoreHost(),
-            new KaskSessionStore.Serde<OAuth1RequestToken>() {
+            new KaskSessionStore.Serde<SessionState>() {
                 @Override
                 public String keyEncoder(String key) {
                     return sessionKeyPrefix + key;
                 }
 
                 @Override
-                public void valueEncoder(DataOutput out, OAuth1RequestToken token) throws IOException {
-                    // Is a serialization version necessary? Shouldn't hurt.
-                    out.writeShort(0);
+                public void valueEncoder(DataOutput out, SessionState state) throws IOException {
+                    out.writeShort(1);
                     // Write out constructor args, rather than full object serialization,
                     // to get better guarantees about what we are doing with what we read back.
-                    out.writeUTF(token.getToken());
-                    out.writeUTF(token.getTokenSecret());
+                    out.writeUTF(state.token.getToken());
+                    out.writeUTF(state.token.getTokenSecret());
+                    out.writeBoolean(state.returnUri.isPresent());
+                    if (state.returnUri.isPresent()) {
+                        out.writeUTF(state.returnUri.get().toString());
+                    }
                 }
 
                 @Override
-                public OAuth1RequestToken valueDecoder(DataInput in) throws IOException {
-                    if (in.readShort() != 0) {
+                public SessionState valueDecoder(DataInput in) throws IOException {
+                    short version = in.readShort();
+                    if (version != 0 && version != 1) {
                         throw new IllegalStateException("serialization version mismatch");
                     }
-                    return new OAuth1RequestToken(in.readUTF(), in.readUTF());
+                    OAuth1RequestToken token = new OAuth1RequestToken(in.readUTF(), in.readUTF());
+                    Optional<URI> returnUri = Optional.empty();
+                    if (version >= 1 && in.readBoolean()) {
+                        returnUri = Optional.of(URI.create(in.readUTF()));
+                    }
+                    return new SessionState(token, returnUri);
                 }
             });
     }

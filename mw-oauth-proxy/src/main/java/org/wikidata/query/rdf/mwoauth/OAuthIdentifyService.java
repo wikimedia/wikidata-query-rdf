@@ -23,7 +23,6 @@ class OAuthIdentifyService {
         this.service = service;
         this.url = indexUrl + "?title=Special:OAuth/identify";
         verifier = JWT.require(Algorithm.HMAC256(consumerSecret)).withClaimPresence(USERNAME).build();
-
     }
 
     String getUsername(OAuth1AccessToken accessToken) throws InterruptedException, ExecutionException, IOException {

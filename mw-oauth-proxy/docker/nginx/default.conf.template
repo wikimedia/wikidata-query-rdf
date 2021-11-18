@@ -4,6 +4,7 @@ server {
     location /error403 {
         internal;
         proxy_pass ${JETTY_URI}/oauth/check_login;
+        proxy_set_header X-redirect-url $request_uri;
     }
 
     location /_check_auth {
