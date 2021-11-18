@@ -57,6 +57,7 @@ class InputEventSerializer(readVersion: Int) extends TypeSerializerBase[InputEve
   override def equals(other: Any): Boolean = other match {
     case that: InputEventSerializer =>
       (that canEqual this) &&
+        super.equals(other)
         serializeHelper == that.serializeHelper
     case _ => false
   }
@@ -67,4 +68,8 @@ class InputEventSerializer(readVersion: Int) extends TypeSerializerBase[InputEve
   }
 }
 
-class InputEventSerializerSnapshot extends VersionedCustomSerializerSnapshot[InputEvent](version => new InputEventSerializer(version))
+class InputEventSerializerSnapshot
+  extends VersionedCustomSerializerSnapshot[InputEvent](
+    InputEventSerializer.currentVersion,
+    version => new InputEventSerializer(version)
+  )

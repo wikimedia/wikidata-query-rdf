@@ -116,7 +116,8 @@ class TypeSerializerBaseUnitTest extends FlatSpec with Matchers {
   }
 
   "VersionedCustomSerializerSnapshot" should "be serializable and provide proper compatibility checks" in {
-    val versionedCustomSerializerSnapshot = new VersionedCustomSerializerSnapshot(v => new MyTypeSerializer(v))
+    val versionedCustomSerializerSnapshot = new VersionedCustomSerializerSnapshot(1, v => new MyTypeSerializer(v))
+    versionedCustomSerializerSnapshot.getCurrentVersion shouldBe 1
     InstantiationUtil.isSerializable(versionedCustomSerializerSnapshot)
 
     val baos = new ByteArrayOutputStream()

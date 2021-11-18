@@ -67,7 +67,11 @@ class MutationOperationSerializer(readVersion: Int) extends TypeSerializerBase[M
   }
 }
 
-class MutationOptionSerializerSnapshot extends VersionedCustomSerializerSnapshot(v => new MutationOperationSerializer(v))
+class MutationOptionSerializerSnapshot
+  extends VersionedCustomSerializerSnapshot(
+    MutationOperationSerializer.currentVersion,
+    v => new MutationOperationSerializer(v)
+  )
 
 
 

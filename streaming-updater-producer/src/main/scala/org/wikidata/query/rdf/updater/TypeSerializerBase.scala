@@ -156,10 +156,10 @@ class SerializerHelper (val readVersion: Int) extends Serializable {
 
 }
 
-class VersionedCustomSerializerSnapshot[E](serializerSupplier: Int => TypeSerializerBase[E]) extends TypeSerializerSnapshot[E] {
+class VersionedCustomSerializerSnapshot[E](currentVersion: Int, serializerSupplier: Int => TypeSerializerBase[E]) extends TypeSerializerSnapshot[E] {
   private var version = -1
 
-  override def getCurrentVersion: Int = 1
+  override def getCurrentVersion: Int = currentVersion
 
   override def writeSnapshot(out: DataOutputView): Unit = {}
 
