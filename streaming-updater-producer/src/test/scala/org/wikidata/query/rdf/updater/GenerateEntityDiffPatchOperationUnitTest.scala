@@ -7,6 +7,7 @@ import java.util.Collections.emptyList
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.language.postfixOps
+import scala.concurrent.duration.DurationInt
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.operators.testutils.MockEnvironment
@@ -86,6 +87,14 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     harness.extractOutputValues() should contain only outputImportEvent(op)
   }
 
+  "a reconcile op" should "fetch 1 entity revisions" in {
+    (repoMock.getEntityByRevision _).expects("Q1", 1) returning statements("uri:a").asScala
+
+    val op = reconcileOp
+    val harness = sendData(op)
+    harness.extractOutputValues() should contain only outputReconcileEvent(op)
+  }
+
   "a repo failure on an import op" should "send a failed op" in {
     val e = new ContainedException("error")
     (repoMock.getEntityByRevision _).expects("Q1", 1) throwing e
@@ -99,6 +108,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     values.size() shouldEqual 1
     val ops: FailedOp = values.get(0) match {
       case e: FailedOp => e
+      case _ => fail("Expecting a FailedOp")
     }
     ops.operation shouldBe op
     ops.exception.getClass shouldBe e.getClass
@@ -199,8 +209,16 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     FullImport("Q1", NOW, 1, NOW, INPUT_EVENT_INFO)
   }
 
+  private def reconcileOp = {
+    Reconcile("Q1", NOW, 1, NOW, INPUT_EVENT_INFO)
+  }
+
   private def outputImportEvent(op: FullImport) = {
     EntityPatchOp(op, new Patch(statements("uri:a"), emptyList(), emptyList(), emptyList()))
+  }
+
+  private def outputReconcileEvent(op: Reconcile) = {
+    ReconcileOp(op, new Patch(statements("uri:a"), emptyList(), emptyList(), emptyList()))
   }
 
   private def inputDiffOp = {

@@ -15,8 +15,9 @@ import org.apache.flink.core.memory.{DataInputView, DataOutputView}
  */
 object MutationOperationSerializer {
   val V1: Int = 1
+  val V2: Int = 2
+  val currentVersion: Int = V2
   def typeInfo(): TypeInformation[MutationOperation] = new BaseTypeInfo(() => new MutationOperationSerializer(currentVersion))
-  val currentVersion: Int = V1
 }
 
 class MutationOperationSerializer(readVersion: Int) extends TypeSerializerBase[MutationOperation](readVersion) {
@@ -24,6 +25,7 @@ class MutationOperationSerializer(readVersion: Int) extends TypeSerializerBase[M
   def helperForVersion(readVersion: Int): SerializerHelper = {
     val helperVersion: Int = readVersion match {
       case MutationOperationSerializer.V1 => SerializerHelper.V1
+      case MutationOperationSerializer.V2 => SerializerHelper.V1
       case _ => throw new IllegalArgumentException("Unsupported InputEventSerializer version " + readVersion)
     }
     new SerializerHelper(helperVersion)
@@ -37,6 +39,7 @@ class MutationOperationSerializer(readVersion: Int) extends TypeSerializerBase[M
         output.writeLong(diff.fromRev)
       case _: FullImport => output.writeUTF("FullImport")
       case _: DeleteItem => output.writeUTF("DeleteItem")
+      case _: Reconcile => output.writeUTF("Reconcile")
     }
   }
 
@@ -46,6 +49,7 @@ class MutationOperationSerializer(readVersion: Int) extends TypeSerializerBase[M
       case "Diff" => Diff(item, eventTime, revision, input.readLong(), ingestionTime, eventInfo)
       case "FullImport" => FullImport(item, eventTime, revision, ingestionTime, eventInfo)
       case "DeleteItem" => DeleteItem(item, eventTime, revision, ingestionTime, eventInfo)
+      case "Reconcile" => Reconcile(item, eventTime, revision, ingestionTime, eventInfo)
     }
   }
 

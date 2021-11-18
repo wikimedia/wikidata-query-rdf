@@ -63,14 +63,26 @@ class PatchChunkOperationUnitTest extends FlatSpec with Matchers with TestEventG
     chunks.asScala.map(_.data.getOperation).toSet should contain only "import"
   }
 
-  "a delete operation" should "generate an import MutationEventData" in {
+  "a delete operation" should "generate an delete MutationEventData" in {
     val op = buildOp()
     val chunks: util.List[MutationDataChunk] = new util.ArrayList[MutationDataChunk]()
-    op.flatMap(outputDeleteEvent(importDeleteOp), new ListCollector[MutationDataChunk](chunks))
+    op.flatMap(outputDeleteEvent(deleteOp), new ListCollector[MutationDataChunk](chunks))
 
     chunks.size() shouldBe 1
-    chunks.asScala.map(_.operation).toSet should contain only importDeleteOp
+    chunks.asScala.map(_.operation).toSet should contain only deleteOp
     chunks.asScala.map(_.data.getOperation).toSet should contain only "delete"
+  }
+
+  "a reconcile operation" should "generate an import MutationEventData" in {
+    val op = buildOp()
+    val chunks: util.List[MutationDataChunk] = new util.ArrayList[MutationDataChunk]()
+    op.flatMap(outputReconcileEvent(reconcileOp), new ListCollector[MutationDataChunk](chunks))
+
+    chunks.size() shouldBe 1
+    chunks.asScala.map(_.operation).toSet should contain only reconcileOp
+    chunks.asScala.map(_.data.getOperation).toSet should contain only "reconcile"
+    chunks.asScala.map(_.data.getOperation).toSet should contain only "reconcile"
+    chunks.asScala.map(_.data).map(_.asInstanceOf[DiffEventData]).map(_.getRdfAddedData.getData).mkString("\n") should include ("uri:reconciliation")
   }
 
   private def buildOp(chunkSize: Int = Int.MaxValue) = {
@@ -91,8 +103,12 @@ class PatchChunkOperationUnitTest extends FlatSpec with Matchers with TestEventG
     FullImport("Q1", NOW, 1, NOW, INPUT_EVENT_INFO)
   }
 
-  private def importDeleteOp: DeleteItem = {
+  private def deleteOp: DeleteItem = {
     DeleteItem("Q1", NOW, 1, NOW, INPUT_EVENT_INFO)
+  }
+
+  private def reconcileOp: Reconcile = {
+    Reconcile("Q1", NOW, 1, NOW, INPUT_EVENT_INFO)
   }
 
   private def inputDiffOp: Diff = {
@@ -105,5 +121,9 @@ class PatchChunkOperationUnitTest extends FlatSpec with Matchers with TestEventG
 
   private def outputDeleteEvent(op: DeleteItem): SuccessfulOp = {
     DeleteOp(op)
+  }
+
+  private def outputReconcileEvent(op: Reconcile): SuccessfulOp = {
+    ReconcileOp(op, new Patch(statements("uri:reconciliation"), emptyList(), emptyList(), emptyList()))
   }
 }

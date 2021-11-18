@@ -1,15 +1,18 @@
 package org.wikidata.query.rdf.updater
 
+import java.net.URI
+import java.time.{Clock, Instant}
+import java.util.Collections
+
+import scala.collection.JavaConverters.{mapAsJavaMapConverter, setAsJavaSetConverter}
+
 import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.change.events._
+import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
-import org.wikidata.query.rdf.updater.config.{InputKafkaTopics, UpdaterPipelineInputEventStreamConfig}
-
-import java.net.URI
-import java.time.{Clock, Instant}
-import scala.collection.JavaConverters.{mapAsJavaMapConverter, setAsJavaSetConverter}
+import org.wikidata.query.rdf.updater.config.{FilteredReconciliationTopic, InputKafkaTopics, UpdaterPipelineInputEventStreamConfig}
 
 class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
 
@@ -33,6 +36,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
           pageDeleteTopicName = "page-delete-topic",
           pageUndeleteTopicName = "page-undelete-topic",
           suppressedDeleteTopicName = "suppressed-delete-topic",
+          reconciliationTopicName = None,
           topicPrefixes = List("")),
         10, 10, Set(), "mediainfo"),
       uris, Clock.systemUTC())
@@ -48,6 +52,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
           pageDeleteTopicName = "page-delete-topic",
           pageUndeleteTopicName = "page-undelete-topic",
           suppressedDeleteTopicName = "suppressed-delete-topic",
+          reconciliationTopicName = None,
           topicPrefixes = List("")),
         10, 10, Set(), "mediainfo"),
       uris, Clock.systemUTC()
@@ -68,6 +73,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
           pageDeleteTopicName = "page-delete-topic",
           pageUndeleteTopicName = "page-undelete-topic",
           suppressedDeleteTopicName = "suppressed-delete-topic",
+          reconciliationTopicName = Some(FilteredReconciliationTopic("rdf-streaming-updater.reconcile", None)),
           topicPrefixes = List("cluster1.", "cluster2.")),
         10, 10, Set(), "mediainfo"),
       uris, Clock.systemUTC())
@@ -76,10 +82,12 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
       s"Filtered(cluster1.page-delete-topic == $DOMAIN)",
       s"Filtered(cluster1.page-undelete-topic == $DOMAIN)",
       s"Filtered(cluster1.suppressed-delete-topic == $DOMAIN)",
+      s"Filtered(cluster1.rdf-streaming-updater.reconcile == $DOMAIN)",
       s"Filtered(cluster2.rev-create-topic == $DOMAIN)",
       s"Filtered(cluster2.page-delete-topic == $DOMAIN)",
       s"Filtered(cluster2.page-undelete-topic == $DOMAIN)",
-      s"Filtered(cluster2.suppressed-delete-topic == $DOMAIN)"
+      s"Filtered(cluster2.suppressed-delete-topic == $DOMAIN)",
+      s"Filtered(cluster2.rdf-streaming-updater.reconcile == $DOMAIN)"
     )
   }
 
@@ -118,6 +126,21 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
       IncomingStreams.REV_CREATE_CONV, clock, resolver, Some(filter)).executeAndCollect().toSet
 
     output.map(_.item) should contain only ("M1", "M3")
+  }
+
+  "IncomingStreams" should "filter out ReconcileEvent based on their source" in {
+    val filter = new ReconciliationSourceFilter("my_source")
+
+    val fromCorrectSource = newReconcileEvent("Q1", 1, Action.CREATION, instant(4), "my_source")
+    val fromOtherSource = newReconcileEvent("Q2", 1, Action.CREATION, instant(4), "other_source")
+    implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+    env.setParallelism(1)
+    val output: Set[InputEvent] = IncomingStreams.fromStream(env.fromCollection(Seq(fromCorrectSource, fromOtherSource))
+      .setParallelism(1),
+      uris,
+      IncomingStreams.RECONCILIATION_CONV, clock, resolver, Some(filter)).executeAndCollect().toSet
+
+    output.map(_.item) should contain only "Q1"
   }
 
   "RevCreateEvent" should "be convertible into InputEvent" in {
@@ -173,6 +196,82 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
     event.originalEventInfo.schema() should equal("schema")
     event.originalEventInfo.meta().requestId() should equal("my_request_id")
     event.originalEventInfo.meta().domain() should equal("my-domain")
+  }
+
+  "ReconcileEvent" should "be convertible into InputEvent" in {
+    val event = IncomingStreams.RECONCILIATION_CONV.apply(new ReconcileEvent(
+      new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "my_request_id"),
+      "schema",
+      "Q123",
+      1234,
+      "source",
+      Action.CREATION,
+      new EventInfo(new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "my_request_id"), "schema")
+      ),
+      resolver, Clock.systemUTC())
+    event.eventTime should equal(Instant.ofEpochMilli(123))
+    event.item should equal("Q123")
+    event.revision should equal(1234)
+    event.originalEventInfo.schema() should equal("schema")
+    event.originalEventInfo.meta().requestId() should equal("my_request_id")
+    event.originalEventInfo.meta().domain() should equal("my-domain")
+  }
+}
+
+class EventWithMetadataHostFilterUnitTest extends FlatSpec with Matchers {
+  "RevisionCreateEvent" should "be filterable" in {
+    val filter = new EventWithMetadataHostFilter[RevisionCreateEvent](new Uris(URI.create("https://my.wikidata.org/"),
+      Set[java.lang.Long](0L, 1L, 2L).asJava, "/api", "/entity"))
+    def revCreate(domain: String, ns: Long): RevisionCreateEvent = {
+      new RevisionCreateEvent(
+        new EventsMeta(Instant.ofEpochMilli(123), "unused", domain, "unused for now", "my_request_id"),
+        "schema", 1L, 1234L, 1233L, "Q123", ns, Collections.emptyMap())
+    }
+    filter.filter(revCreate("unrelated", 3L)) shouldBe false
+    filter.filter(revCreate("unrelated", 2L)) shouldBe false
+    filter.filter(revCreate("my.wikidata.org", 3L)) shouldBe false
+    filter.filter(revCreate("my.wikidata.org", 2L)) shouldBe true
+  }
+
+  "PageDeleteEvent" should "be filterable" in {
+    val filter = new EventWithMetadataHostFilter[PageDeleteEvent](new Uris(URI.create("https://my.wikidata.org/"),
+      Set[java.lang.Long](0L, 1L, 2L).asJava, "/api", "/entity"))
+    def pageDelete(domain: String, ns: Long): PageDeleteEvent = {
+      new PageDeleteEvent(
+        new EventsMeta(Instant.ofEpochMilli(123), "unused", domain, "unused for now", "my_request_id"),
+        "schema", 1L, 1234L, "Q123", ns)
+    }
+    filter.filter(pageDelete("unrelated", 3L)) shouldBe false
+    filter.filter(pageDelete("unrelated", 2L)) shouldBe false
+    filter.filter(pageDelete("my.wikidata.org", 3L)) shouldBe false
+    filter.filter(pageDelete("my.wikidata.org", 2L)) shouldBe true
+  }
+
+  "PageUndeleteEvent" should "be filterable" in {
+    val filter = new EventWithMetadataHostFilter[PageUndeleteEvent](new Uris(URI.create("https://my.wikidata.org/"),
+      Set[java.lang.Long](0L, 1L, 2L).asJava, "/api", "/entity"))
+    def pageUndelete(domain: String, ns: Long): PageUndeleteEvent = {
+      new PageUndeleteEvent(
+        new EventsMeta(Instant.ofEpochMilli(123), "unused", domain, "unused for now", "my_request_id"),
+        "schema", 1L, 1234L, "Q123", ns)
+    }
+    filter.filter(pageUndelete("unrelated", 3L)) shouldBe false
+    filter.filter(pageUndelete("unrelated", 2L)) shouldBe false
+    filter.filter(pageUndelete("my.wikidata.org", 3L)) shouldBe false
+    filter.filter(pageUndelete("my.wikidata.org", 2L)) shouldBe true
+  }
+
+  "ReconcileEvent" should "be filterable" in {
+    val filter = new EventWithMetadataHostFilter[ReconcileEvent](new Uris(URI.create("https://my.wikidata.org/"),
+      Set[java.lang.Long](0L, 1L, 2L).asJava, "/api", "/entity"))
+    def reconcile(domain: String): ReconcileEvent = {
+      new ReconcileEvent(
+        new EventsMeta(Instant.ofEpochMilli(123), "unused", domain, "unused for now", "my_request_id"),
+        "schema", "Q123", 1L, "source", Action.CREATION,
+        new EventInfo(new EventsMeta(Instant.ofEpochMilli(123), "unused", "unused", "unused for now", "original_request_id"), "schema"))
+    }
+    filter.filter(reconcile("unrelated")) shouldBe false
+    filter.filter(reconcile("my.wikidata.org")) shouldBe true
   }
 }
 

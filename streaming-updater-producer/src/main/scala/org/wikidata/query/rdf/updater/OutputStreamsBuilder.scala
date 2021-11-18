@@ -11,7 +11,7 @@ import org.wikidata.query.rdf.updater.config.{HttpClientConfig, UpdaterPipelineO
 case class OutputStreams(
                           mutationSink: SinkFunction[MutationDataChunk],
                           lateEventsSink: SinkFunction[InputEvent] = new DiscardingSink[InputEvent],
-                          spuriousEventsSink: SinkFunction[IgnoredMutation] = new DiscardingSink[IgnoredMutation],
+                          spuriousEventsSink: SinkFunction[InconsistentMutation] = new DiscardingSink[InconsistentMutation],
                           failedOpsSink: SinkFunction[FailedOp] = new DiscardingSink[FailedOp]
                         )
 
@@ -21,7 +21,7 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
       mutationOutput,
       prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema,
         outputStreamsConfig.schemaRepos, httpClientConfig),
-      prepareSideOutputStream[IgnoredMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
+      prepareSideOutputStream[InconsistentMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
         outputStreamsConfig.schemaRepos, httpClientConfig),
       prepareSideOutputStream[FailedOp](JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema,
         outputStreamsConfig.schemaRepos, httpClientConfig))

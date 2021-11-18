@@ -34,7 +34,9 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
 
   private val schemaRepos: List[String] = List(
     "https://schema.wikimedia.org/repositories/primary/jsonschema",
-    "https://schema.wikimedia.org/repositories/secondary/jsonschema")
+    "https://schema.wikimedia.org/repositories/secondary/jsonschema",
+    // useful to put test schemas while changes are being reviewed on the schemas repos
+    this.getClass.getResource("/schema_repo/").toString)
 
   private val jsonLoader: JsonLoader = new JsonLoader(ResourceLoader.builder()
     .setBaseUrls(ResourceLoader.asURLs(schemaRepos.asJava))
@@ -137,6 +139,25 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
     Some(record.get("parent_revision_id").asInstanceOf[Number].longValue()) shouldBe inputEvent.parentRevision
   }
 
+  "ProblematicReconciliation" should "be encoded properly as json" in {
+    val inputEvent = ReconcileInputEvent(item, eventTime, revision, ReconcileCreation, ingestionTime, eventInfo)
+    val state = State(Some(revision), EntityStatus.DELETED)
+    val inconsistency = ProblematicReconciliation("Q1", eventTime, revision, inputEvent, ingestionTime, ReconcileAmbiguousCreation, state,
+      Reconcile("Q1", eventTime, revision, ingestionTime, eventInfo))
+    val eventCreator = jsonEncoder.stateInconsistencyEvent(inconsistency)
+    val jsonEvent = jsonEventGeneratorSupplier().generateEvent(JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
+      eventCreator, processingTime)
+    val event = jsonEventGeneratorSupplier().serializeAsBytes(jsonEvent)
+
+    val record: util.Map[String, Object] = MapperUtils.getObjectMapper.readValue(event, classOf[util.Map[String, Object]])
+    assertBasicMetadata(record)
+    assertNewMetadata(record.get("meta"), JsonEncoders.stateInconsistencyStream)
+    record.get("inconsistency") shouldBe ReconcileAmbiguousCreation.name
+    record.get("state_revision_id").asInstanceOf[Number].longValue() shouldBe revision
+    record.get("state_status") shouldBe "DELETED"
+    record.get("action_type") shouldBe "reconcile-creation"
+  }
+
   "FailedOp event" should "be encoded properly as an json" in {
     val e = new ContainedException("problem")
     val op = FailedOp(Diff(item, eventTime, revision, fromRevision, ingestionTime, eventInfo), e)
@@ -171,7 +192,7 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
     val kafkaSerSchema = new SideOutputSerializationSchema[FailedOp](Some(clock), "my_topic",
       JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema, sideOutputDomain, eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
     val e = new ContainedException("problem")
-    val op = FailedOp(Diff(item, eventTime, revision, fromRevision, ingestionTime, eventInfo), e)
+    val op = FailedOp(Reconcile(item, eventTime, revision, ingestionTime, eventInfo), e)
     val record = kafkaSerSchema.serialize(op, Instant.now().toEpochMilli)
     record.timestamp() shouldBe processingTime.toEpochMilli
     record.topic() shouldBe "my_topic"

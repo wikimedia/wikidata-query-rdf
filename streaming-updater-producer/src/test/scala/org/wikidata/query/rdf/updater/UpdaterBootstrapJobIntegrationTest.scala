@@ -94,7 +94,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       OutputStreams(
         new CollectSink[MutationDataChunk](CollectSink.values.append(_)),
         new CollectSink[InputEvent](CollectSink.lateEvents.append(_)),
-        new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_))
+        new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))
       ),
       _ => repository, clock = clock)
     val graph = streamingEnv.getStreamGraph("test")

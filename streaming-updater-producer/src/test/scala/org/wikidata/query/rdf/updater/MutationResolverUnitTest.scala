@@ -177,6 +177,104 @@ class MutationResolverUnitTest extends FlatSpec with Matchers with MutationFixtu
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
 
+  it should "reconcile a deleted entity when nothing in the state is found" in {
+    operator.processElement(newReconcileEventRecord("Q1", 2, ReconcileDeletion, 1, ingestionTs, testDomain, testStream, "req1"))
+    val expectedOutput = new ListBuffer[AllMutationOperation]
+    expectedOutput += DeleteItem("Q1", instant(1), 2, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req1"))
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs(expectedOutput)
+  }
+
+  it should "reconcile a created entity when nothing in the state is found" in {
+    operator.processElement(newReconcileEventRecord("Q1", 2, ReconcileCreation, 1, ingestionTs, testDomain, testStream, "req1"))
+    val expectedOutput = new ListBuffer[AllMutationOperation]
+    expectedOutput += Reconcile("Q1", instant(1), 2, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req1"))
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs(expectedOutput)
+  }
+
+  it should "reconcile a created entity when a older revision is in the state" in {
+    operator.processElement(newRevCreateRecordNewPage("Q1", 1, 1, ingestionTs, testDomain, testStream, "req1"))
+    operator.processElement(newReconcileEventRecord("Q1", 2, ReconcileCreation, 1, ingestionTs, testDomain, testStream, "req2"))
+    val expectedOutput = new ListBuffer[AllMutationOperation]
+    expectedOutput += FullImport("Q1", instant(1), 1, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req1"))
+    expectedOutput += Reconcile("Q1", instant(1), 2, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req2"))
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs(expectedOutput)
+  }
+
+  it should "reconcile a deleted entity when a older revision is in the state" in {
+    operator.processElement(newRevCreateRecordNewPage("Q1", 1, 1, ingestionTs, testDomain, testStream, "req1"))
+    operator.processElement(newReconcileEventRecord("Q1", 2, ReconcileDeletion, 1, ingestionTs, testDomain, testStream, "req2"))
+    val expectedOutput = new ListBuffer[AllMutationOperation]
+    expectedOutput += FullImport("Q1", instant(1), 1, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req1"))
+    expectedOutput += DeleteItem("Q1", instant(1), 2, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req2"))
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs(expectedOutput)
+  }
+
+  it should "reconcile a created entity with the newer revision when a newer revision is in the state" in {
+    operator.processElement(newRevCreateRecordNewPage("Q1", 3, 1, ingestionTs, testDomain, testStream, "req1"))
+    operator.processElement(newReconcileEventRecord("Q1", 2, ReconcileCreation, 1, ingestionTs, testDomain, testStream, "req2"))
+    val expectedOutput = new ListBuffer[AllMutationOperation]
+    expectedOutput += FullImport("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req1"))
+    expectedOutput += Reconcile("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req2"))
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs(expectedOutput)
+  }
+
+  it should "reconcile a deleted entity (by reconciling it) with the newer revision when a older revision is in the state" in {
+    operator.processElement(newRevCreateRecordNewPage("Q1", 3, 1, ingestionTs, testDomain, testStream, "req1"))
+    operator.processElement(newReconcileEventRecord("Q1", 2, ReconcileDeletion, 1, ingestionTs, testDomain, testStream, "req2"))
+    val expectedOutput = new ListBuffer[AllMutationOperation]
+    expectedOutput += FullImport("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req1"))
+    expectedOutput += Reconcile("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req2"))
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs(expectedOutput)
+  }
+
+  it should "reconcile a created entity with the same revision when the state agrees with the event" in {
+    operator.processElement(newRevCreateRecordNewPage("Q1", 3, 1, ingestionTs, testDomain, testStream, "req1"))
+    operator.processElement(newReconcileEventRecord("Q1", 3, ReconcileCreation, 1, ingestionTs, testDomain, testStream, "req2"))
+    val expectedOutput = new ListBuffer[AllMutationOperation]
+    expectedOutput += FullImport("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req1"))
+    expectedOutput += Reconcile("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req2"))
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs(expectedOutput)
+  }
+
+  it should "reconcile a deleted entity with the same revision when the state agrees with the event" in {
+    operator.processElement(newRevCreateRecordNewPage("Q1", 3, 1, ingestionTs, testDomain, testStream, "req1"))
+    operator.processElement(newPageDeleteRecord("Q1", 3, 1, ingestionTs, testDomain, testStream, "req1"))
+    operator.processElement(newReconcileEventRecord("Q1", 3, ReconcileDeletion, 1, ingestionTs, testDomain, testStream, "req2"))
+    val expectedOutput = new ListBuffer[AllMutationOperation]
+    expectedOutput += FullImport("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req1"))
+    expectedOutput += DeleteItem("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req1"))
+    expectedOutput += DeleteItem("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req2"))
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs(expectedOutput)
+  }
+
+  it should "ambiguously reconcile a deleted entity with the same revision when the state disagrees with the event" in {
+    operator.processElement(newRevCreateRecordNewPage("Q1", 3, 1, ingestionTs, testDomain, testStream, "req1"))
+    val reconcileInputEventRecord = newReconcileEventRecord("Q1", 3, ReconcileDeletion, 1, ingestionTs, testDomain, testStream, "req2")
+    val reconcileInputEvent: ReconcileInputEvent = reconcileInputEventRecord.getValue.asInstanceOf[ReconcileInputEvent]
+    operator.processElement(reconcileInputEventRecord)
+    val expectedOutput = new ListBuffer[AllMutationOperation]
+    expectedOutput += FullImport("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req1"))
+    expectedOutput += ProblematicReconciliation("Q1", instant(1), 3, reconcileInputEvent, ingestionInstant, ReconcileAmbiguousDeletion, State(Some(3), CREATED),
+      DeleteItem("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req2")))
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs(expectedOutput)
+  }
+
+  it should "ambiguously reconcile a created entity with the same revision when the state disagrees with the event" in {
+    operator.processElement(newRevCreateRecordNewPage("Q1", 3, 1, ingestionTs, testDomain, testStream, "req1"))
+    operator.processElement(newPageDeleteRecord("Q1", 3, 1, ingestionTs, testDomain, testStream, "req2"))
+
+    val reconcileInputEventRecord = newReconcileEventRecord("Q1", 3, ReconcileCreation, 1, ingestionTs, testDomain, testStream, "req3")
+    val reconcileInputEvent: ReconcileInputEvent = reconcileInputEventRecord.getValue.asInstanceOf[ReconcileInputEvent]
+    operator.processElement(reconcileInputEventRecord)
+    val expectedOutput = new ListBuffer[AllMutationOperation]
+    expectedOutput += FullImport("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req1"))
+    expectedOutput += DeleteItem("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req2"))
+    expectedOutput += ProblematicReconciliation("Q1", instant(1), 3, reconcileInputEvent, ingestionInstant, ReconcileAmbiguousCreation, State(Some(3), DELETED),
+      Reconcile("Q1", instant(1), 3, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "req3")))
+
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs(expectedOutput)
+  }
+
   class DecideMutationWrapperOperation extends RichMapFunction[InputEvent, AllMutationOperation] with LastSeenRevState {
     override def map(in: InputEvent): AllMutationOperation = new MutationResolver().map(in, entityState)
   }

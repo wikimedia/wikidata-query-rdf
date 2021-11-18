@@ -74,7 +74,7 @@ class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant],
     val eventCreator: Consumer[ObjectNode] = element match {
       case e: InputEvent => jsonEncoders.lapsedActionEvent(e)
       case e: FailedOp => jsonEncoders.fetchFailureEvent(e)
-      case e: IgnoredMutation => jsonEncoders.stateInconsistencyEvent(e)
+      case e: InconsistentMutation => jsonEncoders.stateInconsistencyEvent(e)
       case _ => throw new IllegalArgumentException("Unknown input type [" + element.getClass + "]")
     }
     val jsonEvent: ObjectNode = jsonEventGenerator.generateEvent(stream, schema, eventCreator, recordTime)

@@ -54,7 +54,7 @@ object UpdaterPipeline {
 
     env.getConfig.registerTypeWithKryoSerializer(classOf[Patch], classOf[RDFPatchSerializer])
     val (outputMutationStream, lateEventsSideOutput, spuriousEventsSideOutput):
-      (DataStream[MutationOperation], DataStream[InputEvent], DataStream[IgnoredMutation]) = {
+      (DataStream[MutationOperation], DataStream[InputEvent], DataStream[InconsistentMutation]) = {
       val stream = ReorderAndDecideMutationOperation.attach(incomingEventStream, opts.reorderingWindowLengthMs, opts.useVersionedSerializers)
       (stream, stream.getSideOutput(ReorderAndDecideMutationOperation.LATE_EVENTS_SIDE_OUTPUT_TAG),
         stream.getSideOutput(ReorderAndDecideMutationOperation.SPURIOUS_REV_EVENTS))
@@ -73,7 +73,7 @@ object UpdaterPipeline {
   private def attachSinks(opts: UpdaterPipelineGeneralConfig,
                           outputStreams: OutputStreams,
                           lateEventsSideOutput: DataStream[InputEvent],
-                          spuriousEventsSideOutput: DataStream[IgnoredMutation],
+                          spuriousEventsSideOutput: DataStream[InconsistentMutation],
                           failedOpsToSideOutput: DataStream[FailedOp],
                           tripleStream: DataStream[MutationDataChunk]): Unit = {
     lateEventsSideOutput.addSink(outputStreams.lateEventsSink)

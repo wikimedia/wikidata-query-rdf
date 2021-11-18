@@ -18,7 +18,7 @@ class JsonEncoders(sideOutputDomain: String, uidGenerator: () => String = () => 
     }
   }
 
-  def stateInconsistencyEvent(spuriousEvent: IgnoredMutation): Consumer[ObjectNode] = {
+  def stateInconsistencyEvent(spuriousEvent: InconsistentMutation): Consumer[ObjectNode] = {
     new Consumer[ObjectNode] {
       override def accept(root: ObjectNode): Unit = {
         basicEventData(spuriousEvent, root)
@@ -42,6 +42,8 @@ class JsonEncoders(sideOutputDomain: String, uidGenerator: () => String = () => 
             root.put("op_type", "import")
           case _: DeleteItem =>
             root.put("op_type", "delete")
+          case _: Reconcile =>
+            root.put("op_type", "reconcile")
         }
         root.put("exception_type", failedOp.exception.getClass.getName)
         root.put("exception_msg", failedOp.exception.getMessage)
@@ -77,6 +79,8 @@ class JsonEncoders(sideOutputDomain: String, uidGenerator: () => String = () => 
       case RevCreate(_, _, _, parentRevision, _, _) => ("revision-create", parentRevision)
       case _: PageDelete => ("page-delete", None)
       case _: PageUndelete => ("page-undelete", None)
+      case ReconcileInputEvent(_, _, _, ReconcileCreation, _, _) => ("reconcile-creation", None)
+      case ReconcileInputEvent(_, _, _, ReconcileDeletion, _, _) => ("reconcile-deletion", None)
     }
     objectNode.put("action_type", eventType)
     parentRevision.foreach(r => objectNode.put("parent_revision_id", r))
@@ -92,5 +96,5 @@ object JsonEncoders {
   val stateInconsistencySchema: String = "/rdf_streaming_updater/state_inconsistency/1.0.0";
 
   val fetchFailureStream: String = "rdf-streaming-updater.fetch-failure";
-  val fetchFailureSchema: String = "/rdf_streaming_updater/fetch_failure/1.0.0";
+  val fetchFailureSchema: String = "/rdf_streaming_updater/fetch_failure/1.1.0";
 }

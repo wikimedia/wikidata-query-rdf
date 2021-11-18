@@ -50,6 +50,7 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       pageDeleteTopicName = "mediawiki.page-delete",
       pageUndeleteTopicName = "mediawiki.page-undelete",
       suppressedDeleteTopicName = "mediawiki.page-suppress",
+      reconciliationTopicName = None,
       topicPrefixes = List("")
     )
 
@@ -86,5 +87,29 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     config.generalConfig.urisScheme.entityData() shouldBe "https://my-commons.wikimedia.org/wiki/Special:EntityData/"
     config.generalConfig.urisScheme.entityIdToURI("Q123") shouldBe "https://my.wikidata.org/entity/Q123"
     config.generalConfig.urisScheme.entityIdToURI("M123") shouldBe "https://my-commons.wikimedia.org/entity/M123"
+  }
+
+  "UpdaterConfig" should "build a config with a filtered reconciliation input topic" in {
+    val configWithFilteredTopic = UpdaterConfig(baseConfig ++ Array(
+      "--hostname", "my.wikidata.org",
+      "--uris_scheme", "wikidata",
+      "--reconciliation_topic", "rdf-streaming-updater.reconciliation[source_tag@codfw]"
+    ))
+
+    configWithFilteredTopic.inputEventStreamConfig.inputKafkaTopics.reconciliationTopicName shouldBe Some(FilteredReconciliationTopic(
+      topic = "rdf-streaming-updater.reconciliation",
+      source = Some("source_tag@codfw")
+    ))
+
+    val configWithUnfilteredTopic = UpdaterConfig(baseConfig ++ Array(
+      "--hostname", "my.wikidata.org",
+      "--uris_scheme", "wikidata",
+      "--reconciliation_topic", "rdf-streaming-updater.reconciliation"
+    ))
+
+    configWithUnfilteredTopic.inputEventStreamConfig.inputKafkaTopics.reconciliationTopicName shouldBe Some(FilteredReconciliationTopic(
+      topic = "rdf-streaming-updater.reconciliation",
+      source = None
+    ))
   }
 }

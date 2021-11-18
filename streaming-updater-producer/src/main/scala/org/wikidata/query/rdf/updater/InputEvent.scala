@@ -23,6 +23,18 @@ final case class RevCreate(item: String,
                            originalEventInfo: EventInfo
                     ) extends InputEvent
 
+final case class ReconcileInputEvent(item: String,
+                                     eventTime: Instant,
+                                     revision: Long,
+                                     originalAction: ReconcileOriginalAction,
+                                     ingestionTime: Instant,
+                                     originalEventInfo: EventInfo
+                               ) extends InputEvent
+
+sealed trait ReconcileOriginalAction
+case object ReconcileCreation extends ReconcileOriginalAction
+case object ReconcileDeletion extends ReconcileOriginalAction
+
 /** Describe a delete event */
 final case class PageDelete(item: String,
                             eventTime: Instant,

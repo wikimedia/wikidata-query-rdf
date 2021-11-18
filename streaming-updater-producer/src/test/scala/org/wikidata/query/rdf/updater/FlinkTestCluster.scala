@@ -46,5 +46,5 @@ object CollectSink {
   // must be static
   val values: ListBuffer[MutationDataChunk] = ListBuffer()
   val lateEvents: ListBuffer[InputEvent] = ListBuffer()
-  val spuriousRevEvents: ListBuffer[IgnoredMutation] = ListBuffer()
+  val spuriousRevEvents: ListBuffer[InconsistentMutation] = ListBuffer()
 }

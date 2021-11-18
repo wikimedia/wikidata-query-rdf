@@ -33,6 +33,8 @@ abstract class SuccessfulOp extends ResolvedOp
 
 case class EntityPatchOp(operation: MutationOperation,
                          data: Patch) extends SuccessfulOp
+case class ReconcileOp(operation: Reconcile,
+                         data: Patch) extends SuccessfulOp
 case class FailedOp(operation: MutationOperation, exception: ContainedException) extends ResolvedOp
 
 case class DeleteOp(override val operation: MutationOperation) extends SuccessfulOp
@@ -65,25 +67,31 @@ case class GenerateEntityDiffPatchOperation(
     if (op.isInstanceOf[DeleteItem]) {
       resultFuture.complete(DeleteOp(op) :: Nil)
     } else {
-      completeDiffPatch(op, resultFuture)
+      completeFetchContent(op, resultFuture)
     }
   }
 
   private def recentEventCutoff = now().minusMillis(acceptableRepositoryLag.toMillis)
   private def isRecent(eventTime: Instant): Boolean = eventTime.isAfter(recentEventCutoff)
 
-  private def completeDiffPatch(op: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = {
+  private def completeFetchContent(op: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = {
     val future: Future[Patch] = op match {
       case Diff(item, eventTime, revision, fromRev, _, _) =>
         getDiff(item, revision, fromRev, eventTime)
       case FullImport(item, eventTime, revision, _, _) =>
         getImport(item, revision, eventTime)
+      case Reconcile(item, _, revision, _, _) =>
+        getReconcile(item, revision)
     }
-    future.onComplete {
-      case Success(patch) => resultFuture.complete(EntityPatchOp(op, patch) :: Nil)
-      case Failure(exception: ContainedException) => resultFuture.complete(FailedOp(op, exception) :: Nil)
-      case Failure(exception: Throwable) => resultFuture.completeExceptionally(exception)
-    }
+
+    future.onComplete (patch => {
+      (patch, op) match {
+        case (Success(patch: Patch), r: Reconcile) => resultFuture.complete(ReconcileOp(r, patch) :: Nil)
+        case (Success(patch), _) => resultFuture.complete(EntityPatchOp(op, patch) :: Nil)
+        case (Failure(exception: ContainedException), _) => resultFuture.complete(FailedOp(op, exception) :: Nil)
+        case (Failure(exception: Throwable), _) => resultFuture.completeExceptionally(exception)
+      }
+    })
   }
 
   private def isRetryable(eventTime: Option[Instant], attempts: Int, t: Throwable): Boolean = t match {
@@ -120,6 +128,12 @@ case class GenerateEntityDiffPatchOperation(
     stmts map { sendImport(item, _, revision) }
   }
 
+  private def getReconcile(item: String, revision: Long): Future[Patch] = {
+    val stmts: Future[Iterable[Statement]] = fetchAsync(item, revision)
+    stmts map { sendReconcile(item, _, revision) }
+  }
+
+
   private def sendImport(item: String, stmts: Iterable[Statement], revision: Long): Patch = {
       if (stmts.isEmpty) {
         throw new ContainedException(s"Got empty entity for $item, revision:$revision (404 or 204?)")
@@ -135,6 +149,15 @@ case class GenerateEntityDiffPatchOperation(
       } else {
         diff(item, from, to)
     }
+  }
+
+  private def sendReconcile(item: String, statements: Iterable[Statement], revision: Long): Patch = {
+    if (statements.isEmpty) {
+      throw new ContainedException(s"Got empty entity for $item, revision:$revision (404 or 204?)")
+    }
+    val toList = new util.ArrayList[Statement](statements.asJavaCollection)
+    mungeOperation(item, toList)
+    new Patch(toList, emptyList(), emptyList(), emptyList())
   }
 
   private def diff(item: String, from: Iterable[Statement], to: Iterable[Statement]): Patch = {

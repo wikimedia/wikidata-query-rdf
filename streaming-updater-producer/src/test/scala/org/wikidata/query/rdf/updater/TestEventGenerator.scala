@@ -1,11 +1,12 @@
 package org.wikidata.query.rdf.updater
 
 import java.time.Instant
-import org.apache.flink.api.java.functions.KeySelector
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
-import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, PageDeleteEvent, RevisionCreateEvent, RevisionSlot}
 
 import scala.collection.JavaConverters._
+
+import org.apache.flink.api.java.functions.KeySelector
+import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
+import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, PageDeleteEvent, ReconcileEvent, RevisionCreateEvent, RevisionSlot}
 
 trait TestEventGenerator {
   def newRevCreateRecordNewPage(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
@@ -30,6 +31,32 @@ trait TestEventGenerator {
                             stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
     new StreamRecord[InputEvent](PageUndelete(entity, instant(eventTime), revision, instant(ingestionTime),
       newEventInfo(instant(eventTime), domain, stream, requestId)), eventTime)
+  }
+
+  def newReconcileEventRecord(entity: String,
+                              revision: Long,
+                              originalAction: ReconcileOriginalAction,
+                              eventTime: Long,
+                              ingestionTime: Long,
+                              domain: String = "tested.domain",
+                              stream: String = "tested.stream",
+                              requestId: String = "tested.request.id"
+                             ): StreamRecord[InputEvent] = {
+    new StreamRecord[InputEvent](ReconcileInputEvent(entity, instant(eventTime), revision, originalAction, instant(ingestionTime),
+      newEventInfo(instant(eventTime), domain, stream, requestId)), eventTime)
+  }
+
+  def newReconcileEvent(entity: String,
+                        revision: Long,
+                        originalAction: ReconcileEvent.Action,
+                        eventTime: Instant,
+                        source: String = "source",
+                        domain: String = "tested.domain",
+                        stream: String = "tested.stream",
+                        requestId: String = "tested.request.id"
+                       ): ReconcileEvent = {
+    new ReconcileEvent(newEventMeta(eventTime, domain, stream, requestId), "schema", entity, revision,
+      source, originalAction, newEventInfo(eventTime, domain, stream, requestId))
   }
 
   def instant(millis: Long): Instant = {

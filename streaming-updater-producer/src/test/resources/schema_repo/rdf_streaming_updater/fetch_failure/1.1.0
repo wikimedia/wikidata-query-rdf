@@ -1,0 +1,202 @@
+title: rdf_streaming_updater/fetch_failure
+description: |
+  Indicates a failure when fetching the data from wikibase
+$id: /rdf_streaming_updater/fetch_failure/1.1.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - exception_msg
+  - exception_type
+  - fetch_error_type
+  - item
+  - meta
+  - op_type
+  - original_event_info
+  - original_ingestion_dt
+  - revision_id
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  dt:
+    description: >-
+      (should be part of /fragment/common) time at which this event is produced
+      (processing time of the flink pipeline)
+    type: string
+    format: date-time
+    maxLength: 128
+  exception_msg:
+    description: description message of the exception
+    type: string
+  exception_type:
+    description: class name of the exception thrown
+    type: string
+  fetch_error_type:
+    description: |
+      categorized error type
+    type: string
+    enum:
+      - ENTITY_NOT_FOUND
+      - NO_CONTENT
+      - EMPTY_RESPONSE
+      - UNEXPECTED_RESPONSE
+      - UNKNOWN
+  from_revision_id:
+    description: the revision it is diffing from
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  item:
+    description: Wikibase item
+    type: string
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  op_type:
+    description: type of the operation
+    type: string
+    enum:
+      - diff
+      - import
+      - delete
+      - reconcile
+  original_event_info:
+    description: Some original event data that triggered this side output event
+    type: object
+    required:
+      - $schema
+      - meta
+    properties:
+      $schema:
+        description: >
+          A URI identifying the JSONSchema for this event. This should match an
+          schema's $id in a schema repository. E.g. /schema/title/1.0.0
+        type: string
+      dt:
+        description: (should be part of /fragment/common) original event time
+        type: string
+        format: date-time
+        maxLength: 128
+      meta:
+        type: object
+        required:
+          - dt
+          - stream
+        properties:
+          domain:
+            description: Domain the event or entity pertains to
+            type: string
+            minLength: 1
+          dt:
+            description: 'UTC event datetime, in ISO-8601 format'
+            type: string
+            format: date-time
+            maxLength: 128
+          id:
+            description: Unique ID of this event
+            type: string
+          request_id:
+            description: Unique ID of the request that caused the event
+            type: string
+          stream:
+            description: Name of the stream/queue/dataset that this event belongs in
+            type: string
+            minLength: 1
+          uri:
+            description: Unique URI identifying the event or entity
+            type: string
+            format: uri-reference
+            maxLength: 8192
+  original_ingestion_dt:
+    description: 'time at which the event entered the flink pipeline, in ISO-8601 format'
+    type: string
+    format: date-time
+    maxLength: 128
+  revision_id:
+    description: revision for which this event was triggered for
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+examples:
+  - $schema: /rdf_streaming_updater/fetch_failure/1.1.0
+    dt: '2020-12-10T14:12:16.372Z'
+    exception_msg: >-
+      Cannot fetch entity at
+      https://www.wikidata.org/wiki/Special:EntityData/Q1.ttl?flavor=dump&revision=122:
+      ENTITY_NOT_FOUND
+    exception_type: org.wikidata.query.rdf.tool.exception.ContainedException
+    fetch_error_type: ENTITY_NOT_FOUND
+    from_revision_id: 122
+    item: Q1
+    meta:
+      dt: '2020-12-10T14:12:16.372Z'
+      id: 9d27895c-da78-4e4f-b968-66622e2b02cd
+      stream: fetch_failure
+    op_type: diff
+    original_event_info:
+      $schema: /mediawiki/revision-create/1.0.0
+      dt: '2020-12-10T14:11:16.372Z'
+      meta:
+        domain: www.wikidata.org
+        dt: '2020-12-10T14:11:16.372Z'
+        id: dfda66c8-e317-4927-857f-d6291e90a1f0
+        request_id: bb63dbb8-0e9f-4674-bcd6-53678aeee073
+        stream: mediawiki.revision-create
+    original_ingestion_dt: '2020-12-10T14:11:16.372Z'
+    revision_id: 123
+  - $schema: /rdf_streaming_updater/fetch_failure/1.1.0
+    dt: '2020-12-10T14:12:16.372Z'
+    exception_msg: >-
+      Cannot fetch entity at
+      https://www.wikidata.org/wiki/Special:EntityData/Q1.ttl?flavor=dump&revision=122:
+      ENTITY_NOT_FOUND
+    exception_type: org.wikidata.query.rdf.tool.exception.ContainedException
+    fetch_error_type: ENTITY_NOT_FOUND
+    item: Q1
+    meta:
+      dt: '2020-12-10T14:12:16.372Z'
+      id: 9d27895c-da78-4e4f-b968-66622e2b02cd
+      stream: fetch_failure
+    op_type: reconcile
+    original_event_info:
+      $schema: /mediawiki/revision-create/1.0.0
+      dt: '2020-12-10T14:11:16.372Z'
+      meta:
+        domain: www.wikidata.org
+        dt: '2020-12-10T14:11:16.372Z'
+        id: dfda66c8-e317-4927-857f-d6291e90a1f0
+        request_id: bb63dbb8-0e9f-4674-bcd6-53678aeee073
+        stream: mediawiki.revision-create
+    original_ingestion_dt: '2020-12-10T14:11:16.372Z'
+    revision_id: 123

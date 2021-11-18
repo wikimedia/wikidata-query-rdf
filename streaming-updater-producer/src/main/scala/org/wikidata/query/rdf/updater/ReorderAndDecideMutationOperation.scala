@@ -110,6 +110,9 @@ class ReorderAndDecideMutationOperation(delay: Int, useVersionedSerializers: Boo
     val mutationOperation = decideMutationOperation.map(e, entityState)
     mutationOperation match {
       case e: IgnoredMutation => ctx.output(ReorderAndDecideMutationOperation.SPURIOUS_REV_EVENTS, e)
+      case p: ProblematicReconciliation =>
+        ctx.output(ReorderAndDecideMutationOperation.SPURIOUS_REV_EVENTS, p)
+        out.collect(p.mutationOperation)
       case x: MutationOperation => out.collect(x)
     }
   }
@@ -123,6 +126,8 @@ class ReorderAndDecideMutationOperation(delay: Int, useVersionedSerializers: Boo
           case State(Some(lastRevision), EntityStatus.CREATED) if lastRevision == parentRevision => bufferedEvents.get().iterator().hasNext
           case _ => true
         }
+      // never buffer these events they are not really part of the revision history, so no need to re-order them
+      case _: ReconcileInputEvent => false
       case _ => true
     }
   }
@@ -141,7 +146,7 @@ class ReorderAndDecideMutationOperation(delay: Int, useVersionedSerializers: Boo
 
 object ReorderAndDecideMutationOperation {
   val LATE_EVENTS_SIDE_OUTPUT_TAG = new OutputTag[InputEvent]("late-events")
-  val SPURIOUS_REV_EVENTS = new OutputTag[IgnoredMutation]("spurious-rev-events")
+  val SPURIOUS_REV_EVENTS = new OutputTag[InconsistentMutation]("spurious-rev-events")
   val UID: String = "DecideMutationOperation"
 
   def attach(stream: KeyedStream[InputEvent, String],

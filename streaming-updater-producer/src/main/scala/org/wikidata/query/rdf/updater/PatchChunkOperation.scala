@@ -43,6 +43,9 @@ class PatchChunkOperation(domain: String,
           epo.data.getRemoved,
           epo.data.getLinkedSharedElements,
           epo.data.getUnlinkedSharedElements)
+      case Reconcile(entity, eventTime, rev, _, originalEventInfo) =>
+        val ro = t.asInstanceOf[ReconcileOp]
+        dataEventGenerator.reconcile(eventMetaSupplier(originalEventInfo), entity, rev, eventTime, ro.data.getAdded)
       case DeleteItem(entity, eventTime, rev, _, originalEventMetadata) =>
         dataEventGenerator.deleteEvent(eventMetaSupplier(originalEventMetadata), entity, rev, eventTime)
     }

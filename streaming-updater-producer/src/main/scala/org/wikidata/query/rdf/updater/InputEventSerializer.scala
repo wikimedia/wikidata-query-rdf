@@ -15,7 +15,8 @@ import org.apache.flink.core.memory.{DataInputView, DataOutputView}
  */
 object InputEventSerializer {
   val V1: Int = 1
-  val currentVersion: Int = V1
+  val V2: Int = 2
+  val currentVersion: Int = V2
   def typeInfo(): TypeInformation[InputEvent] = new BaseTypeInfo(() => new InputEventSerializer(currentVersion))
 }
 
@@ -25,6 +26,7 @@ class InputEventSerializer(readVersion: Int) extends TypeSerializerBase[InputEve
   def helperForVersion(readVersion: Int): SerializerHelper = {
     val helperVersion: Int = readVersion match {
       case InputEventSerializer.V1 => SerializerHelper.V1
+      case InputEventSerializer.V2 => SerializerHelper.V1
       case _ => throw new IllegalArgumentException("Unsupported InputEventSerializer version " + readVersion)
     }
     new SerializerHelper(helperVersion)
@@ -38,6 +40,12 @@ class InputEventSerializer(readVersion: Int) extends TypeSerializerBase[InputEve
         serializeHelper.writeOptionalLong(revCreate.parentRevision)
       case _: PageDelete => output.writeUTF("PageDelete")
       case _: PageUndelete => output.writeUTF("PageUndelete")
+      case e: ReconcileInputEvent =>
+        output.writeUTF("ReconcileInputEvent")
+        e.originalAction match {
+          case ReconcileCreation => output.writeUTF("ReconcileCreation")
+          case ReconcileDeletion => output.writeUTF("ReconcileDeletion")
+        }
     }
   }
 
@@ -47,6 +55,13 @@ class InputEventSerializer(readVersion: Int) extends TypeSerializerBase[InputEve
       case "RevCreate" => RevCreate(item, eventTime, revision, serializeHelper.readOptionalLong(), ingestionTime, eventInfo)
       case "PageDelete" => PageDelete(item, eventTime, revision, ingestionTime, eventInfo)
       case "PageUndelete" => PageUndelete(item, eventTime, revision, ingestionTime, eventInfo)
+      case "ReconcileInputEvent" => {
+        val reconcileOriginalAction = input.readUTF() match {
+          case "ReconcileDeletion" => ReconcileDeletion
+          case "ReconcileCreation" => ReconcileCreation
+        }
+        ReconcileInputEvent(item, eventTime, revision, reconcileOriginalAction, ingestionTime, eventInfo)
+      }
     }
   }
 
@@ -57,7 +72,7 @@ class InputEventSerializer(readVersion: Int) extends TypeSerializerBase[InputEve
   override def equals(other: Any): Boolean = other match {
     case that: InputEventSerializer =>
       (that canEqual this) &&
-        super.equals(other)
+        super.equals(other) &&
         serializeHelper == that.serializeHelper
     case _ => false
   }

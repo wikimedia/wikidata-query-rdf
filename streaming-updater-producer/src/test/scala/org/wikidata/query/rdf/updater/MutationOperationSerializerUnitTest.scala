@@ -20,6 +20,8 @@ class MutationOperationSerializerUnitTest extends FlatSpec with Matchers {
     new EventInfo(new EventsMeta(Instant.ofEpochMilli(222), "ID_2", "domain", "stream", "req_id"), "schema"))
   private val delete = DeleteItem("Q1", Instant.ofEpochMilli(3), 3, Instant.ofEpochMilli(33),
     new EventInfo(new EventsMeta(Instant.ofEpochMilli(333), "ID_3", "domain", "stream", "req_id"), "schema"))
+  private val reconcile = Reconcile("Q1", Instant.ofEpochMilli(4), 4, Instant.ofEpochMilli(44),
+    new EventInfo(new EventsMeta(Instant.ofEpochMilli(444), "ID_4", "domain", "stream", "req_id"), "schema"))
 
   "MutationOperationSerializer" should "read/write current version" in {
     val serializer = MutationOperationSerializer.typeInfo().createSerializer(new ExecutionConfig())
@@ -32,6 +34,7 @@ class MutationOperationSerializerUnitTest extends FlatSpec with Matchers {
     serializer.serialize(fullImport, output)
     serializer.serialize(diff, output)
     serializer.serialize(delete, output)
+    serializer.serialize(reconcile, output)
     output.close()
     if (writeFixtureToTmp) {
       Files.write(new File("/tmp/MutationOperationSerializer.v" + MutationOperationSerializer.currentVersion + ".bin").toPath, baos.toByteArray)
@@ -46,6 +49,7 @@ class MutationOperationSerializerUnitTest extends FlatSpec with Matchers {
     deser.deserialize(input) shouldBe fullImport
     deser.deserialize(input) shouldBe diff
     deser.deserialize(input) shouldBe delete
+    deser.deserialize(input) shouldBe reconcile
   }
 
   "MutationOperationSerializer V1 format" should "be readable" in {
@@ -59,5 +63,19 @@ class MutationOperationSerializerUnitTest extends FlatSpec with Matchers {
     deser.deserialize(input) shouldBe fullImport
     deser.deserialize(input) shouldBe diff
     deser.deserialize(input) shouldBe delete
+  }
+
+  "MutationOperationSerializer V2 format" should "be readable" in {
+    val input: DataInputViewStreamWrapper = new DataInputViewStreamWrapper(this.getClass.getResourceAsStream("MutationOperationSerializer.v2.bin"))
+    val serSnapshot: TypeSerializerSnapshot[MutationOperation] = InstantiationUtil.instantiate(InstantiationUtil.resolveClassByName(input,
+      this.getClass.getClassLoader, classOf[TypeSerializerSnapshot[MutationOperation]]))
+    serSnapshot.readSnapshot(input.readInt(), input, this.getClass.getClassLoader)
+    val deser = serSnapshot.restoreSerializer()
+    deser shouldBe a[MutationOperationSerializer]
+    deser.asInstanceOf[MutationOperationSerializer].readVersion shouldBe 2
+    deser.deserialize(input) shouldBe fullImport
+    deser.deserialize(input) shouldBe diff
+    deser.deserialize(input) shouldBe delete
+    deser.deserialize(input) shouldBe reconcile
   }
 }

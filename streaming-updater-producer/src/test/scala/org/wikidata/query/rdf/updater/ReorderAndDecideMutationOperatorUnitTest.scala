@@ -198,6 +198,51 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
 
+  it should "reconcile an entity event" in {
+    operator.processElement(newPageUndeleteRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newRevCreateRecordNewPage("Q1", 2, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processWatermark(200)
+    // state should be revision created after this event
+    operator.processElement(newReconcileEventRecord("Q1", 2,  ReconcileCreation, 300, ingestionTs, testDomain, testStream, "3"))
+    operator.processElement(newRevCreateRecord("Q1", 3, 2, 300, ingestionTs, testDomain, testStream, "4"))
+    operator.processWatermark(400)
+
+    val expectedOutput = new ListBuffer[Any]
+
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(Diff("Q1", instant(2), 2, 1, ingestionInstant, newEventInfo(instant(2), testDomain, testStream, "2")))
+    expectedOutput += new Watermark(200)
+    expectedOutput += newRecord(Reconcile("Q1", instant(300), 2, ingestionInstant, newEventInfo(instant(300), testDomain, testStream, "3")))
+    expectedOutput += newRecord(Diff("Q1", instant(300), 3, 2, ingestionInstant, newEventInfo(instant(300), testDomain, testStream, "4")))
+    expectedOutput += new Watermark(400)
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
+  }
+
+  it should "reconcile an ambiguous entity event" in {
+    operator.processElement(newPageUndeleteRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newRevCreateRecordNewPage("Q1", 2, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processWatermark(200)
+    val reconcileRecord = newReconcileEventRecord("Q1", 2,  ReconcileDeletion, 300, ingestionTs, testDomain, testStream, "3")
+    val reconcileEvent: ReconcileInputEvent = reconcileRecord.getValue.asInstanceOf[ReconcileInputEvent]
+    // State should say revision 2 is deleted after this event
+    operator.processElement(reconcileRecord)
+    operator.processElement(newPageUndeleteRecord("Q1", 2, 300, ingestionTs, testDomain, testStream, "4"))
+    operator.processWatermark(400)
+
+    val expectedOutput = new ListBuffer[Any]
+
+    expectedOutput += newRecord(FullImport("Q1", instant(1), 1, ingestionInstant, newEventInfo(instant(1), testDomain, testStream, "1")))
+    expectedOutput += newRecord(Diff("Q1", instant(2), 2, 1, ingestionInstant, newEventInfo(instant(2), testDomain, testStream, "2")))
+    expectedOutput += new Watermark(200)
+    expectedOutput += newRecord(DeleteItem("Q1", instant(300), 2, ingestionInstant, newEventInfo(instant(300), testDomain, testStream, "3")))
+    expectedOutput += newRecord(FullImport("Q1", instant(300), 2, ingestionInstant, newEventInfo(instant(300), testDomain, testStream, "4")))
+    expectedOutput += new Watermark(400)
+    decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
+    decodeEvents(getSpuriousEvents) should contain only decodeEvent(newRecord(ProblematicReconciliation("Q1", instant(300), 2,
+        reconcileEvent, ingestionInstant, ReconcileAmbiguousDeletion, State(Some(2), CREATED),
+        DeleteItem("Q1", instant(300), 2, ingestionInstant, reconcileEvent.originalEventInfo))))
+  }
+
   it should "mark unmatched undelete event" in {
     operator.processElement(newRevCreateRecordNewPage("Q1", 2, 1, ingestionTs, testDomain, testStream, "1"))
     val undeleteEventRecordToMarkAsUnmatched = newPageUndeleteRecord("Q1", 2, 2, ingestionTs, testDomain, testStream, "2")

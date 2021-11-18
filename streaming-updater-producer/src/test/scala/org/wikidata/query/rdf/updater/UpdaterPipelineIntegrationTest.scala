@@ -10,7 +10,7 @@ import org.apache.flink.streaming.api.scala._
 import org.openrdf.model.Statement
 import org.scalatest._
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
-import org.wikidata.query.rdf.tool.change.events.{EventsMeta, PageDeleteEvent, RevisionCreateEvent}
+import org.wikidata.query.rdf.tool.change.events.{EventsMeta, PageDeleteEvent, ReconcileEvent, RevisionCreateEvent}
 import org.wikidata.query.rdf.updater.config.{HttpClientConfig, UpdaterPipelineGeneralConfig}
 
 
@@ -54,7 +54,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
         OutputStreams(
           new CollectSink[MutationDataChunk](CollectSink.values.append(_)),
           new CollectSink[InputEvent](CollectSink.lateEvents.append(_)),
-          new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_))
+          new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))
         ),
         _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
         clock, OUTPUT_EVENT_STREAM_NAME)
@@ -99,7 +99,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       OutputStreams(
         new CollectSink[MutationDataChunk](CollectSink.values.append(_)),
         new CollectSink[InputEvent](CollectSink.lateEvents.append(_)),
-        new CollectSink[IgnoredMutation](CollectSink.spuriousRevEvents.append(_))
+        new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))
       ),
       _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
       clock, OUTPUT_EVENT_STREAM_NAME)
@@ -111,6 +111,52 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     compareStatements(expected)
     CollectSink.values map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
 
+  }
+
+  "Updater job" should "support reconciliation events" in {
+    implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+
+    // configure your test environment
+    env.setParallelism(PARALLELISM)
+
+    val revCreateEventStream: DataStream[InputEvent] = IncomingStreams.fromStream(env.fromCollection(revCreateEventsForReconcileTest)
+      // force 1 here so that we keep the sequence order and force Q1 rev 3 to be late
+      .setParallelism(1)
+      // Use punctuated WM instead of periodic in test
+      .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
+      URIS,
+      IncomingStreams.REV_CREATE_CONV, clock, resolver, None)
+
+    val reconcileEventsStream: DataStream[InputEvent] = IncomingStreams.fromStream(env.fromCollection(reconcileEvents)
+      // force 1 here so that we keep the sequence order and force Q1 rev 3 to be late
+      .setParallelism(1)
+      // Use punctuated WM instead of periodic in test
+      .assignTimestampsAndWatermarks(watermarkStrategy[ReconcileEvent]()),
+      URIS,
+      IncomingStreams.RECONCILIATION_CONV, clock, resolver, None)
+
+    //this needs to be evaluated before the lambda below because of serialization issues
+    val repository: MockWikibaseEntityRevRepository = getMockRepository
+
+    UpdaterPipeline.configure(pipelineOptions,
+      List(revCreateEventStream, reconcileEventsStream),
+      OutputStreams(
+        new CollectSink[MutationDataChunk](CollectSink.values.append(_)),
+        new CollectSink[InputEvent](CollectSink.lateEvents.append(_)),
+        new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))
+      ),
+      _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
+      clock, OUTPUT_EVENT_STREAM_NAME)
+    env.execute("test")
+
+    val expected = expectedReconcile
+    val (actualReconcile, actualData) = CollectSink.values find  {_.operation.isInstanceOf[Reconcile]} match {
+      case Some(MutationDataChunk(operation: Reconcile, data: DiffEventData)) => (operation, data)
+      case _ => fail("Expected a reconcile operation with a DiffEventData data object")
+    }
+
+    actualReconcile shouldBe expected.operation
+    assertSameDiffData(actualData, expected.data.asInstanceOf[DiffEventData])
   }
 
   private def compareStatements(expected: Seq[MutationDataChunk]) = {
@@ -125,14 +171,18 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
         asComparableTuple(actualOp, actualData) should equal(asComparableTuple(expectedOp, expectedData))
         (actualData, expectedData) match {
           case (actualDiff: DiffEventData, expectedDiff: DiffEventData) =>
-            asStatementsBag(actualDiff.getRdfAddedData) should contain theSameElementsAs asStatementsBag(expectedDiff.getRdfAddedData)
-            asStatementsBag(actualDiff.getRdfDeletedData) should contain theSameElementsAs asStatementsBag(expectedDiff.getRdfDeletedData)
-            asStatementsBag(actualDiff.getRdfLinkedSharedData) should contain theSameElementsAs asStatementsBag(expectedDiff.getRdfLinkedSharedData)
-            asStatementsBag(actualDiff.getRdfUnlinkedSharedData) should contain theSameElementsAs asStatementsBag(expectedDiff.getRdfUnlinkedSharedData)
+            assertSameDiffData(actualDiff, expectedDiff)
           case _ =>
             // nothing to compare for the delete operation
         }
     }
+  }
+
+  private def assertSameDiffData(actualDiff: DiffEventData, expectedDiff: DiffEventData) = {
+    asStatementsBag(actualDiff.getRdfAddedData) should contain theSameElementsAs asStatementsBag(expectedDiff.getRdfAddedData)
+    asStatementsBag(actualDiff.getRdfDeletedData) should contain theSameElementsAs asStatementsBag(expectedDiff.getRdfDeletedData)
+    asStatementsBag(actualDiff.getRdfLinkedSharedData) should contain theSameElementsAs asStatementsBag(expectedDiff.getRdfLinkedSharedData)
+    asStatementsBag(actualDiff.getRdfUnlinkedSharedData) should contain theSameElementsAs asStatementsBag(expectedDiff.getRdfUnlinkedSharedData)
   }
 
   def asStatementsBag(chunk: RDFDataChunk): Iterable[Statement] = {

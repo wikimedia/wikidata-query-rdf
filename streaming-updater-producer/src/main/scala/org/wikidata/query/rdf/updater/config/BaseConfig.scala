@@ -24,6 +24,7 @@ class BaseConfig(protected implicit val params: ParameterTool) {
       pageDeleteTopicName = getStringParam("page_delete_topic"),
       pageUndeleteTopicName = getStringParam("page_undelete_topic"),
       suppressedDeleteTopicName = getStringParam("suppressed_delete_topic"),
+      reconciliationTopicName = optionalFilteredReconciliationTopic("reconciliation_topic"),
       topicPrefixes = params.get("topic_prefixes", "").split(",").toList
     )
   }
@@ -47,13 +48,29 @@ class BaseConfig(protected implicit val params: ParameterTool) {
   def optionalUriArg(paramName: String)(implicit params: ParameterTool): Option[URI] = {
     optionalStringArg(paramName).map(URI.create)
   }
+
+  /**
+   * match things like:
+   * - topic.name[source_filter_eqiad] => FilteredReconciliationTopic("topic.name", Some("source_filter_eqiad"))
+   * - topic.name => FilteredReconciliationTopic("topic.name", None)
+   */
+  private val filteredTopicPattern = "^([^\\[\\]]+)(\\[([^]]+)])?$".r
+  def optionalFilteredReconciliationTopic(paramName: String)(implicit params: ParameterTool): Option[FilteredReconciliationTopic] = {
+    optionalStringArg(paramName) map filteredTopicPattern.findFirstMatchIn map {
+      case Some(m) => FilteredReconciliationTopic(m.group(1), Option(m.group(3)))
+      case None => throw new IllegalArgumentException(s"Cannot parse [${getStringParam(paramName)}] as a filtered topic")
+    }
+  }
 }
 
 sealed case class InputKafkaTopics(revisionCreateTopicName: String,
                                    pageDeleteTopicName: String,
                                    pageUndeleteTopicName: String,
                                    suppressedDeleteTopicName: String,
+                                   reconciliationTopicName: Option[FilteredReconciliationTopic],
                                    topicPrefixes: List[String])
+
+case class FilteredReconciliationTopic(topic: String, source: Option[String])
 
 object BaseConfig {
   val MAX_PARALLELISM: Int = 1024

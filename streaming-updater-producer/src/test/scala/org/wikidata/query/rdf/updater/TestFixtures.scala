@@ -5,13 +5,16 @@ import java.time.{Clock, Instant, ZoneOffset}
 import java.util
 import java.util.{Collections, UUID}
 import java.util.function.Supplier
+
 import scala.collection.JavaConverters._
+
 import org.apache.flink.api.common.eventtime._
 import org.openrdf.model.Statement
 import org.openrdf.model.impl.{StatementImpl, ValueFactoryImpl}
 import org.openrdf.rio.{RDFFormat, RDFParserRegistry, RDFWriterRegistry}
 import org.wikidata.query.rdf.common.uri.{PropertyType, SchemaDotOrg, UrisScheme, UrisSchemeFactory}
-import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, EventWithMeta, RevisionSlot}
+import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventPlatformEvent, EventsMeta, ReconcileEvent, RevisionSlot}
+import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.EntityStatus.CREATED
@@ -73,6 +76,15 @@ trait TestFixtures extends TestEventGenerator {
   val pageDeleteEvents = Seq(
     newPageDeleteEvent("Q1", 1, 1, instant(5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
   )
+
+  val revCreateEventsForReconcileTest = Seq(
+    newRevCreateEvent("Q1", 1, 1, eventTimes("Q1", 1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
+    newRevCreateEvent("Q2", 2, -1, instant(WATERMARK_1), 0, WATERMARK_DOMAIN,
+      STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS)) //unrelated event, test filtering and triggers watermark
+
+  val reconcileEvents: Seq[ReconcileEvent] = Seq(newReconcileEvent("Q1", 1L, Action.CREATION, eventTimes("Q1", 1),
+    "my_source", DOMAIN, STREAM, ORIG_REQUEST_ID))
+
   private val statement1: Statement = createStatement("Q1", PropertyType.QUALIFIER, "Statement_1")
   private val statement2: Statement = createStatement("Q1", PropertyType.QUALIFIER, "Statement_2")
   private val statement3: Statement = createStatement("Q1", PropertyType.QUALIFIER, "Statement_3")
@@ -120,6 +132,15 @@ trait TestFixtures extends TestEventGenerator {
       getExpectedTripleDiff("Q1", 1L),
       getExpectedDelete("Q1", 1L)
     )
+  }
+
+  def expectedReconcile: MutationDataChunk = getExpectedReconcile("Q1", 1)
+  def getExpectedReconcile(entityId: String, revision: Long): MutationDataChunk = {
+    val data: RevisionData = testData((entityId, revision))
+    val eventTime = eventTimes(entityId, revision)
+    val origEventInfo: EventInfo = new EventInfo(new EventsMeta(eventTime, "unused", DOMAIN, STREAM, ORIG_REQUEST_ID), "schema")
+    val evt = dataEventGenerator.reconcile(eventsMetaData, entityId, revision, eventTime, data.expectedAdds.toList.asJava).get(0)
+    MutationDataChunk(Reconcile(entityId, eventTime, revision, instantNow, origEventInfo), evt)
   }
 
   def getExpectedTripleDiff(entityId: String, revisionTo: Long, revisionFrom: Long = 0L): MutationDataChunk = {
@@ -182,13 +203,13 @@ trait TestFixtures extends TestEventGenerator {
   private case class RevisionData(entityId: String, eventTime: Instant, inputTriples: Seq[Statement],
                                   expectedAdds: Set[Statement], expectedRemoves: Set[Statement] = Set())
 
-  def watermarkStrategy[E <: EventWithMeta](): WatermarkStrategy[E] = {
+  def watermarkStrategy[E <: EventPlatformEvent](): WatermarkStrategy[E] = {
     val wm_domain = WATERMARK_DOMAIN
     WatermarkStrategy.forGenerator(new WatermarkGeneratorSupplier[E] {
       override def createWatermarkGenerator(context: WatermarkGeneratorSupplier.Context): WatermarkGenerator[E] = new WatermarkGenerator[E] {
         override def onEvent(event: E, eventTimestamp: Long, output: WatermarkOutput): Unit = {
           val wm: Option[Watermark] = event match {
-            case a: Any if a.domain() == wm_domain => Some(new Watermark(a.timestamp().toEpochMilli))
+            case a: Any if a.meta().domain() == wm_domain => Some(new Watermark(a.meta().timestamp().toEpochMilli))
             case _: Any => None
           }
           wm.foreach(output.emitWatermark)
@@ -196,7 +217,7 @@ trait TestFixtures extends TestEventGenerator {
         override def onPeriodicEmit(output: WatermarkOutput): Unit = {/* no periodic emission */}
       }
     }).withTimestampAssigner(new SerializableTimestampAssigner[E] {
-      override def extractTimestamp(element: E, recordTimestamp: Long): Long = element.timestamp().toEpochMilli
+      override def extractTimestamp(element: E, recordTimestamp: Long): Long = element.meta().timestamp().toEpochMilli
     })
   }
 }
