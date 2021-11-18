@@ -8,7 +8,7 @@ import java.time.Instant;
  * See https://github.com/wikimedia/mediawiki-event-schemas/blob/master/config/eventbus-topics.yaml
  * for the relationship between events and topics.
  */
-public interface ChangeEvent {
+public interface ChangeEvent extends EventPlatformEvent {
     /**
      * Page revision.
      */

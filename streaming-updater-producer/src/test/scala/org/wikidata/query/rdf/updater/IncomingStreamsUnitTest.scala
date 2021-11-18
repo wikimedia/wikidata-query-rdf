@@ -152,6 +152,8 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
 
 
 sealed case class FakeEvent(domain: String, title: String, namespace: Long = 0) extends ChangeEvent {
+  val meta = new EventsMeta(Instant.now(), "ID", domain, "stream", "reqID")
   override def revision(): Long = ???
   override def timestamp(): Instant = ???
+  override def schema(): String = ???
 }

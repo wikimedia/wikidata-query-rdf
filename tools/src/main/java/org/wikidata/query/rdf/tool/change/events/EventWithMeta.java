@@ -37,4 +37,14 @@ public abstract class EventWithMeta implements ChangeEvent {
     public String domain() {
         return eventInfo.meta().domain();
     }
+
+    @Override
+    public String schema() {
+        return eventInfo.schema();
+    }
+
+    @Override
+    public EventsMeta meta() {
+        return eventInfo.meta();
+    }
 }
