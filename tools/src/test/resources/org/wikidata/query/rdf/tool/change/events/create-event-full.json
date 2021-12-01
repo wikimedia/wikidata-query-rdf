@@ -36,5 +36,13 @@
   "rev_minor_edit": false,
   "rev_parent_id": 6299559,
   "rev_sha1": "hfvnvv8qcnluq07gpz15tel9o15sl",
-  "rev_timestamp": "2018-01-21T16:38:20Z"
+  "rev_timestamp": "2018-01-21T16:38:20Z",
+  "rev_slots": {
+    "main": {
+      "rev_slot_content_model": "wikitext",
+      "rev_slot_sha1": "123fewfwe",
+      "rev_slot_size": 1571,
+      "rev_slot_origin_rev_id": 1
+    }
+  }
 }

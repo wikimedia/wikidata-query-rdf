@@ -1,7 +1,6 @@
 package org.wikidata.query.rdf.updater
 
 import java.time.{Clock, Duration}
-
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.streaming.api.scala._
@@ -34,7 +33,7 @@ object IncomingStreams {
 
   def buildIncomingStreams(ievops: UpdaterPipelineInputEventStreamConfig,
                            uris: Uris, clock: Clock)
-                                  (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
+                          (implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
 
     val resolver: EntityResolver = (ns, title, pageId) => if (ievops.mediaInfoEntityNamespaces.contains(ns)) {
       UrisConstants.MEDIAINFO_INITIAL + pageId
@@ -42,14 +41,14 @@ object IncomingStreams {
       cleanEntityId(title)
     }
 
-    def build[E <: ChangeEvent](topic: String, clazz: Class[E], conv: Converter[E]) = {
+    def build[E <: ChangeEvent](topic: String, clazz: Class[E], conv: Converter[E], filter: Option[FilterFunction[E]] = None): DataStream[InputEvent] = {
       fromKafka(KafkaConsumerProperties(topic, ievops.kafkaBrokers, ievops.consumerGroup, DeserializationSchemaFactory.getDeserializationSchema(clazz)),
-        uris, conv, ievops.maxLateness, ievops.idleness, clock, resolver)
+        uris, conv, ievops.maxLateness, ievops.idleness, clock, resolver, filter)
     }
-
+    val revisionCreateEventFilter = new RevisionCreateEventFilter(ievops.mediaInfoEntityNamespaces, ievops.mediaInfoRevisionSlot)
     ievops.inputKafkaTopics.topicPrefixes.flatMap(prefix => {
       List(
-        build(prefix + ievops.inputKafkaTopics.revisionCreateTopicName, classOf[RevisionCreateEvent], REV_CREATE_CONV),
+        build(prefix + ievops.inputKafkaTopics.revisionCreateTopicName, classOf[RevisionCreateEvent], REV_CREATE_CONV, Some(revisionCreateEventFilter)),
         build(prefix + ievops.inputKafkaTopics.pageDeleteTopicName, classOf[PageDeleteEvent], PAGE_DEL_CONV),
         build(prefix + ievops.inputKafkaTopics.pageUndeleteTopicName, classOf[PageUndeleteEvent], PAGE_UNDEL_CONV),
         build(prefix + ievops.inputKafkaTopics.suppressedDeleteTopicName, classOf[PageDeleteEvent], PAGE_DEL_CONV)
@@ -57,9 +56,9 @@ object IncomingStreams {
     })
   }
 
-  def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], uris: Uris,
+  def fromKafka[E <: ChangeEvent](kafkaProps: KafkaConsumerProperties[E], uris: Uris, // scalastyle:ignore
                                   conv: Converter[E],
-                                  maxLatenessMs: Int, idlenessMs: Int, clock: Clock, resolver: EntityResolver)
+                                  maxLatenessMs: Int, idlenessMs: Int, clock: Clock, resolver: EntityResolver, filter: Option[FilterFunction[E]])
                                  (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
     val nameAndUid = operatorUUID(kafkaProps.topic)
     val kafkaStream = env
@@ -69,7 +68,7 @@ object IncomingStreams {
       .uid(nameAndUid)
       .name(nameAndUid)
       .setParallelism(INPUT_PARALLELISM)
-    fromStream(kafkaStream, uris, conv, clock, resolver)
+    fromStream(kafkaStream, uris, conv, clock, resolver, filter)
   }
 
   def operatorUUID[E <: ChangeEvent](topic: String): String = {
@@ -88,9 +87,12 @@ object IncomingStreams {
                                    uris: Uris,
                                    conv: Converter[E],
                                    clock: Clock,
-                                   resolver: EntityResolver
+                                   resolver: EntityResolver,
+                                   filter: Option[FilterFunction[E]]
                                   )(implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
-    val filteredStream = stream.filter(new EventWithMetadataHostFilter[E](uris))
+    val initiallyFilteredStream = stream.filter(new EventWithMetadataHostFilter[E](uris))
+    val filteredStream = filter.map(stream.filter).getOrElse(initiallyFilteredStream)
+
     // force parallelism to one (mostly for unit tests here so that we don't mess-up their ordering)
     // filtering is also very simple
     filteredStream.setParallelism(INPUT_PARALLELISM)
@@ -106,5 +108,15 @@ object IncomingStreams {
 class EventWithMetadataHostFilter[E <: ChangeEvent](uris: Uris) extends FilterFunction[E] {
   override def filter(e: E): Boolean = {
     uris.getHost.equals(e.domain()) && uris.isEntityNamespace(e.namespace())
+  }
+}
+
+class RevisionCreateEventFilter(mediaInfoEntityNamespaces: Set[Long], mediaInfoRevSlot: String) extends FilterFunction[RevisionCreateEvent] {
+  override def filter(value: RevisionCreateEvent): Boolean = {
+    if (mediaInfoEntityNamespaces.contains(value.namespace())) {
+      value.revSlots() != null && value.revSlots().containsKey(mediaInfoRevSlot)
+    } else {
+      true
+    }
   }
 }

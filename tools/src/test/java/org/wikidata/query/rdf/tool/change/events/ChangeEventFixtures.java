@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.tool.change.events;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.UUID;
 
 import org.wikidata.query.rdf.tool.change.Change;
@@ -57,7 +58,7 @@ public final class ChangeEventFixtures {
     public static ChangeEvent makeRCEvent(Duration offset, long pageid, long revid, String qid, int ns, String domain) {
         return new RevisionCreateEvent(
                 new EventsMeta(START_TIME.plus(offset), "", domain, "", ""),
-                pageid, revid, qid, ns);
+                pageid, revid, qid, ns, Collections.emptyMap());
     }
 
     public static EventsMeta makeEventMeta() {

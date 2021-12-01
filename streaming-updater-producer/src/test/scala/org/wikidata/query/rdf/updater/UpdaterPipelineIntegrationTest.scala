@@ -41,7 +41,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       // Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
       URIS,
-      IncomingStreams.REV_CREATE_CONV, clock, resolver)
+      IncomingStreams.REV_CREATE_CONV, clock, resolver, None)
 
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
@@ -78,14 +78,14 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       // Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[RevisionCreateEvent]()),
       URIS,
-      IncomingStreams.REV_CREATE_CONV, clock, resolver)
+      IncomingStreams.REV_CREATE_CONV, clock, resolver, None)
 
     val pageDeleteSource: DataStream[InputEvent] = IncomingStreams.fromStream(env.fromCollection(pageDeleteEvents)
       .setParallelism(1)
       //       Use punctuated WM instead of periodic in test
       .assignTimestampsAndWatermarks(watermarkStrategy[PageDeleteEvent]()),
       URIS,
-      IncomingStreams.PAGE_DEL_CONV, clock, resolver)
+      IncomingStreams.PAGE_DEL_CONV, clock, resolver, None)
 
 
     //this needs to be evaluated before the lambda below because of serialization issues

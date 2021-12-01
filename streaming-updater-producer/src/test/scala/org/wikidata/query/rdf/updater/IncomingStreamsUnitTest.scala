@@ -1,17 +1,17 @@
 package org.wikidata.query.rdf.updater
 
-import java.net.URI
-import java.time.{Clock, Instant}
-
-import scala.collection.JavaConverters.setAsJavaSetConverter
-
+import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
-import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, EventsMeta, PageDeleteEvent, PageUndeleteEvent, RevisionCreateEvent}
+import org.wikidata.query.rdf.tool.change.events._
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.config.{InputKafkaTopics, UpdaterPipelineInputEventStreamConfig}
 
-class IncomingStreamsUnitTest extends FlatSpec with Matchers {
+import java.net.URI
+import java.time.{Clock, Instant}
+import scala.collection.JavaConverters.{mapAsJavaMapConverter, setAsJavaSetConverter}
+
+class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
 
   val resolver: IncomingStreams.EntityResolver = (_, title, _) => title
 
@@ -20,7 +20,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
       DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-      uris, IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC(), resolver)
+      uris, IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC(), resolver, None)
     stream.name should equal ("Filtered(my-topic == my-hostname)")
   }
 
@@ -34,7 +34,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
           pageUndeleteTopicName = "page-undelete-topic",
           suppressedDeleteTopicName = "suppressed-delete-topic",
           topicPrefixes = List("")),
-        10, 10, Set()),
+        10, 10, Set(), "mediainfo"),
       uris, Clock.systemUTC())
     stream.map(_.parallelism).toSet should contain only 1
   }
@@ -49,7 +49,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
           pageUndeleteTopicName = "page-undelete-topic",
           suppressedDeleteTopicName = "suppressed-delete-topic",
           topicPrefixes = List("")),
-        10, 10, Set()),
+        10, 10, Set(), "mediainfo"),
       uris, Clock.systemUTC()
     )
     stream.map(_.name) should contain only("Filtered(rev-create-topic == my-hostname)",
@@ -69,7 +69,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
           pageUndeleteTopicName = "page-undelete-topic",
           suppressedDeleteTopicName = "suppressed-delete-topic",
           topicPrefixes = List("cluster1.", "cluster2.")),
-        10, 10, Set()),
+        10, 10, Set(), "mediainfo"),
       uris, Clock.systemUTC())
     stream.map(_.name) should contain only(
       "Filtered(cluster1.rev-create-topic == my-hostname)",
@@ -96,7 +96,30 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     filter.filter(FakeEvent("my-hostname", "Q123", 10)) should equal(false)
   }
 
+  "IncomingStreams" should "filter out messages based on mediainfo namespace and slot" in {
+    val filter = new RevisionCreateEventFilter(Set(6), "mediainfo")
+    val mainSlot = "main" ->
+      new RevisionSlot("main", "123fewfwe", 1571, 1)
+    val mediainfoSlot = "mediainfo" -> new RevisionSlot("mediainfo", "123fewfwe", 1571, 1);
+
+    val nonFileEvent = newRevCreateEvent("M1", 1, 2, 1, instant(4),
+      0, DOMAIN, STREAM, ORIG_REQUEST_ID, Map(mainSlot))
+    val nonMediaInfoEvent = newRevCreateEvent("M2", 1, 2, 1, instant(4),
+      6, DOMAIN, STREAM, ORIG_REQUEST_ID, Map(mainSlot))
+    val mediaInfoEvent = newRevCreateEvent("M3", 1, 2, 1, instant(4),
+      6, DOMAIN, STREAM, ORIG_REQUEST_ID, Map(mainSlot, mediainfoSlot))
+    implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+    env.setParallelism(1)
+    val ouput: Set[InputEvent] = IncomingStreams.fromStream(env.fromCollection(Seq(nonFileEvent, nonMediaInfoEvent, mediaInfoEvent))
+      .setParallelism(1),
+      URIS,
+      IncomingStreams.REV_CREATE_CONV, clock, resolver, Some(filter)).executeAndCollect().toSet
+
+    ouput.map(_.item) should contain only ("M1", "M3")
+  }
+
   "RevCreateEvent" should "be convertible into InputEvent" in {
+    val revSlots = Map("main" -> new RevisionSlot("main", "1123a", 1, 1)).asJava
     val event: RevCreate = IncomingStreams.REV_CREATE_CONV.apply(new RevisionCreateEvent(
       new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "my_request_id"),
       "schema",
@@ -104,7 +127,8 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
       1234L,
       1233L,
       "Q123",
-      1),
+      1,
+      revSlots),
       resolver, Clock.systemUTC()).asInstanceOf[RevCreate]
     event.eventTime should equal(Instant.ofEpochMilli(123))
     event.item should equal("Q123")
@@ -149,6 +173,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers {
     event.originalEventInfo.meta().domain() should equal("my-domain")
   }
 }
+
 
 
 sealed case class FakeEvent(domain: String, title: String, namespace: Long = 0) extends ChangeEvent {

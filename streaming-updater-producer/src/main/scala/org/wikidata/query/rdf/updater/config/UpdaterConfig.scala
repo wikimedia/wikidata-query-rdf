@@ -58,7 +58,8 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     consumerGroup = getStringParam("consumer_group"),
     maxLateness = params.getInt("max_lateness", 1 minute),
     idleness = params.getInt("input_idleness", 1 minute),
-    mediaInfoEntityNamespaces = mediaInfoEntityNamespaces
+    mediaInfoEntityNamespaces = mediaInfoEntityNamespaces,
+    mediaInfoRevisionSlot = params.get("mediainfo_revision_slot", "mediainfo")
   )
 
   val environmentConfig: UpdaterExecutionEnvironmentConfig = UpdaterExecutionEnvironmentConfig(checkpointDir = checkpointDir,
@@ -134,7 +135,8 @@ sealed case class UpdaterPipelineInputEventStreamConfig(kafkaBrokers: String,
                                                         inputKafkaTopics: InputKafkaTopics,
                                                         maxLateness: Int,
                                                         idleness: Int,
-                                                        mediaInfoEntityNamespaces: Set[Long]
+                                                        mediaInfoEntityNamespaces: Set[Long],
+                                                        mediaInfoRevisionSlot: String
                                                        )
 
 sealed case class UpdaterPipelineOutputStreamConfig(

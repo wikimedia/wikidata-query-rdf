@@ -1,10 +1,11 @@
 package org.wikidata.query.rdf.updater
 
 import java.time.Instant
-
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
-import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, PageDeleteEvent, RevisionCreateEvent}
+import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, PageDeleteEvent, RevisionCreateEvent, RevisionSlot}
+
+import scala.collection.JavaConverters._
 
 trait TestEventGenerator {
   def newRevCreateRecordNewPage(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
@@ -35,17 +36,15 @@ trait TestEventGenerator {
     Instant.ofEpochMilli(millis)
   }
 
-  def newRevCreateEvent(item: String, pageId: Long, revision: Long, eventTime: Instant, namespace: Int,
-                        domain: String, stream: String, requestId: String): RevisionCreateEvent = {
-    new RevisionCreateEvent(
-      newEventInfo(eventTime, domain, stream, requestId),
-      pageId, revision, item, namespace)
+  def newRevCreateEvent(item: String, pageId: Long, revision: Long, eventTime: Instant, namespace: Int, // scalastyle:ignore
+                        domain: String, stream: String, requestId: String, revSlots: Map[String, RevisionSlot]): RevisionCreateEvent = {
+    new RevisionCreateEvent(newEventInfo(eventTime, domain, stream, requestId), pageId, revision, item, namespace, revSlots.asJava)
   }
 
   def newRevCreateEvent(item: String, pageId: Long, revision: Long, fromRevision: Long, eventTime: Instant, namespace: Int, // scalastyle:ignore
-                        domain: String, stream: String, requestId: String): RevisionCreateEvent = {
-    new RevisionCreateEvent(
-      newEventMeta(eventTime, domain, stream, requestId), "schema", pageId, revision, fromRevision, item, namespace)
+                        domain: String, stream: String, requestId: String, revSlots: Map[String, RevisionSlot]): RevisionCreateEvent = {
+    new RevisionCreateEvent(newEventMeta(eventTime, domain, stream, requestId), "schema", pageId, revision,
+      fromRevision, item, namespace, revSlots.asJava)
   }
 
   def newPageDeleteEvent(item: String, pageId: Long, revision: Long, eventTime: Instant, namespace: Int,

@@ -5,15 +5,13 @@ import java.time.{Clock, Instant, ZoneOffset}
 import java.util
 import java.util.{Collections, UUID}
 import java.util.function.Supplier
-
 import scala.collection.JavaConverters._
-
 import org.apache.flink.api.common.eventtime._
 import org.openrdf.model.Statement
 import org.openrdf.model.impl.{StatementImpl, ValueFactoryImpl}
 import org.openrdf.rio.{RDFFormat, RDFParserRegistry, RDFWriterRegistry}
 import org.wikidata.query.rdf.common.uri.{PropertyType, SchemaDotOrg, UrisScheme, UrisSchemeFactory}
-import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, EventWithMeta}
+import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, EventWithMeta, RevisionSlot}
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.EntityStatus.CREATED
@@ -33,7 +31,7 @@ trait TestFixtures extends TestEventGenerator {
   val OUTPUT_EVENT_STREAM_NAME = "wdqs_streaming_updater_test_stream"
   val STREAM: String = "input_stream"
   val ORIG_REQUEST_ID: String = UUID.randomUUID().toString
-
+  val DEFAULT_REV_SLOTS = Map("main" -> new RevisionSlot("wikitext", "rfw4r2", 1233, 1))
 
   val WATERMARK_1: Int = REORDERING_WINDOW_LENGTH
   val WATERMARK_2: Int = REORDERING_WINDOW_LENGTH*2
@@ -55,21 +53,21 @@ trait TestFixtures extends TestEventGenerator {
   )
 
   val revCreateEvents = Seq(
-        newRevCreateEvent("Q1", 1, 2, 1, eventTimes("Q1", 2), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
-        newRevCreateEvent("Q1", 1, 1, eventTimes("Q1", 1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID),
+        newRevCreateEvent("Q1", 1, 2, 1, eventTimes("Q1", 2), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
+        newRevCreateEvent("Q1", 1, 1, eventTimes("Q1", 1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
         newRevCreateEvent("Q2", 2, -1, instant(WATERMARK_1), 0, WATERMARK_DOMAIN,
-          STREAM, ORIG_REQUEST_ID), //unrelated event, test filtering and triggers watermark
-        newRevCreateEvent("Q1", 1, 5, 4, eventTimes("Q1", 5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // skip rev 4
-        newRevCreateEvent("Q1", 1, 3, instant(-1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID), // ignored late event
+          STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), //unrelated event, test filtering and triggers watermark
+        newRevCreateEvent("Q1", 1, 5, 4, eventTimes("Q1", 5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), // skip rev 4
+        newRevCreateEvent("Q1", 1, 3, instant(-1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), // ignored late event
         newRevCreateEvent("Q2", 2, -1, instant(WATERMARK_2), 0, WATERMARK_DOMAIN, STREAM,
-          ORIG_REQUEST_ID), //unrelated event, test filter and triggers watermark
+          ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), //unrelated event, test filter and triggers watermark
         newRevCreateEvent("Q1", 1, 4, instant(WATERMARK_2 + 1), 0, DOMAIN, STREAM,
-          ORIG_REQUEST_ID), // spurious event, rev 4 arrived after WM2 but rev5 was handled at WM1
-        newRevCreateEvent("Q1", 1, 6, eventTimes("Q1", 6), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
+          ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), // spurious event, rev 4 arrived after WM2 but rev5 was handled at WM1
+        newRevCreateEvent("Q1", 1, 6, eventTimes("Q1", 6), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS)
   )
 
   val revCreateEventsForPageDeleteTest = Seq(
-    newRevCreateEvent("Q1", 1, 1, instant(4), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
+    newRevCreateEvent("Q1", 1, 1, instant(4), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS)
   )
 
   val pageDeleteEvents = Seq(
