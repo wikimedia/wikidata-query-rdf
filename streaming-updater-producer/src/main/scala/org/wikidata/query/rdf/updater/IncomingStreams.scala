@@ -90,12 +90,19 @@ object IncomingStreams {
                                    resolver: EntityResolver,
                                    filter: Option[FilterFunction[E]]
                                   )(implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
-    val initiallyFilteredStream = stream.filter(new EventWithMetadataHostFilter[E](uris))
-    val filteredStream = filter.map(stream.filter).getOrElse(initiallyFilteredStream)
+    val initiallyFilteredStream = stream.filter(new EventWithMetadataHostFilter[E](uris)).name("Host&Namespace Filter")
 
     // force parallelism to one (mostly for unit tests here so that we don't mess-up their ordering)
     // filtering is also very simple
-    filteredStream.setParallelism(INPUT_PARALLELISM)
+    initiallyFilteredStream.setParallelism(INPUT_PARALLELISM)
+    val filteredStream =
+      filter.map(f => {
+        initiallyFilteredStream
+          .filter(f)
+          .setParallelism(INPUT_PARALLELISM)
+          .name("MCR mediainfo slot filter")
+      }).getOrElse(initiallyFilteredStream)
+
     val convertedStream = filteredStream
       .map(conv(_, resolver, clock))
       .name(s"Filtered(${stream.name} == ${uris.getHost})")

@@ -15,13 +15,13 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
 
   val resolver: IncomingStreams.EntityResolver = (_, title, _) => title
 
-  val uris: Uris = new Uris(new URI("https://my-hostname"), Set(0, 2, 3, 5).map(_.toLong).map(long2Long).asJava, "/unused", "/wiki/Special:EntityData/")
+  val uris: Uris = new Uris(new URI("https://" + DOMAIN), Set(0, 2, 3, 5, 6).map(_.toLong).map(long2Long).asJava, "/unused", "/wiki/Special:EntityData/")
   "IncomingStreams" should "create properly named streams" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
       DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
       uris, IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC(), resolver, None)
-    stream.name should equal ("Filtered(my-topic == my-hostname)")
+    stream.name should equal (s"Filtered(my-topic == $DOMAIN)")
   }
 
   "IncomingStreams" should "create regular incoming streams proper parallelism" in {
@@ -52,10 +52,10 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
         10, 10, Set(), "mediainfo"),
       uris, Clock.systemUTC()
     )
-    stream.map(_.name) should contain only("Filtered(rev-create-topic == my-hostname)",
-                                           "Filtered(page-delete-topic == my-hostname)",
-                                           "Filtered(page-undelete-topic == my-hostname)",
-                                           "Filtered(suppressed-delete-topic == my-hostname)"
+    stream.map(_.name) should contain only(s"Filtered(rev-create-topic == $DOMAIN)",
+                                           s"Filtered(page-delete-topic == $DOMAIN)",
+                                           s"Filtered(page-undelete-topic == $DOMAIN)",
+                                           s"Filtered(suppressed-delete-topic == $DOMAIN)"
     )
   }
 
@@ -72,28 +72,28 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
         10, 10, Set(), "mediainfo"),
       uris, Clock.systemUTC())
     stream.map(_.name) should contain only(
-      "Filtered(cluster1.rev-create-topic == my-hostname)",
-      "Filtered(cluster1.page-delete-topic == my-hostname)",
-      "Filtered(cluster1.page-undelete-topic == my-hostname)",
-      "Filtered(cluster1.suppressed-delete-topic == my-hostname)",
-      "Filtered(cluster2.rev-create-topic == my-hostname)",
-      "Filtered(cluster2.page-delete-topic == my-hostname)",
-      "Filtered(cluster2.page-undelete-topic == my-hostname)",
-      "Filtered(cluster2.suppressed-delete-topic == my-hostname)"
+      s"Filtered(cluster1.rev-create-topic == $DOMAIN)",
+      s"Filtered(cluster1.page-delete-topic == $DOMAIN)",
+      s"Filtered(cluster1.page-undelete-topic == $DOMAIN)",
+      s"Filtered(cluster1.suppressed-delete-topic == $DOMAIN)",
+      s"Filtered(cluster2.rev-create-topic == $DOMAIN)",
+      s"Filtered(cluster2.page-delete-topic == $DOMAIN)",
+      s"Filtered(cluster2.page-undelete-topic == $DOMAIN)",
+      s"Filtered(cluster2.suppressed-delete-topic == $DOMAIN)"
     )
   }
 
   "EventWithMetadataHostFilter" should "filter events by hostname" in {
     val filter = new EventWithMetadataHostFilter[FakeEvent](uris)
     filter.filter(FakeEvent("not-my-host", "Q123")) should equal(false)
-    filter.filter(FakeEvent("my-hostname", "Unrelated", 10)) should equal(false)
-    filter.filter(FakeEvent("my-hostname", "Q123")) should equal(true)
+    filter.filter(FakeEvent(DOMAIN, "Unrelated", 10)) should equal(false)
+    filter.filter(FakeEvent(DOMAIN, "Q123")) should equal(true)
   }
 
   "EventWithMetadataHostFilter" should "filter events by namespace" in {
     val filter = new EventWithMetadataHostFilter[FakeEvent](uris)
-    filter.filter(FakeEvent("my-hostname", "Q123", 2)) should equal(true)
-    filter.filter(FakeEvent("my-hostname", "Q123", 10)) should equal(false)
+    filter.filter(FakeEvent(DOMAIN, "Q123", 2)) should equal(true)
+    filter.filter(FakeEvent(DOMAIN, "Q123", 10)) should equal(false)
   }
 
   "IncomingStreams" should "filter out messages based on mediainfo namespace and slot" in {
@@ -108,14 +108,16 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
       6, DOMAIN, STREAM, ORIG_REQUEST_ID, Map(mainSlot))
     val mediaInfoEvent = newRevCreateEvent("M3", 1, 2, 1, instant(4),
       6, DOMAIN, STREAM, ORIG_REQUEST_ID, Map(mainSlot, mediainfoSlot))
+    val mediaInfoWrongDomainEvent = newRevCreateEvent("M4", 1, 2, 1, instant(4),
+      6, "wrong", STREAM, ORIG_REQUEST_ID, Map(mainSlot, mediainfoSlot))
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
-    val ouput: Set[InputEvent] = IncomingStreams.fromStream(env.fromCollection(Seq(nonFileEvent, nonMediaInfoEvent, mediaInfoEvent))
+    val output: Set[InputEvent] = IncomingStreams.fromStream(env.fromCollection(Seq(nonFileEvent, nonMediaInfoEvent, mediaInfoEvent,mediaInfoWrongDomainEvent))
       .setParallelism(1),
-      URIS,
+      uris,
       IncomingStreams.REV_CREATE_CONV, clock, resolver, Some(filter)).executeAndCollect().toSet
 
-    ouput.map(_.item) should contain only ("M1", "M3")
+    output.map(_.item) should contain only ("M1", "M3")
   }
 
   "RevCreateEvent" should "be convertible into InputEvent" in {
