@@ -47,7 +47,7 @@ public class WikibaseResponseUnitTest {
         return getClass().getClassLoader().getResourceAsStream(prefix + "/" + name);
     }
 
-    private static final class MockResponse extends WikibaseResponse {
+    private static final class MockResponse extends WikibaseBaseResponse {
         @JsonCreator
         MockResponse(
                 @JsonProperty("error") Object error

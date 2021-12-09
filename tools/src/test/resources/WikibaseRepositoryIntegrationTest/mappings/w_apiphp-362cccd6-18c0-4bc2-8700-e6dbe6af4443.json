@@ -1,0 +1,35 @@
+{
+  "id" : "362cccd6-18c0-4bc2-8700-e6dbe6af4443",
+  "name" : "w_apiphp",
+  "request" : {
+    "url" : "/w/api.php?format=json&formatversion=2&action=query&prop=revisions&rvprop=ids&rvdir=older&titles=Q1%7CProperty%3AP180%7CQ106376",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"batchcomplete\":true,\"query\":{\"pages\":[{\"ns\":0,\"title\":\"Q1\",\"missing\":true},{\"pageid\":1075,\"ns\":120,\"title\":\"Property:P180\",\"revisions\":[{\"revid\":6137,\"parentid\":0}]},{\"pageid\":159135,\"ns\":0,\"title\":\"Q106376\",\"revisions\":[{\"revid\":270062,\"parentid\":0}]}]}}",
+    "headers" : {
+      "Date" : "Mon, 13 Dec 2021 17:29:05 GMT",
+      "Server" : "mw1312.eqiad.wmnet",
+      "X-Content-Type-Options" : "nosniff",
+      "P3p" : "CP=\"See https://test.wikidata.org/wiki/Special:CentralAutoLogin/P3P for more info.\"",
+      "X-Frame-Options" : "DENY",
+      "Content-Disposition" : "inline; filename=api-result.json",
+      "Vary" : "Accept-Encoding,Treat-as-Untrusted,X-Forwarded-Proto,Cookie,Authorization",
+      "Cache-Control" : "private, must-revalidate, max-age=0",
+      "Content-Type" : "application/json; charset=utf-8",
+      "Age" : "0",
+      "X-Cache" : "cp3054 miss, cp3054 pass",
+      "X-Cache-Status" : "pass",
+      "Server-Timing" : "cache;desc=\"pass\", host;desc=\"cp3054\"",
+      "Strict-Transport-Security" : "max-age=106384710; includeSubDomains; preload",
+      "Report-To" : "{ \"group\": \"wm_nel\", \"max_age\": 86400, \"endpoints\": [{ \"url\": \"https://intake-logging.wikimedia.org/v1/events?stream=w3c.reportingapi.network_error&schema_uri=/w3c/reportingapi/network_error/1.0.0\" }] }",
+      "NEL" : "{ \"report_to\": \"wm_nel\", \"max_age\": 86400, \"failure_fraction\": 0.05, \"success_fraction\": 0.0}",
+      "Permissions-Policy" : "interest-cohort=()",
+      "Accept-Ranges" : "bytes"
+    }
+  },
+  "uuid" : "362cccd6-18c0-4bc2-8700-e6dbe6af4443",
+  "persistent" : true,
+  "insertionIndex" : 3
+}

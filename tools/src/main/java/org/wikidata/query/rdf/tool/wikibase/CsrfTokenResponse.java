@@ -1,15 +1,17 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class CsrfTokenResponse extends WikibaseResponse {
+public class CsrfTokenResponse extends WikibaseBaseResponse {
 
     private final Query query;
 
     @JsonCreator
     public CsrfTokenResponse(
-            @JsonProperty("error") Object error,
+            @Nullable @JsonProperty("error") Object error,
             @JsonProperty("query") Query query) {
         super(error);
         this.query = query;

@@ -1,15 +1,17 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class EditResponse extends WikibaseResponse {
+public class EditResponse extends WikibaseBaseResponse {
 
     private final Entity entity;
 
     @JsonCreator
     public EditResponse(
-            @JsonProperty("error") Object error,
+            @Nullable @JsonProperty("error") Object error,
             @JsonProperty("entity") Entity entity) {
         super(error);
         this.entity = entity;

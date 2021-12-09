@@ -1,0 +1,35 @@
+{
+  "id" : "291812eb-a850-4c1b-a51c-dc0e7908f368",
+  "name" : "w_apiphp",
+  "request" : {
+    "url" : "/w/api.php?format=json&formatversion=2&action=query&prop=revisions&rvprop=ids&rvdir=older&pageids=1%7C766",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"continue\":{\"rvcontinue\":\"20190929124538|2532\",\"continue\":\"||\"},\"query\":{\"pages\":[{\"pageid\":1,\"missing\":true},{\"pageid\":766,\"ns\":6,\"title\":\"File:Nubian flute player.jpg\",\"revisions\":[{\"revid\":2537,\"parentid\":2532}]}]}}",
+    "headers" : {
+      "date" : "Thu, 09 Dec 2021 11:01:25 GMT",
+      "server" : "mw1361.eqiad.wmnet",
+      "x-content-type-options" : "nosniff",
+      "p3p" : "CP=\"See https://test-commons.wikimedia.org/wiki/Special:CentralAutoLogin/P3P for more info.\"",
+      "x-frame-options" : "DENY",
+      "content-disposition" : "inline; filename=api-result.json",
+      "vary" : "Accept-Encoding,Treat-as-Untrusted,X-Forwarded-Proto,Cookie,Authorization",
+      "cache-control" : "private, must-revalidate, max-age=0",
+      "content-type" : "application/json; charset=utf-8",
+      "age" : "0",
+      "x-cache" : "cp3062 miss, cp3064 pass",
+      "x-cache-status" : "pass",
+      "server-timing" : "cache;desc=\"pass\", host;desc=\"cp3064\"",
+      "strict-transport-security" : "max-age=106384710; includeSubDomains; preload",
+      "report-to" : "{ \"group\": \"wm_nel\", \"max_age\": 86400, \"endpoints\": [{ \"url\": \"https://intake-logging.wikimedia.org/v1/events?stream=w3c.reportingapi.network_error&schema_uri=/w3c/reportingapi/network_error/1.0.0\" }] }",
+      "nel" : "{ \"report_to\": \"wm_nel\", \"max_age\": 86400, \"failure_fraction\": 0.05, \"success_fraction\": 0.0}",
+      "permissions-policy" : "interest-cohort=()",
+      "accept-ranges" : "bytes"
+    }
+  },
+  "uuid" : "291812eb-a850-4c1b-a51c-dc0e7908f368",
+  "persistent" : true,
+  "insertionIndex" : 5
+}

@@ -5,18 +5,20 @@ import static com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING;
 import java.time.Instant;
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class RecentChangeResponse extends WikibaseResponse {
+public class RecentChangeResponse extends WikibaseBaseResponse {
 
     private final Continue aContinue;
     private final Query query;
 
     @JsonCreator
     public RecentChangeResponse(
-            @JsonProperty("error") Object error,
+            @Nullable @JsonProperty("error") Object error,
             @JsonProperty("continue") Continue aContinue,
             @JsonProperty("query") Query query) {
         super(error);

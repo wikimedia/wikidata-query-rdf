@@ -2,16 +2,18 @@ package org.wikidata.query.rdf.tool.wikibase;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class SearchResponse extends WikibaseResponse {
+public class SearchResponse extends WikibaseBaseResponse {
 
     private final List<SearchResult> search;
 
     @JsonCreator
     public SearchResponse(
-            @JsonProperty("error") Object error,
+            @Nullable @JsonProperty("error") Object error,
             @JsonProperty("search") List<SearchResult> search) {
         super(error);
         this.search = search;

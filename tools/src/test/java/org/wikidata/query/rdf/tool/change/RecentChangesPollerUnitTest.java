@@ -24,6 +24,7 @@ import org.wikidata.query.rdf.tool.wikibase.Continue;
 import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse;
 import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse.Query;
 import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse.RecentChange;
+import org.wikidata.query.rdf.tool.wikibase.WikibaseApiError;
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.codahale.metrics.MetricRegistry;
@@ -67,7 +68,7 @@ public class RecentChangesPollerUnitTest {
             recentChanges.add(rc);
         }
         Query query = new Query(recentChanges);
-        String error = null;
+        WikibaseApiError error = null;
         Continue aContinue = null;
         RecentChangeResponse result = new RecentChangeResponse(error, aContinue, query);
 
@@ -98,7 +99,7 @@ public class RecentChangesPollerUnitTest {
 
         Instant revDate = startTime.plusSeconds(20);
 
-        String error = null;
+        WikibaseApiError error = null;
         Continue aContinue = new Continue(
                 OUTPUT_DATE_FORMATTER.format(revDate) + "|8",
                 "-||");
@@ -142,7 +143,7 @@ public class RecentChangesPollerUnitTest {
         // Use old date to remove backoff
         Instant startTime = Instant.now().minus(10, ChronoUnit.DAYS);
         // Build a result from wikibase with duplicate recent changes
-        String error = null;
+        WikibaseApiError error = null;
         Continue aContinue = null;
         List<RecentChange> recentChanges = new ArrayList<>();
         recentChanges.add(new RecentChange(0L, "Q424242", Instant.now(), 0L, 42L, "log"));
@@ -173,7 +174,7 @@ public class RecentChangesPollerUnitTest {
 
         Instant nextStartTime = startTime.plusSeconds(20);
 
-        String error = null;
+        WikibaseApiError error = null;
         Continue aContinue = null;
         List<RecentChange> recentChanges = new ArrayList<>();
         recentChanges.add(new RecentChange(0L, "Q424242", nextStartTime, 42L, 42L, "edit"));
@@ -207,7 +208,7 @@ public class RecentChangesPollerUnitTest {
         Instant startTime = Instant.now().minus(1, ChronoUnit.DAYS);
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, 10, new MetricRegistry());
 
-        String error = null;
+        WikibaseApiError error = null;
         Continue aContinue = null;
         Query query = new Query(emptyList());
         RecentChangeResponse result = new RecentChangeResponse(error, aContinue, query);
@@ -232,7 +233,7 @@ public class RecentChangesPollerUnitTest {
         batchSize = 1;
         RecentChangesPoller poller = new RecentChangesPoller(repository, startTime, batchSize, new MetricRegistry());
 
-        String error = null;
+        WikibaseApiError error = null;
         Continue aContinue = null;
         ArrayList<RecentChange> recentChanges = new ArrayList<>();
         recentChanges.add(new RecentChange(0L, "Q424242", startTime, 42L, 42L, "edit"));

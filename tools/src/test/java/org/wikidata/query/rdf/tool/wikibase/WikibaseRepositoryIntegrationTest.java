@@ -1,10 +1,12 @@
 package org.wikidata.query.rdf.tool.wikibase;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static java.util.Arrays.asList;
 import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
 import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -21,7 +23,12 @@ import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -29,6 +36,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.assertj.core.api.Assertions;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -48,7 +56,6 @@ import org.wikidata.query.rdf.tool.wikibase.RecentChangeResponse.RecentChange;
 import com.codahale.metrics.MetricRegistry;
 import com.github.tomakehurst.wiremock.common.ClasspathFileSource;
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
-import com.google.common.collect.ImmutableSet;
 
 import lombok.SneakyThrows;
 
@@ -75,7 +82,7 @@ public class WikibaseRepositoryIntegrationTest {
     @SneakyThrows
     private static WikibaseRepository constructRepository(String uri) {
         return new WikibaseRepository(
-                new WikibaseRepository.Uris(new URI(uri), ImmutableSet.of(0L, 120L), "/w/api.php", "/wiki/Special:EntityData/"),
+                new WikibaseRepository.Uris(new URI(uri), WikibaseRepository.Uris.DEFAULT_ENTITY_NAMESPACES, "/w/api.php", "/wiki/Special:EntityData/"),
                 false, new MetricRegistry(), new NullStreamDumper(), null, RDFParserSuppliers.defaultRdfParser());
     }
 
@@ -145,7 +152,6 @@ public class WikibaseRepositoryIntegrationTest {
         return result.getQuery().getRecentChanges();
     }
 
-    @SuppressWarnings({ "rawtypes" })
     private void editShowsUpInRecentChangesTestCase(String label, String type) throws RetryableException,
             ContainedException, IOException, URISyntaxException {
         String entityId = firstEntityIdForLabelStartingWith(baseUri, label, "en", type);
@@ -233,13 +239,39 @@ public class WikibaseRepositoryIntegrationTest {
     }
 
     @Test
-    @SuppressWarnings({ "rawtypes" })
     public void recentChangesWithErrors() throws RetryableException, ContainedException {
         RecentChangeResponse changes = repo.get().fetchRecentChanges(ERROR_RESPONSE_INSTANT, null, 500);
 
         assertNull(changes.getContinue());
         assertNotNull(changes.getQuery());
         assertNotNull(changes.getQuery().getRecentChanges());
+    }
+
+    @Test
+    public void fetchLatestRevisionForEntities() throws RetryableException {
+        Set<String> entityIds = new HashSet<>(asList("Q106376", "Q1", "P180"));
+        Map<String, Optional<Long>> entityRevs = repo.get().fetchLatestRevisionForEntities(entityIds,
+                WikibaseRepository.entityIdToMediaWikiTitle("Q=,P=Property"));
+        assertEquals(270062L, entityRevs.get("Q106376").orElseThrow(AssertionError::new).longValue());
+        assertFalse(entityRevs.get("Q1").isPresent());
+    }
+
+    @Test
+    public void fetchLatestRevisionForEntitiesWithInvalidNsTextMap() throws RetryableException {
+        Set<String> entityIds = new HashSet<>(asList("Q106376", "Q1", "P180"));
+        WikibaseRepository testRepo = repo.get();
+        UnaryOperator<String> entityToTitle = WikibaseRepository.entityIdToMediaWikiTitle("Q=");
+        Assertions.assertThatThrownBy(() -> testRepo.fetchLatestRevisionForEntities(entityIds, entityToTitle))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Unsupported entity id [P180]");
+    }
+
+    @Test
+    public void fetchLatestRevisionForMediainfoItems() throws RetryableException {
+        Set<String> entityIds = new HashSet<>(asList("M766", "M1"));
+        Map<String, Optional<Long>> entityRevs = repo.get().fetchLatestRevisionForMediainfoItems(entityIds);
+        assertEquals(2537L, entityRevs.get("M766").orElseThrow(AssertionError::new).longValue());
+        assertFalse(entityRevs.get("M1").isPresent());
     }
 
     /**
@@ -264,7 +296,7 @@ public class WikibaseRepositoryIntegrationTest {
         return resultList.get(0).getId();
     }
 
-    private <T extends WikibaseResponse> T getJson(HttpRequestBase request, Class<T> valueType)
+    private <T extends WikibaseBaseResponse> T getJson(HttpRequestBase request, Class<T> valueType)
             throws IOException {
         try (CloseableHttpResponse response = (CloseableHttpResponse) client.execute(request)) {
             InputStream content = response.getEntity().getContent();

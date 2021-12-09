@@ -2,6 +2,8 @@ package org.wikidata.query.rdf.tool.wikibase;
 
 import static com.google.common.collect.ImmutableSet.copyOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toMap;
 import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
 
 import java.io.Closeable;
@@ -22,7 +24,12 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -59,6 +66,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.Value;
 
 /**
  * Wraps Wikibase api.
@@ -107,6 +115,8 @@ public class WikibaseRepository implements Closeable {
             .parseDefaulting(ChronoField.NANO_OF_SECOND, 0)
             .toFormatter()
             .withZone(ZoneId.of("Z"));
+
+    public static final int MAX_ITEMS_PER_ACTION_REQUEST = 50;
 
     /**
      * HTTP client for wikibase.
@@ -237,6 +247,58 @@ public class WikibaseRepository implements Closeable {
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RetryableException("Error fetching recent changes", e);
+        }
+    }
+
+    @Value
+    private static class EntityRevision {
+        String entity;
+        Optional<Long> revision;
+    }
+
+    /**
+     * Obtain the latest known revision of every entity identified in entityIds.
+     * @return a map of requested entity ids with their respective latest revision id if available
+     */
+    public Map<String, Optional<Long>> fetchLatestRevisionForEntities(Set<String> entityIds, UnaryOperator<String> toMediaWikiTitle)
+            throws RetryableException {
+        return fetchLastRevision(entityIds, (ids) -> uris.latestRevisionForEntities(ids, toMediaWikiTitle),
+                (resp, eid) -> resp.latestRevisionForTitle(toMediaWikiTitle.apply(eid)));
+    }
+
+    /**
+     * Obtain the latest known revision of every mediainfo items identified in mediainfoItems.
+     */
+    public Map<String, Optional<Long>> fetchLatestRevisionForMediainfoItems(Set<String> mediainfoItems) throws RetryableException {
+        return fetchLastRevision(mediainfoItems, uris::latestRevisionForMediainfoItems,
+                (r, e) -> r.latestRevisionForPageid(Long.parseLong(e.substring(1))));
+    }
+
+
+    private Map<String, Optional<Long>> fetchLastRevision(Set<String> ids,
+                                                          Function<Set<String>, URI> uriFunction,
+                                                          BiFunction<LatestRevisionResponse, String, Optional<Long>> extractRev
+    ) throws RetryableException {
+        if (ids.size() > MAX_ITEMS_PER_ACTION_REQUEST) {
+            throw new IllegalArgumentException("Cannot fetch more than " + MAX_ITEMS_PER_ACTION_REQUEST + " entity revisions");
+        }
+        URI uri = uriFunction.apply(ids);
+        log.info("Get latest revision ids for {}", uri);
+
+        HttpGet request = new HttpGet(uri);
+        try {
+            LatestRevisionResponse response = checkApi(getJson(request, LatestRevisionResponse.class));
+            return ids.stream()
+                    .map(e -> new EntityRevision(e, extractRev.apply(response, e)))
+                    .collect(Collectors.toMap(EntityRevision::getEntity, EntityRevision::getRevision));
+        } catch (UnknownHostException | SocketException e) {
+            // We want to bail on this, since it happens to be sticky for some reason
+            throw new RuntimeException(e);
+        } catch (JsonParseException | JsonMappingException  e) {
+            // An invalid response will probably not fix itself with a retry, so let's bail
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RetryableException("Error fetching latest revision for entities", e);
         }
     }
 
@@ -416,7 +478,30 @@ public class WikibaseRepository implements Closeable {
         client.close();
     }
 
+    /**
+     * Builds a mapper of entity id initials to page id.
+     *
+     * For wikidata it would look like:
+     *  Q=,P=Property,L=Lexeme
+     */
+    public static UnaryOperator<String> entityIdToMediaWikiTitle(String map) {
+        String[] pairs = map.split(",");
+        final Map<String, String> mapping = stream(pairs).map(p -> p.split("=", 2)).
+                collect(toMap(pair -> pair[0], pair -> pair.length > 1 ? pair[1] : ""));
 
+        return entityId -> {
+            String nsText = mapping.entrySet().stream()
+                    .filter(e -> entityId.startsWith(e.getKey()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Unsupported entity id [" + entityId + "]"))
+                    .getValue();
+
+            if (!nsText.isEmpty()) {
+                return nsText + ":" + entityId;
+            }
+            return entityId;
+        };
+    }
     /**
      * URIs used for accessing wikibase.
      */
@@ -485,6 +570,29 @@ public class WikibaseRepository implements Closeable {
                 builder.addParameter("rccontinue", continueObject.getRcContinue());
             }
             return build(builder);
+        }
+
+        public URI latestRevisionForEntities(Set<String> entityIds, UnaryOperator<String> entityToMWTitle) {
+            URIBuilder builder = prepareLatestRevisionRequest()
+                    .addParameter("titles",
+                            entityIds.stream().map(entityToMWTitle).collect(Collectors.joining("|")));
+            return build(builder);
+        }
+
+        public URI latestRevisionForMediainfoItems(Set<String> mediainfoItems) {
+            URIBuilder builder = prepareLatestRevisionRequest()
+                    .addParameter("pageids",
+                            mediainfoItems.stream().map(e -> e.substring(1)).collect(Collectors.joining("|")));
+            return build(builder);
+        }
+
+        private URIBuilder prepareLatestRevisionRequest() {
+            return apiBuilder()
+                .addParameter("formatversion", "2")
+                .addParameter("action", "query")
+                .addParameter("prop", "revisions")
+                .addParameter("rvprop", "ids")
+                .addParameter("rvdir", "older");
         }
 
         private URIBuilder entityURIBuilder(String entityId) {
