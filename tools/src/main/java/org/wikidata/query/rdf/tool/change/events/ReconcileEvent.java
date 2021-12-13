@@ -3,12 +3,15 @@ package org.wikidata.query.rdf.tool.change.events;
 import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Data;
 
 @Data
 public class ReconcileEvent implements EventPlatformEvent {
+    public static String SCHEMA = "/rdf_streaming_updater/reconcile/1.0.0";
+    @JsonIgnore
     private final EventInfo eventInfo;
     @JsonProperty("item")
     private final String item;
@@ -18,6 +21,7 @@ public class ReconcileEvent implements EventPlatformEvent {
     private final String reconciliationSource;
     @JsonProperty("reconciliation_action")
     private final Action reconciliationAction;
+    @JsonProperty("original_event_info")
     private final EventInfo originalEventInfo;
 
     @JsonCreator
@@ -39,11 +43,13 @@ public class ReconcileEvent implements EventPlatformEvent {
     }
 
     @Override
+    @JsonProperty("meta")
     public EventsMeta meta() {
         return eventInfo.meta();
     }
 
     @Override
+    @JsonProperty("$schema")
     public String schema() {
         return eventInfo.schema();
     }

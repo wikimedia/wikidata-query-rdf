@@ -28,6 +28,10 @@
             <artifactId>scopt_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-arq</artifactId>
         </dependency>
@@ -53,6 +57,10 @@
                     <artifactId>kafka-clients</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.wikimedia</groupId>
+            <artifactId>eventutilities</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -118,6 +126,11 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>15.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.scalamock</groupId>
+            <artifactId>scalamock_${scala.compat.version}</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

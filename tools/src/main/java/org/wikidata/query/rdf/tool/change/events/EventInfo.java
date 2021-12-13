@@ -10,7 +10,9 @@ import lombok.experimental.Accessors;
 @Accessors(fluent = true)
 public class EventInfo {
     public static final String SCHEMA_FIELD = "$schema";
+    @JsonProperty
     EventsMeta meta;
+    @JsonProperty(SCHEMA_FIELD)
     String schema;
 
     @JsonCreator
