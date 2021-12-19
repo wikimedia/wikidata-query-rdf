@@ -9,7 +9,7 @@ cd <wikidata/query/rdf>
 mvn package
 ```
 
-This handles all the prerequisites, and creates a distributable *.zip* package in *./dist/target/service-&lt;version&gt;zip*.  This package contains Blazegraph, Wikidata RDF Query extensions and libraries, and scripts to run both Blazegraph and the updater tool:
+This handles all the prerequisites, and creates a distributable *.tar.gz* package in *./dist/target/service-&lt;version&gt;tar.gz*.  This package contains Blazegraph, Wikidata RDF Query extensions and libraries, and scripts to run both Blazegraph and the updater tool:
 
 ```
 service-<version>
