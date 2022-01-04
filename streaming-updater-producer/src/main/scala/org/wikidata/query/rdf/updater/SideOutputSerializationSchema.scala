@@ -10,7 +10,6 @@ import scala.collection.JavaConverters.seqAsJavaListConverter
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
-import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.updater.config.HttpClientConfig
@@ -42,15 +41,15 @@ class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant],
 
   private def getEventGenerator(): JsonEventGenerator = {
     val timeout: Int = httpClientConfig.httpTimeout.getOrElse(HttpClientUtils.TIMEOUT.toMillis.intValue())
-    val client: CloseableHttpClient = HttpClientUtils.createHttpClient(
+    val builder = BasicHttpClient.builder()
+    HttpClientUtils.configureHttpClient(builder.httpClientBuilder(),
       HttpClientUtils.createPooledConnectionManager(timeout),
-      None.orNull,
-      httpClientConfig.httpRoutes.orNull,
-      timeout,
+      None.orNull, httpClientConfig.httpRoutes.orNull, timeout,
       httpClientConfig.userAgent)
+    val client: BasicHttpClient = builder.build()
 
     val resLoader: ResourceLoader = ResourceLoader.builder()
-      .withHttpClient(new BasicHttpClient(client))
+      .withHttpClient(client)
       .setBaseUrls(schemaRepos.map(new URL(_)).asJava)
       .build()
     val jsonLoader = new JsonLoader(resLoader)

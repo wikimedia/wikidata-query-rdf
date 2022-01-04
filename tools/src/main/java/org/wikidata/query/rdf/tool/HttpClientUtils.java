@@ -164,12 +164,22 @@ public final class HttpClientUtils {
                                                        String proxy, String proxyMapString,
                                                        int requestTimeout,
                                                        String userAgent) {
+
+        return configureHttpClient(HttpClients.custom(), connectionManager, proxy, proxyMapString,
+                requestTimeout, userAgent).build();
+    }
+
+    public static HttpClientBuilder configureHttpClient(HttpClientBuilder httpClientBuilder,
+                                                        HttpClientConnectionManager connectionManager,
+                                                        String proxy, String proxyMapString,
+                                                        int requestTimeout,
+                                                        String userAgent) {
+
         if (proxy != null && proxyMapString != null) {
             throw new IllegalArgumentException("Cannot set both proxy and proxy map property");
         }
 
-        HttpClientBuilder httpClientBuilder = HttpClients.custom()
-                .setConnectionManager(connectionManager)
+        httpClientBuilder.setConnectionManager(connectionManager)
                 .setRetryHandler(getRetryHandler(RETRIES))
                 .setServiceUnavailableRetryStrategy(getRetryStrategy(RETRIES, RETRY_INTERVAL))
                 .disableCookieManagement()
@@ -190,8 +200,7 @@ public final class HttpClientUtils {
             HttpHost httpHost = HttpHost.create(proxy);
             httpClientBuilder.setProxy(httpHost);
         }
-
-        return httpClientBuilder.build();
+        return httpClientBuilder;
     }
 
     public static CloseableHttpClient createHttpClient(HttpClientConnectionManager connectionManager, String proxy, String proxyMapString, int requestTimeout) {
