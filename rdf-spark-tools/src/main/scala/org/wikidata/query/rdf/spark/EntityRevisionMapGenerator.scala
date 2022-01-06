@@ -3,8 +3,10 @@ package org.wikidata.query.rdf.spark
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType}
 import org.openrdf.model.Literal
-import org.wikidata.query.rdf.common.uri.{SchemaDotOrg, UrisScheme, UrisSchemeFactory}
+import org.wikidata.query.rdf.common.uri.{FederatedUrisScheme, SchemaDotOrg, UrisScheme, UrisSchemeFactory}
 import scopt.OptionParser
+
+import java.net.URI
 
 object EntityRevisionMapGenerator {
   val schema: StructType = StructType(Seq(
@@ -20,7 +22,10 @@ object EntityRevisionMapGenerator {
                      date: String = "",
                      outputPath: String = "",
                      hostname: String = "www.wikidata.org",
-                     numPartitions: Int = 100
+                     numPartitions: Int = 100,
+                     urisScheme: String = "wikidata",
+                     commonsConceptUri: Option[URI] = None,
+                     wikidataConceptUri: Option[URI] = None
                    )
 
   /**
@@ -34,6 +39,10 @@ object EntityRevisionMapGenerator {
       p.copy(table = x)
     } text "Table-partition holding the wikidata triples"
 
+    opt[String]('u', "uris-scheme") optional() action { (x, p) =>
+      p.copy(urisScheme = x)
+    }
+
     opt[String]('h', "hostname") optional() valueName "<hostname>" action { (x, p) =>
       p.copy(hostname = x)
     } text "Hostname of the rdf data"
@@ -45,6 +54,14 @@ object EntityRevisionMapGenerator {
     opt[Int]('n', "num-partitions") optional() action { (x, p) =>
       p.copy(numPartitions = x)
     } text "Number of partitions to use (output files). Defaults to 100"
+
+    opt[String]("commons-concept-uri") optional() action { (x, p) =>
+      p.copy(commonsConceptUri = Some(URI.create(x)))
+    } text "Overrides uri for commons"
+
+    opt[String]("wikidata-concept-uri") optional() action { (x, p) =>
+      p.copy(wikidataConceptUri = Some(URI.create(x)))
+    } text "Overrides uri for wikidata"
   }
 
   def main(args: Array[String]): Unit = {
@@ -58,9 +75,20 @@ object EntityRevisionMapGenerator {
 
         // Make spark read text with dedicated separator instead of end-of-line
         generateMap(spark, params.table, params.numPartitions,
-          params.outputPath, () => UrisSchemeFactory.forWikidataHost(params.hostname))
+          params.outputPath, urisScheme(params.urisScheme, params.hostname, params.commonsConceptUri, params.wikidataConceptUri))
 
       case None => sys.exit(1) // If args parsing fail (parser prints nice error)
+    }
+  }
+
+  private def urisScheme(urisScheme: String, hostname: String, commonsConceptUri: Option[URI], wikidataConceptUri: Option[URI])(): UrisScheme = {
+    urisScheme match {
+      case "commons" => new FederatedUrisScheme(
+        UrisSchemeFactory.forCommons(commonsConceptUri.getOrElse(UrisSchemeFactory.commonsUri(hostname))),
+        UrisSchemeFactory.forWikidata(wikidataConceptUri.getOrElse(UrisSchemeFactory.wikidataUri(UrisSchemeFactory.WIKIDATA_HOSTNAME))))
+      case "wikidata" =>
+        UrisSchemeFactory.forWikidata(wikidataConceptUri.getOrElse(UrisSchemeFactory.wikidataUri(hostname)))
+      case _ => throw new IllegalArgumentException(s"Unknown uris_scheme: $urisScheme")
     }
   }
 
