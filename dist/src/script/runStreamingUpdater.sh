@@ -1,23 +1,26 @@
 #!/usr/bin/env bash
 set -e
 
-if [ -r /etc/default/wdqs-updater ]; then
-  . /etc/default/wdqs-updater
+
+QUERY_SERVICE=${QUERY_SERVICE:-"wdqs"}
+UPDATER_CONFIG="/etc/default/${QUERY_SERVICE}-updater"
+if [ -r $UPDATER_CONFIG ]; then
+  . $UPDATER_CONFIG
 fi
 
 HOST=http://localhost:9999
 CONTEXT=bigdata
 HEAP_SIZE=${HEAP_SIZE:-"1g"}
 MEMORY=${MEMORY:-"-Xmx${HEAP_SIZE}"}
-LOG_DIR=${LOG_DIR:-"/var/log/wdqs"}
+LOG_DIR=${LOG_DIR:-"/var/log/query_service"}
 if [[ "$JAVA_MAJOR_VERSION" -ge "9" ]] ; then
-    GC_LOGS=${GC_LOGS:-"-Xlog:gc:${LOG_DIR}/wdqs-streaming-updater_jvm_gc.%p.log \
+    GC_LOGS=${GC_LOGS:-"-Xlog:gc:${LOG_DIR}/${QUERY_SERVICE}-streaming-updater_jvm_gc.%p.log \
          -Xlog:gc* \
          -XX:+UnlockExperimentalVMOptions \
          -XX:G1NewSizePercent=20 \
          -XX:+ParallelRefProcEnabled"}
 else
-    GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/wdqs-streaming-updater_jvm_gc.%p.log \
+    GC_LOGS=${GC_LOGS:-"-Xloggc:${LOG_DIR}/${QUERY_SERVICE}-streaming-updater_jvm_gc.%p.log \
          -XX:+PrintGCDetails \
          -XX:+PrintGCDateStamps \
          -XX:+PrintGCTimeStamps \
