@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  */
 @JsonPropertyOrder({"$schema", "meta", "http", "backend_host", "namespace", "query", "format", "params", "query_time", "system_runtime_metrics", "performer"})
 public class QueryEvent implements Event {
-    private static final String SCHEMA = "/sparql/query/1.1.0";
+    private static final String SCHEMA = "/sparql/query/1.2.0";
     private final EventMetadata metadata;
     private final EventHttpMetadata httpMetadata;
     private final String backendHost;
