@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
-
 QUERY_SERVICE=${QUERY_SERVICE:-"wdqs"}
 UPDATER_CONFIG="/etc/default/${QUERY_SERVICE}-updater"
-if [ -r $UPDATER_CONFIG ]; then
+if [ -r /etc/default/query-service-updater ]; then
+  . /etc/default/query-service-updater
+elif [ -r $UPDATER_CONFIG ]; then
+    # BC condition, remove once puppet is updated in I5c413529e6.
   . $UPDATER_CONFIG
 fi
 
