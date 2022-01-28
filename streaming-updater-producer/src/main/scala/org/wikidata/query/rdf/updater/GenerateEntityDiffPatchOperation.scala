@@ -1,10 +1,10 @@
 package org.wikidata.query.rdf.updater
 
-import java.time.{Clock, Duration, Instant}
+import java.time.{Clock, Instant}
 import java.util
+import java.util.{Timer, TimerTask}
 import java.util.Collections.emptyList
 import java.util.concurrent.Executors
-import java.util.{Timer, TimerTask}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -18,7 +18,6 @@ import org.apache.flink.streaming.api.scala.{OutputTag, _}
 import org.apache.flink.streaming.api.scala.async.{ResultFuture, RichAsyncFunction}
 import org.apache.flink.util.Collector
 import org.openrdf.model.Statement
-import org.slf4j.LoggerFactory
 import org.wikidata.query.rdf.common.uri.UrisScheme
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
 import org.wikidata.query.rdf.tool.rdf.{EntityDiff, Munger, Patch}
@@ -42,14 +41,13 @@ case class GenerateEntityDiffPatchOperation(
                                              scheme: UrisScheme,
                                              wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
                                              mungeOperationProvider: UrisScheme => (String, util.Collection[Statement]) => Long = mungerOperationProvider,
+                                             acceptableRepositoryLag: FiniteDuration,
                                              poolSize: Int = 10,
                                              fetchAttempts: Int = 4,
                                              fetchRetryDelay: FiniteDuration = 1.seconds,
                                              now: () => Instant = () => Clock.systemUTC.instant
                                            )
   extends RichAsyncFunction[MutationOperation, ResolvedOp] {
-
-  private val LOG = LoggerFactory.getLogger(getClass)
 
   lazy val repository: WikibaseEntityRevRepositoryTrait =  wikibaseRepositoryGenerator(this.getRuntimeContext)
   lazy val diff: EntityDiff = EntityDiff.withWikibaseSharedElements(scheme)
@@ -71,8 +69,7 @@ case class GenerateEntityDiffPatchOperation(
     }
   }
 
-  private val recentEventCutoffDuration = Duration.ofSeconds(10)
-  private def recentEventCutoff = now().minus(recentEventCutoffDuration)
+  private def recentEventCutoff = now().minusMillis(acceptableRepositoryLag.toMillis)
   private def isRecent(eventTime: Instant): Boolean = eventTime.isAfter(recentEventCutoff)
 
   private def completeDiffPatch(op: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = {

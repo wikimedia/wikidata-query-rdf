@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.updater.config
 
+import scala.concurrent.duration.DurationInt
+
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.HttpClientUtils
@@ -62,6 +64,7 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     config.generalConfig.wikibaseRepoThreadPoolSize shouldBe 30
     config.generalConfig.urisScheme.entityData() shouldBe "http://my.wikidata.org/wiki/Special:EntityData/"
     config.generalConfig.urisScheme.entityIdToURI("Q123") shouldBe "http://my.wikidata.org/entity/Q123"
+    config.generalConfig.acceptableMediawikiLag shouldBe 10.seconds
 
     config.generalConfig.httpClientConfig.httpRoutes shouldBe None
     config.generalConfig.httpClientConfig.httpTimeout shouldBe None

@@ -5,7 +5,7 @@ import java.time.Instant
 import java.util.Collections.emptyList
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.language.postfixOps
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -31,6 +31,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
   val EVT_ID = "my_id"
   val NOW: Instant = Instant.EPOCH
   val INPUT_EVENT_INFO: EventInfo = newEventInfo(NOW, DOMAIN, STREAM, REQ_ID)
+  val ACCEPTABLE_LAG: FiniteDuration = 10 seconds
 
   val repoMock: WikibaseEntityRevRepositoryTrait = mock[WikibaseEntityRevRepositoryTrait]
   val subjectiveClock: () => Instant = mock[() => Instant]
@@ -39,6 +40,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
       wikibaseRepositoryGenerator = _ => repoMock,
       scheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
       mungeOperationProvider = _ => (_, _) => 1,
+      acceptableRepositoryLag = ACCEPTABLE_LAG,
       fetchRetryDelay = 1.milliseconds,
       now = subjectiveClock
     )
@@ -161,8 +163,8 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     (repoMock.getEntityByRevision _).expects("Q1", 1) returning statements("uri:a").asScala
     val op = importOp
     (subjectiveClock.apply _).expects() returning NOW noMoreThanOnce()
-    (subjectiveClock.apply _).expects() returning NOW.plusSeconds(1) noMoreThanOnce()
-    (subjectiveClock.apply _).expects() returning NOW.plusSeconds(2)
+    (subjectiveClock.apply _).expects() returning NOW.plusSeconds(ACCEPTABLE_LAG.toSeconds).minusSeconds(2) noMoreThanOnce()
+    (subjectiveClock.apply _).expects() returning NOW.plusSeconds(ACCEPTABLE_LAG.toSeconds).minusSeconds(1)
     val harness = sendData(op)
     harness.extractOutputValues() should contain only outputImportEvent(op)
   }
@@ -174,7 +176,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     val op = importOp
     (subjectiveClock.apply _).expects() returning NOW noMoreThanOnce()
     (subjectiveClock.apply _).expects() returning NOW.plusSeconds(1) noMoreThanOnce()
-    (subjectiveClock.apply _).expects() returning NOW.plusSeconds(11)
+    (subjectiveClock.apply _).expects() returning NOW.plusSeconds(ACCEPTABLE_LAG.toSeconds).plusSeconds(1)
     assertFailure(notFoundException, op, sendData(op))
   }
 

@@ -143,7 +143,8 @@ object UpdaterPipeline {
     val genDiffOperator: AsyncFunction[MutationOperation, ResolvedOp] = GenerateEntityDiffPatchOperation(
       scheme = opts.urisScheme,
       wikibaseRepositoryGenerator = wikibaseRepositoryGenerator,
-      poolSize = opts.wikibaseRepoThreadPoolSize
+      poolSize = opts.wikibaseRepoThreadPoolSize,
+      acceptableRepositoryLag = opts.acceptableMediawikiLag
     )
 
     // poolSize * 2 for the number of inflight items is a random guess

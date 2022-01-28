@@ -50,7 +50,8 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       case "wikidata" =>
         UrisSchemeFactory.forWikidata(optionalUriArg("wikidata_concept_uri").getOrElse(UrisSchemeFactory.wikidataUri(hostName)))
       case scheme: Any => throw new IllegalArgumentException(s"Unknown uris_scheme: $scheme")
-    }
+    },
+    acceptableMediawikiLag = params.getInt("acceptable_mediawiki_lag", 10) seconds
   )
 
   val inputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
@@ -121,7 +122,8 @@ sealed case class UpdaterPipelineGeneralConfig(hostname: String,
                                                outputOperatorNameAndUuid: String,
                                                httpClientConfig: HttpClientConfig,
                                                useVersionedSerializers: Boolean,
-                                               urisScheme: UrisScheme
+                                               urisScheme: UrisScheme,
+                                               acceptableMediawikiLag: FiniteDuration
                                               )
 
 sealed case class HttpClientConfig(

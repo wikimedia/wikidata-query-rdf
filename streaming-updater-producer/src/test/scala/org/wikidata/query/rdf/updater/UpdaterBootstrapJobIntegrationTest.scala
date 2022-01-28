@@ -3,6 +3,9 @@ package org.wikidata.query.rdf.updater
 import java.io.File
 import java.nio.file.{Files, Paths}
 
+import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
+
 import org.apache.commons.io.FileUtils
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
@@ -84,7 +87,8 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       outputOperatorNameAndUuid = "test-output-name",
       httpClientConfig = HttpClientConfig(None, None, "my user-agent"),
       useVersionedSerializers = true,
-      UrisSchemeFactory.forWikidataHost(DOMAIN)
+      urisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
+      acceptableMediawikiLag = 10 seconds
     )
     UpdaterPipeline.configure(options, List(source),
       OutputStreams(

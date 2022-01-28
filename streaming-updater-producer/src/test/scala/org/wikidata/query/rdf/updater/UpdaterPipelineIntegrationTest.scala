@@ -3,6 +3,8 @@ package org.wikidata.query.rdf.updater
 import java.time.Instant
 
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
+import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
 
 import org.apache.flink.streaming.api.scala._
 import org.openrdf.model.Statement
@@ -24,7 +26,8 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     outputOperatorNameAndUuid = "test-output-name",
     httpClientConfig = HttpClientConfig(None, None, "my user-agent"),
     useVersionedSerializers = true,
-    urisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN)
+    urisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
+    acceptableMediawikiLag = 10 seconds
   )
 
   private val resolver: IncomingStreams.EntityResolver = (_, title, _) => title
