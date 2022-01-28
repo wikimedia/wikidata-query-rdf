@@ -14,8 +14,12 @@ import static org.mockito.Mockito.when;
 import static org.wikidata.query.rdf.mwoauth.OAuthProxyService.SESSION_COOKIE_NAME;
 
 
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URI;
+import java.nio.file.Files;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -26,7 +30,9 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.wikidata.query.rdf.mwoauth.OAuthProxyService.SessionState;
@@ -36,6 +42,7 @@ import com.github.scribejava.core.model.OAuth1RequestToken;
 import com.github.scribejava.core.oauth.OAuth10aService;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -47,6 +54,8 @@ public class OAuthProxyServiceUnitTest {
     private static final String OAUTH_VERIFIER_STR = "oauth_verifying_string";
     public static final String WIKI_LOGOUT_LINK = "https://commons.wikimedia.org/w/index.php?title=Special:UserLogout";
 
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
 
     private OAuthProxyService sut;
     private OAuth10aService mwoauthServiceMock;
@@ -56,16 +65,16 @@ public class OAuthProxyServiceUnitTest {
     public void setUp() throws Exception {
         mwoauthServiceMock = getMockedMWOAuthService();
         identifyMock = mock(OAuthIdentifyService.class);
-        sut = makeService("banned,also_banned");
+        sut = makeService(ImmutableList.of("banned", "also_banned"));
     }
 
-    private OAuthProxyService makeService(String bannedUsernames) throws Exception {
+    private OAuthProxyService makeService(Collection<String> bannedUsernames) throws Exception {
         OAuthProxyService service = new OAuthProxyService();
         service.init(getMockedConfig(ImmutableMap.of(
             OAuthProxyConfig.ACCESS_TOKEN_SECRET, "not_secret",
             OAuthProxyConfig.SESSION_STORE_KEY_PREFIX, "dummy:prefix",
             OAuthProxyConfig.WIKI_LOGOUT_LINK_PROPERTY, WIKI_LOGOUT_LINK,
-            OAuthProxyConfig.BANNED_USERNAMES_CSV_PROPERTY, bannedUsernames
+            OAuthProxyConfig.BANNED_USERNAMES_PATH_PROPERTY, makeBannedFile(bannedUsernames)
         )), mwoauthServiceMock, identifyMock, getMockedSessionStore(1, SessionState.class));
         return service;
     }
@@ -184,7 +193,7 @@ public class OAuthProxyServiceUnitTest {
 
         // When we restart the instance with a new ban list including the username
         // that token will no longer validate.
-        OAuthProxyService serviceIncludingBan = makeService("also_banned,not_banned_yet");
+        OAuthProxyService serviceIncludingBan = makeService(ImmutableList.of("also_banned", "not_banned_yet"));
         Response checkBannedResponse = serviceIncludingBan.checkUser(wikiSession);
         assertThat(checkBannedResponse.getStatus()).isEqualTo(FORBIDDEN.getStatusCode());
     }
@@ -197,6 +206,14 @@ public class OAuthProxyServiceUnitTest {
         ServletConfig servletConfig = mock(ServletConfig.class);
         values.forEach((k, v) -> when(servletConfig.getInitParameter(k)).thenReturn(v));
         return new OAuthProxyConfig(servletConfig);
+    }
+
+    private String makeBannedFile(Collection<String> bannedUsernames) throws IOException {
+        File file = folder.newFile();
+        try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(file.toPath()))) {
+             bannedUsernames.forEach(out::println);
+        }
+        return file.getAbsolutePath();
     }
 
     private OAuth10aService getMockedMWOAuthService() throws IOException, InterruptedException, ExecutionException {

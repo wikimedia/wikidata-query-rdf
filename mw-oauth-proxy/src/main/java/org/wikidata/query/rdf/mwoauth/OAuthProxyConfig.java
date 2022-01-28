@@ -1,7 +1,11 @@
 package org.wikidata.query.rdf.mwoauth;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,7 +27,7 @@ public final class OAuthProxyConfig {
     static final String NICE_URL_BASE_PROPERTY = "niceUrlBase";
     static final String WIKI_LOGOUT_LINK_PROPERTY = "wikiLogoutLink";
     static final String SUCCESS_REDIRECT_PROPERTY = "successRedirect";
-    static final String BANNED_USERNAMES_CSV_PROPERTY = "bannedUsernamesCsv";
+    static final String BANNED_USERNAMES_PATH_PROPERTY = "bannedUsernamesPath";
 
     static final String SESSION_STORE_HOSTNAME = "sessionStoreHostname";
     static final String SESSION_STORE_PORT = "sessionStorePort";
@@ -88,11 +92,19 @@ public final class OAuthProxyConfig {
     }
 
     public Set<String> bannedUsernames() {
-        String banned = loadStringParam(BANNED_USERNAMES_CSV_PROPERTY);
-        if (banned == null || banned.length() == 0) {
+        String path = loadStringParam(BANNED_USERNAMES_PATH_PROPERTY);
+        if (path == null || path.isEmpty()) {
             return Collections.emptySet();
         }
-        return Arrays.stream(banned.split(",")).collect(Collectors.toSet());
+        try (BufferedReader br = Files.newBufferedReader(Paths.get(path))) {
+             // One banned name per line.
+             // Names must be in display form (with spaces, no underscores).
+            return br.lines()
+                .filter(l -> !l.isEmpty())
+                .collect(Collectors.toSet());
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed reading from " + path, e);
+        }
     }
 
     private String loadStringParam(String property) {
