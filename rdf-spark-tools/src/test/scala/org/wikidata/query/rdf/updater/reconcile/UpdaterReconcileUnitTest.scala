@@ -5,12 +5,11 @@ import java.net.URI
 import java.util.Optional
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
-
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.{FlatSpec, Matchers}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
+import org.scalamock.scalatest.MockFactory
+import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.spark.SparkSessionProvider
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
 import org.wikidata.query.rdf.updater.reconcile.UpdaterReconcile.Params

@@ -157,7 +157,7 @@ class ReconcileCollector(reconciliationSource: String,
 
   def collectLateEvents(partitionSpec: String)(implicit spark: SparkSession): List[ReconcileEvent] = {
     // https://schema.wikimedia.org/repositories/secondary/jsonschema/rdf_streaming_updater/lapsed_action/current.yaml
-    SparkUtils.readTablePartition(partitionSpec)
+    val events = SparkUtils.readTablePartition(partitionSpec)
       .filter(col("action_type").isInCollection(lateEventActionMap.keys))
       .filter(col("meta.domain").equalTo(domain))
       .select(
@@ -180,7 +180,10 @@ class ReconcileCollector(reconciliationSource: String,
           e.getAs("revision_id"),
           reconciliationSource,
           lateEventActionMap.getOrElse(e.getAs("action_type"), Action.CREATION), origEventInfo)
-      }).toList
+      }) toList
+
+    logger.info(s"Collected ${events.length} late events from $partitionSpec")
+    events
   }
 
   def collectFailures(partitionSpec: String)(implicit spark: SparkSession): List[ReconcileEvent] = {
@@ -207,7 +210,7 @@ class ReconcileCollector(reconciliationSource: String,
       case e: Any => fetchLatestRevision(e, latestRevisionForEntities)
     }
 
-    (mediainfo ++ entities) map {
+    val filtered: List[ReconcileEvent] = (mediainfo ++ entities) map {
       case (eventInfo, item, revision) =>
         new ReconcileEvent(
           new EventsMeta(now(), idGen(), eventInfo.meta().domain(), stream, requestIdGen()),
@@ -218,6 +221,9 @@ class ReconcileCollector(reconciliationSource: String,
           Action.CREATION,
           eventInfo)
     } toList
+
+    logger.info(s"Kept ${rows.length} out of ${filtered.length} fetch-failure events from $partitionSpec")
+    filtered
   }
 
   /**
@@ -258,7 +264,7 @@ class ReconcileCollector(reconciliationSource: String,
 
   def collectInconsistencies(partitionSpec: String)(implicit spark: SparkSession): List[ReconcileEvent] = {
     // https://schema.wikimedia.org/repositories/secondary/jsonschema/rdf_streaming_updater/state_inconsistency/current.yaml
-    SparkUtils.readTablePartition(partitionSpec)
+    val events = SparkUtils.readTablePartition(partitionSpec)
       .filter(col("meta.domain").equalTo(domain))
       .filter(col("inconsistency").isInCollection(inconsistenciesActionMap.keys))
       .select(
@@ -283,6 +289,9 @@ class ReconcileCollector(reconciliationSource: String,
           inconsistenciesActionMap.getOrElse(e.getAs("inconsistency"), Action.CREATION),
           origEventInfo)
       }).toList
+
+    logger.info(s"Collected ${events.length} inconsistencies from $partitionSpec", events.length, partitionSpec)
+    events
   }
 
   val MW_CALL_RETRY_WAIT_MS = 500

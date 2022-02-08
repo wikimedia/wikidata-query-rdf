@@ -20,6 +20,10 @@
       inspired from https://github.com/martinprobson/Spark-Scala-Maven-Example
       and https://gerrit.wikimedia.org/g/analytics/refinery/source
       -->
+    <properties>
+        <!-- Spark 2 2.6.7.1, force this version to make sure we test with the same version that will be used at runtime. -->
+        <jackson.version>2.6.7.1</jackson.version>
+    </properties>
     <dependencies>
         <!-- Scala lang, spark core and spark sql are all
              scoped as provided as spark-submit will provide these -->
@@ -34,6 +38,13 @@
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-arq</artifactId>
+            <exclusions>
+                <!-- exclude jackson to use the one provided by spark -->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.clapper</groupId>
@@ -52,6 +63,19 @@
             <artifactId>tools</artifactId>
             <version>${project.version}</version>
             <exclusions>
+                <!-- exclude jackson to use the one provided by spark (keep jsr310 for datetime) -->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
@@ -61,6 +85,29 @@
         <dependency>
             <groupId>org.wikimedia</groupId>
             <artifactId>eventutilities</artifactId>
+            <exclusions>
+                <!-- exclude jackson to use the one provided by spark -->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-datatype-jsr310</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
