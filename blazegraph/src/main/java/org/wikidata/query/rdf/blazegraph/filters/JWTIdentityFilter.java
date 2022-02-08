@@ -17,6 +17,9 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -31,6 +34,8 @@ import com.auth0.jwt.interfaces.DecodedJWT;
  */
 public class JWTIdentityFilter implements Filter {
 
+    private static final Logger log = LoggerFactory.getLogger(JWTIdentityFilter.class);
+
     private Function<HttpServletRequest, Optional<String>> usernames;
 
     private Function<HttpServletRequest, Optional<String>> usernameProvider(FilterConfiguration config) {
@@ -38,12 +43,14 @@ public class JWTIdentityFilter implements Filter {
         String identityClaim = config.loadStringParam("jwt-identity-claim");
         String secret = config.loadStringParam("jwt-identity-secret");
         if (allNotNull(cookieName, identityClaim, secret)) {
+            log.info("Configured filter against {} claim of jwt token in the {} cookie", identityClaim, cookieName);
             return new UsernameFromJWTCookie(cookieName, identityClaim, secret);
         } else if (anyNotNull(cookieName, identityClaim, secret)) {
             throw new IllegalArgumentException(
                 "All three of jwt-identity-cookie-name, jwt-identity-claim, and jwt-identity-secret " +
                     "must be provided");
         } else {
+            log.info("Filter disabled, no configuration available.");
             // Better way to disable filter when unconfigured? Seems better than returning a null provider.
             return r -> Optional.empty();
         }
@@ -97,6 +104,7 @@ public class JWTIdentityFilter implements Filter {
             try {
                 return Optional.ofNullable(verifier.verify(token));
             } catch (JWTVerificationException e) {
+                log.info("Received invalid JWT token, incorrect secret?");
                 return Optional.empty();
             }
         }
