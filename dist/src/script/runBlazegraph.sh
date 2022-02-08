@@ -109,7 +109,10 @@ fi
 
 echo "Running Blazegraph from `pwd` on :$PORT/$CONTEXT"
 exec java \
-     -server -XX:+UseG1GC ${MEMORY} ${DEBUG} ${GC_LOGS} ${LOG_OPTIONS} ${EXTRA_JVM_OPTS} \
+     -server -XX:+UseG1GC ${MEMORY} ${DEBUG} ${GC_LOGS} ${LOG_OPTIONS} \
+     -Dwdqs.jwt-identity-filter.jwt-identity-cookie-name=wcqsSession \
+     -Dwdqs.jwt-identity-filter.jwt-identity-claim=username \
+     ${EXTRA_JVM_OPTS} \
      -Dcom.bigdata.rdf.sail.webapp.ConfigParams.propertyFile="${CONFIG_FILE}" \
      -Dorg.eclipse.jetty.server.Request.maxFormContentSize=200000000 \
      -Dcom.bigdata.rdf.sparql.ast.QueryHints.analytic=true \

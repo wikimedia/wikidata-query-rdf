@@ -45,14 +45,14 @@ public class JWTIdentityFilter implements Filter {
         if (allNotNull(cookieName, identityClaim, secret)) {
             log.info("Configured filter against {} claim of jwt token in the {} cookie", identityClaim, cookieName);
             return new UsernameFromJWTCookie(cookieName, identityClaim, secret);
-        } else if (anyNotNull(cookieName, identityClaim, secret)) {
-            throw new IllegalArgumentException(
-                "All three of jwt-identity-cookie-name, jwt-identity-claim, and jwt-identity-secret " +
-                    "must be provided");
-        } else {
+        } else if (secret == null) {
             log.info("Filter disabled, no configuration available.");
             // Better way to disable filter when unconfigured? Seems better than returning a null provider.
             return r -> Optional.empty();
+        } else {
+            throw new IllegalArgumentException(
+                "All three of jwt-identity-cookie-name, jwt-identity-claim, and jwt-identity-secret " +
+                    "must be provided");
         }
     }
 
@@ -68,10 +68,6 @@ public class JWTIdentityFilter implements Filter {
 
     @Override
     public void destroy() {
-    }
-
-    private boolean anyNotNull(Object... values) {
-        return Arrays.stream(values).anyMatch(Objects::nonNull);
     }
 
     private boolean allNotNull(Object... values) {
