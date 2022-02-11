@@ -38,6 +38,18 @@
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
         </dependency>
+        <!-- Even though we don't need avro we still need it because some savepoints
+             will fail to be restored as it declared some serializers in them:
+             https://lists.apache.org/thread/989mfrxqznvzpmhm0315kv23bxh1ln8y
+             There might ways to still cleanup this dependency but this might
+             involve rewriting the savepoints using the state-processor-api which
+             is known to be extremely slow at the moment.
+             For simplicity reasons we keep it for now.
+        -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-avro</artifactId>
+        </dependency>
         <!-- Add connector dependencies here. They must be in the default scope (compile). -->
         <dependency>
             <groupId>org.apache.flink</groupId>
