@@ -1,9 +1,5 @@
 package org.wikidata.query.rdf.mwoauth;
 
-
-import static javax.ws.rs.core.Response.Status.FORBIDDEN;
-import static javax.ws.rs.core.Response.Status.OK;
-import static javax.ws.rs.core.Response.Status.TEMPORARY_REDIRECT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -12,7 +8,9 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.wikidata.query.rdf.mwoauth.OAuthProxyService.SESSION_COOKIE_NAME;
-
+import static javax.ws.rs.core.Response.Status.FORBIDDEN;
+import static javax.ws.rs.core.Response.Status.OK;
+import static javax.ws.rs.core.Response.Status.TEMPORARY_REDIRECT;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,10 +69,10 @@ public class OAuthProxyServiceUnitTest {
     private OAuthProxyService makeService(Collection<String> bannedUsernames) throws Exception {
         OAuthProxyService service = new OAuthProxyService();
         service.init(getMockedConfig(ImmutableMap.of(
-            OAuthProxyConfig.ACCESS_TOKEN_SECRET, "not_secret",
-            OAuthProxyConfig.SESSION_STORE_KEY_PREFIX, "dummy:prefix",
-            OAuthProxyConfig.WIKI_LOGOUT_LINK_PROPERTY, WIKI_LOGOUT_LINK,
-            OAuthProxyConfig.BANNED_USERNAMES_PATH_PROPERTY, makeBannedFile(bannedUsernames)
+                OAuthProxyConfig.ACCESS_TOKEN_SECRET, "not_secret",
+                OAuthProxyConfig.SESSION_STORE_KEY_PREFIX, "dummy:prefix",
+                OAuthProxyConfig.WIKI_LOGOUT_LINK_PROPERTY, WIKI_LOGOUT_LINK,
+                OAuthProxyConfig.BANNED_USERNAMES_PATH_PROPERTY, makeBannedFile(bannedUsernames)
         )), mwoauthServiceMock, identifyMock, getMockedSessionStore(1, SessionState.class));
         return service;
     }
@@ -98,7 +96,9 @@ public class OAuthProxyServiceUnitTest {
 
         String redirectUrl = "http://localhost/redirect";
         Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, redirectUrl);
-        String wikiSession = verifyResponse.getCookies().get(SESSION_COOKIE_NAME).getValue();
+        NewCookie newCookie = verifyResponse.getCookies().get(SESSION_COOKIE_NAME);
+        assertThat(newCookie.getMaxAge()).isEqualTo(2 * 60 * 60);
+        String wikiSession = newCookie.getValue();
 
         assertThat(verifyResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
         assertThat(extractRedirectLocation(verifyResponse)).isEqualTo(new URI(redirectUrl));
@@ -211,7 +211,7 @@ public class OAuthProxyServiceUnitTest {
     private String makeBannedFile(Collection<String> bannedUsernames) throws IOException {
         File file = folder.newFile();
         try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(file.toPath()))) {
-             bannedUsernames.forEach(out::println);
+            bannedUsernames.forEach(out::println);
         }
         return file.getAbsolutePath();
     }
@@ -233,7 +233,7 @@ public class OAuthProxyServiceUnitTest {
         KaskSessionStore<T> sessionStore = mock(KaskSessionStore.class);
 
         when(sessionStore.getIfPresent(anyString())).then((args) ->
-            cache.getIfPresent(args.getArgumentAt(0, String.class)));
+                cache.getIfPresent(args.getArgumentAt(0, String.class)));
 
         doAnswer((args) -> {
             cache.put(args.getArgumentAt(0, String.class), args.getArgumentAt(1, clazz));

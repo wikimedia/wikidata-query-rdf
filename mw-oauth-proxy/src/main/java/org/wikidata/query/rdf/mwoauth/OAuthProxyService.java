@@ -63,8 +63,6 @@ import com.google.common.annotations.VisibleForTesting;
 public class OAuthProxyService {
 
     public static final String SESSION_COOKIE_NAME = "wcqsSession";
-    public static final int SESSION_MAX_AGE = Integer.MAX_VALUE;
-    public static final Duration AUTH_TOKEN_MAX_AGE = Duration.ofHours(2);
 
     @Context
     private ServletConfig servletConfig;
@@ -75,8 +73,9 @@ public class OAuthProxyService {
     private String wikiLogoutLink;
     private String sessionKeyPrefix;
     private String successRedirect;
-    private TimeLimitedAccessToken authToken;
+    private TimeLimitedAccessTokenFactory authTokenFactory;
     private Set<String> bannedUsernames;
+    private Duration expireAfter;
 
     static class SessionState {
         public final OAuth1RequestToken token;
@@ -106,7 +105,8 @@ public class OAuthProxyService {
         wikiLogoutLink = config.wikiLogoutLink();
         successRedirect = config.successRedirect();
         bannedUsernames = config.bannedUsernames();
-        authToken = new TimeLimitedAccessToken(config.accessTokenSecret(), config.accessTokenDuration(), bannedUsernames);
+        expireAfter = config.accessTokenDuration();
+        authTokenFactory = new TimeLimitedAccessTokenFactory(config.accessTokenSecret(), expireAfter, bannedUsernames);
         this.service = service;
         this.identify = identify;
     }
@@ -123,8 +123,8 @@ public class OAuthProxyService {
         return temporaryRedirect(getAuthenticationURI(authorizationUrl)).build();
     }
 
-    private NewCookie sessionCookie(String value, int maxAge) {
-        return new NewCookie(SESSION_COOKIE_NAME, value, "/", null, null, maxAge, true, true);
+    private NewCookie sessionCookie(String value) {
+        return new NewCookie(SESSION_COOKIE_NAME, value, "/", null, null, (int) expireAfter.getSeconds(), true, true);
     }
 
     @GET
@@ -143,7 +143,7 @@ public class OAuthProxyService {
         if (bannedUsernames.contains(username)) {
             return status(FORBIDDEN).build();
         }
-        NewCookie cookie = sessionCookie(authToken.create(username), SESSION_MAX_AGE);
+        NewCookie cookie = sessionCookie(authTokenFactory.create(username));
         // prefer the uri from initial request, then from current request, and finally the system default.
         URI finalRedirect = state.returnUri.orElseGet(() -> URI.create(redirectUrl != null ? redirectUrl : successRedirect));
         return temporaryRedirect(finalRedirect).cookie(cookie).build();
@@ -152,7 +152,7 @@ public class OAuthProxyService {
     @GET
     @Path("/check_auth")
     public Response checkUser(@CookieParam(SESSION_COOKIE_NAME) String session) {
-        return authToken.decide(
+        return authTokenFactory.decide(
             session,
             () -> Response.ok().build(),
             () -> status(FORBIDDEN).build());

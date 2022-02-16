@@ -20,7 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
  * The token carries a username inside the token, allowing a set of banned usernames
  * to be applied.
  */
-class TimeLimitedAccessToken {
+class TimeLimitedAccessTokenFactory {
     private static final String USERNAME = "username";
 
     private final Algorithm algorithm;
@@ -29,17 +29,17 @@ class TimeLimitedAccessToken {
     private final Clock clock;
     private final Set<String> bannedUsernames;
 
-    TimeLimitedAccessToken(String secret, Duration expireAfter, Set<String> bannedUsernames) {
+    TimeLimitedAccessTokenFactory(String secret, Duration expireAfter, Set<String> bannedUsernames) {
         this(Algorithm.HMAC256(secret), expireAfter, bannedUsernames);
     }
 
-    TimeLimitedAccessToken(Algorithm algo, Duration expireAfter, Set<String> bannedUsernames) {
+    TimeLimitedAccessTokenFactory(Algorithm algo, Duration expireAfter, Set<String> bannedUsernames) {
 
         this(algo, JWT.require(algo).withClaimPresence(USERNAME).build(), expireAfter, bannedUsernames, Clock.systemUTC());
     }
 
     @VisibleForTesting
-    TimeLimitedAccessToken(
+    TimeLimitedAccessTokenFactory(
         Algorithm algorithm, JWTVerifier verifier, Duration expireAfter,
         Set<String> bannedUsernames, Clock clock
     ) {
