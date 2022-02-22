@@ -130,8 +130,7 @@ public class RdfRepositoryUpdaterIntegrationTest {
         entitiesToReconcile.put("Q42", collector.getStatements());
         ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(),
                 entityIdsToDelete, entitiesToReconcile);
-        Instant avgEventTime = Instant.EPOCH.plus(2, ChronoUnit.MINUTES);
-        RDFPatchResult rdfPatchResult = rdfRepositoryUpdater.applyPatch(patch, avgEventTime);
+        RDFPatchResult rdfPatchResult = rdfRepositoryUpdater.applyPatch(patch, null);
         assertThat(rdfPatchResult.getActualMutations()).isZero();
         assertThat(rdfPatchResult.getExpectedMutations()).isZero();
         assertThat(rdfPatchResult.getReconciliationMutations()).isPositive();

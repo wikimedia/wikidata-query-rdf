@@ -11,6 +11,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
@@ -64,7 +66,7 @@ public class RdfRepositoryUpdater implements AutoCloseable {
         return Utils.loadBody(name, RdfRepositoryUpdater.class);
     }
 
-    public RDFPatchResult applyPatch(ConsumerPatch patch, Instant avgEventTime) {
+    public RDFPatchResult applyPatch(ConsumerPatch patch, @Nullable Instant avgEventTime) {
         StringBuilder sb = new StringBuilder();
         int expectedMutations = appendUpdateDataQuery(sb, patch.getRemoved(), DELETE_DATA);
         expectedMutations += appendUpdateDataQuery(sb, patch.getAdded(), INSERT_DATA);
@@ -82,7 +84,10 @@ public class RdfRepositoryUpdater implements AutoCloseable {
         // We expect to change the event time
         expectedSharedEltMutations++;
         int actualSharedEltMutations = 0;
-        actualSharedEltMutations = updateEventTime(avgEventTime, sb, actualSharedEltMutations);
+        if (avgEventTime != null) {
+            // Only update event time if we have something
+            actualSharedEltMutations = updateEventTime(avgEventTime, sb, actualSharedEltMutations);
+        }
 
         int deleteMutations = 0;
         if (patch.getEntityIdsToDelete().size() > 0) {

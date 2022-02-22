@@ -151,6 +151,8 @@ public class KafkaStreamConsumer implements StreamConsumer {
         Map<TopicPartition, OffsetAndMetadata> offsetsAndMetadata;
         offsetsAndMetadata = singletonMap(topicPartition, new OffsetAndMetadata(lastRecord.offset()));
         // Only update the event time when we have actual user events, counting event time of reconciliations would make no sense
+        // lastBatchEventTime might be null if we only process reconcile operations, the update process should be aware of this
+        // and not update the event time on the store if it happens
         lastBatchEventTime = nbUserEvents > 0 ? Instant.ofEpochMilli(sumUserEventTimes / nbUserEvents) : lastBatchEventTime;
         lastOfferedBatchOffsets = offsetsAndMetadata;
         return new Batch(
