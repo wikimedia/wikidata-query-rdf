@@ -3,7 +3,8 @@ package org.wikidata.query.rdf.spark.transform.queries.sparql
 import org.apache.spark.sql.functions.{col, count, desc, hash, lit, sum, udf}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.SaveMode.Overwrite
-import org.wikidata.query.rdf.spark.SparkUtils
+import org.wikidata.query.rdf.spark.utils.SparkUtils.getSparkSession
+import org.wikidata.query.rdf.spark.utils.SparkUtils
 
 class QueriesProcessor(tableAndPartitionSpec: String, numPartitions: Int)(implicit spark: SparkSession) {
 
@@ -78,20 +79,6 @@ class QueriesProcessor(tableAndPartitionSpec: String, numPartitions: Int)(implic
 
 object QueriesProcessor {
 
-  def sparkSession: SparkSession = {
-    SparkSession
-      .builder()
-      // required because spark would fail with:
-      // Exception in thread "main" org.apache.spark.SparkException: Dynamic partition strict mode requires
-      // at least one static partition column. To turn this off set // hive.exec.dynamic.partition.mode=nonstrict
-      .config("hive.exec.dynamic.partition", value = true)
-      .config("hive.exec.dynamic.partition.mode", "non-strict")
-      // Allows overwriting the target partitions
-      .config("spark.sql.sources.partitionOverwriteMode", "dynamic")
-      .appName("SparqlExtractor")
-      .getOrCreate()
-  }
-
   def getSparqlDf(tableAndPartitionSpec: String, numPartitions: Int)(implicit spark: SparkSession): DataFrame = {
     val processor = new QueriesProcessor(tableAndPartitionSpec, numPartitions)
     val baseData = processor.getBaseData()
@@ -100,7 +87,7 @@ object QueriesProcessor {
   }
 
   def extractAndSaveQuery(params: Params): Unit = {
-    implicit val spark: SparkSession = sparkSession
+    implicit val spark: SparkSession = getSparkSession("SparqlExtractor")
 
     // Get the data
     val data = getSparqlDf(params.inputTable, params.numPartitions)

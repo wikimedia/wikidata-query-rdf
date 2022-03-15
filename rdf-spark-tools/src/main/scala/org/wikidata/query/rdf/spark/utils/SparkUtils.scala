@@ -1,11 +1,11 @@
-package org.wikidata.query.rdf.spark
+package org.wikidata.query.rdf.spark.utils
 
+import org.apache.spark.sql.SaveMode.Overwrite
+import org.apache.spark.sql.functions.lit
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 import scala.util.matching.Regex
-
-import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
-import org.apache.spark.sql.functions.lit
-import org.apache.spark.sql.types.{BooleanType, DateType, HiveStringType, NumericType, StringType, TimestampType}
 
 object SparkUtils {
   private val partitionRegex: Regex = "^([\\w]+)=([\\w.-/]+)$".r
@@ -27,7 +27,7 @@ object SparkUtils {
       // DataFrame.insertInto only care about column position
       val dfw = df.select(spark.read.table(table).schema.fields.map(e => {
         e.dataType match {
-          case t @ (_: StringType | _: NumericType | _: HiveStringType | _: BooleanType | _: DateType | _: TimestampType) => df(e.name).cast(t)
+          case t@(_: StringType | _: NumericType | _: HiveStringType | _: BooleanType | _: DateType | _: TimestampType) => df(e.name).cast(t)
           case _ => df(e.name)
         }
       }): _*)
@@ -42,12 +42,12 @@ object SparkUtils {
       insertIntoFunction)
   }
 
-  private def applyTablePartitions[E,O](
-                                       tableAndPartitionSpecs: String,
-                                       tablePreOp: String => E,
-                                       partitionOp: (String, String, E) => E,
-                                       tablePostOp: (String, E) => O
-                                     )(implicit spark: SparkSession): O = {
+  private def applyTablePartitions[E, O](
+                                          tableAndPartitionSpecs: String,
+                                          tablePreOp: String => E,
+                                          partitionOp: (String, String, E) => E,
+                                          tablePostOp: (String, E) => O
+                                        )(implicit spark: SparkSession): O = {
     val tableAndPartitions: Array[String] = tableAndPartitionSpecs.split("/", 2)
     tableAndPartitions match {
       case Array(table, partition) => tablePostOp(table, applyPartitions(tablePreOp(table), partition, partitionOp))
@@ -67,5 +67,27 @@ object SparkUtils {
       }
     }
     df
+  }
+
+  def getSparkSession(appName: String): SparkSession = {
+    SparkSession
+      .builder()
+      // required because spark would fail with:
+      // Exception in thread "main" org.apache.spark.SparkException: Dynamic partition strict mode requires
+      // at least one static partition column. To turn this off set // hive.exec.dynamic.partition.mode=nonstrict
+      .config("hive.exec.dynamic.partition", value = true)
+      .config("hive.exec.dynamic.partition.mode", "non-strict")
+      // Allows overwriting the target partitions
+      .config("spark.sql.sources.partitionOverwriteMode", "dynamic")
+      .appName(appName)
+      .getOrCreate()
+  }
+
+  def saveTables(dataframeAndPathList: List[(DataFrame, String)])
+                (implicit spark: SparkSession): Unit = {
+
+    for ((df, path) <- dataframeAndPathList) {
+      insertIntoTablePartition(path, df, saveMode = Overwrite, format = Some("hive"))
+    }
   }
 }

@@ -4,7 +4,7 @@ import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType
 import org.apache.spark.sql.{Row, SparkSession}
 import org.openrdf.model.Literal
 import org.wikidata.query.rdf.common.uri.{FederatedUrisScheme, SchemaDotOrg, UrisScheme, UrisSchemeFactory}
-import org.wikidata.query.rdf.spark.SparkUtils
+import org.wikidata.query.rdf.spark.utils.SparkUtils
 import scopt.OptionParser
 
 import java.net.URI

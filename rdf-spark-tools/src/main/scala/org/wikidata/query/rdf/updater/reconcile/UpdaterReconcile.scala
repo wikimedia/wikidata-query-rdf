@@ -5,21 +5,19 @@ import java.net.URI
 import java.time.{Clock, Instant}
 import java.util.{Optional, UUID}
 import java.util.function.UnaryOperator
-
 import scala.annotation.tailrec
 import scala.collection.JavaConverters.{asScalaIteratorConverter, collectionAsScalaIterableConverter, mapAsScalaMapConverter, setAsJavaSetConverter}
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
-
 import com.codahale.metrics.MetricRegistry
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.functions.col
 import org.slf4j.LoggerFactory
 import org.wikidata.query.rdf.common.uri.UrisConstants
-import org.wikidata.query.rdf.spark.SparkUtils
+import org.wikidata.query.rdf.spark.utils.SparkUtils
 import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, ReconcileEvent}
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}

@@ -5,7 +5,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SaveMode.Overwrite
 import org.apache.spark.sql.{Encoders, Row, SparkSession}
 import org.openrdf.model.Statement
-import org.wikidata.query.rdf.spark.SparkUtils
+import org.wikidata.query.rdf.spark.utils.SparkUtils
 
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
