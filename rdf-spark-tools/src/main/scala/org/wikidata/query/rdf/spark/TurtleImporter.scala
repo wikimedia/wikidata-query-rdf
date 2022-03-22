@@ -41,7 +41,6 @@ object TurtleImporter {
       .config("hive.exec.dynamic.partition.mode", "non-strict")
       // Allows overwriting the target partitions
       .config("spark.sql.sources.partitionOverwriteMode", "dynamic")
-      .appName("WikibaseTurtleConverter")
       .getOrCreate()
   }
 

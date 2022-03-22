@@ -125,7 +125,6 @@ object UpdaterReconcile {
 
     implicit val spark: SparkSession = SparkSession
       .builder()
-      .appName("WikidataEntityRevisionMapGenerator")
       .getOrCreate()
     val sender = new ReconciliationSender(httpClient, params.eventGateEndpoint, params.eventGateBatchSize)
     sender.send(collector.collectLateEvents(params.lateEventPartitionSpec))

@@ -70,7 +70,6 @@ object EntityRevisionMapGenerator {
 
         val spark = SparkSession
           .builder()
-          .appName("WikidataEntityRevisionMapGenerator")
           .getOrCreate()
 
         // Make spark read text with dedicated separator instead of end-of-line
