@@ -25,7 +25,7 @@ class BufferedEventSender implements EventSender {
 
     private boolean offer(Event event) {
         if (!queue.offer(event)) {
-            log.error("Cannot buffer event {}, queue full", event.getMetadata().getStream());
+            log.warn("Cannot buffer event {}, queue full", event.getMetadata().getStream());
             return false;
         }
         return true;
@@ -41,7 +41,7 @@ class BufferedEventSender implements EventSender {
         private final int bufferSize;
         private final BlockingQueue<Event> queue;
 
-        Worker(EventSender sender, BlockingQueue queue, int bufferSize) {
+        Worker(EventSender sender, BlockingQueue<Event> queue, int bufferSize) {
             super(Worker.class.getName() + "-" + sender.getClass().getSimpleName());
             this.setDaemon(true);
             this.sender = sender;

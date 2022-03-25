@@ -55,17 +55,23 @@ public class EventHttpSender implements EventSender, AutoCloseable {
             justification = "false positive - known issue with try-with-resources and spotbugs")
     public int push(Collection<Event> events) {
         HttpPost post = new HttpPost(eventGateUri);
+        // We're fine dropping messages here if they fail
+        // just return 0 in case of errors so that the caller has a chance
+        // to verify if something went wrong or not.
+        // Adding a retry mechanism might be worthwhile in the future if this
+        // class is used to ship something more important events than some
+        // used for analysis purposes
         try {
             post.setEntity(httpEntity(events));
             try (CloseableHttpResponse response = httpClient.execute(post)) {
                 if (response.getStatusLine().getStatusCode() >= 400) {
-                    log.error("Cannot send events to eventgate endpoint: {}: {}", eventGateUri, response.getStatusLine());
+                    log.info("Cannot send events to eventgate endpoint: {}: {}", eventGateUri, response.getStatusLine());
                     return 0;
                 }
             }
             return events.size();
         } catch (IOException e) {
-            log.error("Cannot send events to eventgate endpoint: {}", eventGateUri, e);
+            log.info("Cannot send events to eventgate endpoint: {}: {}", eventGateUri, e.getMessage());
             return 0;
         }
     }
