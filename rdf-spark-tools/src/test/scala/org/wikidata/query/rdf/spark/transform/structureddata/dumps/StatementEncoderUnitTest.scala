@@ -1,4 +1,4 @@
-package org.wikidata.query.rdf.spark
+package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
 import org.apache.spark.sql.Row
 import org.openrdf.model.impl.ValueFactoryImpl

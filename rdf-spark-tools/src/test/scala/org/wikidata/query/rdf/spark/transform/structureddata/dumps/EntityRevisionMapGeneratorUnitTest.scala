@@ -1,8 +1,9 @@
-package org.wikidata.query.rdf.spark
+package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
 import org.apache.spark.sql.Row
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
+import org.wikidata.query.rdf.spark.SparkSessionProvider
 
 class EntityRevisionMapGeneratorUnitTest extends FlatSpec with SparkSessionProvider with Matchers with BeforeAndAfterEach {
   var csvFile: String = _

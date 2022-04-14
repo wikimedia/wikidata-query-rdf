@@ -1,4 +1,4 @@
-package org.wikidata.query.rdf.spark.analysis
+package org.wikidata.query.rdf.spark.transform.queries.sparql
 
 import scopt.OptionParser
 

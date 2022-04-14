@@ -1,7 +1,7 @@
-package org.wikidata.query.rdf.spark.analysis
+package org.wikidata.query.rdf.spark.transform.queries.sparql
 
 import org.scalatest.{FlatSpec, Matchers}
-import org.wikidata.query.rdf.spark.analysis.visitors.{TripleInfo,NodeInfo}
+import org.wikidata.query.rdf.spark.transform.queries.sparql.visitors.{TripleInfo,NodeInfo}
 
 import scala.collection.mutable
 import scala.io.{BufferedSource, Source}

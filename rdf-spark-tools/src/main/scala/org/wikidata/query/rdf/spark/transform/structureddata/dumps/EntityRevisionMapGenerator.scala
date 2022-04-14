@@ -1,9 +1,10 @@
-package org.wikidata.query.rdf.spark
+package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
-import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType}
+import org.apache.spark.sql.{Row, SparkSession}
 import org.openrdf.model.Literal
 import org.wikidata.query.rdf.common.uri.{FederatedUrisScheme, SchemaDotOrg, UrisScheme, UrisSchemeFactory}
+import org.wikidata.query.rdf.spark.SparkUtils
 import scopt.OptionParser
 
 import java.net.URI
@@ -35,7 +36,7 @@ object EntityRevisionMapGenerator {
     head("Wikidata Entity Revision map generator", "")
     help("help") text "Prints this usage text"
 
-    opt[String]('t', "input-table") required() valueName  "<input-table>" action { (x, p) =>
+    opt[String]('t', "input-table") required() valueName "<input-table>" action { (x, p) =>
       p.copy(table = x)
     } text "Table-partition holding the wikidata triples"
 

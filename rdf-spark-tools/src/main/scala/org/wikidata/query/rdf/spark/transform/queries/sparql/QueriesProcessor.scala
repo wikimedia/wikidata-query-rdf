@@ -1,4 +1,4 @@
-package org.wikidata.query.rdf.spark.analysis
+package org.wikidata.query.rdf.spark.transform.queries.sparql
 
 import org.apache.spark.sql.functions.{col, count, desc, hash, lit, sum, udf}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}

@@ -1,12 +1,12 @@
-package org.wikidata.query.rdf.spark
-
-import javax.annotation.concurrent.NotThreadSafe
+package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import org.openrdf.model.{Statement, Value}
 import org.openrdf.model.impl.ValueFactoryImpl
+import org.openrdf.model.{Statement, Value}
 import org.openrdf.rio.ntriples.NTriplesUtil
+
+import javax.annotation.concurrent.NotThreadSafe
 
 /**
  * Encode statement Resource and Value using N3 format:

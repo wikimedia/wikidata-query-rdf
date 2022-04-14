@@ -1,16 +1,15 @@
-package org.wikidata.query.rdf.spark
-
-import java.io.StringReader
-
-import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-
-import org.openrdf.model.impl.ValueFactoryImpl
-import org.openrdf.rio.helpers.StatementCollector
-import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
-import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
+package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
 import org.apache.spark.sql.SparkSession
+import org.openrdf.model.impl.ValueFactoryImpl
+import org.openrdf.rio.helpers.StatementCollector
 import org.scalatest.{FlatSpec, Matchers}
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
+import org.wikidata.query.rdf.spark.SparkSessionProvider
+import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
+
+import java.io.StringReader
+import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
 class WikibaseRDFDumpConverterUnitTest extends FlatSpec with SparkSessionProvider with Matchers {
   val wikidataPaths = Seq(

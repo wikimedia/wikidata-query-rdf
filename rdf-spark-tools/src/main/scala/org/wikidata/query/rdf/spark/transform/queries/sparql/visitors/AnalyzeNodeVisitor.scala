@@ -1,4 +1,4 @@
-package org.wikidata.query.rdf.spark.analysis.visitors
+package org.wikidata.query.rdf.spark.transform.queries.sparql.visitors
 
 import org.apache.jena.graph.impl.LiteralLabel
 import org.apache.jena.graph._

@@ -1,4 +1,4 @@
-package org.wikidata.query.rdf.spark.analysis.visitors
+package org.wikidata.query.rdf.spark.transform.queries.sparql.visitors
 
 import org.apache.jena.sparql.expr._
 import scala.collection.mutable

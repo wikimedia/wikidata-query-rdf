@@ -1,4 +1,4 @@
-package org.wikidata.query.rdf.spark
+package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
 import scopt.OptionParser
 
@@ -15,15 +15,15 @@ import scopt.OptionParser
  * Command line example:
  * DUMP=hdfs://analytics-hadoop/wmf/data/raw/wikidata/dumps
  * spark2-submit --master yarn --driver-memory 2G --executor-memory 16G --executor-cores 8 \
- *   --conf spark.yarn.maxAppAttempts=1 \
- *   --conf spark.dynamicAllocation.maxExecutors=25 \
- *   --class org.wikidata.query.rdf.spark.WikidataTurtleDumpConverter \
- *   --name airflow-spark \
- *   --queue root.default \
- *   ~dcausse/rdf-spark-tools-0.3.42-SNAPSHOT-jar-with-dependencies.jar \
- *   --input-path $DUMPS/all_ttl/20200817/wikidata-20200817-all-BETA.ttl.bz2,$DUMPS/lexemes_ttl/20200816/wikidata-20200816-lexemes-BETA.ttl.bz2 \
- *   --output-table discovery.wikidata_rdf/date=20200817 \
- *   --skolemize
+ * --conf spark.yarn.maxAppAttempts=1 \
+ * --conf spark.dynamicAllocation.maxExecutors=25 \
+ * --class org.wikidata.query.rdf.spark.WikidataTurtleDumpConverter \
+ * --name airflow-spark \
+ * --queue root.default \
+ * ~dcausse/rdf-spark-tools-0.3.42-SNAPSHOT-jar-with-dependencies.jar \
+ * --input-path $DUMPS/all_ttl/20200817/wikidata-20200817-all-BETA.ttl.bz2,$DUMPS/lexemes_ttl/20200816/wikidata-20200816-lexemes-BETA.ttl.bz2 \
+ * --output-table discovery.wikidata_rdf/date=20200817 \
+ * --skolemize
  */
 object WikibaseRDFDumpConverter {
   /**
@@ -37,6 +37,7 @@ object WikibaseRDFDumpConverter {
       case _ => sys.exit(-1)
     }
   }
+
   implicit val siteRead: scopt.Read[Site.Value] = scopt.Read.reads(Site.withName)
 
   /**
@@ -73,7 +74,7 @@ object WikibaseRDFDumpConverter {
         p.copy(skolemizeBlankNodes = true)
       } text "Skolemize blank nodes"
 
-      opt[Site.Value]('S', "site") optional() valueName "<site>" action {(x, p) =>
+      opt[Site.Value]('S', "site") optional() valueName "<site>" action { (x, p) =>
         p.copy(site = x)
       } text s"Site from which this dump is produced (${Site.values.mkString(",")})"
     }
@@ -89,4 +90,3 @@ object WikibaseRDFDumpConverter {
     case _ => None
   }
 }
-
