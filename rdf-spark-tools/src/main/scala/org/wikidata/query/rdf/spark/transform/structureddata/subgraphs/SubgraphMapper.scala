@@ -32,7 +32,7 @@ class SubgraphMapper(wikidataTriples: DataFrame) {
       .count()
 
     val topSubgraphs = allSubgraphs
-      .filter(col("count") > minItems)
+      .filter(col("count") >= minItems)
 
     (allSubgraphs, topSubgraphs)
   }
@@ -61,6 +61,7 @@ class SubgraphMapper(wikidataTriples: DataFrame) {
    */
   def getTopSubgraphTriples(topSubgraphItems: DataFrame): DataFrame = {
     wikidataTriples
+      .select("context", "subject", "predicate", "object")
       .join(topSubgraphItems, wikidataTriples("context") === topSubgraphItems("item"), "inner")
       .drop("context")
       .withColumn("predicate_code", SubgraphUtils.extractItem(col("predicate"), lit("/")))
