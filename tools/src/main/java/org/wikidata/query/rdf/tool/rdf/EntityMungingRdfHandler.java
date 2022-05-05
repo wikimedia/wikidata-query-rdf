@@ -153,7 +153,7 @@ public class EntityMungingRdfHandler implements RDFHandler {
     }
 
     /**
-     * Munge an entity's worth of RDF and then sync it the the output.
+     * Munge an entity's worth of RDF and then sync it the output.
      *
      * @throws RDFHandlerException if there is an error syncing it
      */
