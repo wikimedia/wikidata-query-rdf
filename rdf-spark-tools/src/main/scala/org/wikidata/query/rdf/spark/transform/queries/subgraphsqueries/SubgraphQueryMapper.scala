@@ -34,9 +34,11 @@ class SubgraphQueryMapper() {
                       topSubgraphItems: DataFrame): (DataFrame, DataFrame, DataFrame, DataFrame) = {
 
     // Q-ID (cols: id, subgraph, item)
-    val subgraphNames = topSubgraphItems.select("subgraph").distinct()
+    val subgraphNames = topSubgraphItems
+      .withColumn("item", extractItem(col("subgraph"), lit("/")))
+      .distinct()
     val subgraphQidMatchInQuery = queryWDnames
-      .join(subgraphNames, queryWDnames("item") === subgraphNames("subgraph"), "inner")
+      .join(subgraphNames, Seq("item"), "inner")
       .drop("item")
       .distinct()
 
@@ -67,13 +69,13 @@ class SubgraphQueryMapper() {
       .select(col("id"), col("subgraph"),
         lit(true).alias("item"))
       .join(subgraphPredicatesMatchInQuery.select(col("id"), col("subgraph"),
-        lit(true).alias("predicate")).distinct(), Seq("id"), "outer")
+        lit(true).alias("predicate")).distinct(), Seq("id", "subgraph"), "outer")
       .join(subgraphUrisMatchInQuery.select(col("id"), col("subgraph"),
-        lit(true).alias("uri")).distinct(), Seq("id"), "outer")
+        lit(true).alias("uri")).distinct(), Seq("id", "subgraph"), "outer")
       .join(subgraphQidMatchInQuery.select(col("id"), col("subgraph"),
-        lit(true).alias("qid")).distinct(), Seq("id"), "outer")
+        lit(true).alias("qid")).distinct(), Seq("id", "subgraph"), "outer")
       .join(subgraphLiteralsMatchInQuery.select(col("id"), col("subgraph"),
-        lit(true).alias("literal")).distinct(), Seq("id"), "outer")
+        lit(true).alias("literal")).distinct(), Seq("id", "subgraph"), "outer")
       .na.fill(false)
       .distinct()
 
@@ -94,7 +96,7 @@ object SubgraphQueryMapper {
                                          processedQueryPath: String,
                                          topSubgraphTriplesPath: String,
                                          topSubgraphItemsPath: String,
-                                         filteringLimit: Int,
+                                         filteringLimit: Double,
                                          subgraphQItemsMatchInQueryPath: String,
                                          subgraphPredicatesMatchInQueryPath: String,
                                          subgraphUrisMatchInQueryPath: String,
@@ -142,7 +144,7 @@ object SubgraphQueryMapper {
                               processedQueries: DataFrame,
                               topSubgraphTriples: DataFrame,
                               topSubgraphItems: DataFrame,
-                              filteringLimit: Int): (DataFrame, DataFrame, DataFrame, DataFrame) = {
+                              filteringLimit: Double): (DataFrame, DataFrame, DataFrame, DataFrame) = {
 
     val subgraphQueryMapper = new SubgraphQueryMapper()
     val subgraphQueryMapperUtils = new SubgraphQueryMapperUtils(wikidataTriples, processedQueries, topSubgraphTriples, filteringLimit)

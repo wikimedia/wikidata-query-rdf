@@ -1,0 +1,234 @@
+{
+  "type" : "struct",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : {
+      "comment" : "Query Id"
+    }
+  }, {
+    "name" : "query",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : {
+      "comment" : "The sparql query"
+    }
+  }, {
+    "name" : "query_time",
+    "type" : "long",
+    "nullable" : true,
+    "metadata" : {
+      "comment" : "Time taken to run the query"
+    }
+  }, {
+    "name" : "query_time_class",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : {
+      "comment" : "Bucketed time taken to run the query"
+    }
+  }, {
+    "name" : "ua",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : {
+      "comment" : "User agent"
+    }
+  }, {
+    "name" : "q_info",
+    "type" : {
+      "type" : "struct",
+      "fields" : [ {
+        "name" : "queryReprinted",
+        "type" : "string",
+        "nullable" : true,
+        "metadata" : { }
+      }, {
+        "name" : "opList",
+        "type" : {
+          "type" : "array",
+          "elementType" : "string",
+          "containsNull" : true
+        },
+        "nullable" : true,
+        "metadata" : { }
+      }, {
+        "name" : "operators",
+        "type" : {
+          "type" : "map",
+          "keyType" : "string",
+          "valueType" : "long",
+          "valueContainsNull" : true
+        },
+        "nullable" : true,
+        "metadata" : { }
+      }, {
+        "name" : "prefixes",
+        "type" : {
+          "type" : "map",
+          "keyType" : "string",
+          "valueType" : "long",
+          "valueContainsNull" : true
+        },
+        "nullable" : true,
+        "metadata" : { }
+      }, {
+        "name" : "nodes",
+        "type" : {
+          "type" : "map",
+          "keyType" : "string",
+          "valueType" : "long",
+          "valueContainsNull" : true
+        },
+        "nullable" : true,
+        "metadata" : { }
+      }, {
+        "name" : "services",
+        "type" : {
+          "type" : "map",
+          "keyType" : "string",
+          "valueType" : "long",
+          "valueContainsNull" : true
+        },
+        "nullable" : true,
+        "metadata" : { }
+      }, {
+        "name" : "wikidataNames",
+        "type" : {
+          "type" : "map",
+          "keyType" : "string",
+          "valueType" : "long",
+          "valueContainsNull" : true
+        },
+        "nullable" : true,
+        "metadata" : { }
+      }, {
+        "name" : "expressions",
+        "type" : {
+          "type" : "map",
+          "keyType" : "string",
+          "valueType" : "long",
+          "valueContainsNull" : true
+        },
+        "nullable" : true,
+        "metadata" : { }
+      }, {
+        "name" : "paths",
+        "type" : {
+          "type" : "map",
+          "keyType" : "string",
+          "valueType" : "long",
+          "valueContainsNull" : true
+        },
+        "nullable" : true,
+        "metadata" : { }
+      }, {
+        "name" : "triples",
+        "type" : {
+          "type" : "array",
+          "elementType" : {
+            "type" : "struct",
+            "fields" : [ {
+              "name" : "subjectNode",
+              "type" : {
+                "type" : "struct",
+                "fields" : [ {
+                  "name" : "nodeType",
+                  "type" : "string",
+                  "nullable" : true,
+                  "metadata" : { }
+                }, {
+                  "name" : "nodeValue",
+                  "type" : "string",
+                  "nullable" : true,
+                  "metadata" : { }
+                } ]
+              },
+              "nullable" : true,
+              "metadata" : { }
+            }, {
+              "name" : "predicateNode",
+              "type" : {
+                "type" : "struct",
+                "fields" : [ {
+                  "name" : "nodeType",
+                  "type" : "string",
+                  "nullable" : true,
+                  "metadata" : { }
+                }, {
+                  "name" : "nodeValue",
+                  "type" : "string",
+                  "nullable" : true,
+                  "metadata" : { }
+                } ]
+              },
+              "nullable" : true,
+              "metadata" : { }
+            }, {
+              "name" : "objectNode",
+              "type" : {
+                "type" : "struct",
+                "fields" : [ {
+                  "name" : "nodeType",
+                  "type" : "string",
+                  "nullable" : true,
+                  "metadata" : { }
+                }, {
+                  "name" : "nodeValue",
+                  "type" : "string",
+                  "nullable" : true,
+                  "metadata" : { }
+                } ]
+              },
+              "nullable" : true,
+              "metadata" : { }
+            } ]
+          },
+          "containsNull" : true
+        },
+        "nullable" : true,
+        "metadata" : { }
+      } ]
+    },
+    "nullable" : true,
+    "metadata" : {
+      "comment" : "Extracted information from the query string"
+    }
+  }, {
+    "name" : "year",
+    "type" : "integer",
+    "nullable" : true,
+    "metadata" : {
+      "comment" : "Unpadded year of queries"
+    }
+  }, {
+    "name" : "month",
+    "type" : "integer",
+    "nullable" : true,
+    "metadata" : {
+      "comment" : "Unpadded month of queries"
+    }
+  }, {
+    "name" : "day",
+    "type" : "integer",
+    "nullable" : true,
+    "metadata" : {
+      "comment" : "Unpadded day of queries"
+    }
+  }, {
+    "name" : "hour",
+    "type" : "integer",
+    "nullable" : true,
+    "metadata" : {
+      "comment" : "Unpadded hour of queries"
+    }
+  }, {
+    "name" : "wiki",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : {
+      "comment" : "Wiki name: one of {wikidata, commons}"
+    }
+  } ]
+}

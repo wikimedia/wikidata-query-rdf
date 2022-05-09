@@ -15,7 +15,7 @@ import org.wikidata.query.rdf.spark.utils.SubgraphUtils.{cleanLiteral, extractIt
 class SubgraphQueryMapperUtils(wikidataTriples: DataFrame,
                                processedQueries: DataFrame,
                                topSubgraphTriples: DataFrame,
-                               filteringLimit: Int) {
+                               filteringLimit: Double) {
 
   // Intermediate Calculations: Extracts information from queries
 
@@ -109,7 +109,7 @@ class SubgraphQueryMapperUtils(wikidataTriples: DataFrame,
       .withColumnRenamed("count", "subCount")
 
     val wikidataObjectCount = wikidataTriples
-      .selectExpr("subject as node")
+      .selectExpr("object as node")
       .groupBy("node")
       .count()
       .withColumnRenamed("count", "objCount")

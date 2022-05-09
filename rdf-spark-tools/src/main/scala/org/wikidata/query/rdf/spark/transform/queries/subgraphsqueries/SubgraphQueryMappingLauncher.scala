@@ -11,7 +11,7 @@ case class SubgraphQueryMappingParams(
                                        subgraphPredicatesMatchInQuery: String = "", //out
                                        subgraphUrisMatchInQuery: String = "", //out
                                        queryMapping: String = "", //out
-                                       filteringLimit: Int = 99
+                                       filteringLimit: Double = 99
                                      )
 
 /**
