@@ -43,6 +43,7 @@
     <modules>
         <module>testTools</module>
         <module>common</module>
+        <module>jetty-logging</module>
         <module>blazegraph</module>
         <module>war</module>
         <module>tools</module>
@@ -779,6 +780,11 @@
             <dependency>
                 <groupId>org.wikidata.query.rdf</groupId>
                 <artifactId>common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wikidata.query.rdf</groupId>
+                <artifactId>jetty-logging</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -386,6 +386,13 @@
                         <supportedPackaging>jar</supportedPackaging>
                     </supportedPackagings>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.wikidata.query.rdf</groupId>
+                        <artifactId>jetty-logging</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>start-blazegraph</id>

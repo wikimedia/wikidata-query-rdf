@@ -42,6 +42,14 @@
     </fileSet>
 
     <fileSet>
+      <outputDirectory>lib/logging</outputDirectory>
+      <directory>${project.basedir}/../jetty-logging/target</directory>
+      <includes>
+        <include>jetty-logging-${project.version}-jar-with-dependencies.jar</include>
+      </includes>
+    </fileSet>
+
+    <fileSet>
       <outputDirectory>docs</outputDirectory>
       <directory>${project.basedir}/../docs</directory>
     </fileSet>

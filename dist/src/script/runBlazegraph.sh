@@ -6,6 +6,8 @@ if [ -r $BLAZEGRAPH_CONFIG ]; then
   . $BLAZEGRAPH_CONFIG
 fi
 
+# paren's resolves the glob to the first match
+JETTY_RUNNER=${JETTY_RUNNER:-(jetty-runner*.jar)}
 HOST=${HOST:-"localhost"}
 CONTEXT=bigdata
 PORT=${PORT:-"9999"}
@@ -140,7 +142,8 @@ exec java \
      $OAUTH_BANNED_USERNAMES_PATH_PARAM \
      -Dorg.eclipse.jetty.annotations.AnnotationParser.LEVEL=OFF \
      ${BLAZEGRAPH_OPTS} \
-     -jar jetty-runner*.jar \
+     -cp "$JETTY_RUNNER:lib/logging/*" \
+     org.eclipse.jetty.runner.Runner \
      --host $HOST \
      --port $PORT \
      --path /$CONTEXT \
