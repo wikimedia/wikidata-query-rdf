@@ -160,7 +160,7 @@ public class OAuthProxyService {
 
     @GET
     @Path("/logout")
-    public Response logout(String session) throws URISyntaxException {
+    public Response logout(@CookieParam(SESSION_COOKIE_NAME) String session) throws URISyntaxException {
         // The token itself can't be expired, all we can do is remove the cookie holding it.
         // If the token was captured somewhere else it is still valid for the token duration.
         // Accordingly, durations should be kept short. Minutes or hours not days or weeks.
