@@ -6,8 +6,6 @@ if [ -r $BLAZEGRAPH_CONFIG ]; then
   . $BLAZEGRAPH_CONFIG
 fi
 
-# paren's resolves the glob to the first match
-JETTY_RUNNER=${JETTY_RUNNER:-(jetty-runner*.jar)}
 HOST=${HOST:-"localhost"}
 CONTEXT=bigdata
 PORT=${PORT:-"9999"}
@@ -99,6 +97,7 @@ done
 
 pushd $DIR
 
+JETTY_RUNNER=${JETTY_RUNNER:-$(echo jetty-runner*.jar)}
 # Q-id of the default globe
 DEFAULT_GLOBE=${DEFAULT_GLOBE:-"2"}
 # Blazegraph HTTP User Agent for federation
