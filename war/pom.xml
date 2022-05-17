@@ -25,7 +25,12 @@
             <artifactId>bigdata-war</artifactId>
             <type>war</type>
             <scope>runtime</scope>
-            <exclusions />
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- include bigdata-war as a pom dependency to collect its transitive dependencies -->
         <dependency>
@@ -33,6 +38,12 @@
             <artifactId>bigdata-war</artifactId>
             <type>pom</type>
             <scope>runtime</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jhades</groupId>
@@ -49,6 +60,12 @@
             <groupId>org.wikidata.query.rdf</groupId>
             <artifactId>blazegraph</artifactId>
             <scope>runtime</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.wikidata.query.rdf</groupId>
@@ -121,6 +138,13 @@
                     <webApp>
                         <contextPath>/bigdata</contextPath>
                     </webApp>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.wikidata.query.rdf</groupId>
+                            <artifactId>jetty-logging</artifactId>
+                            <version>${project.version}</version>
+                        </dependency>
+                    </dependencies>
                     <systemProperties combine.children="append">
                         <systemProperty>
                             <!-- By default Blazegraph's WAR thinks it running in tomcat and uses funky relative paths. They suggest
