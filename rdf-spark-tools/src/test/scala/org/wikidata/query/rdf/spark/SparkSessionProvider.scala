@@ -1,17 +1,25 @@
 package org.wikidata.query.rdf.spark
 
-import java.io.File
-import java.nio.file.Files
-
+import com.holdenkarau.spark.testing.DataFrameSuiteBase
+import com.holdenkarau.spark.testing.SparkSessionProvider.sparkSession
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec}
 
-trait SparkSessionProvider extends FlatSpec with BeforeAndAfterEach with BeforeAndAfterAll {
-  protected implicit var spark: SparkSession = _
+import java.io.File
+import java.nio.file.Files
+
+trait SparkSessionProvider extends FlatSpec with BeforeAndAfterEach with BeforeAndAfterAll with DataFrameSuiteBase {
+
+  // same thing in these variables:
+  // spark (from DataFrameSuiteBaseLike), sparkSession (from DataFrameSuiteBase), sparkImplicit
+  protected implicit var sparkImplicit: SparkSession = _
 
   override def beforeAll(): Unit = {
-    spark = SparkSessionProvider.spark
+    super.beforeAll()
+    sparkSession.conf.set("spark.local.dir", SparkSessionProvider.sparkDir.getAbsolutePath)
+    sparkSession.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+    sparkImplicit = sparkSession
   }
 
   override def beforeEach(): Unit = {
@@ -25,11 +33,4 @@ trait SparkSessionProvider extends FlatSpec with BeforeAndAfterEach with BeforeA
 
 object SparkSessionProvider {
   private lazy val sparkDir = Files.createTempDirectory("spark_local_dir").toFile
-  private lazy val spark = SparkSession.builder()
-    .master("local")
-    .appName("spark test example")
-    .config("spark.local.dir", SparkSessionProvider.sparkDir.getAbsolutePath)
-    .config("spark.sql.warehouse.dir", new File(SparkSessionProvider.sparkDir, "spark-warehouse").getAbsolutePath)
-    .config("spark.sql.sources.partitionOverwriteMode", "dynamic")
-    .getOrCreate()
 }

@@ -21,10 +21,6 @@ class WikibaseRDFDumpConverterUnitTest extends FlatSpec with SparkSessionProvide
     this.getClass.getResource("commons_dump.ttl").toURI.toString
   )
 
-  override protected def afterAll(): Unit = {
-    super.afterAll()
-  }
-
   "a wikidata rdf dump present" should "be converted as a table partition" in {
     TurtleImporter.importDump(Params(
       inputPath = wikidataPaths,

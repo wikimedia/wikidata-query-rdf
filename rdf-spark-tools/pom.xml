@@ -32,6 +32,20 @@
             <artifactId>scopt_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.holdenkarau</groupId>
+            <artifactId>spark-testing-base_${scala.compat.version}</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.inject</groupId>
+                    <artifactId>javax.inject</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>stax</groupId>
+                    <artifactId>stax-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
         </dependency>
@@ -45,10 +59,6 @@
                     <artifactId>jackson-core</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.clapper</groupId>
-            <artifactId>grizzled-slf4j_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
             <groupId>org.openrdf.sesame</groupId>
@@ -118,6 +128,10 @@
                     <groupId>com.sun.jersey</groupId>
                     <artifactId>jersey-json</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>asm</groupId>
+                    <artifactId>asm</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -125,6 +139,10 @@
             <artifactId>spark-core_${scala.compat.version}</artifactId>
             <scope>provided</scope>
             <exclusions>
+                <exclusion>
+                    <groupId>org.objenesis</groupId>
+                    <artifactId>objenesis</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>javax.activation</groupId>
                     <artifactId>activation</artifactId>
@@ -154,26 +172,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.xbean</groupId>
-            <artifactId>xbean-asm6-shaded</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <!-- Test Scopes -->
-        <!-- we need to force a very old version of guava
-             as the version of hadoop we use depends on such
-             version
-             c.f. https://stackoverflow.com/questions/36427291/illegalaccesserror-to-guavas-stopwatch-from-org-apache-hadoop-mapreduce-lib-inp
-         -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>15.0</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.scalamock</groupId>
@@ -269,6 +270,10 @@
                     </ignoredClassPatterns>
                     <ignoredResourcePatterns>
                         <ignoredResourcePattern>git.properties</ignoredResourcePattern>
+                        <ignoredResourcePattern>codegen/config.fmpp$</ignoredResourcePattern>
+                        <ignoredResourcePattern>log4j.properties$</ignoredResourcePattern>
+                        <ignoredResourcePattern>parquet.thrift$</ignoredResourcePattern>
+                        <ignoredResourcePattern>plugin.xml$</ignoredResourcePattern>
                     </ignoredResourcePatterns>
                     <ignoredDependencies>
                         <!--
