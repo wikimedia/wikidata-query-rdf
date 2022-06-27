@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `top_subgraph_triples` (
     `predicate_code`              string  COMMENT 'Last suffix of the predicate of the triple (i.e P123, rdf-schema#label etc)'
 )
 PARTITIONED BY (
-    `date` string,
+    `snapshot` string,
     `wiki` string
 )
 STORED AS PARQUET

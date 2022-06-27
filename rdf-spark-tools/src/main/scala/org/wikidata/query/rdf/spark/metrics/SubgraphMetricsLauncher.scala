@@ -73,7 +73,7 @@ class SubgraphMetricsLauncher {
 /**
  * Point of entry to extract subgraph metrics. This includes metrics on wikidata subgraphs
  * and on queries that access these subgraphs, also known as `subgraph queries`.
- * This job lists all subgraph metrics and saves parquet files in date format.
+ * This job lists all subgraph metrics and saves parquet files in date snapshot format.
  * This job also lists all subgraph query metrics and saves parquet files in daily format.
  *
  * Command line example:
@@ -84,10 +84,10 @@ class SubgraphMetricsLauncher {
  * general-subgraph-metrics \
  * ~akhatun/rdf-spark-tools-0.3.42-SNAPSHOT-jar-with-dependencies.jar \
  * --wikidata-triples-table discovery.wikibase_rdf/date=20220210/wiki=wikidata \
- * --all-subgraphs-table discovery.table_name/date=20220210/wiki=wikidata \
- * --top-subgraph-items-table discovery.table_name/date=20220210/wiki=wikidata \
- * --top-subgraph-triples-table discovery.table_name/date=20220210/wiki=wikidata \
- * --general-subgraph-metrics-table discovery.table_name/date=20220210/wiki=wikidata \
+ * --all-subgraphs-table discovery.table_name/snapshot=20220210/wiki=wikidata \
+ * --top-subgraph-items-table discovery.table_name/snapshot=20220210/wiki=wikidata \
+ * --top-subgraph-triples-table discovery.table_name/snapshot=20220210/wiki=wikidata \
+ * --general-subgraph-metrics-table discovery.table_name/snapshot=20220210/wiki=wikidata \
  * --min-items 10000
  */
 object SubgraphMetricsLauncher {

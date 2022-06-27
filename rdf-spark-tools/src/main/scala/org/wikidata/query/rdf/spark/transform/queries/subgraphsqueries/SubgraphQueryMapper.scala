@@ -119,10 +119,10 @@ object SubgraphQueryMapper {
 
     SparkUtils.saveTables(
       List(
-        subgraphQItemsMatchInQuery,
-        subgraphPredicatesMatchInQuery,
-        subgraphUrisMatchInQuery,
-        queryMapping
+        subgraphQItemsMatchInQuery.coalesce(25), // file size ~2.5G
+        subgraphPredicatesMatchInQuery.coalesce(4), // file size ~220Mb
+        subgraphUrisMatchInQuery.coalesce(16), // file size ~1.7G
+        queryMapping.coalesce(8) // file size ~550Mb
       ) zip List(
         subgraphQItemsMatchInQueryPath,
         subgraphPredicatesMatchInQueryPath,

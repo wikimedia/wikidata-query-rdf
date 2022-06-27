@@ -27,8 +27,8 @@ case class SubgraphQueryMappingParams(
  * ~akhatun/rdf-spark-tools-0.3.42-SNAPSHOT-jar-with-dependencies.jar \
  * --wikidata-table discovery.wikibase_rdf/date=20220210/wiki=wikidata \
  * --processed-query-table discovery.processed_external_sparql_query/year=2021/month=5/day=1/wiki=wikidata \
- * --top-subgraph-items-table discovery.table_name/date=20220210/wiki=wikidata \
- * --top-subgraph-triples-table discovery.table_name/date=20220210/wiki=wikidata \
+ * --top-subgraph-items-table discovery.table_name/snapshot=20220210/wiki=wikidata \
+ * --top-subgraph-triples-table discovery.table_name/snapshot=20220210/wiki=wikidata \
  * --subgraph-qitem-match-query-table table_name/year=2021/month=5/day=1/wiki=wikidata \
  * --subgraph-predicate-match-query-table table_name/year=2021/month=5/day=1/wiki=wikidata \
  * --subgraph-uri-match-query-table table_name/year=2021/month=5/day=1/wiki=wikidata \

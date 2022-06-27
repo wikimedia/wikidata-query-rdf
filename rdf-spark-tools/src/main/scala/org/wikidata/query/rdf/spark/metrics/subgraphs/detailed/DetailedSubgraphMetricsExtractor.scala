@@ -29,7 +29,10 @@ object DetailedSubgraphMetricsExtractor {
       SparkUtils.readTablePartition(allSubgraphsPath),
       minItems
     )
-    SparkUtils.saveTables(List(perSubgraphMetrics, subgraphPairMetrics) zip List(perSubgraphMetricsPath, subgraphPairMetricsPath))
+    SparkUtils.saveTables(List(
+      perSubgraphMetrics.coalesce(1), // file size ~2Mb
+      subgraphPairMetrics.coalesce(1) // file size ~9Mb
+    ) zip List(perSubgraphMetricsPath, subgraphPairMetricsPath))
   }
 
   /**

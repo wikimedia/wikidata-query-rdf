@@ -13,7 +13,7 @@ case class SubgraphMappingParams(
 /**
  * Point of entry for wikidata subgraph mapping .
  * This job lists all subgraphs and maps items and triples to subgraphs in wikidata,
- * and saves parquet files in date format.
+ * and saves parquet files in date snapshot format.
  *
  * Command line example:
  * spark2-submit --master yarn --driver-memory 2G --executor-memory 16G --executor-cores 8 \
@@ -22,9 +22,9 @@ case class SubgraphMappingParams(
  * --queue root.default \
  * ~akhatun/rdf-spark-tools-0.3.42-SNAPSHOT-jar-with-dependencies.jar \
  * --wikidata-table discovery.wikibase_rdf/date=20220210/wiki=wikidata \
- * --all-subgraphs-table discovery.table_name/date=20220210/wiki=wikidata \
- * --top-subgraph-items-table discovery.table_name/date=20220210/wiki=wikidata \
- * --top-subgraph-triples-table discovery.table_name/date=20220210/wiki=wikidata \
+ * --all-subgraphs-table discovery.table_name/snapshot=20220210/wiki=wikidata \
+ * --top-subgraph-items-table discovery.table_name/snapshot=20220210/wiki=wikidata \
+ * --top-subgraph-triples-table discovery.table_name/snapshot=20220210/wiki=wikidata \
  * --min-items 10000
  */
 object SubgraphMappingLauncher {

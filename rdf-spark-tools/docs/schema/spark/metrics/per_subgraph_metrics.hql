@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `per_subgraph_metrics` (
     `WD_to_subgraph_triples`            bigint  COMMENT 'Number of triples connecting other subgraphs to this subgraph'
 )
 PARTITIONED BY (
-    `date` string,
+    `snapshot` string,
     `wiki` string
 )
 STORED AS PARQUET

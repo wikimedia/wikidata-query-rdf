@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `general_subgraph_metrics` (
     `subgraph_size_mean`                 double  COMMENT 'Mean of the size (in triples) of all subgraphs'
 )
 PARTITIONED BY (
-    `date` string,
+    `snapshot` string,
     `wiki` string
 )
 STORED AS PARQUET

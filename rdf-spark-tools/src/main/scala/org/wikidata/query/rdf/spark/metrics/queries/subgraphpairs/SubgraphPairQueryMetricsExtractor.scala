@@ -14,7 +14,7 @@ object SubgraphPairQueryMetricsExtractor {
     implicit val spark: SparkSession = SparkUtils.getSparkSession("SubgraphPairQueryMetricsExtractor")
 
     val queriesPerSubgraphPair = getSubgraphPairQueryMetrics(SparkUtils.readTablePartition(subgraphQueriesPath))
-    SparkUtils.saveTables(List(queriesPerSubgraphPair) zip List(subgraphPairQueryMetricsPath))
+    SparkUtils.saveTables(List(queriesPerSubgraphPair.coalesce(1)) zip List(subgraphPairQueryMetricsPath)) // file size ~8Mb
   }
 
   /**

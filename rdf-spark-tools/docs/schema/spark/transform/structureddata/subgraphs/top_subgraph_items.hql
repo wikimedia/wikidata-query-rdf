@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS `top_subgraph_items` (
     `item`                        string  COMMENT 'Item belonging to corresponding subgraph'
 )
 PARTITIONED BY (
-    `date` string,
+    `snapshot` string,
     `wiki` string
 )
 STORED AS PARQUET

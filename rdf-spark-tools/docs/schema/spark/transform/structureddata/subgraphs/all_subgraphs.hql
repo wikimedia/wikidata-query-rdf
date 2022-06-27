@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS `all_subgraphs` (
     `count`                       string  COMMENT 'Number of items in the subgraph'
 )
 PARTITIONED BY (
-    `date` string,
+    `snapshot` string,
     `wiki` string
 )
 STORED AS PARQUET

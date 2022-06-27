@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `subgraph_pair_metrics` (
     `common_item_percent_of_subgraph2_items`   double  COMMENT 'Percent of common items w.r.t total items in subgraph2'
 )
 PARTITIONED BY (
-    `date` string,
+    `snapshot` string,
     `wiki` string
 )
 STORED AS PARQUET

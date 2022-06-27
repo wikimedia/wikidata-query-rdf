@@ -37,7 +37,11 @@ object QueryMetricsExtractor {
       SparkUtils.readTablePartition(subgraphPredicatesMatchInQueryPath),
       SparkUtils.readTablePartition(subgraphUrisMatchInQueryPath)
     )
-    SparkUtils.saveTables(List(generalQueryMetrics, generalSubgraphQueryMetrics, perSubgraphQueryMetrics)
+    SparkUtils.saveTables(List(
+      generalQueryMetrics.coalesce(1), // file size <1Mb
+      generalSubgraphQueryMetrics.coalesce(1), // file size <1Mb
+      perSubgraphQueryMetrics.coalesce(1) // file size ~5Mb
+    )
       zip List(generalQueryMetricsPath, generalSubgraphQueryMetricsPath, perSubgraphQueryMetricsPath))
   }
 
