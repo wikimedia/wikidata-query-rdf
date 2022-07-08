@@ -88,9 +88,9 @@ object SubgraphMapper {
 
     SparkUtils.saveTables(
       List(
-        allSubgraphs.coalesce(1), // file size ~1Mb
-        topSubgraphItems.coalesce(8), // file size ~800Mb
-        topSubgraphTriples.coalesce(3000) // file size 340G
+        allSubgraphs.repartition(1), // file size ~1Mb
+        topSubgraphItems.repartition(8), // file size ~800Mb
+        topSubgraphTriples.repartition(3000) // file size 340G
       ) zip
         List(allSubgraphsPath, topSubgraphItemsPath, topSubgraphTriplesPath)
     )
