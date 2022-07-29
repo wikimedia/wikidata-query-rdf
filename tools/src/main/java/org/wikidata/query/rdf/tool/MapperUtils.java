@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Object mapping service class.
  */
@@ -16,6 +18,7 @@ public final class MapperUtils {
         mapper.registerModule(new JavaTimeModule());
     }
 
+    @SuppressFBWarnings("MS_EXPOSE_REP")
     public static ObjectMapper getObjectMapper() {
         return mapper;
     }

@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.tool.wikibase;
 import static com.google.common.collect.ImmutableSet.copyOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
+import static java.util.Locale.ENGLISH;
 import static java.util.stream.Collectors.toMap;
 import static org.wikidata.query.rdf.tool.MapperUtils.getObjectMapper;
 
@@ -103,7 +104,7 @@ public class WikibaseRepository implements Closeable {
     public static final DateTimeFormatter INPUT_DATE_FORMATTER = new DateTimeFormatterBuilder()
                 .appendPattern(INPUT_DATE_FORMAT)
                 .parseDefaulting(ChronoField.NANO_OF_SECOND, 0)
-                .toFormatter()
+                .toFormatter(ENGLISH)
                 .withZone(ZoneId.of("Z"));
 
     /**
@@ -113,7 +114,7 @@ public class WikibaseRepository implements Closeable {
     public static final DateTimeFormatter OUTPUT_DATE_FORMATTER = new DateTimeFormatterBuilder()
             .appendPattern("yyyyMMddHHmmss")
             .parseDefaulting(ChronoField.NANO_OF_SECOND, 0)
-            .toFormatter()
+            .toFormatter(ENGLISH)
             .withZone(ZoneId.of("Z"));
 
     public static final int MAX_ITEMS_PER_ACTION_REQUEST = 50;
