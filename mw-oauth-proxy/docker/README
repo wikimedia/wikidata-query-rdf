@@ -9,6 +9,7 @@ localhost:8080 - http / jetty running mw-oauth-proxy
 localhost:8081 - http / kask
 localhost:8082 - http / nginx fronting jetty
 localhost:8083 - http / mediawiki
+localhost:8787 - jdwp / debug port for jetty jvm
 localhost:9092 - ??? / cassandra
 
 Passwords
