@@ -19,7 +19,7 @@ public final class OAuthProxyConfig {
     private final ServletConfig servletConfig;
 
     static final String SYSTEM_PROPERTY_PREFIX = OAuthProxyConfig.class.getName() + ".";
-    static final String ACCESS_TOKEN_DURATION_HOURS = "accessTokenDurationHours";
+    static final String ACCESS_TOKEN_DURATION_MINUTES = "accessTokenDurationMinutes";
     static final String ACCESS_TOKEN_SECRET = "accessTokenSecret";
     static final String CONSUMER_KEY_PROPERTY = "consumerKey";
     static final String CONSUMER_SECRET_PROPERTY = "consumerSecret";
@@ -63,8 +63,8 @@ public final class OAuthProxyConfig {
     }
 
     public Duration accessTokenDuration() {
-        return Duration.ofHours(Integer.parseInt(loadStringParam(
-            ACCESS_TOKEN_DURATION_HOURS, "2")));
+        return Duration.ofMinutes(Integer.parseInt(loadStringParam(
+            ACCESS_TOKEN_DURATION_MINUTES, "120")));
     }
 
     public String sessionStoreScheme() {
