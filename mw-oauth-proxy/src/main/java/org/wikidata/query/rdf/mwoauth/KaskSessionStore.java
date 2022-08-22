@@ -6,6 +6,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.UncheckedIOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -66,7 +67,7 @@ public class KaskSessionStore<T> {
         };
     }
 
-    public T getIfPresent(String key) throws IOException {
+    public T getIfPresent(String key) {
         HttpGet req = new HttpGet(path(key));
         req.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_OCTET_STREAM.getMimeType());
         try {
@@ -75,7 +76,9 @@ public class KaskSessionStore<T> {
             if (e.getStatusCode() == 404) {
                 return null;
             }
-            throw e;
+            throw new UncheckedIOException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

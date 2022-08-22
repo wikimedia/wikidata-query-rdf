@@ -14,6 +14,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
+import java.io.UncheckedIOException;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -104,7 +105,7 @@ public class KaskSessionStoreUnitTest {
         assertThat(store.getIfPresent("does_exist")).isEqualTo(expected);
     }
 
-    @Test(expected = HttpResponseException.class)
+    @Test(expected = UncheckedIOException.class)
     public void getThrowsOnFailure() throws Exception {
         mockResponse(HttpGet.class, 500);
         store.getIfPresent("should_throw");

@@ -7,19 +7,25 @@ import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.wikidata.query.rdf.mwoauth.OAuthProxyService.OAUTH_COOKIE_NAME;
 import static org.wikidata.query.rdf.mwoauth.OAuthProxyService.SESSION_COOKIE_NAME;
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.TEMPORARY_REDIRECT;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import javax.servlet.ServletConfig;
@@ -33,7 +39,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.wikidata.query.rdf.mwoauth.OAuthProxyService.SessionState;
+import org.wikidata.query.rdf.mwoauth.OAuthProxyService.PreAuthSessionState;
 
 import com.github.scribejava.core.model.OAuth1AccessToken;
 import com.github.scribejava.core.model.OAuth1RequestToken;
@@ -44,6 +50,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 @RunWith(MockitoJUnitRunner.class)
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class OAuthProxyServiceUnitTest {
 
     private static final String AUTHORIZE_URL = "http://localhost/authorize/";
@@ -68,12 +75,16 @@ public class OAuthProxyServiceUnitTest {
 
     private OAuthProxyService makeService(Collection<String> bannedUsernames) throws Exception {
         OAuthProxyService service = new OAuthProxyService();
-        service.init(getMockedConfig(ImmutableMap.of(
+        service.init(
+            getMockedConfig(ImmutableMap.of(
                 OAuthProxyConfig.ACCESS_TOKEN_SECRET, "not_secret",
                 OAuthProxyConfig.SESSION_STORE_KEY_PREFIX, "dummy:prefix",
                 OAuthProxyConfig.WIKI_LOGOUT_LINK_PROPERTY, WIKI_LOGOUT_LINK,
                 OAuthProxyConfig.BANNED_USERNAMES_PATH_PROPERTY, makeBannedFile(bannedUsernames)
-        )), mwoauthServiceMock, identifyMock, getMockedSessionStore(1, SessionState.class));
+            )),
+            mwoauthServiceMock, identifyMock,
+            getMockedSessionStore(1, PreAuthSessionState.class),
+            getMockedSessionStore(1, OAuth1AccessToken.class));
         return service;
     }
 
@@ -85,8 +96,8 @@ public class OAuthProxyServiceUnitTest {
 
     @Test
     public void shouldAllowLoggedInUser() throws Exception {
-        when(identifyMock.getUsername(any())).thenReturn("fake_username");
-        Response checkLoginResponse = sut.checkLogin(null);
+        when(identifyMock.getUsername(any())).thenReturn(Optional.of("fake_username"));
+        Response checkLoginResponse = sut.checkLogin(null, null);
 
         assertThat(checkLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
         assertThat(extractRedirectLocation(checkLoginResponse)).isEqualTo(new URI(AUTHENTICATE_URL));
@@ -110,7 +121,8 @@ public class OAuthProxyServiceUnitTest {
     @Test
     public void shouldRememberReturnUrl() throws Exception {
         String url = "http://some.where/";
-        sut.checkLogin(url);
+        when(identifyMock.getUsername(any())).thenReturn(Optional.of("fake_username"));
+        sut.checkLogin(url, null);
         Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, null);
         assertThat(verifyResponse.getLocation()).hasToString(url);
     }
@@ -118,13 +130,13 @@ public class OAuthProxyServiceUnitTest {
     @Test
     public void shouldReturnForbiddenIfTokenWasCleared() throws Exception {
         //1st user request for request token
-        sut.checkLogin(null);
+        sut.checkLogin(null, null);
         // 2nd user request for request token. Token clearing is simulated here because our cache is
         // only allowed to hold a single value during test.
         OAuth1RequestToken requestToken = new OAuth1RequestToken("new token", "tokenSecret");
         when(mwoauthServiceMock.getRequestToken()).thenReturn(requestToken);
         when(mwoauthServiceMock.getAuthorizationUrl(requestToken)).thenReturn(AUTHORIZE_URL);
-        sut.checkLogin(null);
+        sut.checkLogin(null, null);
         //1st user request for session verification
         Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, "http://localhost");
         assertThat(verifyResponse.getStatus()).isEqualTo(FORBIDDEN.getStatusCode());
@@ -132,8 +144,8 @@ public class OAuthProxyServiceUnitTest {
 
     @Test
     public void logoutShouldDeleteCookieAndRedirect() throws Exception {
-        when(identifyMock.getUsername(any())).thenReturn("fake_username");
-        sut.checkLogin(null);
+        when(identifyMock.getUsername(any())).thenReturn(Optional.of("fake_username"));
+        sut.checkLogin(null, null);
         String redirectUrl = "http://localhost/redirect";
         Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, redirectUrl);
         String wikiSession = verifyResponse.getCookies().get(SESSION_COOKIE_NAME).getValue();
@@ -149,15 +161,20 @@ public class OAuthProxyServiceUnitTest {
                 .isEqualTo(new URI(WIKI_LOGOUT_LINK));
 
         assertThat(logoutResponse.getCookies())
-                .extractingByKey(SESSION_COOKIE_NAME)
-                .isEqualTo(new NewCookie(new Cookie(SESSION_COOKIE_NAME, "deleted"),
-                        "", 0, new Date(0), true, true));
+            .extractingByKey(SESSION_COOKIE_NAME)
+            .isEqualTo(new NewCookie(SESSION_COOKIE_NAME, "deleted", "/", null, Cookie.DEFAULT_VERSION,
+            null, 0,  new Date(0), true, true));
+
+        assertThat(logoutResponse.getCookies())
+            .extractingByKey(OAUTH_COOKIE_NAME)
+            .isEqualTo(new NewCookie(OAUTH_COOKIE_NAME, "deleted", "/", null, Cookie.DEFAULT_VERSION,
+                null, 0, new Date(0), true, true));
     }
 
     @Test
     public void noSessionCookieForBannedUsers() throws Exception {
-        when(identifyMock.getUsername(any())).thenReturn("banned");
-        Response checkLoginResponse = sut.checkLogin(null);
+        when(identifyMock.getUsername(any())).thenReturn(Optional.of("banned"));
+        Response checkLoginResponse = sut.checkLogin(null, null);
 
         assertThat(checkLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
         assertThat(extractRedirectLocation(checkLoginResponse)).isEqualTo(new URI(AUTHENTICATE_URL));
@@ -174,8 +191,8 @@ public class OAuthProxyServiceUnitTest {
 
     @Test
     public void validTokensWithBannedUsernamesAreRejected() throws Exception {
-        when(identifyMock.getUsername(any())).thenReturn("not_banned_yet");
-        Response checkLoginResponse = sut.checkLogin(null);
+        when(identifyMock.getUsername(any())).thenReturn(Optional.of("not_banned_yet"));
+        Response checkLoginResponse = sut.checkLogin(null, null);
 
         assertThat(checkLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
         assertThat(extractRedirectLocation(checkLoginResponse)).isEqualTo(new URI(AUTHENTICATE_URL));
@@ -196,6 +213,85 @@ public class OAuthProxyServiceUnitTest {
         OAuthProxyService serviceIncludingBan = makeService(ImmutableList.of("also_banned", "not_banned_yet"));
         Response checkBannedResponse = serviceIncludingBan.checkUser(wikiSession);
         assertThat(checkBannedResponse.getStatus()).isEqualTo(FORBIDDEN.getStatusCode());
+    }
+
+    @Test
+    public void shouldReauthFromAccessTokenIfAvailable() throws Exception {
+        when(identifyMock.getUsername(any())).thenReturn(Optional.of("any_user"));
+        // Attempt login, get bounced over to the external oauth provider
+        Response checkLoginResponse = sut.checkLogin(null, null);
+        assertThat(checkLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
+        // User returned and becomes authorized
+        String redirectUrl = "http://localhost/redirect";
+        Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, redirectUrl);
+        assertThat(verifyResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
+        String wikiSession = verifyResponse.getCookies().get(SESSION_COOKIE_NAME).getValue();
+        String oauthToken = verifyResponse.getCookies().get(OAUTH_COOKIE_NAME).getValue();
+
+        // When we arrive at /check_login with the oauthToken the session is refreshed and the user
+        // is forwarded to their destination.
+        Response secondCheckLoginResponse = sut.checkLogin(redirectUrl, oauthToken);
+        assertThat(secondCheckLoginResponse.getCookies()).containsKey(SESSION_COOKIE_NAME);
+        assertThat(secondCheckLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
+        assertThat(secondCheckLoginResponse.getLocation()).hasToString(redirectUrl);
+    }
+
+    @Test
+    public void shouldFailReauthIfAccessTokenCantFetchUsername() throws Exception {
+        when(identifyMock.getUsername(any())).thenReturn(Optional.of("any_user"));
+        // Attempt login, get bounced over to the external oauth provider
+        Response checkLoginResponse = sut.checkLogin(null, null);
+        assertThat(checkLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
+        // User returned and becomes authorized
+        String redirectUrl = "http://localhost/redirect";
+        Response verifyResponse = sut.oauthVerify(OAUTH_VERIFIER_STR, OAUTH_TOKEN_STRING, redirectUrl);
+        assertThat(verifyResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
+        String wikiSession = verifyResponse.getCookies().get(SESSION_COOKIE_NAME).getValue();
+        String oauthToken = verifyResponse.getCookies().get(OAUTH_COOKIE_NAME).getValue();
+
+        // When we arrive at /check_login with an oauthToken that doesn't resolve into a username
+        // we should not issue a session cookie and the user should be forwarded to the oauth provider
+        when(identifyMock.getUsername(any())).thenReturn(Optional.empty());
+        Response secondCheckLoginResponse = sut.checkLogin(redirectUrl, oauthToken);
+        assertThat(secondCheckLoginResponse.getCookies()).doesNotContainKey(SESSION_COOKIE_NAME);
+        assertThat(secondCheckLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
+        assertThat(secondCheckLoginResponse.getLocation()).hasToString(AUTHENTICATE_URL);
+    }
+
+    @Test
+    public void roundTripPreAuthSessionState() throws Exception {
+        roundTripSerde(
+            OAuthProxyService.preAuthSessionStateSerde("example"),
+            new PreAuthSessionState(
+                new OAuth1RequestToken("some", "value"),
+                Optional.empty()
+            )
+        );
+
+        roundTripSerde(
+            OAuthProxyService.preAuthSessionStateSerde("example"),
+            new PreAuthSessionState(
+                new OAuth1RequestToken("other", "content"),
+                Optional.of(new URI("https://wikimedia.org"))
+            )
+        );
+    }
+
+    @Test
+    public void roundTripOAuth1AccessToken() throws Exception {
+        roundTripSerde(
+            OAuthProxyService.oAuth1AccessTokenSerde("example"),
+            new OAuth1AccessToken("token", "tokenSecret")
+        );
+    }
+
+    private <T> void roundTripSerde(KaskSessionStore.Serde<T> serde, T value) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+            serde.valueEncoder(oos, value);
+        }
+        T decoded = serde.valueDecoder(new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())));
+        assertThat(decoded).isEqualTo(value);
     }
 
     private URI extractRedirectLocation(Response verifyResponse) {

@@ -34,7 +34,6 @@ class TimeLimitedAccessTokenFactory {
     }
 
     TimeLimitedAccessTokenFactory(Algorithm algo, Duration expireAfter, Set<String> bannedUsernames) {
-
         this(algo, JWT.require(algo).withClaimPresence(USERNAME).build(), expireAfter, bannedUsernames, Clock.systemUTC());
     }
 
