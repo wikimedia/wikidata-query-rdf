@@ -36,6 +36,7 @@ services:
             - "JAVA_OPTIONS=-Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.consumerKey=${OAUTH_CONSUMER_KEY} -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.consumerSecret=${OAUTH_CONSUMER_SECRET} -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.niceUrlBase=${OAUTH_NICE_URL_BASE} -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.indexUrl=${OAUTH_INDEX_URL} -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.successRedirect=http://localhost:8082 -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.sessionStoreHostname=kask -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.sessionStorePort=8081 -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.sessionStoreScheme=http -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.sessionStoreKeyPrefix=mwoauth:dev -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.accessTokenSecret=not_secret -Dorg.eclipse.jetty.LEVEL=DEBUG -Dorg.wikidata.query.rdf.mwoauth.OAuthProxyConfig.bannedUsernamesCsv=Other"
         volumes:
           - ./jetty/webapps:/var/lib/jetty/webapps
+          - ./jetty/lib:/var/lib/jetty/lib/ext
     mediawiki:
         build: ./mediawiki
         container_name: mediawiki

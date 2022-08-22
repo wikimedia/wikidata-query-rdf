@@ -41,20 +41,30 @@ fi
 echo "Moving to $script_root"
 cd $script_root
 
-MW_OAUTH_VERSION="$(cd "${git_root}"; ./mvnw -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)"
-MW_OAUTH_WAR="${MW_OAUTH_WAR:-../target/mw-oauth-proxy-${MW_OAUTH_VERSION}.war}"
-if [ ! -f "${MW_OAUTH_WAR}" -o "${REBUILD_OAUTH_WAR}" = "yes" ]; then
-    echo "Triggering build"
-    echo ${MW_OAUTH_WAR}
-    pushd "${git_root}"
-    sleep 5
-    ./mvnw -pl mw-oauth-proxy clean verify
-    popd
-fi
-if [ ! -f "${MW_OAUTH_WAR}" ]; then
-    echo "Couldn't locate mw-oauth-proxy WAR at: ${MW_OAUTH_WAR}"
-    exit 1
-fi
+ensure_project_target() {
+    project=$1
+    target=$2
+    if [ ! -f "${target}" -o "${REBUILD_OAUTH_WAR}" = "yes" ]; then
+        echo "Triggering ${project} build"
+        echo ${target}
+        pushd "${git_root}"
+        sleep 5  # Why?
+        ./mvnw -pl "${project}" clean verify
+        popd
+    fi
+    if [ ! -f "${target}" ]; then
+        echo "Couldn't locate ${project} target at: ${target}"
+        exit 1
+    fi
+}
+
+RDF_PROJECT_VERSION="$(cd "${git_root}"; ./mvnw -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)"
+
+MW_OAUTH_WAR="${MW_OAUTH_WAR:-../target/mw-oauth-proxy-${RDF_PROJECT_VERSION}.war}"
+ensure_project_target mw-oauth-proxy "${MW_OAUTH_WAR}"
+
+LOGGING_JAR="${LOGGING_JAR:-../../jetty-logging/target/jetty-logging-${RDF_PROJECT_VERSION}-jar-with-dependencies.jar}"
+ensure_project_target jetty-logging "${LOGGING_JAR}"
 
 wait_for_cassandra() {
     echo -n "Waiting for cassandra..."
@@ -77,6 +87,8 @@ wait_for_port() {
 
 
 cp "${MW_OAUTH_WAR}" jetty/webapps/ROOT.war
+rm -f jetty/lib/jetty-logging-*-jar-with-dependencies.jar
+cp "${LOGGING_JAR}" jetty/lib/
 
 
 docker-compose up -d cassandra
