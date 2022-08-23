@@ -5,21 +5,37 @@ server {
 
     location /error403 {
         internal;
-        proxy_pass ${JETTY_URI}/oauth/check_login;
+
+        proxy_pass_request_headers off;
+        proxy_pass_request_body off;
+
         proxy_set_header X-redirect-url http://$http_host$request_uri;
+        proxy_set_header Host $http_host;
+        proxy_set_header Cookie $http_cookie;
+        proxy_set_header Content-Length "";
+
+        proxy_pass ${JETTY_URI}/oauth/check_login;
     }
 
     location /_check_auth {
         internal;
-        if ($request_uri = '/passthru') {
-            return 200;
-        }
+
+        proxy_pass_request_headers off;
+        proxy_pass_request_body off;
+
+        proxy_set_header Host $http_host;
+        proxy_set_header Cookie $http_cookie;
+        proxy_set_header Content-Length "";
+
         proxy_pass ${JETTY_URI}/oauth/check_auth;
     }
 
     location /_oauth_token_verify {
         error_page 403 = /error403;
         proxy_pass ${JETTY_URI}/oauth/oauth_verify$is_args$args;
+        proxy_pass_request_headers off;
+        proxy_set_header Host $http_host;
+        proxy_set_header Cookie $http_cookie;
     }
 
     location /_logout {
@@ -30,16 +46,19 @@ server {
         root /usr/share/nginx/html;
         auth_request /_check_auth;
         error_page 403 = /error403;
+        add_header Cache-Control no-cache;
     }
 
     location /xhr-test {
         auth_request /_check_auth;
         error_page 403 = /error403;
+        add_header Cache-Control no-cache;
         js_content hello;
     }
 
     location /js-test {
-        # no auth, to verify http.js operation
+        # no auth, verifys http.js operation
+        add_header Cache-Control no-cache;
         js_content hello;
     }
 
