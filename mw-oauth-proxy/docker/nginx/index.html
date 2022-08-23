@@ -1,0 +1,50 @@
+<html>
+    <head>
+        <title>mw-oauth-proxy test page</title>
+        <style>
+            html { color-scheme: light dark; }
+            body { width: 35em; margin: 0 auto;
+                   font-family: Tahoma, Verdana, Arial, sans-serif; }
+            .reauth { border: solid; }
+        </style>
+        <script src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    </head>
+    <body>
+        <h1>Authentication success!</h1>
+        <p>
+            If you see this page, the mw-oauth-proxy authentication process has
+            completed successfull. Use the buttons below to test re-auth over
+            XHR. By default the authentication will expire in two minutes and
+            require re-auth.
+        </p>
+        <div id="xhr-get">
+            <div class="reauth" data-method="GET">Perform XHR GET request</div>
+            <p class="reauth-result">Not invoked (yet)</p>
+        </div>
+        <div id="xhr-post">
+            <div class="reauth" data-method="POST">Perform XHR POST request</div>
+            <p class="reauth-result">Not invoked (yet)</p>
+        </div>
+        <script>
+            $('.reauth').click(function () {
+                // foobar
+                const output = $(this).parent().find('.reauth-result'),
+                      method = $(this).data('method');
+
+                output.text('In Progress...');
+                $.ajax({
+                    url: "/xhr-test",
+                    method: method,
+                    data: "some=value&other=data",
+                    timeout: 1000,
+                    success: function (xhr) {
+                        output.text('Success: ' + JSON.stringify(xhr));
+                    },
+                    error: function (xhr) {
+                        output.text('Failure: ' + JSON.stringify(xhr));
+                    }
+                })
+            });
+        </script>
+    </body>
+</html>

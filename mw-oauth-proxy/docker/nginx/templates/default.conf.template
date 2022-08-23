@@ -1,3 +1,5 @@
+js_include http.js;
+
 server {
     listen 80 default_server;
 
@@ -29,5 +31,25 @@ server {
         auth_request /_check_auth;
         error_page 403 = /error403;
     }
-}
 
+    location /xhr-test {
+        auth_request /_check_auth;
+        error_page 403 = /error403;
+        js_content hello;
+    }
+
+    location /js-test {
+        # no auth, to verify http.js operation
+        js_content hello;
+    }
+
+    location /clear-wcqsSession {
+        add_header Set-Cookie "wcqsSession=deleted; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        return 204;
+    }
+
+    location /clear-wcqsOauth {
+        add_header Set-Cookie "wcqsOauth=deleted; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        return 204;
+    }
+}
