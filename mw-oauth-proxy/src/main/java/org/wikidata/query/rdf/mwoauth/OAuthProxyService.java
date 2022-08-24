@@ -23,6 +23,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.NewCookie;
@@ -86,6 +87,7 @@ public class OAuthProxyService {
     private TimeLimitedAccessTokenFactory authTokenFactory;
     private Set<String> bannedUsernames;
     private Duration expireAfter;
+    private CacheControl noCache;
 
     @EqualsAndHashCode
     static class PreAuthSessionState {
@@ -124,6 +126,11 @@ public class OAuthProxyService {
         authTokenFactory = new TimeLimitedAccessTokenFactory(config.accessTokenSecret(), expireAfter, bannedUsernames);
         this.service = service;
         this.identify = identify;
+        // Header informs browsers to always call the related url, and that only the end-user (browser)
+        // can retain this response. Usually attached to responses that contain user specific cookies.
+        noCache = new CacheControl();
+        noCache.setNoCache(true);
+        noCache.setPrivate(true);
     }
 
     @GET
@@ -143,6 +150,7 @@ public class OAuthProxyService {
         if (username.isPresent()) {
             URI finalRedirect = URI.create(redirectUrl == null ? successRedirect : redirectUrl);
             return temporaryRedirect(finalRedirect)
+                .cacheControl(noCache)
                 .cookie(sessionCookie(authTokenFactory.create(username.get())))
                 .build();
         }
@@ -151,7 +159,7 @@ public class OAuthProxyService {
         preAuthSessions.put(requestToken.getToken(),
             new PreAuthSessionState(requestToken, Optional.ofNullable(redirectUrl).map(URI::create)));
         String authorizationUrl = service.getAuthorizationUrl(requestToken);
-        return temporaryRedirect(getAuthenticationURI(authorizationUrl)).build();
+        return temporaryRedirect(getAuthenticationURI(authorizationUrl)).cacheControl(noCache).build();
     }
 
     private NewCookie sessionCookie(String value) {
@@ -188,6 +196,7 @@ public class OAuthProxyService {
         // prefer the uri from initial request, then from current request, and finally the system default.
         URI finalRedirect = state.returnUri.orElseGet(() -> URI.create(redirectUrl != null ? redirectUrl : successRedirect));
         return temporaryRedirect(finalRedirect)
+            .cacheControl(noCache)
             .cookie(sessionCookie(authTokenFactory.create(username.get())))
             .cookie(authTokenCookie(accessToken.getToken()))
             .build();
@@ -211,6 +220,8 @@ public class OAuthProxyService {
             authorizedSessions.invalidate(oauthToken);
         }
         return temporaryRedirect(new URI(wikiLogoutLink))
+            // Ensure logouts always invoke this method and don't simply receive a cached response that drops cookies.
+            .cacheControl(noCache)
             // The token itself can't be expired, all we can do is remove the cookie holding it.
             // If the token was captured somewhere else it is still valid for the token duration.
             // Accordingly, durations should be kept short. Minutes or hours not days or weeks.
