@@ -16,6 +16,7 @@ import javax.annotation.Nullable;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 
@@ -114,7 +115,11 @@ public class RdfRepositoryUpdater implements AutoCloseable {
     private int updateEventTime(Instant avgEventTime, StringBuilder sb, int actualSharedEltMutations) {
         // Mimic the old updater by maintaining the avg event time found in this batch
         UpdateBuilder b = new UpdateBuilder(UPDATE_EVENT_TIME);
-        b.bindUri("root", uris.root());
+
+        // The WDQS UI and WMF monitoring is based on this URI
+        // Rather than making it configurable all over the place we just hardcode it
+        // A better approach to dealing with lag reporting is described here: https://phabricator.wikimedia.org/T278246
+        b.bindUri("root", UrisSchemeFactory.WIKIDATA.root());
         b.bindUri("dateModified", SchemaDotOrg.DATE_MODIFIED);
         b.bindValue("date", avgEventTime);
         sb.append(b);

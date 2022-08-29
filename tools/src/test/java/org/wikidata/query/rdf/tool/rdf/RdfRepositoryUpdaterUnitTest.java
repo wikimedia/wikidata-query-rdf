@@ -38,9 +38,10 @@ public class RdfRepositoryUpdaterUnitTest {
     List<String> entityIdsToDelete = new ArrayList<>();
     Map<String, Collection<Statement>> entitiesToReconcile = new HashMap<>();
 
-    private final String avgEventTimeUpdate = "\nDELETE {\n  <http://acme.test> <http://schema.org/dateModified> ?o .\n}\n" +
-                    "WHERE {\n  <http://acme.test> <http://schema.org/dateModified> ?o .\n};\n" +
-                    "INSERT DATA {\n  <http://acme.test> <http://schema.org/dateModified> \"1970-01-01T00:10:00Z\"^^xsd:dateTime .\n};\n";
+    private final String avgEventTimeUpdate = "\nDELETE {\n  <" + UrisSchemeFactory.getURISystem().root() + "> <http://schema.org/dateModified> ?o .\n}\n" +
+                    "WHERE {\n  <" + UrisSchemeFactory.getURISystem().root() + "> <http://schema.org/dateModified> ?o .\n};\n" +
+                    "INSERT DATA {\n  <" + UrisSchemeFactory.getURISystem().root() + "> <http://schema.org/dateModified> " +
+                    "\"1970-01-01T00:10:00Z\"^^xsd:dateTime .\n};\n";
     Instant avgEventTime = Instant.EPOCH.plus(10, ChronoUnit.MINUTES);
 
     @Test
