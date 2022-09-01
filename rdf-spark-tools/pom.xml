@@ -350,6 +350,9 @@
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>WDF TestSuite.txt</filereports>
+                    <systemProperties>
+                        <spark.sql.shuffle.partitions>2</spark.sql.shuffle.partitions>
+                    </systemProperties>
                 </configuration>
                 <executions>
                     <execution>
