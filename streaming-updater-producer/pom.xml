@@ -231,16 +231,8 @@
                 <artifactId>scala-maven-plugin</artifactId>
                 <version>${scala.scala-maven-plugin.version}</version>
                 <configuration>
-                    <compilerPlugins>
-                        <compilerPlugin>
-                            <groupId>com.artima.supersafe</groupId>
-                            <artifactId>supersafe_${scala.version}</artifactId>
-                            <version>${scala.supersafe.version}</version>
-                        </compilerPlugin>
-                    </compilerPlugins>
                     <args>
-                        <!--                        <arg>-Xfatal-warnings</arg>-->
-                        <!-- FIXME issue with false positives on unused imports-->
+                        <arg>-Xfatal-warnings</arg>
                         <arg>-unchecked</arg>
                         <arg>-Ywarn-unused-import</arg>
                         <arg>-feature</arg>

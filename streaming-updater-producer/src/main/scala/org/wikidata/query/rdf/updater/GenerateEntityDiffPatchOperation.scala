@@ -82,6 +82,8 @@ case class GenerateEntityDiffPatchOperation(
         getImport(item, revision, eventTime)
       case Reconcile(item, _, revision, _, _) =>
         getReconcile(item, revision)
+      case DeleteItem(item, _, _, _, _) => throw new IllegalArgumentException(
+        s"Received content fetch for DeleteItem($item, ...)")
     }
 
     future.onComplete (patch => {

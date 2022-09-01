@@ -20,7 +20,6 @@ sealed class MutationResolver extends Serializable {
       case del: PageDelete => mutationFromPageDelete(del, entityState)
       case undel: PageUndelete => mutationFromPageUndelete(undel, entityState)
       case reconcile: ReconcileInputEvent => mutationFromReconcileInputEvent(reconcile, entityState)
-      case unknown: InputEvent => emitIgnoredMutation(unknown, NotImplementedYet, entityState.getCurrentState)
     }
   }
 

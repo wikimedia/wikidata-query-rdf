@@ -159,6 +159,7 @@ trait TestFixtures extends TestEventGenerator {
       case _: Diff =>
         dataEventGenerator.diffEvent(eventsMetaData, entityId, revisionTo, eventTime, new util.ArrayList[Statement](data.expectedAdds.asJavaCollection),
           new util.ArrayList[Statement](data.expectedRemoves.asJavaCollection), Collections.emptyList(), Collections.emptyList())
+      case _: Any => ???
     }
     MutationDataChunk(operation, dataEvent.get(0))
   }
