@@ -199,36 +199,11 @@
                 <!-- see http://davidb.github.com/scala-maven-plugin -->
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-                <version>${scala.scala-maven-plugin.version}</version>
                 <configuration>
-                    <compilerPlugins>
-                        <compilerPlugin>
-                            <groupId>com.artima.supersafe</groupId>
-                            <artifactId>supersafe_${scala.version}</artifactId>
-                            <version>${scala.supersafe.version}</version>
-                        </compilerPlugin>
-                    </compilerPlugins>
-                    <args>
-                        <arg>-Xfatal-warnings</arg>
-                        <arg>-unchecked</arg>
+                    <args combine.children="append">
                         <arg>-Ywarn-unused</arg>
-                        <arg>-Ywarn-unused-import</arg>
-                        <arg>-feature</arg>
-                        <arg>-deprecation</arg>
-                        <arg>-dependencyfile</arg>
-                        <arg>-target:jvm-1.8</arg>
-                        <arg>${project.build.directory}/.scala_dependencies</arg>
                     </args>
-                    <secondaryCacheDir>${project.build.directory}/sbt_1.0_zinc_org.scala-sbt</secondaryCacheDir>
                 </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>compile</goal>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -345,23 +320,11 @@
             <plugin>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest-maven-plugin</artifactId>
-                <version>${scala.scalatest-maven-plugin.version}</version>
                 <configuration>
-                    <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-                    <junitxml>.</junitxml>
-                    <filereports>WDF TestSuite.txt</filereports>
                     <systemProperties>
                         <spark.sql.shuffle.partitions>2</spark.sql.shuffle.partitions>
                     </systemProperties>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>test</id>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
         <sourceDirectory>src/main/scala</sourceDirectory>

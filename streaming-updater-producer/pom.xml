@@ -229,28 +229,6 @@
                 <!-- see http://davidb.github.com/scala-maven-plugin -->
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-                <version>${scala.scala-maven-plugin.version}</version>
-                <configuration>
-                    <args>
-                        <arg>-Xfatal-warnings</arg>
-                        <arg>-unchecked</arg>
-                        <arg>-Ywarn-unused-import</arg>
-                        <arg>-feature</arg>
-                        <arg>-deprecation</arg>
-                        <arg>-dependencyfile</arg>
-                        <arg>${project.build.directory}/.scala_dependencies</arg>
-                        <arg>-target:jvm-1.8</arg>
-                    </args>
-                    <secondaryCacheDir>${project.build.directory}/sbt_1.0_zinc_org.scala-sbt</secondaryCacheDir>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>compile</goal>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <!-- We use the maven-shade plugin to create a fat jar that contains all necessary dependencies. -->
             <!-- Change the value of <mainClass>...</mainClass> if your program entry point changes. -->
@@ -313,24 +291,9 @@
                 <groupId>org.scalastyle</groupId>
                 <artifactId>scalastyle-maven-plugin</artifactId>
             </plugin>
-            <!-- enable scalatest -->
             <plugin>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest-maven-plugin</artifactId>
-                <version>${scala.scalatest-maven-plugin.version}</version>
-                <configuration>
-                    <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-                    <junitxml>.</junitxml>
-                    <filereports>WDF TestSuite.txt</filereports>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>test</id>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
