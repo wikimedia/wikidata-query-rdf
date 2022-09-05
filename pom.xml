@@ -1141,6 +1141,12 @@
                         <excludes>
                             <exclude>**/*UnitTest.class</exclude>
                         </excludes>
+                        <systemProperties>
+                            <!-- normalize test runtime (formatting/parsing of floating point numbers) -->
+                            <user.language>en</user.language>
+                            <user.country>US</user.country>
+                            <user.timezone>UTC</user.timezone>
+                        </systemProperties>
                     </configuration>
                     <executions>
                         <execution>
@@ -1173,6 +1179,10 @@
                         </excludes>
                         <systemPropertyVariables>
                             <ASTOptimizerClass>org.wikidata.query.rdf.blazegraph.WikibaseOptimizers</ASTOptimizerClass>
+                            <!-- normalize test runtime (formatting/parsing of floating point numbers) -->
+                            <user.language>en</user.language>
+                            <user.country>US</user.country>
+                            <user.timezone>UTC</user.timezone>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
@@ -1252,6 +1262,19 @@
                                 <name>http.userAgent</name>
                                 <value>Wikidata Query Service (testing); https://query.wikidata.org/</value>
                             </systemProperty>
+                        </systemProperties>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.scalatest</groupId>
+                    <artifactId>scalatest-maven-plugin</artifactId>
+                    <version>${scala.scalatest-maven-plugin.version}</version>
+                    <configuration>
+                        <systemProperties>
+                            <!-- normalize test runtime (formatting/parsing of floating point numbers) -->
+                            <user.language>en</user.language>
+                            <user.country>US</user.country>
+                            <user.timezone>UTC</user.timezone>
                         </systemProperties>
                     </configuration>
                 </plugin>
