@@ -154,6 +154,14 @@
             <artifactId>http-client-utils</artifactId>
         </dependency>
         <dependency>
+            <!-- declared to support intra-reactor-resolution (-am) -->
+            <groupId>org.wikidata.query.rdf</groupId>
+            <artifactId>blazegraph-service</artifactId>
+            <type>war</type>
+            <!-- provided by maven-dependency-plugin@copy-war -->
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
             <scope>runtime</scope>
