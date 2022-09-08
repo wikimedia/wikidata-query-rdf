@@ -83,8 +83,7 @@ public class OAuthProxyServiceUnitTest {
                 OAuthProxyConfig.BANNED_USERNAMES_PATH_PROPERTY, makeBannedFile(bannedUsernames)
             )),
             mwoauthServiceMock, identifyMock,
-            getMockedSessionStore(1, PreAuthSessionState.class),
-            getMockedSessionStore(1, OAuth1AccessToken.class));
+            getMockedSessionStore(1, PreAuthSessionState.class));
         return service;
     }
 
@@ -151,7 +150,7 @@ public class OAuthProxyServiceUnitTest {
         String wikiSession = verifyResponse.getCookies().get(SESSION_COOKIE_NAME).getValue();
 
 
-        Response logoutResponse = sut.logout(wikiSession);
+        Response logoutResponse = sut.logout();
 
         // Expected limitation, access tokens are irrevocable.
         assertThat(sut.checkUser(wikiSession).getStatus()).isEqualTo(OK.getStatusCode());
@@ -216,6 +215,14 @@ public class OAuthProxyServiceUnitTest {
     }
 
     @Test
+    public void invalidOauthTokensAreRejectedByCheckLogin() throws Exception {
+        when(identifyMock.getUsername(any())).thenReturn(Optional.of("any_user"));
+        Response checkLoginResponse = sut.checkLogin(null, "abc.def.ghi");
+        assertThat(checkLoginResponse.getStatus()).isEqualTo(TEMPORARY_REDIRECT.getStatusCode());
+        assertThat(extractRedirectLocation(checkLoginResponse)).isEqualTo(new URI(AUTHENTICATE_URL));
+    }
+
+    @Test
     public void shouldReauthFromAccessTokenIfAvailable() throws Exception {
         when(identifyMock.getUsername(any())).thenReturn(Optional.of("any_user"));
         // Attempt login, get bounced over to the external oauth provider
@@ -274,14 +281,6 @@ public class OAuthProxyServiceUnitTest {
                 new OAuth1RequestToken("other", "content"),
                 Optional.of(new URI("https://wikimedia.org"))
             )
-        );
-    }
-
-    @Test
-    public void roundTripOAuth1AccessToken() throws Exception {
-        roundTripSerde(
-            OAuthProxyService.oAuth1AccessTokenSerde("example"),
-            new OAuth1AccessToken("token", "tokenSecret")
         );
     }
 

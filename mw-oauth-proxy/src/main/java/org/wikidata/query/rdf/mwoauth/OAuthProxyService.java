@@ -51,9 +51,8 @@ import lombok.EqualsAndHashCode;
  *
  *  Creating a new authentication token:
  *  - Initial request comes in to /check_login.
- *  - Look for AUTH_COOKIE_NAME in the http cookies, if available attempt to use
- *    this value to fetch an access token from session storage and sign an identify
- *    request. If valid issue a new JWT token.
+ *  - Look for OAUTH_COOKIE_NAME in the http cookies, if available attempt to use
+ *    this value to sign and perform an identify request. If valid issue a new JWT token.
  *  - Otherwise, the proxy creates a unique request token, caches it, and then
  *    provides the user a redirect to MW oauth api including the request token.
  *  - MW will, on successful auth, send the user back to /oauth_verify. The proxy
@@ -79,8 +78,6 @@ public class OAuthProxyService {
     private OAuthIdentifyService identify;
     // Sessions that are authenticating with the oauth provider
     private KaskSessionStore<PreAuthSessionState> preAuthSessions;
-    // Sessions that have previously authenticated with the oauth provider
-    private KaskSessionStore<OAuth1AccessToken> authorizedSessions;
     private String wikiLogoutLink;
     private String sessionKeyPrefix;
     private String successRedirect;
@@ -108,16 +105,14 @@ public class OAuthProxyService {
             .build(new MediaWikiApi(oauthConfig.indexUrl(), oauthConfig.niceUrlBase()));
         HttpClient httpClient = HttpClients.createDefault();
         KaskSessionStore<PreAuthSessionState> requestTokenStore = buildRequestTokenStore(oauthConfig, httpClient);
-        KaskSessionStore<OAuth1AccessToken> accessTokenStore = buildAccessTokenStore(oauthConfig, httpClient);
         OAuthIdentifyService identify = new OAuthIdentifyService(oauthService, oauthConfig.indexUrl(), oauthConfig.consumerSecret());
-        init(oauthConfig, oauthService, identify, requestTokenStore, accessTokenStore);
+        init(oauthConfig, oauthService, identify, requestTokenStore);
     }
 
     @VisibleForTesting
     public void init(OAuthProxyConfig config, OAuth10aService service, OAuthIdentifyService identify,
-                     KaskSessionStore<PreAuthSessionState> requestTokenStore, KaskSessionStore<OAuth1AccessToken> accessTokenStore) {
+                     KaskSessionStore<PreAuthSessionState> requestTokenStore) {
         preAuthSessions = requestTokenStore;
-        authorizedSessions = accessTokenStore;
         sessionKeyPrefix = config.sessionStoreKeyPrefix();
         wikiLogoutLink = config.wikiLogoutLink();
         successRedirect = config.successRedirect();
@@ -144,7 +139,7 @@ public class OAuthProxyService {
         // issue a fresh JWT. This avoids sending the user through a round-trip to the oauth
         // service that may fail if we are inside an XHR request (and mw oauth doesn't allow CORS).
         Optional<String> username = Optional.ofNullable(rawAccessToken)
-            .map(authorizedSessions::getIfPresent)
+            .flatMap(this::decodeAuthTokenCookie)
             .flatMap(identify::getUsername)
             .filter(name -> !bannedUsernames.contains(name));
         if (username.isPresent()) {
@@ -166,8 +161,25 @@ public class OAuthProxyService {
         return new NewCookie(SESSION_COOKIE_NAME, value, "/", null, null, (int) expireAfter.getSeconds(), true, true);
     }
 
-    private NewCookie authTokenCookie(String value) {
+    private NewCookie authTokenCookie(OAuth1AccessToken token) {
+        // This shares the token secret with the browser as a cookie value. We decided this is acceptable for two
+        // reasons:
+        //  1. Requests must be signed with both the consumer_secret and the oauth_token_secret. The token secret is
+        //     half of a password and useless on its own.
+        //  2. The only access granted to our consumer is the ability to call Special:OAuth/identify.  Pages cannot
+        //     be read or edited with this token.
+        // Token values from mediawiki are hex encoded ([0-9a-f]), use . as a plausible separator that won't otherwise
+        // be seen.
+        String value = token.getToken() + '.' + token.getTokenSecret();
         return new NewCookie(OAUTH_COOKIE_NAME, value, "/", null, null, NewCookie.DEFAULT_MAX_AGE, true, true);
+    }
+
+    private Optional<OAuth1AccessToken> decodeAuthTokenCookie(String value) {
+        String[] pieces = value.split("\\.", 3);
+        if (pieces.length != 2) {
+            return Optional.empty();
+        }
+        return Optional.of(new OAuth1AccessToken(pieces[0], pieces[1]));
     }
 
     private NewCookie deleteCookie(String name) {
@@ -192,13 +204,12 @@ public class OAuthProxyService {
         if (!username.isPresent()) {
             return status(FORBIDDEN).build();
         }
-        authorizedSessions.put(accessToken.getToken(), accessToken);
         // prefer the uri from initial request, then from current request, and finally the system default.
         URI finalRedirect = state.returnUri.orElseGet(() -> URI.create(redirectUrl != null ? redirectUrl : successRedirect));
         return temporaryRedirect(finalRedirect)
             .cacheControl(noCache)
             .cookie(sessionCookie(authTokenFactory.create(username.get())))
-            .cookie(authTokenCookie(accessToken.getToken()))
+            .cookie(authTokenCookie(accessToken))
             .build();
     }
 
@@ -213,22 +224,17 @@ public class OAuthProxyService {
 
     @GET
     @Path("/logout")
-    public Response logout(
-        @CookieParam(OAUTH_COOKIE_NAME) String oauthToken
-    ) throws URISyntaxException, IOException {
-        if (oauthToken != null) {
-            authorizedSessions.invalidate(oauthToken);
-        }
+    public Response logout() throws URISyntaxException {
         return temporaryRedirect(new URI(wikiLogoutLink))
-            // Ensure logouts always invoke this method and don't simply receive a cached response that drops cookies.
-            .cacheControl(noCache)
             // The token itself can't be expired, all we can do is remove the cookie holding it.
             // If the token was captured somewhere else it is still valid for the token duration.
             // Accordingly, durations should be kept short. Minutes or hours not days or weeks.
             // Re-auth should be transparent and safe to re-check.
             .cookie(deleteCookie(SESSION_COOKIE_NAME))
-            // The auth cookie refers to an entry at the oauth provider, we drop it from our session store but it still
-            // exists and is valid at the oauth provider. With the secret forgotten the plain value should be useless.
+            // The oauth cookie refers to an entry at the oauth provider, if the cookie value is held somewhere
+            // other than the requesting http client it stays valid even after this logout function is run. To
+            // actually disable this token the user would need to visit Special:OAuthManageMyGrants and revoke
+            // access to the application.
             .cookie(deleteCookie(OAUTH_COOKIE_NAME))
             .build();
     }
@@ -237,38 +243,6 @@ public class OAuthProxyService {
     // which is used for authentication only consumers. Fortunately, url is almost the same.
     private URI getAuthenticationURI(String authorizationUrl) throws URISyntaxException {
         return new URI(authorizationUrl.replace("authorize", "authenticate"));
-    }
-
-    @VisibleForTesting
-    static KaskSessionStore.Serde<OAuth1AccessToken> oAuth1AccessTokenSerde(String sessionKeyPrefix) {
-        return new KaskSessionStore.Serde<OAuth1AccessToken>() {
-            @Override
-            public String keyEncoder(String key) {
-                return sessionKeyPrefix + ":access:" + key;
-            }
-
-            @Override
-            public void valueEncoder(DataOutput out, OAuth1AccessToken token) throws IOException {
-                out.writeShort(0);
-                out.writeUTF(token.getToken());
-                out.writeUTF(token.getTokenSecret());
-            }
-
-            @Override
-            public OAuth1AccessToken valueDecoder(DataInput in) throws IOException {
-                short version = in.readShort();
-                if (version != 0) {
-                    throw new IllegalStateException("serialization version mismatch");
-                }
-                String token = in.readUTF();
-                String secret = in.readUTF();
-                return new OAuth1AccessToken(token, secret);
-            }
-        };
-    }
-
-    private KaskSessionStore<OAuth1AccessToken> buildAccessTokenStore(OAuthProxyConfig config, HttpClient httpClient) {
-        return new KaskSessionStore<>(httpClient, config.sessionStoreHost(), oAuth1AccessTokenSerde(sessionKeyPrefix));
     }
 
     @VisibleForTesting
