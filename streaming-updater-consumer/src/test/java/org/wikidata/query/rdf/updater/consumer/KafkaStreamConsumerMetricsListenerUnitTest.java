@@ -69,16 +69,19 @@ public class KafkaStreamConsumerMetricsListenerUnitTest {
         streamConsumer.poll(Duration.ofMillis(0));
         Gauge<Long> lag = registry.getGauges().get("kafka-stream-consumer-lag");
         Counter offered = registry.getCounters().get("kafka-stream-consumer-triples-offered");
+        Counter invalidDups = registry.getCounters().get("kafka-stream-consumer-triples-invalid-duplicates");
         Counter accumulated = registry.getCounters().get("kafka-stream-consumer-triples-accumulated");
 
         assertThat(lag.getValue()).isZero();
         assertThat(offered.getCount()).isEqualTo(1);
+        assertThat(invalidDups.getCount()).isEqualTo(0);
         assertThat(accumulated.getCount()).isEqualTo(1);
         streamConsumer.acknowledge();
         assertThat(lag.getValue()).isEqualTo(lagEvt1.toMillis());
 
         streamConsumer.poll(Duration.ofMillis(0));
         assertThat(offered.getCount()).isEqualTo(2);
+        assertThat(invalidDups.getCount()).isEqualTo(0);
         assertThat(accumulated.getCount()).isEqualTo(2);
         assertThat(lag.getValue()).isEqualTo(lagEvt1.toMillis());
 

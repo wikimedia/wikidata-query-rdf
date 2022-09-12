@@ -146,6 +146,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
             return null;
         }
         metrics.triplesAccum(accumulator.getTotalAccumulated());
+        metrics.invalidDuplicates(accumulator.getInvalidDuplicates());
         metrics.triplesOffered(accumulator.getNumberOfTriples());
         metrics.deletedEntities(accumulator.getNumberOfDeletedEntities());
         Map<TopicPartition, OffsetAndMetadata> offsetsAndMetadata;

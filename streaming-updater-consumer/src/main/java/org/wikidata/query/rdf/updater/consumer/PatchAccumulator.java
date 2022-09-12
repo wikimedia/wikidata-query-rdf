@@ -25,6 +25,8 @@ import java.util.Set;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.openrdf.model.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.tool.rdf.ConsumerPatch;
 import org.wikidata.query.rdf.tool.rdf.Patch;
 import org.wikidata.query.rdf.tool.rdf.SiteLinksReclassification;
@@ -58,8 +60,10 @@ import lombok.Getter;
 @Getter
 @NotThreadSafe
 public class PatchAccumulator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PatchAccumulator.class);
     private final Set<String> allEntitiesToDelete = new HashSet<>();
     private int totalAccumulated;
+    private int invalidDuplicates;
     private final RDFChunkDeserializer deser;
     private static final int TRIPLES_PER_DELETE = 100;
     private final Map<Statement, String> allAddedMap = new HashMap<>();
@@ -91,10 +95,10 @@ public class PatchAccumulator {
 
         Map<Statement, String> newlyAdded = added.stream()
                 .collect(toMap(identity(), ei -> entityId, (e1, e2) -> entityId));
-        findInvalidStatements(newlyAdded, allAddedMap);
+        countInvalidStatements(newlyAdded, allAddedMap);
         Map<Statement, String> newlyRemoved = removed.stream()
                 .collect(toMap(identity(), ei -> entityId, (e1, e2) -> entityId));
-        findInvalidStatements(newlyRemoved, allRemovedMap);
+        countInvalidStatements(newlyRemoved, allRemovedMap);
         Map<Statement, String> newlyLinkedSharedElts = linkedSharedElts.stream()
                 .collect(toMap(identity(), ei -> entityId, (e1, e2) -> entityId));
         Map<Statement, String> newlyUnlinkedSharedElts = unlinkedSharedElts.stream()
@@ -110,12 +114,16 @@ public class PatchAccumulator {
         unlinkedSharedMap.putAll(newlyUnlinkedSharedElts);
     }
 
-    private void findInvalidStatements(Map<Statement, String> newItemsMap, Map<Statement, String> allItemsMap) {
+    private void countInvalidStatements(Map<Statement, String> newItemsMap, Map<Statement, String> allItemsMap) {
         newItemsMap.forEach((statement, entityId) -> {
             String currentEntityId = allItemsMap.get(statement);
             if (currentEntityId != null && !currentEntityId.equals(entityId)) {
-                throw new IllegalArgumentException("Cannot add/delete the same triple [" + statement + "] " +
-                        "for a different entities: [" + currentEntityId + "] and [" + entityId + "]");
+                // NOTE: we should fail here and not allow this data
+                // this is currently not possible because of https://phabricator.wikimedia.org/T317530
+                // Once the root cause is fixed we might consider strengthening this again.
+                LOGGER.warn("Trying to add/delete the same triple [{}] " +
+                        "for a different entities: [{}] and [{}]", statement, currentEntityId, entityId);
+                invalidDuplicates++;
             }
         });
     }

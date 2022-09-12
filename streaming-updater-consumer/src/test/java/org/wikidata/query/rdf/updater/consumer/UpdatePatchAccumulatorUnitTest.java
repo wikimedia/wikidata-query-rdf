@@ -107,21 +107,19 @@ public class UpdatePatchAccumulatorUnitTest {
                 singletonList(stmt("uri:linked-shared")),
                 singletonList(stmt("uri:unlinked-shared"))
         );
-        assertThatThrownBy(() -> accumulateDiff(accumulator, "Q2",
+        accumulateDiff(accumulator, "Q2",
                 singletonList(stmt("uri:added")),
                 emptyList(),
                 emptyList(),
-                emptyList()),
-                "Cannot add the same triple for a different entity (should probably be considered as a shared statement)"
-        ).isInstanceOf(IllegalArgumentException.class);
+                emptyList());
+        assertThat(accumulator.getInvalidDuplicates()).isEqualTo(1);
 
-        assertThatThrownBy(() -> accumulateDiff(accumulator, "Q2",
+        accumulateDiff(accumulator, "Q2",
                 emptyList(),
                 singletonList(stmt("uri:removed")),
                 emptyList(),
-                emptyList()),
-                "Cannot delete the same triple for a different entity (should probably be considered as a shared statement)"
-        ).isInstanceOf(IllegalArgumentException.class);
+                emptyList());
+        assertThat(accumulator.getInvalidDuplicates()).isEqualTo(2);
 
         ConsumerPatch expectedPatch = accumulator.asPatch();
         accumulateDiff(accumulator, "Q2",
@@ -133,6 +131,8 @@ public class UpdatePatchAccumulatorUnitTest {
         assertThat(accumulator.asPatch())
                 .withFailMessage("Accumulating same shared statements for different entities should result in the same patch")
                 .isEqualTo(expectedPatch);
+
+        assertThat(accumulator.getInvalidDuplicates()).isEqualTo(2);
     }
 
     @Test
@@ -244,7 +244,7 @@ public class UpdatePatchAccumulatorUnitTest {
     }
 
     @Test
-    public void test_leak_data_from_accumulator() {
+    public void test_invalid_duplicates_are_counted() {
         MutationEventDataGenerator eventGenerator = new MutationEventDataGenerator(
                 serializer, RDFFormat.TURTLE.getDefaultMIMEType(), 300);
 
@@ -257,21 +257,14 @@ public class UpdatePatchAccumulatorUnitTest {
                 singletonList(stmt("uri:unlinked-shared")));
         events.forEach(accumulator::accumulate);
 
-        ConsumerPatch expectedPatch = accumulator.asPatch();
-
         List<MutationEventData> events2 = eventGenerator.diffEvent(metaGenerator("Q2"), "Q2", 1, Instant.EPOCH,
                 asList(stmt("uri:added-Q2"), stmt("uri:added-Q1")),
                 singletonList(stmt("uri:deleted-Q1")),
                 asList(stmt("uri:linked-shared"), stmt("uri:")),
                 singletonList(stmt("uri:unlinked-shared")));
 
-        assertThatThrownBy(() -> events2.forEach(accumulator::accumulate)
-        ).isInstanceOf(IllegalArgumentException.class);
-
-        ConsumerPatch secondPatch = accumulator.asPatch();
-
-        assertThat(secondPatch).isEqualTo(expectedPatch);
-
+        events2.forEach(accumulator::accumulate);
+        assertThat(accumulator.getInvalidDuplicates()).isEqualTo(2);
     }
 
     @Test
