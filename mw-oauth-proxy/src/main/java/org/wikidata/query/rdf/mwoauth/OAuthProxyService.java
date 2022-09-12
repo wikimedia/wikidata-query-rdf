@@ -70,6 +70,7 @@ public class OAuthProxyService {
 
     public static final String SESSION_COOKIE_NAME = "wcqsSession";
     public static final String OAUTH_COOKIE_NAME = "wcqsOauth";
+    private static final int OAUTH_COOKIE_EXPIRE_AFTER = (int)Duration.ofDays(3650).getSeconds();
 
     @Context
     private ServletConfig servletConfig;
@@ -171,7 +172,7 @@ public class OAuthProxyService {
         // Token values from mediawiki are hex encoded ([0-9a-f]), use . as a plausible separator that won't otherwise
         // be seen.
         String value = token.getToken() + '.' + token.getTokenSecret();
-        return new NewCookie(OAUTH_COOKIE_NAME, value, "/", null, null, NewCookie.DEFAULT_MAX_AGE, true, true);
+        return new NewCookie(OAUTH_COOKIE_NAME, value, "/", null, null, OAUTH_COOKIE_EXPIRE_AFTER, true, true);
     }
 
     private Optional<OAuth1AccessToken> decodeAuthTokenCookie(String value) {
