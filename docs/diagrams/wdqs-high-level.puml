@@ -1,0 +1,54 @@
+@startuml
+
+() API
+() "Wikidata UI" as wikidata_ui
+Database Dumps
+node "Mediawiki" {
+  API -down- [Wikidata]
+  wikidata_ui -down- [Wikidata]
+  [Wikidata] --> Dumps: publishes dumps
+}
+
+queue Changes
+note bottom of Changes: multiple queues for creation, edits, deletion, etc...
+
+Wikidata --> Changes: notify of changes
+
+queue "RDF stream" as rdf_stream
+queue Errors
+node Flink {
+    [WDQS Stream\nProducer] --> Changes: consumes
+    [WDQS Stream\nProducer] -down-> rdf_stream: produces
+    [WDQS Stream\nProducer] -right-> API: get entity data
+    [WDQS Stream\nProducer] -down-> Errors: log errors
+}
+
+
+() SPARQL
+
+node WDQS {
+    SPARQL -- [Blazegraph]
+    [WDQS Stream\nConsumer] --> rdf_stream: consumes
+    [WDQS Stream\nConsumer] -up-> [Blazegraph]: updates
+}
+
+node miscweb {
+  [WDQS UI]
+}
+
+() "HTTP/HTML/JS" as HTTP
+
+[WDQS UI] -up- HTTP
+
+actor Readers
+Readers --> SPARQL
+Readers --> HTTP
+
+actor "Editors (basic)" as editors
+editors --> wikidata_ui
+
+actor "Editors (complex)" as editors_complex
+editors_complex --> wikidata_ui
+editors_complex --> API
+editors_complex --> SPARQL
+@enduml

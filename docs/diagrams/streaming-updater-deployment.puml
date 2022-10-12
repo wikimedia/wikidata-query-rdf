@@ -1,0 +1,59 @@
+@startuml
+
+cloud eqiad {
+
+  [Mediawiki] as mw_eqiad
+  queue "changes\n(eqiad)" as changes_eqiad_local
+  queue "changes\n(codfw)" as changes_codfw_remote
+  mw_eqiad --> changes_eqiad_local: publishes\nchanges
+
+  [WDQS Stream\nProducer] as producer_eqiad
+  producer_eqiad -up-> changes_eqiad_local: consumes
+  producer_eqiad -up-> changes_codfw_remote: consumes
+
+  queue "RDF Stream\n(eqiad)" as rdf_eqiad_local
+  producer_eqiad -down-> rdf_eqiad_local: produces
+
+  [WDQS Stream\nConsumer] as consumer_eqiad
+  [Blazegraph] as blazegraph_eqiad
+
+  consumer_eqiad -up-> rdf_eqiad_local: consumes
+  consumer_eqiad -down-> blazegraph_eqiad: updates
+
+  () SPARQL as sparql_eqiad
+
+  blazegraph_eqiad -down- sparql_eqiad
+}
+
+cloud codfw {
+  [Mediawiki] as mw_codfw
+  queue "changes\n(codfw)" as changes_codfw_local
+  queue "changes\n(eqiad)" as changes_eqiad_remote
+  mw_codfw --> changes_codfw_local: publishes\nchanges
+
+  [WDQS Stream\nProducer] as producer_codfw
+  producer_codfw -up-> changes_codfw_local: consumes
+  producer_codfw -up-> changes_eqiad_remote: consumes
+
+  queue "RDF Stream\n(codfw)" as rdf_codfw_local
+
+  producer_codfw -down-> rdf_codfw_local: produces
+
+  [WDQS Stream\nConsumer] as consumer_codfw
+  [Blazegraph] as blazegraph_codfw
+
+  consumer_codfw -up-> rdf_codfw_local: consumes
+  consumer_codfw -down-> blazegraph_codfw: updates
+
+  () SPARQL as sparql_codfw
+
+  blazegraph_codfw -down- sparql_codfw
+}
+
+[MirrorMaker] as mm
+changes_eqiad_local --> mm
+changes_codfw_local --> mm
+mm --> changes_codfw_remote
+mm --> changes_eqiad_remote
+
+@enduml

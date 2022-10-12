@@ -1,0 +1,47 @@
+@startuml
+
+node k8s {
+  database "local storage\n(transient)" as local
+  database configmap
+  note right
+    * leader election
+    * pointer to latest valid checkpoint
+  end note
+  node Flink {
+    [Job Manager] as job_manager
+    node "Flink Task\nManagers" as task_manager {
+      [WDQS\nStream\nProducer] as producer
+    }
+    producer -- local
+    job_manager -- configmap
+  }
+}
+
+queue "RDF stream" as rdf_stream
+
+producer -right-> rdf_stream: publishes
+
+
+
+queue "revision\ncreate" as create
+queue "revision\ndelete" as delete
+queue "revision\nsuppress" as suppress
+
+producer -up-> create: consumes
+producer -up-> delete: consumes
+producer -up-> suppress: consumes
+
+node Swift {
+  database savepoints
+  database checkpoints
+}
+
+note top of Swift
+  All application
+  persistent state
+end note
+
+producer --> savepoints: save state
+producer --> checkpoints: save state
+
+@enduml

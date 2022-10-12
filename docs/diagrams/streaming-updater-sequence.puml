@@ -1,0 +1,26 @@
+@startuml
+
+queue "revision\ncreate" as create
+queue "revision\ndelete" as delete
+queue "revision\nsuppress" as suppress
+boundary Wikidata
+participant "WDQS Stream\nProducer" as producer
+database "Flink state"
+queue "RDF Stream"
+
+producer -> create: consume changes
+producer -> delete: consume changes
+producer -> suppress: consume changes
+
+group sliding window
+  producer -> producer: ordering and\nconsistency checks
+  producer -> "Flink state": get last seen revision ID
+
+  producer -> Wikidata: get last seen\nrevision content
+  producer -> Wikidata: get current\nrevision content
+  producer -> producer: compute diff
+  producer -> "RDF Stream": publish RDF changes
+  producer -> "Flink state": updates last seen revision ID
+end
+
+@enduml
