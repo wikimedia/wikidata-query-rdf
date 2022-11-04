@@ -31,7 +31,7 @@ import org.wikidata.query.rdf.common.uri.PropertyType;
  * Useful matchers for RDF.
  */
 public final class Matchers {
-    private static final Logger log = LoggerFactory.getLogger(Matchers.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Matchers.class);
 
     /**
      * Check a binding to a uri.
@@ -107,13 +107,13 @@ public final class Matchers {
                     position++;
                     assertTrue("There should be at least " + position + " results", result.hasNext());
                     BindingSet bs = result.next();
-                    log.debug("Expected result: {}", bs);
+                    LOG.debug("Expected result: {}", bs);
                     assertThat(bs, bindingMatcher);
                 }
                 assertFalse("There should be no more than " + position + " result", result.hasNext());
             } catch (AssertionError e) {
                 while (result.hasNext()) {
-                    log.info("Unexpected result: {}", result.next());
+                    LOG.info("Unexpected result: {}", result.next());
                 }
                 throw e;
             } finally {

@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class JsonDeserializer<T> implements Deserializer<T> {
 
-    private static final Logger logger = LoggerFactory.getLogger(JsonDeserializer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonDeserializer.class);
 
     private final ObjectMapper mapper = getObjectMapper();
 
@@ -43,7 +43,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
             return mapper.readValue(data, topicToClass.get(topic));
         } catch (IOException e) {
             String dataString = new String(data, UTF_8);
-            logger.warn("Data in topic {} cannot be deserialized [{}].", topic, dataString, e);
+            LOGGER.warn("Data in topic {} cannot be deserialized [{}].", topic, dataString, e);
             return null;
         }
     }

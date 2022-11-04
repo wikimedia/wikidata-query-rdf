@@ -202,9 +202,9 @@ public class KafkaStreamConsumer implements StreamConsumer {
 
     private List<ConsumerRecord<String, MutationEventData>> reassembleMessage(Iterable<ConsumerRecord<String, MutationEventData>> records) {
         List<ConsumerRecord<String, MutationEventData>> entityChunks = new ArrayList<>();
-        for (ConsumerRecord<String, MutationEventData> record : records) {
-            entityChunks.add(record);
-            if (record.value().getSequence() + 1 == record.value().getSequenceLength()) {
+        for (ConsumerRecord<String, MutationEventData> msg : records) {
+            entityChunks.add(msg);
+            if (msg.value().getSequence() + 1 == msg.value().getSequenceLength()) {
                 return entityChunks;
             }
         }

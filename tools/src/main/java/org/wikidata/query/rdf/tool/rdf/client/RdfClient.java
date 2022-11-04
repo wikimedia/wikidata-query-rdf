@@ -45,7 +45,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 @SuppressWarnings("checkstyle:classfanoutcomplexity") // This class seems simple enough as it is, but refactoring proposal are welcomed!
 public class RdfClient {
 
-    private static final Logger log = LoggerFactory.getLogger(RdfClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RdfClient.class);
 
     /** Count and log the number of updates. */
     private static final ResponseHandler<Integer> UPDATE_COUNT_RESPONSE = new UpdateCountResponseHandler();
@@ -116,7 +116,7 @@ public class RdfClient {
      * @return parsed results from the server
      */
     private <T> T execute(String type, ResponseHandler<T> responseHandler, String sparql) {
-        log.trace("Running SPARQL: [{}] {}", sparql.length(), sparql);
+        LOG.trace("Running SPARQL: [{}] {}", sparql.length(), sparql);
         long startQuery = System.currentTimeMillis();
         // TODO we might want to look into Blazegraph's incremental update
         // reporting.....
@@ -130,7 +130,7 @@ public class RdfClient {
                                 + " body=\n" + response.getContentAsString());
             }
 
-            log.debug("Completed in {} ms", System.currentTimeMillis() - startQuery);
+            LOG.debug("Completed in {} ms", System.currentTimeMillis() - startQuery);
             return responseHandler.parse(response);
         } catch (ExecutionException | RetryException | IOException e) {
             throw new FatalException("Error accessing triple store", e);

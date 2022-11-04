@@ -61,7 +61,7 @@ public final class HttpClientUtils {
      */
     public static final Duration TIMEOUT = Duration.ofMillis(5000);
 
-    private static final Logger log = LoggerFactory.getLogger(HttpClientUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HttpClientUtils.class);
 
     /** Configuration name for proxy host. */
     public static final String HTTP_PROXY_PROPERTY = "http.proxyHost";
@@ -150,7 +150,7 @@ public final class HttpClientUtils {
                         @Override
                         public <V> void onRetry(Attempt<V> attempt) {
                             if (attempt.hasException()) {
-                                log.info("HTTP request failed: {}, attempt {}, will {}",
+                                LOG.info("HTTP request failed: {}, attempt {}, will {}",
                                         attempt.getExceptionCause(),
                                         attempt.getAttemptNumber(),
                                         attempt.getAttemptNumber() < MAX_RETRIES ? "retry" : "fail");
@@ -243,7 +243,7 @@ public final class HttpClientUtils {
      */
     private static HttpRequestRetryHandler getRetryHandler(final int max) {
         return (exception, executionCount, context) -> {
-            log.debug("Exception in attempt {}", executionCount, exception);
+            LOG.debug("Exception in attempt {}", executionCount, exception);
             if (executionCount >= max) {
                 // Do not retry if over max retry count
                 return false;

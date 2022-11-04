@@ -15,7 +15,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * for Blazegraph.
  */
 class UpdateCountResponseHandler implements ResponseHandler<Integer> {
-    private static final Logger log = LoggerFactory.getLogger(UpdateCountResponseHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(UpdateCountResponseHandler.class);
 
     /**
      * The pattern for the response for an update.
@@ -57,33 +57,33 @@ class UpdateCountResponseHandler implements ResponseHandler<Integer> {
             Matcher m;
             m = ELAPSED_LINE_FLUSH.matcher(line);
             if (m.matches()) {
-                log.debug("total = {} elapsed = {} flush = {} batch = {} where = {} delete = {} insert = {}",
+                LOG.debug("total = {} elapsed = {} flush = {} batch = {} where = {} delete = {} insert = {}",
                         m.group(1), m.group(2), m.group(3), m.group(4),
                         m.group(5), m.group(6), m.group(7));
                 continue;
             }
             m = ELAPSED_LINE_CLAUSES.matcher(line);
             if (m.matches()) {
-                log.debug("total = {} elapsed = {} where = {} delete = {} insert = {}",
+                LOG.debug("total = {} elapsed = {} where = {} delete = {} insert = {}",
                         m.group(1), m.group(2), m.group(3), m.group(4),
                         m.group(5));
                 continue;
             }
             m = ELAPSED_LINE.matcher(line);
             if (m.matches()) {
-                log.debug("elapsed = {}", m.group(1));
+                LOG.debug("elapsed = {}", m.group(1));
                 continue;
             }
             m = COMMIT_LINE.matcher(line);
             if (m.matches()) {
-                log.debug("total = {} mutation count = {} ", m.group(1),
+                LOG.debug("total = {} mutation count = {} ", m.group(1),
                         m.group(2));
                 mutationCount = Integer.valueOf(m.group(2));
                 continue;
             }
             m = BULK_UPDATE_LINE.matcher(line);
             if (m.matches()) {
-                log.debug("bulk updated {} items in {} millis", m.group(1),
+                LOG.debug("bulk updated {} items in {} millis", m.group(1),
                         m.group(2));
                 mutationCount = Integer.valueOf(m.group(1));
                 continue;

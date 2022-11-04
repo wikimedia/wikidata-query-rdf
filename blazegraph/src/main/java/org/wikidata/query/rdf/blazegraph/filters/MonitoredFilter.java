@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class MonitoredFilter implements Filter {
 
-    private static final Logger log = LoggerFactory.getLogger(MonitoredFilter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MonitoredFilter.class);
 
     /** The object name under which the stats for this filter are exposed through JMX. */
     @Nullable
@@ -40,13 +40,13 @@ public abstract class MonitoredFilter implements Filter {
             name = new ObjectName(this.getClass().getName(), "filterName", filterName);
             MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
             platformMBeanServer.registerMBean(this, name);
-            log.info("ThrottlingFilter MBean registered as {}.", name);
+            LOG.info("ThrottlingFilter MBean registered as {}.", name);
         } catch (MalformedObjectNameException e) {
-            log.error("filter name {} is invalid as an MBean property.", filterName, e);
+            LOG.error("filter name {} is invalid as an MBean property.", filterName, e);
         } catch (InstanceAlreadyExistsException e) {
-            log.error("MBean for {}} has already been registered.", filterName, e);
+            LOG.error("MBean for {}} has already been registered.", filterName, e);
         } catch (NotCompliantMBeanException | MBeanRegistrationException e) {
-            log.error("Could not register MBean for Filter {}.", filterName, e);
+            LOG.error("Could not register MBean for Filter {}.", filterName, e);
         }
         objectName = name;
     }
@@ -59,11 +59,11 @@ public abstract class MonitoredFilter implements Filter {
             MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
             try {
                 platformMBeanServer.unregisterMBean(objectName);
-                log.info("ThrottlingFilter MBean {} unregistered.", objectName);
+                LOG.info("ThrottlingFilter MBean {} unregistered.", objectName);
             } catch (InstanceNotFoundException e) {
-                log.warn("MBean already unregistered.", e);
+                LOG.warn("MBean already unregistered.", e);
             } catch (MBeanRegistrationException e) {
-                log.error("Could not unregister MBean.", e);
+                LOG.error("Could not unregister MBean.", e);
             }
         }
         objectName = null;

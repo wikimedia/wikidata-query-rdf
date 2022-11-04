@@ -36,7 +36,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 public class IOBlastingIntegrationTest {
 
     @ClassRule
-    public static final Randomizer randomizer = new Randomizer();
+    public static final Randomizer RANDOMIZER = new Randomizer();
 
     // works up to at least 10,000,000, albeit slowly (3min)
     private static final int MAX_STATEMENTS_PER_NAMESPACE = 100;
@@ -109,15 +109,15 @@ public class IOBlastingIntegrationTest {
          * store.
          */
         private static List<Statement> generateAndInsert(RdfRepositoryForTesting rdfRepository) {
-            String s = "Q" + randomizer.randomIntBetween(1, 65536);
-            int statementCount = randomizer.randomIntBetween(1, MAX_STATEMENTS_PER_NAMESPACE);
+            String s = "Q" + RANDOMIZER.randomIntBetween(1, 65536);
+            int statementCount = RANDOMIZER.randomIntBetween(1, MAX_STATEMENTS_PER_NAMESPACE);
 
             // Make some noise
-            rdfRepository.sync(s, randomStatementsAbout(randomizer, s, statementCount), null);
-            rdfRepository.sync(s, randomStatementsAbout(randomizer, s, statementCount), null);
+            rdfRepository.sync(s, randomStatementsAbout(RANDOMIZER, s, statementCount), null);
+            rdfRepository.sync(s, randomStatementsAbout(RANDOMIZER, s, statementCount), null);
 
             // Now the *real* statements
-            List<Statement> statements = randomStatementsAbout(randomizer, s, statementCount);
+            List<Statement> statements = randomStatementsAbout(RANDOMIZER, s, statementCount);
             rdfRepository.sync(s, statements, null);
 
             return statements;

@@ -28,7 +28,7 @@ import ch.qos.logback.core.util.StatusPrinter;
  * Utilities for parsing options.
  */
 public final class OptionsUtils {
-    private static final Logger log = LoggerFactory.getLogger(OptionsUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OptionsUtils.class);
 
     /**
      * Basic options for parsing with JewelCLI.
@@ -99,7 +99,7 @@ public final class OptionsUtils {
     public static <T extends BasicOptions> T handleOptions(Class<T> optionsClass, String... args) {
         T options = parseOptions(optionsClass, args);
         if (options.verbose()) {
-            log.info("Verbose mode activated");
+            LOG.info("Verbose mode activated");
             // Assumes logback which is pretty safe in main.
             LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
             try {
@@ -107,7 +107,7 @@ public final class OptionsUtils {
                 configurator.setContext(context);
                 context.reset();
                 configurator.doConfigure(getResource("logback-verbose.xml"));
-            } catch (JoranException je) {
+            } catch (JoranException e) {
                 // StatusPrinter will handle this
             }
             StatusPrinter.printInCaseOfErrorsOrWarnings(context);

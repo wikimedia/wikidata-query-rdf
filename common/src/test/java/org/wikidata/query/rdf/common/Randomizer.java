@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 public class Randomizer implements TestRule {
 
     private static final String SEED_PROPERTY = Randomizer.class.getName() + ".seed";
-    private static final Logger log = LoggerFactory.getLogger(Randomizer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Randomizer.class);
     private Random random;
     private int seed;
 
@@ -54,7 +54,7 @@ public class Randomizer implements TestRule {
      * Log seed on errors.
      */
     private void onError() {
-        log.info("Ramdomizer initialized with: [{}], you can override it by setting the system property {}.", seed, SEED_PROPERTY);
+        LOG.info("Ramdomizer initialized with: [{}], you can override it by setting the system property {}.", seed, SEED_PROPERTY);
     }
 
     private int getSeed() {

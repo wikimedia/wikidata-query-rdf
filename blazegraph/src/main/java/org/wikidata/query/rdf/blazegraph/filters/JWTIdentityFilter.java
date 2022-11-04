@@ -34,7 +34,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
  */
 public class JWTIdentityFilter implements Filter {
 
-    private static final Logger log = LoggerFactory.getLogger(JWTIdentityFilter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JWTIdentityFilter.class);
 
     private Function<HttpServletRequest, Optional<String>> usernames;
 
@@ -43,10 +43,10 @@ public class JWTIdentityFilter implements Filter {
         String identityClaim = config.loadStringParam("jwt-identity-claim");
         String secret = config.loadStringParam("jwt-identity-secret");
         if (allNotNull(cookieName, identityClaim, secret)) {
-            log.info("Configured filter against {} claim of jwt token in the {} cookie", identityClaim, cookieName);
+            LOG.info("Configured filter against {} claim of jwt token in the {} cookie", identityClaim, cookieName);
             return new UsernameFromJWTCookie(cookieName, identityClaim, secret);
         } else if (secret == null) {
-            log.info("Filter disabled, no configuration available.");
+            LOG.info("Filter disabled, no configuration available.");
             // Better way to disable filter when unconfigured? Seems better than returning a null provider.
             return r -> Optional.empty();
         } else {
@@ -100,7 +100,7 @@ public class JWTIdentityFilter implements Filter {
             try {
                 return Optional.ofNullable(verifier.verify(token));
             } catch (JWTVerificationException e) {
-                log.info("Received invalid JWT token, incorrect secret?");
+                LOG.info("Received invalid JWT token, incorrect secret?");
                 return Optional.empty();
             }
         }

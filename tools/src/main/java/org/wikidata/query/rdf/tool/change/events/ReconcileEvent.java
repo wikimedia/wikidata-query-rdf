@@ -10,7 +10,7 @@ import lombok.Data;
 
 @Data
 public class ReconcileEvent implements EventPlatformEvent {
-    public static String SCHEMA = "/rdf_streaming_updater/reconcile/1.0.0";
+    public static final String SCHEMA = "/rdf_streaming_updater/reconcile/1.0.0";
     @JsonIgnore
     private final EventInfo eventInfo;
     @JsonProperty("item")

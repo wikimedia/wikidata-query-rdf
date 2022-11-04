@@ -545,7 +545,7 @@ public class KafkaPollerUnitTest {
     private ConsumerRecords<String, ChangeEvent> makeRecords(ConsumerRecord<String, ChangeEvent>... consumerRecords) {
         return new ConsumerRecords<>(
                 Arrays.stream(consumerRecords).collect(Collectors.groupingBy(
-                        record -> new TopicPartition(record.topic(), record.partition())
+                        msg -> new TopicPartition(msg.topic(), msg.partition())
                 )));
     }
 

@@ -133,16 +133,16 @@ public class PatchAccumulator {
      */
     public boolean canAccumulate(MutationEventData data) {
         switch (data.getOperation()) {
-            case DELETE_OPERATION:
-                // We could possibly skip the reconciliation?
-                return !reconciliations.containsKey(data.getEntity());
-            case RECONCILE_OPERATION:
-                return !allEntitiesToDelete.contains(data.getEntity());
-            case IMPORT_OPERATION:
-            case DIFF_OPERATION:
-                return !allEntitiesToDelete.contains(data.getEntity()) && !reconciliations.containsKey(data.getEntity());
-            default:
-                throw new UnsupportedOperationException("Unsupported operation [" + data.getOperation() + "]");
+        case DELETE_OPERATION:
+            // We could possibly skip the reconciliation?
+            return !reconciliations.containsKey(data.getEntity());
+        case RECONCILE_OPERATION:
+            return !allEntitiesToDelete.contains(data.getEntity());
+        case IMPORT_OPERATION:
+        case DIFF_OPERATION:
+            return !allEntitiesToDelete.contains(data.getEntity()) && !reconciliations.containsKey(data.getEntity());
+        default:
+            throw new UnsupportedOperationException("Unsupported operation [" + data.getOperation() + "]");
         }
     }
 
@@ -167,21 +167,21 @@ public class PatchAccumulator {
         checkArgument(canAccumulate(head), "Cannot accumulate data for entity: " + head.getEntity());
 
         switch (head.getOperation()) {
-            case DELETE_OPERATION:
-                checkArgument(sequence.size() == 1, "Inconsistent delete mutation (" + sequence.size() + " chunks)");
-                accumulateDelete(head);
-                break;
-            case IMPORT_OPERATION:
-            case DIFF_OPERATION:
-                checkArgument(head instanceof DiffEventData, "Unsupported MutationEventData of type " + head.getOperation());
-                accumulateDiff(sequence);
-                break;
-            case RECONCILE_OPERATION:
-                checkArgument(head instanceof DiffEventData, "Unsupported MutationEventData of type " + head.getOperation());
-                accumulateReconciliation(sequence);
-                break;
-            default:
-                throw new UnsupportedOperationException("Unsupported operation [" + head.getOperation() + "]");
+        case DELETE_OPERATION:
+            checkArgument(sequence.size() == 1, "Inconsistent delete mutation (" + sequence.size() + " chunks)");
+            accumulateDelete(head);
+            break;
+        case IMPORT_OPERATION:
+        case DIFF_OPERATION:
+            checkArgument(head instanceof DiffEventData, "Unsupported MutationEventData of type " + head.getOperation());
+            accumulateDiff(sequence);
+            break;
+        case RECONCILE_OPERATION:
+            checkArgument(head instanceof DiffEventData, "Unsupported MutationEventData of type " + head.getOperation());
+            accumulateReconciliation(sequence);
+            break;
+        default:
+            throw new UnsupportedOperationException("Unsupported operation [" + head.getOperation() + "]");
         }
     }
 

@@ -34,7 +34,7 @@ import com.google.common.annotations.VisibleForTesting;
  */
 public class FileStreamDumper implements StreamDumper {
 
-    private static final Logger log = LoggerFactory.getLogger(FileStreamDumper.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileStreamDumper.class);
 
     private static final String DUMP_FILE_SUFFIX = ".dump";
 
@@ -98,7 +98,7 @@ public class FileStreamDumper implements StreamDumper {
         try {
             dumpOutput.close();
         } catch (IOException ioe) {
-            log.info("Could not close dump file, some data might be lost", ioe);
+            LOG.info("Could not close dump file, some data might be lost", ioe);
         }
     }
 
@@ -108,7 +108,7 @@ public class FileStreamDumper implements StreamDumper {
             final Path dumpFile = dumpDir.resolve(String.valueOf(timestamp) + DUMP_FILE_SUFFIX);
             return new BufferedOutputStream(Files.newOutputStream(dumpFile, StandardOpenOption.CREATE));
         } catch (IOException ioe) {
-            log.info("Could not create dump file, dump will be ignored.");
+            LOG.info("Could not create dump file, dump will be ignored.");
             return new NullOutputStream();
         }
     }
@@ -133,11 +133,11 @@ public class FileStreamDumper implements StreamDumper {
                         try {
                             delete(p);
                         } catch (IOException e) {
-                            log.info("Could not delete {}.", p);
+                            LOG.info("Could not delete {}.", p);
                         }
                     });
         } catch (IOException e) {
-            log.info("Could not list files in {}", dumpDir, e);
+            LOG.info("Could not list files in {}", dumpDir, e);
         }
     }
 

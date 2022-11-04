@@ -52,7 +52,7 @@ import com.bigdata.rdf.sparql.ast.service.ServiceNode;
 import com.bigdata.rdf.store.BD;
 
 public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
-    private static final Logger log = LoggerFactory.getLogger(LabelServiceUnitTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LabelServiceUnitTest.class);
 
     @Rule
     public final Randomizer randomizer = new Randomizer();
@@ -189,7 +189,7 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
             }
             assertResult(q, bindingMatchers);
         } catch (AssertionError | RuntimeException e) {
-            log.error("Error while checking results for {}", astContainer);
+            LOG.error("Error while checking results for {}", astContainer);
             throw e;
         }
     }
@@ -208,8 +208,8 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
         query.append("VALUES (?p) {(wd:Q175840sc)}\n");
         assertLabelQueryResult(query.toString(),
                 both(binds("p", URI.class))
-                .and(binds("pLabelEn", Literal.class))
-                .and(binds("pLabelDe", Literal.class))
+                        .and(binds("pLabelEn", Literal.class))
+                        .and(binds("pLabelDe", Literal.class))
         );
     }
 
@@ -224,11 +224,11 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
         query.append("}");
         assertLabelQueryResult(query.toString(),
                 both(binds("p", URI.class))
-                .and(binds("pLabel", Literal.class))
+                        .and(binds("pLabel", Literal.class))
         );
     }
 
-     @Test
+    @Test
     public void multipleServiceCall_T175840_with_other_service() {
         addSimpleLabels("Q175840s3");
         add("wd:Q175840s1", "wdt:P625", GeoUtils.pointLiteral("Point(-180,-90)"));
@@ -250,12 +250,12 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
         query.append("    FILTER(\"in en\"@en = ?name) .\n");
         query.append("} ORDER BY ASC(?name)");
         assertLabelQueryResult(query.toString(),
-                 both(binds("item", URI.class))
-                 .and(binds("name", Literal.class))
+                both(binds("item", URI.class))
+                        .and(binds("name", Literal.class))
         );
     }
 
-     @Test
+    @Test
     public void multipleServiceCall_T175840_with_filters() {
         addSimpleLabels("PROP");
         addSimpleLabels("PS");
@@ -283,20 +283,20 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
         query.append("    FILTER(LANG(?valLabel) != 'fr') .\n");
         query.append("}");
         assertLabelQueryResult(query.toString(),
-                 both(binds("prop", URI.class))
-                    .and(binds("pLabel", Literal.class))
-                    .and(binds("val", URI.class))
-                    .and(binds("valLabel", Literal.class)),
-                 both(binds("prop", URI.class))
-                    .and(binds("pLabel", Literal.class))
-                    .and(binds("val", URI.class))
-                    .and(binds("valLabel", Literal.class)),
-                 both(binds("prop", URI.class))
-                    .and(binds("pLabel", Literal.class))
-                    .and(binds("val", URI.class))
-                    .and(binds("valLabel", Literal.class))
+                both(binds("prop", URI.class))
+                        .and(binds("pLabel", Literal.class))
+                        .and(binds("val", URI.class))
+                        .and(binds("valLabel", Literal.class)),
+                both(binds("prop", URI.class))
+                        .and(binds("pLabel", Literal.class))
+                        .and(binds("val", URI.class))
+                        .and(binds("valLabel", Literal.class)),
+                both(binds("prop", URI.class))
+                        .and(binds("pLabel", Literal.class))
+                        .and(binds("val", URI.class))
+                        .and(binds("valLabel", Literal.class))
 
-         );
+        );
     }
 
     @Test
@@ -312,8 +312,8 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
                 "  SERVICE ontology:label { bd:serviceParam ontology:language \"en\" } \n" +
                 "}");
         assertLabelQueryResult(query.toString(),
-            both(binds("p", URI.class))
-            .and(binds("pLabel", Literal.class))
+                both(binds("p", URI.class))
+                        .and(binds("pLabel", Literal.class))
         );
     }
 
@@ -331,8 +331,8 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
                 "  SERVICE ontology:label { bd:serviceParam ontology:language \"en\" } \n" +
                 "}");
         assertLabelQueryResult(query.toString(),
-            both(binds("p", URI.class))
-            .and(binds("pLabel", Literal.class))
+                both(binds("p", URI.class))
+                        .and(binds("pLabel", Literal.class))
         );
     }
 
@@ -346,8 +346,8 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
                 "  SERVICE ontology:label { bd:serviceParam ontology:language \"en\" } \n" +
                 "}");
         assertLabelQueryResult(query.toString(),
-            both(binds("p", URI.class))
-            .and(binds("pLabel", Literal.class))
+                both(binds("p", URI.class))
+                        .and(binds("pLabel", Literal.class))
         );
     }
 
@@ -364,10 +364,10 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
                 "        SERVICE ontology:label { bd:serviceParam ontology:language \"en\". }\n" +
                 "      }");
         assertLabelQueryResult(query.toString(),
-            both(binds("xLabel", Literal.class))
-            .and(binds("x", URI.class)), // First solution contains both x bound by BIND and xLabel provided by the Service
-            both(binds("xLabel", Literal.class))
-            .and(notBinds("x")) // Second solution binds only xLabel bound by BIND and does not bind x
+                both(binds("xLabel", Literal.class))
+                        .and(binds("x", URI.class)), // First solution contains both x bound by BIND and xLabel provided by the Service
+                both(binds("xLabel", Literal.class))
+                        .and(notBinds("x")) // Second solution binds only xLabel bound by BIND and does not bind x
         );
     }
 
@@ -383,28 +383,28 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
                 "        SERVICE ontology:label { bd:serviceParam ontology:language \"en\". }\n" +
                 "      }");
         assertLabelQueryResult(query.toString(),
-            both(binds("xLabel", Literal.class))
-            .and(binds("x", URI.class))
+                both(binds("xLabel", Literal.class))
+                        .and(binds("x", URI.class))
         );
     }
 
-      @Test
-      public void unionWithServiceCall_T159723_values() {
-          // NotMaterializedException when one branch of UNION binds ?variable and other branch binds ?variableLabel and label service is used
-          // https://phabricator.wikimedia.org/T159723
-          addSimpleLabels("Q159723V");
-          StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
-          query.append("SELECT ?x ?xLabel WHERE {\n" +
-                  "        VALUES (?x ?xLabel) {\n" +
-                  "          (wd:Q159723V \"Douglas Adams\"@en)\n" +
-                  "        }\n" +
-                  "        SERVICE ontology:label { bd:serviceParam ontology:language \"en\". }\n" +
-                  "      }");
-          assertLabelQueryResult(query.toString(),
-                  both(binds("xLabel", Literal.class))
-                  .and(binds("x", URI.class))
-          );
-      }
+    @Test
+    public void unionWithServiceCall_T159723_values() {
+        // NotMaterializedException when one branch of UNION binds ?variable and other branch binds ?variableLabel and label service is used
+        // https://phabricator.wikimedia.org/T159723
+        addSimpleLabels("Q159723V");
+        StringBuilder query = uris().prefixes(Ontology.prefix(new StringBuilder()));
+        query.append("SELECT ?x ?xLabel WHERE {\n" +
+                "        VALUES (?x ?xLabel) {\n" +
+                "          (wd:Q159723V \"Douglas Adams\"@en)\n" +
+                "        }\n" +
+                "        SERVICE ontology:label { bd:serviceParam ontology:language \"en\". }\n" +
+                "      }");
+        assertLabelQueryResult(query.toString(),
+                both(binds("xLabel", Literal.class))
+                        .and(binds("x", URI.class))
+        );
+    }
 
     @Test
     public void sameVarAssignment_T170704() {
@@ -422,10 +422,10 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
                 "            FILTER((LANG(?instance_ofLabel)) = \"en\")\n" +
                 "          }");
         assertLabelQueryResult(query.toString(),
-            both(binds("item", URI.class))
-            .and(binds("itemLabel", Literal.class))
-            .and(binds("instance_of", URI.class))
-            .and(binds("instance_ofLabel", Literal.class))
+                both(binds("item", URI.class))
+                        .and(binds("itemLabel", Literal.class))
+                        .and(binds("instance_of", URI.class))
+                        .and(binds("instance_ofLabel", Literal.class))
         );
     }
 
@@ -441,14 +441,14 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
     }
 
     private void slltcp(String extraQuery, String subjectInQuery, String language, String labelText,
-            String labelLanguage, String altLabelText, String altLabelLanguage) throws QueryEvaluationException {
+                        String labelLanguage, String altLabelText, String altLabelLanguage) throws QueryEvaluationException {
         assertResult(
                 lookupLabel(extraQuery, language, subjectInQuery, "rdfs:label", "skos:altLabel"),
                 both(
                         binds(labelName(subjectInQuery, "rdfs:label"), labelText, labelLanguage)
-                    ).and(
+                ).and(
                         binds(labelName(subjectInQuery, "skos:altLabel"), altLabelText, altLabelLanguage)
-                    )
+                )
         );
 
     }
@@ -459,9 +459,9 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
         if (inLanguages.contains(".")) {
             langs = inLanguages.split("\\.");
         } else {
-            langs = new String[] {inLanguages};
+            langs = new String[]{inLanguages};
         }
-        for (String lang: langs) {
+        for (String lang : langs) {
             params.append("bd:serviceParam ontology:language \"" + lang + "\".\n");
         }
         return params.toString();
@@ -493,18 +493,18 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
         }
         query.append("  }\n");
         query.append("}\n");
-        log.debug("Query: {}", query);
+        LOG.debug("Query: {}", query);
         return query(query.toString());
     }
 
     private void addSimpleLabels(String entity) {
-        for (String language : new String[] {"en", "de", "ru"}) {
+        for (String language : new String[]{"en", "de", "ru"}) {
             add("wd:" + entity, RDFS.LABEL, new LiteralImpl("in " + language, language));
         }
         add("wd:" + entity, SKOS.ALT_LABEL, new LiteralImpl("alt label in en", "en"));
         add("wd:" + entity, SKOS.ALT_LABEL, new LiteralImpl("alt label in en2", "en"));
         add("wd:" + entity, SKOS.ALT_LABEL, new LiteralImpl("alt label in de", "de"));
-        for (String language : new String[] {"en", "de", "ru"}) {
+        for (String language : new String[]{"en", "de", "ru"}) {
             add("wd:" + entity, SchemaDotOrg.DESCRIPTION, new LiteralImpl("description in " + language, language));
         }
     }
@@ -563,8 +563,8 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
         assertThat(vars, hasSize(2));
 
         assertThat(vars, hasItems(
-                            equalTo(Var.var("item")),
-                            equalTo(Var.var("item2"))));
+                equalTo(Var.var("item")),
+                equalTo(Var.var("item2"))));
     }
 
     @Test
@@ -585,13 +585,13 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
             assertTrue(result.hasNext());
             BindingSet resultSet = result.next();
             assertThat(resultSet, both(
-                    binds("itemLabel", "in en", "en")
+                            binds("itemLabel", "in en", "en")
                     ).and(
                             binds("anotherLabel", "in en", "en")
                     )
             );
         } catch (AssertionError e) {
-            log.error("Error while checking results for " + result.ast());
+            LOG.error("Error while checking results for " + result.ast());
             throw e;
         }
     }
@@ -611,7 +611,7 @@ public class LabelServiceUnitTest extends AbstractBlazegraphTestBase {
             BindingSet resultSet = result.next();
             assertThat(resultSet, binds("itemLabel", resultLabel, null));
         } catch (AssertionError e) {
-            log.error("Error while checking results for " + result.ast());
+            LOG.error("Error while checking results for " + result.ast());
             throw e;
         }
     }

@@ -205,12 +205,12 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     static Instant parseDate(String dateStr) {
         try {
             return OUTPUT_DATE_FORMATTER.parse(dateStr, Instant::from);
+        } catch (DateTimeParseException ignored) {
+        }
+        try {
+            return INPUT_DATE_FORMATTER.parse(dateStr, Instant::from);
         } catch (DateTimeParseException e) {
-            try {
-                return INPUT_DATE_FORMATTER.parse(dateStr, Instant::from);
-            } catch (DateTimeParseException e2) {
-                throw  new IllegalArgumentException("Invalid date: " + dateStr, e2);
-            }
+            throw  new IllegalArgumentException("Invalid date: " + dateStr, e);
         }
     }
 

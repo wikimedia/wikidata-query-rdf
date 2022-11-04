@@ -69,12 +69,12 @@ public class AsyncRDFHandler implements RDFHandler {
 
     @Override
     public void startRDF() throws RDFHandlerException {
-        record(RDFHandler::startRDF);
+        recordAction(RDFHandler::startRDF);
     }
 
     @Override
     public void endRDF() throws RDFHandlerException {
-        record(RDFHandler::endRDF);
+        recordAction(RDFHandler::endRDF);
         if (joinOnRDFEnd) {
             try {
                 waitForCompletion();
@@ -90,7 +90,7 @@ public class AsyncRDFHandler implements RDFHandler {
 
     @Override
     public void handleNamespace(String prefix, String uri) throws RDFHandlerException {
-        record((r)  -> r.handleNamespace(prefix, uri));
+        recordAction((r)  -> r.handleNamespace(prefix, uri));
 
     }
 
@@ -116,10 +116,10 @@ public class AsyncRDFHandler implements RDFHandler {
 
     @Override
     public void handleComment(String comment) throws RDFHandlerException {
-        record(r -> r.handleComment(comment));
+        recordAction(r -> r.handleComment(comment));
     }
 
-    private void record(RDFRecordedAction recordedAction) throws RDFHandlerException {
+    private void recordAction(RDFRecordedAction recordedAction) throws RDFHandlerException {
         if (!statementBuffer.isEmpty()) {
             flushStatementBuffer();
         }

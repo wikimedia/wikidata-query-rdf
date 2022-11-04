@@ -70,7 +70,7 @@ import com.google.common.util.concurrent.AtomicLongMap;
 @SuppressWarnings("checkstyle:classfanoutcomplexity") // TODO: refactoring required!
 public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
 
-    private static final Logger log = LoggerFactory.getLogger(KafkaPoller.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaPoller.class);
 
     private static final String MAX_POLL_PROPERTY = KafkaPoller.class.getName() + ".maxPoll";
     private static final String MAX_FETCH_PROPERTY = KafkaPoller.class.getName() + ".maxFetch";
@@ -89,7 +89,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
      * cluster configuration.
      * FIXME: should be configuration?
      */
-    private static final Map<String, Class<? extends ChangeEvent>> defaultTopics = ImmutableMap.of(
+    private static final Map<String, Class<? extends ChangeEvent>> DEFAULT_TOPICS = ImmutableMap.of(
             // Not not using for now since revision-create should cover it
 //                  "mediawiki.recentchange", RecentChangeEvent.class,
             "mediawiki.revision-create", RevisionCreateEvent.class,
@@ -180,9 +180,9 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
     static Map<String, Class<? extends ChangeEvent>> clusterNamesAwareTopics(Collection<String> clusterNames) {
         if (clusterNames == null || clusterNames.isEmpty()) {
             // No cluster - use topic names as is
-            return defaultTopics;
+            return DEFAULT_TOPICS;
         } else {
-            return defaultTopics.entrySet().stream().flatMap(entry ->
+            return DEFAULT_TOPICS.entrySet().stream().flatMap(entry ->
                 // Prepend cluster names to keys, e.g.:
                 // page.revision => eqiad.page.revision
                 clusterNames.stream().map(
@@ -216,7 +216,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         props.put("max.poll.records", System.getProperty(MAX_POLL_PROPERTY, String.valueOf(batchSize)));
         // This is about one batch of messages since message sizes in event queue are about 1k
         props.put("max.partition.fetch.bytes", System.getProperty(MAX_FETCH_PROPERTY, String.valueOf(batchSize * 1024)));
-        log.info("Creating consumer {}", consumerId);
+        LOG.info("Creating consumer {}", consumerId);
         return new KafkaConsumer<>(props, new StringDeserializer(), new JsonDeserializer<>(topicToClass));
     }
 
@@ -245,19 +245,19 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         Map<TopicPartition, OffsetAndTimestamp> kafkaOffsets = fetchOffsets();
         // assign ourselves to all partitions of the topics we want
         consumer.assign(kafkaOffsets.keySet());
-        log.info("Subscribed to {} topics", kafkaOffsets.size());
+        LOG.info("Subscribed to {} topics", kafkaOffsets.size());
         // Seek each topic to proper offset
         kafkaOffsets.forEach(
                 (topic, offset) -> {
                     if (offset == null) {
-                        log.info("No offset for {}, starting at the end", topic);
+                        LOG.info("No offset for {}, starting at the end", topic);
                         consumer.seekToEnd(Collections.singletonList(topic));
                         return;
                     }
                     consumer.seek(topic, offset.offset());
-                    log.info("Set topic {} to {}", topic, offset);
+                    LOG.info("Set topic {} to {}", topic, offset);
                 }
-         );
+        );
 
         return fetch(firstStartTime);
     }
@@ -320,7 +320,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     private Batch fetch(Instant lastNextStartTime) throws RetryableException {
         Map<String, Change> changesByTitle = new LinkedHashMap<>();
-        ConsumerRecords<String, ChangeEvent> records;
+        ConsumerRecords<String, ChangeEvent> messages;
         Instant nextInstant = Instant.EPOCH;
         AtomicLongMap<String> topicCounts = AtomicLongMap.create();
         Map<TopicPartition, OffsetAndMetadata> batchOffsets = new HashMap<>();
@@ -328,23 +328,23 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
             commitPendindOffsets();
             try (Context timerContext = pollingTimer.time()) {
                 // TODO: make timeout configurable? Wait for a bit so we catch bursts of messages?
-                records = consumer.poll(1000);
+                messages = consumer.poll(1000);
             } catch (InterruptException | WakeupException e) {
                 throw new RetryableException("Error fetching recent changes", e);
             }
-            int count = records.count();
-            log.debug("Fetched {} records from Kafka", count);
+            int count = messages.count();
+            LOG.debug("Fetched {} records from Kafka", count);
             changesCounter.inc(count);
             if (count == 0) {
                 // If we got nothing from Kafka, get out of the loop and return what we have
                 break;
             }
             boolean foundSomething = false;
-            for (ConsumerRecord<String, ChangeEvent> record: records) {
-                ChangeEvent event = record.value();
-                String topic = record.topic();
-                batchOffsets.put(new TopicPartition(record.topic(), record.partition()), new OffsetAndMetadata(record.offset()));
-                log.trace("Got event t:{} o:{}", record.topic(), record.offset());
+            for (ConsumerRecord<String, ChangeEvent> message: messages) {
+                ChangeEvent event = message.value();
+                String topic = message.topic();
+                batchOffsets.put(new TopicPartition(message.topic(), message.partition()), new OffsetAndMetadata(message.offset()));
+                LOG.trace("Got event t:{} o:{}", message.topic(), message.offset());
                 if (!event.domain().equals(uris.getHost())) {
                     // wrong domain, ignore
                     continue;
@@ -356,22 +356,22 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
                     continue;
                 }
                 if (!(event instanceof RevisionCreateEvent)) {
-                    log.info("Got non revision create event class:{}, domain:{}, t:{}, revision:{}",
+                    LOG.info("Got non revision create event class:{}, domain:{}, t:{}, revision:{}",
                             event.getClass().getSimpleName(), event.title(), event.domain(), event.revision());
                 }
                 // Now we have event that we want to process
                 foundSomething = true;
-                topicCounts.getAndIncrement(record.topic());
+                topicCounts.getAndIncrement(message.topic());
                 // Keep max time for the reporting topic
                 // We use only one topic (or set of topics) here because otherwise when catching up we
                 // could get messages from different topics with different times and the tracking becomes
                 // very chaotic, jumping back and forth.
                 if (topic.endsWith(reportingTopic)) {
-                    nextInstant = Utils.max(nextInstant, Instant.ofEpochMilli(record.timestamp()));
+                    nextInstant = Utils.max(nextInstant, Instant.ofEpochMilli(message.timestamp()));
                 }
                 // Using offset here as RC id since we do not have real RC id (this not being RC poller) but
                 // the offset serves the same function in Kafka and is also useful for debugging.
-                Change change = makeChange(event, record.offset());
+                Change change = makeChange(event, message.offset());
                 Change dupe = changesByTitle.put(change.entityId(), change);
                 // If we have a duplicate - i.e. event with same title - we
                 // keep the newest one, by revision number, or in case of deletion, we keep
@@ -387,13 +387,13 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
                 }
 
             }
-            log.debug("{} records left after filtering", changesByTitle.size());
+            LOG.debug("{} records left after filtering", changesByTitle.size());
             if (changesByTitle.size() >= batchSize) {
                 // We have enough for the batch
                 break;
             }
             if (changesByTitle.size() > 0 && !foundSomething) {
-                log.info("Did not find anything useful in this batch, returning existing data");
+                LOG.info("Did not find anything useful in this batch, returning existing data");
                 // We have changes and last poll didn't find anything new - return these ones, don't
                 // wait for more.
                 break;
@@ -408,9 +408,9 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         }
 
         final ImmutableList<Change> changes = ImmutableList.copyOf(changesByTitle.values());
-        log.info("Found {} changes", changes.size());
-        if (log.isDebugEnabled()) {
-            topicCounts.asMap().forEach((k, v) -> log.debug("Topic {}: {} records", k, v));
+        LOG.info("Found {} changes", changes.size());
+        if (LOG.isDebugEnabled()) {
+            topicCounts.asMap().forEach((k, v) -> LOG.debug("Topic {}: {} records", k, v));
         }
         long advanced = ChronoUnit.MILLIS.between(lastNextStartTime, nextInstant);
         // Show the user the polled time - one second because we can't
@@ -474,7 +474,7 @@ public class KafkaPoller implements Change.Source<KafkaPoller.Batch> {
         while ((offsets = offsetsToCommit.poll()) != null) {
             consumer.commitAsync(offsets, (o, e) -> {
                 if (e != null) {
-                    log.warn("Failed to commit offsets to kafka", e);
+                    LOG.warn("Failed to commit offsets to kafka", e);
                 }
             });
         }

@@ -23,12 +23,12 @@ import com.bigdata.rdf.sparql.ast.ASTContainer;
 import com.bigdata.rdf.sparql.ast.eval.ASTEvalHelper;
 
 public class MWApiServiceQueryUnitTest extends AbstractBlazegraphTestBase {
-    private static final Logger log = LoggerFactory.getLogger(MWApiServiceQueryUnitTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MWApiServiceQueryUnitTest.class);
 
     @Rule
     public final Randomizer randomizer = new Randomizer();
 
-//    @Test // disabled test, need to be discussed it it is safe to run in in CI
+    //    @Test // disabled test, need to be discussed it it is safe to run in in CI
     public void mwAPI_T168876() {
         // MWAPI service throws “could not find binding for parameter” if optimizer is not disabled
         // https://phabricator.wikimedia.org/T168876
@@ -78,7 +78,7 @@ public class MWApiServiceQueryUnitTest extends AbstractBlazegraphTestBase {
             }
             assertResult(q, bindingMatchers);
         } catch (AssertionError | RuntimeException e) {
-            log.error("Error while checking results for {} ", astContainer);
+            LOG.error("Error while checking results for {} ", astContainer);
             throw e;
         }
     }

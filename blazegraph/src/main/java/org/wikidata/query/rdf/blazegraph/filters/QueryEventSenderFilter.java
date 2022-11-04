@@ -47,7 +47,7 @@ public class QueryEventSenderFilter implements Filter {
     private QueryEventGenerator queryEventGenerator;
     private String enableIfHeader;
     private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
-    private static final AtomicInteger queryCounter = new AtomicInteger(0);
+    private final AtomicInteger queryCounter = new AtomicInteger(0);
 
     public QueryEventSenderFilter() {
     }

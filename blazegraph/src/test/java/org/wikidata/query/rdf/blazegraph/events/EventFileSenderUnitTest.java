@@ -22,7 +22,7 @@ public class EventFileSenderUnitTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
     private EventFileSender sut;
     private Path path;
-    private final IntFunction<String> ID_MAPPER = i -> "id_" + i;
+    private static final IntFunction<String> ID_MAPPER = i -> "id_" + i;
 
     @Before
     public void before() {

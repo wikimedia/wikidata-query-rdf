@@ -571,10 +571,10 @@ public class RdfRepositoryIntegrationTest {
         Instant earlier = now.minusSeconds(30);
         Instant later = now.plusSeconds(30);
         UpdateBuilder b = new UpdateBuilder("INSERT DATA {" +
-           "%dump% %dateModified% %ts1% . " +
-           "%dump% %dateModified% %ts2% . " +
-           "%dump% %dateModified% %ts3% . " +
-           "}");
+                "%dump% %dateModified% %ts1% . " +
+                "%dump% %dateModified% %ts2% . " +
+                "%dump% %dateModified% %ts3% . " +
+                "}");
         b.bindValue("ts1", now);
         b.bindValue("ts2", earlier);
         b.bindValue("ts3", later);

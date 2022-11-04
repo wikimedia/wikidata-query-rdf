@@ -38,7 +38,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 @SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
 @SuppressWarnings("checkstyle:classfanoutcomplexity") // TODO: refactoring required!
 public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Batch> {
-    private static final Logger log = LoggerFactory.getLogger(RecentChangesPoller.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RecentChangesPoller.class);
 
     /**
      * How many IDs we keep in seen IDs map.
@@ -189,7 +189,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
                 return lastBatch;
             }
             // We don't have poller yet - start it
-            log.info("Started trailing poller with gap of {} seconds", tailSeconds);
+            LOG.info("Started trailing poller with gap of {} seconds", tailSeconds);
             // Create new poller starting back tailSeconds and same IDs map.
             final RecentChangesPoller poller = new RecentChangesPoller(wikibase,
                     Instant.now().minusSeconds(tailSeconds),
@@ -202,7 +202,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             tailPoller.setPollerTs(lastBatch.leftOffDate());
             final Batch queuedBatch = queue.poll();
             if (queuedBatch != null) {
-                log.info("Merging {} changes from trailing queue", queuedBatch.changes().size());
+                LOG.info("Merging {} changes from trailing queue", queuedBatch.changes().size());
                 return lastBatch.merge(queuedBatch);
             }
         }
@@ -347,20 +347,20 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             // still advances the time since we've seen it.
             nextStartTime = Utils.max(nextStartTime, rc.getTimestamp());
             if (rc.getNs() == null) {
-                log.warn("Skipping change without a namespace:  {}", rc);
+                LOG.warn("Skipping change without a namespace:  {}", rc);
                 continue;
             }
             if (!wikibase.isEntityNamespace(rc.getNs())) {
-                log.info("Skipping change in irrelevant namespace:  {}", rc);
+                LOG.info("Skipping change in irrelevant namespace:  {}", rc);
                 continue;
             }
             if (!wikibase.isValidEntity(rc.getTitle())) {
-                log.info("Skipping change with bogus title:  {}", rc.getTitle());
+                LOG.info("Skipping change with bogus title:  {}", rc.getTitle());
                 continue;
             }
             if (seenIDs.containsKey(rc.getRcId())) {
                 // This change was in the last batch
-                log.debug("Skipping repeated change with rcid {}", rc.getRcId());
+                LOG.debug("Skipping repeated change with rcid {}", rc.getRcId());
                 continue;
             }
             seenIDs.put(rc.getRcId(), TRUE);
@@ -397,15 +397,15 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
             // Try to advance one second, even though we risk to lose a change - in hope
             // that trailing poller will pick them up.
             nextStartTime = nextStartTime.plusSeconds(1);
-            log.info("Backoff overflow, advancing next time to {}", nextStartTime);
+            LOG.info("Backoff overflow, advancing next time to {}", nextStartTime);
         }
 
         if (!changes.isEmpty()) {
-            log.info("Got {} changes, from {} to {}", changes.size(),
+            LOG.info("Got {} changes, from {} to {}", changes.size(),
                     changes.get(0),
                     changes.get(changes.size() - 1));
         } else {
-            log.info("Got no real changes");
+            LOG.info("Got no real changes");
         }
 
         // Show the user the polled time - one second because we can't
@@ -414,7 +414,7 @@ public class RecentChangesPoller implements Change.Source<RecentChangesPoller.Ba
         Batch batch = new Batch(changes, advanced, nextStartTime.minusSeconds(1).toString(), nextStartTime, nextContinue);
         if (backoffOverflow && nextContinue != null) {
             // We will not sleep if continue is provided.
-            log.info("Got only old changes, next is: {}", nextContinue);
+            LOG.info("Got only old changes, next is: {}", nextContinue);
             batch.hasChanges(true);
         }
         return batch;

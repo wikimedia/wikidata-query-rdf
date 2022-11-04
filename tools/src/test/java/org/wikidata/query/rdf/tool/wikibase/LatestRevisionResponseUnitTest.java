@@ -18,12 +18,13 @@ public class LatestRevisionResponseUnitTest {
                     new LatestRevisionResponse.Page(124L, null, null, true)
             )), null);
     private static final LatestRevisionResponse RESPONSE_WITH_TITLES = new LatestRevisionResponse(
-                new LatestRevisionResponse.Query(asList(
-            new LatestRevisionResponse.Page(null, "Q123", singletonList(new LatestRevisionResponse.Revision(321)), false),
-            new LatestRevisionResponse.Page(null, "Q124", null, true)
+            new LatestRevisionResponse.Query(asList(
+                    new LatestRevisionResponse.Page(null, "Q123", singletonList(new LatestRevisionResponse.Revision(321)), false),
+                    new LatestRevisionResponse.Page(null, "Q124", null, true)
             )), null);
 
     private static final LatestRevisionResponse RESPONSE_WITH_ERROR = new LatestRevisionResponse(null, new WikibaseApiError("oops", "oops"));
+
     @Test
     public void test_deserialize_json() throws IOException {
         LatestRevisionResponse response = MapperUtils.getObjectMapper().readValue(this.getClass().getResourceAsStream("latest_revision_response.json"),

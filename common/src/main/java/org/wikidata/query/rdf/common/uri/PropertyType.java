@@ -110,7 +110,7 @@ public enum PropertyType {
      * Types list as it was in V001 dictionary.
      * Used for BC. V002 has the same set, but V003 is different.
      */
-    public static PropertyType[] V001() {
+    public static PropertyType[] v001() {
         return new PropertyType[] {
             DIRECT,
             STATEMENT_VALUE,

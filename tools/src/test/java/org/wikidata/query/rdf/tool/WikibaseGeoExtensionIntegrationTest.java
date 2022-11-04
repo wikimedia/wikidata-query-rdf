@@ -31,22 +31,22 @@ public class WikibaseGeoExtensionIntegrationTest extends AbstractUpdaterIntegrat
         rdfRepository.update(query);
     }
 
-    private void resultsAreLiteral(TupleQueryResult results, String var,
+    private void resultsAreLiteral(TupleQueryResult results, String variable,
             URI type, String... matches) throws QueryEvaluationException {
         BindingSet result;
         for (String match : matches) {
             result = results.next();
-            assertThat(result, binds(var, new LiteralImpl(match, type)));
+            assertThat(result, binds(variable, new LiteralImpl(match, type)));
         }
         assertFalse(results.hasNext());
     }
 
-    private void resultsAre(TupleQueryResult results, String var,
+    private void resultsAre(TupleQueryResult results, String variable,
             String... matches) throws QueryEvaluationException {
         BindingSet result;
         for (String match : matches) {
             result = results.next();
-            assertThat(result, binds(var, new URIImpl(match)));
+            assertThat(result, binds(variable, new URIImpl(match)));
         }
         assertFalse(results.hasNext());
     }

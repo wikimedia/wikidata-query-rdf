@@ -75,7 +75,7 @@ class TimeLimitedAccessTokenFactory {
             throw new IllegalStateException(("All valid jwt tokens must have a username claim"));
         }
         if (bannedUsernames.contains(claim.asString())) {
-           return bad.get();
+            return bad.get();
         }
         return good.get();
     }

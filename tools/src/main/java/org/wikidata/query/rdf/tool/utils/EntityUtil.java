@@ -5,7 +5,7 @@ public final class EntityUtil {
     public static String cleanEntityId(String entityIdWithPrefix) {
         // FIXME: this should not be hardcoded
         if (entityIdWithPrefix.startsWith("Property:")) {
-           return entityIdWithPrefix.substring("Property:".length());
+            return entityIdWithPrefix.substring("Property:".length());
         } else if (entityIdWithPrefix.startsWith("Item:")) {
             return entityIdWithPrefix.substring("Item:".length());
         } else if (entityIdWithPrefix.startsWith("Lexeme:")) {
@@ -14,5 +14,6 @@ public final class EntityUtil {
         return entityIdWithPrefix;
     }
 
-    private EntityUtil() {}
+    private EntityUtil() {
+    }
 }

@@ -34,7 +34,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KaskSessionStoreUnitTest {
-    private static final HttpHost httpHost = new HttpHost("dummyhost", 1234, "https");
+    private static final HttpHost HTTP_HOST = new HttpHost("dummyhost", 1234, "https");
     private HttpClient httpClient;
     private HttpResponse httpResponse;
     private StatusLine statusLine;
@@ -50,7 +50,7 @@ public class KaskSessionStoreUnitTest {
         statusLine = mock(StatusLine.class);
         httpEntity = mock(HttpEntity.class);
 
-        store = new KaskSessionStore<>(httpClient, httpHost, new KaskSessionStore.Serde<String>() {
+        store = new KaskSessionStore<>(httpClient, HTTP_HOST, new KaskSessionStore.Serde<String>() {
             @Override
             public String keyEncoder(String key) {
                 return key;
@@ -71,7 +71,7 @@ public class KaskSessionStoreUnitTest {
     private <T extends HttpRequest> void mockResponse(Class<T> reqClazz, int statusCode) throws Exception {
         when(statusLine.getStatusCode()).thenReturn(statusCode);
         when(httpResponse.getStatusLine()).thenReturn(statusLine);
-        when(httpClient.execute(eq(httpHost), isA(reqClazz), any(ResponseHandler.class))).then((args) -> {
+        when(httpClient.execute(eq(HTTP_HOST), isA(reqClazz), any(ResponseHandler.class))).then((args) -> {
             lastExecutedRequest = args.getArgumentAt(1, reqClazz);
             return args.getArgumentAt(2, ResponseHandler.class).handleResponse(httpResponse);
         });

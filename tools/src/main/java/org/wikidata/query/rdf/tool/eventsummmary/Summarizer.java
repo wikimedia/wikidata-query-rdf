@@ -28,8 +28,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.tool.MapperUtils;
 import org.wikidata.query.rdf.tool.options.OptionsUtils;
 
@@ -43,8 +41,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 @SuppressFBWarnings(value = "OS_OPEN_STREAM",
         justification = "Stream in streamRotatedEvents might be not closed when exception thrown, don't really care here.")
 public final class Summarizer {
-    private static final Logger log = LoggerFactory.getLogger(Summarizer.class);
-
     public static void main(String[] args) throws IOException {
         SummarizerOptions options = OptionsUtils.handleOptions(SummarizerOptions.class, args);
         summarizeEvents(options.eventFilePath(), options.summaryFilePath());

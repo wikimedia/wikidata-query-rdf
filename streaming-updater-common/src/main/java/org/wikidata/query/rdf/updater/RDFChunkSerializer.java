@@ -21,11 +21,11 @@ public class RDFChunkSerializer {
     public List<RDFDataChunk> serializeAsChunks(Collection<Statement> statements, String mime, int softMaxSize) {
         List<RDFDataChunk> chunks = new ArrayList<>();
         StringWriter stringWriter = new StringWriter();
-        RDFFormat fileFormatForMIMEType = writerRegistry.getFileFormatForMIMEType(mime);
-        if (fileFormatForMIMEType == null) {
+        RDFFormat fileFormatForMimeType = writerRegistry.getFileFormatForMIMEType(mime);
+        if (fileFormatForMimeType == null) {
             throw new IllegalArgumentException("Unsupported mime type [" + mime + "]");
         }
-        RDFWriter writer = writerRegistry.get(fileFormatForMIMEType).getWriter(stringWriter);
+        RDFWriter writer = writerRegistry.get(fileFormatForMimeType).getWriter(stringWriter);
         try {
             boolean pending = false;
             writer.startRDF();

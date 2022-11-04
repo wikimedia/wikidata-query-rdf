@@ -47,7 +47,7 @@ public class EventFileSender implements EventSender {
 
     @Override
     public boolean push(Event event) {
-       return push(Collections.singleton(event)) == 1;
+        return push(Collections.singleton(event)) == 1;
     }
 
     @Override
@@ -55,14 +55,14 @@ public class EventFileSender implements EventSender {
         AtomicInteger written = new AtomicInteger();
         try {
             events.forEach(value -> {
-                        try {
-                            objectWriter.writeValue(writer, value);
-                            writer.write("\n");
-                            written.incrementAndGet();
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    });
+                try {
+                    objectWriter.writeValue(writer, value);
+                    writer.write("\n");
+                    written.incrementAndGet();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
             writer.flush();
         } catch (IOException e) {
             log.error("Couldn't write events", e);
@@ -74,6 +74,5 @@ public class EventFileSender implements EventSender {
     @Override
     public void close() throws IOException {
         writer.close();
-
     }
 }

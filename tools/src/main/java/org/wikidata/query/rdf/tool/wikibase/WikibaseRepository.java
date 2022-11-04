@@ -74,7 +74,7 @@ import lombok.Value;
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class WikibaseRepository implements Closeable {
-    private static final Logger log = LoggerFactory.getLogger(WikibaseRepository.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WikibaseRepository.class);
 
     /**
      * Timeout for communications to Wikidata, in ms.
@@ -236,7 +236,7 @@ public class WikibaseRepository implements Closeable {
     public RecentChangeResponse fetchRecentChanges(Instant nextStartTime, Continue lastContinue, int batchSize)
             throws RetryableException {
         URI uri = uris.recentChanges(nextStartTime, lastContinue, batchSize);
-        log.debug("Polling for changes from {}", uri);
+        LOG.debug("Polling for changes from {}", uri);
         HttpGet request = new HttpGet(uri);
         try {
             return checkApi(getJson(request, RecentChangeResponse.class));
@@ -284,7 +284,7 @@ public class WikibaseRepository implements Closeable {
             throw new IllegalArgumentException("Cannot fetch more than " + MAX_ITEMS_PER_ACTION_REQUEST + " entity revisions");
         }
         URI uri = uriFunction.apply(ids);
-        log.info("Get latest revision ids for {}", uri);
+        LOG.info("Get latest revision ids for {}", uri);
 
         HttpGet request = new HttpGet(uri);
         try {
@@ -328,7 +328,7 @@ public class WikibaseRepository implements Closeable {
     private void collectStatementsFromUrl(URI uri, StatementCollector collector, Timer timer) throws RetryableException {
         RDFParser parser = this.rdfParserSupplier.get(collector);
         HttpGet request = new HttpGet(uri);
-        log.debug("Fetching rdf from {}", uri);
+        LOG.debug("Fetching rdf from {}", uri);
         try (Timer.Context timerContext = timer.time()) {
             try (CloseableHttpResponse response = client.execute(request)) {
                 if (response.getStatusLine().getStatusCode() == 404) {
@@ -419,10 +419,10 @@ public class WikibaseRepository implements Closeable {
                 // TODO: add RetryableException here?
                 // Skip loading constraints on fail, it's not the reason to give up
                 // on the whole item.
-                log.info("Failed to load constraints: {}", ex.getMessage());
+                LOG.info("Failed to load constraints: {}", ex.getMessage());
             }
         }
-        log.debug("Done in {} ms", timerContext.stop() / 1000_000);
+        LOG.debug("Done in {} ms", timerContext.stop() / 1000_000);
         return collector.getStatements();
     }
 

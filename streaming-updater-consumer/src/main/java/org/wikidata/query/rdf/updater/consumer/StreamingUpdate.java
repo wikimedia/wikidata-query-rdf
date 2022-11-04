@@ -34,18 +34,18 @@ import com.codahale.metrics.jmx.JmxReporter;
 import com.github.rholder.retry.Retryer;
 
 public final class StreamingUpdate {
-    private static final Logger log = LoggerFactory.getLogger(StreamingUpdate.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StreamingUpdate.class);
 
     private StreamingUpdate() {}
 
     public static void main(String[] args) {
-        log.info("Starting StreamingUpdater");
+        LOG.info("Starting StreamingUpdater");
         StreamingUpdateOptions options = OptionsUtils.handleOptions(StreamingUpdateOptions.class, args);
         MetricRegistry metrics = new MetricRegistry();
         JmxReporter reporter = JmxReporter.forRegistry(metrics).inDomain(options.metricDomain()).build();
         StreamingUpdaterConsumer updater = build(options, metrics);
         Thread streamingUpdaterThread = Thread.currentThread();
-        streamingUpdaterThread.setUncaughtExceptionHandler((t, e) -> log.error("Uncaught exception in the updater thread: ", e));
+        streamingUpdaterThread.setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in the updater thread: ", e));
         addShutdownHook(updater, streamingUpdaterThread, reporter);
         reporter.start();
         updater.run();
@@ -57,10 +57,10 @@ public final class StreamingUpdate {
             try {
                 updaterThread.join(2000);
             } catch (InterruptedException e) {
-                log.error("Failed to stop the streaming updater", e);
+                LOG.error("Failed to stop the streaming updater", e);
             }
             if (updaterThread.isAlive()) {
-                log.warn("Failed to stop the streaming updater cleanly.");
+                LOG.warn("Failed to stop the streaming updater cleanly.");
             }
             reporter.close();
         }, "StreamingUpdate shutdown");
@@ -89,7 +89,7 @@ public final class StreamingUpdate {
         return new StreamingUpdaterConsumer(consumer, new RdfRepositoryUpdater(rdfClient, uris), metrics, options.inconsistenciesWarningThreshold());
     }
 
-    static String RESET_OFFSETS_TO_EARLIEST = "earliest";
+    private static final String RESET_OFFSETS_TO_EARLIEST = "earliest";
 
     private static BiConsumer<Consumer<String, MutationEventData>, TopicPartition> parseInitialOffset(StreamingUpdateOptions options) {
         String initialOffsets = options.initialOffsets();

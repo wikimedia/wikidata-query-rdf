@@ -34,7 +34,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 @SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
 public abstract class AbstractMultiTypeExtension<V extends BigdataValue> implements IExtension<V> {
-    private static final Logger log = LoggerFactory.getLogger(AbstractMultiTypeExtension.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractMultiTypeExtension.class);
 
     /**
      * IV to type map as resolved against resolver provided on construction.
@@ -77,7 +77,7 @@ public abstract class AbstractMultiTypeExtension<V extends BigdataValue> impleme
              * Exception logging in blazegraph isn't great for this so we log
              * here as well
              */
-            log.warn("Couldn't create IV", e);
+            LOG.warn("Couldn't create IV", e);
             throw e;
         }
     }

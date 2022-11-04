@@ -18,7 +18,7 @@ import com.google.common.cache.Cache;
  */
 public class TimeAndErrorsThrottler<S extends TimeAndErrorsState> extends Throttler<S> {
 
-    private static final Logger log = LoggerFactory.getLogger(TimeAndErrorsThrottler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TimeAndErrorsThrottler.class);
 
     /** Requests longer than this will trigger tracking resource consumption. */
     private final Duration requestTimeThreshold;
@@ -72,8 +72,8 @@ public class TimeAndErrorsThrottler<S extends TimeAndErrorsState> extends Thrott
             if (state != null) {
                 state.consumeTime(elapsed);
             }
-        } catch (ExecutionException ee) {
-            log.warn("Could not create throttling state", ee);
+        } catch (ExecutionException e) {
+            LOG.warn("Could not create throttling state", e);
         }
     }
 
@@ -92,8 +92,8 @@ public class TimeAndErrorsThrottler<S extends TimeAndErrorsState> extends Thrott
 
             state.consumeError();
             state.consumeTime(elapsed);
-        } catch (ExecutionException ee) {
-            log.warn("Could not create throttling state", ee);
+        } catch (ExecutionException e) {
+            LOG.warn("Could not create throttling state", e);
         }
     }
 

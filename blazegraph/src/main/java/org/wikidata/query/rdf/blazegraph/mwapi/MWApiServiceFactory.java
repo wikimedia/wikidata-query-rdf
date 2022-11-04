@@ -57,7 +57,7 @@ import com.google.common.collect.ImmutableSet;
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class MWApiServiceFactory extends AbstractServiceFactory {
-    private static final Logger log = LoggerFactory.getLogger(MWApiServiceFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MWApiServiceFactory.class);
 
     /**
      * Options configuring this service as a native Blazegraph service.
@@ -144,14 +144,14 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
         ServiceRegistry reg = ServiceRegistry.getInstance();
         try {
             Path path = Paths.get(CONFIG_FILE);
-            log.info("Loading MWAPI service configuration from {}", path.toAbsolutePath());
+            LOG.info("Loading MWAPI service configuration from {}", path.toAbsolutePath());
             Reader configReader = Files.newBufferedReader(path, StandardCharsets.UTF_8);
             final ServiceConfig config = new ServiceConfig(configReader);
             reg.add(SERVICE_KEY, new MWApiServiceFactory(config, requestTimer));
-            log.info("Registered {} services.", config.size());
+            LOG.info("Registered {} services.", config.size());
         } catch (IOException e) {
             // Do not add to whitelist if init failed.
-            log.warn("MW Service registration failed.", e);
+            LOG.warn("MW Service registration failed.", e);
             return;
         }
         reg.addWhitelistURL(SERVICE_KEY.toString());

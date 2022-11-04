@@ -69,7 +69,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
         justification = "While inputVars could be implemented as a list, the maps makes semantic sense." +
                 "docBuilder as an instance ThreadLocal seems reasonable to me, especially since we expect a single long lived instance.")
 public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServiceCall {
-    private static final Logger log = LoggerFactory.getLogger(MWApiServiceCall.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MWApiServiceCall.class);
     /**
      * Request timeout property for MWAPI requests.
      */
@@ -146,7 +146,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                 return dbf.newDocumentBuilder();
             } catch (ParserConfigurationException e) {
                 // Converting to runtime exception since anon classes + checked exceptions = :(
-                log.error("Could not configure parser", e);
+                LOG.error("Could not configure parser", e);
                 throw new IllegalStateException(e);
             }
         });
@@ -211,7 +211,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
             throw new IllegalArgumentException("Bad endpoint URL", e);
         }
         if (endpointURL == null) {
-            log.debug("MWAPI: null endpointURL");
+            LOG.debug("MWAPI: null endpointURL");
             return null;
         }
         Request request = client.newRequest(endpointURL);
@@ -277,7 +277,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
     public ResultWithContinue parseResponse(InputStream responseStream, IBindingSet binding, int recordsCount)
             throws SAXException, IOException, XPathExpressionException {
         if (outputVars.isEmpty()) {
-            log.debug("MWAPI: outputVars is empty");
+            LOG.debug("MWAPI: outputVars is empty");
             return null;
         }
         Document doc = docBuilder.get().parse(responseStream);
@@ -290,7 +290,7 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
         NodeList nodes = (NodeList) itemsXPath.evaluate(doc, XPathConstants.NODESET);
         IBindingSet[] results = new IBindingSet[nodes.getLength()];
         if (results.length == 0) {
-            log.debug("MWAPI: item xpath {} returned 0 node (empty?)", template.getItemsPath());
+            LOG.debug("MWAPI: item xpath {} returned 0 node (empty?)", template.getItemsPath());
             return new ResultWithContinue(results, searchContinue);
         }
         final Map<OutputVariable, XPathExpression> compiledVars = new HashMap<>();
@@ -475,14 +475,14 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                 lastResult.getContinue().forEach(req::param);
             }
             try (Closeable mdc = MDC.putCloseable(MW_API_REQUEST, req.getQuery())) {
-                log.debug("MWAPI REQUEST: {}", req.getQuery());
+                LOG.debug("MWAPI REQUEST: {}", req.getQuery());
                 final Response response;
                 InputStreamResponseListener listener = new InputStreamResponseListener();
 
                 try (Timer.Context context = requestTimer.time()) {
                     req.send(listener);
                     response = listener.get(requestTimeout, TimeUnit.MILLISECONDS);
-                    log.debug("MWAPI RESPONSE: HTTP {}, HEADERS: {}", response.getStatus(), response.getHeaders());
+                    LOG.debug("MWAPI RESPONSE: HTTP {}, HEADERS: {}", response.getStatus(), response.getHeaders());
                 }
 
                 if (response.getStatus() != HttpStatus.OK_200) {
@@ -494,17 +494,17 @@ public class MWApiServiceCall implements MockIVReturningServiceCall, BigdataServ
                     return parseResponse(inputStream, bindings, currentRecordsCount);
                 }
             } catch (InterruptedException e) {
-                log.debug("MWAPI REQUEST ERR: {}", req.getQuery(), e);
+                LOG.debug("MWAPI REQUEST ERR: {}", req.getQuery(), e);
                 Thread.currentThread().interrupt();
                 throw new RuntimeException("MWAPI request failed", e);
             } catch (ExecutionException | TimeoutException  e) {
-                log.debug("MWAPI REQUEST ERR: {}", req.getQuery(), e);
+                LOG.debug("MWAPI REQUEST ERR: {}", req.getQuery(), e);
                 throw new RuntimeException("MWAPI request failed", e);
             } catch (SAXException | IOException | XPathExpressionException e) {
-                log.debug("MWAPI REQUEST ERR: {}", req.getQuery(), e);
+                LOG.debug("MWAPI REQUEST ERR: {}", req.getQuery(), e);
                 throw new RuntimeException("Failed to parse response", e);
             } finally {
-                log.debug("MWAPI REQUEST END: {}", req.getQuery());
+                LOG.debug("MWAPI REQUEST END: {}", req.getQuery());
             }
         }
 

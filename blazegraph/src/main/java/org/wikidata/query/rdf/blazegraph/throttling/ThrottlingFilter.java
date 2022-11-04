@@ -106,7 +106,7 @@ import com.google.common.collect.ImmutableList;
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class ThrottlingFilter extends MonitoredFilter implements Filter, ThrottlingMXBean {
 
-    private static final Logger log = LoggerFactory.getLogger(ThrottlingFilter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ThrottlingFilter.class);
 
     /** Is throttling enabled. */
     private boolean enabled;
@@ -296,7 +296,7 @@ public class ThrottlingFilter extends MonitoredFilter implements Filter, Throttl
 
         Instant bannedUntil = banThrottler.throttledUntil(bucket, httpRequest);
         if (bannedUntil.isAfter(now())) {
-            log.info("A request is being banned.");
+            LOG.info("A request is being banned.");
             if (enabled) {
                 nbBannedRequests.increment();
                 notifyUserBanned(httpResponse, bannedUntil);
@@ -306,7 +306,7 @@ public class ThrottlingFilter extends MonitoredFilter implements Filter, Throttl
 
         Duration throttledDuration = timeAndErrorsThrottler.throttledDuration(bucket, httpRequest);
         if (!throttledDuration.isNegative()) {
-            log.info("A request is being throttled.");
+            LOG.info("A request is being throttled.");
             if (enabled) {
                 nbThrottledRequests.increment();
                 notifyUserThrottled(httpResponse, throttledDuration);
@@ -390,7 +390,7 @@ public class ThrottlingFilter extends MonitoredFilter implements Filter, Throttl
         try {
             return Pattern.compile(line, Pattern.DOTALL);
         } catch (PatternSyntaxException e) {
-            log.warn("Invalid pattern: {}", line);
+            LOG.warn("Invalid pattern: {}", line);
             return null;
         }
     }
@@ -399,7 +399,7 @@ public class ThrottlingFilter extends MonitoredFilter implements Filter, Throttl
         try {
             Path patternFile = Paths.get(patternFilename);
             if (!patternFile.toFile().exists()) {
-                log.info("Patterns file {} not found, ignoring.", patternFilename);
+                LOG.info("Patterns file {} not found, ignoring.", patternFilename);
                 return ImmutableList.of();
             }
             try (Stream<String> lines = Files.lines(patternFile, UTF_8)) {
@@ -407,11 +407,11 @@ public class ThrottlingFilter extends MonitoredFilter implements Filter, Throttl
                         .map(this::safeCompile)
                         .filter(Objects::nonNull)
                         .collect(toImmutableList());
-                log.info("Loaded {} patterns from {}", patterns.size(), patternFilename);
+                LOG.info("Loaded {} patterns from {}", patterns.size(), patternFilename);
                 return patterns;
             }
         } catch (IOException e) {
-            log.warn("Failed reading from patterns file {}.", patternFilename);
+            LOG.warn("Failed reading from patterns file {}.", patternFilename);
         }
         return ImmutableList.of();
     }

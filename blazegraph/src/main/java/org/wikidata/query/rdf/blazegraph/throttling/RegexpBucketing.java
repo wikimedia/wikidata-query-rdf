@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
  */
 @Immutable @ThreadSafe
 public class RegexpBucketing implements Bucketing {
-    private static final Logger log = LoggerFactory.getLogger(RegexpBucketing.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RegexpBucketing.class);
 
     /**
      * List of known patterns.
@@ -44,7 +44,7 @@ public class RegexpBucketing implements Bucketing {
         for (Pattern p : patterns) {
             Matcher m = p.matcher(requestData);
             if (m.find()) {
-                log.debug("Matched pattern {} on {}", p, requestData);
+                LOG.debug("Matched pattern {} on {}", p, requestData);
                 return p;
             }
         }

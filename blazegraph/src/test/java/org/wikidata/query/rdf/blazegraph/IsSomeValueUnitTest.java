@@ -22,7 +22,7 @@ public class IsSomeValueUnitTest extends AbstractBlazegraphTestBase {
         FunctionRegistry.add(u, f);
     };
 
-    public static final UrisScheme scheme = UrisSchemeFactory.getURISystem();
+    public static final UrisScheme SCHEME = UrisSchemeFactory.getURISystem();
 
     @AfterClass
     public static void after() {
@@ -40,7 +40,7 @@ public class IsSomeValueUnitTest extends AbstractBlazegraphTestBase {
     static void switchToSkolem() {
         WikibaseContextListener.registerIsSomeValueFunction(
                 REPLACE_FUNC_IN_GLOBAL_REGISTRY,
-                IsSomeValueFunctionFactory.SomeValueMode.Skolem, scheme.wellKnownBNodeIRIPrefix());
+                IsSomeValueFunctionFactory.SomeValueMode.Skolem, SCHEME.wellKnownBNodeIRIPrefix());
     }
 
     @Test
@@ -68,7 +68,7 @@ public class IsSomeValueUnitTest extends AbstractBlazegraphTestBase {
     public void testReturnTrueOnSkolemPrefix() throws QueryEvaluationException {
         switchToSkolem();
         BigdataURI uri = store().getValueFactory().createURI("http://unittest.local/testReturnTrueOnSkolemPrefix");
-        BigdataURI skolem = store().getValueFactory().createURI(scheme.wellKnownBNodeIRIPrefix(), "91212dc3fcc8b65607d27f92b36e5761");
+        BigdataURI skolem = store().getValueFactory().createURI(SCHEME.wellKnownBNodeIRIPrefix(), "91212dc3fcc8b65607d27f92b36e5761");
         add(uri, uri, skolem);
         TupleQueryResult tqr = query("select ?s where { ?s <" + uri + "> ?o FILTER wikibase:isSomeValue(?o) }");
         assertThat(tqr.hasNext()).isTrue();
@@ -80,7 +80,7 @@ public class IsSomeValueUnitTest extends AbstractBlazegraphTestBase {
     public void testReturnFalseOnInlinedURI() throws QueryEvaluationException {
         switchToSkolem();
         BigdataURI uri = store().getValueFactory().createURI("http://unittest.local/testReturnTrueOnSkolemPrefix");
-        BigdataURI skolem = store().getValueFactory().createURI(scheme.value(), "91212dc3fcc8b65607d27f92b36e5761");
+        BigdataURI skolem = store().getValueFactory().createURI(SCHEME.value(), "91212dc3fcc8b65607d27f92b36e5761");
         add(uri, uri, skolem);
         TupleQueryResult tqr = query("select ?s where { ?s <" + uri + "> ?o FILTER wikibase:isSomeValue(?o) }");
         assertThat(tqr.hasNext()).isFalse();

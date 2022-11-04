@@ -152,7 +152,7 @@ public class MWApiServiceCallUnitTest extends AbstractBlazegraphTestBase {
                 new OutputVariable(makeVariable("header"), "/api/header/@value"),
                 new OutputVariable(OutputVariable.Type.ITEM, makeVariable("item"), "@id"),
                 new OutputVariable(OutputVariable.Type.ORDINAL, makeVariable("num"), "@id")
-                );
+        );
         when(template.getItemsPath()).thenReturn("/api/result");
         InputStream responseStream = new ByteArrayInputStream(
                 "<api><header value=\"heading\"></header><result name=\"result1\" id=\"Q1\"></result><result name=\"result2\"></result></api>"
@@ -212,8 +212,8 @@ public class MWApiServiceCallUnitTest extends AbstractBlazegraphTestBase {
         InputStream responseStream = new ByteArrayInputStream(
                 "<api><header value=\"heading\"></header><result name=\"result1\">datadata</result></api>"
                         .getBytes("UTF-8"));
-         ResultWithContinue results = createCall(outputVars).parseResponse(responseStream, binding, 0);
-         assertNull(results.getContinue());
+        ResultWithContinue results = createCall(outputVars).parseResponse(responseStream, binding, 0);
+        assertNull(results.getContinue());
     }
 
     @Test
@@ -223,11 +223,11 @@ public class MWApiServiceCallUnitTest extends AbstractBlazegraphTestBase {
         InputStream responseStream = new ByteArrayInputStream(
                 "<api><continue sroffset=\"5\" continue=\"-||\"></continue><header value=\"heading\"></header><result name=\"result1\">datadata</result></api>"
                         .getBytes("UTF-8"));
-         ResultWithContinue results = createCall(outputVars).parseResponse(responseStream, binding, 0);
-         Map<String, String> continueMap = results.getContinue();
-         assertThat(continueMap.keySet(), containsInAnyOrder("sroffset", "continue"));
-         assertThat(continueMap, hasEntry("sroffset", "5"));
-         assertThat(continueMap, hasEntry("continue", "-||"));
+        ResultWithContinue results = createCall(outputVars).parseResponse(responseStream, binding, 0);
+        Map<String, String> continueMap = results.getContinue();
+        assertThat(continueMap.keySet(), containsInAnyOrder("sroffset", "continue"));
+        assertThat(continueMap, hasEntry("sroffset", "5"));
+        assertThat(continueMap, hasEntry("continue", "-||"));
     }
 
     private MWApiServiceCall createCall() throws Exception {

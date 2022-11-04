@@ -27,11 +27,11 @@ public final class RDFParserSuppliers {
 
     public RDFParserSupplier forMimeType(String mimeType) {
         return (handler) -> {
-            RDFFormat fileFormatForMIMEType = registry.getFileFormatForMIMEType(mimeType);
-            if (fileFormatForMIMEType == null) {
+            RDFFormat fileFormatForMimeType = registry.getFileFormatForMIMEType(mimeType);
+            if (fileFormatForMimeType == null) {
                 throw new IllegalArgumentException("Unsupported mime type [" + mimeType + "]");
             }
-            RDFParser parser = registry.get(fileFormatForMIMEType).getParser();
+            RDFParser parser = registry.get(fileFormatForMimeType).getParser();
             parser.getParserConfig().set(BasicParserSettings.PRESERVE_BNODE_IDS, Boolean.TRUE);
             parser.setRDFHandler(new NormalizingRdfHandler(handler));
             return parser;

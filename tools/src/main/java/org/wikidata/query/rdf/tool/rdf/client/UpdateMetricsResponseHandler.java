@@ -21,7 +21,7 @@ import org.wikidata.query.rdf.tool.rdf.MultiSyncStep;
  * for Blazegraph.
  */
 public class UpdateMetricsResponseHandler implements ResponseHandler<CollectedUpdateMetrics> {
-    private static final Logger log = LoggerFactory.getLogger(UpdateMetricsResponseHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(UpdateMetricsResponseHandler.class);
 
     private static final String COMMIT_TOTAL_ELAPSED = "COMMIT: totalElapsed";
     private static final String MUTATION_COUNT = "mutationCount";
@@ -46,7 +46,7 @@ public class UpdateMetricsResponseHandler implements ResponseHandler<CollectedUp
 
         CollectedUpdateMetrics collectedUpdateMetrics = extractMetrics(lines);
 
-        log.debug("Received metrics from update: {}", collectedUpdateMetrics);
+        LOG.debug("Received metrics from update: {}", collectedUpdateMetrics);
         return collectedUpdateMetrics;
     }
 
@@ -132,7 +132,7 @@ public class UpdateMetricsResponseHandler implements ResponseHandler<CollectedUp
         try {
             return Integer.valueOf(rawIntMetric);
         } catch (NumberFormatException e) {
-            log.error("Issue with the content - unparsable value: {}", rawIntMetric, e);
+            LOG.error("Issue with the content - unparsable value: {}", rawIntMetric, e);
             return null;
         }
     }

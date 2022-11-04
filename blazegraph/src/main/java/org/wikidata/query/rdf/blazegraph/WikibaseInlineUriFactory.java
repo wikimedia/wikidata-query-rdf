@@ -30,16 +30,16 @@ import com.bigdata.rdf.internal.TrailingSlashRemovingInlineUriHandler;
  * forbid them entirely.
  */
 public class WikibaseInlineUriFactory extends InlineURIFactory {
-    private static final UrisScheme uris = UrisSchemeFactory.getURISystem();
+    private static final UrisScheme URIS = UrisSchemeFactory.getURISystem();
 
     public WikibaseInlineUriFactory() {
         /*
          * Order matters here because some of these are prefixes of each other.
          */
         for (PropertyType p: PropertyType.values()) {
-            addHandler(new InlineUnsignedIntegerURIHandler(uris.property(p) + "P"));
+            addHandler(new InlineUnsignedIntegerURIHandler(URIS.property(p) + "P"));
         }
-        uris.inlinableEntityInitials().forEach(s -> addHandler(new InlineUnsignedIntegerURIHandler(uris.entityIdToURI(s))));
+        URIS.inlinableEntityInitials().forEach(s -> addHandler(new InlineUnsignedIntegerURIHandler(URIS.entityIdToURI(s))));
         // Lexemes TODO: can't really do it because of Forms: L1-F1
 
         /*
@@ -73,13 +73,13 @@ public class WikibaseInlineUriFactory extends InlineURIFactory {
          * similarly 160 bit wide. 160 bits is too big to fit into a uuid so we
          * can't inline that without bloating either.
          */
-        addHandler(new UndecoratedUuidInlineUriHandler(uris.value()));
+        addHandler(new UndecoratedUuidInlineUriHandler(URIS.value()));
     }
 
     public static class V001 extends WikibaseInlineUriFactory {
         public V001() {
             super();
-            addHandler(new InlineFixedWidthHexIntegerURIHandler(uris.reference(), 40));
+            addHandler(new InlineFixedWidthHexIntegerURIHandler(URIS.reference(), 40));
             InlineURIHandler viaf = new TrailingSlashRemovingInlineUriHandler(
                     new InlineUnsignedIntegerURIHandler(CommonValues.VIAF_HTTP));
             addHandler(viaf);
@@ -92,7 +92,7 @@ public class WikibaseInlineUriFactory extends InlineURIFactory {
     public static class V002 extends V001 {
         public V002() {
             super();
-            addHandler(new UndecoratedUuidInlineUriHandler(uris.wellKnownBNodeIRIPrefix()));
+            addHandler(new UndecoratedUuidInlineUriHandler(URIS.wellKnownBNodeIRIPrefix()));
         }
 
     }

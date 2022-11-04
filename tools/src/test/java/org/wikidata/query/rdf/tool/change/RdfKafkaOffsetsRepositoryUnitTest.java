@@ -79,16 +79,13 @@ public class RdfKafkaOffsetsRepositoryUnitTest {
         assertThat(loadedOffsets)
                 .containsEntry(
                         new TopicPartition("topic-1", 2),
-                        new OffsetAndTimestamp(3, startTimestamp)
-                )
+                        new OffsetAndTimestamp(3, startTimestamp))
                 .containsEntry(
                         new TopicPartition("topic-4", 5),
-                        new OffsetAndTimestamp(6, startTimestamp)
-                )
+                        new OffsetAndTimestamp(6, startTimestamp))
                 .containsEntry(
                         new TopicPartition("topic-7", 8),
-                        new OffsetAndTimestamp(2149809252L, startTimestamp)
-                );
+                        new OffsetAndTimestamp(2149809252L, startTimestamp));
     }
 
     @Test
@@ -116,8 +113,7 @@ public class RdfKafkaOffsetsRepositoryUnitTest {
                         "  <https://acme.test> wikibase:kafka ( \"topic-1:2\" 3 ) .",
                         "<https://acme.test> wikibase:kafka ( \"topic-4:5\" 6 ) .",
                         "<https://acme.test> wikibase:kafka ( \"topic-7:8\" 2149809252 ) .",
-                        "}"
-                );
+                        "}");
     }
 
 }

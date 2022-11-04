@@ -57,7 +57,7 @@ public class AskQueryResponseHandlerUnitTest {
     }
 
     @Test(expected = IOException.class)
-    public void invalidJSONRaisesException() throws IOException {
+    public void invalidJsonRaisesException() throws IOException {
         setupResponse("non json response");
 
         responseHandler.parse(response);

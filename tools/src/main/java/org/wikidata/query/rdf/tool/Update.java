@@ -55,14 +55,14 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  * Update tool.
  */
 @SuppressWarnings({
-        "checkstyle:classfanoutcomplexity", // object initialization and wiring needs to be cleaned up
-        "checkstyle:IllegalCatch" // Catching exception is OK in a main exception handler, more so since the exception is rethrown
+    "checkstyle:classfanoutcomplexity", // object initialization and wiring needs to be cleaned up
+    "checkstyle:IllegalCatch" // Catching exception is OK in a main exception handler, more so since the exception is rethrown
 })
 public final class Update {
     /** Request timeout property. */
     private static final String TIMEOUT_PROPERTY = RdfRepository.class + ".timeout";
 
-    private static final Logger log = LoggerFactory.getLogger(Update.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Update.class);
 
     /**
      * Max POST form content size.
@@ -91,7 +91,7 @@ public final class Update {
         Closer closer = Closer.create();
         try {
             Properties buildProps = loadBuildProperties();
-            log.info("Starting Updater {} ({})",
+            LOG.info("Starting Updater {} ({})",
                     buildProps.getProperty("git.build.version", "UNKNOWN"),
                     buildProps.getProperty("git.commit.id", "UNKNOWN"));
             Updater<? extends Change.Batch> updater = initialize(args, closer);
@@ -108,7 +108,7 @@ public final class Update {
         try (InputStream instream = Update.class.getClassLoader().getResourceAsStream("git.properties")) {
             prop.load(instream);
         } catch (IOException e) {
-            log.warn("Failed to load properties file");
+            LOG.warn("Failed to load properties file");
         }
         return prop;
     }
@@ -159,7 +159,7 @@ public final class Update {
             closer.register(updater);
             return updater;
         } catch (Exception e) {
-            log.error("Error during initialization.", e);
+            LOG.error("Error during initialization.", e);
             throw e;
         }
     }
@@ -173,7 +173,7 @@ public final class Update {
         try {
             updater.run();
         } catch (Exception e) {
-            log.error("Error during updater run.", e);
+            LOG.error("Error during updater run.", e);
             throw e;
         }
     }

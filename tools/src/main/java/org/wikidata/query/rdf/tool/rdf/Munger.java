@@ -54,7 +54,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * tightly coupled with Wikibase's export format.
  */
 public final class Munger {
-    private static final Logger log = LoggerFactory.getLogger(Munger.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Munger.class);
     /**
      * Wikibase uris we're working with.
      */
@@ -562,8 +562,8 @@ public final class Munger {
                 // Q1 skos:prefLabel "foo" is a dupe of rdfs:label
                 return false;
             case RDFS.LABEL:
-                    if (uris.entityURItoId(subject).startsWith("L")
-                            || subEntities.contains(subject)) {
+                if (uris.entityURItoId(subject).startsWith("L")
+                        || subEntities.contains(subject)) {
                     // Skip labels for Lexeme & its sub-entities, e.g. Forms and Senses
                     return false;
                 }
@@ -799,18 +799,18 @@ public final class Munger {
                 if (statements.isEmpty() && restoredStatements.isEmpty()) {
                     throw new BadSubjectException(unknownSubjects.keySet(), uris);
                 } else {
-                    log.info(
+                    LOG.info(
                             "Unrecognized subjects: {} while processing {}.  Expected only sitelinks and subjects starting with {} and {}",
                             unknownSubjects.keySet(), entityUri, uris.entityData(), uris.entityURIs());
                     // Log statements we're about to drop, unless there are too many
                     unknownSubjects.entries().stream()
                             .limit(20)
                             .forEach(
-                                    e -> log.info(
+                                    e -> LOG.info(
                                             "Unrecognized statement: s:{} p:{} o:{}",
                                             e.getValue().getSubject(), e.getValue().getPredicate(), e.getValue().getObject()));
                     if (unknownSubjects.size() > 20) {
-                        log.info("More than 20 unrecognized statements, further statements not logged.");
+                        LOG.info("More than 20 unrecognized statements, further statements not logged.");
                     }
                 }
             }

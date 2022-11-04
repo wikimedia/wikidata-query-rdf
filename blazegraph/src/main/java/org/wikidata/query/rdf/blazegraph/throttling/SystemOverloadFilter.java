@@ -38,7 +38,7 @@ import com.google.common.annotations.VisibleForTesting;
  */
 public class SystemOverloadFilter extends MonitoredFilter implements Filter, SystemOverloadFilterMXBean {
 
-    private static final Logger logger = LoggerFactory.getLogger(SystemOverloadFilter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemOverloadFilter.class);
 
     @VisibleForTesting
     OperatingSystemMXBean operatingSystemMXBean;
@@ -55,7 +55,7 @@ public class SystemOverloadFilter extends MonitoredFilter implements Filter, Sys
             operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
         } catch (IllegalArgumentException e) {
             operatingSystemMXBean = null;
-            logger.error("Could not load {}.", OperatingSystemMXBean.class.getSimpleName(), e);
+            LOGGER.error("Could not load {}.", OperatingSystemMXBean.class.getSimpleName(), e);
         }
 
         FilterConfiguration config = new FilterConfiguration(filterConfig, WDQS_CONFIG_PREFIX);
@@ -123,7 +123,7 @@ public class SystemOverloadFilter extends MonitoredFilter implements Filter, Sys
     private void notifyOverloaded(HttpServletResponse response) throws IOException {
         response.sendError(503, "Service is overloaded, please try again later.");
 
-        logger.warn("Request throttled because of system load higher than {}.", systemLoadLowLimit);
+        LOGGER.warn("Request throttled because of system load higher than {}.", systemLoadLowLimit);
         rejectedCount.increment();
     }
 

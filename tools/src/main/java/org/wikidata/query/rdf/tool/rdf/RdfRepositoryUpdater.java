@@ -92,7 +92,7 @@ public class RdfRepositoryUpdater implements AutoCloseable {
 
         int deleteMutations = 0;
         if (patch.getEntityIdsToDelete().size() > 0) {
-           deleteMutations = deleteEntities(patch.getEntityIdsToDelete());
+            deleteMutations = deleteEntities(patch.getEntityIdsToDelete());
         }
         int reconciliationMutation = 0;
         if (patch.getReconciliations().size() > 0) {

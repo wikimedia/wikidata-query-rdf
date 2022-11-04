@@ -44,14 +44,14 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 @SuppressWarnings("rawtypes")
 public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
-    private static final Logger log = LoggerFactory.getLogger(EmptyLabelServiceOptimizer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EmptyLabelServiceOptimizer.class);
 
     /**
      * Schema.org's description property as a URI.
      */
     private static final URI DESCRIPTION = new URIImpl(SchemaDotOrg.DESCRIPTION);
 
-	private static final String LABEL_SERVICE_PROJECTION = "LabelService.projection";
+    private static final String LABEL_SERVICE_PROJECTION = "LabelService.projection";
 
     @Override
     protected void optimizeJoinGroup(AST2BOpContext ctx, StaticAnalysis sa, IBindingSet[] bSets, JoinGroupNode op) {
@@ -64,7 +64,7 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
         }
         op.getChildren(SubqueryBase.class).forEach(node -> {
             if (node.getWhereClause() != null) {
-	            BOp whereClause = node.getWhereClause();
+                BOp whereClause = node.getWhereClause();
                 whereClause.setProperty(LABEL_SERVICE_PROJECTION, node.getProjection());
             }
         });
@@ -119,7 +119,7 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
             if (projection != null) {
                 return projection;
             }
-        	parent = parent.getParent();
+            parent = parent.getParent();
         }
         return null;
     }
@@ -166,8 +166,8 @@ public class EmptyLabelServiceOptimizer extends AbstractJoinGroupOptimizer {
             boolean replaced = addResolutionIfSuffix(ctx, g, "AltLabel", SKOS.ALT_LABEL, v)
                     || addResolutionIfSuffix(ctx, g, "Label", RDFS.LABEL, v)
                     || addResolutionIfSuffix(ctx, g, "Description", DESCRIPTION, v);
-            if (replaced && log.isDebugEnabled()) {
-                log.debug("Resolving {} using a label lookup.", v);
+            if (replaced && LOG.isDebugEnabled()) {
+                LOG.debug("Resolving {} using a label lookup.", v);
             }
         }
     }

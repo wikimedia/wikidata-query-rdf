@@ -83,7 +83,7 @@ import com.google.common.annotations.VisibleForTesting;
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "rawtypes"})
 public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
-    private static final Logger log = LoggerFactory.getLogger(WikibaseContextListener.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WikibaseContextListener.class);
 
     /**
      * Enable whitelist configuration.
@@ -198,7 +198,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         registerIsSomeValueFunction(FunctionRegistry::add, mode, uris.wellKnownBNodeIRIPrefix());
         addPrefixes(uris);
 
-        log.info("Wikibase services initialized.");
+        LOG.info("Wikibase services initialized.");
     }
 
     /**
@@ -225,9 +225,9 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
             }
         } catch (FileNotFoundException e) {
             // ignore file not found
-            log.info("Whitelist file {} not found, ignoring.", WHITELIST);
+            LOG.info("Whitelist file {} not found, ignoring.", WHITELIST);
         } catch (IOException e) {
-            log.warn("Failed reading from whitelist file");
+            LOG.warn("Failed reading from whitelist file");
         }
     }
 

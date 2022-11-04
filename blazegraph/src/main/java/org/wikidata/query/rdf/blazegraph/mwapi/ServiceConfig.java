@@ -36,7 +36,7 @@ public class ServiceConfig {
 
     public ServiceConfig(Reader configReader) throws IOException {
         JsonNode mainNode = JacksonUtil.DEFAULT_OBJECT_READER.readTree(configReader);
-        this.serviceMap = loadJSONConfig(mainNode.get("services"));
+        this.serviceMap = loadJsonConfig(mainNode.get("services"));
         this.endpoints = loadEndpoints(mainNode.get("endpoints"));
     }
 
@@ -51,7 +51,7 @@ public class ServiceConfig {
      * @param node Services node
      * @return Map of API templates per name.
      */
-    private static Map<String, ApiTemplate> loadJSONConfig(JsonNode node) {
+    private static Map<String, ApiTemplate> loadJsonConfig(JsonNode node) {
         requireNonNull(node, "Must have services node");
 
         return Streams.stream(node.fieldNames())

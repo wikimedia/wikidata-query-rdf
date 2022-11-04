@@ -125,7 +125,7 @@ public class UpdaterMetricsRepository {
         private final Counter connFlush;
         private final Counter elapsed;
 
-         BlazeGraphMetrics(String baseName, MetricRegistry metricRegistry) {
+        BlazeGraphMetrics(String baseName, MetricRegistry metricRegistry) {
             totalElapsed = metricRegistry.counter(baseName + "total-elapsed");
             insertClause = metricRegistry.counter(baseName + "insert-clause");
             deleteClause = metricRegistry.counter(baseName + "delete-clause");
@@ -148,7 +148,7 @@ public class UpdaterMetricsRepository {
         }
 
         private void updateOnNonNull(Integer value, Counter counter) {
-             if (value != null) counter.inc(value);
+            if (value != null) counter.inc(value);
         }
     }
 }

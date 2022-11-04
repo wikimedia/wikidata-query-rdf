@@ -11,16 +11,16 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 public final class MapperUtils {
     // Initializing statically as instructed in https://github.com/FasterXML/jackson-modules-java8/tree/master/datetime
-    private static final ObjectMapper mapper;
+    private static final ObjectMapper MAPPER;
     static {
-        mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(new JavaTimeModule());
+        MAPPER = new ObjectMapper();
+        MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        MAPPER.registerModule(new JavaTimeModule());
     }
 
     @SuppressFBWarnings("MS_EXPOSE_REP")
     public static ObjectMapper getObjectMapper() {
-        return mapper;
+        return MAPPER;
     }
 
     private MapperUtils() {}

@@ -36,7 +36,7 @@ import fi.iki.elonen.NanoHTTPD.Response.Status;
  * requests.
  */
 public class Proxy extends NanoHTTPD {
-    private static final Logger log = LoggerFactory.getLogger(Proxy.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Proxy.class);
 
     /**
      * Options for this proxy for parsing with JewelCLI.
@@ -149,7 +149,7 @@ public class Proxy extends NanoHTTPD {
     @Override
     public void start() throws IOException {
         super.start();
-        log.info("Started proxy to {} on {}", wikibase.getHost(), getListeningPort());
+        LOG.info("Started proxy to {} on {}", wikibase.getHost(), getListeningPort());
     }
 
     /**
@@ -162,16 +162,16 @@ public class Proxy extends NanoHTTPD {
 
     @Override
     public Response serve(IHTTPSession session) {
-        log.debug("Serving {} {}", session.getMethod(), session.getUri());
+        LOG.debug("Serving {} {}", session.getMethod(), session.getUri());
         long currentRequest = requestCount.incrementAndGet();
         if (currentRequest % errorMod == 1) {
             final IStatus randomStatus = errorStatus[random.nextInt(errorStatus.length)];
-            log.debug("Returning an {}:{}", randomStatus.getRequestStatus(), randomStatus.getDescription());
+            LOG.debug("Returning an {}:{}", randomStatus.getRequestStatus(), randomStatus.getDescription());
             return new Response(randomStatus, NanoHTTPD.MIME_PLAINTEXT, "dummy error");
         }
         try {
             URI uri = buildUri(session.getUri(), session.getParms());
-            log.debug("Proxying to {}", uri);
+            LOG.debug("Proxying to {}", uri);
             HttpRequestBase request = buildRequest(session.getMethod(), uri);
             // TODO we totally ignore headers
             ignoreCookies(request);

@@ -54,7 +54,7 @@ public class KafkaPollerEventConsumptionUnitTest {
     public void receiveValidCreateEvent() throws RetryableException, IOException {
         initPoller();
         when(consumer.poll(anyLong())).thenReturn(records(
-                record(CREATE_TOPIC, "create-event.json")
+                createRecord(CREATE_TOPIC, "create-event.json")
         ), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
@@ -70,7 +70,7 @@ public class KafkaPollerEventConsumptionUnitTest {
     public void receiveRealCreateEvent() throws RetryableException, IOException {
         initPoller();
         when(consumer.poll(anyLong())).thenReturn(records(
-                record(CREATE_TOPIC, "create-event-full.json")
+                createRecord(CREATE_TOPIC, "create-event-full.json")
         ), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
@@ -86,7 +86,7 @@ public class KafkaPollerEventConsumptionUnitTest {
     public void receivePageDeleteEvent() throws RetryableException, IOException {
         initPoller();
         when(consumer.poll(anyLong())).thenReturn(records(
-                record(DELETE_TOPIC, "page-delete.json")
+                createRecord(DELETE_TOPIC, "page-delete.json")
         ), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
@@ -102,7 +102,7 @@ public class KafkaPollerEventConsumptionUnitTest {
     public void receivePageUndeleteEvent() throws RetryableException, IOException {
         initPoller();
         when(consumer.poll(anyLong())).thenReturn(records(
-            record(UNDELETE_TOPIC, "page-undelete.json")
+            createRecord(UNDELETE_TOPIC, "page-undelete.json")
         ), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
@@ -119,8 +119,8 @@ public class KafkaPollerEventConsumptionUnitTest {
     public void receivePropChangeEvent() throws RetryableException, IOException {
         initPoller();
         when(consumer.poll(anyLong())).thenReturn(records(asList(
-                record(CHANGE_TOPIC, "prop-change.json"),
-                record(CHANGE_TOPIC, "prop-change-wb.json") // this one will be ignored
+                createRecord(CHANGE_TOPIC, "prop-change.json"),
+                createRecord(CHANGE_TOPIC, "prop-change-wb.json") // this one will be ignored
         )), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
@@ -136,8 +136,8 @@ public class KafkaPollerEventConsumptionUnitTest {
     public void receiveClusteredEvents() throws RetryableException, IOException, URISyntaxException {
         initPoller("north", "south");
         when(consumer.poll(anyLong())).thenReturn(records(asList(
-                record("north." + CREATE_TOPIC, "create-event-full.json"),
-                record("south." + DELETE_TOPIC, "page-delete.json")
+                createRecord("north." + CREATE_TOPIC, "create-event-full.json"),
+                createRecord("south." + DELETE_TOPIC, "page-delete.json")
         )), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
@@ -160,9 +160,9 @@ public class KafkaPollerEventConsumptionUnitTest {
     public void receiveOtherEvents() throws RetryableException, IOException {
         initPoller();
         when(consumer.poll(anyLong())).thenReturn(records(asList(
-            record(CREATE_TOPIC, "rc-domain.json"),
-            record(CREATE_TOPIC, "create-event.json"),
-            record(CREATE_TOPIC, "rc-namespace.json")
+            createRecord(CREATE_TOPIC, "rc-domain.json"),
+            createRecord(CREATE_TOPIC, "create-event.json"),
+            createRecord(CREATE_TOPIC, "rc-namespace.json")
         )), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
@@ -174,7 +174,7 @@ public class KafkaPollerEventConsumptionUnitTest {
         assertThat(change.timestamp()).isEqualTo(Instant.parse("2018-02-19T13:31:23Z"));
     }
 
-    private ConsumerRecord<String, ChangeEvent> record(String topic, String data) throws IOException {
+    private ConsumerRecord<String, ChangeEvent> createRecord(String topic, String data) throws IOException {
         return new ConsumerRecord<>(topic, 0, 0, null, deserializer.deserialize(topic, load(data)));
     }
 
@@ -182,8 +182,8 @@ public class KafkaPollerEventConsumptionUnitTest {
         return new ConsumerRecords<>(records.stream().collect(groupingBy(r -> new TopicPartition(r.topic(), r.partition()))));
     }
 
-    private ConsumerRecords<String, ChangeEvent> records(ConsumerRecord<String, ChangeEvent> record) {
-        return records(singletonList(record));
+    private ConsumerRecords<String, ChangeEvent> records(ConsumerRecord<String, ChangeEvent> message) {
+        return records(singletonList(message));
     }
 
     private void initPoller(String...clusterNames) {
@@ -212,7 +212,7 @@ public class KafkaPollerEventConsumptionUnitTest {
     public void receiveCreateEventWithMs() throws RetryableException, IOException {
         initPoller();
         when(consumer.poll(anyLong())).thenReturn(records(
-                record(CREATE_TOPIC, "create-event-ms.json")), ConsumerRecords.empty());
+                createRecord(CREATE_TOPIC, "create-event-ms.json")), ConsumerRecords.empty());
         List<Change> changes = poller.firstBatch().changes();
 
         assertThat(changes).hasSize(1);

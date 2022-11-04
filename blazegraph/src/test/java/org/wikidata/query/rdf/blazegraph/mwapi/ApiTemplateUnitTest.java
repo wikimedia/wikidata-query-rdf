@@ -147,34 +147,34 @@ public class ApiTemplateUnitTest extends AbstractBlazegraphTestBase {
         List<OutputVariable> outputs = template.getOutputVars(serviceNode);
         assertThat(outputs.size(), equalTo(4));
         // Pre-defined variable
-        OutputVariable var = outputs.get(0);
-        assertThat(var.getName(), equalTo("somevar"));
-        assertThat(var.getPath(), equalTo("@title"));
-        assertFalse(var.isOrdinal());
+        OutputVariable outputVar = outputs.get(0);
+        assertThat(outputVar.getName(), equalTo("somevar"));
+        assertThat(outputVar.getPath(), equalTo("@title"));
+        assertFalse(outputVar.isOrdinal());
         // User-defined variable
-        var = outputs.get(1);
-        assertThat(var.getName(), equalTo("var2"));
-        assertThat(var.getPath(), equalTo("@somedata"));
-        assertTrue(var.isURI());
-        assertFalse(var.isOrdinal());
-        assertThat(var.getURI("http://test.com/"), instanceOf(URI.class));
+        outputVar = outputs.get(1);
+        assertThat(outputVar.getName(), equalTo("var2"));
+        assertThat(outputVar.getPath(), equalTo("@somedata"));
+        assertTrue(outputVar.isURI());
+        assertFalse(outputVar.isOrdinal());
+        assertThat(outputVar.getURI("http://test.com/"), instanceOf(URI.class));
         // URI keeps the case
-        assertThat(var.getURI("http://test.com/test").toString(), endsWith("test"));
+        assertThat(outputVar.getURI("http://test.com/test").toString(), endsWith("test"));
         // User-defined variable which is an item
-        var = outputs.get(2);
-        assertThat(var.getName(), equalTo("var3"));
-        assertThat(var.getPath(), equalTo("item/@wikibase_id"));
-        assertTrue(var.isURI());
-        assertFalse(var.isOrdinal());
-        assertThat(var.getURI("test"), instanceOf(URI.class));
+        outputVar = outputs.get(2);
+        assertThat(outputVar.getName(), equalTo("var3"));
+        assertThat(outputVar.getPath(), equalTo("item/@wikibase_id"));
+        assertTrue(outputVar.isURI());
+        assertFalse(outputVar.isOrdinal());
+        assertThat(outputVar.getURI("test"), instanceOf(URI.class));
         // T172642: Item URIs will be uppercased
-        assertThat(var.getURI("test").toString(), endsWith("TEST"));
+        assertThat(outputVar.getURI("test").toString(), endsWith("TEST"));
         // Ordinal
-        var = outputs.get(3);
-        assertThat(var.getName(), equalTo("var4"));
-        assertThat(var.getPath(), equalTo("."));
-        assertFalse(var.isURI());
-        assertTrue(var.isOrdinal());
+        outputVar = outputs.get(3);
+        assertThat(outputVar.getName(), equalTo("var4"));
+        assertThat(outputVar.getPath(), equalTo("."));
+        assertFalse(outputVar.isURI());
+        assertTrue(outputVar.isOrdinal());
 
     }
 

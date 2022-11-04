@@ -31,7 +31,7 @@ import com.bigdata.rdf.model.BigdataLiteral;
  */
 @Deprecated
 public class WikibaseStyleStatementInlineUriHandler extends InlineURIHandler {
-    private static final Logger log = LoggerFactory.getLogger(WikibaseStyleStatementInlineUriHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WikibaseStyleStatementInlineUriHandler.class);
 
     public WikibaseStyleStatementInlineUriHandler(String namespace) {
         super(namespace);
@@ -51,7 +51,7 @@ public class WikibaseStyleStatementInlineUriHandler extends InlineURIHandler {
             try {
                 return new UUIDLiteralIV(UUID.fromString(localName));
             } catch (IllegalArgumentException e) {
-                log.debug("Invalid uuid: {}", localName, e);
+                LOG.debug("Invalid uuid: {}", localName, e);
                 return null;
             }
         }
@@ -101,7 +101,7 @@ public class WikibaseStyleStatementInlineUriHandler extends InlineURIHandler {
             i = i.shiftLeft(Long.SIZE).or(unsigned(u.getLeastSignificantBits()));
             return new XSDIntegerIV(i);
         } catch (IllegalArgumentException e) {
-            log.warn("tmp", e);
+            LOG.warn("tmp", e);
             return null;
         }
     }

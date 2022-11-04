@@ -25,12 +25,12 @@ final class MultiSyncUpdateQueryFactory {
     @SuppressFBWarnings(value = "OCP_OVERLY_CONCRETE_PARAMETER", justification = "It isn't entirely clear if order is important or not in lexemeSubIds.")
     String buildQuery(
             Set<String> entityIds,
-                      List<Statement> insertStatements,
-                      ClassifiedStatements classifiedStatements,
-                      Set<String> valueSet,
-                      Set<String> refSet,
-                      List<String> lexemeSubIds,
-                      Optional<Instant> timestamp) {
+            List<Statement> insertStatements,
+            ClassifiedStatements classifiedStatements,
+            Set<String> valueSet,
+            Set<String> refSet,
+            List<String> lexemeSubIds,
+            Optional<Instant> timestamp) {
 
         Set<String> entityIdsWithLexemes = new LinkedHashSet<>();
         entityIdsWithLexemes.addAll(entityIds);
@@ -39,7 +39,7 @@ final class MultiSyncUpdateQueryFactory {
         return Arrays.stream(MultiSyncStep.values())
                 .filter(step -> step != MultiSyncStep.CLEANUP_REFERENCES || !refSet.isEmpty())
                 .filter(step -> step != MultiSyncStep.CLEANUP_VALUES || !valueSet.isEmpty())
-                .filter(step -> step != MultiSyncStep.ADD_TIMESTAMPS  || timestamp.isPresent())
+                .filter(step -> step != MultiSyncStep.ADD_TIMESTAMPS || timestamp.isPresent())
                 .map(step -> prepareQuery(step,
                         entityIds,
                         entityIdsWithLexemes,
@@ -60,22 +60,22 @@ final class MultiSyncUpdateQueryFactory {
                                 Set<String> valueSet,
                                 Optional<Instant> timestamp) {
         switch (step) {
-            case CLEAR_OOD_SITE_LINKS:
-                return MultiSyncStep.createClearOodLinksQuery(entityTopIds, classifiedStatements, uris);
-            case CLEAR_OOD_ST_ABOUT_ST:
-                return MultiSyncStep.createClearOodStatementsAboutStatementsQuery(entityIdsWithLexemes, classifiedStatements, uris);
-            case CLEAR_OOD_ST_ABOUT_ENT:
-                return MultiSyncStep.createClearOodStatementsAboutEntitiesQuery(entityIdsWithLexemes, classifiedStatements, uris);
-            case INSERT_NEW_DATA:
-                return MultiSyncStep.createInsertNewDataQuery(insertStatements);
-            case ADD_TIMESTAMPS:
-                return MultiSyncStep.createAddTimestampsQuery(entityTopIds, timestamp.orElseThrow(IllegalStateException::new), uris);
-            case CLEANUP_REFERENCES:
-                return MultiSyncStep.createCleanupReferencesQuery(refSet);
-            case CLEANUP_VALUES:
-                return MultiSyncStep.createCleanupValuesQuery(valueSet);
-            default:
-                throw new IllegalArgumentException("Step " + step.getStepName() + " is unknown!");
+        case CLEAR_OOD_SITE_LINKS:
+            return MultiSyncStep.createClearOodLinksQuery(entityTopIds, classifiedStatements, uris);
+        case CLEAR_OOD_ST_ABOUT_ST:
+            return MultiSyncStep.createClearOodStatementsAboutStatementsQuery(entityIdsWithLexemes, classifiedStatements, uris);
+        case CLEAR_OOD_ST_ABOUT_ENT:
+            return MultiSyncStep.createClearOodStatementsAboutEntitiesQuery(entityIdsWithLexemes, classifiedStatements, uris);
+        case INSERT_NEW_DATA:
+            return MultiSyncStep.createInsertNewDataQuery(insertStatements);
+        case ADD_TIMESTAMPS:
+            return MultiSyncStep.createAddTimestampsQuery(entityTopIds, timestamp.orElseThrow(IllegalStateException::new), uris);
+        case CLEANUP_REFERENCES:
+            return MultiSyncStep.createCleanupReferencesQuery(refSet);
+        case CLEANUP_VALUES:
+            return MultiSyncStep.createCleanupValuesQuery(valueSet);
+        default:
+            throw new IllegalArgumentException("Step " + step.getStepName() + " is unknown!");
         }
     }
 }

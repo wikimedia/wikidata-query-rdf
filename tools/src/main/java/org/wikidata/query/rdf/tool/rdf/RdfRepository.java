@@ -47,7 +47,7 @@ import lombok.Value;
  * Wrapper for communicating with the RDF repository.
  */
 public class RdfRepository {
-    private static final Logger log = LoggerFactory.getLogger(RdfRepository.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RdfRepository.class);
     /**
      * How many statements we will send to RDF processor at once.
      * We assume typical triple line size is under 200 bytes.
@@ -60,7 +60,7 @@ public class RdfRepository {
      * Max statement data size.
      * Entity data repeats twice plus we're taking 1M safety buffer for other data.
      */
-	private final long maxPostDataSize;
+    private final long maxPostDataSize;
 
     /**
      * Uris for wikibase.
@@ -232,7 +232,7 @@ public class RdfRepository {
             if (insertStatements.size() > maxStatementsPerBatch || classifiedStatements.getDataSize() > maxPostDataSize) {
                 // Send the batch out and clean up
                 // Logging as info for now because I want to know how many split batches we get. I don't want too many.
-                log.info("Too much data with {} bytes - sending batch out, last ID {}", classifiedStatements.getDataSize(), change.entityId);
+                LOG.info("Too much data with {} bytes - sending batch out, last ID {}", classifiedStatements.getDataSize(), change.entityId);
 
                 collectedMetrics.merge(sendUpdateBatch(entityIds, insertStatements, classifiedStatements,
                         valueSet, refSet, verifyResult, updateBatch.withTimestamp));
@@ -274,7 +274,7 @@ public class RdfRepository {
                                 Set<String> refSet,
                                 boolean verifyResult,
                                 boolean withTimestamp) {
-        log.debug("Processing {} IDs and {} statements", entityIds.size(), insertStatements.size());
+        LOG.debug("Processing {} IDs and {} statements", entityIds.size(), insertStatements.size());
 
         String query = multiSyncUpdateQueryFactory.buildQuery(entityIds,
                 insertStatements,
@@ -284,11 +284,11 @@ public class RdfRepository {
                 fetchLexemeSubIds(entityIds),
                 withTimestamp ? Optional.of(Instant.now()) : Optional.empty());
 
-        log.debug("Sending query {} bytes", query.length());
+        LOG.debug("Sending query {} bytes", query.length());
         long start = System.nanoTime();
         CollectedUpdateMetrics collectedUpdateMetrics = rdfClient.update(query,
                 new UpdateMetricsResponseHandler(!refSet.isEmpty(), !valueSet.isEmpty(), withTimestamp));
-        log.debug("Update query took {} nanos and modified {} statements",
+        LOG.debug("Update query took {} nanos and modified {} statements",
                 System.nanoTime() - start, collectedUpdateMetrics.getMutationCount());
 
         if (verifyResult) {
@@ -323,7 +323,7 @@ public class RdfRepository {
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT", justification = "We rely on that format.")
     private void verifyStatements(Set<String> entityIds, List<Statement> statements)
             throws QueryEvaluationException {
-        log.debug("Verifying the update");
+        LOG.debug("Verifying the update");
         UpdateBuilder bv = new UpdateBuilder(verify);
         bv.bindUri("schema:about", SchemaDotOrg.ABOUT);
         bv.bind("uris.statement", uris.statement());
@@ -331,18 +331,18 @@ public class RdfRepository {
         bv.bindValues("allStatements", statements);
         TupleQueryResult result = rdfClient.query(bv.toString());
         if (result.hasNext()) {
-            log.error("Update failed, we have extra data!");
+            LOG.error("Update failed, we have extra data!");
             while (result.hasNext()) {
                 BindingSet bindings = result.next();
                 Binding s = bindings.getBinding("s");
                 Binding p = bindings.getBinding("p");
                 Binding o = bindings.getBinding("o");
-                log.error("{}\t{}\t{}", s.getValue().stringValue(),
+                LOG.error("{}\t{}\t{}", s.getValue().stringValue(),
                         p.getValue().stringValue(), o.getValue().stringValue());
             }
             throw new FatalException("Update failed, bad old data in the store");
         }
-        log.debug("Verification OK");
+        LOG.debug("Verification OK");
     }
 
     /**
@@ -380,15 +380,15 @@ public class RdfRepository {
      */
     @SuppressFBWarnings(value = "PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS", justification = "prefix() is called with different StringBuilders")
     public Instant fetchLeftOffTime() {
-        log.info("Checking for left off time from the updater");
+        LOG.info("Checking for left off time from the updater");
         StringBuilder b = SchemaDotOrg.prefix(new StringBuilder());
         b.append("SELECT * WHERE { <").append(uris.root()).append("> schema:dateModified ?date }");
         Instant leftOffTime = dateFromQuery(b.toString());
         if (leftOffTime != null) {
-            log.info("Found left off time from the updater");
+            LOG.info("Found left off time from the updater");
             return leftOffTime;
         }
-        log.info("Checking for left off time from the dump");
+        LOG.info("Checking for left off time from the dump");
         b = Ontology.prefix(SchemaDotOrg.prefix(new StringBuilder()));
         // Only use the earliest TS from the dump since
         b.append("SELECT * WHERE { ontology:Dump schema:dateModified ?date } ORDER BY ASC(?date) LIMIT 1");
@@ -401,7 +401,7 @@ public class RdfRepository {
      * restarted.
      */
     public void updateLeftOffTime(Instant leftOffTime) {
-        log.debug("Setting last updated time to {}", leftOffTime);
+        LOG.debug("Setting last updated time to {}", leftOffTime);
         UpdateBuilder b = new UpdateBuilder(updateLeftOffTimeBody);
         b.bindUri("root", uris.root());
         b.bindUri("dateModified", SchemaDotOrg.DATE_MODIFIED);

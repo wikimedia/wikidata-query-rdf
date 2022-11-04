@@ -54,7 +54,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 // TODO fan out complexity
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class Updater<B extends Change.Batch> implements Runnable, Closeable {
-    private static final Logger log = LoggerFactory.getLogger(Updater.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Updater.class);
 
     /**
      * For how long (seconds) we should defer a change in case we detect replication lag.
@@ -151,10 +151,10 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 try {
                     batch = changeSource.firstBatch();
                 } catch (RetryableException e) {
-                    log.warn("Retryable error fetching first batch.  Retrying.", e);
+                    LOG.warn("Retryable error fetching first batch.  Retrying.", e);
                 }
             } while (batch == null);
-            log.debug("{} changes in batch", batch.changes().size());
+            LOG.debug("{} changes in batch", batch.changes().size());
             while (!currentThread().isInterrupted()) {
                 applyBatch(batch);
                 if (batch.last()) {
@@ -162,7 +162,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 }
                 batch = nextBatch(batch);
             }
-        } catch (InterruptedException ie) {
+        } catch (InterruptedException e) {
             currentThread().interrupt();
         } finally {
             if (importAsync) {
@@ -182,7 +182,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                         syncDate(leftOffDate);
                     }
                     metricsRepository.markBatchProgress(batch.advanced());
-                    log.info("Polled up to {} at {} updates per second and {} {} per second", batch.leftOffHuman(),
+                    LOG.info("Polled up to {} at {} updates per second and {} {} per second", batch.leftOffHuman(),
                             metricsRepository.reportUpdatesMeter(), metricsRepository.reportBatchProgress(), batch.advancedUnits());
                     changeSource.done(batch);
                     countDownLatch.countDown();
@@ -217,10 +217,10 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                     Runnable importJob = importQueue.take();
                     importJob.run();
                 }
-            } catch (InterruptedException ie) {
+            } catch (InterruptedException e) {
             }
         }, "Importer");
-        importerThread.setUncaughtExceptionHandler((thread, throwable) -> log.error("Importer error", throwable));
+        importerThread.setUncaughtExceptionHandler((thread, throwable) -> LOG.error("Importer error", throwable));
         importerThread.start();
     }
 
@@ -286,9 +286,9 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                         handleChange(change, existingValues, existingRefs);
                         return change;
                     } catch (RetryableException e) {
-                        log.warn("Retryable error syncing.  Retrying.", e);
+                        LOG.warn("Retryable error syncing.  Retrying.", e);
                     } catch (ContainedException e) {
-                        log.warn("Contained error syncing.  Giving up on {}", change.entityId(), e);
+                        LOG.warn("Contained error syncing.  Giving up on {}", change.entityId(), e);
                         throw e;
                     }
                 }
@@ -337,7 +337,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 trueChanges.add(candidateChanges.get(uris.entityURItoId(entityId)));
             }
         }
-        log.debug("Filtered batch contains {} changes", trueChanges.size());
+        LOG.debug("Filtered batch contains {} changes", trueChanges.size());
 
         if (!trueChanges.isEmpty()) {
             /**
@@ -348,9 +348,9 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
              */
             ImmutableSetMultimap<String, String> values = ImmutableSetMultimap.of();
             ImmutableSetMultimap<String, String> refs = ImmutableSetMultimap.of();
-            if (log.isDebugEnabled()) {
-                log.debug("Fetched {} values", values.size());
-                log.debug("Fetched {} refs", refs.size());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Fetched {} values", values.size());
+                LOG.debug("Fetched {} refs", refs.size());
             }
             return new ChangesWithValuesAndRefs(trueChanges, values, refs);
         }
@@ -370,11 +370,11 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
             try {
                 batch = changeSource.nextBatch(prevBatch);
             } catch (RetryableException e) {
-                log.warn("Retryable error fetching next batch.  Retrying.", e);
+                LOG.warn("Retryable error fetching next batch.  Retrying.", e);
                 continue;
             }
             if (!batch.hasAnyChanges()) {
-                log.info("Sleeping for {} secs", pollDelay);
+                LOG.info("Sleeping for {} secs", pollDelay);
                 Thread.sleep(pollDelay * 1000);
                 continue;
             }
@@ -382,7 +382,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                 prevBatch = batch;
                 continue;
             }
-            log.debug("{} changes in batch", batch.changes().size());
+            LOG.debug("{} changes in batch", batch.changes().size());
             return batch;
         }
     }
@@ -408,13 +408,13 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
      *             store
      */
     private void handleChange(Change change, Set<String> repoValues, Set<String> repoRefs) throws RetryableException {
-        log.debug("Processing data for {}", change);
+        LOG.debug("Processing data for {}", change);
         Collection<Statement> statements;
         try {
             statements = wikibase.fetchRdfForEntity(change);
         } catch (WikibaseEntityFetchException e) {
             if (DELETE_ENTITY_ERROR_TYPE.contains(e.getErrorType())) {
-                log.debug("Cannot fetch entity (deleting entity): ", e);
+                LOG.debug("Cannot fetch entity (deleting entity): ", e);
                 statements = new ArrayList<>();
             } else {
                 throw new ContainedException("Received un-recoverable error fetching entity data for " + change.entityId(), e);
@@ -425,7 +425,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
                     .stream()
                     .collect(entityStatementsWithoutRank());
             if (!entityStmtsWithoutRank.isEmpty()) {
-                log.warn("Found some statements without ranks while processing {}: {}", change.entityId(), entityStmtsWithoutRank);
+                LOG.warn("Found some statements without ranks while processing {}: {}", change.entityId(), entityStmtsWithoutRank);
             }
         }
         Set<String> valuesToClean = Collections.emptySet();
@@ -441,7 +441,7 @@ public class Updater<B extends Change.Batch> implements Runnable, Closeable {
             if (sourceRev > 0 && fetchedRev > 0) {
                 if (fetchedRev < sourceRev) {
                     // Something weird happened - we've got stale revision!
-                    log.warn("Stale revision on {}: change is {}, RDF is {}", change.entityId(), sourceRev, fetchedRev);
+                    LOG.warn("Stale revision on {}: change is {}, RDF is {}", change.entityId(), sourceRev, fetchedRev);
                     metricsRepository.incDeferredChanges();
                     deferredChanges.add(change, DEFERRAL_DELAY);
                 }

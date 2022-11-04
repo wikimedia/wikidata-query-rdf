@@ -40,7 +40,7 @@ public final class UrisSchemeFactory {
      * Current URI system. This is static since each instance has only one URI
      * system.
      */
-    private static final UrisScheme uriSystem = initializeURISystem();
+    private static final UrisScheme URI_SYSTEM = initializeURISystem();
 
     /**
      * Private ctor.
@@ -52,7 +52,7 @@ public final class UrisSchemeFactory {
      * Return current URI system.
      */
     public static UrisScheme getURISystem() {
-        return uriSystem;
+        return URI_SYSTEM;
     }
 
     private static UrisScheme initializeURISystem() {

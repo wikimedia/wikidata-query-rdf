@@ -14,7 +14,7 @@ import com.google.common.cache.Cache;
 
 public class BanThrottler <S extends BanState> extends Throttler<S> {
 
-    private static final Logger log = LoggerFactory.getLogger(BanThrottler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BanThrottler.class);
 
     /**
      * Constructor.
@@ -55,8 +55,8 @@ public class BanThrottler <S extends BanState> extends Throttler<S> {
 
         try {
             getState(bucket).consumeThrottled();
-        } catch (ExecutionException ee) {
-            log.warn("Could not create throttling state", ee);
+        } catch (ExecutionException e) {
+            LOG.warn("Could not create throttling state", e);
         }
     }
 

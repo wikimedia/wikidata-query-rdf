@@ -242,7 +242,7 @@ public class ApiTemplate {
                                 // Ordinal values ignore the object
                                 vars.add(new OutputVariable(varType, v, "."));
                                 break;
-                             }
+                            }
                             IV value = sp.o().getValueExpression().get();
                             if (value.isURI()) {
                                 String paramName = value.stringValue().substring(prefix.length());

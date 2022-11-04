@@ -38,7 +38,7 @@ import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
  * Munges a Wikidata RDF dump so that it can be loaded in a single import.
  */
 public class Munge {
-    private static final Logger log = LoggerFactory.getLogger(Munge.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Munge.class);
     public static final int BUFFER_SIZE = 20000;
 
     /**
@@ -58,7 +58,7 @@ public class Munge {
             Munge munge = new Munge(uris, munger, CliUtils.reader(options.from()), chunksize, options.to());
             munge.run();
         } catch (Exception e) {
-            log.error("Fatal error munging RDF", e);
+            LOG.error("Fatal error munging RDF", e);
             System.exit(1);
         }
     }
@@ -111,7 +111,7 @@ public class Munge {
             try {
                 from.close();
             } catch (IOException e) {
-                log.error("Error closing input", e);
+                LOG.error("Error closing input", e);
             }
         }
     }
@@ -165,7 +165,7 @@ public class Munge {
 
         private Writer buildWriter(long chunk) throws RDFHandlerException {
             String file = String.format(Locale.ROOT, pattern, chunk);
-            log.info("Switching to {}", file);
+            LOG.info("Switching to {}", file);
             try {
                 return CliUtils.writer(file);
             } catch (IOException e) {

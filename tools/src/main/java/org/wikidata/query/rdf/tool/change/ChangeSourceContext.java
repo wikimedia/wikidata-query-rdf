@@ -24,7 +24,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * @see UpdateOptions
  */
 public final class ChangeSourceContext {
-    private static final Logger log = LoggerFactory.getLogger(ChangeSourceContext.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ChangeSourceContext.class);
 
     private static final String MAX_DAYS_BACK_NAME = "wikibaseMaxDaysBack";
 
@@ -88,20 +88,20 @@ public final class ChangeSourceContext {
                 rdfRepository.updateLeftOffTime(startInstant);
             }
         } else {
-            log.info("Checking where we left off");
+            LOG.info("Checking where we left off");
             Instant leftOff = rdfRepository.fetchLeftOffTime();
             Integer maxDays = Integer.valueOf(System.getProperty(MAX_DAYS_BACK_NAME, "30"));
             Instant minStartTime = Instant.now().minus(maxDays.intValue(), DAYS);
             if (leftOff == null) {
                 startInstant = minStartTime;
-                log.info("Defaulting start time to {} days ago: {}", maxDays, startInstant);
+                LOG.info("Defaulting start time to {} days ago: {}", maxDays, startInstant);
             } else {
                 if (leftOff.isBefore(minStartTime)) {
                     throw new IllegalStateException("RDF store reports the last update time is before the minimum safe poll time.  "
                             + "You will have to reload from scratch or you might have missing data.");
                 }
                 startInstant = leftOff;
-                log.info("Found start time in the RDF store: {}", leftOff);
+                LOG.info("Found start time in the RDF store: {}", leftOff);
             }
         }
         return startInstant;

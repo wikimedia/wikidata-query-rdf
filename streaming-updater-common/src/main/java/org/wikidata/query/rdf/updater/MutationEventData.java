@@ -22,22 +22,22 @@ import lombok.experimental.NonFinal;
         visible = true
 )
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = DiffEventData.class, name = "diff"),
-        @JsonSubTypes.Type(value = DiffEventData.class, name = "import"),
-        @JsonSubTypes.Type(value = DiffEventData.class, name = "reconcile"),
-        @JsonSubTypes.Type(value = MutationEventData.class, name = "delete"),
+    @JsonSubTypes.Type(value = DiffEventData.class, name = "diff"),
+    @JsonSubTypes.Type(value = DiffEventData.class, name = "import"),
+    @JsonSubTypes.Type(value = DiffEventData.class, name = "reconcile"),
+    @JsonSubTypes.Type(value = MutationEventData.class, name = "delete"),
 })
 @Value
 @NonFinal
 @JsonPropertyOrder(value = {
-        "$schema",
-        "meta",
-        "entity",
-        "revision",
-        "event_time",
-        "sequence",
-        "sequence_length",
-        "operation",
+    "$schema",
+    "meta",
+    "entity",
+    "revision",
+    "event_time",
+    "sequence",
+    "sequence_length",
+    "operation",
 })
 public class MutationEventData implements Serializable {
     public static final String DIFF_OPERATION = "diff";

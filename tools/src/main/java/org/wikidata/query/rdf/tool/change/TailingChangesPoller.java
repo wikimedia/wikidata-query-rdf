@@ -24,7 +24,7 @@ import org.wikidata.query.rdf.tool.exception.RetryableException;
  */
 public class TailingChangesPoller extends Thread {
 
-    private static final Logger log = LoggerFactory
+    private static final Logger LOG = LoggerFactory
             .getLogger(TailingChangesPoller.class);
 
     /**
@@ -83,29 +83,29 @@ public class TailingChangesPoller extends Thread {
                             lastBatch = poller.nextBatch(lastBatch);
                         }
                     } catch (RetryableException e) {
-                        log.warn("Retryable error fetching first batch.  Retrying.", e);
+                        LOG.warn("Retryable error fetching first batch.  Retrying.", e);
                         continue;
                     }
                 } while (false);
                 // Process the batch
                 if (!lastBatch.changes().isEmpty()) {
-                    log.info("Caught {} missing updates, adding to the queue", lastBatch.changes().size());
+                    LOG.info("Caught {} missing updates, adding to the queue", lastBatch.changes().size());
                     queue.put(lastBatch);
                 }
-                log.info("Tail poll up to {}", lastBatch.leftOffDate());
+                LOG.info("Tail poll up to {}", lastBatch.leftOffDate());
                 if (mainPollerTs != null && mainPollerTs.isBefore(lastBatch.leftOffDate())) {
                     // We are ahead of main poller, this is not good, normally should not happen
                     long sleepTime = MILLIS.between(mainPollerTs, lastBatch.leftOffDate()) + tailSeconds * 1000;
                     // Waiting for sleepTime does not guarantee RC poller would catch up
                     // - we don't how long that would take - but it gives it a chance.
-                    log.info("Got ahead of main poller ({} > {}), sleeping for {}...", lastBatch.leftOffDate(), mainPollerTs, sleepTime);
+                    LOG.info("Got ahead of main poller ({} > {}), sleeping for {}...", lastBatch.leftOffDate(), mainPollerTs, sleepTime);
                     Thread.sleep(sleepTime);
                 }
                 if (!isOldEnough(lastBatch.leftOffDate())) {
                     // we're too far forward, let's sleep for a bit so we are couple
                     // of seconds behind
                     long sleepTime = MILLIS.between(lastBatch.leftOffDate(), Instant.now().plusSeconds(tailSeconds + 2));
-                    log.info("Got too close to the current stream, sleeping for {}...", sleepTime);
+                    LOG.info("Got too close to the current stream, sleeping for {}...", sleepTime);
                     Thread.sleep(sleepTime);
                 }
             } catch (InterruptedException ex) {
