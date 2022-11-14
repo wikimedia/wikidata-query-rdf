@@ -31,20 +31,20 @@
 	"Categories": {
 		"params": {
 			"action": "query",
-            "prop": "categories",
-            "titles": {
-            	"type": "list"
-            },
-            "cllimit": {
-            	"type": "int",
-                "default": "max"
+			"prop": "categories",
+			"titles": {
+				"type": "list"
+			},
+			"cllimit": {
+				"type": "int",
+				"default": "max"
 			}
 		},
-        "output": {
-        	"items": "//api/query/pages/page/categories/cl",
-            "vars": {
-            	"category": "@title",
-                "title": "//api/query/pages/page/@title"
+		"output": {
+			"items": "//api/query/pages/page/categories/cl",
+			"vars": {
+				"category": "@title",
+				"title": "//api/query/pages/page/@title"
 			}
 		}
 	},
@@ -53,23 +53,23 @@
 		"@docs": "https://www.mediawiki.org/wiki/API:Search",
 		"params": {
 			"action": "query",
-            "list": "search",
-            "srsearch": {
-            	"type": "string"
-            },
-            "srwhat": {
-            	"type": "string",
-            	"default": "text"
-            },
-            "srlimit": {
-            	"type": "int",
-                "default": "max"
+			"list": "search",
+			"srsearch": {
+				"type": "string"
+			},
+			"srwhat": {
+				"type": "string",
+				"default": "text"
+			},
+			"srlimit": {
+				"type": "int",
+				"default": "max"
 			}
 		},
-        "output": {
-        	"items": "//api/query/search/p",
-            "vars": {
-                "title": "@title"
+		"output": {
+			"items": "//api/query/search/p",
+			"vars": {
+				"title": "@title"
 			}
 		}
 	},
@@ -78,26 +78,26 @@
 		"@docs": "https://www.mediawiki.org/wiki/Wikibase/API#wbsearchentities",
 		"params": {
 			"action": "wbsearchentities",
-            "search": {
-            	"type": "string"
-            },
-            "language": {
-            	"type": "string"
-            },
-            "type": {
-            	"type": "string",
-                "default": "item"
+			"search": {
+				"type": "string"
 			},
-            "limit": {
-            	"type": "string",
-                "default": "max"
+			"language": {
+				"type": "string"
+			},
+			"type": {
+				"type": "string",
+				"default": "item"
+			},
+			"limit": {
+				"type": "string",
+				"default": "max"
 			}
 		},
-        "output": {
-        	"items": "//api/search/entity",
-            "vars": {
-                "item": "@id",
-                "label": "@label"
+		"output": {
+			"items": "//api/search/entity",
+			"vars": {
+				"item": "@id",
+				"label": "@label"
 			}
 		}
 	}
