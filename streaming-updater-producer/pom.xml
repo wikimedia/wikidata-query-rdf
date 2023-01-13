@@ -15,6 +15,11 @@
     <properties>
         <!-- Blazegraph has to stay on older Jackson version, but streaming consumer will use newer one -->
         <jackson.version>2.9.8</jackson.version>
+        <!-- scala deps for rdf-spark-tools -->
+        <scala.compat.version>2.12</scala.compat.version>
+        <scala.scopt.version>3.7.1</scala.scopt.version>
+        <!-- https://docs.scala-lang.org/overviews/jdk-compatibility/overview.html -->
+        <scala.version>2.12.13</scala.version>
     </properties>
 
     <dependencies>
@@ -53,7 +58,7 @@
         <!-- Add connector dependencies here. They must be in the default scope (compile). -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-kafka_${scala.compat.version}</artifactId>
+            <artifactId>flink-connector-kafka</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -73,7 +78,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-parquet_${scala.compat.version}</artifactId>
+            <artifactId>flink-parquet</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -81,7 +86,19 @@
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java_${scala.compat.version}</artifactId>
+            <artifactId>flink-scala_${scala.compat.version}</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-state-processor-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-streaming-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-streaming-scala_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -94,6 +111,10 @@
         <dependency>
             <groupId>org.openrdf.sesame</groupId>
             <artifactId>sesame-rio-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
         </dependency>
         <dependency>
             <groupId>org.scalactic</groupId>
@@ -140,34 +161,11 @@
             <groupId>org.wikimedia</groupId>
             <artifactId>eventutilities</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-scala_${scala.compat.version}</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-state-processor-api_${scala.compat.version}</artifactId>
-            <scope>provided</scope>
-        </dependency>
 
         <!-- These dependencies are provided, because they should not be packaged into the JAR file. -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-statebackend-rocksdb_${scala.compat.version}</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-scala_${scala.compat.version}</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-metrics -->
-
-        <!-- Scala Library, provided by Flink as well. -->
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
+            <artifactId>flink-statebackend-rocksdb</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -183,13 +181,13 @@
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java_${scala.compat.version}</artifactId>
+            <artifactId>flink-streaming-java</artifactId>
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-test-utils_${scala.compat.version}</artifactId>
+            <artifactId>flink-test-utils</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -233,10 +231,7 @@
                 <!-- custom config to allow deprecations -->
                 <configuration>
                     <args>
-                        <!--
-                        TODO: use more fine-grained warning selection e.g. -Wconf:cat=deprecation:i with scala 2.12.13
                         <arg>-Xfatal-warnings</arg>
-                        -->
                         <arg>-unchecked</arg>
                         <!-- when using higher kinded types in our code, we should
                           make it explicit. Failing to do so will trigger a WARN at compile time -->
@@ -244,6 +239,7 @@
                         <arg>${scala.scala-maven-plugin.warn-unused-imports}</arg>
                         <arg>-feature</arg>
                         <arg>-deprecation</arg>
+                        <arg>-Wconf:cat=deprecation:i</arg>
                         <arg>-dependencyfile</arg>
                         <arg>${project.build.directory}/.scala_dependencies</arg>
                         <arg>-target:jvm-${maven.compiler.target}</arg>

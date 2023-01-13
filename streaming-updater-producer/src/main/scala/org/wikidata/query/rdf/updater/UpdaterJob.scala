@@ -8,12 +8,14 @@ import scala.collection.JavaConverters.setAsJavaSetConverter
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.FailureRateRestartStrategyConfiguration
 import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup
 import org.apache.flink.streaming.api.scala._
+import org.slf4j.{Logger, LoggerFactory}
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.config.{BaseConfig, UpdaterConfig, UpdaterExecutionEnvironmentConfig}
 
 object UpdaterJob {
   val DEFAULT_CLOCK: Clock = Clock.systemUTC()
+  private lazy val LOGGER: Logger = LoggerFactory.getLogger(this.getClass)
 
   def main(args: Array[String]): Unit = {
     val config = UpdaterConfig(args)
@@ -32,7 +34,11 @@ object UpdaterJob {
         incomingStreams = incomingStreams,
         outputStreams = outputStreamsBuilder.build,
         wikibaseRepositoryGenerator = rc => WikibaseEntityRevRepository(uris, generalConfig.httpClientConfig, rc.getMetricGroup))
-    env.execute(generalConfig.jobName)
+    if (config.printExecutionPlan) {
+      LOGGER.info("Execution plan: {}", env.getExecutionPlan)
+    } else {
+      env.execute(generalConfig.jobName)
+    }
   }
 
   private def prepareEnv(environmentOption: UpdaterExecutionEnvironmentConfig): StreamExecutionEnvironment = {

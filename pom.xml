@@ -76,7 +76,7 @@
 
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikidata/query/rdf</developerConnection>
 
-        <flink.version>1.14.6</flink.version>
+        <flink.version>1.16.0</flink.version>
         <hadoop.version>2.10.1</hadoop.version>
         <!-- matching version used by Blazegraph here -->
         <jackson.version>2.6.7</jackson.version>
@@ -400,7 +400,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-connector-kafka_${scala.compat.version}</artifactId>
+                <artifactId>flink-connector-kafka</artifactId>
                 <version>${flink.version}</version>
             </dependency>
             <dependency>
@@ -410,7 +410,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-parquet_${scala.compat.version}</artifactId>
+                <artifactId>flink-parquet</artifactId>
                 <version>${flink.version}</version>
             </dependency>
             <dependency>
@@ -428,18 +428,18 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-state-processor-api_${scala.compat.version}</artifactId>
+                <artifactId>flink-state-processor-api</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-statebackend-rocksdb_${scala.compat.version}</artifactId>
+                <artifactId>flink-statebackend-rocksdb</artifactId>
                 <version>${flink.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-streaming-java_${scala.compat.version}</artifactId>
+                <artifactId>flink-streaming-java</artifactId>
                 <version>${flink.version}</version>
                 <classifier>tests</classifier>
             </dependency>
@@ -450,13 +450,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-streaming-scala_${scala.compat.version}</artifactId>
-                <version>${flink.version}</version>
-                <classifier>tests</classifier>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.flink</groupId>
-                <artifactId>flink-test-utils_${scala.compat.version}</artifactId>
+                <artifactId>flink-test-utils</artifactId>
                 <version>${flink.version}</version>
             </dependency>
             <dependency>
@@ -856,7 +850,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-streaming-java_${scala.compat.version}</artifactId>
+                <artifactId>flink-streaming-java</artifactId>
                 <version>${flink.version}</version>
                 <scope>provided</scope>
             </dependency>

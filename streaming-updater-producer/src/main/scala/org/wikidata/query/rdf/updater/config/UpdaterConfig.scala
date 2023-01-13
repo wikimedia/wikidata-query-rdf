@@ -22,6 +22,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
   val mediaInfoEntityNamespaces: Set[Long] = params.get("mediainfo_entity_namespaces", "").split(",").map(_.trim).filterNot(_.isEmpty).map(_.toLong).toSet
   val entityDataPath: String = params.get("wikibase_entitydata_path", Uris.DEFAULT_ENTITY_DATA_PATH)
   val useVersionedSerializers: Boolean = params.getBoolean("use_versioned_serializers", false)
+  val printExecutionPlan: Boolean = params.getBoolean("print_execution_plan", false)
   if (entityNamespaces.isEmpty && mediaInfoEntityNamespaces.isEmpty) {
     throw new IllegalArgumentException("entity_namespaces and/or mediainfo_entity_namespaces")
   }
