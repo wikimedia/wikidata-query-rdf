@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.spark.metrics.subgraphs.general
 
-import org.apache.spark.sql.functions.{col, lit}
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions.{col, lit}
 import org.wikidata.query.rdf.spark.utils.SparkUtils
 import org.wikidata.query.rdf.spark.utils.SubgraphUtils.{extractItem, getPercentileExpr}
 

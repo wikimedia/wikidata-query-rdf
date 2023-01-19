@@ -1,10 +1,10 @@
 package org.wikidata.query.rdf.spark.transform.queries.sparql
 
-import org.apache.spark.sql.functions.{col, count, desc, hash, lit, sum, udf}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.SaveMode.Overwrite
-import org.wikidata.query.rdf.spark.utils.SparkUtils.getSparkSession
 import org.wikidata.query.rdf.spark.utils.SparkUtils
+import org.wikidata.query.rdf.spark.utils.SparkUtils.getSparkSession
 
 class QueriesProcessor(tableAndPartitionSpec: String, numPartitions: Int)(implicit spark: SparkSession) {
 

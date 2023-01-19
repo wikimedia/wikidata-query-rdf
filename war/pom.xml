@@ -138,13 +138,6 @@
                     <webApp>
                         <contextPath>/bigdata</contextPath>
                     </webApp>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.wikidata.query.rdf</groupId>
-                            <artifactId>jetty-logging</artifactId>
-                            <version>${project.version}</version>
-                        </dependency>
-                    </dependencies>
                     <systemProperties combine.children="append">
                         <systemProperty>
                             <!-- By default Blazegraph's WAR thinks it running in tomcat and uses funky relative paths. They suggest
@@ -162,7 +155,7 @@
                         </systemProperty>
                         <systemProperty>
                             <name>org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.config</name>
-                            <value>${project.basedir}/../dist/src/script/services.json</value>
+                            <value>${project.basedir}/../dist/src/script/mwservices.json</value>
                         </systemProperty>
                         <systemProperty>
                             <name>com.bigdata.rdf.sparql.ast.QueryHints.analytic</name>
@@ -170,6 +163,13 @@
                         </systemProperty>
                     </systemProperties>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.wikidata.query.rdf</groupId>
+                        <artifactId>jetty-logging</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

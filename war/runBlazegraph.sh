@@ -4,7 +4,8 @@ DIR=${DIR:-`dirname $0`}
 cd $DIR/..
 if [ "$1x" = "-dx" -o "$1x" = "--debugx" ]; then
 	shift
-	mvnDebug -pl tools jetty:run "$@"
+	export MAVEN_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+	./mvnw -pl tools jetty:run "$@"
 else
-	mvn -pl tools jetty:run "$@"
+	./mvnw -pl tools jetty:run "$@"
 fi

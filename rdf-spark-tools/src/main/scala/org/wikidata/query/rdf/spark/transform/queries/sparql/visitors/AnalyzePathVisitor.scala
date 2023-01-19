@@ -1,9 +1,9 @@
 package org.wikidata.query.rdf.spark.transform.queries.sparql.visitors
 
-import org.apache.jena.sparql.path._
-
 import scala.collection.mutable
-import collection.JavaConverters._
+import scala.collection.JavaConverters._
+
+import org.apache.jena.sparql.path._
 
 class AnalyzePathVisitor(nodeVisitor: AnalyzeNodeVisitor) extends PathVisitor {
 

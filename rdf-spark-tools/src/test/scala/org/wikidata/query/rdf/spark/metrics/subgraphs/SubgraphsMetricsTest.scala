@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.spark.metrics.subgraphs
 
 import org.apache.spark.sql.DataFrame
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.spark.SparkDataFrameComparisons
 import org.wikidata.query.rdf.spark.metrics.subgraphs.detailed.DetailedSubgraphMetricsExtractor.getDetailedSubgraphMetrics
 import org.wikidata.query.rdf.spark.metrics.subgraphs.general.GeneralSubgraphMetricsExtractor.getGeneralSubgraphMetrics

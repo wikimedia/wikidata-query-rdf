@@ -1,8 +1,8 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.subgraphs
 
-import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row}
-import org.scalatest.Matchers
+import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType}
+import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.spark.SparkDataFrameComparisons
 
 class SubgraphMapperTest extends SparkDataFrameComparisons with Matchers {

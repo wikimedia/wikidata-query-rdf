@@ -1,11 +1,18 @@
 package org.wikidata.query.rdf.spark.utils
 
-import org.apache.spark.sql.functions.{col, lit}
-import org.scalatest.Matchers
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.functions.{array_sort, col, lit}
+import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.spark.SparkDataFrameComparisons
 import org.wikidata.query.rdf.spark.utils.SubgraphUtils._
 
 case class personInfo(name: String, country: String, age: Int)
+
+object SortUtils {
+  def sort(df: DataFrame, columnName: String): DataFrame = {
+    df.withColumn(columnName, array_sort(col(columnName)))
+  }
+}
 
 class SubgraphUtilsUnitTest extends SparkDataFrameComparisons with Matchers {
 
@@ -245,7 +252,7 @@ class SubgraphUtilsUnitTest extends SparkDataFrameComparisons with Matchers {
     )
     val expectedResultDF = spark.sparkContext.parallelize(expectedResultData).toDF("group", "person_info")
 
-    assertDataFrameDataEqualsImproved(resultDF, expectedResultDF)
+    assertDataFrameDataEqualsImproved(SortUtils.sort(resultDF, "person_info"), SortUtils.sort(expectedResultDF, "person_info"))
   }
 
   it should "be possible when grouping the entire df" in {
@@ -263,7 +270,7 @@ class SubgraphUtilsUnitTest extends SparkDataFrameComparisons with Matchers {
     val expectedResultData = Seq((Array(personInfo("beth", "Canada", 10), personInfo("andy", "US", 109), personInfo("cary", "Ireland", 59))))
     val expectedResultDF = spark.sparkContext.parallelize(expectedResultData).toDF("person_info")
 
-    assertDataFrameDataEqualsImproved(resultDF, expectedResultDF)
+    assertDataFrameDataEqualsImproved(SortUtils.sort(resultDF, "person_info"), SortUtils.sort(expectedResultDF, "person_info"))
   }
 
 }

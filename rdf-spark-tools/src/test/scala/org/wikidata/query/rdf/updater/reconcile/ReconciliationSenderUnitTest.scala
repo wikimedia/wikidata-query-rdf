@@ -11,14 +11,15 @@ import scala.util.{Failure, Success, Try}
 
 import com.fasterxml.jackson.databind.node.ArrayNode
 import org.apache.commons.io.IOUtils
-import org.apache.http.client.methods.{CloseableHttpResponse, HttpPost, HttpUriRequest}
 import org.apache.http.HttpVersion
 import org.apache.http.client.HttpClient
+import org.apache.http.client.methods.{CloseableHttpResponse, HttpPost, HttpUriRequest}
 import org.apache.http.entity.ByteArrayEntity
 import org.apache.http.message.BasicStatusLine
 import org.scalamock.matchers.ArgCapture.CaptureAll
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.tool.MapperUtils
 import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, ReconcileEvent}
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
@@ -27,7 +28,7 @@ import org.wikimedia.eventutilities.core.json.JsonSchemaLoader
 import org.wikimedia.eventutilities.core.util.ResourceLoader
 
 @deprecated("Workaround scalamock & deprecated http-client components", "1.0")
-class ReconciliationSenderUnitTest extends FlatSpec with Matchers with MockFactory {
+class ReconciliationSenderUnitTest extends AnyFlatSpec with Matchers with MockFactory {
   private val now: Instant = Instant.now();
   private val evtId: String = UUID.randomUUID().toString
   private val requestId: String = UUID.randomUUID().toString
@@ -77,7 +78,7 @@ class ReconciliationSenderUnitTest extends FlatSpec with Matchers with MockFacto
     val payload2 = captureAllSuccess.values(1).asInstanceOf[HttpPost].getEntity.asInstanceOf[ByteArrayEntity].getContent
     val array = MapperUtils.getObjectMapper.reader().readTree(payload1)
     array shouldBe a[ArrayNode]
-    (array.asInstanceOf[ArrayNode].elements().asScala map validator.validate filterNot(_.isSuccess) toList) shouldBe empty
+    (array.asInstanceOf[ArrayNode].elements().asScala map validator.validate filterNot (_.isSuccess) toList) shouldBe empty
     MapperUtils.getObjectMapper.readValue(payload2, classOf[Array[ReconcileEvent]]) should contain theSameElementsAs Seq(genEvent())
   }
 

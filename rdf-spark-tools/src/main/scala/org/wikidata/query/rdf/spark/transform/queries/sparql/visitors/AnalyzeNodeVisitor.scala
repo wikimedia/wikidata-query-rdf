@@ -1,10 +1,10 @@
 package org.wikidata.query.rdf.spark.transform.queries.sparql.visitors
 
-import org.apache.jena.graph.impl.LiteralLabel
-import org.apache.jena.graph._
-import org.apache.jena.shared.PrefixMapping
-
 import scala.collection.mutable
+
+import org.apache.jena.graph._
+import org.apache.jena.graph.impl.LiteralLabel
+import org.apache.jena.shared.PrefixMapping
 
 case class NodeInfo(nodeType: String, nodeValue: String)
 

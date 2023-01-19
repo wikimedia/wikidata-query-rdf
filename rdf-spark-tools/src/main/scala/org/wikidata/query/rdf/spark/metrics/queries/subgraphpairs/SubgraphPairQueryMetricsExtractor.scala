@@ -23,7 +23,7 @@ object SubgraphPairQueryMetricsExtractor {
    * @param subgraphQueries mapping of query to subgraph. Expected columns: id, subgraph, qid, item, predicate, uri, literal
    * @return spark dataframe with columns: subgraph1, subgraph2, query_count
    */
-  def getSubgraphPairQueryMetrics(subgraphQueries: DataFrame)(implicit spark: SparkSession): DataFrame = {
+  def getSubgraphPairQueryMetrics(subgraphQueries: DataFrame): DataFrame = {
 
     // This will not contain queries that use only 1 subgraph
     // columns: subgraph1, subgraph2, query_count

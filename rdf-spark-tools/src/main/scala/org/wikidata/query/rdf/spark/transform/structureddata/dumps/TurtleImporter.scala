@@ -1,14 +1,14 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
-import org.apache.hadoop.io.compress.{BZip2Codec, GzipCodec}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SaveMode.Overwrite
-import org.apache.spark.sql.{Encoders, Row, SparkSession}
-import org.openrdf.model.Statement
-import org.wikidata.query.rdf.spark.utils.SparkUtils
-
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
+
+import org.apache.hadoop.io.compress.{BZip2Codec, GzipCodec}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{Encoders, Row, SparkSession}
+import org.apache.spark.sql.SaveMode.Overwrite
+import org.openrdf.model.Statement
+import org.wikidata.query.rdf.spark.utils.SparkUtils
 
 object Site extends Enumeration {
   type Site = Value

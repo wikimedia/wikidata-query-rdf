@@ -3,7 +3,7 @@ package org.wikidata.query.rdf.spark.utils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.spark.SparkSessionProvider
 
 class SparkUtilsUnitTest extends SparkSessionProvider with Matchers {

@@ -9,12 +9,13 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.spark.SparkSessionProvider
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
 import org.wikidata.query.rdf.updater.reconcile.UpdaterReconcile.Params
 
-class UpdaterReconcileUnitTest extends FlatSpec with SparkSessionProvider with Matchers with MockFactory {
+class UpdaterReconcileUnitTest extends AnyFlatSpec with SparkSessionProvider with Matchers with MockFactory {
   val latestRevForItems: util.Set[String] => util.Map[String, Optional[lang.Long]] = stub[util.Set[String] => util.Map[String, Optional[lang.Long]]]
   val latestRevForMediaInfoItems: util.Set[String] => util.Map[String, Optional[lang.Long]] = stub[util.Set[String] => util.Map[String, Optional[lang.Long]]]
 

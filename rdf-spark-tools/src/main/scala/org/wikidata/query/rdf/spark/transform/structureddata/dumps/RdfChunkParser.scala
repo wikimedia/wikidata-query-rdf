@@ -1,16 +1,17 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
+import java.io.{ByteArrayInputStream, InputStream, SequenceInputStream}
+import java.nio.charset.StandardCharsets
+import java.util.function.BiFunction
+
+import scala.collection.mutable.ListBuffer
+
 import org.openrdf.model.Statement
 import org.openrdf.model.impl.ValueFactoryImpl
 import org.openrdf.rio.RDFHandler
 import org.wikidata.query.rdf.common.uri.{Ontology, UrisScheme, UrisSchemeFactory}
-import org.wikidata.query.rdf.tool.rdf.EntityMungingRdfHandler.EntityCountListener
 import org.wikidata.query.rdf.tool.rdf._
-
-import java.io.{ByteArrayInputStream, InputStream, SequenceInputStream}
-import java.nio.charset.StandardCharsets
-import java.util.function.BiFunction
-import scala.collection.mutable.ListBuffer
+import org.wikidata.query.rdf.tool.rdf.EntityMungingRdfHandler.EntityCountListener
 
 /**
  * Parse a chunk of the wikibase rdf dump in turtle format

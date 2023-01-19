@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.spark.metrics.subgraphs.detailed
 
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.DataFrame
 
 object PredicatesPerSubgraph {
 
@@ -11,7 +11,7 @@ object PredicatesPerSubgraph {
    *                           Expected columns: subgraph, item, subject, predicate, object, predicate_code
    * @return spark dataframe with number of predicates per subgraph. Expected columns: subgraph, predicate_code, count
    */
-  def getPredicatesPerSubgraph(topSubgraphTriples: DataFrame)(implicit spark: SparkSession): DataFrame = {
+  def getPredicatesPerSubgraph(topSubgraphTriples: DataFrame): DataFrame = {
 
     // All predicates per subgraph = ~40k rows total
     val predicatesPerSubgraph = topSubgraphTriples

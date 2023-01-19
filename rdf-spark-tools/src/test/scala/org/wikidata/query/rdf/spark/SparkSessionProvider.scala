@@ -1,15 +1,16 @@
 package org.wikidata.query.rdf.spark
 
+import java.io.File
+import java.nio.file.Files
+
 import com.holdenkarau.spark.testing.DataFrameSuiteBase
 import com.holdenkarau.spark.testing.SparkSessionProvider.sparkSession
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.flatspec.AnyFlatSpec
 
-import java.io.File
-import java.nio.file.Files
-
-trait SparkSessionProvider extends FlatSpec with BeforeAndAfterEach with BeforeAndAfterAll with DataFrameSuiteBase {
+trait SparkSessionProvider extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterAll with DataFrameSuiteBase {
 
   // same thing in these variables:
   // spark (from DataFrameSuiteBaseLike), sparkSession (from DataFrameSuiteBase), sparkImplicit

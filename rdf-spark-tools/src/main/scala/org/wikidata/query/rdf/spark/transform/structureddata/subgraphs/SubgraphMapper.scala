@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.subgraphs
 
-import org.apache.spark.sql.functions.{col, lit}
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions.{col, lit}
 import org.wikidata.query.rdf.common.uri.{DefaultUrisScheme, PropertyType, UrisSchemeFactory}
 import org.wikidata.query.rdf.spark.utils.{SparkUtils, SubgraphUtils}
 

@@ -1,12 +1,13 @@
 package org.wikidata.query.rdf.spark.transform.queries.sparql
 
-import org.scalatest.{FlatSpec, Matchers}
-import org.wikidata.query.rdf.spark.transform.queries.sparql.visitors.{TripleInfo,NodeInfo}
-
 import scala.collection.mutable
 import scala.io.{BufferedSource, Source}
 
-class TripleExtractorTest extends FlatSpec with Matchers{
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.wikidata.query.rdf.spark.transform.queries.sparql.visitors.{NodeInfo, TripleInfo}
+
+class TripleExtractorTest extends AnyFlatSpec with Matchers {
 
   //Load SPARQL queries that will be successfully processed
   val successSparqls: Array[String] = TripleExtractorTest.getQueries("SuccessfulSparqlQueries.txt")

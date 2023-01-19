@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.spark.metrics.subgraphs.detailed
 
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.expr
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.wikidata.query.rdf.common.uri.{DefaultUrisScheme, PropertyType, UrisSchemeFactory}
 import org.wikidata.query.rdf.spark.utils.SubgraphUtils.getPercentileExpr
 
@@ -17,8 +17,7 @@ object TriplesPerSubgraphItem {
    *         - numStatements expected columns: subgraph, num_statements
    *         - numFullStatements expected columns: subgraph, num_statement_triples
    */
-  def getTriplesPerSubgraphItem(topSubgraphTriples: DataFrame)
-                               (implicit spark: SparkSession): (DataFrame, DataFrame, DataFrame, DataFrame) = {
+  def getTriplesPerSubgraphItem(topSubgraphTriples: DataFrame): (DataFrame, DataFrame, DataFrame, DataFrame) = {
 
     val scheme: DefaultUrisScheme = UrisSchemeFactory.WIKIDATA
     val claimPropertyPrefix = scheme.property(PropertyType.CLAIM)

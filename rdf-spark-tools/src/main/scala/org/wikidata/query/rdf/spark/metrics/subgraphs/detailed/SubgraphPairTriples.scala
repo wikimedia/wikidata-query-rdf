@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.spark.metrics.subgraphs.detailed
 
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.col
-import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object SubgraphPairTriples {
 
@@ -16,7 +16,7 @@ object SubgraphPairTriples {
    *         - toSubgraphTripleCount: number of triples to each subgraph. Expected columns: subgraph, WD_to_subgraph_triples
    */
   def getSubgraphPairTriples(topSubgraphItems: DataFrame,
-                             topSubgraphTriples: DataFrame)(implicit spark: SparkSession): (DataFrame, DataFrame, DataFrame) = {
+                             topSubgraphTriples: DataFrame): (DataFrame, DataFrame, DataFrame) = {
 
     // The same items when used as object can link to multiple subgraphs
     // e.g Sub Pred Obj, Obj P31 A, Obj P31 B: then there will be connection to both A and B subgraph

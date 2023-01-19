@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.spark.metrics.queries.subgraphs
 
-import org.apache.spark.sql.functions.countDistinct
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions.countDistinct
 import org.wikidata.query.rdf.spark.metrics.queries.subgraphs.NumOfSubgraphsPerQueryDist.getNumOfSubgraphsPerQueryDist
 import org.wikidata.query.rdf.spark.metrics.queries.subgraphs.QueryTimeClassBySubgraphDist.getQueryTimeClassBySubgraphDist
 import org.wikidata.query.rdf.spark.metrics.queries.subgraphs.UaSubgraphCounts.getUaSubgraphCounts

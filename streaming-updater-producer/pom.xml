@@ -107,13 +107,6 @@
             <groupId>org.wikidata.query.rdf</groupId>
             <artifactId>common</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <!-- conflicts with flink log4j-slf4j-impl -->
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.wikidata.query.rdf</groupId>
@@ -128,11 +121,6 @@
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
-                </exclusion>
-                <exclusion>
-                    <!-- conflicts with flink log4j-slf4j-impl -->
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

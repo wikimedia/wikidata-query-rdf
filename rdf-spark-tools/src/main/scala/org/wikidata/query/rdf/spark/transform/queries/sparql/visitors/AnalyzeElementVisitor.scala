@@ -1,10 +1,10 @@
 package org.wikidata.query.rdf.spark.transform.queries.sparql.visitors
 
+import scala.collection.JavaConverters._
+
 import org.apache.jena.sparql.algebra.Algebra
 import org.apache.jena.sparql.algebra.walker.Walker
 import org.apache.jena.sparql.syntax._
-
-import scala.collection.JavaConverters._
 
 /**
  * Currently not used

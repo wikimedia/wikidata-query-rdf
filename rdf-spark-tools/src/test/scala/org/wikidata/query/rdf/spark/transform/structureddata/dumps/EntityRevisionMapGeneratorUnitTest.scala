@@ -1,11 +1,13 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
 import org.apache.spark.sql.Row
-import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.BeforeAndAfterEach
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
 import org.wikidata.query.rdf.spark.SparkSessionProvider
 
-class EntityRevisionMapGeneratorUnitTest extends FlatSpec with SparkSessionProvider with Matchers with BeforeAndAfterEach {
+class EntityRevisionMapGeneratorUnitTest extends AnyFlatSpec with SparkSessionProvider with Matchers with BeforeAndAfterEach {
   var csvFile: String = _
   val inputFormat = "parquet"
 

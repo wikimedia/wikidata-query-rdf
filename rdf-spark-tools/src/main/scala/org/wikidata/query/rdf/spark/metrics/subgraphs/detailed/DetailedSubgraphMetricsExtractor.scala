@@ -43,7 +43,7 @@ object DetailedSubgraphMetricsExtractor {
                                  topSubgraphItems: DataFrame,
                                  topSubgraphTriples: DataFrame,
                                  allSubgraphs: DataFrame,
-                                 minItems: Long)(implicit spark: SparkSession): (DataFrame, DataFrame) = {
+                                 minItems: Long): (DataFrame, DataFrame) = {
 
     val (subgraphPairTripleCount, fromSubgraphTripleCount, toSubgraphTripleCount) = getSubgraphPairTriples(topSubgraphItems, topSubgraphTriples)
     val predicatesPerSubgraph = getPredicatesPerSubgraph(topSubgraphTriples)

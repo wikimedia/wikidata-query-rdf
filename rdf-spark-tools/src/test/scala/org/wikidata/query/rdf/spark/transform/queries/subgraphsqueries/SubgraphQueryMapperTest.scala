@@ -1,11 +1,11 @@
 package org.wikidata.query.rdf.spark.transform.queries.subgraphsqueries
 
+import scala.io.Source
+
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.{DataType, StructType}
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.spark.SparkDataFrameComparisons
-
-import scala.io.Source
 
 class SubgraphQueryMapperTest extends SparkDataFrameComparisons with Matchers {
 

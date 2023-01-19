@@ -1,14 +1,14 @@
 package org.wikidata.query.rdf.spark.metrics.queries
 
+import scala.io.Source
+
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{col, explode}
 import org.apache.spark.sql.types.{DataType, StructType}
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.spark.SparkDataFrameComparisons
 import org.wikidata.query.rdf.spark.metrics.queries.subgraphpairs.SubgraphPairQueryMetricsExtractor.getSubgraphPairQueryMetrics
 import org.wikidata.query.rdf.spark.metrics.queries.subgraphs.QueryMetricsExtractor.getQueryMetrics
-
-import scala.io.Source
 
 // These tests are non-exhaustive and the values may not be fully accurate.
 // Any correction in the code may result in value changes that should be

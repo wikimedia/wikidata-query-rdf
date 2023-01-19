@@ -21,9 +21,42 @@
       and https://gerrit.wikimedia.org/g/analytics/refinery/source
       -->
     <properties>
+        <hadoop.version>3.3.2</hadoop.version>
         <!-- Spark 2 2.6.7.1, force this version to make sure we test with the same version that will be used at runtime. -->
-        <jackson.version>2.6.7.1</jackson.version>
+        <jackson.version>2.12.2</jackson.version>
+        <scala.compat.version>2.12</scala.compat.version>
+        <scala.scalatest-maven-plugin.version>2.2.0</scala.scalatest-maven-plugin.version>
+        <scala.scalatest.version>3.2.15</scala.scalatest.version>
+        <scala.version>2.12.17</scala.version>
+        <spark.version>3.3.1</spark.version>
     </properties>
+    <!-- use dependencyManagement here to enforce versions of transitive dependencies -->
+    <dependencyManagement>
+        <!-- enforce compatibility with spark-core -->
+        <dependencies>
+            <dependency>
+                <groupId>com.thoughtworks.paranamer</groupId>
+                <artifactId>paranamer</artifactId>
+                <version>2.8</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.janino</groupId>
+                <artifactId>janino</artifactId>
+                <version>3.0.16</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scalactic</groupId>
+                <artifactId>scalactic_${scala.compat.version}</artifactId>
+                <version>3.2.15</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <!-- Scala lang, spark core and spark sql are all
              scoped as provided as spark-submit will provide these -->
@@ -34,6 +67,7 @@
         <dependency>
             <groupId>com.holdenkarau</groupId>
             <artifactId>spark-testing-base_${scala.compat.version}</artifactId>
+            <version>${spark.version}_1.3.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.inject</groupId>
@@ -42,6 +76,11 @@
                 <exclusion>
                     <groupId>stax</groupId>
                     <artifactId>stax-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <!-- comes with org.datanucleus:datanucleus-api-jdo -->
+                    <groupId>javax.jdo</groupId>
+                    <artifactId>jdo-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -117,20 +156,10 @@
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
                 </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-            <scope>provided</scope>
-            <exclusions>
                 <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-json</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>asm</groupId>
-                    <artifactId>asm</artifactId>
+                    <!-- via com.github.java-json-tools:json-schema-validator -->
+                    <groupId>javax.activation</groupId>
+                    <artifactId>activation</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -164,11 +193,26 @@
                     <groupId>org.apache.xbean</groupId>
                     <artifactId>xbean-asm6-shaded</artifactId>
                 </exclusion>
+                <exclusion>
+                    <!-- comes with org.apache.hadoop:hadoop-client-runtime -->
+                    <groupId>org.apache.hadoop.thirdparty</groupId>
+                    <artifactId>hadoop-shaded-guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.compat.version}</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-compiler</artifactId>
+            <version>${scala.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -190,7 +234,7 @@
     <repositories>
         <repository>
             <id>artima</id>
-            <url>http://repo.artima.com/releases/</url>
+            <url>https://repo.artima.com/releases/</url>
         </repository>
     </repositories>
     <build>
@@ -199,7 +243,9 @@
                 <!-- see http://davidb.github.com/scala-maven-plugin -->
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
+                <version>4.8.0</version>
                 <configuration>
+                    <scalaVersion>${scala.version}</scalaVersion>
                     <args combine.children="append">
                         <arg>-Ywarn-unused</arg>
                     </args>
@@ -242,6 +288,10 @@
                 <configuration>
                     <ignoredClassPatterns>
                         <ignoredClassPattern>org.apache.spark.unused.UnusedStubClass</ignoredClassPattern>
+                        <ignoredClassPattern>dev.ludovic.netlib.InstanceBuilder</ignoredClassPattern>
+                        <!-- unable to exclude either one: org.apache.hive:hive-common:2.3.9 (test), org.apache.hive:hive-storage-api:2.7.2 (provided) -->
+                        <ignoredClassPattern>org.apache.hadoop.hive.common.ValidReadTxnList</ignoredClassPattern>
+                        <ignoredClassPattern>org.apache.hadoop.hive.common.ValidTxnList</ignoredClassPattern>
                     </ignoredClassPatterns>
                     <ignoredResourcePatterns>
                         <ignoredResourcePattern>git.properties</ignoredResourcePattern>
@@ -249,6 +299,8 @@
                         <ignoredResourcePattern>log4j.properties$</ignoredResourcePattern>
                         <ignoredResourcePattern>parquet.thrift$</ignoredResourcePattern>
                         <ignoredResourcePattern>plugin.xml$</ignoredResourcePattern>
+                        <ignoredResourcePattern>jetty-dir.css$</ignoredResourcePattern>
+                        <ignoredResourcePattern>mozilla/public-suffix-list.txt$</ignoredResourcePattern>
                     </ignoredResourcePatterns>
                     <ignoredDependencies>
                         <!--

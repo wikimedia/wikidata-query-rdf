@@ -1,11 +1,11 @@
 package org.wikidata.query.rdf.spark.utils
 
+import scala.util.matching.Regex
+
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.SaveMode.Overwrite
 import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
-
-import scala.util.matching.Regex
 
 object SparkUtils {
   private val partitionRegex: Regex = "^([\\w]+)=([\\w.-/]+)$".r
@@ -27,7 +27,7 @@ object SparkUtils {
       // DataFrame.insertInto only care about column position
       val dfw = df.select(spark.read.table(table).schema.fields.map(e => {
         e.dataType match {
-          case t@(_: StringType | _: NumericType | _: HiveStringType | _: BooleanType | _: DateType | _: TimestampType) => df(e.name).cast(t)
+          case t@(_: StringType | _: VarcharType | _: CharType | _: NumericType | _: BooleanType | _: DateType | _: TimestampType) => df(e.name).cast(t)
           case _ => df(e.name)
         }
       }): _*)
@@ -47,7 +47,7 @@ object SparkUtils {
                                           tablePreOp: String => E,
                                           partitionOp: (String, String, E) => E,
                                           tablePostOp: (String, E) => O
-                                        )(implicit spark: SparkSession): O = {
+                                        ): O = {
     val tableAndPartitions: Array[String] = tableAndPartitionSpecs.split("/", 2)
     tableAndPartitions match {
       case Array(table, partition) => tablePostOp(table, applyPartitions(tablePreOp(table), partition, partitionOp))

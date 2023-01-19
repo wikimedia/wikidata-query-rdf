@@ -2,15 +2,16 @@ package org.wikidata.query.rdf
 
 import scala.collection.JavaConverters.seqAsJavaListConverter
 
-import org.scalatest.{FlatSpec, Matchers}
-import org.wikidata.query.rdf.tool.wikibase.{LatestRevisionResponse, WikibaseApiError}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.tool.MapperUtils
+import org.wikidata.query.rdf.tool.wikibase.{LatestRevisionResponse, WikibaseApiError}
 
 /**
  * Simple test to make sure that the POJO required here can be deserialized
  * using the jackson version embarked by spark
  */
-class JacksonVersionTest extends FlatSpec with Matchers {
+class JacksonVersionTest extends AnyFlatSpec with Matchers {
   "Jackson" should "be able to deserialiaze lombok classes" in {
     val apiOutput = new LatestRevisionResponse(
       new LatestRevisionResponse.Query(

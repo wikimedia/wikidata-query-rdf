@@ -1,13 +1,13 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
-import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType}
+import java.net.URI
+
 import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType}
 import org.openrdf.model.Literal
 import org.wikidata.query.rdf.common.uri.{FederatedUrisScheme, SchemaDotOrg, UrisScheme, UrisSchemeFactory}
 import org.wikidata.query.rdf.spark.utils.SparkUtils
 import scopt.OptionParser
-
-import java.net.URI
 
 object EntityRevisionMapGenerator {
   val schema: StructType = StructType(Seq(

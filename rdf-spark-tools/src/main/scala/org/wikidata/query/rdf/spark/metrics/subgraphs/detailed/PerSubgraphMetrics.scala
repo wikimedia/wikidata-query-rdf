@@ -1,8 +1,8 @@
 package org.wikidata.query.rdf.spark.metrics.subgraphs.detailed
 
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{col, countDistinct, desc, row_number}
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.wikidata.query.rdf.spark.metrics.subgraphs.detailed.TriplesPerSubgraphItem.getTriplesPerSubgraphItem
 import org.wikidata.query.rdf.spark.utils.SubgraphUtils.sparkDfColumnsToMap
 
@@ -27,7 +27,7 @@ object PerSubgraphMetrics {
                             fromSubgraphTripleCount: DataFrame,
                             toSubgraphTripleCount: DataFrame,
                             topSubgraphTriples: DataFrame,
-                            generalSubgraphMetrics: DataFrame)(implicit spark: SparkSession): DataFrame = {
+                            generalSubgraphMetrics: DataFrame): DataFrame = {
 
     val totalItems = generalSubgraphMetrics.select("total_items").first.getLong(0)
     val totalTriples = generalSubgraphMetrics.select("total_triples").first.getLong(0)

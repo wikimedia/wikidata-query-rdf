@@ -1,8 +1,8 @@
 package org.wikidata.query.rdf.spark.utils
 
 import org.apache.jena.shared.impl.PrefixMappingImpl
-import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, RelationalGroupedDataset}
+import org.apache.spark.sql.functions._
 import org.openrdf.model.impl.ValueFactoryImpl
 import org.openrdf.rio.ntriples.NTriplesUtil
 
@@ -136,7 +136,7 @@ object SubgraphUtils {
   // Returns a string of the format "percentile(col, array(0.1,0.2...0.9) as newCol)"
   // to get percent distribution of any columns
   def getPercentileExpr(colName: String, newColName: String): String = {
-    val percentileList: String = (0.1 to 0.9 by 0.1).map(p => f"$p%.1f").mkString(",")
+    val percentileList: String = (1 to 9).map(p => p / 10).map(p => f"$p%.1f").mkString(",")
     f"percentile($colName, array($percentileList)) as $newColName"
   }
 

@@ -1,17 +1,19 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
+import java.io.StringReader
+
+import scala.collection.JavaConverters.collectionAsScalaIterableConverter
+
 import org.apache.spark.sql.SparkSession
 import org.openrdf.model.impl.ValueFactoryImpl
 import org.openrdf.rio.helpers.StatementCollector
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
 import org.wikidata.query.rdf.spark.SparkSessionProvider
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
 
-import java.io.StringReader
-import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-
-class WikibaseRDFDumpConverterUnitTest extends FlatSpec with SparkSessionProvider with Matchers {
+class WikibaseRDFDumpConverterUnitTest extends AnyFlatSpec with SparkSessionProvider with Matchers {
   val wikidataPaths = Seq(
     this.getClass.getResource("small_dump_chunk.ttl").toURI.toString,
     this.getClass.getResource("lexeme_dump.ttl").toURI.toString

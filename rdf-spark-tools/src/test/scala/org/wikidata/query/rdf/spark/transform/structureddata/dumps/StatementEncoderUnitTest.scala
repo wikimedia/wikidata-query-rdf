@@ -2,9 +2,10 @@ package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
 import org.apache.spark.sql.Row
 import org.openrdf.model.impl.ValueFactoryImpl
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class StatementEncoderUnitTest extends FlatSpec with Matchers {
+class StatementEncoderUnitTest extends AnyFlatSpec with Matchers {
   val statementEncoder = new StatementEncoder()
   val valueFactory = new ValueFactoryImpl()
   "a statement" should "be encodable as spark Row" in {

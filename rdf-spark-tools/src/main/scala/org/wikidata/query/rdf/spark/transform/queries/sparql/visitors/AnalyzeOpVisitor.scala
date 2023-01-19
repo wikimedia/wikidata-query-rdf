@@ -1,12 +1,12 @@
 package org.wikidata.query.rdf.spark.transform.queries.sparql.visitors
 
-import org.apache.jena.shared.PrefixMapping
-import org.apache.jena.sparql.algebra.op._
-import org.apache.jena.sparql.algebra.{Op, OpVisitor}
-import org.apache.jena.sparql.core.Var
-
 import scala.collection.mutable
-import collection.JavaConverters._
+import scala.collection.JavaConverters._
+
+import org.apache.jena.shared.PrefixMapping
+import org.apache.jena.sparql.algebra.{Op, OpVisitor}
+import org.apache.jena.sparql.algebra.op._
+import org.apache.jena.sparql.core.Var
 
 case class TripleInfo(subjectNode: NodeInfo, predicateNode: NodeInfo, objectNode: NodeInfo)
 

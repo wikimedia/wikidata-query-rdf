@@ -1,13 +1,13 @@
 package org.wikidata.query.rdf.spark.transform.queries.sparql
 
+import scala.collection.mutable
+import scala.util.Try
+
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.sparql.algebra.Algebra
 import org.apache.jena.sparql.algebra.walker.Walker
 import org.wikidata.query.rdf.spark.transform.queries.sparql.visitors.{AnalyzeOpVisitor, TripleInfo}
 import org.wikidata.query.rdf.spark.utils.PrefixDeclarations
-
-import scala.collection.mutable
-import scala.util.Try
 
 case class QueryInfo(
                       queryReprinted: String,

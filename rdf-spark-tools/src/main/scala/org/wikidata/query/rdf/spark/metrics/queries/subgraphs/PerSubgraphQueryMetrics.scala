@@ -1,8 +1,8 @@
 package org.wikidata.query.rdf.spark.metrics.queries.subgraphs
 
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.desc
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.wikidata.query.rdf.spark.metrics.queries.subgraphs.SubgraphQueriesBasicMetrics.getSubgraphQueriesBasicMetrics
 import org.wikidata.query.rdf.spark.metrics.queries.subgraphs.SubgraphQueryComposition.getSubgraphQueryComposition
 import org.wikidata.query.rdf.spark.metrics.queries.subgraphs.SubgraphUaMetrics.getPerSubgraphUaMetrics
@@ -56,7 +56,7 @@ object PerSubgraphQueryMetrics {
                                  subgraphQItemsMatchInQuery: DataFrame,
                                  subgraphPredicatesMatchInQuery: DataFrame,
                                  subgraphUrisMatchInQuery: DataFrame,
-                                 topN: Long)(implicit spark: SparkSession): DataFrame = {
+                                 topN: Long): DataFrame = {
 
     var perSubgraphQueryMetrics = getSubgraphQueriesBasicMetrics(totalTime, processedQueryCount, uaCount, subgraphQueriesInfo)
 

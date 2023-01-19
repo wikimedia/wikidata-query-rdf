@@ -1,8 +1,8 @@
 package org.wikidata.query.rdf.spark.utils
 
-import org.wikidata.query.rdf.common.uri._
-
 import java.lang
+
+import org.wikidata.query.rdf.common.uri._
 
 object PrefixDeclarations {
 

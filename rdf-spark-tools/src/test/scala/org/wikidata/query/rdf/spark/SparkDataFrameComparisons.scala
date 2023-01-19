@@ -2,9 +2,9 @@ package org.wikidata.query.rdf.spark
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{col, explode}
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 
-trait SparkDataFrameComparisons extends FlatSpec with SparkSessionProvider {
+trait SparkDataFrameComparisons extends AnyFlatSpec with SparkSessionProvider {
 
   // explode on a MapType will create two columns called 'key' and 'value' and each element of the
   // map will be listed as a row. This will increase the number of rows greatly if the map contains
