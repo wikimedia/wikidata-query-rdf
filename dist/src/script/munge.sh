@@ -39,8 +39,7 @@ if [ ! -z "$SKIPSITE" ]; then
 	ARGS="$ARGS --skipSiteLinks"
 fi
 
-CP=$(dirname $BASH_SOURCE)/lib/wikidata-query-tools-*-jar-with-dependencies.jar
+CP=`dirname $BASH_SOURCE`/lib/wikidata-query-tools-*-jar-with-dependencies.jar
 MAIN=org.wikidata.query.rdf.tool.Munge
-REAL_DUMP_PATH="$(realpath $FROM)"
-echo "Using dump file of ${REAL_DUMP_PATH} for upcoming munge\n"
-java -cp $CP $MAIN --from "${REAL_DUMP_PATH}" --to $LOCATION/$FORMAT $ARGS --chunkSize $CHUNK "$@"
+java -cp $CP $MAIN --from $FROM --to $LOCATION/$FORMAT $ARGS --chunkSize $CHUNK "$@"
+
