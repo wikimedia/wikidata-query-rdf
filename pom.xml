@@ -62,7 +62,7 @@
             SCM in CI. Namely CI pushes over https when developers typically use ssh.
         -->
         <developerConnection>${developerConnection}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>flink_1_16</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/wikidata/query/rdf</url>
     </scm>
 
