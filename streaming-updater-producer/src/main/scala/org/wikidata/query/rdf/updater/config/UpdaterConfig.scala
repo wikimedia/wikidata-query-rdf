@@ -102,7 +102,8 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
         "https://schema.wikimedia.org/repositories/primary/jsonschema,https://schema.wikimedia.org/repositories/secondary/jsonschema"
       ).split(",")
         .map(_.trim)
-        .toList
+        .toList,
+      ignoreFailuresAfterTransactionTimeout = params.getBoolean("ignore_failures_after_transaction_timeout", false)
     )
 
   implicit def finiteDuration2Int(fd: FiniteDuration): Int = fd.toMillis.intValue
@@ -150,7 +151,8 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      outputTopicPrefix: Option[String] = None,
                                                      sideOutputsDomain: String,
                                                      sideOutputsKafkaBrokers: Option[String],
-                                                     schemaRepos: List[String]
+                                                     schemaRepos: List[String],
+                                                     ignoreFailuresAfterTransactionTimeout: Boolean
                                                    )
 
 sealed case class UpdaterExecutionEnvironmentConfig(checkpointDir: String,

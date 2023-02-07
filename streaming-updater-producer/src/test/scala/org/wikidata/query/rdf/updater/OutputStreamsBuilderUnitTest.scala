@@ -18,7 +18,8 @@ class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
       outputTopicPrefix = Some("test-prefix"),
       sideOutputsDomain = "test-host",
       sideOutputsKafkaBrokers = None,
-      schemaRepos = List("https://schema.wikimedia.org/repositories/primary/jsonschema", "https://schema.wikimedia.org/repositories/secondary/jsonschema")
+      schemaRepos = List("https://schema.wikimedia.org/repositories/primary/jsonschema", "https://schema.wikimedia.org/repositories/secondary/jsonschema"),
+      ignoreFailuresAfterTransactionTimeout = false
     )
     val outputStreams: OutputStreams = new OutputStreamsBuilder(outputStreamConfig, HttpClientConfig(None, None, "My agent")).build
     InstantiationUtil.serializeObject(outputStreams.failedOpsSink).length should not be 0

@@ -70,6 +70,8 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     config.generalConfig.httpClientConfig.httpRoutes shouldBe None
     config.generalConfig.httpClientConfig.httpTimeout shouldBe None
     config.generalConfig.httpClientConfig.userAgent shouldBe HttpClientUtils.WDQS_DEFAULT_UA
+
+    config.outputStreamConfig.ignoreFailuresAfterTransactionTimeout shouldBe false
   }
 
   "UpdaterConfig" should "build a config suited for commons with wikidata federation" in {

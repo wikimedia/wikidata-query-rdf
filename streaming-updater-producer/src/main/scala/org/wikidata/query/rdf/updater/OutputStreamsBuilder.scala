@@ -18,7 +18,7 @@ case class OutputStreams(
 class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig, httpClientConfig: HttpClientConfig) {
   def build: OutputStreams = {
     OutputStreams(
-      mutationOutput,
+      mutationOutput(outputStreamsConfig),
       prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema,
         outputStreamsConfig.schemaRepos, httpClientConfig),
       prepareSideOutputStream[InconsistentMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
@@ -40,7 +40,7 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
       FlinkKafkaProducer.Semantic.AT_LEAST_ONCE)
   }
 
-  def mutationOutput: SinkFunction[MutationDataChunk] = {
+  def mutationOutput(outputStreamConfig: UpdaterPipelineOutputStreamConfig): SinkFunction[MutationDataChunk] = {
     val producerConfig = new Properties()
     producerConfig.setProperty("bootstrap.servers", outputStreamsConfig.kafkaBrokers)
     // Flink defaults is 1hour but wmf kafka uses the default value of 15min for transaction.max.timeout.ms
@@ -49,7 +49,7 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
     producerConfig.setProperty("delivery.timeout.ms", txTimeoutMs.toString)
     producerConfig.setProperty("batch.size", "250000")
     producerConfig.setProperty("compression.type", "gzip")
-    new FlinkKafkaProducer[MutationDataChunk](
+    val producer = new FlinkKafkaProducer[MutationDataChunk](
       outputStreamsConfig.topic,
       new MutationEventDataSerializationSchema(outputStreamsConfig.topic, outputStreamsConfig.partition),
       producerConfig,
@@ -57,5 +57,11 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
         case CheckpointingMode.EXACTLY_ONCE => FlinkKafkaProducer.Semantic.EXACTLY_ONCE
         case CheckpointingMode.AT_LEAST_ONCE => FlinkKafkaProducer.Semantic.AT_LEAST_ONCE
       })
+
+    if (outputStreamsConfig.ignoreFailuresAfterTransactionTimeout) {
+      // workaround for https://issues.apache.org/jira/browse/FLINK-16419
+      producer.ignoreFailuresAfterTransactionTimeout();
+    }
+    producer
   }
 }
