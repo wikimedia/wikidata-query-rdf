@@ -150,7 +150,10 @@ class ReconcileCollector(reconciliationSource: String,
     "reconcile-deletion" -> Action.DELETION,
     "reconcile-creation" -> Action.CREATION)
 
-  private val inconsistenciesActionMap: Map[String, Action] = Map[String, Action]("unmatched_delete" -> Action.CREATION)
+  private val inconsistenciesActionMap: Map[String, Action] = Map[String, Action](
+    "unmatched_delete" -> Action.CREATION,
+    "newer_revision_seen" -> Action.CREATION
+  )
 
   def collectLateEvents(partitionSpec: String)(implicit spark: SparkSession): List[ReconcileEvent] = {
     // https://schema.wikimedia.org/repositories/secondary/jsonschema/rdf_streaming_updater/lapsed_action/current.yaml
