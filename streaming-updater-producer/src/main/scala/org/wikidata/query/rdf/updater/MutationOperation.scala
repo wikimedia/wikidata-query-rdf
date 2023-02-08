@@ -78,6 +78,10 @@ case object UnmatchedUndelete extends Inconsistency {
   override val name: String = "unmatched_delete"
 }
 
+case object MissedUndelete extends Inconsistency {
+  override val name: String = "missed_undelete"
+}
+
 sealed trait ReconciliationIssue extends Inconsistency
 
 case object ReconcileAmbiguousDeletion extends ReconciliationIssue {

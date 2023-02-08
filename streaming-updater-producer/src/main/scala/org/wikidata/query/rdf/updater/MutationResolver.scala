@@ -35,6 +35,9 @@ sealed class MutationResolver extends Serializable {
     entityState.getCurrentState match {
       case State(None, _) => emitFullImport(event, entityState)
       case State(Some(rev), CREATED) if rev < event.revision => emitDiff(event, rev, entityState)
+      // revision-create on top of a deleted entity (most likely the corresponding undelete event was missed)
+      case state @ State(Some(rev), DELETED) if rev < event.revision => emitIgnoredMutation(event, MissedUndelete, state)
+      // rest should be events for past revision (duplicate events or backfill)
       case state: State =>  emitIgnoredMutation(event, NewerRevisionSeen, state)
     }
   }

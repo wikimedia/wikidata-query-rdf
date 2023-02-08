@@ -152,7 +152,7 @@ class ReconcileCollector(reconciliationSource: String,
 
   private val inconsistenciesActionMap: Map[String, Action] = Map[String, Action](
     "unmatched_delete" -> Action.CREATION,
-    "newer_revision_seen" -> Action.CREATION
+    "missed_undelete" -> Action.CREATION
   )
 
   def collectLateEvents(partitionSpec: String)(implicit spark: SparkSession): List[ReconcileEvent] = {
@@ -266,7 +266,13 @@ class ReconcileCollector(reconciliationSource: String,
     // https://schema.wikimedia.org/repositories/secondary/jsonschema/rdf_streaming_updater/state_inconsistency/current.yaml
     val events = SparkUtils.readTablePartition(partitionSpec)
       .filter(col("meta.domain").equalTo(domain))
-      .filter(col("inconsistency").isInCollection(inconsistenciesActionMap.keys))
+      .filter(col("inconsistency").isInCollection(inconsistenciesActionMap.keys)
+        // TODO remove the following condition once the producer has stopped emitting such inconsistencies (missed_undelete)
+        //  as newer_revision_seen
+        .or(
+          (col("inconsistency") === "newer_revision_seen")
+            .and(col("state_status") === "DELETED")
+        ))
       .select(
         col("meta"),
         col("item"),

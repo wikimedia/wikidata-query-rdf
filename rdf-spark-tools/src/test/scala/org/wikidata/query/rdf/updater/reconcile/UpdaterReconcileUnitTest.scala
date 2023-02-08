@@ -43,9 +43,9 @@ class UpdaterReconcileUnitTest extends FlatSpec with SparkSessionProvider with M
     val codfwEvents = collector.collectInconsistencies("inconsistencies/year=2021/month=11/datacenter=codfw")
     val eqiadEvents = collector.collectInconsistencies("inconsistencies/year=2021/month=11/datacenter=eqiad")
     codfwEvents should have size 10
-    eqiadEvents should have size 6
-    codfwEvents map { _.getItem } should contain only ("Q101208968", "Q106605647", "Q108906915", "Q108922819",
-      "Q109332244", "Q109616453", "Q109658637", "Q1437663", "Q17370984", "Q87538978")
+    eqiadEvents should have size 4
+    codfwEvents map { _.getItem } should contain only ("Q101208968", "Q106605647", "Q1437663", "Q108922819",
+      "Q109332244", "Q109616453", "Q109658637", "Q17370984", "Q87538978", "Q123")
 
     codfwEvents map { _.getReconciliationAction } should contain only Action.CREATION
     codfwEvents map { _.getReconciliationSource } should contain only "my_source"

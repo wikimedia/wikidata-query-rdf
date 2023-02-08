@@ -119,7 +119,7 @@ class MutationResolverUnitTest extends FlatSpec with Matchers with MutationFixtu
     expectedOutput += newRecord(DeleteItem("Q1", instant(2), 1, ingestionInstant, newEventInfo(instant(2), testDomain, testStream, "2")))
     expectedOutput += newRecord(IgnoredMutation("Q1", instant(3), 2,
       RevCreate("Q1", instant(3), 2, None, ingestionInstant, newEventInfo(instant(3), testDomain, testStream, "3")),
-      ingestionInstant, NewerRevisionSeen, State(Some(1), DELETED)))
+      ingestionInstant, MissedUndelete, State(Some(1), DELETED)))
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
   }
