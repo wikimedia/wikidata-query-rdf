@@ -12,8 +12,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
-import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
@@ -26,9 +26,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wikidata.query.rdf.blazegraph.WikibaseContextListener;
 import org.wikidata.query.rdf.blazegraph.events.AsyncEventSender;
+import org.wikidata.query.rdf.blazegraph.events.EventFileSender;
 import org.wikidata.query.rdf.blazegraph.events.EventHttpSender;
 import org.wikidata.query.rdf.blazegraph.events.EventSender;
-import org.wikidata.query.rdf.blazegraph.events.EventFileSender;
 import org.wikidata.query.rdf.blazegraph.events.QueryEvent;
 import org.wikidata.query.rdf.blazegraph.events.QueryEventGenerator;
 
@@ -41,13 +41,14 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * This filter assumes that it is configured to only track
  * read queries.
  */
-public class QueryEventSenderFilter implements Filter {
+public class QueryEventSenderFilter extends MonitoredFilter implements QueryEventSenderMXBean {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private EventSender sender;
     private QueryEventGenerator queryEventGenerator;
     private String enableIfHeader;
     private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
     private final AtomicInteger queryCounter = new AtomicInteger(0);
+    private final AtomicLong startedQueries = new AtomicLong(0);
 
     public QueryEventSenderFilter() {
     }
@@ -112,6 +113,7 @@ public class QueryEventSenderFilter implements Filter {
         Instant start = queryEventGenerator.instant();
         boolean succeed = false;
         int countBefore = queryCounter.getAndIncrement();
+        startedQueries.incrementAndGet();
         try {
             filterChain.doFilter(servletRequest, servletResponse);
             succeed = true;
@@ -150,5 +152,15 @@ public class QueryEventSenderFilter implements Filter {
         } catch (IOException e) {
             log.error("Exception thrown while closing event sender.", e);
         }
+    }
+
+    @Override
+    public int getRunningQueries() {
+        return queryCounter.get();
+    }
+
+    @Override
+    public long getStartedQueries() {
+        return startedQueries.get();
     }
 }

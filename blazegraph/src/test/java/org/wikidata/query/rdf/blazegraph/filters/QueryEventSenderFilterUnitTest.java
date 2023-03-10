@@ -66,6 +66,7 @@ public class QueryEventSenderFilterUnitTest {
         filter.doFilter(request, response, filterChain);
         assertThat(receivedEvents).containsExactly(generatedEvent);
         verify(filterChain, times(1)).doFilter(eq(request), eq(response));
+        assertThat(filter.getStartedQueries()).isEqualTo(1L);
     }
 
     @Test

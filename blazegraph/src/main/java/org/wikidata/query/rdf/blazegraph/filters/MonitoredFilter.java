@@ -40,7 +40,7 @@ public abstract class MonitoredFilter implements Filter {
             name = new ObjectName(this.getClass().getName(), "filterName", filterName);
             MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
             platformMBeanServer.registerMBean(this, name);
-            LOG.info("ThrottlingFilter MBean registered as {}.", name);
+            LOG.info("{} MBean registered as {}.", this.getClass().getSimpleName(), name);
         } catch (MalformedObjectNameException e) {
             LOG.error("filter name {} is invalid as an MBean property.", filterName, e);
         } catch (InstanceAlreadyExistsException e) {
@@ -59,7 +59,7 @@ public abstract class MonitoredFilter implements Filter {
             MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
             try {
                 platformMBeanServer.unregisterMBean(objectName);
-                LOG.info("ThrottlingFilter MBean {} unregistered.", objectName);
+                LOG.info("{} MBean {} unregistered.", this.getClass().getSimpleName(), objectName);
             } catch (InstanceNotFoundException e) {
                 LOG.warn("MBean already unregistered.", e);
             } catch (MBeanRegistrationException e) {
