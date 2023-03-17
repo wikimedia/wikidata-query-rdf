@@ -15,12 +15,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import javax.management.MBeanFeatureInfo;
+import javax.management.MBeanInfo;
+import javax.management.ObjectName;
 import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -162,5 +168,20 @@ public class QueryEventSenderFilterUnitTest {
         QueryEventSenderFilter filter = new QueryEventSenderFilter(sender, eventGenerator, null);
         filter.destroy();
         verify(sender, times(1)).close();
+    }
+
+    @Test
+    public void testMXBeanRegistered() throws Exception {
+        QueryEventGenerator eventGenerator = mock(QueryEventGenerator.class);
+        EventSender sender = mock(EventSender.class);
+        QueryEventSenderFilter filter = new QueryEventSenderFilter(sender, eventGenerator, null);
+        FilterConfig config = mock(FilterConfig.class);
+        when(config.getFilterName()).thenReturn("QueryEventSenderFilter");
+        filter.init(config);
+        ObjectName objectName = new ObjectName("org.wikidata.query.rdf.blazegraph.filters.QueryEventSenderFilter",
+                "filterName", "QueryEventSenderFilter");
+        MBeanInfo mBeanInfo = ManagementFactory.getPlatformMBeanServer().getMBeanInfo(objectName);
+        assertThat(mBeanInfo.getAttributes()).hasSize(2);
+        assertThat(Arrays.stream(mBeanInfo.getAttributes()).map(MBeanFeatureInfo::getName)).containsExactlyInAnyOrder("RunningQueries", "StartedQueries");
     }
 }

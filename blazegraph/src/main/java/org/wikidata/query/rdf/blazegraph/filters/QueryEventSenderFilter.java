@@ -63,6 +63,7 @@ public class QueryEventSenderFilter extends MonitoredFilter implements QueryEven
     @Override
     @SuppressFBWarnings(value = "MDM_INETADDRESS_GETLOCALHOST", justification = "are there alternatives?")
     public void init(FilterConfig filterConfig) throws ServletException {
+        super.init(filterConfig);
         FilterConfiguration config = new FilterConfiguration(filterConfig, FilterConfiguration.WDQS_CONFIG_PREFIX);
         String wdqsHostname;
         try {
