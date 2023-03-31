@@ -11,6 +11,7 @@ import scala.collection.JavaConverters.seqAsJavaListConverter
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.slf4j.LoggerFactory
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.updater.config.HttpClientConfig
 import org.wikimedia.eventutilities.core.event.{EventSchemaLoader, EventStreamConfig, JsonEventGenerator}
@@ -26,14 +27,16 @@ class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant],
                                        eventStreamConfigEndpoint: String,
                                        schemaRepos: List[String],
                                        httpClientConfig: HttpClientConfig) extends KafkaSerializationSchema[E] {
+  private val LOG = LoggerFactory.getLogger(getClass)
 
   private def getRecordClock(): () => Instant = {
     recordTimeClock match {
       case Some(recTimeClock) => recTimeClock
-      case None => {
+      case _ =>
+        LOG.info("None object from {}", recordTimeClock.getClass.getProtectionDomain.getCodeSource.getLocation)
+        LOG.info("recordTimeClock = {}, None = {}", System.identityHashCode(recordTimeClock), System.identityHashCode(None))
         val systemClock: Clock = Clock.systemUTC()
         () => systemClock.instant()
-      }
     }
   }
 
