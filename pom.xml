@@ -421,8 +421,6 @@
                 <version>${flink.version}</version>
                 <classifier>tests</classifier>
             </dependency>
-            <!-- Apache Flink dependencies -->
-            <!-- These dependencies are provided, because they should not be packaged into the JAR file. -->
             <dependency>
                 <groupId>org.apache.flink</groupId>
                 <artifactId>flink-scala_${scala.compat.version}</artifactId>
