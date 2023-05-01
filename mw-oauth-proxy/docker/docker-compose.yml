@@ -8,7 +8,7 @@ services:
         volumes:
           - ./mediawiki-services-kask:/etc/mediawiki-services-kask
     kask:
-        image: docker-registry.wikimedia.org/wikimedia/mediawiki-services-kask:v1.0.9
+        image: docker-registry.wikimedia.org/repos/mediawiki/services/kask:v1.0.11
         container_name: kask
         depends_on:
           # TODO: Insuficient, wait for port to be available?
