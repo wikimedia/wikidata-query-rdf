@@ -31,7 +31,8 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import scopt.OptionParser
 
 object UpdaterReconcile {
-  case class Params(
+    val datacenterPlaceholder = "$DC$"
+    case class Params(
                      domain: String = "",
                      initialToNamespace: String = "Q=,P=120",
                      entityNamespaces: Seq[Long] = WikibaseRepository.Uris.DEFAULT_ENTITY_NAMESPACES.asScala map Long2long toSeq,
@@ -55,7 +56,8 @@ object UpdaterReconcile {
     } text "project domains to consider"
     opt[String]("reconciliation-source") required() valueName "<reconciliation-source>" action {(x,p) =>
       p.copy(reconciliationSource = x)
-    } text "Name of the source of the reconciliation to tag generated events"
+    } text s"Name of the source of the reconciliation to tag generated events, the pattern $datacenterPlaceholder will get " +
+      "replaced by the datacenter field of the input events"
     opt[String]("event-gate") required() valueName "<event-gate>" action {(x,p) =>
       p.copy(eventGateEndpoint = URI.create(x))
     } text "event-gate endpoint"
@@ -163,6 +165,7 @@ class ReconcileCollector(reconciliationSource: String,
       .filter(col("action_type").isInCollection(lateEventActionMap.keys))
       .filter(col("meta.domain").equalTo(domain))
       .select(
+        col("datacenter"),
         col("meta"),
         col("item"),
         col("revision_id"),
@@ -180,7 +183,7 @@ class ReconcileCollector(reconciliationSource: String,
           schema,
           e.getAs("item"),
           e.getAs("revision_id"),
-          reconciliationSource,
+          buildSourceTag(e.getAs("datacenter")),
           lateEventActionMap.getOrElse(e.getAs("action_type"), Action.CREATION), origEventInfo)
       }) toList
 
@@ -188,38 +191,43 @@ class ReconcileCollector(reconciliationSource: String,
     events
   }
 
+  private def buildSourceTag(datacenter: String) = {
+    reconciliationSource.replace(UpdaterReconcile.datacenterPlaceholder, datacenter)
+  }
+
   def collectFailures(partitionSpec: String)(implicit spark: SparkSession): List[ReconcileEvent] = {
     // https://schema.wikimedia.org/repositories//secondary/jsonschema/rdf_streaming_updater/fetch_failure/current.yaml
-    val rows: List[(EventInfo, String, Long)] = SparkUtils.readTablePartition(partitionSpec)
+    val rows: List[(EventInfo, String, Long, String)] = SparkUtils.readTablePartition(partitionSpec)
       .filter(col("meta.domain").equalTo(domain))
       .select(
+        col("datacenter"),
         col("meta"),
         col("item"),
         col("revision_id"),
         col("original_event_info"))
       .toLocalIterator().asScala.map(e => {
-        (rowToEventInfo(e.getAs[Row]("original_event_info")), e.getAs[String]("item"), e.getAs[Long]("revision_id"))
+        (rowToEventInfo(e.getAs[Row]("original_event_info")), e.getAs[String]("item"),e.getAs[Long]("revision_id"), e.getAs[String]("datacenter"))
       }).toList
 
-    val mediainfo: immutable.Seq[(EventInfo, String, Long)] = rows filter {
-      case (_, item, _) => item.startsWith(UrisConstants.MEDIAINFO_INITIAL)
+    val mediainfo: immutable.Seq[(EventInfo, String, Long, String)] = rows filter {
+      case (_, item, _, _) => item.startsWith(UrisConstants.MEDIAINFO_INITIAL)
     } match {
       case e: Any => fetchLatestRevision(e, latestRevisionForMediaInfoItems)
     }
     val entities = rows filterNot {
-      case (_, item, _) => item.startsWith(UrisConstants.MEDIAINFO_INITIAL)
+      case (_, item, _, _) => item.startsWith(UrisConstants.MEDIAINFO_INITIAL)
     } match {
       case e: Any => fetchLatestRevision(e, latestRevisionForEntities)
     }
 
     val filtered: List[ReconcileEvent] = (mediainfo ++ entities) map {
-      case (eventInfo, item, revision) =>
+      case (eventInfo, item, revision, datacenter) =>
         new ReconcileEvent(
           new EventsMeta(now(), idGen(), eventInfo.meta().domain(), stream, requestIdGen()),
           schema,
           item,
           revision,
-          reconciliationSource,
+          buildSourceTag(datacenter),
           Action.CREATION,
           eventInfo)
     } toList
@@ -233,33 +241,37 @@ class ReconcileCollector(reconciliationSource: String,
    * - ignore revisions that have been deleted
    * - choose most recent revision between the one returned by MW and the one present in the event, should always be MW)
    */
-  private def fetchLatestRevision(data: List[(EventInfo, String, Long)],
+  private def fetchLatestRevision(data: List[(EventInfo, String, Long, String)],
                                   fetcher: util.Set[String] => util.Map[String, Optional[lang.Long]]
-                                 ): List[(EventInfo, String, Long)] = {
-    val perItemMap: Map[String, (EventInfo, String, Long)] = data groupBy { _._2 } mapValues { e => e.reduceLeft {(a, b) => if (a._3 > b._3) a else b} }
-
-    perItemMap.grouped(WikibaseRepository.MAX_ITEMS_PER_ACTION_REQUEST) flatMap { chunk =>
-      val revMap: Map[String, Optional[lang.Long]] = withRetry()(() => fetcher(chunk.keySet.asJava).asScala.toMap)
-      chunk.toSeq map {
-        // (key, (EventInfo, item, revision)) -> (revFromMWApi, (EventInfo, item, revision))
-        case (k, v) => (revMap.getOrElse(k, Optional.empty()), v)
-      } filter {
-        // Ignore revisions that have been deleted, the pipeline certainly received a delete event afterward so no
-        // need to replay this event (we would be unable to fetch its content anyways).
-        case (rev, _) => rev.isPresent
-      } map {
-        // (Optional revFromMWApi, (EventInfo, item, revision)) -> (rev, (EventInfo, item, revision))
-        case (rev, evt) => (Long2long(rev.orElse(evt._3)), evt)
-      } map {
-        // We should choose the most recent revision between the one returned by the MW Api and the one present in the event
-        case (rev, (origEvent, key, evtRevision)) =>
-          if (rev < evtRevision) {
-            // Something really weird is happening if MW is returning something older than what the pipeline already
-            // received. Nothing we could automatically do so just log something in case it might help debug something.
-            logger.warn(s"MW returned an older revision than the one already received by the flink pipeline: " +
-              s"$key with MW revision: $rev < event revision: $evtRevision (event metadata: ${origEvent.meta()})")
-          }
-          (origEvent, key, if (rev > evtRevision) rev else evtRevision)
+                                 ): List[(EventInfo, String, Long, String)] = {
+    // group by DC first
+    data groupBy { _._4 } flatMap { case (_, dcData) =>
+      val perItemMap: Map[String, (EventInfo, String, Long, String)] = dcData groupBy { _._2 } mapValues {
+        e => e.reduceLeft {(a, b) => if (a._3 > b._3) a else b}
+      }
+      perItemMap.grouped(WikibaseRepository.MAX_ITEMS_PER_ACTION_REQUEST) flatMap { chunk =>
+        val revMap: Map[String, Optional[lang.Long]] = withRetry()(() => fetcher(chunk.keySet.asJava).asScala.toMap)
+        chunk.toSeq map {
+          // (key, (EventInfo, item, revision, dc)) -> (revFromMWApi, (EventInfo, item, revision, dc))
+          case (k, v) => (revMap.getOrElse(k, Optional.empty()), v)
+        } filter {
+          // Ignore revisions that have been deleted, the pipeline certainly received a delete event afterward so no
+          // need to replay this event (we would be unable to fetch its content anyways).
+          case (rev, _) => rev.isPresent
+        } map {
+          // (Optional revFromMWApi, (EventInfo, item, revision, dc)) -> (rev, (EventInfo, item, revision, dc))
+          case (rev, evt) => (Long2long(rev.orElse(evt._3)), evt)
+        } map {
+          // We should choose the most recent revision between the one returned by the MW Api and the one present in the event
+          case (rev, (origEvent, key, evtRevision, datacenter)) =>
+            if (rev < evtRevision) {
+              // Something really weird is happening if MW is returning something older than what the pipeline already
+              // received. Nothing we could automatically do so just log something in case it might help debug something.
+              logger.warn(s"MW returned an older revision than the one already received by the flink pipeline: " +
+                s"$key with MW revision: $rev < event revision: $evtRevision (event metadata: ${origEvent.meta()})")
+            }
+            (origEvent, key, if (rev > evtRevision) rev else evtRevision, datacenter)
+        }
       }
     } toList
   }
@@ -276,6 +288,7 @@ class ReconcileCollector(reconciliationSource: String,
             .and(col("state_status") === "DELETED")
         ))
       .select(
+        col("datacenter"),
         col("meta"),
         col("item"),
         col("revision_id"),
@@ -293,7 +306,7 @@ class ReconcileCollector(reconciliationSource: String,
           schema,
           e.getAs("item"),
           e.getAs("revision_id"),
-          reconciliationSource,
+          buildSourceTag(e.getAs("datacenter")),
           inconsistenciesActionMap.getOrElse(e.getAs("inconsistency"), Action.CREATION),
           origEventInfo)
       }).toList
