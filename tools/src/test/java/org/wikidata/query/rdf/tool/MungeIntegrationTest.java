@@ -51,7 +51,7 @@ public class MungeIntegrationTest {
     @Test
     public void loadTest() throws IOException, QueryEvaluationException, InterruptedException, RDFParseException, RDFHandlerException {
         try (Reader dumpReader = utf8(this.getClass().getResourceAsStream("test.ttl"))) {
-            loadDumpIntoRepo(dumpReader, 963);
+            loadDumpIntoRepo(dumpReader, 977);
         }
         assertTrue(ask("ASK { wd:Q10 rdfs:label \"Wikidata\"@en }"));
 
@@ -65,6 +65,10 @@ public class MungeIntegrationTest {
 
         assertTrue(ask("ASK { wd:Q20 schema:dateModified ?date }"));
         assertTrue(ask("ASK { wd:Q21 schema:version ?v }"));
+        assertTrue(ask("ASK { wd:Q291 wdt:P163 wd:E1 }"));
+        assertTrue(ask("ASK { wds:Q291-2e61d8df-4a70-a366-8dbe-7f3d0070a10e ps:P163 wd:E1 }"));
+        assertTrue(ask("ASK { wds:Q291-2e61d8df-4a70-a366-8dbe-7f3d0070a10e pq:P163 wd:E1 }"));
+        assertTrue(ask("ASK { wdref:cfd0801e5ac52166f3e33f34059dafce51942f2b pr:P163 wd:E1 }"));
 
         TupleQueryResult results = rdfClient.query(uris.prefixes(new StringBuilder())
                 .append("SELECT ?x WHERE { wd:Q14 wdt:P69 ?x }").toString());

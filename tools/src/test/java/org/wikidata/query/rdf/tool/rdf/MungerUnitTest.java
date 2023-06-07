@@ -464,6 +464,24 @@ public class MungerUnitTest {
         assertThat(revision, equalTo(100L));
     }
 
+    @Test
+    public void testEntitySchema() {
+        String statementUri = uris.statement() + "Q291-2e61d8df-4a70-a366-8dbe-7f3d0070a10e";
+        String referenceUri = uris.reference() + "cfd0801e5ac52166f3e33f34059dafce51942f2b";
+        String schemaE1Uri = uris.entityIdToURI("E1");
+        entity("Q291")
+                .retain(statement("Q291", "P163", statementUri),
+                    statement("Q291", uris.property(PropertyType.DIRECT), schemaE1Uri),
+                    statement(statementUri, Ontology.RANK, Ontology.NORMAL_RANK),
+                    statement(statementUri, Provenance.WAS_DERIVED_FROM, referenceUri),
+                    statement(statementUri, uris.property(PropertyType.STATEMENT) + "P163", schemaE1Uri),
+                    statement(statementUri, uris.property(PropertyType.QUALIFIER) + "P163", schemaE1Uri),
+                    statement(referenceUri, uris.property(PropertyType.REFERENCE_VALUE) + "P163", schemaE1Uri))
+                .remove(statement(statementUri, RDF.TYPE, Ontology.STATEMENT),
+                        statement(referenceUri, RDF.TYPE, Ontology.REFERENCE))
+                .testWithoutShuffle();
+    }
+
     private Mungekin entity(String id) {
         return new Mungekin(uris, id);
     }
