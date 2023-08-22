@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -45,6 +45,7 @@ import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.test.CloseableRule;
 import org.wikidata.query.rdf.tool.AbstractUpdaterIntegrationTestBase;
+import org.wikidata.query.rdf.tool.EntityId;
 import org.wikidata.query.rdf.tool.MapperUtils;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
@@ -249,18 +250,18 @@ public class WikibaseRepositoryIntegrationTest {
 
     @Test
     public void fetchLatestRevisionForEntities() throws RetryableException {
-        Set<String> entityIds = new HashSet<>(asList("Q106376", "Q1", "P180"));
-        Map<String, Optional<Long>> entityRevs = repo.get().fetchLatestRevisionForEntities(entityIds,
+        Set<EntityId> entityIds = new HashSet<>(asList(EntityId.parse("Q106376"), EntityId.parse("Q1"), EntityId.parse("P180")));
+        Map<EntityId, Optional<Long>> entityRevs = repo.get().fetchLatestRevisionForEntities(entityIds,
                 WikibaseRepository.entityIdToMediaWikiTitle("Q=,P=Property"));
-        assertEquals(270062L, entityRevs.get("Q106376").orElseThrow(AssertionError::new).longValue());
-        assertFalse(entityRevs.get("Q1").isPresent());
+        assertEquals(270062L, entityRevs.get(EntityId.parse("Q106376")).orElseThrow(AssertionError::new).longValue());
+        assertFalse(entityRevs.get(EntityId.parse("Q1")).isPresent());
     }
 
     @Test
     public void fetchLatestRevisionForEntitiesWithInvalidNsTextMap() throws RetryableException {
-        Set<String> entityIds = new HashSet<>(asList("Q106376", "Q1", "P180"));
+        Set<EntityId> entityIds = new HashSet<>(asList(EntityId.parse("Q106376"), EntityId.parse("Q1"), EntityId.parse("P180")));
         WikibaseRepository testRepo = repo.get();
-        UnaryOperator<String> entityToTitle = WikibaseRepository.entityIdToMediaWikiTitle("Q=");
+        Function<EntityId, String> entityToTitle = WikibaseRepository.entityIdToMediaWikiTitle("Q=");
         Assertions.assertThatThrownBy(() -> testRepo.fetchLatestRevisionForEntities(entityIds, entityToTitle))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Unsupported entity id [P180]");
@@ -268,10 +269,10 @@ public class WikibaseRepositoryIntegrationTest {
 
     @Test
     public void fetchLatestRevisionForMediainfoItems() throws RetryableException {
-        Set<String> entityIds = new HashSet<>(asList("M766", "M1"));
-        Map<String, Optional<Long>> entityRevs = repo.get().fetchLatestRevisionForMediainfoItems(entityIds);
-        assertEquals(2537L, entityRevs.get("M766").orElseThrow(AssertionError::new).longValue());
-        assertFalse(entityRevs.get("M1").isPresent());
+        Set<EntityId> entityIds = new HashSet<>(asList(EntityId.parse("M1"), EntityId.parse("M766")));
+        Map<EntityId, Optional<Long>> entityRevs = repo.get().fetchLatestRevisionForMediainfoItems(entityIds);
+        assertEquals(2537L, entityRevs.get(EntityId.parse("M766")).orElseThrow(AssertionError::new).longValue());
+        assertFalse(entityRevs.get(EntityId.parse("M1")).isPresent());
     }
 
     /**

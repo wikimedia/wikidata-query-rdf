@@ -2,7 +2,7 @@
   "id" : "362cccd6-18c0-4bc2-8700-e6dbe6af4443",
   "name" : "w_apiphp",
   "request" : {
-    "url" : "/w/api.php?format=json&formatversion=2&action=query&prop=revisions&rvprop=ids&rvdir=older&titles=Q1%7CProperty%3AP180%7CQ106376",
+    "url" : "/w/api.php?format=json&formatversion=2&action=query&prop=revisions&rvprop=ids&rvdir=older&titles=Property%3AP180%7CQ1%7CQ106376",
     "method" : "GET"
   },
   "response" : {

@@ -12,6 +12,7 @@ import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
+import org.wikidata.query.rdf.tool.EntityId
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
 import org.wikidata.query.rdf.updater.EntityStatus.CREATED
 import org.wikidata.query.rdf.updater.config.{BootstrapConfig, HttpClientConfig, UpdaterPipelineGeneralConfig}
@@ -64,10 +65,12 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       .withResponse(("Q3", 101013L) -> metaStatements("Q3", 101013L, Some(3L)).entityDataNS)
 
     val input = Seq(
-      newRevCreateEvent("Q1", 1, 2, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), // dupped event, currently treated as spurious
-      newRevCreateEvent("Q1", 1, 3, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
-      newRevCreateEvent("Q2", 2, 8, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
-      newRevCreateEvent("Q3", 3, 101013, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS)
+      // dupped event, currently treated as spurious
+      newRevCreateEvent(EntityId.parse("Q1"), 1, 2, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
+      // normal events
+      newRevCreateEvent(EntityId.parse("Q1"), 1, 3, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
+      newRevCreateEvent(EntityId.parse("Q2"), 2, 8, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
+      newRevCreateEvent(EntityId.parse("Q3"), 3, 101013, instant(3), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS)
     )
 
     val resolver: IncomingStreams.EntityResolver = (_, title, _) => title

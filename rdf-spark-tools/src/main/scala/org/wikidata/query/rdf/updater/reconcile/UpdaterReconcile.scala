@@ -4,7 +4,7 @@ import java.{lang, time, util}
 import java.net.URI
 import java.time.{Clock, Instant}
 import java.util.{Optional, UUID}
-import java.util.function.UnaryOperator
+import java.util.function.Function
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters.{asScalaIteratorConverter, collectionAsScalaIterableConverter, mapAsScalaMapConverter, setAsJavaSetConverter}
@@ -24,7 +24,7 @@ import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, Reconci
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
-import org.wikidata.query.rdf.tool.HttpClientUtils
+import org.wikidata.query.rdf.tool.{EntityId, HttpClientUtils}
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
 import org.wikidata.query.rdf.tool.utils.NullStreamDumper
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
@@ -115,7 +115,7 @@ object UpdaterReconcile {
     val cutoff: time.Duration = None.orNull
     val wikibaseRepository = new WikibaseRepository(uris, false, new MetricRegistry(), new NullStreamDumper(),
       cutoff, RDFParserSuppliers.defaultRdfParser(), httpClient)
-    val initialToNamespace: UnaryOperator[String] = WikibaseRepository.entityIdToMediaWikiTitle(params.initialToNamespace)
+    val initialToNamespace: Function[EntityId, String] = WikibaseRepository.entityIdToMediaWikiTitle(params.initialToNamespace)
 
     val collector = new ReconcileCollector(
       reconciliationSource = params.reconciliationSource,
@@ -138,8 +138,8 @@ object UpdaterReconcile {
 class ReconcileCollector(reconciliationSource: String,
                          stream: String,
                          domain: String,
-                         latestRevisionForEntities: util.Set[String] => util.Map[String, Optional[lang.Long]],
-                         latestRevisionForMediaInfoItems: util.Set[String] => util.Map[String, Optional[lang.Long]],
+                         latestRevisionForEntities: util.Set[EntityId] => util.Map[EntityId, Optional[lang.Long]],
+                         latestRevisionForMediaInfoItems: util.Set[EntityId] => util.Map[EntityId, Optional[lang.Long]],
                          now: () => Instant = () => Clock.systemUTC().instant(),
                          idGen: () => String = () => UUID.randomUUID().toString,
                          requestIdGen: () =>  String = () => UUID.randomUUID().toString
@@ -181,7 +181,7 @@ class ReconcileCollector(reconciliationSource: String,
         new ReconcileEvent(
           new EventsMeta(now(), idGen(), origEventInfo.meta().domain(), stream, requestIdGen()),
           schema,
-          e.getAs("item"),
+          EntityId.parse(e.getAs("item")),
           e.getAs("revision_id"),
           buildSourceTag(e.getAs("datacenter")),
           lateEventActionMap.getOrElse(e.getAs("action_type"), Action.CREATION), origEventInfo)
@@ -197,7 +197,7 @@ class ReconcileCollector(reconciliationSource: String,
 
   def collectFailures(partitionSpec: String)(implicit spark: SparkSession): List[ReconcileEvent] = {
     // https://schema.wikimedia.org/repositories//secondary/jsonschema/rdf_streaming_updater/fetch_failure/current.yaml
-    val rows: List[(EventInfo, String, Long, String)] = SparkUtils.readTablePartition(partitionSpec)
+    val rows: List[(EventInfo, EntityId, Long, String)] = SparkUtils.readTablePartition(partitionSpec)
       .filter(col("meta.domain").equalTo(domain))
       .select(
         col("datacenter"),
@@ -206,16 +206,16 @@ class ReconcileCollector(reconciliationSource: String,
         col("revision_id"),
         col("original_event_info"))
       .toLocalIterator().asScala.map(e => {
-        (rowToEventInfo(e.getAs[Row]("original_event_info")), e.getAs[String]("item"),e.getAs[Long]("revision_id"), e.getAs[String]("datacenter"))
+        (rowToEventInfo(e.getAs[Row]("original_event_info")), EntityId.parse(e.getAs("item")),e.getAs[Long]("revision_id"), e.getAs[String]("datacenter"))
       }).toList
 
-    val mediainfo: immutable.Seq[(EventInfo, String, Long, String)] = rows filter {
-      case (_, item, _, _) => item.startsWith(UrisConstants.MEDIAINFO_INITIAL)
+    val mediainfo: immutable.Seq[(EventInfo, EntityId, Long, String)] = rows filter {
+      case (_, item, _, _) => UrisConstants.MEDIAINFO_INITIAL.equals(item.getPrefix)
     } match {
       case e: Any => fetchLatestRevision(e, latestRevisionForMediaInfoItems)
     }
     val entities = rows filterNot {
-      case (_, item, _, _) => item.startsWith(UrisConstants.MEDIAINFO_INITIAL)
+      case (_, item, _, _) => UrisConstants.MEDIAINFO_INITIAL.equals(item.getPrefix)
     } match {
       case e: Any => fetchLatestRevision(e, latestRevisionForEntities)
     }
@@ -241,16 +241,17 @@ class ReconcileCollector(reconciliationSource: String,
    * - ignore revisions that have been deleted
    * - choose most recent revision between the one returned by MW and the one present in the event, should always be MW)
    */
-  private def fetchLatestRevision(data: List[(EventInfo, String, Long, String)],
-                                  fetcher: util.Set[String] => util.Map[String, Optional[lang.Long]]
-                                 ): List[(EventInfo, String, Long, String)] = {
+  private def fetchLatestRevision(data: List[(EventInfo, EntityId, Long, String)],
+                                  fetcher: util.Set[EntityId] => util.Map[EntityId, Optional[lang.Long]]
+                                 ): List[(EventInfo, EntityId, Long, String)] = {
     // group by DC first
     data groupBy { _._4 } flatMap { case (_, dcData) =>
-      val perItemMap: Map[String, (EventInfo, String, Long, String)] = dcData groupBy { _._2 } mapValues {
+      val perItemMap: Map[EntityId, (EventInfo, EntityId, Long, String)] = dcData groupBy { _._2 } mapValues {
         e => e.reduceLeft {(a, b) => if (a._3 > b._3) a else b}
       }
       perItemMap.grouped(WikibaseRepository.MAX_ITEMS_PER_ACTION_REQUEST) flatMap { chunk =>
-        val revMap: Map[String, Optional[lang.Long]] = withRetry()(() => fetcher(chunk.keySet.asJava).asScala.toMap)
+        val revMap: Map[EntityId, Optional[lang.Long]] = withRetry()(() =>
+          fetcher(chunk.keySet.asJava).asScala.toMap)
         chunk.toSeq map {
           // (key, (EventInfo, item, revision, dc)) -> (revFromMWApi, (EventInfo, item, revision, dc))
           case (k, v) => (revMap.getOrElse(k, Optional.empty()), v)
@@ -304,7 +305,7 @@ class ReconcileCollector(reconciliationSource: String,
         new ReconcileEvent(
           new EventsMeta(now(), idGen(), origEventInfo.meta().domain(), stream, requestIdGen()),
           schema,
-          e.getAs("item"),
+          EntityId.parse(e.getAs("item")),
           e.getAs("revision_id"),
           buildSourceTag(e.getAs("datacenter")),
           inconsistenciesActionMap.getOrElse(e.getAs("inconsistency"), Action.CREATION),

@@ -13,11 +13,13 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.spark.SparkSessionProvider
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
+import org.wikidata.query.rdf.tool.EntityId
 import org.wikidata.query.rdf.updater.reconcile.UpdaterReconcile.Params
 
 class UpdaterReconcileUnitTest extends AnyFlatSpec with SparkSessionProvider with Matchers with MockFactory {
-  val latestRevForItems: util.Set[String] => util.Map[String, Optional[lang.Long]] = stub[util.Set[String] => util.Map[String, Optional[lang.Long]]]
-  val latestRevForMediaInfoItems: util.Set[String] => util.Map[String, Optional[lang.Long]] = stub[util.Set[String] => util.Map[String, Optional[lang.Long]]]
+  val latestRevForItems: util.Set[EntityId] => util.Map[EntityId, Optional[lang.Long]] = stub[util.Set[EntityId] => util.Map[EntityId, Optional[lang.Long]]]
+  val latestRevForMediaInfoItems: util.Set[EntityId] => util.Map[EntityId, Optional[lang.Long]] =
+    stub[util.Set[EntityId] => util.Map[EntityId, Optional[lang.Long]]]
 
   "ReconcileCollector" should "collect late events" in {
     val df = spark.read.json(this.getClass.getResource("late-events.json").toURI.toString)
@@ -30,8 +32,8 @@ class UpdaterReconcileUnitTest extends AnyFlatSpec with SparkSessionProvider wit
     codfwEvents should have size 1
     eqiadEvents should have size 1
     noData shouldBe empty
-    eqiadEvents.head.getItem shouldBe "Q894254"
-    codfwEvents.head.getItem shouldBe "Q894254"
+    eqiadEvents.head.getItem.toString shouldBe "Q894254"
+    codfwEvents.head.getItem.toString shouldBe "Q894254"
     eqiadEvents.head.getReconciliationAction shouldBe Action.CREATION
     codfwEvents.head.getReconciliationAction shouldBe Action.CREATION
     eqiadEvents map { _.getReconciliationSource } should contain only "my_source@eqiad"
@@ -47,7 +49,7 @@ class UpdaterReconcileUnitTest extends AnyFlatSpec with SparkSessionProvider wit
     val codfwEvents = events.filter(_.getReconciliationSource.endsWith("codfw"))
     codfwEvents should have size 10
     eqiadEvents should have size 4
-    codfwEvents map { _.getItem } should contain only ("Q101208968", "Q106605647", "Q1437663", "Q108922819",
+    codfwEvents map { _.getItem.toString } should contain only ("Q101208968", "Q106605647", "Q1437663", "Q108922819",
       "Q109332244", "Q109616453", "Q109658637", "Q17370984", "Q87538978", "Q123")
 
     codfwEvents map { _.getReconciliationAction } should contain only Action.CREATION
@@ -57,30 +59,30 @@ class UpdaterReconcileUnitTest extends AnyFlatSpec with SparkSessionProvider wit
   "ReconcileCollector" should "collect failures" in {
     val df = spark.read.json(this.getClass.getResource("failures.json").toURI.toString)
 
-    val revsForEqiad: util.Map[String, Optional[lang.Long]] = Map(
-      "L620507" -> Optional.of(long2Long(1L)),
-      "Q97495350" -> Optional.empty[lang.Long](),
-      "Q89138924" -> Optional.of(long2Long(1L)),
-      "Q44411127" -> Optional.of(long2Long(1L)),
-      "Q41644871" -> Optional.of(long2Long(1L)),
-      "Q41628488" -> Optional.of(long2Long(1L)),
-      "Q108906915" -> Optional.of(long2Long(1L)),
-      "Q65786717" -> Optional.of(long2Long(1L)),
-      "Q28885212" -> Optional.of(long2Long(Long.MaxValue))
+    val revsForEqiad: util.Map[EntityId, Optional[lang.Long]] = Map(
+      EntityId.parse("L620507") -> Optional.of(long2Long(1L)),
+      EntityId.parse("Q97495350") -> Optional.empty[lang.Long](),
+      EntityId.parse("Q89138924") -> Optional.of(long2Long(1L)),
+      EntityId.parse("Q44411127") -> Optional.of(long2Long(1L)),
+      EntityId.parse("Q41644871") -> Optional.of(long2Long(1L)),
+      EntityId.parse("Q41628488") -> Optional.of(long2Long(1L)),
+      EntityId.parse("Q108906915") -> Optional.of(long2Long(1L)),
+      EntityId.parse("Q65786717") -> Optional.of(long2Long(1L)),
+      EntityId.parse("Q28885212") -> Optional.of(long2Long(Long.MaxValue))
     ).asJava
 
-    val revsForCodfw: util.Map[String, Optional[lang.Long]] = Map(
-      "L620507" -> Optional.of(long2Long(1L)),
-      "Q108906915" -> Optional.empty[lang.Long](),
-      "Q109680063" -> Optional.of(long2Long(1L)),
-      "Q109768229" -> Optional.of(long2Long(Long.MaxValue))
+    val revsForCodfw: util.Map[EntityId, Optional[lang.Long]] = Map(
+      EntityId.parse("L620507") -> Optional.of(long2Long(1L)),
+      EntityId.parse("Q108906915") -> Optional.empty[lang.Long](),
+      EntityId.parse("Q109680063") -> Optional.of(long2Long(1L)),
+      EntityId.parse("Q109768229") -> Optional.of(long2Long(Long.MaxValue))
     ).asJava
 
-    val revsForMediaInfo: util.Map[String, Optional[lang.Long]] = Map(
-      "M91170167" -> Optional.of(long2Long(1L)),
-      "M107454021" -> Optional.empty[lang.Long](),
-      "M82223288" -> Optional.of(long2Long(1L)),
-      "M106386043" -> Optional.of(long2Long(Long.MaxValue))
+    val revsForMediaInfo: util.Map[EntityId, Optional[lang.Long]] = Map(
+      EntityId.parse("M91170167") -> Optional.of(long2Long(1L)),
+      EntityId.parse("M107454021") -> Optional.empty[lang.Long](),
+      EntityId.parse("M82223288") -> Optional.of(long2Long(1L)),
+      EntityId.parse("M106386043") -> Optional.of(long2Long(Long.MaxValue))
     ).asJava
 
     (latestRevForItems apply _) when revsForEqiad.keySet() returns revsForEqiad
@@ -99,10 +101,10 @@ class UpdaterReconcileUnitTest extends AnyFlatSpec with SparkSessionProvider wit
     val codfwEvents = events.filter(_.getReconciliationSource.endsWith("codfw"))
     val mediaInfoEvents = allMediaInfoEvents.filter(_.getReconciliationSource.endsWith("eqiad"))
 
-    eqiadEvents map { _.getItem } should contain allOf("L620507", "Q89138924", "Q44411127", "Q41644871",
+    eqiadEvents map { _.getItem.toString } should contain allOf("L620507", "Q89138924", "Q44411127", "Q41644871",
       "Q41628488", "Q108906915", "Q65786717", "Q28885212")
-    codfwEvents map { _.getItem } should contain allOf("L620507", "Q109680063", "Q109768229")
-    mediaInfoEvents map { _.getItem } should contain allOf("M106386043", "M82223288", "M91170167")
+    codfwEvents map { _.getItem.toString } should contain allOf("L620507", "Q109680063", "Q109768229")
+    mediaInfoEvents map { _.getItem.toString } should contain allOf("M106386043", "M82223288", "M91170167")
 
     eqiadEvents map { _.getRevision } should contain(Long.MaxValue)
     codfwEvents map { _.getRevision } should contain(Long.MaxValue)

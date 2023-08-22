@@ -2,6 +2,8 @@ package org.wikidata.query.rdf.tool.change.events;
 
 import javax.annotation.Nullable;
 
+import org.wikidata.query.rdf.tool.EntityId;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,7 +16,7 @@ public class ReconcileEvent implements EventPlatformEvent {
     @JsonIgnore
     private final EventInfo eventInfo;
     @JsonProperty("item")
-    private final String item;
+    private final EntityId item;
     @JsonProperty("revision_id")
     private final long revision;
     @JsonProperty("reconciliation_source")
@@ -28,7 +30,7 @@ public class ReconcileEvent implements EventPlatformEvent {
     public ReconcileEvent(
             @JsonProperty("meta") EventsMeta meta,
             @JsonProperty("$schema") String schema,
-            @JsonProperty("item") String item,
+            @JsonProperty("item") EntityId item,
             @JsonProperty("revision_id") long revision,
             @JsonProperty("reconciliation_source") String reconciliationSource,
             @JsonProperty("reconciliation_action") Action reconciliationAction,

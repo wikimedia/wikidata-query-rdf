@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.tool.change;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.wikidata.query.rdf.tool.utils.EntityUtil.cleanEntityId;
+import static org.wikidata.query.rdf.tool.EntityId.cleanEntityId;
 import static org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.OUTPUT_DATE_FORMATTER;
 
 import java.io.Closeable;

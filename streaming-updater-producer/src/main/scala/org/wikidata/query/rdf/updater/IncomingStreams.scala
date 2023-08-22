@@ -1,15 +1,15 @@
 package org.wikidata.query.rdf.updater
 
 import java.time.{Clock, Duration}
-
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.wikidata.query.rdf.common.uri.UrisConstants
+import org.wikidata.query.rdf.tool.EntityId
 import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, EventPlatformEvent, PageDeleteEvent, PageUndeleteEvent, ReconcileEvent, RevisionCreateEvent}
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action.{CREATION, DELETION}
-import org.wikidata.query.rdf.tool.utils.EntityUtil.cleanEntityId
+import EntityId.cleanEntityId
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.config.{FilteredReconciliationTopic, UpdaterPipelineInputEventStreamConfig}
 
@@ -36,7 +36,7 @@ object IncomingStreams {
   val RECONCILIATION_CONV: Converter[ReconcileEvent] =
     (e, resolver, clock) =>
       ReconcileInputEvent(
-        e.getItem,
+        e.getItem.toString,
         e.getEventInfo.meta().timestamp(),
         e.getRevision,
         e.getReconciliationAction match {

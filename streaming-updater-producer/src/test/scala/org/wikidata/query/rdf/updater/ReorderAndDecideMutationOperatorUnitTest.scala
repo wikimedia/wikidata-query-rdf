@@ -11,6 +11,7 @@ import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.streaming.util.KeyedOneInputStreamOperatorTestHarness
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import org.wikidata.query.rdf.tool.EntityId
 import org.wikidata.query.rdf.updater.EntityStatus.{CREATED, DELETED, UNDEFINED}
 
 class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers with TestEventGenerator with BeforeAndAfterEach {
@@ -32,14 +33,14 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   }
 
   "ReorderAndDecideMutationOperator operator" should "decide what operation to apply to the graph" in {
-    operator.processElement(newRevCreateRecord("Q1", 3, 2, 30, ingestionTs, testDomain, testStream, "2"))
-    operator.processElement(newRevCreateRecordNewPage("Q1", 1, 5, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newRevCreateRecord(EntityId.parse("Q1"), 3, 2, 30, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 1, 5, ingestionTs, testDomain, testStream, "1"))
     operator.processWatermark(42)
-    operator.processElement(newRevCreateRecord("Q1", 2, 1, 45, ingestionTs, testDomain, testStream, "3")) // spurious
-    operator.processElement(newRevCreateRecord("Q1", 2, 1, 4, ingestionTs, testDomain, testStream, "3")) // late
-    operator.processElement(newPageDeleteRecord("Q2", 3, 103, ingestionTs, testDomain, testStream, "6"))
-    operator.processElement(newRevCreateRecordNewPage("Q2", 1, 100, ingestionTs, testDomain, testStream, "4"))
-    operator.processElement(newRevCreateRecord("Q2", 2, 1, 102, ingestionTs, testDomain, testStream, "5"))
+    operator.processElement(newRevCreateRecord(EntityId.parse("Q1"), 2, 1, 45, ingestionTs, testDomain, testStream, "3")) // spurious
+    operator.processElement(newRevCreateRecord(EntityId.parse("Q1"), 2, 1, 4, ingestionTs, testDomain, testStream, "3")) // late
+    operator.processElement(newPageDeleteRecord(EntityId.parse("Q2"), 3, 103, ingestionTs, testDomain, testStream, "6"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q2"), 1, 100, ingestionTs, testDomain, testStream, "4"))
+    operator.processElement(newRevCreateRecord(EntityId.parse("Q2"), 2, 1, 102, ingestionTs, testDomain, testStream, "5"))
     operator.processWatermark(200)
     operator.close()
     val expectedOutput = new ListBuffer[Any]
@@ -54,15 +55,15 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
     decodeEvents(operator.getSideOutput(ReorderAndDecideMutationOperation.LATE_EVENTS_SIDE_OUTPUT_TAG).toArray()) should contain only decodeEvent(
-      newRevCreateRecord("Q1", 2, 1, 4, ingestionTs, testDomain, testStream, "3"))
+      newRevCreateRecord(EntityId.parse("Q1"), 2, 1, 4, ingestionTs, testDomain, testStream, "3"))
     decodeEvents(getSpuriousEvents) should contain only decodeEvent(newRecord(IgnoredMutation("Q1", instant(45), 2,
-      RevCreate("Q1", instant(45), 2, Some(1), ingestionInstant, newEventInfo(instant(45), testDomain, testStream, "3")),
+      RevCreate("Q1", instant(45), 2, Some(1L), ingestionInstant, newEventInfo(instant(45), testDomain, testStream, "3")),
       ingestionInstant, NewerRevisionSeen, State(Some(3), CREATED))))
   }
 
   it should "have the delete happy path" in {
-    operator.processElement(newRevCreateRecordNewPage("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
-    operator.processElement(newPageDeleteRecord("Q1", 1, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newPageDeleteRecord(EntityId.parse("Q1"), 1, 2, ingestionTs, testDomain, testStream, "2"))
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
@@ -73,7 +74,7 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   }
 
   it should "ignore a delete for an unknown entity" in {
-    operator.processElement(newPageDeleteRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newPageDeleteRecord(EntityId.parse("Q1"), 1, 1, ingestionTs, testDomain, testStream, "1"))
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
@@ -85,9 +86,9 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   }
 
   it should "ignore a late delete" in {
-    operator.processElement(newRevCreateRecordNewPage("Q1", 2, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 2, 1, ingestionTs, testDomain, testStream, "1"))
     operator.processWatermark(20)
-    operator.processElement(newPageDeleteRecord("Q1", 1, 25, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(newPageDeleteRecord(EntityId.parse("Q1"), 1, 25, ingestionTs, testDomain, testStream, "2"))
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
@@ -102,8 +103,8 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   }
 
   it should "test a missed revision" in {
-    operator.processElement(newRevCreateRecordNewPage("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
-    operator.processElement(newPageDeleteRecord("Q1", 2, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newPageDeleteRecord(EntityId.parse("Q1"), 2, 2, ingestionTs, testDomain, testStream, "2"))
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
@@ -115,10 +116,10 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   }
 
   it should "test a missed revision and a late new revision" in {
-    operator.processElement(newRevCreateRecordNewPage("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
-    operator.processElement(newPageDeleteRecord("Q1", 2, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newPageDeleteRecord(EntityId.parse("Q1"), 2, 2, ingestionTs, testDomain, testStream, "2"))
     operator.processWatermark(25)
-    operator.processElement(newRevCreateRecord("Q1", 2, 1, 40, ingestionTs, testDomain, testStream, "3"))
+    operator.processElement(newRevCreateRecord(EntityId.parse("Q1"), 2, 1, 40, ingestionTs, testDomain, testStream, "3"))
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
@@ -129,14 +130,14 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
     decodeEvents(getSpuriousEvents) should contain only decodeEvent(newRecord(IgnoredMutation("Q1", instant(40), 2,
-      RevCreate("Q1", instant(40), 2, Some(1), ingestionInstant, newEventInfo(instant(40), testDomain, testStream, "3")),
+      RevCreate("Q1", instant(40), 2, Some(1L), ingestionInstant, newEventInfo(instant(40), testDomain, testStream, "3")),
       ingestionInstant, NewerRevisionSeen, State(Some(2), DELETED))))
   }
 
   it should "ignore a revision after a delete with no undelete event" in {
-    operator.processElement(newRevCreateRecordNewPage("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
-    operator.processElement(newPageDeleteRecord("Q1", 1, 2, ingestionTs, testDomain, testStream, "2"))
-    operator.processElement(newRevCreateRecord("Q1", 2, 1, 3, ingestionTs, testDomain, testStream, "3"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newPageDeleteRecord(EntityId.parse("Q1"), 1, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(newRevCreateRecord(EntityId.parse("Q1"), 2, 1, 3, ingestionTs, testDomain, testStream, "3"))
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
@@ -146,14 +147,14 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
 
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
     decodeEvents(getSpuriousEvents) should contain only decodeEvent(newRecord(IgnoredMutation("Q1", instant(3), 2,
-      RevCreate("Q1", instant(3), 2, Some(1), ingestionInstant, newEventInfo(instant(3), testDomain, testStream, "3")),
+      RevCreate("Q1", instant(3), 2, Some(1L), ingestionInstant, newEventInfo(instant(3), testDomain, testStream, "3")),
       ingestionInstant, MissedUndelete, State(Some(1), DELETED))))
   }
 
   it should "do a full import after receiving undelete event if matching delete was properly handled" in {
-    operator.processElement(newRevCreateRecordNewPage("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
-    operator.processElement(newPageDeleteRecord("Q1", 1, 2, ingestionTs, testDomain, testStream, "2"))
-    operator.processElement(newPageUndeleteRecord("Q1", 1, 3, ingestionTs, testDomain, testStream, "3"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newPageDeleteRecord(EntityId.parse("Q1"), 1, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(newPageUndeleteRecord(EntityId.parse("Q1"), 1, 3, ingestionTs, testDomain, testStream, "3"))
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
@@ -166,11 +167,11 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   }
 
   it should "ignore late undelete event if revisions moved forward" in {
-    val undeleteEventRecordToIgnore = newPageUndeleteRecord("Q1", 1, 25, ingestionTs, testDomain, testStream, "3")
+    val undeleteEventRecordToIgnore = newPageUndeleteRecord(EntityId.parse("Q1"), 1, 25, ingestionTs, testDomain, testStream, "3")
     val undeleteEventToIgnore = undeleteEventRecordToIgnore.getValue
 
-    operator.processElement(newRevCreateRecordNewPage("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
-    operator.processElement(newRevCreateRecordNewPage("Q1", 2, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 2, 2, ingestionTs, testDomain, testStream, "2"))
     operator.processWatermark(20)
     operator.processElement(undeleteEventRecordToIgnore)
     operator.processWatermark(200)
@@ -186,8 +187,8 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   }
 
   it should "fully import entity when first seen event is undelete" in {
-    operator.processElement(newPageUndeleteRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
-    operator.processElement(newRevCreateRecordNewPage("Q1", 2, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(newPageUndeleteRecord(EntityId.parse("Q1"), 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 2, 2, ingestionTs, testDomain, testStream, "2"))
     operator.processWatermark(200)
 
     val expectedOutput = new ListBuffer[Any]
@@ -199,12 +200,12 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   }
 
   it should "reconcile an entity event" in {
-    operator.processElement(newPageUndeleteRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
-    operator.processElement(newRevCreateRecordNewPage("Q1", 2, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(newPageUndeleteRecord(EntityId.parse("Q1"), 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 2, 2, ingestionTs, testDomain, testStream, "2"))
     operator.processWatermark(200)
     // state should be revision created after this event
-    operator.processElement(newReconcileEventRecord("Q1", 2,  ReconcileCreation, 300, ingestionTs, testDomain, testStream, "3"))
-    operator.processElement(newRevCreateRecord("Q1", 3, 2, 300, ingestionTs, testDomain, testStream, "4"))
+    operator.processElement(newReconcileEventRecord(EntityId.parse("Q1"), 2,  ReconcileCreation, 300, ingestionTs, testDomain, testStream, "3"))
+    operator.processElement(newRevCreateRecord(EntityId.parse("Q1"), 3, 2, 300, ingestionTs, testDomain, testStream, "4"))
     operator.processWatermark(400)
 
     val expectedOutput = new ListBuffer[Any]
@@ -219,14 +220,14 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   }
 
   it should "reconcile an ambiguous entity event" in {
-    operator.processElement(newPageUndeleteRecord("Q1", 1, 1, ingestionTs, testDomain, testStream, "1"))
-    operator.processElement(newRevCreateRecordNewPage("Q1", 2, 2, ingestionTs, testDomain, testStream, "2"))
+    operator.processElement(newPageUndeleteRecord(EntityId.parse("Q1"), 1, 1, ingestionTs, testDomain, testStream, "1"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 2, 2, ingestionTs, testDomain, testStream, "2"))
     operator.processWatermark(200)
-    val reconcileRecord = newReconcileEventRecord("Q1", 2,  ReconcileDeletion, 300, ingestionTs, testDomain, testStream, "3")
+    val reconcileRecord = newReconcileEventRecord(EntityId.parse("Q1"), 2,  ReconcileDeletion, 300, ingestionTs, testDomain, testStream, "3")
     val reconcileEvent: ReconcileInputEvent = reconcileRecord.getValue.asInstanceOf[ReconcileInputEvent]
     // State should say revision 2 is deleted after this event
     operator.processElement(reconcileRecord)
-    operator.processElement(newPageUndeleteRecord("Q1", 2, 300, ingestionTs, testDomain, testStream, "4"))
+    operator.processElement(newPageUndeleteRecord(EntityId.parse("Q1"), 2, 300, ingestionTs, testDomain, testStream, "4"))
     operator.processWatermark(400)
 
     val expectedOutput = new ListBuffer[Any]
@@ -244,8 +245,8 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   }
 
   it should "mark unmatched undelete event" in {
-    operator.processElement(newRevCreateRecordNewPage("Q1", 2, 1, ingestionTs, testDomain, testStream, "1"))
-    val undeleteEventRecordToMarkAsUnmatched = newPageUndeleteRecord("Q1", 2, 2, ingestionTs, testDomain, testStream, "2")
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 2, 1, ingestionTs, testDomain, testStream, "1"))
+    val undeleteEventRecordToMarkAsUnmatched = newPageUndeleteRecord(EntityId.parse("Q1"), 2, 2, ingestionTs, testDomain, testStream, "2")
     val undeleteEventToMarkAsUnmatched = undeleteEventRecordToMarkAsUnmatched.getValue
     operator.processElement(undeleteEventRecordToMarkAsUnmatched)
     operator.processWatermark(200)
@@ -259,11 +260,11 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   }
 
   it should "initial import -> early page delete -> dupped rev create" in {
-    val ignoredRevCreate: StreamRecord[InputEvent] = newRevCreateRecordNewPage("Q1", 1, 20,
+    val ignoredRevCreate: StreamRecord[InputEvent] = newRevCreateRecordNewPage(EntityId.parse("Q1"), 1, 20,
       ingestionTs, testDomain, testStream, "dupped (backfill) rev create")
     val expectedOutput = new ListBuffer[Any]
 
-    operator.processElement(newRevCreateRecordNewPage("Q1", 1, 0, ingestionTs, testDomain, testStream, "initial import (set state)"))
+    operator.processElement(newRevCreateRecordNewPage(EntityId.parse("Q1"), 1, 0, ingestionTs, testDomain, testStream, "initial import (set state)"))
     operator.processWatermark(20)
 
     expectedOutput += newRecord(FullImport("Q1", instant(0), 1, ingestionInstant, newEventInfo(instant(0),
@@ -273,7 +274,7 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
     // make sure the initial import state is set
     decodeEvents(operator.getOutput.toArray()) should contain theSameElementsInOrderAs decodeEvents(expectedOutput)
 
-    operator.processElement(newPageDeleteRecord("Q1", 1, 22, ingestionTs, testDomain, testStream, "delete"))
+    operator.processElement(newPageDeleteRecord(EntityId.parse("Q1"), 1, 22, ingestionTs, testDomain, testStream, "delete"))
     operator.processElement(ignoredRevCreate)
     operator.processWatermark(200)
 

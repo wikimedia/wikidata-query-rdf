@@ -6,34 +6,35 @@ import scala.collection.JavaConverters._
 
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
+import org.wikidata.query.rdf.tool.EntityId
 import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, PageDeleteEvent, ReconcileEvent, RevisionCreateEvent, RevisionSlot}
 
 trait TestEventGenerator {
-  def newRevCreateRecordNewPage(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
+  def newRevCreateRecordNewPage(entity: EntityId, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
                                 stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
     new StreamRecord[InputEvent](RevCreate(entity, instant(eventTime), revision, None, instant(ingestionTime),
       newEventInfo(instant(eventTime), domain, stream, requestId)), eventTime)
   }
 
-  def newRevCreateRecord(entity: String, revision: Long, fromRevision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
+  def newRevCreateRecord(entity: EntityId, revision: Long, fromRevision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
                          stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
     new StreamRecord[InputEvent](RevCreate(entity, instant(eventTime), revision, Some(fromRevision), instant(ingestionTime),
       newEventInfo(instant(eventTime), domain, stream, requestId)), eventTime)
   }
 
-  def newPageDeleteRecord(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
+  def newPageDeleteRecord(entity: EntityId, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
                           stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
     new StreamRecord[InputEvent](PageDelete(entity, instant(eventTime), revision, instant(ingestionTime),
       newEventInfo(instant(eventTime), domain, stream, requestId)), eventTime)
   }
 
-  def newPageUndeleteRecord(entity: String, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
+  def newPageUndeleteRecord(entity: EntityId, revision: Long, eventTime: Long, ingestionTime: Long, domain: String = "tested.domain",
                             stream: String = "tested.stream", requestId: String = "tested.request.id"): StreamRecord[InputEvent] = {
     new StreamRecord[InputEvent](PageUndelete(entity, instant(eventTime), revision, instant(ingestionTime),
       newEventInfo(instant(eventTime), domain, stream, requestId)), eventTime)
   }
 
-  def newReconcileEventRecord(entity: String,
+  def newReconcileEventRecord(entity: EntityId,
                               revision: Long,
                               originalAction: ReconcileOriginalAction,
                               eventTime: Long,
@@ -46,7 +47,7 @@ trait TestEventGenerator {
       newEventInfo(instant(eventTime), domain, stream, requestId)), eventTime)
   }
 
-  def newReconcileEvent(entity: String,
+  def newReconcileEvent(entity: EntityId,
                         revision: Long,
                         originalAction: ReconcileEvent.Action,
                         eventTime: Instant,
@@ -63,20 +64,20 @@ trait TestEventGenerator {
     Instant.ofEpochMilli(millis)
   }
 
-  def newRevCreateEvent(item: String, pageId: Long, revision: Long, eventTime: Instant, namespace: Int, // scalastyle:ignore
+  def newRevCreateEvent(item: EntityId, pageId: Long, revision: Long, eventTime: Instant, namespace: Int, // scalastyle:ignore
                         domain: String, stream: String, requestId: String, revSlots: Map[String, RevisionSlot]): RevisionCreateEvent = {
-    new RevisionCreateEvent(newEventInfo(eventTime, domain, stream, requestId), pageId, revision, item, namespace, revSlots.asJava)
+    new RevisionCreateEvent(newEventInfo(eventTime, domain, stream, requestId), pageId, revision, item.toString, namespace, revSlots.asJava)
   }
 
-  def newRevCreateEvent(item: String, pageId: Long, revision: Long, fromRevision: Long, eventTime: Instant, namespace: Int, // scalastyle:ignore
+  def newRevCreateEvent(item: EntityId, pageId: Long, revision: Long, fromRevision: Long, eventTime: Instant, namespace: Int, // scalastyle:ignore
                         domain: String, stream: String, requestId: String, revSlots: Map[String, RevisionSlot]): RevisionCreateEvent = {
     new RevisionCreateEvent(newEventMeta(eventTime, domain, stream, requestId), "schema", pageId, revision,
-      fromRevision, item, namespace, revSlots.asJava)
+      fromRevision, item.toString, namespace, revSlots.asJava)
   }
 
-  def newPageDeleteEvent(item: String, pageId: Long, revision: Long, eventTime: Instant, namespace: Int,
+  def newPageDeleteEvent(item: EntityId, pageId: Long, revision: Long, eventTime: Instant, namespace: Int,
                          domain: String, stream: String, requestId: String): PageDeleteEvent = {
-    new PageDeleteEvent(newEventMeta(eventTime, domain, stream, requestId), "schema", pageId, revision, item, namespace)
+    new PageDeleteEvent(newEventMeta(eventTime, domain, stream, requestId), "schema", pageId, revision, item.toString, namespace)
   }
 
   def newEventInfo(eventTime: Instant, domain: String, stream: String, requestId: String, schema: String = "schema"): EventInfo = {

@@ -5,14 +5,13 @@ import java.time.{Clock, Instant, ZoneOffset}
 import java.util
 import java.util.{Collections, UUID}
 import java.util.function.Supplier
-
 import scala.collection.JavaConverters._
-
 import org.apache.flink.api.common.eventtime._
 import org.openrdf.model.Statement
 import org.openrdf.model.impl.{StatementImpl, ValueFactoryImpl}
 import org.openrdf.rio.{RDFFormat, RDFParserRegistry, RDFWriterRegistry}
 import org.wikidata.query.rdf.common.uri.{PropertyType, SchemaDotOrg, UrisScheme, UrisSchemeFactory}
+import org.wikidata.query.rdf.tool.EntityId
 import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventPlatformEvent, EventsMeta, ReconcileEvent, RevisionSlot}
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
@@ -56,33 +55,33 @@ trait TestFixtures extends TestEventGenerator {
   )
 
   val revCreateEvents = Seq(
-        newRevCreateEvent("Q1", 1, 2, 1, eventTimes("Q1", 2), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
-        newRevCreateEvent("Q1", 1, 1, eventTimes("Q1", 1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
-        newRevCreateEvent("Q2", 2, -1, instant(WATERMARK_1), 0, WATERMARK_DOMAIN,
+        newRevCreateEvent(EntityId.parse("Q1"), 1, 2, 1, eventTimes("Q1", 2), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
+        newRevCreateEvent(EntityId.parse("Q1"), 1, 1, eventTimes("Q1", 1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
+        newRevCreateEvent(EntityId.parse("Q2"), 2, -1, instant(WATERMARK_1), 0, WATERMARK_DOMAIN,
           STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), //unrelated event, test filtering and triggers watermark
-        newRevCreateEvent("Q1", 1, 5, 4, eventTimes("Q1", 5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), // skip rev 4
-        newRevCreateEvent("Q1", 1, 3, instant(-1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), // ignored late event
-        newRevCreateEvent("Q2", 2, -1, instant(WATERMARK_2), 0, WATERMARK_DOMAIN, STREAM,
+        newRevCreateEvent(EntityId.parse("Q1"), 1, 5, 4, eventTimes("Q1", 5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), // skip rev 4
+        newRevCreateEvent(EntityId.parse("Q1"), 1, 3, instant(-1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), // ignored late event
+        newRevCreateEvent(EntityId.parse("Q2"), 2, -1, instant(WATERMARK_2), 0, WATERMARK_DOMAIN, STREAM,
           ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), //unrelated event, test filter and triggers watermark
-        newRevCreateEvent("Q1", 1, 4, instant(WATERMARK_2 + 1), 0, DOMAIN, STREAM,
+        newRevCreateEvent(EntityId.parse("Q1"), 1, 4, instant(WATERMARK_2 + 1), 0, DOMAIN, STREAM,
           ORIG_REQUEST_ID, DEFAULT_REV_SLOTS), // spurious event, rev 4 arrived after WM2 but rev5 was handled at WM1
-        newRevCreateEvent("Q1", 1, 6, eventTimes("Q1", 6), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS)
+        newRevCreateEvent(EntityId.parse("Q1"), 1, 6, eventTimes("Q1", 6), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS)
   )
 
   val revCreateEventsForPageDeleteTest = Seq(
-    newRevCreateEvent("Q1", 1, 1, instant(4), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS)
+    newRevCreateEvent(EntityId.parse("Q1"), 1, 1, instant(4), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS)
   )
 
   val pageDeleteEvents = Seq(
-    newPageDeleteEvent("Q1", 1, 1, instant(5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
+    newPageDeleteEvent(EntityId.parse("Q1"), 1, 1, instant(5), 0, DOMAIN, STREAM, ORIG_REQUEST_ID)
   )
 
   val revCreateEventsForReconcileTest = Seq(
-    newRevCreateEvent("Q1", 1, 1, eventTimes("Q1", 1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
-    newRevCreateEvent("Q2", 2, -1, instant(WATERMARK_1), 0, WATERMARK_DOMAIN,
+    newRevCreateEvent(EntityId.parse("Q1"), 1, 1, eventTimes("Q1", 1), 0, DOMAIN, STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS),
+    newRevCreateEvent(EntityId.parse("Q2"), 2, -1, instant(WATERMARK_1), 0, WATERMARK_DOMAIN,
       STREAM, ORIG_REQUEST_ID, DEFAULT_REV_SLOTS)) //unrelated event, test filtering and triggers watermark
 
-  val reconcileEvents: Seq[ReconcileEvent] = Seq(newReconcileEvent("Q1", 1L, Action.CREATION, eventTimes("Q1", 1),
+  val reconcileEvents: Seq[ReconcileEvent] = Seq(newReconcileEvent(EntityId.parse("Q1"), 1L, Action.CREATION, eventTimes("Q1", 1),
     "my_source", DOMAIN, STREAM, ORIG_REQUEST_ID))
 
   private val statement1: Statement = createStatement("Q1", PropertyType.QUALIFIER, "Statement_1")

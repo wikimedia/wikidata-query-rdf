@@ -9,6 +9,7 @@ import scala.collection.JavaConverters.{mapAsJavaMapConverter, setAsJavaSetConve
 import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
+import org.wikidata.query.rdf.tool.EntityId
 import org.wikidata.query.rdf.tool.change.events._
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
@@ -110,13 +111,13 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
       new RevisionSlot("main", "123fewfwe", 1571, 1)
     val mediainfoSlot = "mediainfo" -> new RevisionSlot("mediainfo", "123fewfwe", 1571, 1);
 
-    val nonFileEvent = newRevCreateEvent("M1", 1, 2, 1, instant(4),
+    val nonFileEvent = newRevCreateEvent(EntityId.parse("M1"), 1, 2, 1, instant(4),
       0, DOMAIN, STREAM, ORIG_REQUEST_ID, Map(mainSlot))
-    val nonMediaInfoEvent = newRevCreateEvent("M2", 1, 2, 1, instant(4),
+    val nonMediaInfoEvent = newRevCreateEvent(EntityId.parse("M2"), 1, 2, 1, instant(4),
       6, DOMAIN, STREAM, ORIG_REQUEST_ID, Map(mainSlot))
-    val mediaInfoEvent = newRevCreateEvent("M3", 1, 2, 1, instant(4),
+    val mediaInfoEvent = newRevCreateEvent(EntityId.parse("M3"), 1, 2, 1, instant(4),
       6, DOMAIN, STREAM, ORIG_REQUEST_ID, Map(mainSlot, mediainfoSlot))
-    val mediaInfoWrongDomainEvent = newRevCreateEvent("M4", 1, 2, 1, instant(4),
+    val mediaInfoWrongDomainEvent = newRevCreateEvent(EntityId.parse("M4"), 1, 2, 1, instant(4),
       6, "wrong", STREAM, ORIG_REQUEST_ID, Map(mainSlot, mediainfoSlot))
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
@@ -131,8 +132,8 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
   "IncomingStreams" should "filter out ReconcileEvent based on their source" in {
     val filter = new ReconciliationSourceFilter("my_source")
 
-    val fromCorrectSource = newReconcileEvent("Q1", 1, Action.CREATION, instant(4), "my_source")
-    val fromOtherSource = newReconcileEvent("Q2", 1, Action.CREATION, instant(4), "other_source")
+    val fromCorrectSource = newReconcileEvent(EntityId.parse("Q1"), 1, Action.CREATION, instant(4), "my_source")
+    val fromOtherSource = newReconcileEvent(EntityId.parse("Q2"), 1, Action.CREATION, instant(4), "other_source")
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
     val output: Set[InputEvent] = IncomingStreams.fromStream(env.fromCollection(Seq(fromCorrectSource, fromOtherSource))
@@ -202,7 +203,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
     val event = IncomingStreams.RECONCILIATION_CONV.apply(new ReconcileEvent(
       new EventsMeta(Instant.ofEpochMilli(123), "unused", "my-domain", "unused for now", "my_request_id"),
       "schema",
-      "Q123",
+      EntityId.parse("Q123"),
       1234,
       "source",
       Action.CREATION,
@@ -267,7 +268,7 @@ class EventWithMetadataHostFilterUnitTest extends FlatSpec with Matchers {
     def reconcile(domain: String): ReconcileEvent = {
       new ReconcileEvent(
         new EventsMeta(Instant.ofEpochMilli(123), "unused", domain, "unused for now", "my_request_id"),
-        "schema", "Q123", 1L, "source", Action.CREATION,
+        "schema", EntityId.parse("Q123"), 1L, "source", Action.CREATION,
         new EventInfo(new EventsMeta(Instant.ofEpochMilli(123), "unused", "unused", "unused for now", "original_request_id"), "schema"))
     }
     filter.filter(reconcile("unrelated")) shouldBe false

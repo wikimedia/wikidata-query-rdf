@@ -3,8 +3,8 @@ package org.wikidata.query.rdf.updater.reconcile
 import java.io.IOException
 import java.net.URI
 import java.time.Instant
-import java.util.{function, UUID}
 
+import java.util.{UUID, function}
 import scala.collection.JavaConverters._
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -20,7 +20,7 @@ import org.scalamock.matchers.ArgCapture.CaptureAll
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.wikidata.query.rdf.tool.MapperUtils
+import org.wikidata.query.rdf.tool.{EntityId, MapperUtils}
 import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, ReconcileEvent}
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
 import org.wikimedia.eventutilities.core.event.{EventSchemaLoader, EventSchemaValidator}
@@ -108,7 +108,7 @@ class ReconciliationSenderUnitTest extends AnyFlatSpec with Matchers with MockFa
   private def genEvent(): ReconcileEvent = {
     new ReconcileEvent(
       new EventsMeta(now, evtId, domain, mystream, requestId),
-      "https://schema.wikimedia.org/repositories/secondary/jsonschema" + ReconcileEvent.SCHEMA, "Q1", 123L,
+      "https://schema.wikimedia.org/repositories/secondary/jsonschema" + ReconcileEvent.SCHEMA, EntityId.parse("Q1"), 123L,
       "source", Action.CREATION,
       new EventInfo(new EventsMeta(now, evtId, domain, mystream, requestId), "another_schema")
     )

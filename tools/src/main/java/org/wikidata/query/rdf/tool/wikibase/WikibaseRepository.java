@@ -30,7 +30,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -50,6 +49,7 @@ import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.helpers.StatementCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wikidata.query.rdf.tool.EntityId;
 import org.wikidata.query.rdf.tool.HttpClientUtils;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.ContainedException;
@@ -253,7 +253,7 @@ public class WikibaseRepository implements Closeable {
 
     @Value
     private static class EntityRevision {
-        String entity;
+        EntityId entity;
         Optional<Long> revision;
     }
 
@@ -261,7 +261,7 @@ public class WikibaseRepository implements Closeable {
      * Obtain the latest known revision of every entity identified in entityIds.
      * @return a map of requested entity ids with their respective latest revision id if available
      */
-    public Map<String, Optional<Long>> fetchLatestRevisionForEntities(Set<String> entityIds, UnaryOperator<String> toMediaWikiTitle)
+    public Map<EntityId, Optional<Long>> fetchLatestRevisionForEntities(Set<EntityId> entityIds, Function<EntityId, String> toMediaWikiTitle)
             throws RetryableException {
         return fetchLastRevision(entityIds, (ids) -> uris.latestRevisionForEntities(ids, toMediaWikiTitle),
                 (resp, eid) -> resp.latestRevisionForTitle(toMediaWikiTitle.apply(eid)));
@@ -270,15 +270,15 @@ public class WikibaseRepository implements Closeable {
     /**
      * Obtain the latest known revision of every mediainfo items identified in mediainfoItems.
      */
-    public Map<String, Optional<Long>> fetchLatestRevisionForMediainfoItems(Set<String> mediainfoItems) throws RetryableException {
+    public Map<EntityId, Optional<Long>> fetchLatestRevisionForMediainfoItems(Set<EntityId> mediainfoItems) throws RetryableException {
         return fetchLastRevision(mediainfoItems, uris::latestRevisionForMediainfoItems,
-                (r, e) -> r.latestRevisionForPageid(Long.parseLong(e.substring(1))));
+                (r, e) -> r.latestRevisionForPageid(e.getId()));
     }
 
 
-    private Map<String, Optional<Long>> fetchLastRevision(Set<String> ids,
-                                                          Function<Set<String>, URI> uriFunction,
-                                                          BiFunction<LatestRevisionResponse, String, Optional<Long>> extractRev
+    private Map<EntityId, Optional<Long>> fetchLastRevision(Set<EntityId> ids,
+                                                          Function<Set<EntityId>, URI> uriFunction,
+                                                          BiFunction<LatestRevisionResponse, EntityId, Optional<Long>> extractRev
     ) throws RetryableException {
         if (ids.size() > MAX_ITEMS_PER_ACTION_REQUEST) {
             throw new IllegalArgumentException("Cannot fetch more than " + MAX_ITEMS_PER_ACTION_REQUEST + " entity revisions");
@@ -485,24 +485,24 @@ public class WikibaseRepository implements Closeable {
      * For wikidata it would look like:
      *  Q=,P=Property,L=Lexeme
      */
-    public static UnaryOperator<String> entityIdToMediaWikiTitle(String map) {
+    public static Function<EntityId, String> entityIdToMediaWikiTitle(String map) {
         String[] pairs = map.split(",");
-        final Map<String, String> mapping = stream(pairs).map(p -> p.split("=", 2)).
-                collect(toMap(pair -> pair[0], pair -> pair.length > 1 ? pair[1] : ""));
+        final Map<Character, String> mapping = stream(pairs).map(p -> p.split("=", 2)).
+                collect(toMap(pair -> pair[0].charAt(0), pair -> pair.length > 1 ? pair[1] : ""));
 
         return entityId -> {
             String nsText = mapping.entrySet().stream()
-                    .filter(e -> entityId.startsWith(e.getKey()))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("Unsupported entity id [" + entityId + "]"))
-                    .getValue();
-
+                .filter(e -> e.getKey().equals(entityId.getPrefixChar()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unsupported entity id [" + entityId + "]"))
+                .getValue();
             if (!nsText.isEmpty()) {
-                return nsText + ":" + entityId;
+                return nsText + ':' + entityId;
             }
-            return entityId;
+            return entityId.toString();
         };
     }
+
     /**
      * URIs used for accessing wikibase.
      */
@@ -573,17 +573,20 @@ public class WikibaseRepository implements Closeable {
             return build(builder);
         }
 
-        public URI latestRevisionForEntities(Set<String> entityIds, UnaryOperator<String> entityToMWTitle) {
+        public URI latestRevisionForEntities(Set<EntityId> entityIds, Function<EntityId, String> entityToMWTitle) {
             URIBuilder builder = prepareLatestRevisionRequest()
                     .addParameter("titles",
-                            entityIds.stream().map(entityToMWTitle).collect(Collectors.joining("|")));
+                            entityIds.stream().map(entityToMWTitle).sorted().collect(Collectors.joining("|")));
             return build(builder);
         }
 
-        public URI latestRevisionForMediainfoItems(Set<String> mediainfoItems) {
+        public URI latestRevisionForMediainfoItems(Set<EntityId> mediainfoItems) {
             URIBuilder builder = prepareLatestRevisionRequest()
                     .addParameter("pageids",
-                            mediainfoItems.stream().map(e -> e.substring(1)).collect(Collectors.joining("|")));
+                            mediainfoItems.stream()
+                                .mapToLong(EntityId::getId)
+                                .mapToObj(Long::toString)
+                                .sorted().collect(Collectors.joining("|")));
             return build(builder);
         }
 

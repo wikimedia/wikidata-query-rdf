@@ -36,7 +36,7 @@ class StateExtractionJobIntegrationTest extends FlatSpec with FlinkTestCluster w
       BaseConfig.MAX_PARALLELISM)
     val bufferedEventOp: OneInputOperatorTransformation[InputEvent] = OperatorTransformation
       .bootstrapWith(env.getJavaEnv.fromCollection(
-        Seq[InputEvent](RevCreate("Q1", instant(0), 124, Some(123), instant(1), newEventInfo(instant(0), DOMAIN, STREAM, "REQ_ID"))).asJava,
+        Seq[InputEvent](RevCreate("Q1", instant(0), 124, Some(123L), instant(1), newEventInfo(instant(0), DOMAIN, STREAM, "REQ_ID"))).asJava,
         InputEventSerializer.typeInfo()
       ))
 

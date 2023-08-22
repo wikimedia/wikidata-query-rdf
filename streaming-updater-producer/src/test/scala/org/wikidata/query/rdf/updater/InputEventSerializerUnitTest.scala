@@ -15,7 +15,7 @@ class InputEventSerializerUnitTest extends FlatSpec with Matchers {
   private val writeFixtureToTmp = false
   private val revCreate1 = RevCreate("Q1", Instant.ofEpochMilli(1), 2, None, Instant.ofEpochMilli(11),
     new EventInfo(new EventsMeta(Instant.ofEpochMilli(111), "ID_1", "domain", "stream", "req_id"), "schema_rev_create"))
-  private val revCreate2 = RevCreate("Q1", Instant.ofEpochMilli(2), 3, Some(2), Instant.ofEpochMilli(22),
+  private val revCreate2 = RevCreate("Q1", Instant.ofEpochMilli(2), 3, Some(2L), Instant.ofEpochMilli(22),
     new EventInfo(new EventsMeta(Instant.ofEpochMilli(222), "ID_2", "domain", "stream", "req_id"), "schema_rev_create"))
   private val pageDelete = PageDelete("Q1", Instant.ofEpochMilli(3), 3, Instant.ofEpochMilli(33),
     new EventInfo(new EventsMeta(Instant.ofEpochMilli(333), "ID_3", "domain", "stream", "req_id"), "schema_page_delete"))
