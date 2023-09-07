@@ -19,8 +19,16 @@ sealed class MutationResolver extends Serializable {
       case rev: RevCreate => mutationFromRevisionCreate(rev, entityState)
       case del: PageDelete => mutationFromPageDelete(del, entityState)
       case undel: PageUndelete => mutationFromPageUndelete(undel, entityState)
+      // Special case for forcing a delete via a reconcile event. It is hard to know what was the last revision of the deleted item
+      // Allow clients to emit such events without a rev id so that we can forcibly delete the item from the underlying triple stores
+      case reconcile @ ReconcileInputEvent(_, _, 0L, ReconcileDeletion, _, _) => forcedDeleteReconciliation(reconcile, entityState)
       case reconcile: ReconcileInputEvent => mutationFromReconcileInputEvent(reconcile, entityState)
     }
+  }
+
+  def forcedDeleteReconciliation(reconcile: ReconcileInputEvent, entityState: EntityState): AllMutationOperation = {
+    entityState.clear()
+    DeleteItem(reconcile.item, reconcile.eventTime, 0, reconcile.ingestionTime, reconcile.originalEventInfo)
   }
 
   def mutationFromReconcileInputEvent(reconcile: ReconcileInputEvent, entityState: EntityState): AllMutationOperation = {
@@ -158,6 +166,7 @@ sealed class MutationResolver extends Serializable {
 class EntityState(revState: ValueState[java.lang.Long]) {
   def updatePageDelete(revision: Long): Unit = revState.update(-revision)
   def updateRevCreate(revision: Long): Unit = revState.update(revision)
+  def clear(): Unit = revState.clear()
 
   def getCurrentState: State = {
     Option(revState.value()) match {

@@ -24,6 +24,7 @@
 import re
 import uuid
 import requests
+import json
 
 from argparse import ArgumentParser
 from datetime import datetime, timezone
@@ -92,24 +93,34 @@ class WBRepo:
 
     @staticmethod
     def parse_response(entities: List[str], body: Dict, retrieve_item: Callable[[Dict], str]) -> Dict[str, Optional[int]]:
-        pages = [p for p in body['query']['pages'] if 'revisions' in p]
-        rev_map = {retrieve_item(p): int(p['revisions'][0]['revid']) for p in pages}
-        return {e: rev_map.get(e, None) for e in entities}
+        def extract_rev(entry) -> tuple[str, Optional[int]]:
+            item = retrieve_item(entry)
+            if 'missing' in entry and entry['missing']:
+                return item, None
+            else:
+                return item, int(entry['revisions'][0]['revid'])
+
+        entries = [extract_rev(p) for p in body['query']['pages']]
+        rev_map = dict(entries)
+        missing_keys = [m for m in entities if m not in rev_map]
+        if len(missing_keys) > 0:
+            raise ValueError("Unexpected missing entities in API response: %s" % missing_keys)
+        extra_keys = [e for e, d in rev_map.items() if e not in entities]
+        if len(extra_keys) > 0:
+            raise ValueError("Unexpected extra entities in API response: %s" % extra_keys)
+        return rev_map
 
 
 class EventSender:
     def __init__(self,
-                 eventgate_endpoint: str,
                  project_hostname: str,
                  reconcile_source_tag: str,
                  stream: str = "rdf-streaming-updater.reconcile"):
-        self._eventgate_endpoint = eventgate_endpoint
-        self._session = requests.session()
         self._project_hostname = project_hostname
         self._stream = stream
         self._reconciliation_source_tag = reconcile_source_tag
 
-    def build_event(self, item: str, revision: int, dt: datetime):
+    def build_event(self, item: str, revision: Optional[int], dt: datetime):
         event_id = str(uuid.uuid4())
         request_id = str(uuid.uuid4())
         dt_iso8601 = dt.replace(microsecond=0, tzinfo=timezone.utc).isoformat()
@@ -123,9 +134,10 @@ class EventSender:
             },
             "$schema": "/rdf_streaming_updater/reconcile/1.0.0",
             "item": item,
-            "revision_id": revision,
+            # 0 is the revision we use to forcibly reconcile deleted items
+            "revision_id": 0 if revision is None else revision,
             "reconciliation_source": self._reconciliation_source_tag,
-            "reconciliation_action": "CREATION",
+            "reconciliation_action": "DELETION" if revision is None else "CREATION",
             "original_event_info": {
                 "meta": {
                     "dt": dt_iso8601,
@@ -139,11 +151,25 @@ class EventSender:
         }
 
     def send(self, items: Dict[str, Optional[int]]):
+        raise NotImplementedError()
+
+
+class EventGateSender(EventSender):
+    def __init__(self,
+                 eventgate_endpoint: str,
+                 project_hostname: str,
+                 reconcile_source_tag: str,
+                 stream: str = "rdf-streaming-updater.reconcile"):
+        super().__init__(project_hostname, reconcile_source_tag, stream)
+        self._eventgate_endpoint = eventgate_endpoint
+        self._session = requests.session()
+
+    def send(self, items: Dict[str, Optional[int]]):
         def chunks(events: list, size):
             for i in range(0, len(events), size):
                 yield events[i:i+size]
 
-        data = [self.build_event(k, v, datetime.utcnow()) for (k, v) in items.items() if v is not None]
+        data = [self.build_event(k, v, datetime.utcnow()) for (k, v) in items.items()]
         for chunk in chunks(data, size=50):
             self._send(chunk)
 
@@ -151,6 +177,12 @@ class EventSender:
         resp = self._session.post(self._eventgate_endpoint, json=events)
         resp.raise_for_status()
 
+
+class DryRunSender(EventSender):
+    def send(self, items: Dict[str, Optional[int]]):
+        for k, v in items.items():
+            print("Reconcile event for %s (revision %s):" % (k, v))
+            print("%s" % json.dumps(self.build_event(k, v, datetime.utcnow()), indent=2))
 
 def main():
     parser = ArgumentParser()
@@ -160,6 +192,7 @@ def main():
     parser.add_argument("--domain_project", required=True)
     parser.add_argument("--eventgate_endpoint", default=EVENT_GATE_ENDPOINT)
     parser.add_argument("--mw_api_endpoint", default=MW_API_ENDPOINT)
+    parser.add_argument("--dry-run", default=False, action='store_true')
 
     args = parser.parse_args()
 
@@ -170,9 +203,13 @@ def main():
                   endpoint=args.mw_api_endpoint,
                   ns_to_entity_map=parse_ns_map(args.ns_map))
 
-    sender = EventSender(eventgate_endpoint=args.eventgate_endpoint,
-                         project_hostname=args.domain_project,
-                         reconcile_source_tag=args.reconcile_source)
+    if args.dry_run:
+        sender = DryRunSender(project_hostname=args.domain_project,
+                              reconcile_source_tag=args.reconcile_source)
+    else:
+        sender = EventGateSender(eventgate_endpoint=args.eventgate_endpoint,
+                                 project_hostname=args.domain_project,
+                                 reconcile_source_tag=args.reconcile_source)
 
     sender.send(repo.fetch_latest_revision(args.entities))
 

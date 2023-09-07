@@ -54,6 +54,14 @@
       <directory>${project.basedir}/../docs</directory>
     </fileSet>
 
+    <fileSet>
+      <outputDirectory></outputDirectory>
+      <directory>${project.basedir}/../streaming-updater-producer/scripts</directory>
+      <includes>
+        <include>reconcile_items.py</include>
+      </includes>
+    </fileSet>
+
   </fileSets>
 
   <dependencySets>
