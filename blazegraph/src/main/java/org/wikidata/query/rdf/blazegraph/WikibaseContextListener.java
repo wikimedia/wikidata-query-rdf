@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
@@ -86,10 +87,9 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     private static final Logger LOG = LoggerFactory.getLogger(WikibaseContextListener.class);
 
     /**
-     * Enable whitelist configuration.
+     * Enable allowlist configuration.
      */
-    private static final boolean ENABLE_WHITELIST =
-            Boolean.parseBoolean(System.getProperty("wikibaseServiceEnableWhitelist", "true"));
+    private static final boolean ENABLE_ALLOWLIST;
 
     /**
      * Overrides the default namespace set by blazegraph on within the web.xml file.
@@ -97,14 +97,14 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     private static final String DEFAULT_NAMESPACE = System.getProperty("blazegraphDefaultNamespace");
 
     /**
-     * Default service whitelist filename.
+     * Default service allowlist filename.
      */
-    private static final String WHITELIST_DEFAULT = "whitelist.txt";
+    private static final String ALLOWLIST_DEFAULT;
 
     /**
-     * Whitelist configuration name.
+     * Allowlist configuration name.
      */
-    private static final String WHITELIST = System.getProperty("wikibaseServiceWhitelist", WHITELIST_DEFAULT);
+    private static final String ALLOWLIST;
 
     /**
      * Default metrics domain.
@@ -126,8 +126,28 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      */
     private final List<Runnable> shutdownHooks = new CopyOnWriteArrayList<>();
 
+
+    static {
+        // Drop this enableAllowlistBC and the reference to wikibaseServiceEnableWhitelist
+        String enableAllowlistBC = System.getProperty("wikibaseServiceEnableWhitelist", "true");
+        ENABLE_ALLOWLIST = Boolean.parseBoolean(System.getProperty("wikibaseServiceEnableAllowlist", enableAllowlistBC));
+        // Drop this allowlistBC and the reference to wikibaseServiceWhitelist
+        final String allowListDefault = "allowlist.txt";
+        final String bcAllowListDefault = "whitelist.txt";
+        Path allowlistPath = Paths.get(allowListDefault);
+        Path bcAllowlistPath = Paths.get(bcAllowListDefault);
+        // Change the default allowlist path if it's not available and the BC name is available
+        if (!Files.isReadable(allowlistPath) && Files.isReadable(bcAllowlistPath)) {
+            ALLOWLIST_DEFAULT = bcAllowListDefault;
+        } else {
+            ALLOWLIST_DEFAULT = allowListDefault;
+        }
+        String allowlistBC = System.getProperty("wikibaseServiceWhitelist", ALLOWLIST_DEFAULT);
+        ALLOWLIST = System.getProperty("wikibaseServiceAllowlist", allowlistBC);
+    }
+
     /**
-     * Initializes BG service setup to allow whitelisted services.
+     * Initializes BG service setup to allow services from the allowlist.
      * Also add additional custom services and functions.
      */
     @VisibleForTesting
@@ -137,19 +157,19 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
 
         // Enable service whitelisting
         final ServiceRegistry reg = ServiceRegistry.getInstance();
-        reg.setWhitelistEnabled(ENABLE_WHITELIST);
+        reg.setWhitelistEnabled(ENABLE_ALLOWLIST);
         LabelService.register();
         GeoService.register();
         MWApiServiceFactory.register(metricRegistry.timer(name(MWApiServiceCall.class, MW_API_REQUEST)));
         CategoriesStoredQuery.register();
 
-        // Whitelist services we like by default
+        // Allowlist services we like by default
         reg.addWhitelistURL(GASService.Options.SERVICE_KEY.toString());
         reg.addWhitelistURL(ValuesServiceFactory.SERVICE_KEY.toString());
         reg.addWhitelistURL(BDS.SEARCH_IN_SEARCH.toString());
         reg.addWhitelistURL(SliceServiceFactory.SERVICE_KEY.toString());
         reg.addWhitelistURL(SampleServiceFactory.SERVICE_KEY.toString());
-        loadWhitelist(reg);
+        loadAllowlist(reg);
 
         // Initialize remote services
         reg.setDefaultServiceFactory(getDefaultServiceFactory(metricRegistry.timer(name(RemoteServiceFactoryImpl.class, REMOTE_REQUEST))));
@@ -214,20 +234,20 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     }
 
     /**
-     * Load whitelist from file.
+     * Load allowlist from file.
      */
-    private static void loadWhitelist(final ServiceRegistry reg) {
+    private static void loadAllowlist(final ServiceRegistry reg) {
         try {
-            List<String> lines = Files.readAllLines(Paths.get(WHITELIST),
+            List<String> lines = Files.readAllLines(Paths.get(ALLOWLIST),
                     StandardCharsets.UTF_8);
             for (String line : lines) {
                 reg.addWhitelistURL(line);
             }
         } catch (FileNotFoundException e) {
             // ignore file not found
-            LOG.info("Whitelist file {} not found, ignoring.", WHITELIST);
+            LOG.info("Allowlist file {} not found, ignoring.", ALLOWLIST);
         } catch (IOException e) {
-            LOG.warn("Failed reading from whitelist file");
+            LOG.warn("Failed reading from allowlist file");
         }
     }
 

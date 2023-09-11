@@ -86,12 +86,6 @@
         <param-name>executorMaxThreads</param-name>
         <param-value>2000</param-value>
     </context-param>
-    <!-- We can't use the builtin whitelist because it breaks label relation. But we enable our own whitelist so its all good. -->
-    <!-- <context-param>
-    <description>List of allowed services.</description>
-    <param-name>serviceWhitelist</param-name>
-    <param-value>http://www.bigdata.com/rdf/search#search,http://www.bigdata.com/rdf#describe</param-value>
-   </context-param> -->
     <context-param>
         <description>The name of the class to use for the Blueprints Servlet instance</description>
         <param-name>blueprintsServletProvider</param-name>

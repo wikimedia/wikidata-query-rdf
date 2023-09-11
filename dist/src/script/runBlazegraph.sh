@@ -5,7 +5,7 @@ BLAZEGRAPH_CONFIG=${BLAZEGRAPH_CONFIG:-"/etc/default/wdqs-blazegraph"}
 if [ -r $BLAZEGRAPH_CONFIG ]; then
   . $BLAZEGRAPH_CONFIG
 fi
-ALLOWLIST=${ALLOWLIST:-"whitelist.txt"}
+ALLOWLIST=${ALLOWLIST:-"allowlist.txt"}
 HOST=${HOST:-"localhost"}
 CONTEXT=bigdata
 PORT=${PORT:-"9999"}
@@ -114,7 +114,7 @@ exec java \
      -Dwdqs.jwt-identity-filter.jwt-identity-cookie-name=wcqsSession \
      -Dwdqs.jwt-identity-filter.jwt-identity-claim=username \
      ${EXTRA_JVM_OPTS} \
-     -DwikibaseServiceWhitelist="${ALLOWLIST}" \
+     -DwikibaseServiceAllowlist="${ALLOWLIST}" \
      -Dcom.bigdata.rdf.sail.webapp.ConfigParams.propertyFile="${CONFIG_FILE}" \
      -Dorg.eclipse.jetty.server.Request.maxFormContentSize=200000000 \
      -Dcom.bigdata.rdf.sparql.ast.QueryHints.analytic=true \

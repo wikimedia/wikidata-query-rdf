@@ -378,8 +378,8 @@
                             <value>${project.parent.basedir}/dist/src/script/prefixes.conf</value>
                         </systemProperty>
                         <systemProperty>
-                            <name>wikibaseServiceWhitelist</name>
-                            <value>${project.basedir}/src/test/resources/blazegraph/whitelist.txt</value>
+                            <name>wikibaseServiceAllowlist</name>
+                            <value>${project.basedir}/src/test/resources/blazegraph/allowlist.txt</value>
                         </systemProperty>
                         <systemProperty>
                             <name>org.wikidata.query.rdf.blazegraph.mwapi.MWApiServiceFactory.config</name>

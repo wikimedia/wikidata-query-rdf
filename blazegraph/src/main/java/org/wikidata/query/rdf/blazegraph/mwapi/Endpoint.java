@@ -15,7 +15,7 @@ import com.bigdata.rdf.internal.IV;
  * Representation of static or variable endpoint.
  * The resulting URL will always be https://HOSTNAME/w/api.php where hostname is either
  * taken from URI or from string.
- * It will be also checked against allowed endpoint whitelist.
+ * It will be also checked against allowed endpoint allowlist.
  */
 public abstract class Endpoint {
 

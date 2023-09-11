@@ -150,7 +150,7 @@ public class MWApiServiceFactory extends AbstractServiceFactory {
             reg.add(SERVICE_KEY, new MWApiServiceFactory(config, requestTimer));
             LOG.info("Registered {} services.", config.size());
         } catch (IOException e) {
-            // Do not add to whitelist if init failed.
+            // Do not add to allowlist if init failed.
             LOG.warn("MW Service registration failed.", e);
             return;
         }
