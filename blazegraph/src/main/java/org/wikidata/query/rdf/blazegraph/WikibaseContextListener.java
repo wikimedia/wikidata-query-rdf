@@ -10,7 +10,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -94,7 +93,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     /**
      * Enable allowlist configuration.
      */
-    private static final boolean ENABLE_ALLOWLIST;
+    private static final boolean ENABLE_ALLOWLIST = Boolean.parseBoolean(System.getProperty("wikibaseServiceEnableAllowlist", "true"));
 
     /**
      * Overrides the default namespace set by blazegraph on within the web.xml file.
@@ -104,12 +103,12 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
     /**
      * Default service allowlist filename.
      */
-    private static final String ALLOWLIST_DEFAULT;
+    private static final String ALLOWLIST_DEFAULT = "allowlist.txt";
 
     /**
      * Allowlist configuration name.
      */
-    private static final String ALLOWLIST;
+    private static final String ALLOWLIST = System.getProperty("wikibaseServiceAllowlist", ALLOWLIST_DEFAULT);
 
     /**
      * Default metrics domain.
@@ -130,26 +129,6 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
      * in the same thread as the startup. And safe publication is just more cumbersome.
      */
     private final List<Runnable> shutdownHooks = new CopyOnWriteArrayList<>();
-
-
-    static {
-        // Drop this enableAllowlistBC and the reference to wikibaseServiceEnableWhitelist
-        String enableAllowlistBC = System.getProperty("wikibaseServiceEnableWhitelist", "true");
-        ENABLE_ALLOWLIST = Boolean.parseBoolean(System.getProperty("wikibaseServiceEnableAllowlist", enableAllowlistBC));
-        // Drop this allowlistBC and the reference to wikibaseServiceWhitelist
-        final String allowListDefault = "allowlist.txt";
-        final String bcAllowListDefault = "whitelist.txt";
-        Path allowlistPath = Paths.get(allowListDefault);
-        Path bcAllowlistPath = Paths.get(bcAllowListDefault);
-        // Change the default allowlist path if it's not available and the BC name is available
-        if (!Files.isReadable(allowlistPath) && Files.isReadable(bcAllowlistPath)) {
-            ALLOWLIST_DEFAULT = bcAllowListDefault;
-        } else {
-            ALLOWLIST_DEFAULT = allowListDefault;
-        }
-        String allowlistBC = System.getProperty("wikibaseServiceWhitelist", ALLOWLIST_DEFAULT);
-        ALLOWLIST = System.getProperty("wikibaseServiceAllowlist", allowlistBC);
-    }
 
     /**
      * Initializes BG service setup to allow services from the allowlist.

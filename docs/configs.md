@@ -10,10 +10,8 @@ If you want to change the location of the data file, edit this line:
 
     com.bigdata.journal.AbstractJournal.file=wikidata.jnl
 
-# allowlist.txt (ex whitelist.txt)
+# allowlist.txt
 This file contains the list of external (federated) SPARQL endpoints that the service is allowed to call. It is a simple list of URLs, one URL per line.
-NOTE: to remain back-compatible with previous version of this repo the file whitelist.txt is still read in the absence
-of an allowlist.txt file. Next versions of this repo might drop such support completely in the future.
 
 # ldf-config.json
 This file configures Blazegraph [LDF service](https://www.mediawiki.org/wiki/Wikidata_query_service/User_Manual#Linked_Data_Fragments_endpoint).
