@@ -54,11 +54,6 @@
       <directory>${project.basedir}/../docs</directory>
     </fileSet>
 
-    <fileSet>
-      <outputDirectory>gui</outputDirectory>
-      <directory>${project.basedir}/../gui/build</directory>
-    </fileSet>
-
   </fileSets>
 
   <dependencySets>
