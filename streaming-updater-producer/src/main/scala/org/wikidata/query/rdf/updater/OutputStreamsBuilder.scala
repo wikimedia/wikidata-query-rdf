@@ -62,6 +62,7 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
       // workaround for https://issues.apache.org/jira/browse/FLINK-16419
       producer.ignoreFailuresAfterTransactionTimeout();
     }
+    producer.setTransactionalIdPrefix(outputStreamConfig.transactionalIdPrefix)
     producer
   }
 }

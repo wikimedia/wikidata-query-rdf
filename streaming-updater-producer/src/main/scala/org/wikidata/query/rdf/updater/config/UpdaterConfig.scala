@@ -27,6 +27,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     throw new IllegalArgumentException("entity_namespaces and/or mediainfo_entity_namespaces")
   }
 
+  val transactionalIdPrefix = s"$outputTopic:$outputPartition"
   val generalConfig: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
     hostname = hostName,
     jobName = jobName,
@@ -36,8 +37,8 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
 
     generateDiffTimeout = params.getLong("generate_diff_timeout", 5.minutes.toMillis),
     wikibaseRepoThreadPoolSize = params.getInt("wikibase_repo_thread_pool_size", 30), // at most 60 concurrent requests to wikibase
-    // T262020 and FLINK-11654 (might change to something more explicit on the KafkaProducer rather than reusing operator's name
-    outputOperatorNameAndUuid = s"$outputTopic:$outputPartition",
+    // Re-use the transactional-id prefix the for the output operator
+    outputOperatorNameAndUuid = transactionalIdPrefix,
     httpClientConfig = HttpClientConfig(
       httpRoutes = optionalStringArg("http_routes"),
       httpTimeout = optionalIntArg("http_timeout"),
@@ -105,7 +106,8 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       ).split(",")
         .map(_.trim)
         .toList,
-      ignoreFailuresAfterTransactionTimeout = params.getBoolean("ignore_failures_after_transaction_timeout", false)
+      ignoreFailuresAfterTransactionTimeout = params.getBoolean("ignore_failures_after_transaction_timeout", false),
+      transactionalIdPrefix = transactionalIdPrefix
     )
 
   implicit def finiteDuration2Int(fd: FiniteDuration): Int = fd.toMillis.intValue
@@ -154,7 +156,8 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      sideOutputsDomain: String,
                                                      sideOutputsKafkaBrokers: Option[String],
                                                      schemaRepos: List[String],
-                                                     ignoreFailuresAfterTransactionTimeout: Boolean
+                                                     ignoreFailuresAfterTransactionTimeout: Boolean,
+                                                     transactionalIdPrefix: String
                                                    )
 
 sealed case class UpdaterExecutionEnvironmentConfig(checkpointDir: String,
