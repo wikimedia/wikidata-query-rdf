@@ -5,10 +5,9 @@ import java.net.{URI, URL}
 import java.time.{Clock, Instant}
 import java.util.function.{Consumer, Supplier}
 import java.util.Collections
-
 import scala.collection.JavaConverters.seqAsJavaListConverter
-
 import com.fasterxml.jackson.databind.node.ObjectNode
+import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.wikidata.query.rdf.tool.HttpClientUtils
@@ -25,7 +24,7 @@ class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant],
                                        sideOutputsDomain: String,
                                        eventStreamConfigEndpoint: String,
                                        schemaRepos: List[String],
-                                       httpClientConfig: HttpClientConfig) extends KafkaSerializationSchema[E] {
+                                       httpClientConfig: HttpClientConfig) extends KafkaRecordSerializationSchema[E] {
 
   private def getRecordClock(): () => Instant = {
     recordTimeClock match {
@@ -62,15 +61,15 @@ class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant],
         .setEventServiceToUriMap(Collections.emptyMap(): java.util.Map[String, URI])
         .setJsonLoader(new JsonLoader(resLoader))
         .build())
-     .ingestionTimeClock(new Supplier[Instant] {
+      .ingestionTimeClock(new Supplier[Instant] {
         override def get(): Instant = clock()
       }).build()
   }
 
   lazy val jsonEventGenerator: JsonEventGenerator = getEventGenerator()
-  override def serialize(element: E, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+
+  def serializeValue(element: E, recordTime: Instant): Array[Byte] = {
     lazy val jsonEncoders = new JsonEncoders(sideOutputsDomain)
-    val recordTime: Instant = clock()
     val eventCreator: Consumer[ObjectNode] = element match {
       case e: InputEvent => jsonEncoders.lapsedActionEvent(e)
       case e: FailedOp => jsonEncoders.fetchFailureEvent(e)
@@ -78,7 +77,24 @@ class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant],
       case _ => throw new IllegalArgumentException("Unknown input type [" + element.getClass + "]")
     }
     val jsonEvent: ObjectNode = jsonEventGenerator.generateEvent(stream, schema, eventCreator, recordTime)
-    val eventData: Array[Byte] = jsonEventGenerator.serializeAsBytes(jsonEvent)
+    jsonEventGenerator.serializeAsBytes(jsonEvent)
+  }
+
+  def serializeRecord(element: E): ProducerRecord[Array[Byte], Array[Byte]] = {
+    val recordTime: Instant = clock()
+    val eventData = serializeValue(element, recordTime)
     new ProducerRecord[Array[Byte], Array[Byte]](topic, null, recordTime.toEpochMilli, null, eventData) // scalastyle:ignore null
+  }
+
+  override def serialize(element: E,
+                         context: KafkaRecordSerializationSchema.KafkaSinkContext,
+                         timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+    serializeRecord(element)
+  }
+
+  def asDeprecatedKafkaSerializationSchema(): KafkaSerializationSchema[E] = {
+    (element: E, _: lang.Long) => {
+      serializeRecord(element)
+    }
   }
 }

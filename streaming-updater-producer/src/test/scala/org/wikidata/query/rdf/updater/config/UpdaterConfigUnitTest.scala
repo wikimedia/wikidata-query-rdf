@@ -60,7 +60,6 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     config.generalConfig.entityNamespaces should contain only(0, 120)
     config.generalConfig.useVersionedSerializers shouldBe false
     config.generalConfig.generateDiffTimeout shouldBe 300000
-    config.generalConfig.outputOperatorNameAndUuid shouldBe "my.output-topic:1"
     config.generalConfig.reorderingWindowLengthMs shouldBe 60000
     config.generalConfig.wikibaseRepoThreadPoolSize shouldBe 30
     config.generalConfig.urisScheme.entityData() shouldBe "http://my.wikidata.org/wiki/Special:EntityData/"

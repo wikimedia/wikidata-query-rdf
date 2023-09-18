@@ -20,8 +20,8 @@ import org.wikidata.query.rdf.updater.EntityStatus.CREATED
 
 case class MetaStatement(entityDataNS: Statement, entityNS: Statement)
 case class MetaStatements(revision: MetaStatement, lastModified: MetaStatement) {
-  val entityDataNS = Set(revision.entityDataNS, lastModified.entityDataNS)
-  val entityNS = Set(revision.entityNS, lastModified.entityNS)
+  val entityDataNS: Set[Statement] = Set(revision.entityDataNS, lastModified.entityDataNS)
+  val entityNS: Set[Statement] = Set(revision.entityNS, lastModified.entityNS)
 }
 trait TestFixtures extends TestEventGenerator {
   val REORDERING_WINDOW_LENGTH = 60000
@@ -33,7 +33,7 @@ trait TestFixtures extends TestEventGenerator {
   val OUTPUT_EVENT_STREAM_NAME = "wdqs_streaming_updater_test_stream"
   val STREAM: String = "input_stream"
   val ORIG_REQUEST_ID: String = UUID.randomUUID().toString
-  val DEFAULT_REV_SLOTS = Map("main" -> new RevisionSlot("wikitext", "rfw4r2", 1233, 1))
+  val DEFAULT_REV_SLOTS: Map[String, RevisionSlot] = Map("main" -> new RevisionSlot("wikitext", "rfw4r2", 1233, 1))
 
   val WATERMARK_1: Int = REORDERING_WINDOW_LENGTH
   val WATERMARK_2: Int = REORDERING_WINDOW_LENGTH*2

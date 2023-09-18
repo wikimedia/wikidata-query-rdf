@@ -1,17 +1,18 @@
 package org.wikidata.query.rdf.updater
 
-import java.time.{Clock, Duration}
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.api.common.functions.FilterFunction
+import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.wikidata.query.rdf.common.uri.UrisConstants
-import org.wikidata.query.rdf.tool.EntityId
-import org.wikidata.query.rdf.tool.change.events.{ChangeEvent, EventPlatformEvent, PageDeleteEvent, PageUndeleteEvent, ReconcileEvent, RevisionCreateEvent}
+import org.wikidata.query.rdf.tool.EntityId.cleanEntityId
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action.{CREATION, DELETION}
-import EntityId.cleanEntityId
+import org.wikidata.query.rdf.tool.change.events._
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.config.{FilteredReconciliationTopic, UpdaterPipelineInputEventStreamConfig}
+
+import java.time.{Clock, Duration}
 
 // FIXME rework parts this class do limit duplication
 object IncomingStreams {
@@ -59,8 +60,9 @@ object IncomingStreams {
 
     def build[E <: EventPlatformEvent](topic: String, clazz: Class[E], conv: Converter[E], filter: Option[FilterFunction[E]] = None): DataStream[InputEvent] = {
       fromKafka(KafkaConsumerProperties(topic, ievops.kafkaBrokers, ievops.consumerGroup, DeserializationSchemaFactory.getDeserializationSchema(clazz)),
-        uris, conv, ievops.maxLateness, ievops.idleness, clock, resolver, filter)
+        uris, conv, ievops.maxLateness, ievops.idleness, clock, resolver, filter, ievops.useNewFlinkKafkaApi)
     }
+
     val revisionCreateEventFilter = new RevisionCreateEventFilter(ievops.mediaInfoEntityNamespaces, ievops.mediaInfoRevisionSlot)
     ievops.inputKafkaTopics.topicPrefixes.flatMap(prefix => {
       List(
@@ -76,9 +78,25 @@ object IncomingStreams {
   }
 
   def fromKafka[E <: EventPlatformEvent](kafkaProps: KafkaConsumerProperties[E], uris: Uris, // scalastyle:ignore
-                                  conv: Converter[E],
-                                  maxLatenessMs: Int, idlenessMs: Int, clock: Clock, resolver: EntityResolver, filter: Option[FilterFunction[E]])
+                                         conv: Converter[E],
+                                         maxLatenessMs: Int, idlenessMs: Int,
+                                         clock: Clock,
+                                         resolver: EntityResolver,
+                                         filter: Option[FilterFunction[E]],
+                                         useNewFlinkApi: Boolean)
                                  (implicit env: StreamExecutionEnvironment): DataStream[InputEvent] = {
+    val kafkaStream: DataStream[E] = if (useNewFlinkApi) {
+      withKafkaSource(kafkaProps, maxLatenessMs, idlenessMs)
+    } else {
+      withDeprecatedFlinkKafkaConsumer(kafkaProps, maxLatenessMs, idlenessMs)
+    }
+    fromStream(kafkaStream, uris, conv, clock, resolver, filter)
+  }
+
+  private def withDeprecatedFlinkKafkaConsumer[E <: EventPlatformEvent](kafkaProps: KafkaConsumerProperties[E],
+                                                                        maxLatenessMs: Int,
+                                                                        idlenessMs: Int)
+                                                                       (implicit env: StreamExecutionEnvironment): DataStream[E] = {
     val nameAndUid = operatorUUID(kafkaProps.topic)
     val kafkaStream = env
       .addSource(new FlinkKafkaConsumer[E](kafkaProps.topic, kafkaProps.schema, kafkaProps.asProperties()))(kafkaProps.schema.getProducedType)
@@ -87,11 +105,28 @@ object IncomingStreams {
       .uid(nameAndUid)
       .name(nameAndUid)
       .setParallelism(INPUT_PARALLELISM)
-    fromStream(kafkaStream, uris, conv, clock, resolver, filter)
+    kafkaStream
   }
 
-  def operatorUUID[E <: EventPlatformEvent](topic: String): String = {
-    topic
+  private def withKafkaSource[E <: EventPlatformEvent](kafkaProps: KafkaConsumerProperties[E],
+                                                       maxLatenessMs: Int,
+                                                       idlenessMs: Int)
+                                                      (implicit env: StreamExecutionEnvironment): DataStream[E] = {
+    val nameAndUid = operatorUUID(kafkaProps.topic, Some("KafkaSource"));
+    val kafkaSource: KafkaSource[E] = KafkaSource.builder[E]()
+      .setProperties(kafkaProps.asProperties())
+      .setTopics(kafkaProps.topic)
+      .setValueOnlyDeserializer(kafkaProps.schema)
+      .build();
+
+    env.fromSource(kafkaSource, watermarkStrategy[E](maxLatenessMs, idlenessMs), nameAndUid)(kafkaSource.getProducedType)
+      .uid(nameAndUid)
+      .name(nameAndUid)
+      .setParallelism(INPUT_PARALLELISM)
+  }
+
+  def operatorUUID[E <: EventPlatformEvent](topic: String, prefix: Option[String] = None): String = {
+    prefix.fold(topic)(p => f"$p:$topic")
   }
 
   private def watermarkStrategy[E <: EventPlatformEvent](maxLatenessMs: Int, idlenessMs: Int): WatermarkStrategy[E] = {

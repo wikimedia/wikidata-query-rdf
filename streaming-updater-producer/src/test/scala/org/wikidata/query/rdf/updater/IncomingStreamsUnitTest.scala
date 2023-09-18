@@ -15,7 +15,7 @@ import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.config.{FilteredReconciliationTopic, InputKafkaTopics, UpdaterPipelineInputEventStreamConfig}
 
-class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
+class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
 
   val resolver: IncomingStreams.EntityResolver = (_, title, _) => title
 
@@ -24,8 +24,8 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
       DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-      uris, IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC(), resolver, None)
-    stream.name should equal (s"Filtered(my-topic == $DOMAIN)")
+      uris, IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC(), resolver, None, useNewFlinkApi = true)
+    stream.name should equal (s"Filtered(KafkaSource:my-topic == $DOMAIN)")
   }
 
   "IncomingStreams" should "create regular incoming streams proper parallelism" in {
@@ -39,7 +39,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
           suppressedDeleteTopicName = "suppressed-delete-topic",
           reconciliationTopicName = None,
           topicPrefixes = List("")),
-        10, 10, Set(), "mediainfo"),
+        10, 10, Set(), "mediainfo", useNewFlinkKafkaApi = true),
       uris, Clock.systemUTC())
     stream.map(_.parallelism).toSet should contain only 1
   }
@@ -55,13 +55,13 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
           suppressedDeleteTopicName = "suppressed-delete-topic",
           reconciliationTopicName = None,
           topicPrefixes = List("")),
-        10, 10, Set(), "mediainfo"),
+        10, 10, Set(), "mediainfo", useNewFlinkKafkaApi = true),
       uris, Clock.systemUTC()
     )
-    stream.map(_.name) should contain only(s"Filtered(rev-create-topic == $DOMAIN)",
-                                           s"Filtered(page-delete-topic == $DOMAIN)",
-                                           s"Filtered(page-undelete-topic == $DOMAIN)",
-                                           s"Filtered(suppressed-delete-topic == $DOMAIN)"
+    stream.map(_.name) should contain only(s"Filtered(KafkaSource:rev-create-topic == $DOMAIN)",
+                                           s"Filtered(KafkaSource:page-delete-topic == $DOMAIN)",
+                                           s"Filtered(KafkaSource:page-undelete-topic == $DOMAIN)",
+                                           s"Filtered(KafkaSource:suppressed-delete-topic == $DOMAIN)"
     )
   }
 
@@ -76,19 +76,19 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures{
           suppressedDeleteTopicName = "suppressed-delete-topic",
           reconciliationTopicName = Some(FilteredReconciliationTopic("rdf-streaming-updater.reconcile", None)),
           topicPrefixes = List("cluster1.", "cluster2.")),
-        10, 10, Set(), "mediainfo"),
+        10, 10, Set(), "mediainfo", useNewFlinkKafkaApi = true),
       uris, Clock.systemUTC())
     stream.map(_.name) should contain only(
-      s"Filtered(cluster1.rev-create-topic == $DOMAIN)",
-      s"Filtered(cluster1.page-delete-topic == $DOMAIN)",
-      s"Filtered(cluster1.page-undelete-topic == $DOMAIN)",
-      s"Filtered(cluster1.suppressed-delete-topic == $DOMAIN)",
-      s"Filtered(cluster1.rdf-streaming-updater.reconcile == $DOMAIN)",
-      s"Filtered(cluster2.rev-create-topic == $DOMAIN)",
-      s"Filtered(cluster2.page-delete-topic == $DOMAIN)",
-      s"Filtered(cluster2.page-undelete-topic == $DOMAIN)",
-      s"Filtered(cluster2.suppressed-delete-topic == $DOMAIN)",
-      s"Filtered(cluster2.rdf-streaming-updater.reconcile == $DOMAIN)"
+      s"Filtered(KafkaSource:cluster1.rev-create-topic == $DOMAIN)",
+      s"Filtered(KafkaSource:cluster1.page-delete-topic == $DOMAIN)",
+      s"Filtered(KafkaSource:cluster1.page-undelete-topic == $DOMAIN)",
+      s"Filtered(KafkaSource:cluster1.suppressed-delete-topic == $DOMAIN)",
+      s"Filtered(KafkaSource:cluster1.rdf-streaming-updater.reconcile == $DOMAIN)",
+      s"Filtered(KafkaSource:cluster2.rev-create-topic == $DOMAIN)",
+      s"Filtered(KafkaSource:cluster2.page-delete-topic == $DOMAIN)",
+      s"Filtered(KafkaSource:cluster2.page-undelete-topic == $DOMAIN)",
+      s"Filtered(KafkaSource:cluster2.suppressed-delete-topic == $DOMAIN)",
+      s"Filtered(KafkaSource:cluster2.rdf-streaming-updater.reconcile == $DOMAIN)"
     )
   }
 

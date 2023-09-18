@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.updater
 import org.apache.commons.io.FileUtils
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
+import org.apache.flink.streaming.api.functions.sink.DiscardingSink
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
@@ -85,7 +86,6 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       reorderingWindowLengthMs = 60000,
       generateDiffTimeout = Int.MaxValue,
       wikibaseRepoThreadPoolSize = 10,
-      outputOperatorNameAndUuid = "test-output-name",
       httpClientConfig = HttpClientConfig(None, None, "my user-agent"),
       useVersionedSerializers = true,
       urisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
@@ -93,9 +93,10 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     )
     UpdaterPipeline.configure(options, List(source),
       OutputStreams(
-        new CollectSink[MutationDataChunk](CollectSink.values.append(_)),
-        new CollectSink[InputEvent](CollectSink.lateEvents.append(_)),
-        new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))
+        SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations"),
+        SinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events"),
+        SinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies"),
+        SinkWrapper(Left(new DiscardingSink[FailedOp]()), "failures")
       ),
       _ => repository, clock = clock)
     val graph = streamingEnv.getStreamGraph(true)

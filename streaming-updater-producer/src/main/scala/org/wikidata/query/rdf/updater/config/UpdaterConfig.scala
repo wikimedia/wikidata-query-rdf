@@ -1,21 +1,21 @@
 package org.wikidata.query.rdf.updater.config
 
-import scala.concurrent.duration._
-import scala.language.{implicitConversions, postfixOps}
-
 import org.apache.flink.api.common.time.Time
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.wikidata.query.rdf.common.uri.{FederatedUrisScheme, UrisScheme, UrisSchemeFactory}
-import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.tool.HttpClientUtils
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikimedia.eventutilities.core.event.WikimediaDefaults
+
+import scala.concurrent.duration._
+import scala.language.{implicitConversions, postfixOps}
 
 class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(args)) {
   val checkpointDir: String = getStringParam("checkpoint_dir")
   private val hostName: String = getStringParam("hostname")
   val jobName: String = getStringParam("job_name")
   val inputKafkaBrokers: String = getStringParam("brokers")
-  val outputKafkaBrokers: String = params.get("output_brokers", inputKafkaBrokers)
+  private val outputKafkaBrokers: String = params.get("output_brokers", inputKafkaBrokers)
   val outputTopic: String = getStringParam("output_topic")
   val outputPartition: Int = params.getInt("output_topic_partition")
   val entityNamespaces: Set[Long] = params.get("entity_namespaces", "").split(",").map(_.trim).filterNot(_.isEmpty).map(_.toLong).toSet
@@ -37,8 +37,6 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
 
     generateDiffTimeout = params.getLong("generate_diff_timeout", 5.minutes.toMillis),
     wikibaseRepoThreadPoolSize = params.getInt("wikibase_repo_thread_pool_size", 30), // at most 60 concurrent requests to wikibase
-    // Re-use the transactional-id prefix the for the output operator
-    outputOperatorNameAndUuid = transactionalIdPrefix,
     httpClientConfig = HttpClientConfig(
       httpRoutes = optionalStringArg("http_routes"),
       httpTimeout = optionalIntArg("http_timeout"),
@@ -57,13 +55,15 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     acceptableMediawikiLag = params.getInt("acceptable_mediawiki_lag", 10) seconds
   )
 
+  private val useNewFlinkKafkaApi: Boolean = params.getBoolean("use_new_flink_kafka_api", false)
   val inputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
     inputKafkaTopics = getInputKafkaTopics,
     consumerGroup = getStringParam("consumer_group"),
     maxLateness = params.getInt("max_lateness", 1 minute),
     idleness = params.getInt("input_idleness", 1 minute),
     mediaInfoEntityNamespaces = mediaInfoEntityNamespaces,
-    mediaInfoRevisionSlot = params.get("mediainfo_revision_slot", "mediainfo")
+    mediaInfoRevisionSlot = params.get("mediainfo_revision_slot", "mediainfo"),
+    useNewFlinkKafkaApi = useNewFlinkKafkaApi
   )
 
   val environmentConfig: UpdaterExecutionEnvironmentConfig = UpdaterExecutionEnvironmentConfig(checkpointDir = checkpointDir,
@@ -107,7 +107,8 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
         .map(_.trim)
         .toList,
       ignoreFailuresAfterTransactionTimeout = params.getBoolean("ignore_failures_after_transaction_timeout", false),
-      transactionalIdPrefix = transactionalIdPrefix
+      transactionalIdPrefix = transactionalIdPrefix,
+      useNewFlinkKafkaApi = useNewFlinkKafkaApi
     )
 
   implicit def finiteDuration2Int(fd: FiniteDuration): Int = fd.toMillis.intValue
@@ -124,7 +125,6 @@ sealed case class UpdaterPipelineGeneralConfig(hostname: String,
                                                reorderingWindowLengthMs: Int,
                                                generateDiffTimeout: Long,
                                                wikibaseRepoThreadPoolSize: Int,
-                                               outputOperatorNameAndUuid: String,
                                                httpClientConfig: HttpClientConfig,
                                                useVersionedSerializers: Boolean,
                                                urisScheme: UrisScheme,
@@ -143,7 +143,8 @@ sealed case class UpdaterPipelineInputEventStreamConfig(kafkaBrokers: String,
                                                         maxLateness: Int,
                                                         idleness: Int,
                                                         mediaInfoEntityNamespaces: Set[Long],
-                                                        mediaInfoRevisionSlot: String
+                                                        mediaInfoRevisionSlot: String,
+                                                        useNewFlinkKafkaApi: Boolean
                                                        )
 
 sealed case class UpdaterPipelineOutputStreamConfig(
@@ -157,7 +158,8 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      sideOutputsKafkaBrokers: Option[String],
                                                      schemaRepos: List[String],
                                                      ignoreFailuresAfterTransactionTimeout: Boolean,
-                                                     transactionalIdPrefix: String
+                                                     transactionalIdPrefix: String,
+                                                     useNewFlinkKafkaApi: Boolean
                                                    )
 
 sealed case class UpdaterExecutionEnvironmentConfig(checkpointDir: String,

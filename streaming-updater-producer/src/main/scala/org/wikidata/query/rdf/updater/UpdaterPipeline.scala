@@ -67,30 +67,18 @@ object UpdaterPipeline {
     val tripleStream: DataStream[MutationDataChunk] = measureLatency(
       rdfPatchChunkOp(patchStream, opts, uniqueIdGenerator, clock, outputStreamName), clock)
 
-    attachSinks(opts, outputStreams, lateEventsSideOutput, spuriousEventsSideOutput, failedOpsToSideOutput, tripleStream)
+    attachSinks(outputStreams, lateEventsSideOutput, spuriousEventsSideOutput, failedOpsToSideOutput, tripleStream)
   }
 
-  private def attachSinks(opts: UpdaterPipelineGeneralConfig,
-                          outputStreams: OutputStreams,
+  private def attachSinks(outputStreams: OutputStreams,
                           lateEventsSideOutput: DataStream[InputEvent],
                           spuriousEventsSideOutput: DataStream[InconsistentMutation],
                           failedOpsToSideOutput: DataStream[FailedOp],
                           tripleStream: DataStream[MutationDataChunk]): Unit = {
-    lateEventsSideOutput.addSink(outputStreams.lateEventsSink)
-      .uid("late-events-output")
-      .name("late-events-output")
-
-    spuriousEventsSideOutput.addSink(outputStreams.spuriousEventsSink)
-      .uid("spurious-events-output")
-      .name("spurious-events-output")
-
-    failedOpsToSideOutput.addSink(outputStreams.failedOpsSink)
-      .uid("failed-events-output")
-      .name("failed-events-output")
-
-    tripleStream.addSink(outputStreams.mutationSink)
-      .uid(opts.outputOperatorNameAndUuid)
-      .name(opts.outputOperatorNameAndUuid)
+    outputStreams.lateEventsSink.attachStream(lateEventsSideOutput)
+    outputStreams.spuriousEventsSink.attachStream(spuriousEventsSideOutput)
+    outputStreams.failedOpsSink.attachStream(failedOpsToSideOutput)
+    outputStreams.mutationSink.attachStream(tripleStream)
       .setParallelism(OUTPUT_PARALLELISM)
   }
 

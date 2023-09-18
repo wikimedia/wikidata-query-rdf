@@ -1,17 +1,17 @@
 package org.wikidata.query.rdf.updater
 
-import java.time.Instant
-
-import scala.collection.JavaConverters.iterableAsScalaIterableConverter
-import scala.concurrent.duration.DurationInt
-import scala.language.postfixOps
-
+import org.apache.flink.streaming.api.functions.sink.DiscardingSink
 import org.apache.flink.streaming.api.scala._
 import org.openrdf.model.Statement
 import org.scalatest._
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
 import org.wikidata.query.rdf.tool.change.events.{EventsMeta, PageDeleteEvent, ReconcileEvent, RevisionCreateEvent}
 import org.wikidata.query.rdf.updater.config.{HttpClientConfig, UpdaterPipelineGeneralConfig}
+
+import java.time.Instant
+import scala.collection.JavaConverters.iterableAsScalaIterableConverter
+import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
 
 
 class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers {
@@ -23,7 +23,6 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     reorderingWindowLengthMs = REORDERING_WINDOW_LENGTH,
     generateDiffTimeout = Int.MaxValue,
     wikibaseRepoThreadPoolSize = 10,
-    outputOperatorNameAndUuid = "test-output-name",
     httpClientConfig = HttpClientConfig(None, None, "my user-agent"),
     useVersionedSerializers = true,
     urisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
@@ -52,9 +51,10 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     UpdaterPipeline.configure(pipelineOptions,
         List(revCreateSource),
         OutputStreams(
-          new CollectSink[MutationDataChunk](CollectSink.values.append(_)),
-          new CollectSink[InputEvent](CollectSink.lateEvents.append(_)),
-          new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))
+          SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations"),
+          SinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events"),
+          SinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies"),
+          SinkWrapper(Left(new DiscardingSink[FailedOp]()), "failures")
         ),
         _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
         clock, OUTPUT_EVENT_STREAM_NAME)
@@ -97,9 +97,10 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     UpdaterPipeline.configure(pipelineOptions,
       List(revCreateSourceForDeleteTest, pageDeleteSource),
       OutputStreams(
-        new CollectSink[MutationDataChunk](CollectSink.values.append(_)),
-        new CollectSink[InputEvent](CollectSink.lateEvents.append(_)),
-        new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))
+        SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations"),
+        SinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events"),
+        SinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies"),
+        SinkWrapper(Left(new DiscardingSink[FailedOp]()), "failures")
       ),
       _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
       clock, OUTPUT_EVENT_STREAM_NAME)
@@ -141,9 +142,10 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     UpdaterPipeline.configure(pipelineOptions,
       List(revCreateEventStream, reconcileEventsStream),
       OutputStreams(
-        new CollectSink[MutationDataChunk](CollectSink.values.append(_)),
-        new CollectSink[InputEvent](CollectSink.lateEvents.append(_)),
-        new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))
+        SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations"),
+        SinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events"),
+        SinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies"),
+        SinkWrapper(Left(new DiscardingSink[FailedOp]()), "failures")
       ),
       _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
       clock, OUTPUT_EVENT_STREAM_NAME)
