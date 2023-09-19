@@ -22,7 +22,6 @@ class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
       sideOutputsKafkaBrokers = None,
       schemaRepos = List("https://schema.wikimedia.org/repositories/primary/jsonschema", "https://schema.wikimedia.org/repositories/secondary/jsonschema"),
       ignoreFailuresAfterTransactionTimeout = false,
-      useNewFlinkKafkaApi = true,
       produceSideOutputs = true,
       emitterId = Some("id"),
       immutable.Map("main" -> "topic-main", "scholarly" -> "topic-scholarly"),

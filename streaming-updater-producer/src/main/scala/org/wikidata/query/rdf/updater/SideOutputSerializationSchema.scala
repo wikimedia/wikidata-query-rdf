@@ -2,7 +2,6 @@ package org.wikidata.query.rdf.updater
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.updater.config.HttpClientConfig
@@ -90,11 +89,5 @@ class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant],
                          context: KafkaRecordSerializationSchema.KafkaSinkContext,
                          timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
     serializeRecord(element)
-  }
-
-  def asDeprecatedKafkaSerializationSchema(): KafkaSerializationSchema[E] = {
-    (element: E, _: lang.Long) => {
-      serializeRecord(element)
-    }
   }
 }

@@ -24,7 +24,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
       DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
-      uris, IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC(), resolver, None, useNewFlinkApi = true)
+      uris, IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC(), resolver, None)
     stream.name should equal (s"Filtered(KafkaSource:my-topic == $DOMAIN)")
   }
 
@@ -39,7 +39,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
           suppressedDeleteTopicName = "suppressed-delete-topic",
           reconciliationTopicName = None,
           topicPrefixes = List("")),
-        10, 10, Set(), "mediainfo", useNewFlinkKafkaApi = true),
+        10, 10, Set(), "mediainfo"),
       uris, Clock.systemUTC())
     stream.map(_.parallelism).toSet should contain only 1
   }
@@ -55,7 +55,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
           suppressedDeleteTopicName = "suppressed-delete-topic",
           reconciliationTopicName = None,
           topicPrefixes = List("")),
-        10, 10, Set(), "mediainfo", useNewFlinkKafkaApi = true),
+        10, 10, Set(), "mediainfo"),
       uris, Clock.systemUTC()
     )
     stream.map(_.name) should contain only(s"Filtered(KafkaSource:rev-create-topic == $DOMAIN)",
@@ -76,7 +76,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
           suppressedDeleteTopicName = "suppressed-delete-topic",
           reconciliationTopicName = Some(FilteredReconciliationTopic("rdf-streaming-updater.reconcile", None)),
           topicPrefixes = List("cluster1.", "cluster2.")),
-        10, 10, Set(), "mediainfo", useNewFlinkKafkaApi = true),
+        10, 10, Set(), "mediainfo"),
       uris, Clock.systemUTC())
     stream.map(_.name) should contain only(
       s"Filtered(KafkaSource:cluster1.rev-create-topic == $DOMAIN)",
@@ -109,7 +109,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
     val filter = new RevisionCreateEventFilter(Set(6), "mediainfo")
     val mainSlot = "main" ->
       new RevisionSlot("main", "123fewfwe", 1571, 1)
-    val mediainfoSlot = "mediainfo" -> new RevisionSlot("mediainfo", "123fewfwe", 1571, 1);
+    val mediainfoSlot = "mediainfo" -> new RevisionSlot("mediainfo", "123fewfwe", 1571, 1)
 
     val nonFileEvent = newRevCreateEvent(EntityId.parse("M1"), 1, 2, 1, instant(4),
       0, DOMAIN, STREAM, ORIG_REQUEST_ID, Map(mainSlot))

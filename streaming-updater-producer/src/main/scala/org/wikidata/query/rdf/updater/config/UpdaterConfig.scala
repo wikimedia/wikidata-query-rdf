@@ -77,8 +77,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     maxLateness = params.getInt("max_lateness", 1 minute),
     idleness = params.getInt("input_idleness", 1 minute),
     mediaInfoEntityNamespaces = mediaInfoEntityNamespaces,
-    mediaInfoRevisionSlot = params.get("mediainfo_revision_slot", "mediainfo"),
-    useNewFlinkKafkaApi = useNewFlinkKafkaApi
+    mediaInfoRevisionSlot = params.get("mediainfo_revision_slot", "mediainfo")
   )
 
   val environmentConfig: UpdaterExecutionEnvironmentConfig = UpdaterExecutionEnvironmentConfig(checkpointDir = checkpointDir,
@@ -122,7 +121,6 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
         .map(_.trim)
         .toList,
       ignoreFailuresAfterTransactionTimeout = params.getBoolean("ignore_failures_after_transaction_timeout", false),
-      useNewFlinkKafkaApi = useNewFlinkKafkaApi,
       produceSideOutputs = params.getBoolean("produce_side_outputs", true),
       emitterId = optionalStringArg("emitter_id"),
       subgraphKafkaTopics,
@@ -140,7 +138,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
             s"with a parallelism of $fetchOpParallelism, please set --parallelism to at most $maxTotalConcurrentRequests")
         }
         val threadPoolSize = maxTotalConcurrentRequests / fetchOpParallelism
-        val actualLimit = threadPoolSize * fetchOpParallelism;
+        val actualLimit = threadPoolSize * fetchOpParallelism
         if (actualLimit != maxTotalConcurrentRequests) {
           log.warn(s"The concurrency limit of $maxTotalConcurrentRequests is not a multiple of $fetchOpParallelism, the actual limit used will be $actualLimit")
         }
@@ -224,8 +222,7 @@ sealed case class UpdaterPipelineInputEventStreamConfig(kafkaBrokers: String,
                                                         maxLateness: Int,
                                                         idleness: Int,
                                                         mediaInfoEntityNamespaces: Set[Long],
-                                                        mediaInfoRevisionSlot: String,
-                                                        useNewFlinkKafkaApi: Boolean
+                                                        mediaInfoRevisionSlot: String
                                                        )
 
 sealed case class UpdaterPipelineOutputStreamConfig(
@@ -239,7 +236,6 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      sideOutputsKafkaBrokers: Option[String],
                                                      schemaRepos: List[String],
                                                      ignoreFailuresAfterTransactionTimeout: Boolean,
-                                                     useNewFlinkKafkaApi: Boolean,
                                                      produceSideOutputs: Boolean,
                                                      emitterId: Option[String],
                                                      subgraphKafkaTopics: Map[String, String],

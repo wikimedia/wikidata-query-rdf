@@ -8,7 +8,6 @@ import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.DataStream
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.wikidata.query.rdf.updater.config.{HttpClientConfig, UpdaterPipelineOutputStreamConfig}
 
 import java.util.Properties
@@ -67,22 +66,7 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
     val sideOutputSerializationSchema = new SideOutputSerializationSchema[E](None, topic, stream, schema, outputStreamsConfig.sideOutputsDomain,
       outputStreamsConfig.emitterId, outputStreamsConfig.eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
 
-    if (outputStreamsConfig.useNewFlinkKafkaApi) {
-      sideOutputWithKafkaSink(producerConfig, sideOutputSerializationSchema, operatorNameAndUuid)
-    } else {
-      sideOutputWithFlinkKafkaConsumer(producerConfig, topic, sideOutputSerializationSchema, operatorNameAndUuid)
-    }
-  }
-
-  private def sideOutputWithFlinkKafkaConsumer[E](producerConfig: Properties, defaultTopic: String,
-                                                  sideOutputSerializationSchema: SideOutputSerializationSchema[E],
-                                                  operatorNameAndUuid: String): SinkWrapper[E] = {
-    SinkWrapper(Left(new FlinkKafkaProducer[E](
-      defaultTopic,
-      sideOutputSerializationSchema.asDeprecatedKafkaSerializationSchema(),
-      producerConfig,
-      // force at least once semantic (WMF event platform does not seem to support kafka transactions yet)
-      FlinkKafkaProducer.Semantic.AT_LEAST_ONCE)), operatorNameAndUuid)
+    sideOutputWithKafkaSink(producerConfig, sideOutputSerializationSchema, operatorNameAndUuid)
   }
 
   private def sideOutputWithKafkaSink[E](producerConfig: Properties,
@@ -103,35 +87,8 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
     producerConfig.setProperty("transaction.timeout.ms", txTimeoutMs.toString)
     producerConfig.setProperty("delivery.timeout.ms", txTimeoutMs.toString)
     outputStreamConfig.producerProperties.foreach { case (k, v) => producerConfig.setProperty(k, v) }
-
-    if (outputStreamConfig.useNewFlinkKafkaApi) {
-      withKafkaSink(s"$topic:${outputStreamConfig.partition}", producerConfig, topic, nameAndUuidSuffix = nameAndUuidSuffix)
-    } else {
-      withDeprecadedFlinkKafkaProducer(s"$topic:${outputStreamConfig.partition}", producerConfig)
-    }
+    withKafkaSink(s"$topic:${outputStreamConfig.partition}", producerConfig, topic, nameAndUuidSuffix = nameAndUuidSuffix)
   }
-
-  def withDeprecadedFlinkKafkaProducer(transactionalIdPrefix: String, producerConfig: Properties): SinkWrapper[MutationDataChunk] = {
-    val producer = new FlinkKafkaProducer[MutationDataChunk](
-      outputStreamsConfig.topic,
-      new MutationEventDataSerializationSchema(outputStreamsConfig.topic, outputStreamsConfig.partition),
-      producerConfig,
-      outputStreamsConfig.checkpointingMode match {
-        case CheckpointingMode.EXACTLY_ONCE => FlinkKafkaProducer.Semantic.EXACTLY_ONCE
-        case CheckpointingMode.AT_LEAST_ONCE => FlinkKafkaProducer.Semantic.AT_LEAST_ONCE
-      })
-
-    producer.setTransactionalIdPrefix(transactionalIdPrefix)
-
-    if (outputStreamsConfig.ignoreFailuresAfterTransactionTimeout) {
-      // workaround for https://issues.apache.org/jira/browse/FLINK-16419
-      producer.ignoreFailuresAfterTransactionTimeout();
-    }
-    producer.setTransactionalIdPrefix(transactionalIdPrefix)
-    // Re-use transactionalIdPrefix of the operator name and UUID
-    SinkWrapper(Left(producer), transactionalIdPrefix)
-  }
-
 
   def withKafkaSink(
                      transactionalPrefixId: String,
