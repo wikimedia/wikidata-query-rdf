@@ -87,7 +87,6 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       generateDiffTimeout = Int.MaxValue,
       wikibaseRepoThreadPoolSize = 10,
       httpClientConfig = HttpClientConfig(None, None, "my user-agent"),
-      useVersionedSerializers = true,
       urisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
       acceptableMediawikiLag = 10 seconds
     )

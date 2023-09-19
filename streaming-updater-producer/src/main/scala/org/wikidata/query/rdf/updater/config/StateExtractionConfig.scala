@@ -5,5 +5,4 @@ case class StateExtractionConfig(args: Array[String]) extends BaseConfig()(BaseC
   val inputSavepoint: String = getStringParam("input_savepoint")
   val outputRevisionPath: Option[String] = optionalStringArg("rev_map_output")
   val verify: Boolean = params.getBoolean("verify", false)
-  val useVersionedSerializers: Boolean = params.getBoolean("use_versioned_serializers", false)
 }

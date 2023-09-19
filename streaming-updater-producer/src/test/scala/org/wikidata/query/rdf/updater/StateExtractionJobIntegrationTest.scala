@@ -1,20 +1,19 @@
 package org.wikidata.query.rdf.updater
 
-import java.io.File
-import java.lang
-import java.nio.file.Files
-
-import scala.collection.JavaConverters.seqAsJavaListConverter
-
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.flink.api.common.state.{ListState, ValueState}
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.state.api.{OneInputOperatorTransformation, OperatorTransformation, Savepoint}
 import org.apache.flink.state.api.functions.KeyedStateBootstrapFunction
+import org.apache.flink.state.api.{OneInputOperatorTransformation, OperatorTransformation, Savepoint}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.updater.config.{BaseConfig, StateExtractionConfig}
+
+import java.io.File
+import java.lang
+import java.nio.file.Files
+import scala.collection.JavaConverters.seqAsJavaListConverter
 
 class StateExtractionJobIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers with BeforeAndAfter {
   private var savePointDir: File = _
@@ -47,7 +46,7 @@ class StateExtractionJobIntegrationTest extends FlatSpec with FlinkTestCluster w
       var revMap: ValueState[lang.Long] = _
       override def open(parameters: Configuration): Unit = {
         revMap = getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())
-        state = getRuntimeContext.getListState(UpdaterStateConfiguration.newPartialReorderingStateDesc(true))
+        state = getRuntimeContext.getListState(UpdaterStateConfiguration.newPartialReorderingStateDesc())
       }
       override def processElement(in: InputEvent, context: KeyedStateBootstrapFunction[String, InputEvent]#Context): Unit = {
         state.add(in)
@@ -65,8 +64,7 @@ class StateExtractionJobIntegrationTest extends FlatSpec with FlinkTestCluster w
       "--input_savepoint", savePointDir.getAbsolutePath,
       "--rev_map_output", revMapOutput.toString,
       "--verify", "true", // do not verify as we don't have the buffered events here
-      "--job_name", "state inspection",
-      "--use_versioned_serializers", "true").toArray)
+      "--job_name", "state inspection").toArray)
     StateExtractionJob.configure(stateInspectionConfig)
 
     try {

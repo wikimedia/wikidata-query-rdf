@@ -1,9 +1,5 @@
 package org.wikidata.query.rdf.updater
 
-import java.time.Instant
-
-import scala.collection.mutable.ListBuffer
-
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.operators.KeyedProcessOperator
@@ -14,6 +10,9 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.EntityId
 import org.wikidata.query.rdf.updater.EntityStatus.{CREATED, DELETED, UNDEFINED}
 
+import java.time.Instant
+import scala.collection.mutable.ListBuffer
+
 class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers with TestEventGenerator with BeforeAndAfterEach {
   val testDomain = "tested.domain"
   val testStream = "test-input-stream"
@@ -23,9 +22,9 @@ class ReorderAndDecideMutationOperatorUnitTest extends FlatSpec with Matchers wi
   var operator: KeyedOneInputStreamOperatorTestHarness[String, InputEvent, MutationOperation] = _
 
   override def beforeEach(): Unit = {
-    val stateDescr = UpdaterStateConfiguration.newPartialReorderingStateDesc(true)
+    val stateDescr = UpdaterStateConfiguration.newPartialReorderingStateDesc()
     stateDescr.initializeSerializerUnlessSet(new ExecutionConfig())
-    val processFunction = new ReorderAndDecideMutationOperation(10, true )
+    val processFunction = new ReorderAndDecideMutationOperation(10)
     operator = new KeyedOneInputStreamOperatorTestHarness[String, InputEvent, MutationOperation](new KeyedProcessOperator(processFunction),
       inputEventKeySelector,
       TypeInformation.of(classOf[String]))

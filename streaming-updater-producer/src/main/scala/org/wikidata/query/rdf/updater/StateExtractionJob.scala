@@ -23,17 +23,17 @@ object StateExtractionJob {
   def configure(config: StateExtractionConfig)(implicit env: ExecutionEnvironment): Unit = {
     val stateBackend: StateBackend = UpdaterStateConfiguration.newStateBackend()
     val point: ExistingSavepoint = Savepoint.load(env.getJavaEnv, config.inputSavepoint, stateBackend)
-    config.outputRevisionPath.foreach(saveRevisionsAsCsv(point, _, config.verify, config.useVersionedSerializers))
+    config.outputRevisionPath.foreach(saveRevisionsAsCsv(point, _, config.verify))
   }
 
-  def saveRevisionsAsCsv(savepoint: ExistingSavepoint, outputPath: String, verify: Boolean, useVersionedSerializers: Boolean)
+  def saveRevisionsAsCsv(savepoint: ExistingSavepoint, outputPath: String, verify: Boolean)
                         (implicit env: ExecutionEnvironment): Unit = {
-    revisionMapDataset(savepoint, verify, useVersionedSerializers).writeAsCsv(outputPath)
+    revisionMapDataset(savepoint, verify).writeAsCsv(outputPath)
   }
 
-  def revisionMapDataset(savepoint: ExistingSavepoint, verify: Boolean, useVersionedSerializers: Boolean)
+  def revisionMapDataset(savepoint: ExistingSavepoint, verify: Boolean)
                         (implicit env: ExecutionEnvironment): ScalaDataSet[(String, String)] = {
-    val dataset = if (verify) loadAndVerifyRevMapDataSet(savepoint, useVersionedSerializers) else loadRevMapDataSet(savepoint)
+    val dataset = if (verify) loadAndVerifyRevMapDataSet(savepoint) else loadRevMapDataSet(savepoint)
     dataset
       .map(revMap => (revMap.key, String.valueOf(revMap.revision)))
   }
@@ -42,9 +42,9 @@ object StateExtractionJob {
     new ScalaDataSet(savepoint.readKeyedState(ReorderAndDecideMutationOperation.UID, new RevMapStateReader()))
   }
 
-  private def loadAndVerifyRevMapDataSet(savepoint: ExistingSavepoint, useVersionedSerializers: Boolean)
+  private def loadAndVerifyRevMapDataSet(savepoint: ExistingSavepoint)
                                         (implicit env: ExecutionEnvironment): ScalaDataSet[RevMap] = {
-    new ScalaDataSet(savepoint.readKeyedState(ReorderAndDecideMutationOperation.UID, new FullDecideMutationSateReader(useVersionedSerializers)))
+    new ScalaDataSet(savepoint.readKeyedState(ReorderAndDecideMutationOperation.UID, new FullDecideMutationSateReader()))
       .map(s => {
         if (s.bufferedEvents.nonEmpty) {
           throw new IllegalStateException(s"Savepoint has ${s.bufferedEvents.size} buffered event(s) " +
@@ -69,13 +69,13 @@ object StateExtractionJob {
     }
   }
 
-  class FullDecideMutationSateReader(useVersionedSerializers: Boolean) extends KeyedStateReaderFunction[String, FullDecideMutationState] {
-    var revState: ValueState[java.lang.Long] = _
-    var bufferedEvents: ListState[InputEvent] = _
+  private class FullDecideMutationSateReader() extends KeyedStateReaderFunction[String, FullDecideMutationState] {
+    private var revState: ValueState[java.lang.Long] = _
+    private var bufferedEvents: ListState[InputEvent] = _
 
     override def open(parameters: Configuration): Unit = {
       revState = getRuntimeContext.getState(UpdaterStateConfiguration.newLastRevisionStateDesc())
-      bufferedEvents = getRuntimeContext.getListState(UpdaterStateConfiguration.newPartialReorderingStateDesc(useVersionedSerializers: Boolean))
+      bufferedEvents = getRuntimeContext.getListState(UpdaterStateConfiguration.newPartialReorderingStateDesc())
     }
 
     override def readKey(k: String, context: KeyedStateReaderFunction.Context, collector: Collector[FullDecideMutationState]): Unit = {

@@ -58,7 +58,6 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     config.generalConfig.hostname shouldBe "my.wikidata.org"
     config.generalConfig.entityDataPath shouldBe WikibaseRepository.Uris.DEFAULT_ENTITY_DATA_PATH
     config.generalConfig.entityNamespaces should contain only(0, 120)
-    config.generalConfig.useVersionedSerializers shouldBe false
     config.generalConfig.generateDiffTimeout shouldBe 300000
     config.generalConfig.reorderingWindowLengthMs shouldBe 60000
     config.generalConfig.wikibaseRepoThreadPoolSize shouldBe 30

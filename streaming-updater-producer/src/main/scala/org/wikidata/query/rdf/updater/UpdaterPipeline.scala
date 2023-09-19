@@ -55,7 +55,7 @@ object UpdaterPipeline {
     env.getConfig.registerTypeWithKryoSerializer(classOf[Patch], classOf[RDFPatchSerializer])
     val (outputMutationStream, lateEventsSideOutput, spuriousEventsSideOutput):
       (DataStream[MutationOperation], DataStream[InputEvent], DataStream[InconsistentMutation]) = {
-      val stream = ReorderAndDecideMutationOperation.attach(incomingEventStream, opts.reorderingWindowLengthMs, opts.useVersionedSerializers)
+      val stream = ReorderAndDecideMutationOperation.attach(incomingEventStream, opts.reorderingWindowLengthMs)
       (stream, stream.getSideOutput(ReorderAndDecideMutationOperation.LATE_EVENTS_SIDE_OUTPUT_TAG),
         stream.getSideOutput(ReorderAndDecideMutationOperation.SPURIOUS_REV_EVENTS))
     }
@@ -121,11 +121,9 @@ object UpdaterPipeline {
                                         wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
                                         outputMutationStream: DataStream[MutationOperation]
                                        ): DataStream[ResolvedOp] = {
-    val streamToResolve: KeyedStream[MutationOperation, String] = if (opts.useVersionedSerializers) {
-      new scala.DataStreamUtils[MutationOperation](outputMutationStream.map(e => e)(MutationOperationSerializer.typeInfo())).reinterpretAsKeyedStream(_.item)
-    } else {
-      new scala.DataStreamUtils[MutationOperation](outputMutationStream).reinterpretAsKeyedStream(_.item)
-    }
+    val streamToResolve: KeyedStream[MutationOperation, String] =
+      new scala.DataStreamUtils[MutationOperation](outputMutationStream.map(e => e)(MutationOperationSerializer.typeInfo()))
+        .reinterpretAsKeyedStream(_.item)
 
 
     val genDiffOperator: AsyncFunction[MutationOperation, ResolvedOp] = GenerateEntityDiffPatchOperation(

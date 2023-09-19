@@ -24,7 +24,6 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     generateDiffTimeout = Int.MaxValue,
     wikibaseRepoThreadPoolSize = 10,
     httpClientConfig = HttpClientConfig(None, None, "my user-agent"),
-    useVersionedSerializers = true,
     urisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
     acceptableMediawikiLag = 10 seconds
   )
