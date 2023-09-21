@@ -1,11 +1,5 @@
 package org.wikidata.query.rdf.updater
 
-import java.io.File
-import java.nio.file.{Files, Paths}
-
-import scala.concurrent.duration.DurationInt
-import scala.language.postfixOps
-
 import org.apache.commons.io.FileUtils
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
@@ -15,18 +9,21 @@ import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
 import org.wikidata.query.rdf.tool.EntityId
 import org.wikidata.query.rdf.tool.change.events.RevisionCreateEvent
 import org.wikidata.query.rdf.updater.EntityStatus.CREATED
-import org.wikidata.query.rdf.updater.config.{BootstrapConfig, HttpClientConfig, UpdaterPipelineGeneralConfig}
+import org.wikidata.query.rdf.updater.config.{BaseConfig, BootstrapConfig, HttpClientConfig, UpdaterPipelineGeneralConfig}
+
+import java.io.File
+import java.nio.file.{Files, Paths}
+import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
 
 
 class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers with BeforeAndAfter {
   private var savePointDir: File = _
-  private var checkPointDir: File = _
   private var checkPointDirInStream: File = _
 
 
   before {
     savePointDir = Files.createTempDirectory("savePoint").toFile
-    checkPointDir = Files.createTempDirectory("checkPoint").toFile
     checkPointDirInStream = Files.createTempDirectory("checkPointStream").toFile
   }
 
@@ -39,13 +36,12 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
 
     val config = BootstrapConfig(Seq[String](
     "--job_name", "bootstrap",
-      "--checkpoint_dir", "file:///unused",
       "--revisions_file", csvFile,
       "--savepoint_dir", savePointDir.getAbsolutePath,
       "--parallelism", String.valueOf(PARALLELISM)
     ).toArray)
     UpdaterBootstrapJob.newSavepoint(config)
-      .write(savePointDir.getAbsolutePath)
+      .write(config.savepointDir)
     env.execute("write savepoint")
     val metatadaFile = Paths.get(savePointDir.getAbsolutePath, "_metadata").toFile
     metatadaFile.exists() should equal(true)
@@ -56,6 +52,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     streamingEnv.setParallelism(PARALLELISM)
     streamingEnv.setStateBackend(UpdaterStateConfiguration.newStateBackend())
     streamingEnv.getCheckpointConfig.setCheckpointStorage(checkPointDirInStream.toURI)
+    streamingEnv.setMaxParallelism(BaseConfig.MAX_PARALLELISM)
     val repository: WikibaseEntityRevRepositoryTrait = MockWikibaseEntityRevRepository()
       .withResponse(("Q1", 2L) -> metaStatements("Q1", 2L, Some(3L)).entityDataNS)
       .withResponse(("Q1", 3L) -> metaStatements("Q1", 3L, Some(3L)).entityDataNS)
@@ -120,7 +117,6 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
 
   after {
     FileUtils.forceDelete(savePointDir)
-    FileUtils.forceDelete(checkPointDir)
     FileUtils.forceDelete(checkPointDirInStream)
   }
 }
