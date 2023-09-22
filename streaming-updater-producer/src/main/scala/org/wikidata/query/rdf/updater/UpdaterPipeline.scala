@@ -1,16 +1,14 @@
 package org.wikidata.query.rdf.updater
 
-import java.time.Clock
-import java.util.UUID
-
-import scala.concurrent.duration.MILLISECONDS
-
 import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.streaming.api.scala
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
 import org.wikidata.query.rdf.tool.rdf.Patch
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
+
+import java.time.Clock
+import java.util.UUID
+import scala.concurrent.duration.MILLISECONDS
 
 /**
  * Current state
@@ -51,6 +49,9 @@ object UpdaterPipeline {
         case x :: rest => x.union(rest: _*)
       }).keyBy(_.item)
 
+    if (env.getParallelism < OUTPUT_PARALLELISM) {
+      throw new IllegalAccessException("The job parallelism cannot be less than than the OUTPUT_PARALLELISM")
+    }
 
     env.getConfig.registerTypeWithKryoSerializer(classOf[Patch], classOf[RDFPatchSerializer])
     val (outputMutationStream, lateEventsSideOutput, spuriousEventsSideOutput):
@@ -96,6 +97,10 @@ object UpdaterPipeline {
                               outputStreamName: String
                              ): DataStream[MutationDataChunk] = {
     dataStream
+      // explicitly rescale to avoid re-ordering events (OUTPUT_PARALLELISM must be smaller than the job parallelism),
+      // should not matter much as long as OUTPUT_PARALLELISM is 1 but be explicit to expression the intention of keeping
+      // the event order from their source partitions
+      .rescale
       .flatMap(new PatchChunkOperation(
         domain = opts.hostname,
         clock = clock,
@@ -106,8 +111,6 @@ object UpdaterPipeline {
       .uid("RDFPatchChunkOperation")
       .setParallelism(OUTPUT_PARALLELISM)
   }
-
-
 
   private def measureLatency(dataStream: DataStream[MutationDataChunk],
                              clock: Clock): DataStream[MutationDataChunk] = {
@@ -121,11 +124,6 @@ object UpdaterPipeline {
                                         wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
                                         outputMutationStream: DataStream[MutationOperation]
                                        ): DataStream[ResolvedOp] = {
-    val streamToResolve: KeyedStream[MutationOperation, String] =
-      new scala.DataStreamUtils[MutationOperation](outputMutationStream.map(e => e)(MutationOperationSerializer.typeInfo()))
-        .reinterpretAsKeyedStream(_.item)
-
-
     val genDiffOperator: AsyncFunction[MutationOperation, ResolvedOp] = GenerateEntityDiffPatchOperation(
       scheme = opts.urisScheme,
       wikibaseRepositoryGenerator = wikibaseRepositoryGenerator,
@@ -134,7 +132,7 @@ object UpdaterPipeline {
     )
 
     // poolSize * 2 for the number of inflight items is a random guess
-    AsyncDataStream.orderedWait(streamToResolve,
+    AsyncDataStream.orderedWait(outputMutationStream,
         genDiffOperator, opts.generateDiffTimeout, MILLISECONDS, opts.wikibaseRepoThreadPoolSize * 2)
       .name("GenerateEntityDiffPatchOperation")
       .uid("GenerateEntityDiffPatchOperation")

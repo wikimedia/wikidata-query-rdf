@@ -60,7 +60,7 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     config.generalConfig.entityNamespaces should contain only(0, 120)
     config.generalConfig.generateDiffTimeout shouldBe 300000
     config.generalConfig.reorderingWindowLengthMs shouldBe 60000
-    config.generalConfig.wikibaseRepoThreadPoolSize shouldBe 30
+    config.generalConfig.wikibaseRepoThreadPoolSize shouldBe 10
     config.generalConfig.urisScheme.entityData() shouldBe "http://my.wikidata.org/wiki/Special:EntityData/"
     config.generalConfig.urisScheme.entityIdToURI("Q123") shouldBe "http://my.wikidata.org/entity/Q123"
     config.generalConfig.acceptableMediawikiLag shouldBe 10.seconds
@@ -111,5 +111,17 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       topic = "rdf-streaming-updater.reconciliation",
       source = None
     ))
+  }
+
+  "UpdaterConfig" should "fail when given improper parallelism max concurrency settings" in {
+    val caught = intercept[IllegalArgumentException] {
+      UpdaterConfig(baseConfig ++ Array(
+        "--hostname", "my.wikidata.org",
+        "--mediawiki_max_concurrent_requests", "2",
+        "--parallelism", "4"
+      ))
+    }
+    assert(caught.getMessage == "The expected concurrency limits of 2 cannot be achieved with a parallelism of 4, " +
+      "please set --parallelism to at most 2")
   }
 }

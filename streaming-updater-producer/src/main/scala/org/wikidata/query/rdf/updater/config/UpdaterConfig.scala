@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.updater.config
 
 import org.apache.flink.api.common.time.Time
 import org.apache.flink.streaming.api.CheckpointingMode
+import org.slf4j.LoggerFactory
 import org.wikidata.query.rdf.common.uri.{FederatedUrisScheme, UrisScheme, UrisSchemeFactory}
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
@@ -11,6 +12,7 @@ import scala.concurrent.duration._
 import scala.language.{implicitConversions, postfixOps}
 
 class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(args)) {
+  private val log = LoggerFactory.getLogger(this.getClass)
   val checkpointDir: String = getStringParam("checkpoint_dir")
   private val hostName: String = getStringParam("hostname")
   val jobName: String = getStringParam("job_name")
@@ -25,6 +27,11 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
   if (entityNamespaces.isEmpty && mediaInfoEntityNamespaces.isEmpty) {
     throw new IllegalArgumentException("entity_namespaces and/or mediainfo_entity_namespaces")
   }
+  private val jobParallelism = params.getInt("parallelism", 1)
+
+  // Assuming we want to process 50evt/sec (~2x the realtime speed) and the avg response time is 100ms and that we make 2 requests per events (diffs)
+  // this is 50*2 = 100rps, 100*0.1 = 10 concurrent requests
+  private val mwMaxConcurrentRequests: Int = params.getInt("mediawiki_max_concurrent_requests", 10)
 
   val transactionalIdPrefix = s"$outputTopic:$outputPartition"
   val generalConfig: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
@@ -35,7 +42,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     reorderingWindowLengthMs = params.getInt("reordering_window_length", 1 minute),
 
     generateDiffTimeout = params.getLong("generate_diff_timeout", 5.minutes.toMillis),
-    wikibaseRepoThreadPoolSize = params.getInt("wikibase_repo_thread_pool_size", 30), // at most 60 concurrent requests to wikibase
+    wikibaseRepoThreadPoolSize = wikibaseRepoThreadPoolSize(jobParallelism, mwMaxConcurrentRequests),
     httpClientConfig = HttpClientConfig(
       httpRoutes = optionalStringArg("http_routes"),
       httpTimeout = optionalIntArg("http_timeout"),
@@ -80,7 +87,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     restartFailureRateDelay = Time.milliseconds(params.getInt("restart_failures_rate_delay", 10 seconds)),
     restartFailureRateInterval = Time.milliseconds(params.getInt("restart_failures_rate_interval", 30 minutes)),
     restartFailureRateMaxPerInternal = params.getInt("restart_failures_rate_max_per_interval", 2),
-    parallelism = params.getInt("parallelism", 1)
+    parallelism = jobParallelism
   )
 
   val checkpointingMode: CheckpointingMode = if (params.getBoolean("exactly_once", true)) {
@@ -110,6 +117,23 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     )
 
   implicit def finiteDuration2Int(fd: FiniteDuration): Int = fd.toMillis.intValue
+
+  def wikibaseRepoThreadPoolSize(fetchOpParallelism: Int, maxTotalConcurrentRequests: Int): Int = {
+    optionalIntArg("wikibase_repo_thread_pool_size") match {
+      case Some(size) => size
+      case None =>
+        if (maxTotalConcurrentRequests < fetchOpParallelism) {
+          throw new IllegalArgumentException (s"The expected concurrency limits of $maxTotalConcurrentRequests cannot be achieved " +
+            s"with a parallelism of $fetchOpParallelism, please set --parallelism to at most $maxTotalConcurrentRequests")
+        }
+        val threadPoolSize = maxTotalConcurrentRequests / fetchOpParallelism
+        val actualLimit = threadPoolSize * fetchOpParallelism;
+        if (actualLimit != maxTotalConcurrentRequests) {
+          log.warn(s"The concurrency limit of $maxTotalConcurrentRequests is not a multiple of $fetchOpParallelism, the actual limit used will be $actualLimit")
+        }
+        threadPoolSize
+    }
+  }
 }
 
 object UpdaterConfig {
