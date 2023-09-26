@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.updater
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.connector.kafka.source.KafkaSource
+import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.wikidata.query.rdf.common.uri.UrisConstants
@@ -114,6 +115,7 @@ object IncomingStreams {
                                                       (implicit env: StreamExecutionEnvironment): DataStream[E] = {
     val nameAndUid = operatorUUID(kafkaProps.topic, Some("KafkaSource"));
     val kafkaSource: KafkaSource[E] = KafkaSource.builder[E]()
+      .setStartingOffsets(OffsetsInitializer.committedOffsets()) // fails if no group offsets are available
       .setProperties(kafkaProps.asProperties())
       .setTopics(kafkaProps.topic)
       .setValueOnlyDeserializer(kafkaProps.schema)
