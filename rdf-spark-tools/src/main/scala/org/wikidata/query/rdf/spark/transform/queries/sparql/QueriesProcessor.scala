@@ -14,13 +14,6 @@ class QueriesProcessor(tableAndPartitionSpec: String, numPartitions: Int)(implic
   val filterMapKeysUdf = udf((map: Map[String, Long], prefix: String) => map.filterKeys(k => k.startsWith(prefix)))
 
   /**
-   * Setup spark to use numPartitions parallelism default is SQL mode
-   */
-  def initSpark: Unit = {
-    spark.sql(s"SET spark.sql.shuffle.partitions = $numPartitions")
-  }
-
-  /**
    * Get query base data from the event table:
    *  - query id
    *  - query text
@@ -35,7 +28,7 @@ class QueriesProcessor(tableAndPartitionSpec: String, numPartitions: Int)(implic
       // the input can be read as. That resulted in using a single executor and exceeding the
       // available memory overhead of the executor. Resolve by forcing a shuffle so we don't
       // process everything on a single executor.
-      .repartition(200)
+      .repartition(numPartitions)
       .selectExpr(
         "meta.id as id",
         "query",
@@ -95,7 +88,8 @@ object QueriesProcessor {
     implicit val spark: SparkSession = getSparkSession("SparqlExtractor")
 
     // Get the data
-    val data = getSparqlDf(params.inputTable, params.numPartitions)
+    val data = getSparqlDf(params.inputTable, params.inputPartitions)
+      .repartition(params.outputPartitions)
 
     // Save the data
     SparkUtils.insertIntoTablePartition(params.outputTable,

@@ -5,7 +5,8 @@ import scopt.OptionParser
 case class Params(
                    inputTable: String = "",
                    outputTable: String = "",
-                   numPartitions: Int = 1
+                   inputPartitions: Int = 1,
+                   outputPartitions: Int = 1
                  )
 /**
  * Point of entry for sparql query extraction.
@@ -46,9 +47,16 @@ object QueryExtractor {
       } text "Table to output processed SPARQL queries with partition specs"
 
       opt[Int]('p', "num-partitions") optional() action { (x, p) =>
-        p.copy(numPartitions = x)
-      } text "Number of partitions to use (output files). Defaults to 1"
+        p.copy(inputPartitions = x)
+      } text "BC option for --input-partitions"
 
+      opt[Int]("input-partitions") optional() action { (x, p) =>
+        p.copy(inputPartitions = x)
+      } text "Number of partitions to process the data with. Defaults to 1"
+
+      opt[Int]("output-partitions") optional() action { (x, p) =>
+        p.copy(outputPartitions = x)
+      } text "Number of output files to write. Defaults to 1"
     }
   }
 
