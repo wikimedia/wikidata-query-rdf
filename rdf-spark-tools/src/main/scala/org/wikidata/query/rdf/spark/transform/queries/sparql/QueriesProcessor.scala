@@ -31,6 +31,11 @@ class QueriesProcessor(tableAndPartitionSpec: String, numPartitions: Int)(implic
    */
   def getBaseData(): DataFrame = {
     SparkUtils.readTablePartition(tableAndPartitionSpec)
+      // This job has no internal shuffles, so we end up using whatever number of partitions
+      // the input can be read as. That resulted in using a single executor and exceeding the
+      // available memory overhead of the executor. Resolve by forcing a shuffle so we don't
+      // process everything on a single executor.
+      .repartition(200)
       .selectExpr(
         "meta.id as id",
         "query",
