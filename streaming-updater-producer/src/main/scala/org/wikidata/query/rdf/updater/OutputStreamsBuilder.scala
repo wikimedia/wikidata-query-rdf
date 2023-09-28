@@ -15,9 +15,9 @@ import java.util.Properties
 
 case class OutputStreams(
                           mutationSink: SinkWrapper[MutationDataChunk],
-                          lateEventsSink: SinkWrapper[InputEvent],
-                          spuriousEventsSink: SinkWrapper[InconsistentMutation],
-                          failedOpsSink: SinkWrapper[FailedOp]
+                          lateEventsSink: Option[SinkWrapper[InputEvent]] = None,
+                          spuriousEventsSink: Option[SinkWrapper[InconsistentMutation]] = None,
+                          failedOpsSink: Option[SinkWrapper[FailedOp]] = None
                         )
 
 case class SinkWrapper[E](sink: Either[SinkFunction[E], Sink[E]], nameAndUuid: String) {
@@ -32,14 +32,19 @@ case class SinkWrapper[E](sink: Either[SinkFunction[E], Sink[E]], nameAndUuid: S
 }
 class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig, httpClientConfig: HttpClientConfig) {
   def build: OutputStreams = {
-    OutputStreams(
-      mutationOutput(outputStreamsConfig),
-      prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema,
-        outputStreamsConfig.schemaRepos, httpClientConfig, "late-events-output"),
-      prepareSideOutputStream[InconsistentMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
-        outputStreamsConfig.schemaRepos, httpClientConfig, "spurious-events-output"),
-      prepareSideOutputStream[FailedOp](JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema,
-        outputStreamsConfig.schemaRepos, httpClientConfig, "failed-events-output"))
+    val mutationSink = mutationOutput(outputStreamsConfig)
+    if (outputStreamsConfig.produceSideOutputs) {
+      OutputStreams(
+        mutationSink,
+        Some(prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema,
+          outputStreamsConfig.schemaRepos, httpClientConfig, "late-events-output")),
+        Some(prepareSideOutputStream[InconsistentMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
+          outputStreamsConfig.schemaRepos, httpClientConfig, "spurious-events-output")),
+        Some(prepareSideOutputStream[FailedOp](JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema,
+          outputStreamsConfig.schemaRepos, httpClientConfig, "failed-events-output")))
+    } else {
+      OutputStreams(mutationSink)
+    }
   }
 
   private def prepareSideOutputStream[E](stream: String, schema: String, schemaRepos: List[String],

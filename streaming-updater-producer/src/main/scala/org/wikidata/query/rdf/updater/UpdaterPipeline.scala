@@ -76,9 +76,9 @@ object UpdaterPipeline {
                           spuriousEventsSideOutput: DataStream[InconsistentMutation],
                           failedOpsToSideOutput: DataStream[FailedOp],
                           tripleStream: DataStream[MutationDataChunk]): Unit = {
-    outputStreams.lateEventsSink.attachStream(lateEventsSideOutput)
-    outputStreams.spuriousEventsSink.attachStream(spuriousEventsSideOutput)
-    outputStreams.failedOpsSink.attachStream(failedOpsToSideOutput)
+    outputStreams.lateEventsSink foreach { _.attachStream(lateEventsSideOutput) }
+    outputStreams.spuriousEventsSink foreach { _.attachStream(spuriousEventsSideOutput) }
+    outputStreams.failedOpsSink foreach { _.attachStream(failedOpsToSideOutput) }
     outputStreams.mutationSink.attachStream(tripleStream)
       .setParallelism(OUTPUT_PARALLELISM)
   }

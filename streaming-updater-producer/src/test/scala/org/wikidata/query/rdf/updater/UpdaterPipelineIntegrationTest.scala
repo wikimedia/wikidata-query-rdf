@@ -1,6 +1,5 @@
 package org.wikidata.query.rdf.updater
 
-import org.apache.flink.streaming.api.functions.sink.DiscardingSink
 import org.apache.flink.streaming.api.scala._
 import org.openrdf.model.Statement
 import org.scalatest._
@@ -47,16 +46,8 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
 
-    UpdaterPipeline.configure(pipelineOptions,
-        List(revCreateSource),
-        OutputStreams(
-          SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations"),
-          SinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events"),
-          SinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies"),
-          SinkWrapper(Left(new DiscardingSink[FailedOp]()), "failures")
-        ),
-        _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
-        clock, OUTPUT_EVENT_STREAM_NAME)
+    UpdaterPipeline.configure(pipelineOptions, List(revCreateSource), CollectSink.asOutputStreams, _ => repository,
+      OUTPUT_EVENT_UUID_GENERATOR, clock, OUTPUT_EVENT_STREAM_NAME)
 
     env.execute("test")
 
@@ -95,12 +86,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
 
     UpdaterPipeline.configure(pipelineOptions,
       List(revCreateSourceForDeleteTest, pageDeleteSource),
-      OutputStreams(
-        SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations"),
-        SinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events"),
-        SinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies"),
-        SinkWrapper(Left(new DiscardingSink[FailedOp]()), "failures")
-      ),
+      CollectSink.asOutputStreams,
       _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
       clock, OUTPUT_EVENT_STREAM_NAME)
     env.execute("test")
@@ -140,12 +126,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
 
     UpdaterPipeline.configure(pipelineOptions,
       List(revCreateEventStream, reconcileEventsStream),
-      OutputStreams(
-        SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations"),
-        SinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events"),
-        SinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies"),
-        SinkWrapper(Left(new DiscardingSink[FailedOp]()), "failures")
-      ),
+      CollectSink.asOutputStreams,
       _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
       clock, OUTPUT_EVENT_STREAM_NAME)
     env.execute("test")

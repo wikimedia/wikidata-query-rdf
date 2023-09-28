@@ -3,7 +3,6 @@ package org.wikidata.query.rdf.updater
 import org.apache.commons.io.FileUtils
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
-import org.apache.flink.streaming.api.functions.sink.DiscardingSink
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
@@ -90,14 +89,7 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       urisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
       acceptableMediawikiLag = 10 seconds
     )
-    UpdaterPipeline.configure(options, List(source),
-      OutputStreams(
-        SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations"),
-        SinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events"),
-        SinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies"),
-        SinkWrapper(Left(new DiscardingSink[FailedOp]()), "failures")
-      ),
-      _ => repository, clock = clock)
+    UpdaterPipeline.configure(options, List(source), CollectSink.asOutputStreams, _ => repository, clock = clock)
     val graph = streamingEnv.getStreamGraph(true)
     graph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savePointDir.toURI.toString, false))
     streamingEnv.getJavaEnv.execute(graph)

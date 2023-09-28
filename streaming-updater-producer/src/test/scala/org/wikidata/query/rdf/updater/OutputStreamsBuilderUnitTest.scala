@@ -21,11 +21,12 @@ class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
       schemaRepos = List("https://schema.wikimedia.org/repositories/primary/jsonschema", "https://schema.wikimedia.org/repositories/secondary/jsonschema"),
       ignoreFailuresAfterTransactionTimeout = false,
       transactionalIdPrefix = "my-prefix",
-      useNewFlinkKafkaApi = true
+      useNewFlinkKafkaApi = true,
+      produceSideOutputs = true
     )
     val outputStreams: OutputStreams = new OutputStreamsBuilder(outputStreamConfig, HttpClientConfig(None, None, "My agent")).build
-    InstantiationUtil.serializeObject(outputStreams.failedOpsSink.sink).length should not be 0
-    InstantiationUtil.serializeObject(outputStreams.lateEventsSink.sink).length should not be 0
-    InstantiationUtil.serializeObject(outputStreams.spuriousEventsSink.sink).length should not be 0
+    InstantiationUtil.serializeObject(outputStreams.failedOpsSink.get.sink).length should not be 0
+    InstantiationUtil.serializeObject(outputStreams.lateEventsSink.get.sink).length should not be 0
+    InstantiationUtil.serializeObject(outputStreams.spuriousEventsSink.get.sink).length should not be 0
   }
 }

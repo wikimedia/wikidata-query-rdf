@@ -47,4 +47,13 @@ object CollectSink {
   val values: ListBuffer[MutationDataChunk] = ListBuffer()
   val lateEvents: ListBuffer[InputEvent] = ListBuffer()
   val spuriousRevEvents: ListBuffer[InconsistentMutation] = ListBuffer()
+
+  def asOutputStreams: OutputStreams = {
+    OutputStreams(
+      SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations"),
+      Some(SinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events")),
+      Some(SinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies")),
+      None
+    )
+  }
 }
