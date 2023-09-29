@@ -79,7 +79,7 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
       .setKafkaProducerConfig(producerConfig)
       .setRecordSerializer(serializer)
       .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
-      .build()), operatorNameAndUuid)
+      .build()), f"KafkaSink-$operatorNameAndUuid")
 
   }
 
