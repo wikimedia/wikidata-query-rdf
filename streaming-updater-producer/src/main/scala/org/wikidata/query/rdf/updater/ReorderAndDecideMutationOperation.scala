@@ -153,7 +153,7 @@ object ReorderAndDecideMutationOperation {
              delay: Int,
              uuid: String = UID): DataStream[MutationOperation] = {
       stream
-        .process(new ReorderAndDecideMutationOperation(delay))
+        .process(new ReorderAndDecideMutationOperation(delay))(MutationOperationSerializer.typeInfo())
         // make sure to use the same UUID used by the boostrap job
         .uid(uuid)
         .name("ReorderAndDecideMutationOperation")
