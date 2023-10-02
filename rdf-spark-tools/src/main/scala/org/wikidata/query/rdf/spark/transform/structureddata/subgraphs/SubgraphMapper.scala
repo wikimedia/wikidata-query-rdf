@@ -1,7 +1,7 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.subgraphs
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions.{col, lit}
+import org.apache.spark.sql.functions.{broadcast, col, lit, rand}
 import org.wikidata.query.rdf.common.uri.{DefaultUrisScheme, PropertyType, UrisSchemeFactory}
 import org.wikidata.query.rdf.spark.utils.{SparkUtils, SubgraphUtils}
 
@@ -19,10 +19,7 @@ class SubgraphMapper(wikidataTriples: DataFrame) {
   /**
    * Lists all subgraphs in Wikidata
    *
-   * @param minItems the minimum number of items a subgraph should have to be called a top_subgraph
-   * @return spark dataframes containing list of all subgraphs and a truncated list of top dataframes.
-   *         - allSubgraphs columns: subgraph, count
-   *         - topSubgraphs columns: subgraph, count
+   * @return spark dataframe containing list of all subgraphs with columns: subgraph, count
    */
   def getAllSubgraphs(): DataFrame = {
     wikidataTriples
@@ -33,19 +30,64 @@ class SubgraphMapper(wikidataTriples: DataFrame) {
   }
 
   /**
+   * Performs a right join when the left side is skewed. The right side must be small
+   * enough to be collected and broadcast to executors.
+   *
+   * This cannot use a standard broadcast join. In a broadcast right join the left
+   * dataset needs to be broadcasted, but in our case the right side is the one small
+   * enough to be broadcasted.
+   *
+   * Instead we perform an inner join which can operate off a broadcast hash join, and
+   * an anti join after pruning the left down to only the set of distinct subgraphs.
+   *
+   * This is specialized to the exact dataframes being used here, and is not a generic
+   * right-join with skew implementation.
+   */
+  def rightSkewJoin(left: DataFrame, right: DataFrame): DataFrame = {
+    // Using a broadcast join will avoid skew problems here, left wont even need to be shuffled.
+    val inner = left.join(broadcast(right), Seq("subgraph"), "inner")
+
+    // Then we need to union in the rows in the right dataset that don't match the left dataset.
+    // Thankfully the right dataset is ~1MB and easy to deal with.
+
+    // First we prepare the set of subgraphs that exist in the left dataset. We do a two-pass
+    // distinct with a salt to deal with the skew, avoiding sending the largest subgraphs
+    // to a single executor.
+    val salt = (rand(0) * 10).cast("int").alias("salt")
+    val leftSubgraphs = left
+      .select(col("subgraph"), salt)
+      .distinct()
+      .drop("salt")
+      .distinct()
+
+    // Then perform an anti join from the right side. This will give us all subgraphs in right that
+    // are not referenced in left. The anti join doesn't add in the extra null columns, so we manually
+    // add the "item" column that would have been set to null in a standard right join.
+    // scalastyle:off null
+    val rightNotLeft = right.join(leftSubgraphs, right("subgraph").equalTo(leftSubgraphs("subgraph")), "anti")
+      .withColumn("item", lit(null).cast(left.schema("item").dataType))
+    // scalastyle:on null
+
+    inner.union(rightNotLeft)
+  }
+
+  /**
    * Maps all items to one or more of the top subgraphs
    *
    * @param topSubgraphs expected columns: subgraph, count
+   * @param minItems the minimum number of items a subgraph should have to be called a top_subgraph
    * @return spark dataframes with columns: subgraph, item
    */
   def getTopSubgraphItems(allSubgraphs: DataFrame, minItems: Long): DataFrame = {
     val topSubgraphs = allSubgraphs
       .filter(col("count") >= minItems)
+      .drop("count")
 
-    wikidataTriples
+    val filteredTriples = wikidataTriples
       .filter(s"predicate='<$p31>'")
       .selectExpr("object as subgraph", "subject as item")
-      .join(topSubgraphs.select("subgraph"), Seq("subgraph"), "right")
+
+    rightSkewJoin(filteredTriples, topSubgraphs)
   }
 
   /**
