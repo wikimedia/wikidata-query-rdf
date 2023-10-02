@@ -24,17 +24,12 @@ class SubgraphMapper(wikidataTriples: DataFrame) {
    *         - allSubgraphs columns: subgraph, count
    *         - topSubgraphs columns: subgraph, count
    */
-  def getTopSubgraphs(minItems: Long): (DataFrame, DataFrame) = {
-    val allSubgraphs = wikidataTriples
+  def getAllSubgraphs(): DataFrame = {
+    wikidataTriples
       .filter(s"predicate='<$p31>'")
       .selectExpr("object as subgraph")
       .groupBy("subgraph")
       .count()
-
-    val topSubgraphs = allSubgraphs
-      .filter(col("count") >= minItems)
-
-    (allSubgraphs, topSubgraphs)
   }
 
   /**
@@ -43,7 +38,10 @@ class SubgraphMapper(wikidataTriples: DataFrame) {
    * @param topSubgraphs expected columns: subgraph, count
    * @return spark dataframes with columns: subgraph, item
    */
-  def getTopSubgraphItems(topSubgraphs: DataFrame): DataFrame = {
+  def getTopSubgraphItems(allSubgraphs: DataFrame, minItems: Long): DataFrame = {
+    val topSubgraphs = allSubgraphs
+      .filter(col("count") >= minItems)
+
     wikidataTriples
       .filter(s"predicate='<$p31>'")
       .selectExpr("object as subgraph", "subject as item")
@@ -71,6 +69,15 @@ class SubgraphMapper(wikidataTriples: DataFrame) {
 object SubgraphMapper {
 
   /**
+   * When the same data is referenced multiple times in a pipeline spark will recompute it
+   * each time. Used to dataframes that need to both write to disk and be used in later
+   * computation, so they are only computed once.
+   */
+  private def saveAndReload(df: DataFrame, path: String, numPartitions: Int)(implicit spark: SparkSession): DataFrame = {
+    SparkUtils.saveTables((df.repartition(numPartitions), path) :: Nil)
+    SparkUtils.readTablePartition(path)
+  }
+  /**
    * Reads input table, calls getSubgraphMapping(...) to extract subgraph mapping, and saves output tables
    */
   def extractAndSaveSubgraphMapping(wikidataTriplesPath: String,
@@ -81,33 +88,22 @@ object SubgraphMapper {
 
     implicit val spark: SparkSession = SparkUtils.getSparkSession("SubgraphMapper")
 
-    val (allSubgraphs, topSubgraphItems, topSubgraphTriples) = getSubgraphMapping(
-      SparkUtils.readTablePartition(wikidataTriplesPath),
-      minItems
-    )
+    val subgraphMapper = new SubgraphMapper(SparkUtils.readTablePartition(wikidataTriplesPath))
 
-    SparkUtils.saveTables(
-      List(
-        allSubgraphs.repartition(1), // file size ~1Mb
-        topSubgraphItems.repartition(8), // file size ~800Mb
-        topSubgraphTriples.repartition(3000) // file size 340G
-      ) zip
-        List(allSubgraphsPath, topSubgraphItemsPath, topSubgraphTriplesPath)
-    )
-  }
+    // 1 partition since data is ~1mb
+    val allSubgraphs = saveAndReload(subgraphMapper.getAllSubgraphs(), allSubgraphsPath, 1)
 
-  /**
-   * Extracts subgraph mapping to items and triples and also outputs list of all subgraphs.
-   * Calls getTopSubgraphs, getTopSubgraphItems, and getTopSubgraphTriples
-   */
-  def getSubgraphMapping(wikidataTriples: DataFrame, minItems: Long): (DataFrame, DataFrame, DataFrame) = {
+    // data is ~800mb
+    val topSubgraphItems = saveAndReload(
+      subgraphMapper
+        .getTopSubgraphItems(allSubgraphs, minItems),
+      topSubgraphItemsPath, 8)
 
-    val subgraphMapper = new SubgraphMapper(wikidataTriples)
+    // data is ~340gb
+    val topSubgraphTriples = subgraphMapper
+      .getTopSubgraphTriples(topSubgraphItems)
+      .repartition(3000)
 
-    val (allSubgraphs, topSubgraphs) = subgraphMapper.getTopSubgraphs(minItems)
-    val topSubgraphItems = subgraphMapper.getTopSubgraphItems(topSubgraphs)
-    val topSubgraphTriples = subgraphMapper.getTopSubgraphTriples(topSubgraphItems)
-
-    (allSubgraphs, topSubgraphItems, topSubgraphTriples)
+    SparkUtils.saveTables((topSubgraphTriples, topSubgraphTriplesPath) :: Nil)
   }
 }

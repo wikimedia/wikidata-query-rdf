@@ -14,14 +14,13 @@ class SubgraphMapperTest extends SparkDataFrameComparisons with Matchers {
   var topSubgraphTriples: DataFrame = _
 
   "subgraph mapper" should "identify top subgraphs" in {
-    val (allSubgraphsTestResult, topSubgraphsTestResult) = subgraphMapper.getTopSubgraphs(5)
+    val allSubgraphsTestResult = subgraphMapper.getAllSubgraphs()
 
     assertDataFrameDataEqualsImproved(allSubgraphsTestResult, allSubgraphs)
-    assertDataFrameDataEqualsImproved(topSubgraphsTestResult, topSubgraphs)
   }
 
   it should "identify all items of the top subgraphs" in {
-    val topSubgraphItemsResult = subgraphMapper.getTopSubgraphItems(topSubgraphs)
+    val topSubgraphItemsResult = subgraphMapper.getTopSubgraphItems(allSubgraphs, 5)
 
     assertDataFrameDataEqualsImproved(topSubgraphItemsResult, topSubgraphItems)
   }
