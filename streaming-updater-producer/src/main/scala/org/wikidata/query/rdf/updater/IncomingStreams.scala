@@ -117,6 +117,7 @@ object IncomingStreams {
     val kafkaSource: KafkaSource[E] = KafkaSource.builder[E]()
       .setStartingOffsets(OffsetsInitializer.committedOffsets()) // fails if no group offsets are available
       .setProperties(kafkaProps.asProperties())
+      .setClientIdPrefix(kafkaProps.consumerGroup + ":" + nameAndUid)
       .setTopics(kafkaProps.topic)
       .setValueOnlyDeserializer(kafkaProps.schema)
       .build();
