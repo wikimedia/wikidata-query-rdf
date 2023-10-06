@@ -8,7 +8,7 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException.Type
 import org.wikimedia.eventutilities.core.event.JsonEventGenerator
 
-class JsonEncoders(sideOutputDomain: String, uidGenerator: () => String = () => UUID.randomUUID().toString)  {
+class JsonEncoders(sideOutputDomain: String, emitterId: Option[String], uidGenerator: () => String = () => UUID.randomUUID().toString)  {
   def lapsedActionEvent(inputEvent: InputEvent): Consumer[ObjectNode] = {
     new Consumer[ObjectNode] {
       override def accept(root: ObjectNode): Unit = {
@@ -60,6 +60,7 @@ class JsonEncoders(sideOutputDomain: String, uidGenerator: () => String = () => 
     meta.put("domain", sideOutputDomain)
     meta.put("id", uidGenerator())
 
+    emitterId.foreach(root.put("emitter_id", _))
     root.put("item", basicEventData.item)
     root.put("original_ingestion_dt", basicEventData.ingestionTime.toString)
     root.put("revision_id", basicEventData.revision)
@@ -90,11 +91,11 @@ class JsonEncoders(sideOutputDomain: String, uidGenerator: () => String = () => 
 
 object JsonEncoders {
   val lapsedActionStream: String = "rdf-streaming-updater.lapsed-action";
-  val lapsedActionSchema: String = "/rdf_streaming_updater/lapsed_action/1.0.0";
+  val lapsedActionSchema: String = "/rdf_streaming_updater/lapsed_action/1.1.0";
 
   val stateInconsistencyStream: String = "rdf-streaming-updater.state-inconsistency";
-  val stateInconsistencySchema: String = "/rdf_streaming_updater/state_inconsistency/1.0.0";
+  val stateInconsistencySchema: String = "/rdf_streaming_updater/state_inconsistency/1.1.0";
 
   val fetchFailureStream: String = "rdf-streaming-updater.fetch-failure";
-  val fetchFailureSchema: String = "/rdf_streaming_updater/fetch_failure/1.1.0";
+  val fetchFailureSchema: String = "/rdf_streaming_updater/fetch_failure/1.2.0";
 }

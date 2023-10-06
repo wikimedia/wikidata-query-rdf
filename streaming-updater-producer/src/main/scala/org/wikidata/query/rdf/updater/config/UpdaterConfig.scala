@@ -114,7 +114,8 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       ignoreFailuresAfterTransactionTimeout = params.getBoolean("ignore_failures_after_transaction_timeout", false),
       transactionalIdPrefix = transactionalIdPrefix,
       useNewFlinkKafkaApi = useNewFlinkKafkaApi,
-      produceSideOutputs = params.getBoolean("produce_side_outputs", true)
+      produceSideOutputs = params.getBoolean("produce_side_outputs", true),
+      emitterId = optionalStringArg("emitter_id")
     )
 
   implicit def finiteDuration2Int(fd: FiniteDuration): Int = fd.toMillis.intValue
@@ -182,7 +183,8 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      ignoreFailuresAfterTransactionTimeout: Boolean,
                                                      transactionalIdPrefix: String,
                                                      useNewFlinkKafkaApi: Boolean,
-                                                     produceSideOutputs: Boolean
+                                                     produceSideOutputs: Boolean,
+                                                     emitterId: Option[String]
                                                    )
 
 sealed case class UpdaterExecutionEnvironmentConfig(checkpointDir: String,

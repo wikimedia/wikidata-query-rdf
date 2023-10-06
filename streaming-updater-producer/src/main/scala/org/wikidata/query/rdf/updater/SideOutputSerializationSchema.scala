@@ -22,6 +22,7 @@ class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant],
                                        stream: String,
                                        schema: String,
                                        sideOutputsDomain: String,
+                                       emitterId: Option[String],
                                        eventStreamConfigEndpoint: String,
                                        schemaRepos: List[String],
                                        httpClientConfig: HttpClientConfig) extends KafkaRecordSerializationSchema[E] {
@@ -69,7 +70,7 @@ class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant],
   lazy val jsonEventGenerator: JsonEventGenerator = getEventGenerator()
 
   def serializeValue(element: E, recordTime: Instant): Array[Byte] = {
-    lazy val jsonEncoders = new JsonEncoders(sideOutputsDomain)
+    lazy val jsonEncoders = new JsonEncoders(sideOutputsDomain, emitterId)
     val eventCreator: Consumer[ObjectNode] = element match {
       case e: InputEvent => jsonEncoders.lapsedActionEvent(e)
       case e: FailedOp => jsonEncoders.fetchFailureEvent(e)

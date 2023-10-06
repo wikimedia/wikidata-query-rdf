@@ -53,7 +53,7 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
     producerConfig.setProperty("bootstrap.servers", outputStreamsConfig.sideOutputsKafkaBrokers.getOrElse(outputStreamsConfig.kafkaBrokers))
     val topic = outputStreamsConfig.outputTopicPrefix.getOrElse("") + stream
     val sideOutputSerializationSchema = new SideOutputSerializationSchema[E](None, topic, stream, schema, outputStreamsConfig.sideOutputsDomain,
-      outputStreamsConfig.eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
+      outputStreamsConfig.emitterId, outputStreamsConfig.eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
 
     if (outputStreamsConfig.useNewFlinkKafkaApi) {
       sideOutputWithKafkaSink(producerConfig, sideOutputSerializationSchema, operatorNameAndUuid)

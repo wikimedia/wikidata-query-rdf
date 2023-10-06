@@ -22,7 +22,8 @@ class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
       ignoreFailuresAfterTransactionTimeout = false,
       transactionalIdPrefix = "my-prefix",
       useNewFlinkKafkaApi = true,
-      produceSideOutputs = true
+      produceSideOutputs = true,
+      emitterId = Some("id")
     )
     val outputStreams: OutputStreams = new OutputStreamsBuilder(outputStreamConfig, HttpClientConfig(None, None, "My agent")).build
     InstantiationUtil.serializeObject(outputStreams.failedOpsSink.get.sink).length should not be 0

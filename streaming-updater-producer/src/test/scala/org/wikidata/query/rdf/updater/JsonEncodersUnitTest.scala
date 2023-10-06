@@ -28,6 +28,7 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
   private val processingTime: Instant = Instant.now()
   private val domain: String = "tested.domain"
   private val stream: String = "tested.stream"
+  private val emitterId = "my_emitter_id"
   private val uuid: String = UUID.randomUUID().toString
   private val requestId: String = UUID.randomUUID().toString
   private val eventInfo: EventInfo = new EventInfo(new EventsMeta(eventTime, uuid, domain, stream, requestId), "schema")
@@ -61,7 +62,7 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
   private val sideOutputDomain = "sideOutputDomain"
   private val eventStreamConfigEndpoint = WikimediaDefaults.EVENT_STREAM_CONFIG_URI
   private val httpClientConfig = HttpClientConfig(httpRoutes = None, httpTimeout = None, HttpClientUtils.WDQS_DEFAULT_UA)
-  private val jsonEncoder = new JsonEncoders(sideOutputDomain, () => uniqueId)
+  private val jsonEncoder = new JsonEncoders(sideOutputDomain, Some(emitterId), () => uniqueId)
 
   "RevCreateEvent" should "be encoded properly as a json record" in {
     val inputEvent = RevCreate(item, eventTime, revision, Some(revision-1), ingestionTime, eventInfo)
@@ -178,13 +179,15 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
 
   "JsonEncoders" should "provide a KafkaSerializationSchema for InputEvent" in {
     val kafkaSerSchema = new SideOutputSerializationSchema[InputEvent](Some(clock), "my_topic",
-      JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema, sideOutputDomain, eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
+      JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema, sideOutputDomain, Some(emitterId),
+      eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
     val inputEvent = RevCreate(item, eventTime, revision, Some(revision-1), ingestionTime, eventInfo)
     val record = kafkaSerSchema.serialize(inputEvent, mockKafkaSinkContext, Instant.now().toEpochMilli)
     record.timestamp() shouldBe processingTime.toEpochMilli
     record.topic() shouldBe "my_topic"
     val node = jsonLoader.parse(new String(record.value(), "UTF-8"))
     node.get("$schema").asText() shouldBe JsonEncoders.lapsedActionSchema
+    node.get("emitter_id").asText() shouldEqual emitterId
     node.get("meta").get("stream").asText() shouldBe JsonEncoders.lapsedActionStream
   }
 
@@ -194,7 +197,8 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
 
   "JsonEncoders" should "provide a KafkaSerializationSchema for FailedOp" in {
     val kafkaSerSchema = new SideOutputSerializationSchema[FailedOp](Some(clock), "my_topic",
-      JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema, sideOutputDomain, eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
+      JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema, sideOutputDomain, Some(emitterId),
+      eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
     val e = new ContainedException("problem")
     val op = FailedOp(Reconcile(item, eventTime, revision, ingestionTime, eventInfo), e)
     val record = kafkaSerSchema.serialize(op, mockKafkaSinkContext, Instant.now().toEpochMilli)
@@ -202,12 +206,14 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
     record.topic() shouldBe "my_topic"
     val node = jsonLoader.parse(new String(record.value(), "UTF-8"))
     node.get("$schema").asText() shouldBe JsonEncoders.fetchFailureSchema
+    node.get("emitter_id").asText() shouldEqual emitterId
     node.get("meta").get("stream").asText() shouldBe JsonEncoders.fetchFailureStream
   }
 
   "JsonEncoders" should "provide a KafkaSerializationSchema for IgnoredMutation" in {
     val kafkaSerSchema = new SideOutputSerializationSchema[IgnoredMutation](Some(clock), "my_topic",
-      JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema, sideOutputDomain, eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
+      JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema, sideOutputDomain, Some(emitterId),
+      eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
     val inputEvent = RevCreate(item, eventTime, revision, Some(revision-1), ingestionTime, eventInfo)
     val state = State(Some(revision), EntityStatus.CREATED)
     val inconsistency = IgnoredMutation("Q1", eventTime, revision, inputEvent, ingestionTime, NewerRevisionSeen, state)
@@ -216,21 +222,25 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
     record.topic() shouldBe "my_topic"
     val node = jsonLoader.parse(new String(record.value(), "UTF-8"))
     node.get("$schema").asText() shouldBe JsonEncoders.stateInconsistencySchema
+    node.get("emitter_id").asText() shouldEqual emitterId
     node.get("meta").get("stream").asText() shouldBe JsonEncoders.stateInconsistencyStream
   }
 
   "JsonEncoders" should "provide a KafkaSerializationSchema that fails on an unsupported type" in {
     val kafkaSerSchema = new SideOutputSerializationSchema[String](Some(clock), "my_topic",
-      JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema, sideOutputDomain, eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
+      JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema, sideOutputDomain, Some(emitterId),
+      eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
     assertThrows[IllegalArgumentException] {
       kafkaSerSchema.serialize("boom", mockKafkaSinkContext, Instant.now().toEpochMilli)
     }
   }
 
+
   private def assertBasicMetadata(record: util.Map[String, Object]): Unit = {
     record.get("item") shouldEqual item
     record.get("original_ingestion_dt") shouldEqual ingestionTime.toString
     record.get("revision_id").asInstanceOf[Number].longValue() shouldEqual revision.longValue()
+    record.get("emitter_id") shouldEqual emitterId
     assertOriginalInfo(record.get("original_event_info"))
   }
 

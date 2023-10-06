@@ -24,11 +24,11 @@ class UpdaterReconcileUnitTest extends AnyFlatSpec with SparkSessionProvider wit
   "ReconcileCollector" should "collect late events" in {
     val df = spark.read.json(this.getClass.getResource("late-events.json").toURI.toString)
     df.createTempView("late_events")
-    val collector = new ReconcileCollector("my_source@$DC$", "my_stream", "www.wikidata.org", latestRevForItems, latestRevForMediaInfoItems)
+    val collector = new ReconcileCollector("my_source@$DC$@$EMITTER_ID$", "my_stream", "www.wikidata.org", latestRevForItems, latestRevForMediaInfoItems)
     val events = collector.collectLateEvents("late_events/year=2021/month=11")
     val noData = collector.collectLateEvents("late_events/year=2021/month=11/datacenter=unknownDC")
-    val eqiadEvents = events.filter(_.getReconciliationSource.endsWith("eqiad"))
-    val codfwEvents = events.filter(_.getReconciliationSource.endsWith("codfw"))
+    val eqiadEvents = events.filter(_.getReconciliationSource.endsWith("eqiad@my_id"))
+    val codfwEvents = events.filter(_.getReconciliationSource.endsWith("codfw@my_id"))
     codfwEvents should have size 1
     eqiadEvents should have size 1
     noData shouldBe empty
@@ -36,24 +36,24 @@ class UpdaterReconcileUnitTest extends AnyFlatSpec with SparkSessionProvider wit
     codfwEvents.head.getItem.toString shouldBe "Q894254"
     eqiadEvents.head.getReconciliationAction shouldBe Action.CREATION
     codfwEvents.head.getReconciliationAction shouldBe Action.CREATION
-    eqiadEvents map { _.getReconciliationSource } should contain only "my_source@eqiad"
-    codfwEvents map { _.getReconciliationSource } should contain only "my_source@codfw"
+    eqiadEvents map { _.getReconciliationSource } should contain only "my_source@eqiad@my_id"
+    codfwEvents map { _.getReconciliationSource } should contain only "my_source@codfw@my_id"
   }
 
   "ReconcileCollector" should "collect inconsistencies" in {
     val df = spark.read.json(this.getClass.getResource("inconsistencies.json").toURI.toString)
     df.createTempView("inconsistencies")
-    val collector = new ReconcileCollector("my_source@$DC$", "my_stream", "www.wikidata.org", latestRevForItems, latestRevForMediaInfoItems)
+    val collector = new ReconcileCollector("my_source@$DC$@$EMITTER_ID$", "my_stream", "www.wikidata.org", latestRevForItems, latestRevForMediaInfoItems)
     val events = collector.collectInconsistencies("inconsistencies/year=2021/month=11")
-    val eqiadEvents = events.filter(_.getReconciliationSource.endsWith("eqiad"))
-    val codfwEvents = events.filter(_.getReconciliationSource.endsWith("codfw"))
+    val eqiadEvents = events.filter(_.getReconciliationSource.endsWith("eqiad@my_id"))
+    val codfwEvents = events.filter(_.getReconciliationSource.endsWith("codfw@my_id"))
     codfwEvents should have size 10
     eqiadEvents should have size 4
     codfwEvents map { _.getItem.toString } should contain only ("Q101208968", "Q106605647", "Q1437663", "Q108922819",
       "Q109332244", "Q109616453", "Q109658637", "Q17370984", "Q87538978", "Q123")
 
     codfwEvents map { _.getReconciliationAction } should contain only Action.CREATION
-    codfwEvents map { _.getReconciliationSource } should contain only "my_source@codfw"
+    codfwEvents map { _.getReconciliationSource } should contain only "my_source@codfw@my_id"
   }
 
   "ReconcileCollector" should "collect failures" in {
@@ -90,15 +90,15 @@ class UpdaterReconcileUnitTest extends AnyFlatSpec with SparkSessionProvider wit
     (latestRevForMediaInfoItems apply _) when revsForMediaInfo.keySet() returns revsForMediaInfo
 
     df.createTempView("failures")
-    val collector = new ReconcileCollector("my_source@$DC$", "my_stream", "www.wikidata.org", latestRevForItems, latestRevForMediaInfoItems)
+    val collector = new ReconcileCollector("my_source@$DC$@$EMITTER_ID$", "my_stream", "www.wikidata.org", latestRevForItems, latestRevForMediaInfoItems)
     val events = collector.collectFailures("failures/year=2021/month=11")
 
     val mediaInfoCollector = new ReconcileCollector("my_mediainfo_source@$DC$", "my_stream", "commons.wikimedia.org",
       latestRevForItems, latestRevForMediaInfoItems)
     val allMediaInfoEvents = mediaInfoCollector.collectFailures("failures/year=2021/month=12")
 
-    val eqiadEvents = events.filter(_.getReconciliationSource.endsWith("eqiad"))
-    val codfwEvents = events.filter(_.getReconciliationSource.endsWith("codfw"))
+    val eqiadEvents = events.filter(_.getReconciliationSource.endsWith("eqiad@my_id"))
+    val codfwEvents = events.filter(_.getReconciliationSource.endsWith("codfw@my_id"))
     val mediaInfoEvents = allMediaInfoEvents.filter(_.getReconciliationSource.endsWith("eqiad"))
 
     eqiadEvents map { _.getItem.toString } should contain allOf("L620507", "Q89138924", "Q44411127", "Q41644871",
@@ -110,8 +110,8 @@ class UpdaterReconcileUnitTest extends AnyFlatSpec with SparkSessionProvider wit
     codfwEvents map { _.getRevision } should contain(Long.MaxValue)
     mediaInfoEvents map { _.getRevision } should contain(Long.MaxValue)
 
-    eqiadEvents map { _.getReconciliationSource } should contain only "my_source@eqiad"
-    codfwEvents map { _.getReconciliationSource } should contain only "my_source@codfw"
+    eqiadEvents map { _.getReconciliationSource } should contain only "my_source@eqiad@my_id"
+    codfwEvents map { _.getReconciliationSource } should contain only "my_source@codfw@my_id"
     mediaInfoEvents map { _.getReconciliationSource } should contain only "my_mediainfo_source@eqiad"
 
     codfwEvents map { _.getReconciliationAction } should contain only Action.CREATION
