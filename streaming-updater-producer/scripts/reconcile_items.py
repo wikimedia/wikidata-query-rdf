@@ -28,7 +28,7 @@ import json
 
 from argparse import ArgumentParser
 from datetime import datetime, timezone
-from typing import Optional, Dict, List, Callable
+from typing import Optional, Dict, List, Callable, Tuple
 
 MW_API_ENDPOINT = "https://api-ro.wikimedia.org/"
 EVENT_GATE_ENDPOINT = "https://eventgate-main.discovery.wmnet:4492/v1/events"
@@ -93,7 +93,7 @@ class WBRepo:
 
     @staticmethod
     def parse_response(entities: List[str], body: Dict, retrieve_item: Callable[[Dict], str]) -> Dict[str, Optional[int]]:
-        def extract_rev(entry) -> tuple[str, Optional[int]]:
+        def extract_rev(entry) -> Tuple[str, Optional[int]]:
             item = retrieve_item(entry)
             if 'missing' in entry and entry['missing']:
                 return item, None
