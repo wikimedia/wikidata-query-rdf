@@ -6,6 +6,7 @@ import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
+import org.apache.kafka.clients.consumer.OffsetResetStrategy
 import org.wikidata.query.rdf.common.uri.UrisConstants
 import org.wikidata.query.rdf.tool.EntityId.cleanEntityId
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action.{CREATION, DELETION}
@@ -115,7 +116,7 @@ object IncomingStreams {
                                                       (implicit env: StreamExecutionEnvironment): DataStream[E] = {
     val nameAndUid = operatorUUID(kafkaProps.topic, Some("KafkaSource"));
     val kafkaSource: KafkaSource[E] = KafkaSource.builder[E]()
-      .setStartingOffsets(OffsetsInitializer.committedOffsets()) // fails if no group offsets are available
+      .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.LATEST)) // latest if no group offsets are available
       .setProperties(kafkaProps.asProperties())
       .setClientIdPrefix(kafkaProps.consumerGroup + ":" + nameAndUid)
       .setTopics(kafkaProps.topic)
