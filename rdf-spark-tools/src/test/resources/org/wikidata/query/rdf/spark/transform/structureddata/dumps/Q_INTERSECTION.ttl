@@ -1,0 +1,80 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix data: <https://www.wikidata.org/wiki/Special:EntityData/> .
+@prefix s: <http://www.wikidata.org/entity/statement/> .
+@prefix ref: <http://www.wikidata.org/reference/> .
+@prefix v: <http://www.wikidata.org/value/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix wdtn: <http://www.wikidata.org/prop/direct-normalized/> .
+@prefix p: <http://www.wikidata.org/prop/> .
+@prefix ps: <http://www.wikidata.org/prop/statement/> .
+@prefix psv: <http://www.wikidata.org/prop/statement/value/> .
+@prefix psn: <http://www.wikidata.org/prop/statement/value-normalized/> .
+@prefix pq: <http://www.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://www.wikidata.org/prop/qualifier/value/> .
+@prefix pqn: <http://www.wikidata.org/prop/qualifier/value-normalized/> .
+@prefix pr: <http://www.wikidata.org/prop/reference/> .
+@prefix prv: <http://www.wikidata.org/prop/reference/value/> .
+@prefix prn: <http://www.wikidata.org/prop/reference/value-normalized/> .
+@prefix wdno: <http://www.wikidata.org/prop/novalue/> .
+
+data:Q_INTERSECTION a schema:Dataset ;
+	schema:about wd:Q_INTERSECTION;
+	cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+	schema:softwareVersion "1.0.0" ;
+    schema:version "123456789"^^xsd:integer ;
+    schema:dateModified "1972-12-04T18:07:13Z"^^xsd:dateTime .
+
+wd:Q_INTERSECTION p:P119 s:Q_INTERSECTION-881F40DC-0AFE-4FEB-B882-79600D234273 .
+
+s:Q_INTERSECTION-881F40DC-0AFE-4FEB-B882-79600D234273 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P119 wd:Q533697 ;
+	pq:P625 "Point(-0.14544444444444 51.566527777778)"^^geo:wktLiteral ;
+	pqv:P625 v:12b3879e659a02b6b54b45eb5d03fe47 ;
+	prov:wasDerivedFrom ref:e4f9e55d169fadcbf86b00425f1cce94ce788679,
+		ref:e71a7903858496c67eea189a7084d5559f788edb .
+
+v:12b3879e659a02b6b54b45eb5d03fe47 a wikibase:GlobecoordinateValue ;
+	wikibase:geoLatitude "51.566527777778"^^xsd:double ;
+	wikibase:geoLongitude "-0.14544444444444"^^xsd:double ;
+	wikibase:geoPrecision "2.7777777777778E-5"^^xsd:double ;
+	wikibase:geoGlobe <http://www.wikidata.org/entity/Q2> .
+
+v:866de9172090592497e94e497370838e a wikibase:TimeValue ;
+	wikibase:timeValue "2013-12-07T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:8bb44cabe981a9533b690ce41b5a1def a wikibase:TimeValue ;
+	wikibase:timeValue "2013-12-03T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+ref:e4f9e55d169fadcbf86b00425f1cce94ce788679 a wikibase:Reference ;
+	pr:P854 <http://highgatecemetery.org/visit/who> ;
+	pr:P407 wd:Q1860 ;
+	pr:P813 "2013-12-07T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:866de9172090592497e94e497370838e ;
+	pr:P1476 "Who’s here"@en ;
+	pr:P248 wd:Q533697 ;
+	pr:P1065 <https://web.archive.org/web/20131203025040/http://highgatecemetery.org/visit/who> ;
+	pr:P2960 "2013-12-03T00:00:00Z"^^xsd:dateTime ;
+	prv:P2960 v:8bb44cabe981a9533b690ce41b5a1def .
+
+ref:e71a7903858496c67eea189a7084d5559f788edb a wikibase:Reference ;
+	pr:P143 wd:Q565 .

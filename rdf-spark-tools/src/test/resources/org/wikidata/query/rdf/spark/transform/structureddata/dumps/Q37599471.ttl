@@ -1,0 +1,1153 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix data: <https://www.wikidata.org/wiki/Special:EntityData/> .
+@prefix s: <http://www.wikidata.org/entity/statement/> .
+@prefix ref: <http://www.wikidata.org/reference/> .
+@prefix v: <http://www.wikidata.org/value/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix wdtn: <http://www.wikidata.org/prop/direct-normalized/> .
+@prefix p: <http://www.wikidata.org/prop/> .
+@prefix ps: <http://www.wikidata.org/prop/statement/> .
+@prefix psv: <http://www.wikidata.org/prop/statement/value/> .
+@prefix psn: <http://www.wikidata.org/prop/statement/value-normalized/> .
+@prefix pq: <http://www.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://www.wikidata.org/prop/qualifier/value/> .
+@prefix pqn: <http://www.wikidata.org/prop/qualifier/value-normalized/> .
+@prefix pr: <http://www.wikidata.org/prop/reference/> .
+@prefix prv: <http://www.wikidata.org/prop/reference/value/> .
+@prefix prn: <http://www.wikidata.org/prop/reference/value-normalized/> .
+@prefix wdno: <http://www.wikidata.org/prop/novalue/> .
+
+data:Q37599471 a schema:Dataset ;
+	schema:about wd:Q37599471 ;
+	cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+	schema:softwareVersion "1.0.0" ;
+	schema:version "1784367683"^^xsd:integer ;
+	schema:dateModified "2022-12-04T18:07:13Z"^^xsd:dateTime ;
+	wikibase:statements "106"^^xsd:integer ;
+	wikibase:sitelinks "0"^^xsd:integer ;
+	wikibase:identifiers "4"^^xsd:integer .
+
+wd:Q37599471 a wikibase:Item ;
+	wdt:P932 "5256093" ;
+	wdt:P1476 "Loop Quantum Gravity"@en ;
+	wdt:P31 wd:Q13442814 ;
+	wdt:P2093 "Carlo Rovelli" ;
+	wdt:P1433 wd:Q26288 ;
+	wdt:P698 "28179822" ;
+	wdtn:P698 <http://rdf.ncbi.nlm.nih.gov/pubchem/reference/28179822> ;
+	wdt:P478 "11" ;
+	wdt:P356 "10.12942/LRR-2008-5" ;
+	wdtn:P356 <http://dx.doi.org/10.12942/LRR-2008-5> ;
+	wdt:P577 "2008-07-15T00:00:00Z"^^xsd:dateTime ;
+	wdt:P304 "5" ;
+	wdt:P433 "1" ;
+	wdt:P2860 wd:Q30835866,
+		wd:Q27349887,
+		wd:Q27454035,
+		wd:Q27450570,
+		wd:Q27339200,
+		wd:Q27450317,
+		wd:Q54467074,
+		wd:Q51973418,
+		wd:Q54660341,
+		wd:Q52290876,
+		wd:Q56139278,
+		wd:Q56593607,
+		wd:Q55934555,
+		wd:Q27441065,
+		wd:Q56139258,
+		wd:Q55878237,
+		wd:Q55968136,
+		wd:Q27346211,
+		wd:Q27346000,
+		wd:Q56139201,
+		wd:Q21707324,
+		wd:Q56227981,
+		wd:Q57394278,
+		wd:Q56227982,
+		wd:Q57394279,
+		wd:Q57394186,
+		wd:Q57394182,
+		wd:Q57394269,
+		wd:Q56287069,
+		wd:Q57394255,
+		wd:Q57394200,
+		wd:Q57394203,
+		wd:Q57394181,
+		wd:Q27441501,
+		wd:Q21707537,
+		wd:Q57394209,
+		wd:Q56287070,
+		wd:Q56139240,
+		wd:Q56139245,
+		wd:Q56139250,
+		wd:Q21707690,
+		wd:Q54017915,
+		wd:Q55869076,
+		wd:Q21707732,
+		wd:Q56139203,
+		wd:Q56020216,
+		wd:Q56895084,
+		wd:Q21707555,
+		wd:Q56895045,
+		wd:Q56895098,
+		wd:Q55871863,
+		wd:Q56895008,
+		wd:Q56139352,
+		wd:Q55968132,
+		wd:Q29013523,
+		wd:Q56139196,
+		wd:Q55878244,
+		wd:Q55894301,
+		wd:Q57564479,
+		wd:Q57602592,
+		wd:Q58879892,
+		wd:Q58879895,
+		wd:Q58879885,
+		wd:Q58879888,
+		wd:Q58879893,
+		wd:Q58879879,
+		wd:Q58879897,
+		wd:Q58879886,
+		wd:Q59239851,
+		wd:Q59239862,
+		wd:Q59239824,
+		wd:Q59239834,
+		wd:Q59239854,
+		wd:Q59239831,
+		wd:Q59239861,
+		wd:Q74433881,
+		wd:Q74561629,
+		wd:Q74423846,
+		wd:Q64007818,
+		wd:Q60144978,
+		wd:Q79417360,
+		wd:Q74518343,
+		wd:Q74442922,
+		wd:Q74445808,
+		wd:Q74548198,
+		wd:Q74426266,
+		wd:Q74445407,
+		wd:Q74428079,
+		wd:Q74549204,
+		wd:Q74417154,
+		wd:Q74413907 ;
+	wdt:P2888 <https://scigraph.springernature.com/pub.10.12942/lrr-2008-5> ;
+	wdt:P6179 "1064758162" ;
+	wdt:P921 wd:Q11412,
+		wd:Q234181 ;
+	p:P932 s:Q37599471-B6CD6891-9FA6-4AC1-9FC5-2EB238959AA2 .
+
+s:Q37599471-B6CD6891-9FA6-4AC1-9FC5-2EB238959AA2 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P932 "5256093" ;
+	prov:wasDerivedFrom ref:6190ccfa23bc2e1490b9e71b84d5cda1ed3003fb .
+
+wd:Q37599471 p:P1476 s:Q37599471-8BF29A55-FFA9-4DA6-9DEF-87BA4BE01B38 .
+
+s:Q37599471-8BF29A55-FFA9-4DA6-9DEF-87BA4BE01B38 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1476 "Loop Quantum Gravity"@en ;
+	prov:wasDerivedFrom ref:6190ccfa23bc2e1490b9e71b84d5cda1ed3003fb .
+
+wd:Q37599471 p:P31 s:Q37599471-489285DE-F5EA-4F17-901A-AA848DF400D7 .
+
+s:Q37599471-489285DE-F5EA-4F17-901A-AA848DF400D7 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P31 wd:Q13442814 ;
+	prov:wasDerivedFrom ref:6190ccfa23bc2e1490b9e71b84d5cda1ed3003fb .
+
+wd:Q37599471 p:P2093 s:Q37599471-A78060A4-FAE9-4BF5-B837-E79A8E675BA3 .
+
+s:Q37599471-A78060A4-FAE9-4BF5-B837-E79A8E675BA3 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2093 "Carlo Rovelli" ;
+	pq:P1545 "1" ;
+	prov:wasDerivedFrom ref:6190ccfa23bc2e1490b9e71b84d5cda1ed3003fb .
+
+wd:Q37599471 p:P1433 s:Q37599471-0AEE89DB-3F76-41EE-85C5-4B07B488A9E7 .
+
+s:Q37599471-0AEE89DB-3F76-41EE-85C5-4B07B488A9E7 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1433 wd:Q26288 ;
+	prov:wasDerivedFrom ref:6190ccfa23bc2e1490b9e71b84d5cda1ed3003fb .
+
+wd:Q37599471 p:P698 s:Q37599471-17FE5034-0B1C-4F0D-A3D0-A00AAE61AC3F .
+
+s:Q37599471-17FE5034-0B1C-4F0D-A3D0-A00AAE61AC3F a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P698 "28179822" ;
+	psn:P698 <http://rdf.ncbi.nlm.nih.gov/pubchem/reference/28179822> ;
+	prov:wasDerivedFrom ref:6190ccfa23bc2e1490b9e71b84d5cda1ed3003fb .
+
+wd:Q37599471 p:P478 s:Q37599471-4C3D5734-201D-4A1D-A808-9D64FB321584 .
+
+s:Q37599471-4C3D5734-201D-4A1D-A808-9D64FB321584 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P478 "11" ;
+	prov:wasDerivedFrom ref:6190ccfa23bc2e1490b9e71b84d5cda1ed3003fb .
+
+wd:Q37599471 p:P356 s:Q37599471-50C45CCE-54D2-4114-B45B-2F5B86CCC8F0 .
+
+s:Q37599471-50C45CCE-54D2-4114-B45B-2F5B86CCC8F0 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P356 "10.12942/LRR-2008-5" ;
+	psn:P356 <http://dx.doi.org/10.12942/LRR-2008-5> ;
+	prov:wasDerivedFrom ref:6190ccfa23bc2e1490b9e71b84d5cda1ed3003fb .
+
+wd:Q37599471 p:P577 s:Q37599471-928E0EBC-4577-4D7B-B430-9D79B1C1BC34 .
+
+s:Q37599471-928E0EBC-4577-4D7B-B430-9D79B1C1BC34 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P577 "2008-07-15T00:00:00Z"^^xsd:dateTime ;
+	psv:P577 v:9b44f5d847b3630e7c1dc8730c798f21 ;
+	prov:wasDerivedFrom ref:6190ccfa23bc2e1490b9e71b84d5cda1ed3003fb .
+
+wd:Q37599471 p:P304 s:Q37599471-0288671E-54E0-4DC2-8016-9D610C9CC97B .
+
+s:Q37599471-0288671E-54E0-4DC2-8016-9D610C9CC97B a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P304 "5" ;
+	prov:wasDerivedFrom ref:6190ccfa23bc2e1490b9e71b84d5cda1ed3003fb .
+
+wd:Q37599471 p:P433 s:Q37599471-E421C922-0607-4C89-BDB3-2C2C25E5FFFA .
+
+s:Q37599471-E421C922-0607-4C89-BDB3-2C2C25E5FFFA a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P433 "1" ;
+	prov:wasDerivedFrom ref:6190ccfa23bc2e1490b9e71b84d5cda1ed3003fb .
+
+wd:Q37599471 p:P2860 s:Q37599471-F26C67C3-3D16-4C55-A879-C073CCA69B03 .
+
+s:Q37599471-F26C67C3-3D16-4C55-A879-C073CCA69B03 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q30835866 ;
+	prov:wasDerivedFrom ref:af47b17b85dbdea3f9a5ed71318e3ce835f9cba6 .
+
+wd:Q37599471 p:P2860 s:Q37599471-B1A23ADA-3CA6-4D1B-9B57-73759D915AD5 .
+
+s:Q37599471-B1A23ADA-3CA6-4D1B-9B57-73759D915AD5 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q27349887 ;
+	prov:wasDerivedFrom ref:af47b17b85dbdea3f9a5ed71318e3ce835f9cba6 .
+
+wd:Q37599471 p:P2860 s:Q37599471-AFEF6003-2A1B-434B-A91E-0F1232019071 .
+
+s:Q37599471-AFEF6003-2A1B-434B-A91E-0F1232019071 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q27454035 ;
+	prov:wasDerivedFrom ref:af47b17b85dbdea3f9a5ed71318e3ce835f9cba6 .
+
+wd:Q37599471 p:P2860 s:Q37599471-553916AD-D24F-4C02-9294-3051B5718CC9 .
+
+s:Q37599471-553916AD-D24F-4C02-9294-3051B5718CC9 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q27450570 ;
+	prov:wasDerivedFrom ref:af47b17b85dbdea3f9a5ed71318e3ce835f9cba6 .
+
+wd:Q37599471 p:P2860 s:Q37599471-1C049240-4C28-472E-ABA2-C2EBFE63C34A .
+
+s:Q37599471-1C049240-4C28-472E-ABA2-C2EBFE63C34A a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q27339200 ;
+	prov:wasDerivedFrom ref:af47b17b85dbdea3f9a5ed71318e3ce835f9cba6 .
+
+wd:Q37599471 p:P2860 s:Q37599471-4F67C39C-D210-4F01-BA8D-9FC95A99FF2D .
+
+s:Q37599471-4F67C39C-D210-4F01-BA8D-9FC95A99FF2D a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q27450317 ;
+	prov:wasDerivedFrom ref:af47b17b85dbdea3f9a5ed71318e3ce835f9cba6 .
+
+wd:Q37599471 p:P2860 s:Q37599471-D1C975A6-AE82-4CB9-A10E-B59A1DA716D3 .
+
+s:Q37599471-D1C975A6-AE82-4CB9-A10E-B59A1DA716D3 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q54467074 ;
+	prov:wasDerivedFrom ref:a90c2fdab19f96228e8c99a3bfc1138f0e89e1e0 .
+
+wd:Q37599471 p:P2860 s:Q37599471-ECBF5B84-F889-43DD-A952-C455B4A835E6 .
+
+s:Q37599471-ECBF5B84-F889-43DD-A952-C455B4A835E6 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q51973418 ;
+	prov:wasDerivedFrom ref:36077254ebe654d99ede110985ecd8b58c297ef9 .
+
+wd:Q37599471 p:P2860 s:Q37599471-F33B6797-5303-4A20-AC9B-162C72ED43D5 .
+
+s:Q37599471-F33B6797-5303-4A20-AC9B-162C72ED43D5 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q54660341 ;
+	prov:wasDerivedFrom ref:36077254ebe654d99ede110985ecd8b58c297ef9 .
+
+wd:Q37599471 p:P2860 s:Q37599471-50F60B42-689A-493F-ADC0-42FB835B3A2D .
+
+s:Q37599471-50F60B42-689A-493F-ADC0-42FB835B3A2D a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q52290876 ;
+	prov:wasDerivedFrom ref:36077254ebe654d99ede110985ecd8b58c297ef9 .
+
+wd:Q37599471 p:P2860 s:Q37599471-5B5365ED-2135-48DB-8CA9-CD4627591929 .
+
+s:Q37599471-5B5365ED-2135-48DB-8CA9-CD4627591929 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56139278 ;
+	prov:wasDerivedFrom ref:36077254ebe654d99ede110985ecd8b58c297ef9 .
+
+wd:Q37599471 p:P2860 s:Q37599471-56E28C73-BCA8-4FDB-83EE-C9F4EF77EF6D .
+
+s:Q37599471-56E28C73-BCA8-4FDB-83EE-C9F4EF77EF6D a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56593607 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-4AAEC02D-FABF-4208-BD38-7511D7C6452F .
+
+s:Q37599471-4AAEC02D-FABF-4208-BD38-7511D7C6452F a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q55934555 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-1BEBB7E0-7215-4A53-A87B-75420D742E08 .
+
+s:Q37599471-1BEBB7E0-7215-4A53-A87B-75420D742E08 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q27441065 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-5E87BC25-9EAA-4428-B085-E50447EA0316 .
+
+s:Q37599471-5E87BC25-9EAA-4428-B085-E50447EA0316 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56139258 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-28087150-7EA9-43F7-8A0D-4494D1A49043 .
+
+s:Q37599471-28087150-7EA9-43F7-8A0D-4494D1A49043 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q55878237 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-2D045D13-6651-4A5A-AE30-930CA2E10E59 .
+
+s:Q37599471-2D045D13-6651-4A5A-AE30-930CA2E10E59 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q55968136 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-5D37DC07-0D96-4FD3-8F10-AFE3346A49FE .
+
+s:Q37599471-5D37DC07-0D96-4FD3-8F10-AFE3346A49FE a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q27346211 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-B749560D-9A56-459F-894A-E15CA918FAE2 .
+
+s:Q37599471-B749560D-9A56-459F-894A-E15CA918FAE2 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q27346000 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-F1899B6A-DFB0-4EBA-AE10-D1613C19709C .
+
+s:Q37599471-F1899B6A-DFB0-4EBA-AE10-D1613C19709C a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56139201 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-5A085946-D477-45C2-A13C-0BF22A33EF30 .
+
+s:Q37599471-5A085946-D477-45C2-A13C-0BF22A33EF30 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q21707324 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-417468E5-EE53-42C1-9A4F-EDDAFAC8D9E6 .
+
+s:Q37599471-417468E5-EE53-42C1-9A4F-EDDAFAC8D9E6 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56227981 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-DD812AEF-ADFC-4E19-A9A2-19F1AFCA0F43 .
+
+s:Q37599471-DD812AEF-ADFC-4E19-A9A2-19F1AFCA0F43 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q57394278 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-9B1FDBB6-8AF0-474D-BFA6-A372492DDBCF .
+
+s:Q37599471-9B1FDBB6-8AF0-474D-BFA6-A372492DDBCF a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56227982 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-61136743-CE6A-4059-90A6-E0804AD061F6 .
+
+s:Q37599471-61136743-CE6A-4059-90A6-E0804AD061F6 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q57394279 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-D2F6671A-E3B8-4EC8-B4DD-ED56E5E49840 .
+
+s:Q37599471-D2F6671A-E3B8-4EC8-B4DD-ED56E5E49840 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q57394186 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-F90272E6-60A2-4392-B3CA-4F81AFF055D4 .
+
+s:Q37599471-F90272E6-60A2-4392-B3CA-4F81AFF055D4 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q57394182 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-1D838076-D9C2-4C6D-9895-C686E39562FF .
+
+s:Q37599471-1D838076-D9C2-4C6D-9895-C686E39562FF a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q57394269 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-54C2ECD5-09E2-4EF9-A187-B7B85EA74157 .
+
+s:Q37599471-54C2ECD5-09E2-4EF9-A187-B7B85EA74157 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56287069 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-D42384F5-AD17-47A9-A33C-587529D35A1F .
+
+s:Q37599471-D42384F5-AD17-47A9-A33C-587529D35A1F a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q57394255 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-7924D615-77D8-4DA1-B4E1-B39DB436F17B .
+
+s:Q37599471-7924D615-77D8-4DA1-B4E1-B39DB436F17B a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q57394200 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-9145A526-D8A3-47E6-8033-8494F0BBFC06 .
+
+s:Q37599471-9145A526-D8A3-47E6-8033-8494F0BBFC06 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q57394203 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-E8BAE28B-439B-46A0-BFAC-E608B740025C .
+
+s:Q37599471-E8BAE28B-439B-46A0-BFAC-E608B740025C a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q57394181 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-209AF175-58D4-48EC-A1E4-44E845A32660 .
+
+s:Q37599471-209AF175-58D4-48EC-A1E4-44E845A32660 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q27441501 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-F0EEA5C0-F831-4551-9B2D-059644B03EFD .
+
+s:Q37599471-F0EEA5C0-F831-4551-9B2D-059644B03EFD a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q21707537 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-81DCFA93-39AA-4D7E-89EE-5E5B448EEABC .
+
+s:Q37599471-81DCFA93-39AA-4D7E-89EE-5E5B448EEABC a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q57394209 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-0D4A0BE4-3884-42A4-BC0D-4F595AFC80EE .
+
+s:Q37599471-0D4A0BE4-3884-42A4-BC0D-4F595AFC80EE a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56287070 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-24562CC6-53D8-4DED-A0BD-887503C0D806 .
+
+s:Q37599471-24562CC6-53D8-4DED-A0BD-887503C0D806 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56139240 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-DBF06319-8A99-4DD9-9C49-5A3A8DCA4B6E .
+
+s:Q37599471-DBF06319-8A99-4DD9-9C49-5A3A8DCA4B6E a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56139245 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-A9EB4025-EE44-4A1F-A690-9CAA64B14616 .
+
+s:Q37599471-A9EB4025-EE44-4A1F-A690-9CAA64B14616 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56139250 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-88DD0BCE-69C9-4A7C-BCA1-E13667E28F32 .
+
+s:Q37599471-88DD0BCE-69C9-4A7C-BCA1-E13667E28F32 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q21707690 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-9809ACD3-ADB5-4ECE-ADB5-FAD8E499F329 .
+
+s:Q37599471-9809ACD3-ADB5-4ECE-ADB5-FAD8E499F329 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q54017915 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-D4CCA960-D194-4C32-9CE5-F0816B7E6789 .
+
+s:Q37599471-D4CCA960-D194-4C32-9CE5-F0816B7E6789 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q55869076 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-98F88731-1F3F-4F9B-94DF-607785B12AF1 .
+
+s:Q37599471-98F88731-1F3F-4F9B-94DF-607785B12AF1 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q21707732 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-13FA86A0-3405-4B78-B72D-99C1C8F9F5E5 .
+
+s:Q37599471-13FA86A0-3405-4B78-B72D-99C1C8F9F5E5 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56139203 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-BE94EC6C-5366-4FCA-9FED-311E4956BE77 .
+
+s:Q37599471-BE94EC6C-5366-4FCA-9FED-311E4956BE77 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56020216 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-B60472FC-61CA-4C51-9811-5A06F4947C45 .
+
+s:Q37599471-B60472FC-61CA-4C51-9811-5A06F4947C45 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56895084 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-0D8E7459-12A9-46FE-BC06-1BE2FBB76913 .
+
+s:Q37599471-0D8E7459-12A9-46FE-BC06-1BE2FBB76913 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q21707555 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-12309417-9718-47D9-96D3-7B8C40098132 .
+
+s:Q37599471-12309417-9718-47D9-96D3-7B8C40098132 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56895045 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-3C9ACADB-E352-44DC-9639-47E736B9DE8F .
+
+s:Q37599471-3C9ACADB-E352-44DC-9639-47E736B9DE8F a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56895098 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-D23E086B-3BE2-40C9-9054-3326A9464CE1 .
+
+s:Q37599471-D23E086B-3BE2-40C9-9054-3326A9464CE1 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q55871863 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-1214DCDB-53CA-4CAF-825D-12A89552903B .
+
+s:Q37599471-1214DCDB-53CA-4CAF-825D-12A89552903B a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56895008 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-D61AB73C-34FD-4113-9B30-431BC1AD7AA7 .
+
+s:Q37599471-D61AB73C-34FD-4113-9B30-431BC1AD7AA7 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56139352 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-542343E4-AB94-4436-B6FC-90499D2E100D .
+
+s:Q37599471-542343E4-AB94-4436-B6FC-90499D2E100D a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q55968132 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-81FE8265-41BB-41B5-88E5-3AC3A7059018 .
+
+s:Q37599471-81FE8265-41BB-41B5-88E5-3AC3A7059018 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q29013523 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-F5A33142-E7E3-4B3D-B983-7C3144092A57 .
+
+s:Q37599471-F5A33142-E7E3-4B3D-B983-7C3144092A57 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q56139196 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-F6B43279-4D0F-4ECE-86AE-2192CC015B6E .
+
+s:Q37599471-F6B43279-4D0F-4ECE-86AE-2192CC015B6E a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q55878244 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-BDB01CCF-B7F9-4AD1-9318-56CA0F6E1CD4 .
+
+s:Q37599471-BDB01CCF-B7F9-4AD1-9318-56CA0F6E1CD4 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q55894301 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-50798D77-D664-455C-B143-F3A57001E8A3 .
+
+s:Q37599471-50798D77-D664-455C-B143-F3A57001E8A3 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q57564479 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-AB2E36EE-0CBD-4A6E-A5D6-2A628A1C57D1 .
+
+s:Q37599471-AB2E36EE-0CBD-4A6E-A5D6-2A628A1C57D1 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q57602592 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-74514322-73F8-4D75-AF64-1172FFF96F7D .
+
+s:Q37599471-74514322-73F8-4D75-AF64-1172FFF96F7D a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q58879892 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-490D5DF0-F913-47EC-8116-0B0891EE3A67 .
+
+s:Q37599471-490D5DF0-F913-47EC-8116-0B0891EE3A67 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q58879895 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-FB34CDD2-BCD0-464A-B71F-2CFB0698C0FA .
+
+s:Q37599471-FB34CDD2-BCD0-464A-B71F-2CFB0698C0FA a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q58879885 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-2094F515-B7AC-4115-91F3-EFA87A56C744 .
+
+s:Q37599471-2094F515-B7AC-4115-91F3-EFA87A56C744 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q58879888 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-4FD7ACE3-7C8B-42AA-9D57-3C259BC13516 .
+
+s:Q37599471-4FD7ACE3-7C8B-42AA-9D57-3C259BC13516 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q58879893 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-495CD4AC-DFBB-49B9-829D-6D9DBB256CB1 .
+
+s:Q37599471-495CD4AC-DFBB-49B9-829D-6D9DBB256CB1 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q58879879 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-8A5F6393-239C-4750-A655-021742EF00E1 .
+
+s:Q37599471-8A5F6393-239C-4750-A655-021742EF00E1 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q58879897 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-07983D20-ACEE-48B6-8B23-DAAF5677633D .
+
+s:Q37599471-07983D20-ACEE-48B6-8B23-DAAF5677633D a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q58879886 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-FD4FFBC3-14E8-4807-ABCC-CFB2CCDC25B8 .
+
+s:Q37599471-FD4FFBC3-14E8-4807-ABCC-CFB2CCDC25B8 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q59239851 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-200BAF1A-233A-4B1C-8460-6323024A5C10 .
+
+s:Q37599471-200BAF1A-233A-4B1C-8460-6323024A5C10 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q59239862 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-9D19FEFE-CEDD-4DDA-884F-2B13AB68FA6E .
+
+s:Q37599471-9D19FEFE-CEDD-4DDA-884F-2B13AB68FA6E a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q59239824 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-5E06B295-9AE8-4D06-A256-67067975AED8 .
+
+s:Q37599471-5E06B295-9AE8-4D06-A256-67067975AED8 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q59239834 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-D7EF5A16-8A1E-4052-9FEA-C85FBA3A341C .
+
+s:Q37599471-D7EF5A16-8A1E-4052-9FEA-C85FBA3A341C a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q59239854 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-5681E0BC-22F4-4E1B-B175-ADD1FACCC66B .
+
+s:Q37599471-5681E0BC-22F4-4E1B-B175-ADD1FACCC66B a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q59239831 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-BD8C26EB-7263-4D19-8F11-F1AE67E5ECF7 .
+
+s:Q37599471-BD8C26EB-7263-4D19-8F11-F1AE67E5ECF7 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q59239861 ;
+	prov:wasDerivedFrom ref:f751da09d7e54d13b0c098869a2017963fc3ecdf .
+
+wd:Q37599471 p:P2860 s:Q37599471-CBA1E083-DFCC-4879-9B73-FE2CDB7B82DD .
+
+s:Q37599471-CBA1E083-DFCC-4879-9B73-FE2CDB7B82DD a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74433881 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-997D7991-3FA7-4A14-943C-48BE0D967847 .
+
+s:Q37599471-997D7991-3FA7-4A14-943C-48BE0D967847 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74561629 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-DE58C48C-722A-4ABD-BB4A-3C04C99CFB50 .
+
+s:Q37599471-DE58C48C-722A-4ABD-BB4A-3C04C99CFB50 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74423846 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-1BA2A765-5D90-470A-99A7-779254D9F8BA .
+
+s:Q37599471-1BA2A765-5D90-470A-99A7-779254D9F8BA a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q64007818 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-1E212ABC-CF45-4206-8FB9-945FF81BF5C1 .
+
+s:Q37599471-1E212ABC-CF45-4206-8FB9-945FF81BF5C1 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q60144978 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-37B111EF-72A3-4E2A-A21A-0F525D121CFE .
+
+s:Q37599471-37B111EF-72A3-4E2A-A21A-0F525D121CFE a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q79417360 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-ADC43E65-6598-40E3-8914-631E75A252B9 .
+
+s:Q37599471-ADC43E65-6598-40E3-8914-631E75A252B9 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74518343 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-42F06094-E490-4806-8849-63A06B21F250 .
+
+s:Q37599471-42F06094-E490-4806-8849-63A06B21F250 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74442922 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-AFF68B2C-06F9-4B83-A235-0FADF1B8A406 .
+
+s:Q37599471-AFF68B2C-06F9-4B83-A235-0FADF1B8A406 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74445808 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-F1C7BD5E-145E-4C5A-9722-3BC39D399C6F .
+
+s:Q37599471-F1C7BD5E-145E-4C5A-9722-3BC39D399C6F a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74548198 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-6FACBFA6-87D6-4DCC-AD8E-5549BDCE9A11 .
+
+s:Q37599471-6FACBFA6-87D6-4DCC-AD8E-5549BDCE9A11 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74426266 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-59D82857-311C-49FD-AE9D-44D66AA19C3E .
+
+s:Q37599471-59D82857-311C-49FD-AE9D-44D66AA19C3E a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74445407 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-B9D064D2-887C-430E-99DB-AA30BFD7084B .
+
+s:Q37599471-B9D064D2-887C-430E-99DB-AA30BFD7084B a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74428079 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-667AFBA8-5EA6-46D0-A75C-D09A9E042EBB .
+
+s:Q37599471-667AFBA8-5EA6-46D0-A75C-D09A9E042EBB a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74549204 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-548B80AA-5A77-4B8D-8850-932BC8026591 .
+
+s:Q37599471-548B80AA-5A77-4B8D-8850-932BC8026591 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74417154 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2860 s:Q37599471-82A7EFBA-BE35-4E2D-92D5-C945501E621C .
+
+s:Q37599471-82A7EFBA-BE35-4E2D-92D5-C945501E621C a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q74413907 ;
+	prov:wasDerivedFrom ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc .
+
+wd:Q37599471 p:P2888 s:Q37599471-E058F269-1C95-4E0E-A579-34C567138A79 .
+
+s:Q37599471-E058F269-1C95-4E0E-A579-34C567138A79 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2888 <https://scigraph.springernature.com/pub.10.12942/lrr-2008-5> .
+
+wd:Q37599471 p:P6179 s:Q37599471-6ECCBBC7-960F-46CA-9868-1E7ADEED7CF3 .
+
+s:Q37599471-6ECCBBC7-960F-46CA-9868-1E7ADEED7CF3 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6179 "1064758162" .
+
+wd:Q37599471 p:P921 s:Q37599471-DA9B2F7C-074A-4251-ADD0-EB5EA0FDFDF2 .
+
+s:Q37599471-DA9B2F7C-074A-4251-ADD0-EB5EA0FDFDF2 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P921 wd:Q11412 .
+
+wd:Q37599471 p:P921 s:Q37599471-C44456CD-1282-433E-9B54-AFF43352492F .
+
+s:Q37599471-C44456CD-1282-433E-9B54-AFF43352492F a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P921 wd:Q234181 ;
+	prov:wasDerivedFrom ref:0723282bb80042897ca697416c050b4bf7fb5428 .
+
+wd:Q37599471 rdfs:label "Loop Quantum Gravity"@en ;
+	skos:prefLabel "Loop Quantum Gravity"@en ;
+	schema:name "Loop Quantum Gravity"@en ;
+	rdfs:label "Loop Quantum Gravity"@nl ;
+	skos:prefLabel "Loop Quantum Gravity"@nl ;
+	schema:name "Loop Quantum Gravity"@nl ;
+	rdfs:label "Loop Quantum Gravity"@ast ;
+	skos:prefLabel "Loop Quantum Gravity"@ast ;
+	schema:name "Loop Quantum Gravity"@ast ;
+	schema:description "scientific article published on 15 July 2008"@en,
+		"article scientifique"@fr,
+		"wetenschappelijk artikel"@nl,
+		"artigo científico"@pt,
+		"научни чланак"@sr,
+		"article científic"@ca,
+		"wissenschaftlicher Artikel"@de,
+		"bilimsel makale"@tr,
+		"articolo scientifico"@it,
+		"videnskabelig artikel"@da,
+		"vedecký článok"@sk,
+		"مقالة علمية نشرت في 15 يوليو 2008"@ar,
+		"vědecký článek"@cs,
+		"vetenskaplig artikel"@sv,
+		"наукова стаття, опублікована в липні 2008"@uk,
+		"artículu científicu espublizáu en 2008"@ast .
+
+v:23bbf8ef8845baa4e3e25d56e9df979c a wikibase:TimeValue ;
+	wikibase:timeValue "2017-08-21T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:9b44f5d847b3630e7c1dc8730c798f21 a wikibase:TimeValue ;
+	wikibase:timeValue "2008-07-15T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:61172ba904464c065038060bd45fd7bd a wikibase:TimeValue ;
+	wikibase:timeValue "2017-08-23T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:f377dc1a32e7a79d5ff55ebd106f8820 a wikibase:TimeValue ;
+	wikibase:timeValue "2018-06-25T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:d7daaf0facfa73f40ad16b737f837f48 a wikibase:TimeValue ;
+	wikibase:timeValue "2018-09-01T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:4e601d1880d647664093f1b20b24dacf a wikibase:TimeValue ;
+	wikibase:timeValue "2018-01-21T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:d0931b31b1c31ffa1325777f65b723db a wikibase:TimeValue ;
+	wikibase:timeValue "2020-12-12T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+ref:6190ccfa23bc2e1490b9e71b84d5cda1ed3003fb a wikibase:Reference ;
+	pr:P248 wd:Q5412157 ;
+	pr:P932 "5256093" ;
+	pr:P813 "2017-08-21T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:23bbf8ef8845baa4e3e25d56e9df979c .
+
+ref:af47b17b85dbdea3f9a5ed71318e3ce835f9cba6 a wikibase:Reference ;
+	pr:P248 wd:Q229883 ;
+	pr:P854 <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pmc&linkname=pmc_refs_pubmed&retmode=json&id=5256093> ;
+	pr:P813 "2017-08-23T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:61172ba904464c065038060bd45fd7bd .
+
+ref:a90c2fdab19f96228e8c99a3bfc1138f0e89e1e0 a wikibase:Reference ;
+	pr:P248 wd:Q229883 ;
+	pr:P854 <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pmc&linkname=pmc_refs_pubmed&retmode=json&id=5256093> ;
+	pr:P813 "2018-06-25T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:f377dc1a32e7a79d5ff55ebd106f8820 .
+
+ref:36077254ebe654d99ede110985ecd8b58c297ef9 a wikibase:Reference ;
+	pr:P248 wd:Q229883 ;
+	pr:P854 <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pmc&linkname=pmc_refs_pubmed&retmode=json&id=5256093> ;
+	pr:P813 "2018-09-01T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:d7daaf0facfa73f40ad16b737f837f48 .
+
+ref:f751da09d7e54d13b0c098869a2017963fc3ecdf a wikibase:Reference ;
+	pr:P248 wd:Q5188229 ;
+	pr:P854 <https://api.crossref.org/works/10.12942%2FLRR-2008-5> ;
+	pr:P813 "2018-01-21T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:4e601d1880d647664093f1b20b24dacf .
+
+ref:f5c918d937b53d7bdf18550353ea543a0faf4bcc a wikibase:Reference ;
+	pr:P248 wd:Q180686 ;
+	pr:P854 <https://pubmed.ncbi.nlm.nih.gov/28179822> ;
+	pr:P813 "2020-12-12T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:d0931b31b1c31ffa1325777f65b723db ;
+	pr:P887 wd:Q105771474 .
+
+ref:0723282bb80042897ca697416c050b4bf7fb5428 a wikibase:Reference ;
+	pr:P887 wd:Q69652283 .
+
+#################################################################
+## DUMMY STATEMENT COPIED FROM Q42 TO TEST SHARED VALUES & REF ##
+#################################################################
+
+wd:Q37599471 p:P119 s:q37599471-881F40DC-0AFE-4FEB-B882-79600D234273 .
+
+s:q37599471-881F40DC-0AFE-4FEB-B882-79600D234273 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P119 wd:Q533697 ;
+	pq:P625 "Point(-0.14544444444444 51.566527777778)"^^geo:wktLiteral ;
+	pqv:P625 v:12b3879e659a02b6b54b45eb5d03fe47 ;
+	prov:wasDerivedFrom ref:e4f9e55d169fadcbf86b00425f1cce94ce788679,
+		ref:e71a7903858496c67eea189a7084d5559f788edb .
+
+v:12b3879e659a02b6b54b45eb5d03fe47 a wikibase:GlobecoordinateValue ;
+	wikibase:geoLatitude "51.566527777778"^^xsd:double ;
+	wikibase:geoLongitude "-0.14544444444444"^^xsd:double ;
+	wikibase:geoPrecision "2.7777777777778E-5"^^xsd:double ;
+	wikibase:geoGlobe <http://www.wikidata.org/entity/Q2> .
+
+v:866de9172090592497e94e497370838e a wikibase:TimeValue ;
+	wikibase:timeValue "2013-12-07T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:8bb44cabe981a9533b690ce41b5a1def a wikibase:TimeValue ;
+	wikibase:timeValue "2013-12-03T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+ref:e4f9e55d169fadcbf86b00425f1cce94ce788679 a wikibase:Reference ;
+	pr:P854 <http://highgatecemetery.org/visit/who> ;
+	pr:P407 wd:Q1860 ;
+	pr:P813 "2013-12-07T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:866de9172090592497e94e497370838e ;
+	pr:P1476 "Who’s here"@en ;
+	pr:P248 wd:Q533697 ;
+	pr:P1065 <https://web.archive.org/web/20131203025040/http://highgatecemetery.org/visit/who> ;
+	pr:P2960 "2013-12-03T00:00:00Z"^^xsd:dateTime ;
+	prv:P2960 v:8bb44cabe981a9533b690ce41b5a1def .
+
+ref:e71a7903858496c67eea189a7084d5559f788edb a wikibase:Reference ;
+	pr:P143 wd:Q565 .
