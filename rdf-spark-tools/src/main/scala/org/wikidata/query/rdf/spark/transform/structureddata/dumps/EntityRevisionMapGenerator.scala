@@ -23,7 +23,7 @@ object EntityRevisionMapGenerator {
                      date: String = "",
                      outputPath: String = "",
                      hostname: String = "www.wikidata.org",
-                     numPartitions: Int = 100,
+                     numPartitions: Int = 8,
                      urisScheme: String = "wikidata",
                      commonsConceptUri: Option[URI] = None,
                      wikidataConceptUri: Option[URI] = None
@@ -116,11 +116,13 @@ object EntityRevisionMapGenerator {
           }
           Row.fromTuple(entity, rev)
         }), schema)
+
+    entityRevDf
       // repartition so that the caller can control from the command line how many files will be generated
       // in the scenario these files need to be transferred out of hdfs
-      .repartition(numPartitions)
-
-    entityRevDf.write.format("csv")
+      .coalesce(numPartitions)
+      .write
+      .format("csv")
       // force bzip2, flink is currently unable to detect&use the snappy codec
       .option("compression", "bzip2")
       .save(outputPath)
