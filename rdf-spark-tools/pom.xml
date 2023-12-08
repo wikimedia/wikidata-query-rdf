@@ -274,6 +274,18 @@
                             </descriptorRefs>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>spark-client</id>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/assembly/spark-free.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <!-- disable surefire -->

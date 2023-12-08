@@ -39,3 +39,4 @@ You can find documentation in the `docs` folder. It contains:
   which ones (subgraph related transformations and metrics).
 - A [`schema`](rdf-spark-tools/docs/schema) folder, which contains schemas of all the tables saved through various jobs within this
   package.
+- A [`query_recorder.md`](rdf-spark-tools/docs/query_recorder.md) file, demonstrating how to collect sparql query results and compare them.
