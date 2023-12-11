@@ -14,7 +14,6 @@ import org.wikimedia.eventutilities.core.util.ResourceLoader
 import java.net.URI
 import java.time.{Duration, Instant}
 import java.util
-import java.util.function.Supplier
 import java.util.{Collections, Properties, UUID}
 import scala.collection.JavaConverters._
 
@@ -51,14 +50,11 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
     .setEventServiceToUriMap(Collections.emptyMap(): java.util.Map[String, URI])
     .build()
 
-  private val processingTimeClock: Supplier[Instant] = new Supplier[Instant] {
-    def get: Instant = processingTime
-  }
   private val clock: () => Instant = () => processingTime
   private val jsonEventGeneratorSupplier: () => JsonEventGenerator = () => JsonEventGenerator.builder()
     .eventStreamConfig(eventStreamConfig)
     .schemaLoader(EventSchemaLoader.builder().setJsonSchemaLoader(new JsonSchemaLoader(jsonLoader)).build())
-    .ingestionTimeClock(processingTimeClock).build()
+    .ingestionTimeClock(() => processingTime).build()
   private val sideOutputDomain = "sideOutputDomain"
   private val eventStreamConfigEndpoint = WikimediaDefaults.EVENT_STREAM_CONFIG_URI
   private val httpClientConfig = HttpClientConfig(httpRoutes = None, httpTimeout = None, HttpClientUtils.WDQS_DEFAULT_UA)

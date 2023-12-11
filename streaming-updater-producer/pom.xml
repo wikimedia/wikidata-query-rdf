@@ -268,6 +268,10 @@
                         <ignoredResourcePattern>git.properties</ignoredResourcePattern>
                         <!-- test resource -->
                         <ignoredResourcePattern>log4j2-test.properties</ignoredResourcePattern>
+                        <!-- Found duplicate and different resources in
+                             [com.github.java-json-tools:json-schema-core:1.2.14, com.github.java-json-tools:json-schema-validator:2.2.14]:
+                          -->
+                        <ignoredResourcePattern>draftv4/schema</ignoredResourcePattern>
                     </ignoredResourcePatterns>
                     <ignoredDependencies>
                         <dependency>

@@ -1,11 +1,5 @@
 package org.wikidata.query.rdf.updater
 
-import java.lang
-import java.net.{URI, URL}
-import java.time.{Clock, Instant}
-import java.util.function.{Consumer, Supplier}
-import java.util.Collections
-import scala.collection.JavaConverters.seqAsJavaListConverter
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
@@ -16,6 +10,13 @@ import org.wikimedia.eventutilities.core.event.{EventSchemaLoader, EventStreamCo
 import org.wikimedia.eventutilities.core.http.BasicHttpClient
 import org.wikimedia.eventutilities.core.json.{JsonLoader, JsonSchemaLoader}
 import org.wikimedia.eventutilities.core.util.ResourceLoader
+
+import java.lang
+import java.net.{URI, URL}
+import java.time.{Clock, Instant}
+import java.util.Collections
+import java.util.function.Consumer
+import scala.collection.JavaConverters.seqAsJavaListConverter
 
 class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant],
                                        topic: String,
@@ -62,9 +63,7 @@ class SideOutputSerializationSchema[E](recordTimeClock: Option[() => Instant],
         .setEventServiceToUriMap(Collections.emptyMap(): java.util.Map[String, URI])
         .setJsonLoader(new JsonLoader(resLoader))
         .build())
-      .ingestionTimeClock(new Supplier[Instant] {
-        override def get(): Instant = clock()
-      }).build()
+      .ingestionTimeClock(() => clock()).build()
   }
 
   lazy val jsonEventGenerator: JsonEventGenerator = getEventGenerator()

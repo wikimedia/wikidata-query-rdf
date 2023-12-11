@@ -75,6 +75,7 @@
         <blazegraph.version>2.1.6-wmf.1</blazegraph.version>
 
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikidata/query/rdf</developerConnection>
+        <eventutilities.version>1.3.2</eventutilities.version>
 
         <!-- make sure to align kafka-clients.version when upgrading flink -->
         <flink.version>1.16.1</flink.version>
@@ -808,7 +809,12 @@
             <dependency>
                 <groupId>org.wikimedia</groupId>
                 <artifactId>eventutilities</artifactId>
-                <version>1.0.10</version>
+                <version>${eventutilities.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wikimedia</groupId>
+                <artifactId>eventutilities-shaded</artifactId>
+                <version>${eventutilities.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wikimedia.utils</groupId>

@@ -49,6 +49,13 @@
                 <artifactId>janino</artifactId>
                 <version>3.0.16</version>
             </dependency>
+            <!-- Force the guava version used inside the WMF hadoop cluster -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>11.0.2</version>
+                <scope>provided</scope>
+            </dependency>
             <dependency>
                 <groupId>org.scalactic</groupId>
                 <artifactId>scalactic_${scala.compat.version}</artifactId>
@@ -133,7 +140,7 @@
         </dependency>
         <dependency>
             <groupId>org.wikimedia</groupId>
-            <artifactId>eventutilities</artifactId>
+            <artifactId>eventutilities-shaded</artifactId>
             <exclusions>
                 <!-- exclude jackson to use the one provided by spark -->
                 <exclusion>
