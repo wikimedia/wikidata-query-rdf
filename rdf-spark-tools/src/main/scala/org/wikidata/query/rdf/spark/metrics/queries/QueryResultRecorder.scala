@@ -146,7 +146,7 @@ object QueryResultRecorder {
       val timeout = Duration.ofSeconds(65)
       val httpClient = HttpClientUtils.buildHttpClient(None.orNull, None.orNull)
       httpClient.setUserAgentField(new HttpField(HttpHeader.USER_AGENT, "QueryResultRecorder (org.wikidata.query.rdf:rdf-spark-tools) bot " + uaSuffix))
-      new RdfClient(httpClient, URI.create(endpoint), HttpClientUtils.buildHttpClientRetryer(), timeout)
+      new RdfClient(httpClient, URI.create(endpoint), HttpClientUtils.buildHttpClientRetryer(), timeout, 8*1024*1024)
     })
   }
 

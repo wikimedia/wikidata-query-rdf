@@ -10,6 +10,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 import javax.annotation.Nonnull;
@@ -19,6 +20,7 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.FormContentProvider;
+import org.eclipse.jetty.client.util.FutureResponseListener;
 import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.util.Fields;
 import org.openrdf.query.Binding;
@@ -46,6 +48,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 public class RdfClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(RdfClient.class);
+    public static final int DEFAULT_MAX_RESPONSE_SIZE = 2 * 1024 * 1024;
 
     /** Count and log the number of updates. */
     private static final ResponseHandler<Integer> UPDATE_COUNT_RESPONSE = new UpdateCountResponseHandler();
@@ -64,11 +67,14 @@ public class RdfClient {
     /** Retryer for fetching data from RDF store. */
     private final Retryer<ContentResponse> retryer;
 
-    public RdfClient(HttpClient httpClient, URI uri, Retryer<ContentResponse> retryer, Duration timeout) {
+    private final int maxResponseSize;
+
+    public RdfClient(HttpClient httpClient, URI uri, Retryer<ContentResponse> retryer, Duration timeout, int maxResponseSize) {
         this.httpClient = httpClient;
         this.uri = uri;
         this.timeout = timeout;
         this.retryer = retryer;
+        this.maxResponseSize = maxResponseSize;
     }
 
     /**
@@ -115,6 +121,7 @@ public class RdfClient {
      * @param <T> the type into which the result is parsed
      * @return parsed results from the server
      */
+    @SuppressWarnings("IllegalCatch") // code copied from HttpRequest
     private <T> T execute(String type, ResponseHandler<T> responseHandler, String sparql) {
         LOG.trace("Running SPARQL: [{}] {}", sparql.length(), sparql);
         long startQuery = System.currentTimeMillis();
@@ -122,8 +129,37 @@ public class RdfClient {
         // reporting.....
         final ContentResponse response;
         try {
-            response = retryer.call(()
-                -> makeRequest(type, sparql, responseHandler.acceptHeader()).send());
+            response = retryer.call(() -> {
+                Request request = makeRequest(type, sparql, responseHandler.acceptHeader());
+                FutureResponseListener listener = new FutureResponseListener(request, maxResponseSize);
+                request.send(listener);
+                try {
+                    return listener.get();
+                } catch (ExecutionException e) {
+                    // Previously this method used a timed get on the future, which was in a race
+                    // with the timeouts implemented in HttpDestination and HttpConnection. The change to
+                    // make those timeouts relative to the timestamp taken in sent() has made that race
+                    // less certain, so a timeout could be either a TimeoutException from the get() or
+                    // a ExecutionException(TimeoutException) from the HttpDestination/HttpConnection.
+                    // We now do not do a timed get and just rely on the HttpDestination/HttpConnection
+                    // timeouts.   This has the affect of changing this method from mostly throwing a
+                    // TimeoutException to always throwing a ExecutionException(TimeoutException).
+                    // Thus for backwards compatibility we unwrap the timeout exception here
+                    if (e.getCause() instanceof TimeoutException) {
+                        TimeoutException t = (TimeoutException) (e.getCause());
+                        request.abort(t);
+                        throw t;
+                    }
+
+                    request.abort(e);
+                    throw e;
+                } catch (Throwable e) {
+                    // Differently from the Future, the semantic of this method is that if
+                    // the send() is interrupted or times out, we abort the request.
+                    request.abort(e);
+                    throw e;
+                }
+            });
 
             if (response.getStatus() != OK_200) {
                 throw new ContainedException("Non-200 response from triple store:  " + response

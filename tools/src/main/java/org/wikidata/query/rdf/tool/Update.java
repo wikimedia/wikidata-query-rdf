@@ -137,7 +137,7 @@ public final class Update {
             Retryer<ContentResponse> retryer = buildHttpClientRetryer();
             Duration rdfClientTimeout = getRdfClientTimeout();
 
-            RdfClient rdfClient = new RdfClient(httpClient, sparqlUri, retryer, rdfClientTimeout);
+            RdfClient rdfClient = new RdfClient(httpClient, sparqlUri, retryer, rdfClientTimeout, 2*1024*1024);
 
             RdfRepository rdfRepository = new RdfRepository(wikibaseUris, rdfClient, MAX_FORM_CONTENT_SIZE);
 

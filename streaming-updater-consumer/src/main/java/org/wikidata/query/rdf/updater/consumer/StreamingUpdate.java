@@ -84,7 +84,8 @@ public final class StreamingUpdate {
         HttpClient httpClient = buildHttpClient(getHttpProxyHost(), getHttpProxyPort());
         Retryer<ContentResponse> retryer = buildHttpClientRetryer();
         Duration rdfClientTimeout = RdfRepositoryUpdater.getRdfClientTimeout();
-        RdfClient rdfClient = new RdfClient(httpClient, StreamingUpdateOptions.sparqlUri(options), retryer, rdfClientTimeout);
+        RdfClient rdfClient = new RdfClient(httpClient, StreamingUpdateOptions.sparqlUri(options), retryer,
+                rdfClientTimeout, RdfClient.DEFAULT_MAX_RESPONSE_SIZE);
         UrisScheme uris = UrisSchemeFactory.getURISystem();
         return new StreamingUpdaterConsumer(consumer, new RdfRepositoryUpdater(rdfClient, uris), metrics, options.inconsistenciesWarningThreshold());
     }

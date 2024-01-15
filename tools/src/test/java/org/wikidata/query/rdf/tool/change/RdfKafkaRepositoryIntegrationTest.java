@@ -36,7 +36,8 @@ public class RdfKafkaRepositoryIntegrationTest {
         RdfClient rdfClient = new RdfClient(httpClient,
                 url("/namespace/wdq/sparql"),
                 buildHttpClientRetryer(),
-                Duration.of(-1, SECONDS)
+                Duration.of(-1, SECONDS),
+                RdfClient.DEFAULT_MAX_RESPONSE_SIZE
         );
 
         try {

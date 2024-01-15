@@ -33,7 +33,8 @@ public class RdfRepositoryUpdaterIntegrationTest {
     private final RdfClient client = new RdfClient(
             buildHttpClient(getHttpProxyHost(), getHttpProxyPort()), url("/namespace/wdq/sparql"),
             buildHttpClientRetryer(),
-            getRdfClientTimeout()
+            getRdfClientTimeout(),
+            RdfClient.DEFAULT_MAX_RESPONSE_SIZE
     );
 
     private final UrisScheme uris = UrisSchemeFactory.getURISystem();
