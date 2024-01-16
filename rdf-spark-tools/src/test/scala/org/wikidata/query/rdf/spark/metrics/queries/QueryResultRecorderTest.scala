@@ -9,9 +9,9 @@ import org.openrdf.query.impl.{BindingImpl, ListBindingSet, MapBindingSet, Tuple
 import org.openrdf.query.{BindingSet, TupleQueryResult}
 import org.openrdf.rio.ntriples.NTriplesUtil
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.slf4j.LoggerFactory
 import org.wikidata.query.rdf.spark.SparkSessionProvider
 import org.wikidata.query.rdf.tool.exception.FatalException
@@ -121,6 +121,25 @@ class QueryResultRecorderTest extends AnyFlatSpec with SparkSessionProvider with
     val deserRecorder = serDeser(recorder)
     deserRecorder should not be Nil
     deserRecorder(col("test")) should not be Nil
+  }
+
+  "QueryResultRecorder" should "collate string keys with tertiary strength" in {
+    // Test that Noe͏̈l and Noël is "identical"
+    // U+0065 : LATIN SMALL LETTER E
+    // U+034F: COMBINING GRAPHEME JOINER [CGJ]
+    // U+0308: COMBINING DIAERESIS
+    // vs
+    // U+00EB : LATIN SMALL LETTER E WITH DIAERESIS
+    val (varNames, bindingSets1) = (List("res"), List(new ListBindingSet(List("res").asJava, valueFactory.createLiteral("Noe͏̈l"))))
+    val bindingSets2 = List(new ListBindingSet(List("res").asJava, valueFactory.createLiteral("Noël")))
+    val tupleQueryResult: TupleQueryResult = toTupeQueryResult(varNames, bindingSets1)
+    val tupleQueryResult2: TupleQueryResult = toTupeQueryResult(varNames, bindingSets2)
+    (client.query(_: String)) expects "query 1" returns tupleQueryResult once()
+    (client.query(_: String)) expects "query 2" returns tupleQueryResult2 once()
+    val result = recorder.query("query 1")
+    val result2 = recorder.query("query 2")
+    result.exactHash shouldEqual result2.exactHash
+    result.reorderedHash shouldEqual result2.reorderedHash
   }
 
   def decodeResult(results: Iterable[Map[String, String]]): (List[String], List[BindingSet]) = {

@@ -1,12 +1,14 @@
 package org.wikidata.query.rdf.spark.metrics.queries
 
 import com.google.common.hash.{HashFunction, Hashing}
+import com.ibm.icu.text.{CollationKey, Collator}
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.spark.sql.api.java.UDF1
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Column, Row, functions}
 import org.eclipse.jetty.http.{HttpField, HttpHeader}
+import org.openrdf.model.Value
 import org.openrdf.query.{BindingSet, TupleQueryResult}
 import org.openrdf.rio.ntriples.NTriplesUtil
 import org.wikidata.query.rdf.tool.HttpClientUtils
@@ -16,6 +18,7 @@ import java.io.Serializable
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Duration
+import java.util.Locale
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.language.postfixOps
@@ -66,6 +69,12 @@ class QueryResultRecorder(rdfClientBuilder: () => RdfClient) extends Serializabl
     functions.udf(udfFunc, QueryResultRecorder.outputStruct)
   }
 
+  private lazy val collator: Collator = {
+    val collator = Collator.getInstance(Locale.ROOT)
+    // Set tertiary strength (same as blazegraph, for context see T233204)
+    collator.setStrength(Collator.TERTIARY)
+    collator
+  }
   def apply(column: Column): Column = {
     udf(column)
   }
@@ -102,7 +111,7 @@ class QueryResultRecorder(rdfClientBuilder: () => RdfClient) extends Serializabl
         case (None, Some(_)) => -1 // null < right
         case (Some(vx), Some(vy)) => // actual comparison
           vx.getClass.getName.compareTo(vy.getClass.getName) match {
-            case 0 => vx.getValue.toString.compareTo(vy.getValue.toString)
+            case 0 => encodeValue(vx.getValue).compareTo(encodeValue(vy.getValue))
             case x: Int => x
           }
       } collectFirst {
@@ -120,12 +129,16 @@ class QueryResultRecorder(rdfClientBuilder: () => RdfClient) extends Serializabl
       bindings map bs.getBinding map (Option(_)) foreach {
         case Some(b) =>
           hasher.putString(b.getValue.getClass.getName, StandardCharsets.UTF_8)
-          hasher.putString(b.getValue.toString, StandardCharsets.UTF_8)
+          hasher.putBytes(encodeValue(b.getValue).toByteArray)
         case None =>
           hasher.putInt(-1)
       }
     }
     hasher.hash().toString
+  }
+
+  private def encodeValue(v: Value): CollationKey = {
+    collator.getCollationKey(v.toString)
   }
 
   private def copyResult(result: TupleQueryResult): (Array[String], Array[BindingSet]) = {
