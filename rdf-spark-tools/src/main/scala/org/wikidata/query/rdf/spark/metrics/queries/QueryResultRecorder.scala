@@ -8,7 +8,9 @@ import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Column, Row, functions}
 import org.eclipse.jetty.http.{HttpField, HttpHeader}
-import org.openrdf.model.Value
+import org.openrdf.model.impl.ValueFactoryImpl
+import org.openrdf.model.{Value, ValueFactory}
+import org.openrdf.query.impl.{ListBindingSet, TupleQueryResultImpl}
 import org.openrdf.query.{BindingSet, TupleQueryResult}
 import org.openrdf.rio.ntriples.NTriplesUtil
 import org.wikidata.query.rdf.tool.HttpClientUtils
@@ -19,6 +21,7 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.Locale
+import java.util.regex.Pattern
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.language.postfixOps
@@ -51,10 +54,13 @@ import scala.util.{Failure, Success, Try}
 
 @SerialVersionUID(1)
 class QueryResultRecorder(rdfClientBuilder: () => RdfClient) extends Serializable {
+
   @transient
   private lazy val hashFunction: HashFunction = Hashing.sha256()
   @transient
   private lazy val client: RdfClient = rdfClientBuilder()
+  @transient
+  private lazy val valueFactory: ValueFactory = new ValueFactoryImpl()
   @transient
   private lazy val udf: UserDefinedFunction = {
     def udfFunc: UDF1[String,Row] = (query: String) => {
@@ -79,17 +85,33 @@ class QueryResultRecorder(rdfClientBuilder: () => RdfClient) extends Serializabl
     udf(column)
   }
 
-  def query(sparql: String): QueryResult = {
-    Try(client.query(sparql)) match {
-      case Success(result) => fromResult(result)
-      case Failure(e) => QueryResult(results = None, success = false,
-        Some(e.getMessage + ": " + ExceptionUtils.getStackTrace(e)), resultSize = None, exactHash = None, reorderedHash = None)
+  private def fromAsk(result: Boolean): QueryResult = {
+    val names = List("b").asJava
+    fromResult(new TupleQueryResultImpl(names, List(new ListBindingSet(names, valueFactory.createLiteral(result))).asJava))
+  }
+
+  def query(query: String): QueryResult = {
+    def execute(query: String): QueryResult = {
+      QueryResultRecorder.getQueryType(query) match {
+        case "SELECT" => fromResult(client.query(query))
+        case "ASK" => fromAsk(client.ask(query))
+        case "DESCRIBE" => fromResult(client.describe(query))
+        case "CONSTRUCT" => fromResult(client.construct(query))
+      }
+    }
+
+    Try(execute(query)) match {
+      case Success(result) => result
+      case Failure(e) =>
+        QueryResult(results = None, success = false,
+          Some(e.getMessage + ": " + ExceptionUtils.getStackTrace(e)), resultSize = None, exactHash = None, reorderedHash = None)
     }
   }
 
-  private def fromResult(result: TupleQueryResult): QueryResult = {
+
+  private def fromResult(result: TupleQueryResult) = {
     val (bindings, solutions) = copyResult(result)
-    val sortedBindings: Array[String] = bindings.sorted
+    val sortedBindings = bindings.sorted
     QueryResult(
       results = Some(QueryResultRecorder.encodeQueryResults(solutions)),
       success = true,
@@ -154,6 +176,13 @@ class QueryResultRecorder(rdfClientBuilder: () => RdfClient) extends Serializabl
 
 @SerialVersionUID(1)
 object QueryResultRecorder {
+  private val IRI_PATTERN = Pattern.compile("^<([^>]*)>*")
+
+  private val PREFIX_PATTERN = Pattern.compile("^prefix([^:]+):", Pattern.CASE_INSENSITIVE)
+
+  private val COMMENT_PATTERN = Pattern.compile("^(#.*((\r)?\n|(\r)?\n*))*")
+  private val QUERY_TYPE = Pattern.compile("^(SELECT|ASK|CONSTRUCT|DESCRIBE)", Pattern.CASE_INSENSITIVE)
+
   def create(endpoint: String, uaSuffix: String): QueryResultRecorder = {
     new QueryResultRecorder(() => {
       val timeout = Duration.ofSeconds(65)
@@ -182,6 +211,80 @@ object QueryResultRecorder {
     StructField(name = "exactHash", dataType = DataTypes.StringType),
     StructField(name = "reorderedHash", dataType = DataTypes.StringType)
   ))
+
+  // scalastyle:off cyclomatic.complexity
+  def getQueryType(input: CharSequence): CharSequence  = {
+    var i = 0
+    var restOfQuery: CharSequence = ""
+    while (i < input.length) {
+      val c = input.charAt(i)
+      c match {
+        case '#' =>
+          i += readComment(input, i)
+
+        case 'p' | 'P' =>
+          // read PREFIX
+          i += readPrefix(input, i)
+
+        case 'b' | 'B' =>
+          i += 4 // 4 for base keyword
+
+        case '<' =>
+          // read IRI
+          i += readIRI(input, i)
+
+        case _ =>
+          if (Character.isWhitespace(c)) {
+            i += 1
+          } else {
+            restOfQuery = input.subSequence(i, input.length)
+            i += restOfQuery.length
+          }
+
+      }
+    }
+
+    val m = QUERY_TYPE.matcher(restOfQuery)
+    if (m.find()) {
+      m.group().toUpperCase()
+    } else {
+      "SELECT"
+    }
+  }
+  // scalastyle:on cyclomatic.complexity
+
+  /**
+   * Reads the first comment line from the input, and returns
+   * the comment line (including the line break character) without
+   * the leading "#".
+   */
+  private def readComment(input: CharSequence, index: Int): Int = {
+    val matcher = COMMENT_PATTERN.matcher(input.subSequence(index, input.length()))
+    if (matcher.find()) {
+      matcher.end()
+    } else {
+      1
+    }
+  }
+
+  private def readPrefix(input: CharSequence, index: Int): Int = {
+    val matcher = PREFIX_PATTERN.matcher(input.subSequence(index, input.length()))
+    if (matcher.find()) {
+      matcher.end()
+    } else {
+      1
+    }
+  }
+
+  private def readIRI(input: CharSequence, index: Int): Int = {
+    val matcher = IRI_PATTERN.matcher(input.subSequence(index, input.length()))
+    if (matcher.find()) {
+      matcher.end()
+    } else {
+      1
+    }
+  }
+
 }
 
 case class QueryResult(results: Option[Array[Map[String, String]]],

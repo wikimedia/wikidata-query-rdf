@@ -55,7 +55,7 @@ class QueryResultRecorderTest extends AnyFlatSpec with SparkSessionProvider with
     result.results map { _.toList } map { decodeResult } foreach {
       case (decodedVarnames, decodedBindingSets) =>
         decodedVarnames should contain only (varNames: _*)
-        decodedBindingSets should contain only (bindingSets: _*)
+        decodedBindingSets should contain only (bindingSets distinct: _*)
     }
   }
 
@@ -140,6 +140,14 @@ class QueryResultRecorderTest extends AnyFlatSpec with SparkSessionProvider with
     val result2 = recorder.query("query 2")
     result.exactHash shouldEqual result2.exactHash
     result.reorderedHash shouldEqual result2.reorderedHash
+  }
+
+  "QueryResultRecorder" should "properly identify the query type" in {
+    val prolog = "# comment  \nPREFIX p: <u:u> prefix p2: <u:u2> BASE <u:base> base <u:base2> "
+    QueryResultRecorder.getQueryType(prolog + "ask { ?s ?p ?o }") shouldBe "ASK"
+    QueryResultRecorder.getQueryType(prolog + "select ?s { ?s ?p ?o }") shouldBe "SELECT"
+    QueryResultRecorder.getQueryType(prolog + "describe p:test") shouldBe "DESCRIBE"
+    QueryResultRecorder.getQueryType(prolog + " construct { ?s ?p ?o } { ?s ?p ?o . }") shouldBe "CONSTRUCT"
   }
 
   def decodeResult(results: Iterable[Map[String, String]]): (List[String], List[BindingSet]) = {

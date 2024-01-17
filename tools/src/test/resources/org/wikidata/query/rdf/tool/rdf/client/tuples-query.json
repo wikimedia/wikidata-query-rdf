@@ -1,0 +1,18 @@
+{
+  "head" : {
+    "vars" : [ "cause" ]
+  },
+  "results" : {
+    "bindings" : [ {
+      "cause" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q1347065"
+      }
+    }, {
+      "cause" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q3827083"
+      }
+    } ]
+  }
+}

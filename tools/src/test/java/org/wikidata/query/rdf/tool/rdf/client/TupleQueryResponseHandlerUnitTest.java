@@ -6,12 +6,17 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.Collection;
 
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
@@ -19,16 +24,33 @@ import org.openrdf.query.TupleQueryResult;
 
 import com.google.common.io.ByteStreams;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(Parameterized.class)
 public class TupleQueryResponseHandlerUnitTest {
 
+    @Rule public MockitoRule rule = MockitoJUnit.rule();
     @Mock private ContentResponse response;
 
-    private final TupleQueryResponseHandler responseHandler = new TupleQueryResponseHandler();
+    private final TupleQueryResponseHandler responseHandler;
+
+    private final String testResource;
+    private final String expectedAcceptHeader;
+
+    public TupleQueryResponseHandlerUnitTest(TupleQueryResponseHandler.ResponseFormat format, String testResource, String expectedAcceptHeader) {
+        this.responseHandler = new TupleQueryResponseHandler(format);
+        this.testResource = testResource;
+        this.expectedAcceptHeader = expectedAcceptHeader;
+    }
+    @Parameterized.Parameters
+    public static Collection<Object[]> params() {
+        return Arrays.asList(
+                new Object[]{TupleQueryResponseHandler.ResponseFormat.BINARY, "tuples-query.bin", "application/x-binary-rdf-results-table"},
+                new Object[]{TupleQueryResponseHandler.ResponseFormat.JSON, "tuples-query.json", "application/json"}
+        );
+    }
 
     @Test
     public void canParseTuples() throws IOException, QueryEvaluationException {
-        byte[] bytes = loadResponseFromFile();
+        byte[] bytes = loadResponseFromFile(testResource);
         setupResponse(bytes);
 
         TupleQueryResult parsed = responseHandler.parse(response);
@@ -56,6 +78,11 @@ public class TupleQueryResponseHandlerUnitTest {
         responseHandler.parse(response);
     }
 
+    @Test
+    public void testAcceptHeader() {
+        assertThat(responseHandler.acceptHeader()).isEqualTo(expectedAcceptHeader);
+    }
+
     /**
      * loads the result of:
      *
@@ -64,8 +91,8 @@ public class TupleQueryResponseHandlerUnitTest {
      *   _:b1 ps:P509 ?cause.
      * }
      */
-    private byte[] loadResponseFromFile() throws IOException {
-        URL r = getResource(TupleQueryResponseHandlerUnitTest.class, "tuples-query.bin");
+    private byte[] loadResponseFromFile(String resource) throws IOException {
+        URL r = getResource(TupleQueryResponseHandlerUnitTest.class, resource);
         return ByteStreams.toByteArray(r.openStream());
     }
 

@@ -4,6 +4,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.eclipse.jetty.http.HttpMethod.POST;
 import static org.eclipse.jetty.http.HttpStatus.OK_200;
+import static org.wikidata.query.rdf.tool.rdf.client.TupleQueryResponseHandler.ResponseFormat.BINARY;
+import static org.wikidata.query.rdf.tool.rdf.client.TupleQueryResponseHandler.ResponseFormat.JSON;
 
 import java.io.IOException;
 import java.net.URI;
@@ -53,7 +55,9 @@ public class RdfClient {
     /** Count and log the number of updates. */
     private static final ResponseHandler<Integer> UPDATE_COUNT_RESPONSE = new UpdateCountResponseHandler();
     /** Parse the response from a regular query into a TupleQueryResult. */
-    private static final ResponseHandler<TupleQueryResult> TUPLE_QUERY_RESPONSE = new TupleQueryResponseHandler();
+    private static final ResponseHandler<TupleQueryResult> TUPLE_QUERY_RESPONSE = new TupleQueryResponseHandler(BINARY);
+    /** Parse the json response from a select, describe or construct query into a TupleQueryResult. */
+    private static final ResponseHandler<TupleQueryResult> TUPLE_JSON_QUERY_RESPONSE = new TupleQueryResponseHandler(JSON);
     /** Parse the response from an ask query into a boolean. */
     private static final ResponseHandler<Boolean> ASK_QUERY_RESPONSE = new AskQueryResponseHandler();
 
@@ -82,6 +86,24 @@ public class RdfClient {
      */
     public TupleQueryResult query(String sparql) {
         return execute("query", TUPLE_QUERY_RESPONSE, sparql);
+    }
+
+    /**
+     * Execute a DESCRIBE query.
+     */
+    public TupleQueryResult describe(String sparql) {
+        // blazegraph does support a describe query with a json output which is interpretable
+        // as "normal" tuple result set
+        return execute("query", TUPLE_JSON_QUERY_RESPONSE, sparql);
+    }
+
+    /**
+     * Execute a CONSTRUCT query.
+     */
+    public TupleQueryResult construct(String sparql) {
+        // blazegraph does support a construct query with a json output which is interpretable
+        // as "normal" tuple result set
+        return execute("query", TUPLE_JSON_QUERY_RESPONSE, sparql);
     }
 
     /**
