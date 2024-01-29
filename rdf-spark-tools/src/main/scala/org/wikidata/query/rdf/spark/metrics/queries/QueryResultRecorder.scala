@@ -9,9 +9,9 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Column, Row, functions}
 import org.eclipse.jetty.http.{HttpField, HttpHeader}
 import org.openrdf.model.impl.ValueFactoryImpl
-import org.openrdf.model.{Value, ValueFactory}
+import org.openrdf.model.{BNode, Value, ValueFactory}
 import org.openrdf.query.impl.{ListBindingSet, TupleQueryResultImpl}
-import org.openrdf.query.{BindingSet, TupleQueryResult}
+import org.openrdf.query.{Binding, BindingSet, TupleQueryResult}
 import org.openrdf.rio.ntriples.NTriplesUtil
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient
@@ -131,14 +131,28 @@ class QueryResultRecorder(rdfClientBuilder: () => RdfClient) extends Serializabl
         case (None, None) => 0
         case (Some(_), None) => 1 // left|null > null
         case (None, Some(_)) => -1 // null < right
-        case (Some(vx), Some(vy)) => // actual comparison
-          vx.getClass.getName.compareTo(vy.getClass.getName) match {
-            case 0 => encodeValue(vx.getValue).compareTo(encodeValue(vy.getValue))
-            case x: Int => x
-          }
+        case (Some(bvx), Some(bvy)) => // actual comparison
+          compareBinding(bvx, bvy)
       } collectFirst {
         case cmp: Int if cmp != 0 => cmp
       } getOrElse 0
+    }
+  }
+
+  private def compareBinding(bvx: Binding, bvy: Binding) = {
+    (bvx.getValue, bvy.getValue) match {
+      // consider two blank nodes as equal, they're assigned by blazegraph while generating the results
+      // if we re-order there's no point in keeping the specific blank node id.
+      // Risk of missed positives seems low enough compared to the noise caused by false positives.
+      case (_: BNode, _: BNode) => 0
+      case (_: BNode, _: Value) => -1
+      case (_: Value, _: BNode) => 1
+      case (vx: Value, vy: Value) =>
+        vx.getClass.getName.compareTo(vy.getClass.getName) match {
+          case 0 =>
+            encodeValue(vx).compareTo(encodeValue(vy))
+          case x: Int => x
+        }
     }
   }
 
@@ -150,8 +164,12 @@ class QueryResultRecorder(rdfClientBuilder: () => RdfClient) extends Serializabl
     solutions foreach { bs =>
       bindings map bs.getBinding map (Option(_)) foreach {
         case Some(b) =>
-          hasher.putString(b.getValue.getClass.getName, StandardCharsets.UTF_8)
-          hasher.putBytes(encodeValue(b.getValue).toByteArray)
+          b.getValue match {
+            case _: BNode => hasher.putString("_BLANK")
+            case v: Value =>
+              hasher.putString(v.getClass.getName, StandardCharsets.UTF_8)
+              hasher.putBytes(encodeValue(v).toByteArray)
+          }
         case None =>
           hasher.putInt(-1)
       }
