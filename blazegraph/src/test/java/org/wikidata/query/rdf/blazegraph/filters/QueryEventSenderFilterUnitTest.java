@@ -49,7 +49,8 @@ public class QueryEventSenderFilterUnitTest {
         List<Event> receivedEvents = new ArrayList<>();
         QueryEventGenerator eventGenerator = mock(QueryEventGenerator.class);
         QueryEvent generatedEvent = mock(QueryEvent.class);
-        String headerFlag = "headerFlag";
+        String enableIfHeaderFlag = "enableHeaderFlag";
+        String disableIfHeaderFlag = "disableHeaderFlag";
         String defaultNS = "defaultNS";
 
         when(eventGenerator.instant())
@@ -59,7 +60,8 @@ public class QueryEventSenderFilterUnitTest {
         ServletContext context = mock(ServletContext.class);
         when(context.getAttribute(eq(WikibaseContextListener.BLAZEGRAPH_DEFAULT_NAMESPACE))).thenReturn(defaultNS);
         when(request.getParameter(eq(QueryEventGenerator.QUERY_PARAM))).thenReturn(SPARQL_QUERY);
-        when(request.getHeader(eq(headerFlag))).thenReturn("yes");
+        when(request.getHeader(eq(enableIfHeaderFlag))).thenReturn("yes");
+        when(request.getHeader(eq(disableIfHeaderFlag))).thenReturn(null);
         when(request.getServletContext()).thenReturn(context);
         when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         HttpServletResponse response = mock(HttpServletResponse.class);
@@ -68,7 +70,7 @@ public class QueryEventSenderFilterUnitTest {
                 .thenReturn(generatedEvent);
         FilterChain filterChain = mock(FilterChain.class);
         when(response.getStatus()).thenReturn(200);
-        QueryEventSenderFilter filter = new QueryEventSenderFilter(receivedEvents::add, eventGenerator, headerFlag);
+        QueryEventSenderFilter filter = new QueryEventSenderFilter(receivedEvents::add, eventGenerator, enableIfHeaderFlag, disableIfHeaderFlag);
         filter.doFilter(request, response, filterChain);
         assertThat(receivedEvents).containsExactly(generatedEvent);
         verify(filterChain, times(1)).doFilter(eq(request), eq(response));
@@ -98,7 +100,7 @@ public class QueryEventSenderFilterUnitTest {
         when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         FilterChain filterChain = mock(FilterChain.class);
         doThrow(new ServletException("failure")).when(filterChain).doFilter(eq(request), eq(response));
-        QueryEventSenderFilter filter = new QueryEventSenderFilter(receivedEvents::add, eventGenerator, null);
+        QueryEventSenderFilter filter = new QueryEventSenderFilter(receivedEvents::add, eventGenerator, null, null);
         Throwable servletException = catchThrowable(() -> filter.doFilter(request, response, filterChain));
         assertThat(servletException).isInstanceOf(ServletException.class);
         assertThat(receivedEvents).containsExactly(generatedEvent);
@@ -118,7 +120,7 @@ public class QueryEventSenderFilterUnitTest {
         HttpServletResponse response = mock(HttpServletResponse.class);
 
         FilterChain filterChain = mock(FilterChain.class);
-        QueryEventSenderFilter filter = new QueryEventSenderFilter((e) -> true, eventGenerator, null);
+        QueryEventSenderFilter filter = new QueryEventSenderFilter((e) -> true, eventGenerator, null, null);
         filter.doFilter(request, response, filterChain);
         verify(filterChain, times(1)).doFilter(eq(request), eq(response));
         verify(eventGenerator, never()).instant();
@@ -135,7 +137,7 @@ public class QueryEventSenderFilterUnitTest {
         HttpServletResponse response = mock(HttpServletResponse.class);
 
         FilterChain filterChain = mock(FilterChain.class);
-        QueryEventSenderFilter filter = new QueryEventSenderFilter((e) -> true, eventGenerator, null);
+        QueryEventSenderFilter filter = new QueryEventSenderFilter((e) -> true, eventGenerator, null, null);
         filter.doFilter(request, response, filterChain);
         verify(filterChain, times(1)).doFilter(eq(request), eq(response));
         verify(eventGenerator, never()).instant();
@@ -143,7 +145,7 @@ public class QueryEventSenderFilterUnitTest {
     }
 
     @Test
-    public void testIgnoreOnMissingHeaderFlag() throws IOException, ServletException {
+    public void testIgnoreOnMissingEnableIfHeaderFlag() throws IOException, ServletException {
         QueryEventGenerator eventGenerator = mock(QueryEventGenerator.class);
         String headerFlag = "headerFlag";
 
@@ -154,7 +156,26 @@ public class QueryEventSenderFilterUnitTest {
         HttpServletResponse response = mock(HttpServletResponse.class);
 
         FilterChain filterChain = mock(FilterChain.class);
-        QueryEventSenderFilter filter = new QueryEventSenderFilter((e) -> true, eventGenerator, headerFlag);
+        QueryEventSenderFilter filter = new QueryEventSenderFilter((e) -> true, eventGenerator, headerFlag, null);
+        filter.doFilter(request, response, filterChain);
+        verify(filterChain, times(1)).doFilter(eq(request), eq(response));
+        verify(eventGenerator, never()).instant();
+        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), any(), any(), anyString(), eq(0), eq(0));
+    }
+
+    @Test
+    public void testIgnoreOnDisableIfHeaderFlag() throws IOException, ServletException {
+        QueryEventGenerator eventGenerator = mock(QueryEventGenerator.class);
+        String headerFlag = "headerFlag";
+
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(eq(QueryEventGenerator.QUERY_PARAM))).thenReturn(SPARQL_QUERY);
+        when(request.getHeader(eq(headerFlag))).thenReturn("true");
+        when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+
+        FilterChain filterChain = mock(FilterChain.class);
+        QueryEventSenderFilter filter = new QueryEventSenderFilter((e) -> true, eventGenerator, null, headerFlag);
         filter.doFilter(request, response, filterChain);
         verify(filterChain, times(1)).doFilter(eq(request), eq(response));
         verify(eventGenerator, never()).instant();
@@ -165,7 +186,7 @@ public class QueryEventSenderFilterUnitTest {
     public void testDestroy() throws IOException {
         QueryEventGenerator eventGenerator = mock(QueryEventGenerator.class);
         EventSender sender = mock(EventSender.class);
-        QueryEventSenderFilter filter = new QueryEventSenderFilter(sender, eventGenerator, null);
+        QueryEventSenderFilter filter = new QueryEventSenderFilter(sender, eventGenerator, null, null);
         filter.destroy();
         verify(sender, times(1)).close();
     }
@@ -174,7 +195,7 @@ public class QueryEventSenderFilterUnitTest {
     public void testMXBeanRegistered() throws Exception {
         QueryEventGenerator eventGenerator = mock(QueryEventGenerator.class);
         EventSender sender = mock(EventSender.class);
-        QueryEventSenderFilter filter = new QueryEventSenderFilter(sender, eventGenerator, null);
+        QueryEventSenderFilter filter = new QueryEventSenderFilter(sender, eventGenerator, null, null);
         FilterConfig config = mock(FilterConfig.class);
         when(config.getFilterName()).thenReturn("QueryEventSenderFilter");
         filter.init(config);

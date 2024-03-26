@@ -46,6 +46,7 @@ public class QueryEventSenderFilter extends MonitoredFilter implements QueryEven
     private EventSender sender;
     private QueryEventGenerator queryEventGenerator;
     private String enableIfHeader;
+    private String disableIfHeader;
     private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
     private final AtomicInteger queryCounter = new AtomicInteger(0);
     private final AtomicLong startedQueries = new AtomicLong(0);
@@ -54,10 +55,11 @@ public class QueryEventSenderFilter extends MonitoredFilter implements QueryEven
     }
 
     @VisibleForTesting
-    QueryEventSenderFilter(EventSender sender, QueryEventGenerator eventGenerator, String enableIfHeader) {
+    QueryEventSenderFilter(EventSender sender, QueryEventGenerator eventGenerator, String enableIfHeader, String disableIfHeader) {
         this.sender = sender;
         this.queryEventGenerator = eventGenerator;
         this.enableIfHeader = enableIfHeader;
+        this.disableIfHeader = disableIfHeader;
     }
 
     @Override
@@ -79,6 +81,7 @@ public class QueryEventSenderFilter extends MonitoredFilter implements QueryEven
                 streamName,
                 operatingSystemMXBean::getSystemLoadAverage);
         this.enableIfHeader = config.loadStringParam("enable-event-sender-if-header");
+        this.disableIfHeader = config.loadStringParam("disable-event-sender-if-header");
         boolean eventFileSenderEnabled = config.loadBooleanParam("file-event-sender", false);
         int maxCap = config.loadIntParam("queue-size", 1000);
         int maxEventsPerHttpRequest = config.loadIntParam("http-max-events-per-request", 10);
@@ -138,6 +141,9 @@ public class QueryEventSenderFilter extends MonitoredFilter implements QueryEven
 
     private boolean canLogQueryEvent(HttpServletRequest httpRequest) {
         if (!Strings.isNullOrEmpty(enableIfHeader) && httpRequest.getHeader(enableIfHeader) == null) {
+            return false;
+        }
+        if (!Strings.isNullOrEmpty(disableIfHeader) && httpRequest.getHeader(disableIfHeader) != null) {
             return false;
         }
         if (!queryEventGenerator.hasValidPath(httpRequest)) {

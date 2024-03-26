@@ -135,6 +135,10 @@
             <param-name>enable-event-sender-if-header</param-name>
             <param-value>X-BIGDATA-READ-ONLY</param-value>
         </init-param>
+        <init-param>
+            <param-name>disable-event-sender-if-header</param-name>
+            <param-value>X-Monitoring-Query</param-value>
+        </init-param>
     </filter>
     <filter-mapping>
         <filter-name>event-sender-filter</filter-name>
