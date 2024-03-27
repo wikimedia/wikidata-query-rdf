@@ -264,7 +264,7 @@ object QueryResultRecorder {
 
     val m = QUERY_TYPE.matcher(restOfQuery)
     if (m.find()) {
-      m.group().toUpperCase()
+      m.group().toUpperCase(Locale.ROOT)
     } else {
       "SELECT"
     }
