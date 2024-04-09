@@ -1,0 +1,20 @@
+subgraphs:
+  - name: scholarly
+    subgraph_uri: wdsubgraph:scholarly
+    stream: rdf-streaming-updater.mutations-scholarly
+    default: block
+    rules:
+      - pass ?entity wdt:P31 wd:Q13442814
+      - pass ?entity rdfs:type wikibase:Property
+    stubs_source: true
+  - name: main
+    subgraph_uri: wdsubgraph:main
+    stream: rdf-streaming-updater.mutations-main
+    default: pass
+    rules:
+      - block ?entity wdt:P31 wd:Q13442814
+    stubs_source: true
+  - name: full
+    stream: rdf-streaming-udpater.mutations
+    default: pass
+    stubs_source: false

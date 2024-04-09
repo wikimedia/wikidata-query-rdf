@@ -1,0 +1,8 @@
+subgraphs:
+  - name: something
+    subgraph_uri: <uri:something>
+    stream: rdf-streaming-updater.mutations-something
+    default: block
+    rules:
+      - garbage
+    stubs_source: true
