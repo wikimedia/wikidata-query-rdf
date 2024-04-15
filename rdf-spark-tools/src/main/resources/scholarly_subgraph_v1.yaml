@@ -1,0 +1,13 @@
+subgraphs:
+  - name: scholarly_articles
+    stream: unused
+    default: block
+    rules:
+      - pass ?entity wdt:P31 wd:Q13442814
+    stubs_source: false
+  - name: wikidata_main
+    stream: unused
+    default: pass
+    rules:
+      - block ?entity wdt:P31 wd:Q13442814
+    stubs_source: false

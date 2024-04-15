@@ -1,9 +1,12 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
-import org.apache.spark.sql.{Column, DataFrame, SparkSession}
 import org.apache.spark.sql.functions.{col, lit}
-import org.wikidata.query.rdf.common.uri.Ontology
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
+import org.wikidata.query.rdf.common.uri.{Ontology, UrisSchemeFactory}
 import org.wikidata.query.rdf.spark.utils.SparkUtils
+import org.wikidata.query.rdf.tool.subgraph.{SubgraphDefinitions, SubgraphDefinitionsParser}
+
+import scala.collection.JavaConverters._
 
 object ScholarlyArticleSplitter {
   /** Splits an input partition into two output partitions, keeping shared pieces where needed.
@@ -20,29 +23,21 @@ object ScholarlyArticleSplitter {
     val ontologyContextRefTriples = ontologyContextReferenceTriples(baseTable).cache()
     val ontologyContextValTriples = ontologyContextValueTriples(baseTable).cache()
     val dumpMetadata = baseTable.filter(baseTable("context") === lit("<" + Ontology.DUMP + ">")).dropDuplicates().cache()
+    val subgraphDefinitions = loadSubGraphDefinitions()
+    val subgraphRuleMapper = new SubgraphRuleMapper(UrisSchemeFactory.WIKIDATA, subgraphDefinitions, List("wikidata_main", "scholarly_articles"))
+    val mappedSubgraphs = subgraphRuleMapper.mapSubgraphs(baseTable)
 
-    val allEntities = applyRule(baseTable, lit(true))
-    val instanceOfScholarlyEntities = applyRule(baseTable, col("predicate") === lit(P31) && col("object") === lit(Q13442814))
-
-    val scholEntities = instanceOfScholarlyEntities
-    val mainEntities = allEntities
-      .join(instanceOfScholarlyEntities, allEntities("entity_uri") === instanceOfScholarlyEntities("entity_uri"), "left_anti")
-
-    SparkUtils.insertIntoTablePartition(s"$outPart/scope=scholarly_articles",
-      allEntityTriples(scholEntities, baseTable, ontologyContextRefTriples, ontologyContextValTriples, dumpMetadata))
-    SparkUtils.insertIntoTablePartition(s"$outPart/scope=wikidata_main",
-      allEntityTriples(mainEntities, baseTable, ontologyContextRefTriples, ontologyContextValTriples, dumpMetadata))
+    mappedSubgraphs foreach { case (definition, dataset) =>
+      SparkUtils.insertIntoTablePartition(s"$outPart/scope=${definition.getName}",
+        allEntityTriples(dataset, baseTable, ontologyContextRefTriples, ontologyContextValTriples, dumpMetadata))
+    }
   }
 
-  private def applyRule(from: DataFrame, subgraphRules: Column): DataFrame = {
-    from
-      .filter(col("context").startsWith(ENTITY_NS))
-      .filter(subgraphRules)
-      .select(col("context").as("entity_uri"))
-      .distinct()
+  private def loadSubGraphDefinitions(): SubgraphDefinitions = {
+    SubgraphDefinitionsParser.yamlParser(PREFIXES.asJava).parse(this.getClass.getResourceAsStream("/scholarly_subgraph_v1.yaml"))
   }
 
-  private def allEntityTriples(entities: DataFrame,
+  private def allEntityTriples(entities: Dataset[Entity],
                                allTriples: DataFrame,
                                allReferenceTriples: DataFrame,
                                allValueTriples: DataFrame,
@@ -51,7 +46,7 @@ object ScholarlyArticleSplitter {
       .union(dumpMetadata)
   }
 
-  private def localEntityTriples(entities: DataFrame, allTriples: DataFrame): DataFrame = {
+  private def localEntityTriples(entities: Dataset[Entity], allTriples: DataFrame): DataFrame = {
     entities.join(
         allTriples,
         allTriples("context") === entities("entity_uri"))
@@ -105,10 +100,14 @@ object ScholarlyArticleSplitter {
       .distinct()
   }
 
+  /**
+   * @todo load prefixes from some config or add prefixes to the subgraph definition
+   */
+  private val PREFIXES: Map[String, String] = Map(
+    "wd" -> "http://www.wikidata.org/entity/",
+    "wdt" -> "http://www.wikidata.org/prop/direct/"
+  )
   private val QUAD_COL_NAMES = List("subject", "predicate", "object", "context").map(col)
-  private val P31 = "<http://www.wikidata.org/prop/direct/P31>"
-  private val Q13442814 = "<http://www.wikidata.org/entity/Q13442814>"
   private val PREFIX_REF = "<http://www.wikidata.org/reference/"
   private val PREFIX_VAL = "<http://www.wikidata.org/value/"
-  private val ENTITY_NS = "<http://www.wikidata.org/entity/"
 }
