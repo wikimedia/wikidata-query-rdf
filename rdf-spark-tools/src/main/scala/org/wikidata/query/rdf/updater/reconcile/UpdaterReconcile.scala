@@ -1,34 +1,34 @@
 package org.wikidata.query.rdf.updater.reconcile
 
-import java.{lang, time, util}
+import com.codahale.metrics.MetricRegistry
+import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.functions.{col, row_number}
+import org.apache.spark.sql.{Row, SparkSession}
+import org.slf4j.LoggerFactory
+import org.wikidata.query.rdf.common.uri.UrisConstants
+import org.wikidata.query.rdf.spark.utils.SparkUtils
+import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
+import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, ReconcileEvent}
+import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
+import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
+import org.wikidata.query.rdf.tool.utils.NullStreamDumper
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
+import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
+import org.wikidata.query.rdf.tool.{EntityId, HttpClientUtils}
+import scopt.OptionParser
+
 import java.net.URI
 import java.time.{Clock, Instant}
-import java.util.{Optional, UUID}
 import java.util.function.Function
-
+import java.util.{Optional, UUID}
+import java.{lang, time, util}
 import scala.annotation.tailrec
 import scala.collection.JavaConverters.{asScalaIteratorConverter, collectionAsScalaIterableConverter, mapAsScalaMapConverter, setAsJavaSetConverter}
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
-
-import com.codahale.metrics.MetricRegistry
-import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.functions.col
-import org.slf4j.LoggerFactory
-import org.wikidata.query.rdf.common.uri.UrisConstants
-import org.wikidata.query.rdf.spark.utils.SparkUtils
-import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, ReconcileEvent}
-import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
-import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
-import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
-import org.wikidata.query.rdf.tool.{EntityId, HttpClientUtils}
-import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
-import org.wikidata.query.rdf.tool.utils.NullStreamDumper
-import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
-import scopt.OptionParser
 
 object UpdaterReconcile {
     val datacenterPlaceholder = "$DC$"
@@ -163,9 +163,14 @@ class ReconcileCollector(reconciliationSource: String,
 
   def collectLateEvents(partitionSpec: String)(implicit spark: SparkSession): List[ReconcileEvent] = {
     // https://schema.wikimedia.org/repositories/secondary/jsonschema/rdf_streaming_updater/lapsed_action/current.yaml
+
     val events = SparkUtils.readTablePartition(partitionSpec)
       .filter(col("action_type").isInCollection(lateEventActionMap.keys))
       .filter(col("meta.domain").equalTo(domain))
+      .withColumn("row", row_number().over(
+        Window.partitionBy(col("datacenter"), col("item"), col("action_type"))
+          .orderBy(col("revision_id").desc, col("meta.dt").desc)))
+      .filter(col("row").equalTo(1)).drop("row")
       .select(
         col("datacenter"),
         col("emitter_id"),
@@ -210,6 +215,10 @@ class ReconcileCollector(reconciliationSource: String,
     // https://schema.wikimedia.org/repositories//secondary/jsonschema/rdf_streaming_updater/fetch_failure/current.yaml
     val rows: List[(EventInfo, EntityId, Long, String, Option[String])] = SparkUtils.readTablePartition(partitionSpec)
       .filter(col("meta.domain").equalTo(domain))
+      .withColumn("row", row_number().over(
+        Window.partitionBy(col("datacenter"), col("item"))
+          .orderBy(col("revision_id").desc, col("meta.dt").desc)))
+      .filter(col("row").equalTo(1)).drop("row")
       .select(
         col("datacenter"),
         col("emitter_id"),
@@ -305,6 +314,10 @@ class ReconcileCollector(reconciliationSource: String,
           (col("inconsistency") === "newer_revision_seen")
             .and(col("state_status") === "DELETED")
         ))
+      .withColumn("row", row_number().over(
+        Window.partitionBy(col("datacenter"), col("item"), col("inconsistency"), col("action_type"))
+          .orderBy(col("revision_id").desc, col("meta.dt").desc)))
+      .filter(col("row").equalTo(1)).drop("row")
       .select(
         col("datacenter"),
         col("emitter_id"),

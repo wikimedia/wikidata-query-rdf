@@ -1,5 +1,7 @@
 package org.wikidata.query.rdf.tool.change.events;
 
+import java.time.Instant;
+
 import javax.annotation.Nullable;
 
 import org.wikidata.query.rdf.tool.EntityId;
@@ -59,5 +61,12 @@ public class ReconcileEvent implements EventPlatformEvent {
     public enum Action {
         CREATION,
         DELETION
+    }
+
+    /** Repurpose this event with a new event time. */
+    public ReconcileEvent overrideEventTime(Instant eventTime) {
+        return new ReconcileEvent(
+                new EventsMeta(eventTime, meta().id(), meta().domain(), meta().stream(), meta().requestId()),
+                schema(), item, revision, reconciliationSource, reconciliationAction, originalEventInfo);
     }
 }

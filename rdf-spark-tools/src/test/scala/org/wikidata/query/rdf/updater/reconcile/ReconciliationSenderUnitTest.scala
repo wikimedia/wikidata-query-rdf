@@ -57,7 +57,7 @@ class ReconciliationSenderUnitTest extends AnyFlatSpec with Matchers with MockFa
     (httpClient.execute(_: HttpUriRequest)) expects capture(captureAllFailed) returns invalidResponse repeat 2
     (httpClient.execute(_: HttpUriRequest)) expects capture(captureAllSuccess) returns validResponse noMoreThanOnce()
     val sender = new ReconciliationSender(httpClient, URI.create("https://my_endpoint/"), 2,
-      MapperUtils.getObjectMapper, retries = 3, retryWaitMs = 1)
+      MapperUtils.getObjectMapper, retries = 3, retryWaitMs = 1, clock = () => now)
     sender.send(Seq(genEvent(), genEvent()))
     captureAllFailed.values should have length 2
     captureAllSuccess.values should have length 1
@@ -72,7 +72,7 @@ class ReconciliationSenderUnitTest extends AnyFlatSpec with Matchers with MockFa
 
     (httpClient.execute(_: HttpUriRequest)) expects capture(captureAllSuccess) returns validResponse repeat 2
     val sender = new ReconciliationSender(httpClient, URI.create("https://my_endpoint/"), batchSize = 2,
-      MapperUtils.getObjectMapper, retries = 3, retryWaitMs = 1)
+      MapperUtils.getObjectMapper, retries = 3, retryWaitMs = 1, clock = () => now)
     sender.send(Seq(genEvent(), genEvent(), genEvent()))
     val payload1 = captureAllSuccess.values.head.asInstanceOf[HttpPost].getEntity.asInstanceOf[ByteArrayEntity].getContent
     val payload2 = captureAllSuccess.values(1).asInstanceOf[HttpPost].getEntity.asInstanceOf[ByteArrayEntity].getContent
@@ -93,7 +93,7 @@ class ReconciliationSenderUnitTest extends AnyFlatSpec with Matchers with MockFa
 
     (httpClient.execute(_: HttpUriRequest)) expects capture(captureAllFailed) returns invalidResponse anyNumberOfTimes()
     val sender = new ReconciliationSender(httpClient, URI.create("https://my_endpoint/"), batchSize = 2,
-      MapperUtils.getObjectMapper, retries = 3, retryWaitMs = 1)
+      MapperUtils.getObjectMapper, retries = 3, retryWaitMs = 1, clock = () => now)
     Try {
       sender.send(Seq(genEvent(), genEvent()))
     } match {
