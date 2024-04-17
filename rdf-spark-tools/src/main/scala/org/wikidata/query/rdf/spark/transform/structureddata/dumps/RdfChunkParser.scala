@@ -24,26 +24,47 @@ class RdfChunkParser(urisScheme: UrisScheme, munger: Munger, namespaces: Map[Str
   val predicates = new NamespaceStatementPredicates(urisScheme)
   val valueFactory = new ValueFactoryImpl()
 
-  def parse(inputStream: InputStream): List[Statement] = {
+  /**
+   * Plain parsing without any munging, only useful to parse some dump metadata triples.
+   */
+  def parseHeader(inputStream: InputStream): List[Statement] = {
     val statements = new ListBuffer[Statement]()
+    val handler: RDFHandler = rdfHandler(statements)
+    parse(inputStream, handler)
+    statements.toList map headerQuadGenerator
+  }
+
+  def parseEntityChunk(inputStream: InputStream): List[Statement] = {
+    val statements = new ListBuffer[Statement]()
+    val handler: RDFHandler = rdfHandler(statements)
+    val countListener = new EntityCountListener {
+      override def entitiesProcessed(l: Long): Unit = {}
+    }
+    val mungingRdfHandler = new EntityMungingRdfHandler(urisScheme, this.munger, handler, countListener, quadGenerator)
+    parse(inputStream, mungingRdfHandler)
+    statements.toList
+  }
+
+  private def parse(inputStream: InputStream, handler: RDFHandler): Unit = {
+    val parser = RDFParserSuppliers.defaultRdfParser().get(new NormalizingRdfHandler(handler))
+    parser.parse(new SequenceInputStream(new ByteArrayInputStream(makePrefixHeader().getBytes(StandardCharsets.UTF_8)), inputStream), urisScheme.root())
+  }
+
+  private def rdfHandler(statements: ListBuffer[Statement]) = {
     val handler = new RDFHandler {
       override def startRDF(): Unit = {}
+
       override def endRDF(): Unit = {}
+
       override def handleNamespace(prefix: String, uri: String): Unit = {}
+
       override def handleComment(comment: String): Unit = {}
 
       override def handleStatement(st: Statement): Unit = {
         statements += st
       }
     }
-    val countListener = new EntityCountListener {
-      override def entitiesProcessed(l: Long): Unit = {}
-    }
-    val mungingRdfHandler = new EntityMungingRdfHandler(urisScheme, this.munger, handler, countListener, quadGenerator)
-
-    val parser = RDFParserSuppliers.defaultRdfParser().get(new NormalizingRdfHandler(mungingRdfHandler));
-    parser.parse(new SequenceInputStream(new ByteArrayInputStream(makePrefixHeader().getBytes(StandardCharsets.UTF_8)), inputStream), urisScheme.root())
-    statements.toList
+    handler
   }
 
   /**
@@ -59,6 +80,17 @@ class RdfChunkParser(urisScheme: UrisScheme, munger: Munger, namespaces: Map[Str
         case s: Statement if predicates.subjectInReferenceNS(s) => Ontology.REFERENCE
         case s: Statement if predicates.subjectInValueNS(s) => Ontology.VALUE
         case _: Any => urisScheme.entityIdToURI(entityId)
+      }
+      valueFactory.createStatement(st.getSubject, st.getPredicate, st.getObject, valueFactory.createURI(contextURI))
+    }
+  }
+
+  private def headerQuadGenerator: Function[Statement, Statement] = new Function[Statement, Statement] {
+    def apply(st: Statement): Statement = {
+      val contextURI = st match {
+        // Dump statements are Bound to the dump file not a particular entity
+        case s: Statement if StatementPredicates.dumpStatement(s) => Ontology.DUMP
+        case _: Any => throw new IllegalArgumentException(s"Received $st but expected ")
       }
       valueFactory.createStatement(st.getSubject, st.getPredicate, st.getObject, valueFactory.createURI(contextURI))
     }

@@ -29,6 +29,13 @@
 @prefix prn: <http://www.wikidata.org/prop/reference/value-normalized/> .
 @prefix wdno: <http://www.wikidata.org/prop/novalue/> .
 
+wikibase:Dump a schema:Dataset,
+		owl:Ontology ;
+	cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+	schema:softwareVersion "1.0.0" ;
+	schema:dateModified "2024-04-08T23:00:02Z"^^xsd:dateTime ;
+	owl:imports <http://wikiba.se/ontology-1.0.owl> .
+
 data:Q_INTERSECTION a schema:Dataset ;
 	schema:about wd:Q_INTERSECTION;
 	cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;

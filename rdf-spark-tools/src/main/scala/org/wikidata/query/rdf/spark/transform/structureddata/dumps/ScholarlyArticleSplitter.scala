@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
 import org.apache.spark.sql.{Column, DataFrame, SparkSession}
 import org.apache.spark.sql.functions.{col, lit}
+import org.wikidata.query.rdf.common.uri.Ontology
 import org.wikidata.query.rdf.spark.utils.SparkUtils
 
 object ScholarlyArticleSplitter {
@@ -18,6 +19,7 @@ object ScholarlyArticleSplitter {
     // Spark operations run more reliably this way.
     val ontologyContextRefTriples = ontologyContextReferenceTriples(baseTable).cache()
     val ontologyContextValTriples = ontologyContextValueTriples(baseTable).cache()
+    val dumpMetadata = baseTable.filter(baseTable("context") === lit("<" + Ontology.DUMP + ">")).dropDuplicates().cache()
 
     val allEntities = applyRule(baseTable, lit(true))
     val instanceOfScholarlyEntities = applyRule(baseTable, col("predicate") === lit(P31) && col("object") === lit(Q13442814))
@@ -27,9 +29,9 @@ object ScholarlyArticleSplitter {
       .join(instanceOfScholarlyEntities, allEntities("entity_uri") === instanceOfScholarlyEntities("entity_uri"), "left_anti")
 
     SparkUtils.insertIntoTablePartition(s"$outPart/scope=scholarly_articles",
-      allEntityTriples(scholEntities, baseTable, ontologyContextRefTriples, ontologyContextValTriples))
+      allEntityTriples(scholEntities, baseTable, ontologyContextRefTriples, ontologyContextValTriples, dumpMetadata))
     SparkUtils.insertIntoTablePartition(s"$outPart/scope=wikidata_main",
-      allEntityTriples(mainEntities, baseTable, ontologyContextRefTriples, ontologyContextValTriples))
+      allEntityTriples(mainEntities, baseTable, ontologyContextRefTriples, ontologyContextValTriples, dumpMetadata))
   }
 
   private def applyRule(from: DataFrame, subgraphRules: Column): DataFrame = {
@@ -40,8 +42,13 @@ object ScholarlyArticleSplitter {
       .distinct()
   }
 
-  private def allEntityTriples(entities: DataFrame, allTriples: DataFrame, allReferenceTriples: DataFrame, allValueTriples: DataFrame): DataFrame = {
+  private def allEntityTriples(entities: DataFrame,
+                               allTriples: DataFrame,
+                               allReferenceTriples: DataFrame,
+                               allValueTriples: DataFrame,
+                               dumpMetadata: DataFrame): DataFrame = {
     joinReferenceAndValues(localEntityTriples(entities, allTriples), allReferenceTriples, allValueTriples)
+      .union(dumpMetadata)
   }
 
   private def localEntityTriples(entities: DataFrame, allTriples: DataFrame): DataFrame = {
@@ -82,12 +89,12 @@ object ScholarlyArticleSplitter {
 
   private def ontologyContextValueTriples(baseTable: DataFrame) = {
     baseTable
-      .filter(baseTable("context") === lit("<http://wikiba.se/ontology#Value>"))
+      .filter(baseTable("context") === lit("<" + Ontology.VALUE + ">"))
   }
 
   private def ontologyContextReferenceTriples(baseTable: DataFrame) = {
     baseTable
-      .filter(baseTable("context") === lit("<http://wikiba.se/ontology#Reference>"))
+      .filter(baseTable("context") === lit("<" + Ontology.REFERENCE + ">"))
   }
 
   private def distinctObjects(from: DataFrame, startingWith: String, aliasOfColumn: String): DataFrame = {

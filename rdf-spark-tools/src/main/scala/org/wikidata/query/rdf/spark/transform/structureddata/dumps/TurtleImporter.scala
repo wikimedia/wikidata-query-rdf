@@ -64,15 +64,20 @@ object TurtleImporter {
     val rdd: RDD[Row] = spark.sparkContext.union(params.inputPath map {spark.sparkContext.textFile(_)})
       .flatMap(str => {
         // Filter out prefixes
-        if (!str.startsWith("@prefix")) {
-          // Parse entity turtle block (add entity header that have been removed by parsing)
-          val is = new ByteArrayInputStream(s"$entityHeader$str".getBytes(StandardCharsets.UTF_8))
+        if (str.startsWith("@prefix")) {
+          // parse the header that might contain some dump metadata
+          val is = new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8))
           val chunkParser = RdfChunkParser.bySite(params.site, params.skolemizeBlankNodes)
-          val statements = chunkParser.parse(is)
+          val statements = chunkParser.parseHeader(is)
           // Convert statements to rows
           statements.map(encoder)
         } else {
-          Seq.empty[Row]
+          // Parse entity turtle block (add entity header that have been removed by parsing)
+          val is = new ByteArrayInputStream(s"$entityHeader$str".getBytes(StandardCharsets.UTF_8))
+          val chunkParser = RdfChunkParser.bySite(params.site, params.skolemizeBlankNodes)
+          val statements = chunkParser.parseEntityChunk(is)
+          // Convert statements to rows
+          statements.map(encoder)
         }
       })
       .distinct()
