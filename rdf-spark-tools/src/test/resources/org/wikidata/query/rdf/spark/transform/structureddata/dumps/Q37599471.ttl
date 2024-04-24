@@ -1106,6 +1106,72 @@ ref:0723282bb80042897ca697416c050b4bf7fb5428 a wikibase:Reference ;
 	pr:P887 wd:Q69652283 .
 
 #################################################################
+## DUMMY STATEMENT TO TEST COMPLICATED VALUES
+#################################################################
+wd:Q37599471 p:P2370 s:Q37599471-a890369a-4470-e08b-df95-1b8e00985eb9 .
+
+s:Q37599471-a890369a-4470-e08b-df95-1b8e00985eb9 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2370 "+1"^^xsd:decimal ;
+	psv:P2370 v:3c5956a47ba19c9003fe6cd46a5c9e2f ;
+	psn:P2370 v:3c5956a47ba19c9003fe6cd46a5c9e2f .
+
+v:3c5956a47ba19c9003fe6cd46a5c9e2f a wikibase:QuantityValue ;
+	wikibase:quantityAmount "+1"^^xsd:decimal ;
+	wikibase:quantityUnit <http://www.wikidata.org/entity/Q33680> ;
+	wikibase:quantityNormalized v:3c5956a47ba19c9003fe6cd46a5c9e2f .
+
+wd:Q37599471 p:P6127 s:Q37599471-6A36411E-B776-4088-AAFA-21CE914F5AAE .
+
+s:Q37599471-6A36411E-B776-4088-AAFA-21CE914F5AAE a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6127 "ae-dil-hai-mushkil" .
+
+wd:Q37599471 p:P5021 s:Q37599471-2A3CF9D7-3D72-4BEF-A6C1-DCF299C26BFD .
+
+s:Q37599471-2A3CF9D7-3D72-4BEF-A6C1-DCF299C26BFD a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5021 wd:Q4165246 ;
+	pq:P1013 wd:Q93591279 ;
+	pq:P5102 wd:Q28962310 ;
+	pq:P9259 wd:Q105773168 ;
+	prov:wasDerivedFrom ref:c3f5287635456a5bd2b26e2f58e0ad9881cfcbd4 .
+
+ref:c3f5287635456a5bd2b26e2f58e0ad9881cfcbd4 a wikibase:Reference ;
+	pr:P248 wd:Q21646028 ;
+	pr:P4895 "+17.083"^^xsd:decimal ;
+	prv:P4895 v:2c49653946ab8b338105c42db5e468a4 ;
+	prn:P4895 v:076c33640b540c56070dbe0823cc8de7 ;
+	pr:P4895 "+104.467"^^xsd:decimal ;
+	prv:P4895 v:1abd76a475bf5d46551fa3c7d8708f19 ;
+	prn:P4895 v:804f728f51dc5aa340ca97ff93aea0c2 .
+
+v:2c49653946ab8b338105c42db5e468a4 a wikibase:QuantityValue ;
+	wikibase:quantityAmount "+17.083"^^xsd:decimal ;
+	wikibase:quantityUnit <http://www.wikidata.org/entity/Q7727> .
+
+v:076c33640b540c56070dbe0823cc8de7 a wikibase:QuantityValue ;
+	wikibase:quantityAmount "+1024.980"^^xsd:decimal ;
+	wikibase:quantityUnit <http://www.wikidata.org/entity/Q11574> ;
+	wikibase:quantityNormalized v:076c33640b540c56070dbe0823cc8de7 .
+
+v:2c49653946ab8b338105c42db5e468a4 wikibase:quantityNormalized v:076c33640b540c56070dbe0823cc8de7 .
+
+v:1abd76a475bf5d46551fa3c7d8708f19 a wikibase:QuantityValue ;
+	wikibase:quantityAmount "+104.467"^^xsd:decimal ;
+	wikibase:quantityUnit <http://www.wikidata.org/entity/Q7727> .
+
+v:804f728f51dc5aa340ca97ff93aea0c2 a wikibase:QuantityValue ;
+	wikibase:quantityAmount "+6268.020"^^xsd:decimal ;
+	wikibase:quantityUnit <http://www.wikidata.org/entity/Q11574> ;
+	wikibase:quantityNormalized v:804f728f51dc5aa340ca97ff93aea0c2 .
+
+v:1abd76a475bf5d46551fa3c7d8708f19 wikibase:quantityNormalized v:804f728f51dc5aa340ca97ff93aea0c2 .
+
+#################################################################
 ## DUMMY STATEMENT COPIED FROM Q42 TO TEST SHARED VALUES & REF ##
 #################################################################
 
