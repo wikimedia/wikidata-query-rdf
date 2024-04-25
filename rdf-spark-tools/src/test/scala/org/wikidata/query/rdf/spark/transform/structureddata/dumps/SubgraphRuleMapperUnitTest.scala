@@ -14,7 +14,7 @@ import org.wikidata.query.rdf.tool.subgraph.{SubgraphDefinition, SubgraphDefinit
 import scala.collection.JavaConverters._
 
 class SubgraphRuleMapperUnitTest extends AnyFlatSpec with SparkSessionProvider with Matchers{
-  private val subgraphPred = "<" + Ontology.QueryService.SUBGRAPH + ">";
+  private val subgraphPred = "<" + Ontology.QueryService.SUBGRAPH + ">"
   private val scheme = UrisSchemeFactory.forWikidataHost("ut")
   private val prefixes = Map("e" -> scheme.entityURIs().iterator().next()).asJava
   private val valueFactory = new ValueFactoryImpl()
@@ -167,7 +167,6 @@ class SubgraphRuleMapperUnitTest extends AnyFlatSpec with SparkSessionProvider w
       Row(entityUri("E1"), entityUri("E1"), subgraphPred, "<subgraph:B>")
     )
   }
-
 
   "SubgraphRuleMapper" should "not generate stubs when not required" in {
     val definitions: SubgraphDefinitions = graphDefinitionsForStubsTest(false)

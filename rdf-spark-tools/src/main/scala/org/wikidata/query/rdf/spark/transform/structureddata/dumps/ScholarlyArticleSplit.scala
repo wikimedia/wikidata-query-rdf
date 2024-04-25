@@ -45,14 +45,6 @@ object ScholarlyArticleSplit {
   val V1_SUBGRAPHS: List[String] = List("scholarly_articles", "wikidata_main")
   val V1_SUBGRAPH_DEFINITIONS: String = "scholarly_subgraph_v1"
   val NULL_SUBGRAPH_DEF: SubgraphDefinitions = new SubgraphDefinitions(List.empty.asJava)
-  /**
-   * @todo load prefixes from some config or add prefixes to the subgraph definition
-   */
-  private val PREFIXES: Map[String, String] = Map(
-    "wd" -> "http://www.wikidata.org/entity/",
-    "wdt" -> "http://www.wikidata.org/prop/direct/",
-    "wdsubgraph" -> "https://query.wikidata.org/subgraph/"
-  )
 
   implicit val sparkSession: SparkSession = {
     SparkUtils.getSparkSession("ScholarlyArticleSplitWorker")
@@ -118,6 +110,6 @@ object ScholarlyArticleSplit {
   }
 
   def loadSubGraphDefinitions(strategy: String): SubgraphDefinitions = {
-    SubgraphDefinitionsParser.yamlParser(PREFIXES.asJava).parse(this.getClass.getResourceAsStream(s"/$strategy.yaml"))
+    SubgraphDefinitionsParser.parseYaml(this.getClass.getResourceAsStream(s"/$strategy.yaml"))
   }
 }

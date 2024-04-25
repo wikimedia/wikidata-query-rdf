@@ -1,3 +1,7 @@
+prefixes:
+  wdt: http://www.wikidata.org/prop/direct/
+  wd: http://www.wikidata.org/entity/
+  wdsubgraph: https://query.wikidata.org/subgraph/
 subgraphs:
   - name: scholarly
     stream: unused

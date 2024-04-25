@@ -1,9 +1,8 @@
 prefixes:
-    wdt: http://www.wikidata.org/prop/direct/
-    wd: http://www.wikidata.org/entity/
-    rdfs: http://www.w3.org/2000/01/rdf-schema#
-    wikibase: http://wikiba.se/ontology#
-    wdsubgraph: https://query.wikidata.org/subgraph/
+    wdt: "http://www.wikidata.org/prop/direct/"
+    rdfs: "http://www.w3.org/2000/01/rdf-schema#"
+    wikibase: "http://wikiba.se/ontology#"
+    wdsubgraph: "https://query.wikidata.org/subgraph/"
 subgraphs:
   - name: scholarly
     subgraph_uri: wdsubgraph:scholarly
