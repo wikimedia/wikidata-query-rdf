@@ -1,11 +1,12 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
+import org.apache.spark.sql.functions.{col, lit}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row}
 import org.openrdf.model.impl.ValueFactoryImpl
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
+import org.wikidata.query.rdf.common.uri.{Ontology, UrisSchemeFactory}
 import org.wikidata.query.rdf.spark.SparkSessionProvider
 import org.wikidata.query.rdf.tool.subgraph.SubgraphRule.{Outcome, TriplePattern}
 import org.wikidata.query.rdf.tool.subgraph.{SubgraphDefinition, SubgraphDefinitions, SubgraphRule}
@@ -13,6 +14,7 @@ import org.wikidata.query.rdf.tool.subgraph.{SubgraphDefinition, SubgraphDefinit
 import scala.collection.JavaConverters._
 
 class SubgraphRuleMapperUnitTest extends AnyFlatSpec with SparkSessionProvider with Matchers{
+  private val subgraphPred = "<" + Ontology.QueryService.SUBGRAPH + ">";
   private val scheme = UrisSchemeFactory.forWikidataHost("ut")
   private val prefixes = Map("e" -> scheme.entityURIs().iterator().next()).asJava
   private val valueFactory = new ValueFactoryImpl()
@@ -21,6 +23,7 @@ class SubgraphRuleMapperUnitTest extends AnyFlatSpec with SparkSessionProvider w
   private val pass_P1_E200_rule = new SubgraphRule(Outcome.pass, TriplePattern.parseTriplePattern(s"?entity <pred:P1> e:E200", valueFactory, prefixes))
   private val block_P1_E100_rule = new SubgraphRule(Outcome.block, TriplePattern.parseTriplePattern(s"?entity <pred:P1> e:E100", valueFactory, prefixes))
   private val pass_all_rule = new SubgraphRule(Outcome.pass, TriplePattern.parseTriplePattern(s"?entity <pred:P1> []", valueFactory, prefixes))
+  private val block_P1_P300_rule = new SubgraphRule(Outcome.block, TriplePattern.parseTriplePattern(s"?entity <pred:P1> e:E300", valueFactory, prefixes))
 
   private val pass_P1_E100_default_block = new SubgraphDefinition("pass_P1_E100_default_block", Option.empty.orNull, "unused",
     List(pass_P1_E100_rule).asJava, Outcome.block, false)
@@ -53,7 +56,7 @@ class SubgraphRuleMapperUnitTest extends AnyFlatSpec with SparkSessionProvider w
       Row(entityUri("E2"), "<random:triple>", "<random:triple>", "<random:triple>"),
       Row(entityUri("E3"), entityUri("E3"), "<pred:P1>", entityUri("E300")),
       Row(entityUri("E3"), "<random:triple>", "<random:triple>", "<random:triple>"),
-      Row(entityUri("E4"), entityUri("E4"), "<pred:P1>", entityUri("E300")),
+      Row(entityUri("E4"), entityUri("E4"), "<pred:P1>", entityUri("E400")),
       Row(entityUri("E4"), "<random:triple>", "<random:triple>", "<random:triple>")
     ).asJava, SCHEMA)
   }
@@ -122,5 +125,58 @@ class SubgraphRuleMapperUnitTest extends AnyFlatSpec with SparkSessionProvider w
 
     val mappedSubgraph2 = mappedSubgraphs(block_P1_E100_default_pass)
     mappedSubgraph2.collect() should contain only (Entity(entityUri("E2")), Entity(entityUri("E3")), Entity(entityUri("E4")))
+  }
+
+  private def graphDefinitionsForStubsTest(withStubs: Boolean) = {
+    // A has [E1,E2] (E3 -> [C], E4 -> [B,C])
+    // B has [E1,E2,E4] (E3 -> [C])
+    // C has [E2,E3,E4] (E1 ->[A,B])
+    val definitions = new SubgraphDefinitions(List(
+      new SubgraphDefinition("A", valueFactory.createURI("subgraph:A"), "unused", List(pass_P1_E100_rule, pass_P1_E200_rule).asJava, Outcome.block, withStubs),
+      new SubgraphDefinition("B", valueFactory.createURI("subgraph:B"), "unused", List(block_P1_P300_rule).asJava, Outcome.pass, withStubs),
+      new SubgraphDefinition("C", valueFactory.createURI("subgraph:C"), "unused", List(block_P1_E100_rule).asJava, Outcome.pass, withStubs)
+    ).asJava)
+    definitions
+  }
+
+  private def extractStubs(stubs: Option[DataFrame]): DataFrame = {
+    stubs.get.filter(col("predicate") === lit("<" + Ontology.QueryService.SUBGRAPH + ">"))
+  }
+
+  "SubgraphRuleMapper" should "generate stubs when required" in {
+    val definitions: SubgraphDefinitions = graphDefinitionsForStubsTest(true)
+    val mapper = new SubgraphRuleMapper(scheme, definitions, List("A", "B", "C"))
+    val mappedSubgraphs = mapper.mapSubgraphs(dataset())
+    val stubs = mapper.buildStubs(mappedSubgraphs)
+    stubs.size shouldBe 3
+    val stubsGraphAtoBC = stubs(definitions.getDefinitionByName("A"))
+    val stubsGraphBtoAC = stubs(definitions.getDefinitionByName("B"))
+    val stubsGraphCtoAB = stubs(definitions.getDefinitionByName("C"))
+    stubsGraphAtoBC should not be None
+    stubsGraphBtoAC should not be None
+    stubsGraphCtoAB should not be None
+
+    extractStubs(stubsGraphAtoBC).collect() should contain only (
+      Row(entityUri("E4"), entityUri("E4"), subgraphPred, "<subgraph:B>"),
+      Row(entityUri("E4"), entityUri("E4"), subgraphPred, "<subgraph:C>"),
+      Row(entityUri("E3"), entityUri("E3"), subgraphPred, "<subgraph:C>")
+    )
+    extractStubs(stubsGraphBtoAC).collect() should contain only Row(entityUri("E3"), entityUri("E3"), subgraphPred, "<subgraph:C>")
+    extractStubs(stubsGraphCtoAB).collect() should contain only (
+      Row(entityUri("E1"), entityUri("E1"), subgraphPred, "<subgraph:A>"),
+      Row(entityUri("E1"), entityUri("E1"), subgraphPred, "<subgraph:B>")
+    )
+  }
+
+
+  "SubgraphRuleMapper" should "not generate stubs when not required" in {
+    val definitions: SubgraphDefinitions = graphDefinitionsForStubsTest(false)
+    val mapper = new SubgraphRuleMapper(scheme, definitions, List("A", "B", "C"))
+    val mappedSubgraphs = mapper.mapSubgraphs(dataset())
+    val stubs = mapper.buildStubs(mappedSubgraphs)
+    stubs.size shouldBe 3
+    stubs foreach { case (_, stubs) =>
+      stubs shouldBe None
+    }
   }
 }

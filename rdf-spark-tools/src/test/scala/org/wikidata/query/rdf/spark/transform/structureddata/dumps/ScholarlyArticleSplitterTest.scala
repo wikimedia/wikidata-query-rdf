@@ -1,8 +1,10 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql._
+import org.apache.spark.sql.functions.{col, lit}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.wikidata.query.rdf.common.uri.Ontology
 import org.wikidata.query.rdf.spark.SparkSessionProvider
 
 class ScholarlyArticleSplitterTest extends AnyFlatSpec with SparkSessionProvider with Matchers {
@@ -12,7 +14,7 @@ class ScholarlyArticleSplitterTest extends AnyFlatSpec with SparkSessionProvider
     "Q_INTERSECTION" -> this.getClass.getResource("Q_INTERSECTION.ttl").toURI.toString
   )
 
-  "ScholarlyArticleSplitter" should "be able to properly split a rdf dataset" in {
+  "ScholarlyArticleSplitter" should "be able to properly split a rdf dataset based on subgraph_v1 strategy" in {
     importedFiles foreach {
       case (p, file) =>
         val dtPlaceholder = if (p == "Q_INTERSECTION") "19700101" else "20231027"
@@ -26,7 +28,10 @@ class ScholarlyArticleSplitterTest extends AnyFlatSpec with SparkSessionProvider
     }
     ScholarlyArticleSplit.split(ScholarlyArticleSplitParams(
       inputPartition = s"rdf/date=20231027",
-      outputPartitionParent = s"rdf_split/snapshot=20231027"
+      outputPartitionParent = s"rdf_split/snapshot=20231027",
+      subgraphDefinitions = ScholarlyArticleSplit.loadSubGraphDefinitions(strategy = ScholarlyArticleSplit.V1_SUBGRAPH_DEFINITIONS),
+      subgraphs = ScholarlyArticleSplit.V1_SUBGRAPHS
+
     ))
     assertSplitCorrectness(readSourceEntityTriples("Q37599471"), "scholarly_articles")
     assertSplitCorrectness(readSourceEntityTriples("Q42"), "wikidata_main")
@@ -37,15 +42,56 @@ class ScholarlyArticleSplitterTest extends AnyFlatSpec with SparkSessionProvider
       "Q_INTERSECTION")
   }
 
+  "ScholarlyArticleSplitter" should "be able to properly split a rdf dataset based on scholarly_subgraph_v2_alpha strategy" in {
+    importedFiles foreach {
+      case (p, file) =>
+        val dtPlaceholder = if (p == "Q_INTERSECTION") "19700101" else "20231027"
+        TurtleImporter.importDump(Params(
+          inputPath = Seq(file),
+          outputTable = Some(s"rdf/date=$dtPlaceholder/entity=$p"),
+          outputPath = None,
+          numPartitions = 1,
+          skolemizeBlankNodes = true,
+          site = Site.wikidata), None)
+    }
+    ScholarlyArticleSplit.split(ScholarlyArticleSplitParams(
+      inputPartition = s"rdf/date=20231027",
+      outputPartitionParent = s"rdf_split/snapshot=20231027",
+      subgraphDefinitions = ScholarlyArticleSplit.loadSubGraphDefinitions(strategy = "scholarly_subgraph_v2_alpha"),
+      subgraphs = List("main", "scholarly")
+
+    ))
+    assertSplitCorrectness(readSourceEntityTriples("Q37599471"), "scholarly")
+    assertSplitCorrectness(readSourceEntityTriples("Q42"), "main")
+    assertSharedTripleCorrectness(
+      readSourceEntityTriples("Q_INTERSECTION"),
+      "scholarly_articles",
+      "wikidata_main",
+      "Q_INTERSECTION")
+
+
+    assertStubs("scholarly", Array(Row("<http://www.wikidata.org/entity/Q42>", "<https://query.wikidata.org/subgraph/main>")))
+    assertStubs("main", Array(Row("<http://www.wikidata.org/entity/Q37599471>", "<https://query.wikidata.org/subgraph/scholarly>")))
+  }
+
+  private def assertStubs(scope: String, stubs: Array[Row]): Unit = {
+    withClue(s"$scope split should contains stub triples") {
+      readSplit(scope)
+        .filter(stubsFilter)
+        .select("subject", "object")
+        .collect() should contain only (stubs: _*)
+    }
+  }
+
   private def assertSplitCorrectness(source: DataFrame, scope: String): Unit = {
-    val split = readSplit(scope)
+    val split = readSplitNoStubs(scope)
     withClue(s"$scope split should contain all source triples") { source.except(split).collect() shouldBe empty }
     withClue(s"$scope split should not have extra triples") { split.except(source).collect() shouldBe empty }
   }
 
   private def assertSharedTripleCorrectness(goal: DataFrame, scopeA: String, scopeB: String, exclude: String): Unit = {
-    val partitionA = readSplit(scopeA)
-    val partitionB = readSplit(scopeB)
+    val partitionA = readSplitNoStubs(scopeA)
+    val partitionB = readSplitNoStubs(scopeB)
     val goalWithoutSyntheticQID = goal.filter(s"subject not like '%$exclude%'")
     withClue(s"$scopeA and $scopeB intersection should be non-empty") {
       partitionA.intersect(partitionB) should not be empty
@@ -56,6 +102,12 @@ class ScholarlyArticleSplitterTest extends AnyFlatSpec with SparkSessionProvider
     withClue(s"$scopeA and $scopeB intersection minus intersection goal should have no leftovers") {
       partitionA.intersect(partitionB).except(goalWithoutSyntheticQID) shouldBe empty
     }
+  }
+
+  private def stubsFilter: Column = col("predicate") === lit(s"<${Ontology.QueryService.SUBGRAPH}>")
+
+  private def readSplitNoStubs(scope: String) = {
+    readSplit(scope).filter(!stubsFilter)
   }
 
   private def readSplit(scope: String) = {

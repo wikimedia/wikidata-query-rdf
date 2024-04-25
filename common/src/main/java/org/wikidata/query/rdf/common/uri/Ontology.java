@@ -255,6 +255,19 @@ public final class Ontology {
         }
     }
 
+    /** Ontology for the Query Service. */
+    public static final class QueryService {
+        /**
+         * Common prefix for the Query Service ontology.
+         */
+        public static final String QUERY_SERVICE_NS = "http://wikiba.se/queryService#";
+
+        /**
+         * Term used for triples holding subgraph stubs: wd:Q1 wikibaseqs:subgraph uri:subgraph.
+         */
+        public static final String SUBGRAPH = QUERY_SERVICE_NS + "subgraph";
+    }
+
     /**
      * Add prefix to a query.
      */

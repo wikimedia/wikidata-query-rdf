@@ -4,11 +4,9 @@ import org.apache.spark.sql.functions.{col, lit}
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 import org.wikidata.query.rdf.common.uri.{Ontology, UrisSchemeFactory}
 import org.wikidata.query.rdf.spark.utils.SparkUtils
-import org.wikidata.query.rdf.tool.subgraph.{SubgraphDefinitions, SubgraphDefinitionsParser}
-
-import scala.collection.JavaConverters._
 
 object ScholarlyArticleSplitter {
+  private val uriScheme = UrisSchemeFactory.WIKIDATA
   /** Splits an input partition into two output partitions, keeping shared pieces where needed.
    * Adapted from https://people.wikimedia.org/~andrewtavis-wmde/T342111_spark_sa_subgraph_metrics.html
    * for job wireup and more reliable execution. This additionally pulls values for references (not just entities).
@@ -23,27 +21,27 @@ object ScholarlyArticleSplitter {
     val ontologyContextRefTriples = ontologyContextReferenceTriples(baseTable).cache()
     val ontologyContextValTriples = ontologyContextValueTriples(baseTable).cache()
     val dumpMetadata = baseTable.filter(baseTable("context") === lit("<" + Ontology.DUMP + ">")).dropDuplicates().cache()
-    val subgraphDefinitions = loadSubGraphDefinitions()
-    val subgraphRuleMapper = new SubgraphRuleMapper(UrisSchemeFactory.WIKIDATA, subgraphDefinitions, List("wikidata_main", "scholarly_articles"))
+    val subgraphDefinitions = params.subgraphDefinitions
+    val subgraphRuleMapper = new SubgraphRuleMapper(uriScheme, subgraphDefinitions, params.subgraphs)
     val mappedSubgraphs = subgraphRuleMapper.mapSubgraphs(baseTable)
 
+    val stubs = subgraphRuleMapper.buildStubs(mappedSubgraphs)
     mappedSubgraphs foreach { case (definition, dataset) =>
       SparkUtils.insertIntoTablePartition(s"$outPart/scope=${definition.getName}",
-        allEntityTriples(dataset, baseTable, ontologyContextRefTriples, ontologyContextValTriples, dumpMetadata))
+        allEntityTriples(dataset, baseTable, ontologyContextRefTriples, ontologyContextValTriples, dumpMetadata, stubs(definition)))
     }
-  }
-
-  private def loadSubGraphDefinitions(): SubgraphDefinitions = {
-    SubgraphDefinitionsParser.yamlParser(PREFIXES.asJava).parse(this.getClass.getResourceAsStream("/scholarly_subgraph_v1.yaml"))
   }
 
   private def allEntityTriples(entities: Dataset[Entity],
                                allTriples: DataFrame,
                                allReferenceTriples: DataFrame,
                                allValueTriples: DataFrame,
-                               dumpMetadata: DataFrame): DataFrame = {
-    joinReferenceAndValues(localEntityTriples(entities, allTriples), allReferenceTriples, allValueTriples)
+                               dumpMetadata: DataFrame,
+                               stubs: Option[DataFrame]
+                              ): DataFrame = {
+    val triples = joinReferenceAndValues(localEntityTriples(entities, allTriples), allReferenceTriples, allValueTriples)
       .union(dumpMetadata)
+    stubs.map(triples.unionByName).getOrElse(triples).select(QUAD_COL_NAMES: _*)
   }
 
   private def localEntityTriples(entities: Dataset[Entity], allTriples: DataFrame): DataFrame = {
@@ -54,14 +52,14 @@ object ScholarlyArticleSplitter {
   }
 
   private def joinReferenceAndValues(entitiesTriple: DataFrame, allReferenceTriples: DataFrame, allValueTriples: DataFrame): DataFrame = {
-    val entityDirectReferenceUris = distinctObjects(entitiesTriple, PREFIX_REF, "reference_uri")
-    val entityDirectValueUris = distinctObjects(entitiesTriple, PREFIX_VAL, "value_uri")
+    val entityDirectReferenceUris = distinctObjects(entitiesTriple, "<" + uriScheme.reference(), "reference_uri")
+    val entityDirectValueUris = distinctObjects(entitiesTriple, "<" + uriScheme.value(), "value_uri")
 
     val entityDirectRefTriples = allReferenceTriples
       .join(entityDirectReferenceUris, allReferenceTriples("subject") === entityDirectReferenceUris("reference_uri"))
       .select(QUAD_COL_NAMES: _*)
 
-    val entityIndirectValueUris = distinctObjects(entityDirectRefTriples, PREFIX_VAL, "value_uri")
+    val entityIndirectValueUris = distinctObjects(entityDirectRefTriples, "<" + uriScheme.value(), "value_uri")
 
     val entityValueUris = entityDirectValueUris
       .union(entityIndirectValueUris)
@@ -100,14 +98,5 @@ object ScholarlyArticleSplitter {
       .distinct()
   }
 
-  /**
-   * @todo load prefixes from some config or add prefixes to the subgraph definition
-   */
-  private val PREFIXES: Map[String, String] = Map(
-    "wd" -> "http://www.wikidata.org/entity/",
-    "wdt" -> "http://www.wikidata.org/prop/direct/"
-  )
   private val QUAD_COL_NAMES = List("subject", "predicate", "object", "context").map(col)
-  private val PREFIX_REF = "<http://www.wikidata.org/reference/"
-  private val PREFIX_VAL = "<http://www.wikidata.org/value/"
 }

@@ -1,0 +1,15 @@
+subgraphs:
+  - name: scholarly
+    stream: unused
+    subgraph_uri: wdsubgraph:scholarly
+    default: block
+    rules:
+      - pass ?entity wdt:P31 wd:Q13442814
+    stubs_source: true
+  - name: main
+    stream: unused
+    subgraph_uri: wdsubgraph:main
+    default: pass
+    rules:
+      - block ?entity wdt:P31 wd:Q13442814
+    stubs_source: true

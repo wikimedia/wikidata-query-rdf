@@ -1,9 +1,9 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
-import org.apache.spark.sql.functions._
 import org.apache.spark.sql._
+import org.apache.spark.sql.functions._
 import org.openrdf.model.{BNode, Value}
-import org.wikidata.query.rdf.common.uri.UrisScheme
+import org.wikidata.query.rdf.common.uri.{Ontology, UrisScheme}
 import org.wikidata.query.rdf.tool.subgraph.SubgraphRule.{Outcome, TriplePattern}
 import org.wikidata.query.rdf.tool.subgraph.{SubgraphDefinition, SubgraphDefinitions, SubgraphRule}
 
@@ -66,6 +66,24 @@ class SubgraphRuleMapper(urisScheme: UrisScheme, subgraphDefinition: SubgraphDef
       }
       subgraph -> filteredEntities
     } toMap
+  }
+
+  def buildStubs(mappedSubgraphs: Map[SubgraphDefinition, Dataset[Entity]]): Map[SubgraphDefinition, Option[DataFrame]] = {
+    mappedSubgraphs map { case (dest, entities) =>
+      val stubsDf = mappedSubgraphs filter {
+        case (source, _) => source.isStubsSource && !source.equals(dest)
+      } map { case (source, sourceEntities) =>
+        sourceEntities
+          .withColumn("context", sourceEntities("entity_uri"))
+          .withColumn("subject", sourceEntities("entity_uri"))
+          .withColumn("predicate", lit(statementEncoder.encodeURI(Ontology.QueryService.SUBGRAPH)))
+          .withColumn("object", lit(statementEncoder.encode(source.getSubgraphUri)))
+          .drop("entity_uri")
+      } reduceOption {
+        _ union _
+      } map (stubs => stubs.join(entities, entities("entity_uri") === stubs("context"), "left_anti"))
+      dest -> stubsDf
+    }
   }
 
   /**
