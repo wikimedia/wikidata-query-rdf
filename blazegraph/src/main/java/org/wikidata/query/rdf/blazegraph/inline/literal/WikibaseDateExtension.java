@@ -216,15 +216,15 @@ public class WikibaseDateExtension<V extends BigdataValue> extends AbstractMulti
         long ts1 = iv1.getDelegate().longValue();
         long ts2 = iv2.getDelegate().longValue();
         switch (op) {
-        case MIN:
-            return ts1 < ts2 ? iv1 : iv2;
-        case MAX:
-            return ts1 > ts2 ? iv1 : iv2;
-        case MINUS:
-            double days = (double) (ts1 - ts2) / ((double) (60 * 60 * 24));
-            return new XSDNumericIV(days);
-        default:
-            throw new SparqlTypeErrorException();
+            case MIN:
+                return ts1 < ts2 ? iv1 : iv2;
+            case MAX:
+                return ts1 > ts2 ? iv1 : iv2;
+            case MINUS:
+                double days = (double) (ts1 - ts2) / ((double) (60 * 60 * 24));
+                return new XSDNumericIV(days);
+            default:
+                throw new SparqlTypeErrorException();
         }
     }
 

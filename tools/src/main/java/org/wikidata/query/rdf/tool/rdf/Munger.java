@@ -505,21 +505,21 @@ public final class Munger {
             // Three specific ones are recorded for later re-application
             String predicate = statement.getPredicate().stringValue();
             switch (predicate) {
-            case SchemaDotOrg.VERSION:
-                knownPredicate = true;
-                revisionId = objectAsLiteral(statement);
-                break;
-            case SchemaDotOrg.DATE_MODIFIED:
-                knownPredicate = true;
-                lastModified = objectAsLiteral(statement);
-                break;
-            case SchemaDotOrg.SOFTWARE_VERSION:
-                setFormatVersion(objectAsLiteral(statement).stringValue());
-                break;
-            default:
-                if (predicate.startsWith(Ontology.NAMESPACE)) {
+                case SchemaDotOrg.VERSION:
                     knownPredicate = true;
-                }
+                    revisionId = objectAsLiteral(statement);
+                    break;
+                case SchemaDotOrg.DATE_MODIFIED:
+                    knownPredicate = true;
+                    lastModified = objectAsLiteral(statement);
+                    break;
+                case SchemaDotOrg.SOFTWARE_VERSION:
+                    setFormatVersion(objectAsLiteral(statement).stringValue());
+                    break;
+                default:
+                    if (predicate.startsWith(Ontology.NAMESPACE)) {
+                        knownPredicate = true;
+                    }
                     // Noop - fall out is ok as we just remove them.
             }
             if (knownPredicate) {
@@ -547,40 +547,40 @@ public final class Munger {
                 return false;
             }
             switch (statement.getPredicate().stringValue()) {
-            case RDF.TYPE:
-                if (keepTypes) {
-                    return true;
-                }
-                /*
-                 * We don't need wd:Q1 a ontology:Item because its super common
-                 * and not super interesting.
-                 */
-                return !SKIPPED_TYPES.contains(statement.getObject().stringValue());
-            case SchemaDotOrg.NAME:
-            case SKOS.PREF_LABEL:
-                // Q1 schema:name "foo" is a dupe of rdfs:label
-                // Q1 skos:prefLabel "foo" is a dupe of rdfs:label
-                return false;
-            case RDFS.LABEL:
-                if (uris.entityURItoId(subject).startsWith("L")
-                        || subEntities.contains(subject)) {
-                    // Skip labels for Lexeme & its sub-entities, e.g. Forms and Senses
+                case RDF.TYPE:
+                    if (keepTypes) {
+                        return true;
+                    }
+                    /*
+                     * We don't need wd:Q1 a ontology:Item because its super common
+                     * and not super interesting.
+                     */
+                    return !SKIPPED_TYPES.contains(statement.getObject().stringValue());
+                case SchemaDotOrg.NAME:
+                case SKOS.PREF_LABEL:
+                    // Q1 schema:name "foo" is a dupe of rdfs:label
+                    // Q1 skos:prefLabel "foo" is a dupe of rdfs:label
                     return false;
-                }
-                return limitLabelLanguage(statement) && singleLabelMode(singleLabelModeWorkForLabel, statement);
-            case SchemaDotOrg.DESCRIPTION:
-                return limitLabelLanguage(statement) && singleLabelMode(singleLabelModeWorkForDescription, statement);
-            case SKOS.ALT_LABEL:
-                return limitLabelLanguage(statement);
-            case OWL.SAME_AS:
-                return true;
-            case Ontolex.LEXICAL_FORM:
-            case Ontolex.SENSE_PREDICATE:
-                // Links to Form and Sense
-                subEntities.add(statement.getObject().stringValue());
-                return true;
-            default:
-                return entityStatementWithUnrecognizedPredicate(statement);
+                case RDFS.LABEL:
+                    if (uris.entityURItoId(subject).startsWith("L")
+                            || subEntities.contains(subject)) {
+                        // Skip labels for Lexeme & its sub-entities, e.g. Forms and Senses
+                        return false;
+                    }
+                    return limitLabelLanguage(statement) && singleLabelMode(singleLabelModeWorkForLabel, statement);
+                case SchemaDotOrg.DESCRIPTION:
+                    return limitLabelLanguage(statement) && singleLabelMode(singleLabelModeWorkForDescription, statement);
+                case SKOS.ALT_LABEL:
+                    return limitLabelLanguage(statement);
+                case OWL.SAME_AS:
+                    return true;
+                case Ontolex.LEXICAL_FORM:
+                case Ontolex.SENSE_PREDICATE:
+                    // Links to Form and Sense
+                    subEntities.add(statement.getObject().stringValue());
+                    return true;
+                default:
+                    return entityStatementWithUnrecognizedPredicate(statement);
             }
         }
 
@@ -604,24 +604,24 @@ public final class Munger {
         private boolean entityStatementStatement(Statement statement) {
             String subject = statement.getSubject().stringValue();
             switch (statement.getPredicate().stringValue()) {
-            case RDF.TYPE:
-                if (keepTypes) {
+                case RDF.TYPE:
+                    if (keepTypes) {
+                        return true;
+                    }
+                    /*
+                     * We don't need s:<uuid> a ontology:Statement because its super
+                     * common and not super interesting.
+                     */
+                    if (statement.getObject().stringValue().equals(Ontology.STATEMENT)) {
+                        return false;
+                    }
+                    break;
+                case Provenance.WAS_DERIVED_FROM:
+                    if (predicates.objectInReferenceNS(statement)) {
+                        registerExtraValidSubject(statement.getObject().stringValue());
+                    }
                     return true;
-                }
-                /*
-                 * We don't need s:<uuid> a ontology:Statement because its super
-                 * common and not super interesting.
-                 */
-                if (statement.getObject().stringValue().equals(Ontology.STATEMENT)) {
-                    return false;
-                }
-                break;
-            case Provenance.WAS_DERIVED_FROM:
-                if (predicates.objectInReferenceNS(statement)) {
-                    registerExtraValidSubject(statement.getObject().stringValue());
-                }
-                return true;
-            default:
+                default:
             }
             if (!extraValidSubjects.contains(subject)) {
                 /*
@@ -687,18 +687,18 @@ public final class Munger {
         private boolean entityValueStatement(Statement statement) {
             String subject = statement.getSubject().stringValue();
             switch (statement.getPredicate().stringValue()) {
-            case RDF.TYPE:
-                // We keep value types
-                return true;
-            case Quantity.NORMALIZED:
-                /* Keep normalized values. It's a bit tricky here since
-                 * normalized value may not be used yet and when we restore
-                 * regular value we may miss normalized one. So we always add
-                 * normalized ones to allowed list.
-                 */
-                registerExtraValidSubject(statement.getObject().stringValue());
-                break;
-            default:
+                case RDF.TYPE:
+                    // We keep value types
+                    return true;
+                case Quantity.NORMALIZED:
+                    /* Keep normalized values. It's a bit tricky here since
+                     * normalized value may not be used yet and when we restore
+                     * regular value we may miss normalized one. So we always add
+                     * normalized ones to allowed list.
+                     */
+                    registerExtraValidSubject(statement.getObject().stringValue());
+                    break;
+                default:
             }
             if (!extraValidSubjects.contains(subject)) {
                 /*
@@ -869,7 +869,7 @@ public final class Munger {
          * Work for making sure we remove everything but the best label or
          * description.
          */
-        private class SingleLabelModeWork {
+        private final class SingleLabelModeWork {
             /**
              * The best statement we've seen for the label/description.
              */

@@ -5,6 +5,7 @@ import static java.lang.Boolean.parseBoolean;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 
+import javax.annotation.Untainted;
 import javax.servlet.FilterConfig;
 
 /**
@@ -34,6 +35,7 @@ public class FilterConfiguration {
      * @param name name of the property
      * @return the value of the parameter
      */
+    @Untainted // we implicitly trust configuration files
     public String loadStringParam(String name) {
         String result = null;
         String fParam = filterConfig.getInitParameter(name);

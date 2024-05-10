@@ -90,22 +90,22 @@ public class CoordinatePartBOp extends IVValueExpression<IV> implements INeedsMa
         final BigdataValue result;
 
         switch (part()) {
-        case GLOBE:
-            String globe = point.getGlobe();
-            if (globe == null) {
-                result = getValueFactory().createLiteral("");
-            } else {
-                result = getValueFactory().createURI(point.getGlobe());
-            }
-            break;
-        case LON:
-            result = getValueFactory().createLiteral(Double.parseDouble(point.getLongitude()));
-            break;
-        case LAT:
-            result = getValueFactory().createLiteral(Double.parseDouble(point.getLatitude()));
-            break;
-        default:
-            throw new IllegalArgumentException("Unknown part specified");
+            case GLOBE:
+                String globe = point.getGlobe();
+                if (globe == null) {
+                    result = getValueFactory().createLiteral("");
+                } else {
+                    result = getValueFactory().createURI(point.getGlobe());
+                }
+                break;
+            case LON:
+                result = getValueFactory().createLiteral(Double.parseDouble(point.getLongitude()));
+                break;
+            case LAT:
+                result = getValueFactory().createLiteral(Double.parseDouble(point.getLatitude()));
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown part specified");
         }
 
         return super.asIV(result, bindingSet);

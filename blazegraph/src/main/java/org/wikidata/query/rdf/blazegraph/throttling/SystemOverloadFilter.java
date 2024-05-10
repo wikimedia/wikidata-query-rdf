@@ -24,6 +24,8 @@ import org.wikidata.query.rdf.blazegraph.filters.MonitoredFilter;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * A Servlet Filter that drops requests when the system load is high.
  *
@@ -87,6 +89,7 @@ public class SystemOverloadFilter extends MonitoredFilter implements Filter, Sys
         else chain.doFilter(request, response);
     }
 
+    @SuppressFBWarnings(value = "PREDICTABLE_RANDOM", justification = "We don't need a SecureRandom to drop a percentage of requests.")
     private boolean shouldDropRequest(double ratio) {
         return ThreadLocalRandom.current().nextDouble(1.0) > ratio;
     }

@@ -533,15 +533,15 @@ public class LabelService extends AbstractServiceFactory {
          */
         private IV pickOrBuildBestLabel() {
             switch (bestLabels.size()) {
-            case 1:
-                // Found a single label so we can just return it.
-                // This is probably the most common case.
-                return bestLabels.get(0);
-            case 0:
-                // Didn't find a real label so lets fake one up
-                return bestEffortLabel();
-            default:
-                return joinLabels();
+                case 1:
+                    // Found a single label so we can just return it.
+                    // This is probably the most common case.
+                    return bestLabels.get(0);
+                case 0:
+                    // Didn't find a real label so lets fake one up
+                    return bestEffortLabel();
+                default:
+                    return joinLabels();
             }
         }
 

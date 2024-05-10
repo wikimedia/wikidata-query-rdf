@@ -44,6 +44,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * A Servlet Filter that applies throttling.
  *
@@ -339,6 +341,7 @@ public class ThrottlingFilter extends MonitoredFilter implements Filter, Throttl
      * @param bannedUntil time until which the user is banned
      * @throws IOException if the response cannot be written
      */
+    @SuppressFBWarnings("XSS_SERVLET") // inputs to sendError() are all trusted
     private void notifyUserBanned(HttpServletResponse response, Instant bannedUntil) throws IOException {
         response.sendError(403, formattedBanMessage(bannedUntil));
     }
@@ -395,6 +398,7 @@ public class ThrottlingFilter extends MonitoredFilter implements Filter, Throttl
         }
     }
 
+    @SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "Path comes from trusted configuration file.")
     private Collection<Pattern> loadRegexPatterns(String patternFilename) {
         try {
             Path patternFile = Paths.get(patternFilename);

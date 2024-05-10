@@ -22,6 +22,7 @@ import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 import de.thetaphi.forbiddenapis.SuppressForbidden;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Utilities for command line scripts.
@@ -42,6 +43,9 @@ public final class CliUtils {
      *
      * @throws IOException if it is thrown opening the files and such
      */
+    @SuppressFBWarnings(
+            value = {"PATH_TRAVERSAL_IN", "URLCONNECTION_SSRF_FD"},
+            justification = "coming from program arguments")
     public static InputStream inputStream(String uri) throws IOException {
         if (uri.equals("-")) {
             return ForbiddenOk.systemDotIn();

@@ -115,22 +115,22 @@ public final class ChangeSourceContext {
         long start;
         long end;
         switch (ids.length) {
-        case 1:
-            // FIXME: this seems to be an undocumented abuse of the --idrange option, should we drop support?
-            // Dropping support would make it easier to move this parsing to the UpdateOptions class.
-            if (!Character.isDigit(ids[0].charAt(0))) {
-                // Not a digit - probably just single ID
-                return new IdListChangeSource(ids, batchSize);
-            }
-            start = Long.parseLong(ids[0]);
-            end = start;
-            break;
-        case 2:
-            start = Long.parseLong(ids[0]);
-            end = Long.parseLong(ids[1]);
-            break;
-        default:
-            throw new IllegalArgumentException("Invalid format for --idrange.  Need <start>-<stop>.");
+            case 1:
+                // FIXME: this seems to be an undocumented abuse of the --idrange option, should we drop support?
+                // Dropping support would make it easier to move this parsing to the UpdateOptions class.
+                if (!Character.isDigit(ids[0].charAt(0))) {
+                    // Not a digit - probably just single ID
+                    return new IdListChangeSource(ids, batchSize);
+                }
+                start = Long.parseLong(ids[0]);
+                end = start;
+                break;
+            case 2:
+                start = Long.parseLong(ids[0]);
+                end = Long.parseLong(ids[1]);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid format for --idrange.  Need <start>-<stop>.");
         }
         return IdRangeChangeSource.forItems(start, end, batchSize);
     }

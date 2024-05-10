@@ -42,7 +42,7 @@ public class RdfRepositoryUpdater implements AutoCloseable {
      * Concise struct data type to hold an update template and its argument name (single arg template).
      */
     @Value
-    private static class UpdateDataTemplate {
+    private static final class UpdateDataTemplate {
         String template;
         String dataArgument;
     }

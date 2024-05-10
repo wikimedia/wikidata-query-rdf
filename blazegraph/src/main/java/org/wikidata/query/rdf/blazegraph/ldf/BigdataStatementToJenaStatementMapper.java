@@ -35,10 +35,14 @@ public class BigdataStatementToJenaStatementMapper implements
      */
     private static BigdataStatementToJenaStatementMapper instance;
 
+    private BigdataStatementToJenaStatementMapper() {
+        // singleton should never be constructed outside of this class
+    }
+
     /**
      * Get singleton instance.
      */
-    public static BigdataStatementToJenaStatementMapper getInstance() {
+    public synchronized static BigdataStatementToJenaStatementMapper getInstance() {
         if (instance == null) {
             instance = new BigdataStatementToJenaStatementMapper();
         }

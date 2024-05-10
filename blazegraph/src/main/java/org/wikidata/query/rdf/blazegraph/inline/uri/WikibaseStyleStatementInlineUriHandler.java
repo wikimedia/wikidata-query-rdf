@@ -41,48 +41,48 @@ public class WikibaseStyleStatementInlineUriHandler extends InlineURIHandler {
     @SuppressWarnings("rawtypes")
     protected AbstractLiteralIV createInlineIV(String localName) {
         switch (localName.charAt(0)) {
-        case 'q':
-        case 'Q':
-            return inlineIvFrom(1, localName);
-        case 'p':
-        case 'P':
-            return inlineIvFrom(-1, localName);
-        default:
-            try {
-                return new UUIDLiteralIV(UUID.fromString(localName));
-            } catch (IllegalArgumentException e) {
-                LOG.debug("Invalid uuid: {}", localName, e);
-                return null;
-            }
+            case 'q':
+            case 'Q':
+                return inlineIvFrom(1, localName);
+            case 'p':
+            case 'P':
+                return inlineIvFrom(-1, localName);
+            default:
+                try {
+                    return new UUIDLiteralIV(UUID.fromString(localName));
+                } catch (IllegalArgumentException e) {
+                    LOG.debug("Invalid uuid: {}", localName, e);
+                    return null;
+                }
         }
     }
 
     @Override
     public String getLocalNameFromDelegate(AbstractLiteralIV<BigdataLiteral, ?> delegate) {
         switch (delegate.getDTE()) {
-        case UUID:
-            // UUID style statements just decode.
-            return delegate.stringValue().toUpperCase(Locale.ROOT);
-        case XSDInteger:
-            // Otherwise we've got to decode the BigInteger style:
-            BigInteger i = delegate.integerValue();
-            long least = i.longValue();
-            i = i.shiftRight(Long.SIZE);
-            long most = i.longValue();
-            i = i.shiftRight(Long.SIZE);
-            long entity = i.longValue();
-            StringBuilder b = new StringBuilder();
-            if (entity < 0) {
-                entity = -entity;
-                b.append('P');
-            } else {
-                b.append('Q');
-            }
-            b.append(entity).append('-').append(new UUID(most, least).toString().toUpperCase(Locale.ROOT));
-            return b.toString();
-        default:
-            // How in the world did we get here?
-            return super.getLocalNameFromDelegate(delegate);
+            case UUID:
+                // UUID style statements just decode.
+                return delegate.stringValue().toUpperCase(Locale.ROOT);
+            case XSDInteger:
+                // Otherwise we've got to decode the BigInteger style:
+                BigInteger i = delegate.integerValue();
+                long least = i.longValue();
+                i = i.shiftRight(Long.SIZE);
+                long most = i.longValue();
+                i = i.shiftRight(Long.SIZE);
+                long entity = i.longValue();
+                StringBuilder b = new StringBuilder();
+                if (entity < 0) {
+                    entity = -entity;
+                    b.append('P');
+                } else {
+                    b.append('Q');
+                }
+                b.append(entity).append('-').append(new UUID(most, least).toString().toUpperCase(Locale.ROOT));
+                return b.toString();
+            default:
+                // How in the world did we get here?
+                return super.getLocalNameFromDelegate(delegate);
         }
     }
 

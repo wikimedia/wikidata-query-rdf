@@ -47,6 +47,7 @@ public class Randomizer implements TestRule {
     /**
      * Initialize the random generator.
      */
+    @SuppressFBWarnings(value = "PREDICTABLE_RANDOM", justification = "We specifically need a reproducible RNG for reproducible tests")
     private void before() {
         seed = getSeed();
         random = new Random(seed);

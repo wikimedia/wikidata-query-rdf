@@ -252,7 +252,7 @@ public class WikibaseRepository implements Closeable {
     }
 
     @Value
-    private static class EntityRevision {
+    private static final class EntityRevision {
         EntityId entity;
         Optional<Long> revision;
     }

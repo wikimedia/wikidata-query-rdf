@@ -51,6 +51,8 @@ import com.github.rholder.retry.Retryer;
 import com.google.common.io.Closer;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Update tool.
  */
@@ -87,6 +89,7 @@ public final class Update {
      * Run updates configured from the command line.
      * @throws Exception on error
      */
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "git.properties is implicitly trusted")
     public static void main(String[] args) throws Exception {
         Closer closer = Closer.create();
         try {

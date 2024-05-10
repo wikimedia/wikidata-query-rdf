@@ -34,6 +34,8 @@ import org.wikidata.query.rdf.tool.rdf.NormalizingRdfHandler;
 import org.wikidata.query.rdf.tool.rdf.PrefixRecordingRdfHandler;
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Munges a Wikidata RDF dump so that it can be loaded in a single import.
  */
@@ -45,6 +47,7 @@ public class Munge {
      * Run a bulk munge configured from the command line.
      */
     @SuppressWarnings("IllegalCatch")
+    @SuppressFBWarnings(value = {"PATH_TRAVERSAL_IN", "URLCONNECTION_SSRF_FD"}, justification = "arguments are implicitly trusted")
     public static void main(String[] args) {
         MungeOptions options = handleOptions(MungeOptions.class, args);
         UrisScheme uris = OptionsUtils.WikibaseOptions.wikibaseUris(options);

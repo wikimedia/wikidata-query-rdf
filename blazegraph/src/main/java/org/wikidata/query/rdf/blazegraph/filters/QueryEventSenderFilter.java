@@ -89,6 +89,7 @@ public class QueryEventSenderFilter extends MonitoredFilter implements QueryEven
         this.sender = AsyncEventSender.wrap(maxCap, maxEventsPerHttpRequest, eventSender);
     }
 
+    @SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "We trust the FilterConfiguration")
     private EventSender createFileEventSender(FilterConfiguration config) {
         Path path = Paths.get(config.loadStringParam("file-event-sender-filepath"));
         return new EventFileSender(path);

@@ -109,6 +109,9 @@ public final class Summarizer {
     }
 
     @SuppressForbidden() //cli tool - System#out allowed
+    @SuppressFBWarnings(
+            value = "PATH_TRAVERSAL_IN",
+            justification = "fileName comes from program arguments that are implicitly trusted")
     private static void writeEventSummary(Map<Instant, Long> summary, String path) throws IOException {
         Stream<String> valueStream = summary.entrySet().stream()
                 .sorted(Comparator.comparingLong(entry -> entry.getKey().toEpochMilli()))
@@ -122,6 +125,9 @@ public final class Summarizer {
         }
     }
 
+    @SuppressFBWarnings(
+            value = "PATH_TRAVERSAL_IN",
+            justification = "fileName comes from program arguments that are implicitly trusted")
     public static Stream<String> streamRotatedEvents(String fileName) {
         Path mainPath = Paths.get(fileName).toAbsolutePath();
         String absolutePath = mainPath.toString();

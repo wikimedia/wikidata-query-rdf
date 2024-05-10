@@ -14,6 +14,8 @@ import javax.servlet.ServletConfig;
 
 import org.apache.http.HttpHost;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public final class OAuthProxyConfig {
 
     private final ServletConfig servletConfig;
@@ -91,6 +93,7 @@ public final class OAuthProxyConfig {
         return loadStringParam(WIKI_LOGOUT_LINK_PROPERTY);
     }
 
+    @SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "We implicitly trust system properties")
     public Set<String> bannedUsernames() {
         String path = loadStringParam(BANNED_USERNAMES_PATH_PROPERTY);
         if (path == null || path.isEmpty()) {

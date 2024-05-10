@@ -28,6 +28,8 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository;
 
 import com.lexicalscope.jewel.cli.Option;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * CLI options for use with JewelCli.
  */
@@ -184,6 +186,9 @@ public interface UpdateOptions extends OptionsUtils.BasicOptions, OptionsUtils.M
     }
 
     @Nullable
+    @SuppressFBWarnings(
+            value = "PATH_TRAVERSAL_IN",
+            justification = "fileName comes from program arguments that are implicitly trusted")
     static Path dumpDirPath(UpdateOptions updateOptions) {
         String dumpDir = updateOptions.dumpDir();
         if (dumpDir == null) return null;

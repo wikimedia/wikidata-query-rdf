@@ -95,11 +95,11 @@ public class Proxy extends NanoHTTPD {
          * ourselves.
          */
         switch (errorCode) {
-        case 503:
-            return new SimpleStatus(503, "Internal server error");
-        case 429:
-            return new SimpleStatus(429, "Too many requests");
-        default:
+            case 503:
+                return new SimpleStatus(503, "Internal server error");
+            case 429:
+                return new SimpleStatus(429, "Too many requests");
+            default:
         }
         // If it is supported by NanoHTTPD use its status
         for (Status status : Status.values()) {
@@ -216,10 +216,10 @@ public class Proxy extends NanoHTTPD {
     private HttpRequestBase buildRequest(Method method, URI uri) {
         // Add extra case arms to support more types of requests
         switch (method) {
-        case GET:
-            return new HttpGet(uri);
-        default:
-            throw new UnsupportedOperationException("Unsupported method:  " + method);
+            case GET:
+                return new HttpGet(uri);
+            default:
+                throw new UnsupportedOperationException("Unsupported method:  " + method);
         }
     }
 

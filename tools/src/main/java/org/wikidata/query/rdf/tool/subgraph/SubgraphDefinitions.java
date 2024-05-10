@@ -121,21 +121,21 @@ public class SubgraphDefinitions {
                     throw new JsonParseException(p, "Expected a FIELD_NAME or END_OBJECT token got " + p.currentToken());
                 }
                 switch (p.currentName()) {
-                case "prefixes":
-                    if (p.nextToken() != JsonToken.START_OBJECT) {
-                        throw new JsonParseException(p, "[prefixes] expected a START_OBJECT token got " + p.currentToken());
-                    }
-                    prefixes = p.readValueAs(new TypeReference<Map<String, String>>(){});
-                    break;
-                case "subgraphs":
-                    p.nextToken();
-                    JsonNode subgraphsNode = p.readValueAsTree();
-                    if (!subgraphsNode.isArray()) {
-                        throw new JsonParseException(p, "subgraphs must be an array, got " + subgraphsNode.getNodeType());
-                    }
-                    subgraphs = (ArrayNode) subgraphsNode;
-                    break;
-                default: throw new JsonParseException(p, "Unsupported field " + p.currentName());
+                    case "prefixes":
+                        if (p.nextToken() != JsonToken.START_OBJECT) {
+                            throw new JsonParseException(p, "[prefixes] expected a START_OBJECT token got " + p.currentToken());
+                        }
+                        prefixes = p.readValueAs(new TypeReference<Map<String, String>>(){});
+                        break;
+                    case "subgraphs":
+                        p.nextToken();
+                        JsonNode subgraphsNode = p.readValueAsTree();
+                        if (!subgraphsNode.isArray()) {
+                            throw new JsonParseException(p, "subgraphs must be an array, got " + subgraphsNode.getNodeType());
+                        }
+                        subgraphs = (ArrayNode) subgraphsNode;
+                        break;
+                    default: throw new JsonParseException(p, "Unsupported field " + p.currentName());
                 }
             }
 

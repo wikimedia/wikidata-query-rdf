@@ -380,12 +380,12 @@ public class ApiTemplate {
          */
         public URI getURI(String value) {
             switch (type) {
-            case URI:
-                return new URIImpl(value);
-            case ITEM:
-                return new URIImpl(UrisSchemeFactory.getURISystem().entityIdToURI(value.toUpperCase(Locale.ROOT)));
-            default:
-                throw new IllegalArgumentException("Can not produce URI for non-URI type " + type);
+                case URI:
+                    return new URIImpl(value);
+                case ITEM:
+                    return new URIImpl(UrisSchemeFactory.getURISystem().entityIdToURI(value.toUpperCase(Locale.ROOT)));
+                default:
+                    throw new IllegalArgumentException("Can not produce URI for non-URI type " + type);
             }
         }
     }

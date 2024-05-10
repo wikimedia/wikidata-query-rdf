@@ -60,22 +60,22 @@ final class MultiSyncUpdateQueryFactory {
                                 Set<String> valueSet,
                                 Optional<Instant> timestamp) {
         switch (step) {
-        case CLEAR_OOD_SITE_LINKS:
-            return MultiSyncStep.createClearOodLinksQuery(entityTopIds, classifiedStatements, uris);
-        case CLEAR_OOD_ST_ABOUT_ST:
-            return MultiSyncStep.createClearOodStatementsAboutStatementsQuery(entityIdsWithLexemes, classifiedStatements, uris);
-        case CLEAR_OOD_ST_ABOUT_ENT:
-            return MultiSyncStep.createClearOodStatementsAboutEntitiesQuery(entityIdsWithLexemes, classifiedStatements, uris);
-        case INSERT_NEW_DATA:
-            return MultiSyncStep.createInsertNewDataQuery(insertStatements);
-        case ADD_TIMESTAMPS:
-            return MultiSyncStep.createAddTimestampsQuery(entityTopIds, timestamp.orElseThrow(IllegalStateException::new), uris);
-        case CLEANUP_REFERENCES:
-            return MultiSyncStep.createCleanupReferencesQuery(refSet);
-        case CLEANUP_VALUES:
-            return MultiSyncStep.createCleanupValuesQuery(valueSet);
-        default:
-            throw new IllegalArgumentException("Step " + step.getStepName() + " is unknown!");
+            case CLEAR_OOD_SITE_LINKS:
+                return MultiSyncStep.createClearOodLinksQuery(entityTopIds, classifiedStatements, uris);
+            case CLEAR_OOD_ST_ABOUT_ST:
+                return MultiSyncStep.createClearOodStatementsAboutStatementsQuery(entityIdsWithLexemes, classifiedStatements, uris);
+            case CLEAR_OOD_ST_ABOUT_ENT:
+                return MultiSyncStep.createClearOodStatementsAboutEntitiesQuery(entityIdsWithLexemes, classifiedStatements, uris);
+            case INSERT_NEW_DATA:
+                return MultiSyncStep.createInsertNewDataQuery(insertStatements);
+            case ADD_TIMESTAMPS:
+                return MultiSyncStep.createAddTimestampsQuery(entityTopIds, timestamp.orElseThrow(IllegalStateException::new), uris);
+            case CLEANUP_REFERENCES:
+                return MultiSyncStep.createCleanupReferencesQuery(refSet);
+            case CLEANUP_VALUES:
+                return MultiSyncStep.createCleanupValuesQuery(valueSet);
+            default:
+                throw new IllegalArgumentException("Step " + step.getStepName() + " is unknown!");
         }
     }
 }

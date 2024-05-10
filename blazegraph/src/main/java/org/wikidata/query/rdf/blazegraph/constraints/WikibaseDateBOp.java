@@ -125,20 +125,20 @@ public class WikibaseDateBOp extends IVValueExpression<IV> implements INeedsMate
                 }
 
                 switch (op()) {
-                case YEAR:
-                    return new XSDIntegerIV(BigInteger.valueOf(date.year()));
-                case MONTH:
-                    return new XSDIntegerIV(BigInteger.valueOf(date.month()));
-                case DAY:
-                    return new XSDIntegerIV(BigInteger.valueOf(date.day()));
-                case HOURS:
-                    return new XSDIntegerIV(BigInteger.valueOf(date.hour()));
-                case MINUTES:
-                    return new XSDIntegerIV(BigInteger.valueOf(date.minute()));
-                case SECONDS:
-                    return new XSDIntegerIV(BigInteger.valueOf(date.second()));
-                default:
-                    throw new UnsupportedOperationException();
+                    case YEAR:
+                        return new XSDIntegerIV(BigInteger.valueOf(date.year()));
+                    case MONTH:
+                        return new XSDIntegerIV(BigInteger.valueOf(date.month()));
+                    case DAY:
+                        return new XSDIntegerIV(BigInteger.valueOf(date.day()));
+                    case HOURS:
+                        return new XSDIntegerIV(BigInteger.valueOf(date.hour()));
+                    case MINUTES:
+                        return new XSDIntegerIV(BigInteger.valueOf(date.minute()));
+                    case SECONDS:
+                        return new XSDIntegerIV(BigInteger.valueOf(date.second()));
+                    default:
+                        throw new UnsupportedOperationException();
                 }
             } else {
                 return originalOp.get(bs);
