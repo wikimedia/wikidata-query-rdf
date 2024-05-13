@@ -18,12 +18,13 @@ do
     s) START=${OPTARG};;
     e) END=${OPTARG};;
     d) LOCATION=${OPTARG};;
+    f) FORMAT=${OPTARG};;
   esac
 done
 
 if [ -z "$NAMESPACE" ]
 then
-  echo "Usage: $0 -n <namespace> [-h <host>] [-c <context>] [-s <start>] [-e <end>] [-d <directory>]"
+  echo "Usage: $0 -n <namespace> [-h <host>] [-c <context>] [-s <start>] [-e <end>] [-d <directory>] [-f <format>]"
   exit 1
 fi
 
