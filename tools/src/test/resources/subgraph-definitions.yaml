@@ -4,13 +4,16 @@ prefixes:
     rdfs: http://www.w3.org/2000/01/rdf-schema#
     wikibase: http://wikiba.se/ontology#
     wdsubgraph: https://query.wikidata.org/subgraph/
+bindings:
+  scholarly_type:
+    - wd:Q13442814
 subgraphs:
   - name: scholarly
     subgraph_uri: wdsubgraph:scholarly
     stream: rdf-streaming-updater.mutations-scholarly
     default: block
     rules:
-      - pass ?entity wdt:P31 wd:Q13442814
+      - pass ?entity wdt:P31 ?scholarly_type
       - pass ?entity rdfs:type wikibase:Property
     stubs_source: true
   - name: main
@@ -18,9 +21,9 @@ subgraphs:
     stream: rdf-streaming-updater.mutations-main
     default: pass
     rules:
-      - block ?entity wdt:P31 wd:Q13442814
+      - block ?entity wdt:P31 ?scholarly_type
     stubs_source: true
   - name: full
-    stream: rdf-streaming-udpater.mutations
+    stream: rdf-streaming-updater.mutations
     default: pass
     stubs_source: false

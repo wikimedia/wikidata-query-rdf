@@ -43,7 +43,7 @@ case class ScholarlyArticleSplitParams(
 
 object ScholarlyArticleSplit {
   val V1_SUBGRAPHS: List[String] = List("scholarly_articles", "wikidata_main")
-  val V1_SUBGRAPH_DEFINITIONS: String = "scholarly_subgraph_v1"
+  val V1_SUBGRAPH_DEFINITIONS: String = "wdqs-subgraph-definitions-v1"
   val NULL_SUBGRAPH_DEF: SubgraphDefinitions = new SubgraphDefinitions(List.empty.asJava)
 
   implicit val sparkSession: SparkSession = {
@@ -110,6 +110,6 @@ object ScholarlyArticleSplit {
   }
 
   def loadSubGraphDefinitions(strategy: String): SubgraphDefinitions = {
-    SubgraphDefinitionsParser.parseYaml(this.getClass.getResourceAsStream(s"/$strategy.yaml"))
+    SubgraphDefinitionsParser.parseYaml(classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/$strategy.yaml"))
   }
 }

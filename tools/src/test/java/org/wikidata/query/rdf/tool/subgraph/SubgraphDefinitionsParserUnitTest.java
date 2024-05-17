@@ -5,10 +5,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 
 import org.junit.Test;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
+
+import com.google.common.collect.ImmutableMap;
 
 public class SubgraphDefinitionsParserUnitTest {
     private final ValueFactory valueFactory = new ValueFactoryImpl();
@@ -26,7 +29,9 @@ public class SubgraphDefinitionsParserUnitTest {
                         new SubgraphRule.TriplePattern(
                                 valueFactory.createBNode("entity"),
                                 valueFactory.createURI("http://www.wikidata.org/prop/direct/P31"),
-                                valueFactory.createURI("http://www.wikidata.org/entity/Q13442814"))));
+                                valueFactory.createBNode("scholarly_type"),
+                                ImmutableMap.of("scholarly_type", Collections.singletonList(valueFactory.createURI("http://www.wikidata.org/entity/Q13442814")))
+                        )));
         assertThat(main.isStubsSource()).isTrue();
     }
 

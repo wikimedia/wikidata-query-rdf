@@ -3,14 +3,17 @@ package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 import org.apache.spark.sql.functions.{col, lit}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row}
+import org.openrdf.model.Resource
 import org.openrdf.model.impl.ValueFactoryImpl
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.common.uri.{Ontology, UrisSchemeFactory}
 import org.wikidata.query.rdf.spark.SparkSessionProvider
-import org.wikidata.query.rdf.tool.subgraph.SubgraphRule.{Outcome, TriplePattern}
+import org.wikidata.query.rdf.tool.subgraph.SubgraphRule.Outcome
+import org.wikidata.query.rdf.tool.subgraph.SubgraphRule.TriplePattern.parseTriplePattern
 import org.wikidata.query.rdf.tool.subgraph.{SubgraphDefinition, SubgraphDefinitions, SubgraphRule}
 
+import java.util
 import scala.collection.JavaConverters._
 
 class SubgraphRuleMapperUnitTest extends AnyFlatSpec with SparkSessionProvider with Matchers{
@@ -18,21 +21,31 @@ class SubgraphRuleMapperUnitTest extends AnyFlatSpec with SparkSessionProvider w
   private val scheme = UrisSchemeFactory.forWikidataHost("ut")
   private val prefixes = Map("e" -> scheme.entityURIs().iterator().next()).asJava
   private val valueFactory = new ValueFactoryImpl()
+  private val bindings: util.Map[String, util.Collection[Resource]] = Map(
+    "e100e200" -> Seq(valueFactory.createURI(scheme.entityIdToURI("E100")), valueFactory.createURI(scheme.entityIdToURI("E200"))
+    ).asJava.asInstanceOf[util.Collection[Resource]]).asJava
 
-  private val pass_P1_E100_rule = new SubgraphRule(Outcome.pass, TriplePattern.parseTriplePattern(s"?entity <pred:P1> e:E100", valueFactory, prefixes))
-  private val pass_P1_E200_rule = new SubgraphRule(Outcome.pass, TriplePattern.parseTriplePattern(s"?entity <pred:P1> e:E200", valueFactory, prefixes))
-  private val block_P1_E100_rule = new SubgraphRule(Outcome.block, TriplePattern.parseTriplePattern(s"?entity <pred:P1> e:E100", valueFactory, prefixes))
-  private val pass_all_rule = new SubgraphRule(Outcome.pass, TriplePattern.parseTriplePattern(s"?entity <pred:P1> []", valueFactory, prefixes))
-  private val block_P1_P300_rule = new SubgraphRule(Outcome.block, TriplePattern.parseTriplePattern(s"?entity <pred:P1> e:E300", valueFactory, prefixes))
+  private val pass_P1_E100_rule = new SubgraphRule(Outcome.pass, parseTriplePattern(s"?entity <pred:P1> e:E100",
+    valueFactory, prefixes, bindings))
+  private val pass_P1_E200_rule = new SubgraphRule(Outcome.pass, parseTriplePattern(s"?entity <pred:P1> e:E200",
+    valueFactory, prefixes, bindings))
+  private val pass_P1_E100_E200_rule = new SubgraphRule(Outcome.pass, parseTriplePattern(s"?entity <pred:P1> ?e100e200",
+    valueFactory, prefixes, bindings))
+  private val block_P1_E100_rule = new SubgraphRule(Outcome.block, parseTriplePattern(s"?entity <pred:P1> e:E100",
+    valueFactory, prefixes, bindings))
+  private val pass_all_rule = new SubgraphRule(Outcome.pass, parseTriplePattern(s"?entity <pred:P1> []",
+    valueFactory, prefixes, bindings))
+  private val block_P1_P300_rule = new SubgraphRule(Outcome.block, parseTriplePattern(s"?entity <pred:P1> e:E300",
+    valueFactory, prefixes, bindings))
 
   private val pass_P1_E100_default_block = new SubgraphDefinition("pass_P1_E100_default_block", Option.empty.orNull, "unused",
     List(pass_P1_E100_rule).asJava, Outcome.block, false)
   private val pass_P1_E100_E200_default_block = new SubgraphDefinition("pass_P1_E100_E200_default_block", Option.empty.orNull, "unused",
-    List(pass_P1_E100_rule, pass_P1_E200_rule).asJava, Outcome.block, false)
+    List(pass_P1_E100_E200_rule).asJava, Outcome.block, false)
   private val block_P1_E100_default_pass = new SubgraphDefinition("block_P1_E100_default_pass", Option.empty.orNull, "unused",
     List(block_P1_E100_rule).asJava, Outcome.pass, false)
-  private val pass_all_block_P1_E100_default_block = new SubgraphDefinition("pass_all_block_P1_E100_default_block", Option.empty.orNull, "unused",
-    List(pass_all_rule, block_P1_E100_rule).asJava, Outcome.block, false)
+  private val block_P1_E100_then_pass_all_default_block = new SubgraphDefinition("block_P1_E100_then_pass_all_default_block", Option.empty.orNull, "unused",
+    List(block_P1_E100_rule, pass_all_rule).asJava, Outcome.block, false)
 
   private val pass_all_pass_P1_E100_rule = new SubgraphDefinition("pass_all_pass_P1_E100_rule", Option.empty.orNull, "unused",
     List(pass_P1_E100_rule).asJava, Outcome.pass, false)
@@ -89,11 +102,11 @@ class SubgraphRuleMapperUnitTest extends AnyFlatSpec with SparkSessionProvider w
   }
 
   "SubgraphRuleMapper" should "extract correct entities using pass all and a block rule and default block outcome" in {
-    val definitions = new SubgraphDefinitions(List(pass_all_block_P1_E100_default_block).asJava)
-    val mapper = new SubgraphRuleMapper(scheme, definitions, List(pass_all_block_P1_E100_default_block.getName))
+    val definitions = new SubgraphDefinitions(List(block_P1_E100_then_pass_all_default_block).asJava)
+    val mapper = new SubgraphRuleMapper(scheme, definitions, List(block_P1_E100_then_pass_all_default_block.getName))
     val mappedSubgraphs = mapper.mapSubgraphs(dataset())
     mappedSubgraphs.size shouldBe 1
-    val mappedSubgraph = mappedSubgraphs(pass_all_block_P1_E100_default_block)
+    val mappedSubgraph = mappedSubgraphs(block_P1_E100_then_pass_all_default_block)
     mappedSubgraph.collect() should contain only (Entity(entityUri("E2")), Entity(entityUri("E3")), Entity(entityUri("E4")))
   }
 

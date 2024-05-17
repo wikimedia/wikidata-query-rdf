@@ -3,14 +3,19 @@ package org.wikidata.query.rdf.tool.subgraph;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static org.wikidata.query.rdf.tool.subgraph.SubgraphRule.TriplePattern.ENTITY_BINDING_NAME;
+import static org.wikidata.query.rdf.tool.subgraph.SubgraphRule.TriplePattern.WILDCARD_BNODE_LABEL;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,6 +23,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 
@@ -32,25 +38,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.google.common.collect.ImmutableSet;
 
 import lombok.Value;
 import lombok.val;
 
 @Value
 @JsonDeserialize(using = SubgraphDefinitions.SubgraphDefinitionsDeserializer.class)
-public class SubgraphDefinitions {
+public class SubgraphDefinitions implements Serializable {
     static final String PREFIXES_ATTRIBUTE = SubgraphDefinitions.class.getName() + "-prefixes";
     static final String VALUE_FACTORY_ATTRIBUTE = SubgraphDefinitions.class.getName() + "-value-factory";
+    static final String BINDINGS_ATTRIBUTE = SubgraphDefinitions.class.getName() + "-bindings";
     private static final Pattern PREFIX = Pattern.compile("^([a-zA-Z\\d]+):(.*)$");
+    private static final Set<String> RESERVED_BINDING_NAMES = ImmutableSet.of(ENTITY_BINDING_NAME, WILDCARD_BNODE_LABEL);
     Map<String, String> prefixes;
+    Map<String, Collection<Resource>> bindings;
     List<SubgraphDefinition> subgraphs;
 
     public SubgraphDefinitions(List<SubgraphDefinition> subgraphs) {
-        this(Collections.emptyMap(), subgraphs);
+        this(Collections.emptyMap(), Collections.emptyMap(), subgraphs);
     }
 
-    public SubgraphDefinitions(Map<String, String> prefixes, List<SubgraphDefinition> subgraphs) {
+    public SubgraphDefinitions(Map<String, String> prefixes, Map<String, Collection<Resource>> bindings, List<SubgraphDefinition> subgraphs) {
         this.prefixes = prefixes;
+        this.bindings = bindings;
         val nameDups = duplicates(subgraphs, SubgraphDefinition::getName);
         if (!nameDups.isEmpty()) {
             throw new IllegalArgumentException("Duplicate names in subgraph definitions: " + nameDups);
@@ -102,9 +113,10 @@ public class SubgraphDefinitions {
 
     static class SubgraphDefinitionsDeserializer extends JsonDeserializer<SubgraphDefinitions> {
         @Override
-        @SuppressWarnings({"CyclomaticComplexity"})
+        @SuppressWarnings({"CyclomaticComplexity", "NPathComplexity"})
         public SubgraphDefinitions deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             Map<String, String> prefixes = emptyMap();
+            Map<String, Collection<String>> bindings = emptyMap();
             // buffer the list of definitions as an JsonNode object so that it can be mapped later once prefixes are
             // collected.
             ArrayNode subgraphs = null;
@@ -127,6 +139,16 @@ public class SubgraphDefinitions {
                         }
                         prefixes = p.readValueAs(new TypeReference<Map<String, String>>(){});
                         break;
+                    case "bindings":
+                        if (p.nextToken() != JsonToken.START_OBJECT) {
+                            throw new JsonParseException(p, "[prefixes] expected a START_OBJECT token got " + p.currentToken());
+                        }
+                        bindings = p.readValueAs(new TypeReference<Map<String, Collection<String>>>(){});
+                        List<String> reserved = bindings.keySet().stream().filter(RESERVED_BINDING_NAMES::contains).collect(toList());
+                        if (!reserved.isEmpty()) {
+                            throw new JsonParseException(p, "Cannot use a binding with reserved names: " + reserved);
+                        }
+                        break;
                     case "subgraphs":
                         p.nextToken();
                         JsonNode subgraphsNode = p.readValueAsTree();
@@ -143,20 +165,27 @@ public class SubgraphDefinitions {
                 throw new IllegalArgumentException("Expected at least one subgraph definition");
             }
 
+            final Map<String, String> parsedPrefixes = prefixes;
+            ValueFactory vf = (ValueFactory) ctxt.getAttribute(VALUE_FACTORY_ATTRIBUTE);
+            Map<String, List<Resource>> resolvedBindings = bindings.entrySet().stream()
+                    .collect(toMap(Map.Entry::getKey, e -> e.getValue().stream().map(r -> parseUri(r, vf, parsedPrefixes)).collect(toList())));
+
             // ugly hack to parse the list of subgraph definitions
             // ideally we'd like to re-use the current parser objectmapper and context,
             // but I could not find a way to do so...
             ObjectReader objectReader = new ObjectMapper().reader()
                     .forType(SubgraphDefinition.class)
                     .withAttribute(PREFIXES_ATTRIBUTE, prefixes)
-                    .withAttribute(VALUE_FACTORY_ATTRIBUTE, ctxt.getAttribute(VALUE_FACTORY_ATTRIBUTE));
+                    .withAttribute(VALUE_FACTORY_ATTRIBUTE, ctxt.getAttribute(VALUE_FACTORY_ATTRIBUTE))
+                    .withAttribute(BINDINGS_ATTRIBUTE, resolvedBindings);
 
             List<SubgraphDefinition> defs = new ArrayList<>();
             for (JsonNode node: subgraphs) {
                 defs.add(objectReader.readValue(node));
             }
 
-            return new SubgraphDefinitions(Collections.unmodifiableMap(prefixes), Collections.unmodifiableList(defs));
+            return new SubgraphDefinitions(Collections.unmodifiableMap(prefixes),
+                    Collections.unmodifiableMap(resolvedBindings), Collections.unmodifiableList(defs));
         }
     }
 
@@ -172,9 +201,14 @@ public class SubgraphDefinitions {
             if (prefixes == null) {
                 throw new IllegalStateException("Attribute " + PREFIXES_ATTRIBUTE + " not found");
             }
-            return deserialize(p, valueFactory, prefixes);
+            Map<String, Collection<Resource>> bingings = (Map<String, Collection<Resource>>) ctx.getAttribute(BINDINGS_ATTRIBUTE);
+            if (bingings == null) {
+                throw new IllegalStateException("Attribute " + BINDINGS_ATTRIBUTE + " not found");
+            }
+            return deserialize(p, valueFactory, prefixes, bingings);
         }
 
-        public abstract E deserialize(JsonParser p, ValueFactory valueFactory, Map<String, String> prefixes) throws IOException;
+        public abstract E deserialize(JsonParser p, ValueFactory valueFactory, Map<String, String> prefixes,
+                                      Map<String, Collection<Resource>> bindings) throws IOException;
     }
 }

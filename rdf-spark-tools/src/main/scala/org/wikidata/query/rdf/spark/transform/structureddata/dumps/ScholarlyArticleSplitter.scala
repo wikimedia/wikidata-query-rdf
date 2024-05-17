@@ -26,7 +26,7 @@ object ScholarlyArticleSplitter {
     val mappedSubgraphs = subgraphRuleMapper.mapSubgraphs(baseTable)
 
     val stubs = subgraphRuleMapper.buildStubs(mappedSubgraphs)
-    mappedSubgraphs foreach { case (definition, dataset) =>
+    mappedSubgraphs.foreach { case (definition, dataset) =>
       SparkUtils.insertIntoTablePartition(s"$outPart/scope=${definition.getName}",
         allEntityTriples(dataset, baseTable, ontologyContextRefTriples, ontologyContextValTriples, dumpMetadata, stubs(definition)))
     }

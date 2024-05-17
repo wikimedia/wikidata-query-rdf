@@ -40,38 +40,9 @@ class ScholarlyArticleSplitterTest extends AnyFlatSpec with SparkSessionProvider
       "scholarly_articles",
       "wikidata_main",
       "Q_INTERSECTION")
-  }
 
-  "ScholarlyArticleSplitter" should "be able to properly split a rdf dataset based on scholarly_subgraph_v2_alpha strategy" in {
-    importedFiles foreach {
-      case (p, file) =>
-        val dtPlaceholder = if (p == "Q_INTERSECTION") "19700101" else "20231027"
-        TurtleImporter.importDump(Params(
-          inputPath = Seq(file),
-          outputTable = Some(s"rdf/date=$dtPlaceholder/entity=$p"),
-          outputPath = None,
-          numPartitions = 1,
-          skolemizeBlankNodes = true,
-          site = Site.wikidata), None)
-    }
-    ScholarlyArticleSplit.split(ScholarlyArticleSplitParams(
-      inputPartition = s"rdf/date=20231027",
-      outputPartitionParent = s"rdf_split/snapshot=20231027",
-      subgraphDefinitions = ScholarlyArticleSplit.loadSubGraphDefinitions(strategy = "scholarly_subgraph_v2_alpha"),
-      subgraphs = List("main", "scholarly")
-
-    ))
-    assertSplitCorrectness(readSourceEntityTriples("Q37599471"), "scholarly")
-    assertSplitCorrectness(readSourceEntityTriples("Q42"), "main")
-    assertSharedTripleCorrectness(
-      readSourceEntityTriples("Q_INTERSECTION"),
-      "scholarly_articles",
-      "wikidata_main",
-      "Q_INTERSECTION")
-
-
-    assertStubs("scholarly", Array(Row("<http://www.wikidata.org/entity/Q42>", "<https://query.wikidata.org/subgraph/main>")))
-    assertStubs("main", Array(Row("<http://www.wikidata.org/entity/Q37599471>", "<https://query.wikidata.org/subgraph/scholarly>")))
+    assertStubs("scholarly_articles", Array(Row("<http://www.wikidata.org/entity/Q42>", "<https://query.wikidata.org/subgraph/wikidata_main>")))
+    assertStubs("wikidata_main", Array(Row("<http://www.wikidata.org/entity/Q37599471>", "<https://query.wikidata.org/subgraph/scholarly_articles>")))
   }
 
   private def assertStubs(scope: String, stubs: Array[Row]): Unit = {

@@ -1,0 +1,75 @@
+prefixes:
+  wdt: http://www.wikidata.org/prop/direct/
+  wd: http://www.wikidata.org/entity/
+  wdsubgraph: https://query.wikidata.org/subgraph/
+bindings:
+  scholarly_type:
+    - wd:Q13442814
+    - wd:Q7318358
+    - wd:Q2782326
+    - wd:Q815382
+    - wd:Q1348305
+    - wd:Q187685
+    - wd:Q1907875
+    - wd:Q18918145
+    - wd:Q1266946
+    - wd:Q23927052
+    - wd:Q1504425
+    - wd:Q45182324
+    - wd:Q1402850
+    - wd:Q7316896
+    - wd:Q580922
+    - wd:Q30749496
+    - wd:Q111475835
+    - wd:Q92998777
+    - wd:Q114613919
+    - wd:Q798134
+    - wd:Q1385450
+    - wd:Q10885494
+    - wd:Q51282918
+    - wd:Q51282711
+    - wd:Q111475860
+    - wd:Q51283092
+    - wd:Q15706459
+    - wd:Q59387148
+    - wd:Q110716513
+    - wd:Q58897583
+    - wd:Q51283145
+    - wd:Q54670950
+    - wd:Q91901000
+    - wd:Q111476177
+    - wd:Q51283053
+    - wd:Q1414362
+    - wd:Q51283181
+    - wd:Q51282999
+    - wd:Q51283199
+    - wd:Q82969330
+    - wd:Q112585758
+    - wd:Q118114827
+    - wd:Q106276531
+    - wd:Q1884156
+    - wd:Q51283362
+    - wd:Q46629343
+    - wd:Q100328456
+    - wd:Q51283219
+    - wd:Q70471362
+subgraphs:
+  - name: scholarly_articles
+    stream: rdf-streaming-updater.mutation-scholarly
+    subgraph_uri: wdsubgraph:scholarly_articles
+    default: block
+    rules:
+      - pass ?entity wdt:P31 ?scholarly_type
+    stubs_source: true
+  - name: wikidata_main
+    stream: rdf-streaming-updater.mutation-main
+    subgraph_uri: wdsubgraph:wikidata_main
+    default: pass
+    rules:
+      - block ?entity wdt:P31 ?scholarly_type
+    stubs_source: true
+  - name: wikidata_full
+    stream: rdf-streaming-updater.mutation
+    subgraph_uri: wdsubgraph:full
+    default: pass
+    stubs_source: false

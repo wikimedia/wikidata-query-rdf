@@ -1,11 +1,14 @@
 package org.wikidata.query.rdf.tool.subgraph;
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Nullable;
 
+import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 
@@ -21,7 +24,7 @@ import lombok.Value;
  * Class representing a subgraph.
  */
 @Value
-public class SubgraphDefinition {
+public class SubgraphDefinition implements Serializable {
     /** Name of the subgraph. */
     String name;
 
@@ -46,7 +49,8 @@ public class SubgraphDefinition {
 
     static class UriDeserializer extends SubgraphDefinitions.Deserializer<URI> {
         @Override
-        public URI deserialize(JsonParser p, ValueFactory valueFactory, Map<String, String> prefixes) throws IOException {
+        public URI deserialize(JsonParser p, ValueFactory valueFactory, Map<String, String> prefixes,
+                               Map<String, Collection<Resource>> bindings) throws IOException {
             JsonToken token = p.currentToken();
             if (token != JsonToken.VALUE_STRING) {
                 throw new JsonParseException(p, "Expected a string but got " + token);
