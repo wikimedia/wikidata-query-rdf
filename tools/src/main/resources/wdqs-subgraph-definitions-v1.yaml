@@ -70,6 +70,5 @@ subgraphs:
     stubs_source: true
   - name: wikidata_full
     stream: rdf-streaming-updater.mutation
-    subgraph_uri: wdsubgraph:full
     default: pass
     stubs_source: false

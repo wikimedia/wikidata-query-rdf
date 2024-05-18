@@ -1,23 +1,12 @@
 package org.wikidata.query.rdf.updater
 
-import java.time.{Clock, Instant}
-import java.util
-import java.util.{Timer, TimerTask}
-import java.util.Collections.emptyList
-import java.util.concurrent.Executors
-
-import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
-import scala.util.{Failure, Success}
-
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.api.functions.ProcessFunction
-import org.apache.flink.streaming.api.scala.{OutputTag, _}
 import org.apache.flink.streaming.api.scala.async.{ResultFuture, RichAsyncFunction}
+import org.apache.flink.streaming.api.scala.{OutputTag, _}
 import org.apache.flink.util.Collector
-import org.openrdf.model.Statement
+import org.openrdf.model.{Statement, URI}
 import org.wikidata.query.rdf.common.uri.UrisScheme
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
 import org.wikidata.query.rdf.tool.rdf.{EntityDiff, Munger, Patch}
@@ -25,19 +14,32 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException.Type.ENTITY_NOT_FOUND
 import org.wikidata.query.rdf.updater.GenerateEntityDiffPatchOperation.mungerOperationProvider
 
+import java.time.{Clock, Instant}
+import java.util
+import java.util.concurrent.Executors
+import java.util.{Timer, TimerTask}
+import scala.collection.JavaConverters._
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success}
+
 sealed trait ResolvedOp {
   val operation: MutationOperation
 }
 
-abstract class SuccessfulOp extends ResolvedOp
+abstract class SuccessfulOp extends ResolvedOp {
+  val subgraph: Option[URI]
+}
 
 case class EntityPatchOp(operation: MutationOperation,
-                         data: Patch) extends SuccessfulOp
-case class ReconcileOp(operation: Reconcile,
-                         data: Patch) extends SuccessfulOp
-case class FailedOp(operation: MutationOperation, exception: ContainedException) extends ResolvedOp
+                         data: Patch, subgraph: Option[URI] = None) extends SuccessfulOp
 
-case class DeleteOp(override val operation: MutationOperation) extends SuccessfulOp
+case class ReconcileOp(operation: Reconcile,
+                       data: Patch, subgraph: Option[URI] = None) extends SuccessfulOp
+
+case class DeleteOp(operation: MutationOperation, subgraph: Option[URI] = None) extends SuccessfulOp
+
+case class FailedOp(operation: MutationOperation, exception: ContainedException) extends ResolvedOp
 
 case class GenerateEntityDiffPatchOperation(
                                              scheme: UrisScheme,
@@ -47,12 +49,16 @@ case class GenerateEntityDiffPatchOperation(
                                              poolSize: Int = 10,
                                              fetchAttempts: Int = 4,
                                              fetchRetryDelay: FiniteDuration = 1.seconds,
-                                             now: () => Instant = () => Clock.systemUTC.instant
+                                             now: () => Instant = () => Clock.systemUTC.instant,
+                                             subgraphAssigner: SubgraphAssigner
                                            )
   extends RichAsyncFunction[MutationOperation, ResolvedOp] {
 
-  lazy val repository: WikibaseEntityRevRepositoryTrait =  wikibaseRepositoryGenerator(this.getRuntimeContext)
-  lazy val diff: EntityDiff = EntityDiff.withWikibaseSharedElements(scheme)
+  lazy val repository: WikibaseEntityRevRepositoryTrait = wikibaseRepositoryGenerator(this.getRuntimeContext)
+  lazy val entityDiff: EntityDiff = EntityDiff.withWikibaseSharedElements(scheme)
+  lazy val subgraphDiff: SubgraphDiff = new SubgraphDiff(entityDiff, subgraphAssigner, scheme)
+
+  type SubgraphPatch = (Option[URI], Patch)
 
   implicit lazy val executionContext: ExecutionContext = buildExecContext
 
@@ -64,37 +70,41 @@ case class GenerateEntityDiffPatchOperation(
   lazy val mungeOperation: (String, util.Collection[Statement]) => Long = mungeOperationProvider.apply(scheme)
 
   override def asyncInvoke(op: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = {
-    if (op.isInstanceOf[DeleteItem]) {
-      resultFuture.complete(DeleteOp(op) :: Nil)
-    } else {
-      completeFetchContent(op, resultFuture)
+    op match {
+      case delete: DeleteItem =>
+        resultFuture.complete(subgraphDiff.delete(delete))
+      case _ =>
+        completeFetchContent(op, resultFuture)
     }
   }
 
   private def recentEventCutoff = now().minusMillis(acceptableRepositoryLag.toMillis)
+
   private def isRecent(eventTime: Instant): Boolean = eventTime.isAfter(recentEventCutoff)
 
+  // scalastyle:off cyclomatic.complexity
   private def completeFetchContent(op: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = {
-    val future: Future[Patch] = op match {
-      case Diff(item, eventTime, revision, fromRev, _, _) =>
-        getDiff(item, revision, fromRev, eventTime)
-      case FullImport(item, eventTime, revision, _, _) =>
-        getImport(item, revision, eventTime)
-      case Reconcile(item, _, revision, _, _) =>
-        getReconcile(item, revision)
+    val future = op match {
+      case Diff(_, eventTime, revision, fromRev, _, _) =>
+        getDiff(op.asInstanceOf[Diff], revision, fromRev, eventTime)
+      case FullImport(_, eventTime, revision, _, _) =>
+        getImport(op.asInstanceOf[FullImport], revision, eventTime)
+      case Reconcile(_, _, revision, _, _) =>
+        getReconcile(op.asInstanceOf[Reconcile], revision)
       case DeleteItem(item, _, _, _, _) => throw new IllegalArgumentException(
         s"Received content fetch for DeleteItem($item, ...)")
     }
 
-    future.onComplete (patch => {
-      (patch, op) match {
-        case (Success(patch: Patch), r: Reconcile) => resultFuture.complete(ReconcileOp(r, patch) :: Nil)
-        case (Success(patch), _) => resultFuture.complete(EntityPatchOp(op, patch) :: Nil)
-        case (Failure(exception: ContainedException), _) => resultFuture.complete(FailedOp(op, exception) :: Nil)
-        case (Failure(exception: Throwable), _) => resultFuture.completeExceptionally(exception)
-      }
-    })
+    future.onComplete {
+      case Success(patches: Iterable[SuccessfulOp]) =>
+        resultFuture.complete(patches)
+      case Failure(exception: ContainedException) =>
+        resultFuture.complete(FailedOp(op, exception) :: Nil)
+      case Failure(exception: Throwable) =>
+        resultFuture.completeExceptionally(exception)
+    }
   }
+  // scalastyle:on cyclomatic.complexity
 
   private def isRetryable(eventTime: Option[Instant], attempts: Int, t: Throwable): Boolean = t match {
     case _: RetryableException => attempts < fetchAttempts
@@ -114,70 +124,74 @@ case class GenerateEntityDiffPatchOperation(
     }
   }
 
-  private def getDiff(item: String, revision: Long, fromRev: Long, eventTime: Instant): Future[Patch] = {
-    val from: Future[Iterable[Statement]] = fetchAsync(item, fromRev)
-    val to: Future[Iterable[Statement]] = fetchAsync(item, revision, Some(eventTime))
+  private def getDiff(operation: Diff, revision: Long, fromRev: Long, eventTime: Instant): Future[Iterable[SuccessfulOp]] = {
+    val from: Future[Iterable[Statement]] = fetchAsync(operation.item, fromRev)
+    val to: Future[Iterable[Statement]] = fetchAsync(operation.item, revision, Some(eventTime))
 
     from flatMap { fromIt =>
       to map {
-        toIt => generateDiff(item, fromIt, toIt, revision, fromRev)
+        toIt => generateDiff(operation, fromIt, toIt, revision, fromRev)
       }
     }
   }
 
-  private def getImport(item: String, revision: Long, eventTime: Instant): Future[Patch] = {
-    val stmts: Future[Iterable[Statement]] = fetchAsync(item, revision, Some(eventTime))
-    stmts map { sendImport(item, _, revision) }
-  }
-
-  private def getReconcile(item: String, revision: Long): Future[Patch] = {
-    val stmts: Future[Iterable[Statement]] = fetchAsync(item, revision)
-    stmts map { sendReconcile(item, _, revision) }
-  }
-
-
-  private def sendImport(item: String, stmts: Iterable[Statement], revision: Long): Patch = {
-      if (stmts.isEmpty) {
-        throw new ContainedException(s"Got empty entity for $item, revision:$revision (404 or 204?)")
-      } else {
-        fullImport(item, stmts)
-      }
-  }
-
-  private def generateDiff(item: String, from: Iterable[Statement], to: Iterable[Statement],
-                           revision: Long, fromRev: Long): Patch = {
-      if (from.isEmpty || to.isEmpty) {
-        throw new ContainedException(s"Got empty entity for $item, fromRev: $fromRev, revision:$revision (404 or 204?)")
-      } else {
-        diff(item, from, to)
+  private def getImport(operation: FullImport, revision: Long, eventTime: Instant): Future[Iterable[SuccessfulOp]] = {
+    val stmts: Future[Iterable[Statement]] = fetchAsync(operation.item, revision, Some(eventTime))
+    stmts map {
+      sendImport(operation, _, revision)
     }
   }
 
-  private def sendReconcile(item: String, statements: Iterable[Statement], revision: Long): Patch = {
+  private def getReconcile(operation: Reconcile, revision: Long): Future[Iterable[SuccessfulOp]] = {
+    val stmts: Future[Iterable[Statement]] = fetchAsync(operation.item, revision)
+    stmts map {
+      sendReconcile(operation, _, revision)
+    }
+  }
+
+  private def sendImport(operation: FullImport, stmts: Iterable[Statement], revision: Long): Iterable[SuccessfulOp] = {
+    if (stmts.isEmpty) {
+      throw new ContainedException(s"Got empty entity for ${operation.item}, revision:$revision (404 or 204?)")
+    } else {
+      fullImport(operation, stmts)
+    }
+  }
+
+  private def generateDiff(operation: Diff, from: Iterable[Statement], to: Iterable[Statement],
+                           revision: Long, fromRev: Long): Iterable[SuccessfulOp] = {
+    if (from.isEmpty || to.isEmpty) {
+      throw new ContainedException(s"Got empty entity for ${operation.item}, fromRev: $fromRev, revision:$revision (404 or 204?)")
+    } else {
+      diff(operation, from, to)
+    }
+  }
+
+  private def sendReconcile(operation: Reconcile, statements: Iterable[Statement], revision: Long): Iterable[SuccessfulOp] = {
     if (statements.isEmpty) {
-      throw new ContainedException(s"Got empty entity for $item, revision:$revision (404 or 204?)")
+      throw new ContainedException(s"Got empty entity for $operation, revision:$revision (404 or 204?)")
     }
     val toList = new util.ArrayList[Statement](statements.asJavaCollection)
-    mungeOperation(item, toList)
-    new Patch(toList, emptyList(), emptyList(), emptyList())
+    mungeOperation(operation.item, toList)
+
+    subgraphDiff.reconcile(operation, toList.asScala)
   }
 
-  private def diff(item: String, from: Iterable[Statement], to: Iterable[Statement]): Patch = {
+  private def diff(operation: Diff, from: Iterable[Statement], to: Iterable[Statement]): Iterable[SuccessfulOp] = {
     val fromList = new util.ArrayList[Statement](from.asJavaCollection)
     val toList = new util.ArrayList[Statement](to.asJavaCollection)
 
-    mungeOperation(item, fromList)
-    mungeOperation(item, toList)
+    mungeOperation(operation.item, fromList)
+    mungeOperation(operation.item, toList)
 
-    diff.diff(fromList, toList)
+    subgraphDiff.diff(operation, fromList.asScala, toList.asScala)
   }
 
-  private def fullImport(item: String, stmts: Iterable[Statement]): Patch = {
+  private def fullImport(operation: FullImport, stmts: Iterable[Statement]): Iterable[SuccessfulOp] = {
     val toList = new util.ArrayList[Statement](stmts.asJavaCollection)
 
-    mungeOperation(item, toList)
+    mungeOperation(operation.item, toList)
 
-    diff.diff(emptyList(), toList)
+    subgraphDiff.fullImport(operation, toList.asScala)
   }
 
   object RetryingFuture {
@@ -197,6 +211,7 @@ case class GenerateEntityDiffPatchOperation(
           case e: Throwable if canRetry(attempts, e) => after(delay)(attempt(attempts + 1))
           case e: Throwable => Future.failed(new FailedRetryException(attempts, e))
         }
+
       attempt(1)
     }
   }
@@ -209,21 +224,25 @@ object GenerateEntityDiffPatchOperation {
   }
 }
 
-sealed class RouteFailedOpsToSideOutput(ignoredEventTag: OutputTag[FailedOp] = RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
-  extends ProcessFunction[ResolvedOp, SuccessfulOp]
-{
-  override def processElement(i: ResolvedOp,
+sealed class RouteResolvedOpsToSideOutput(
+                                           ignoredEventTag: OutputTag[FailedOp] = RouteResolvedOpsToSideOutput.FAILED_OPS_TAG,
+                                           subgraphTags: Map[URI, OutputTag[SuccessfulOp]])
+  extends ProcessFunction[ResolvedOp, SuccessfulOp] {
+  override def processElement(op: ResolvedOp,
                               context: ProcessFunction[ResolvedOp, SuccessfulOp]#Context,
                               collector: Collector[SuccessfulOp]
                              ): Unit = {
-    i match {
-      case e: FailedOp => context.output(ignoredEventTag, e)
-      case x: SuccessfulOp => collector.collect(x)
+    op match {
+      case op: FailedOp => context.output(ignoredEventTag, op)
+      case op: SuccessfulOp => op.subgraph match {
+        case Some(subgraph) => context.output(subgraphTags(subgraph), op)
+        case None => collector.collect(op)
+      }
     }
   }
 }
 
-object RouteFailedOpsToSideOutput {
+object RouteResolvedOpsToSideOutput {
   val FAILED_OPS_TAG: OutputTag[FailedOp] = new OutputTag[FailedOp]("failed-ops-events")
 }
 

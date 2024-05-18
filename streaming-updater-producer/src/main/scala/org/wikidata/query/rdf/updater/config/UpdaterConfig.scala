@@ -1,13 +1,17 @@
 package org.wikidata.query.rdf.updater.config
 
 import org.apache.flink.api.common.time.Time
+import org.apache.flink.configuration.ConfigOptions
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.slf4j.LoggerFactory
 import org.wikidata.query.rdf.common.uri.{FederatedUrisScheme, UrisScheme, UrisSchemeFactory}
 import org.wikidata.query.rdf.tool.HttpClientUtils
+import org.wikidata.query.rdf.tool.subgraph.{SubgraphDefinitions, SubgraphDefinitionsParser}
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikimedia.eventutilities.core.event.WikimediaDefaults
 
+import java.util.Collections
+import scala.collection.JavaConverters.{iterableAsScalaIterableConverter, mapAsScalaMapConverter}
 import scala.concurrent.duration._
 import scala.language.{implicitConversions, postfixOps}
 
@@ -24,16 +28,20 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
   val mediaInfoEntityNamespaces: Set[Long] = params.get("mediainfo_entity_namespaces", "").split(",").map(_.trim).filterNot(_.isEmpty).map(_.toLong).toSet
   val entityDataPath: String = params.get("wikibase_entitydata_path", Uris.DEFAULT_ENTITY_DATA_PATH)
   val printExecutionPlan: Boolean = params.getBoolean("print_execution_plan", false)
+  val subgraphDefinition: Option[SubgraphDefinitions] = loadSubgraphDefinition()
+
   if (entityNamespaces.isEmpty && mediaInfoEntityNamespaces.isEmpty) {
     throw new IllegalArgumentException("entity_namespaces and/or mediainfo_entity_namespaces")
   }
   private val jobParallelism = params.getInt("parallelism", 1)
+  private val subgraphKafkaTopics: Map[String, String] = params.getConfiguration.get(UpdaterConfig.SUBGRAPH_KAFKA_TOPICS).asScala.toMap
+
+  validateStreamMapping()
 
   // Assuming we want to process 50evt/sec (~2x the realtime speed) and the avg response time is 100ms and that we make 2 requests per events (diffs)
   // this is 50*2 = 100rps, 100*0.1 = 10 concurrent requests
   private val mwMaxConcurrentRequests: Int = params.getInt("mediawiki_max_concurrent_requests", 10)
 
-  val transactionalIdPrefix = s"$outputTopic:$outputPartition"
   val generalConfig: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
     hostname = hostName,
     jobName = jobName,
@@ -106,16 +114,16 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       sideOutputsDomain = params.get("side_outputs_domain", hostName),
       sideOutputsKafkaBrokers = optionalStringArg("side_outputs_kafka_brokers"),
       schemaRepos = params.get(
-        "schema_repositories",
-        "https://schema.wikimedia.org/repositories/primary/jsonschema,https://schema.wikimedia.org/repositories/secondary/jsonschema"
-      ).split(",")
+          "schema_repositories",
+          "https://schema.wikimedia.org/repositories/primary/jsonschema,https://schema.wikimedia.org/repositories/secondary/jsonschema"
+        ).split(",")
         .map(_.trim)
         .toList,
       ignoreFailuresAfterTransactionTimeout = params.getBoolean("ignore_failures_after_transaction_timeout", false),
-      transactionalIdPrefix = transactionalIdPrefix,
       useNewFlinkKafkaApi = useNewFlinkKafkaApi,
       produceSideOutputs = params.getBoolean("produce_side_outputs", true),
-      emitterId = optionalStringArg("emitter_id")
+      emitterId = optionalStringArg("emitter_id"),
+      subgraphKafkaTopics
     )
 
   implicit def finiteDuration2Int(fd: FiniteDuration): Int = fd.toMillis.intValue
@@ -125,7 +133,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       case Some(size) => size
       case None =>
         if (maxTotalConcurrentRequests < fetchOpParallelism) {
-          throw new IllegalArgumentException (s"The expected concurrency limits of $maxTotalConcurrentRequests cannot be achieved " +
+          throw new IllegalArgumentException(s"The expected concurrency limits of $maxTotalConcurrentRequests cannot be achieved " +
             s"with a parallelism of $fetchOpParallelism, please set --parallelism to at most $maxTotalConcurrentRequests")
         }
         val threadPoolSize = maxTotalConcurrentRequests / fetchOpParallelism
@@ -136,9 +144,43 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
         threadPoolSize
     }
   }
+
+  def loadSubgraphDefinition(): Option[SubgraphDefinitions] = {
+    optionalStringArg("subgraph_definitions") match {
+      case Some(definition) =>
+        Some(SubgraphDefinitionsParser.parseYaml(classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/$definition.yaml")))
+      case None => None
+    }
+  }
+
+  private def validateStreamMapping(): Unit = {
+    subgraphDefinition match {
+      case Some(definitions) =>
+        definitions.getSubgraphs.asScala
+          .filter(_.getSubgraphUri != null) // the graph without URI has special meaning
+          .map(_.getStream)
+          .filterNot(subgraphKafkaTopics.contains)
+          .toList match {
+            case Nil =>
+            case list: List[String] => throw new IllegalArgumentException("Missing mapping for streams " + list.mkString(", "))
+          }
+        definitions.getSubgraphs.asScala
+          .filter(_.getSubgraphUri == null)
+          .toList match {
+            case _ :: Nil =>
+            case _ => throw new IllegalArgumentException("One and only one subgraph with a null subgraph_uri must be defined")
+          }
+      case None =>
+    }
+  }
+
 }
 
 object UpdaterConfig {
+  private val SUBGRAPH_KAFKA_TOPICS = ConfigOptions.key("subgraph_kafka_topics")
+    .mapType()
+    .defaultValue(Collections.emptyMap())
+
   def apply(args: Array[String]): UpdaterConfig = new UpdaterConfig(args)
 }
 
@@ -181,10 +223,10 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      sideOutputsKafkaBrokers: Option[String],
                                                      schemaRepos: List[String],
                                                      ignoreFailuresAfterTransactionTimeout: Boolean,
-                                                     transactionalIdPrefix: String,
                                                      useNewFlinkKafkaApi: Boolean,
                                                      produceSideOutputs: Boolean,
-                                                     emitterId: Option[String]
+                                                     emitterId: Option[String],
+                                                     subgraphKafkaTopics: Map[String, String]
                                                    )
 
 sealed case class UpdaterExecutionEnvironmentConfig(checkpointDir: String,

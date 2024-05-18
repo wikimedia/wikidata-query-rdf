@@ -1,14 +1,5 @@
 package org.wikidata.query.rdf.updater
 
-import java.net.URI
-import java.time.Instant
-import java.util.Collections.emptyList
-
-import scala.collection.JavaConverters._
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
-import scala.language.postfixOps
-import scala.concurrent.duration.DurationInt
-
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.operators.testutils.MockEnvironment
 import org.apache.flink.streaming.api.datastream.AsyncDataStream.OutputMode
@@ -24,6 +15,13 @@ import org.wikidata.query.rdf.tool.change.events.EventInfo
 import org.wikidata.query.rdf.tool.exception.{ContainedException, RetryableException}
 import org.wikidata.query.rdf.tool.rdf.Patch
 import org.wikidata.query.rdf.tool.wikibase.WikibaseEntityFetchException
+
+import java.net.URI
+import java.time.Instant
+import java.util.Collections.emptyList
+import scala.collection.JavaConverters._
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.language.postfixOps
 
 class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers with MockFactory with TestEventGenerator with BeforeAndAfter {
   val DOMAIN = "tested.domain"
@@ -43,8 +41,8 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
       mungeOperationProvider = _ => (_, _) => 1,
       acceptableRepositoryLag = ACCEPTABLE_LAG,
       fetchRetryDelay = 1.milliseconds,
-      now = subjectiveClock
-    )
+      now = subjectiveClock,
+      subgraphAssigner = SubgraphAssigner.empty())
 
     val operator: AsyncFunction[MutationOperation, ResolvedOp] = new AsyncFunction[MutationOperation, ResolvedOp] {
       override def asyncInvoke(input: MutationOperation, resultFuture: ResultFuture[ResolvedOp]): Unit = genDiff.asyncInvoke(input,

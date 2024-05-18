@@ -89,7 +89,14 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       urisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
       acceptableMediawikiLag = 10 seconds
     )
-    UpdaterPipeline.configure(options, List(source), CollectSink.asOutputStreams, _ => repository, clock = clock)
+
+    UpdaterPipeline.configure(
+      options,
+      List(source),
+      CollectSink.asOutputStreams(), _ => repository,
+      clock = clock,
+      subgraphAssigner = SubgraphAssigner.empty())
+
     val graph = streamingEnv.getStreamGraph(true)
     graph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savePointDir.toURI.toString, false))
     streamingEnv.getJavaEnv.execute(graph)

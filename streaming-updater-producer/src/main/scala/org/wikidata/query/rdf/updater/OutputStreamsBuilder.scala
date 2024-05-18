@@ -15,6 +15,7 @@ import java.util.Properties
 
 case class OutputStreams(
                           mutationSink: SinkWrapper[MutationDataChunk],
+                          subgraphMutationSinks: Map[String, SinkWrapper[MutationDataChunk]] = Map.empty,
                           lateEventsSink: Option[SinkWrapper[InputEvent]] = None,
                           spuriousEventsSink: Option[SinkWrapper[InconsistentMutation]] = None,
                           failedOpsSink: Option[SinkWrapper[FailedOp]] = None
@@ -30,20 +31,31 @@ case class SinkWrapper[E](sink: Either[SinkFunction[E], Sink[E]], nameAndUuid: S
       .name(nameAndUuid)
   }
 }
-class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig, httpClientConfig: HttpClientConfig) {
+
+class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig, httpClientConfig: HttpClientConfig, subgraphStreams: Iterable[String]) {
   def build: OutputStreams = {
-    val mutationSink = mutationOutput(outputStreamsConfig)
+    val mutationSink = mutationOutput(outputStreamsConfig, outputStreamsConfig.topic)
+    val subgraphMutationSinks = subgraphStreams
+      .map(subgraphStream => subgraphStream -> mutationOutput(
+        outputStreamsConfig,
+        outputStreamsConfig.subgraphKafkaTopics(subgraphStream),
+        nameAndUuidSuffix = f"-$subgraphStream")
+      ).toMap
     if (outputStreamsConfig.produceSideOutputs) {
       OutputStreams(
-        mutationSink,
-        Some(prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema,
-          outputStreamsConfig.schemaRepos, httpClientConfig, "late-events-output")),
-        Some(prepareSideOutputStream[InconsistentMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
-          outputStreamsConfig.schemaRepos, httpClientConfig, "spurious-events-output")),
-        Some(prepareSideOutputStream[FailedOp](JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema,
-          outputStreamsConfig.schemaRepos, httpClientConfig, "failed-events-output")))
+        mutationSink = mutationSink,
+        subgraphMutationSinks = subgraphMutationSinks,
+        lateEventsSink =
+          Some(prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema,
+            outputStreamsConfig.schemaRepos, httpClientConfig, "late-events-output")),
+        spuriousEventsSink =
+          Some(prepareSideOutputStream[InconsistentMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
+            outputStreamsConfig.schemaRepos, httpClientConfig, "spurious-events-output")),
+        failedOpsSink =
+          Some(prepareSideOutputStream[FailedOp](JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema,
+            outputStreamsConfig.schemaRepos, httpClientConfig, "failed-events-output")))
     } else {
-      OutputStreams(mutationSink)
+      OutputStreams(mutationSink, subgraphMutationSinks = subgraphMutationSinks)
     }
   }
 
@@ -83,7 +95,7 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
 
   }
 
-  def mutationOutput(outputStreamConfig: UpdaterPipelineOutputStreamConfig): SinkWrapper[MutationDataChunk] = {
+  def mutationOutput(outputStreamConfig: UpdaterPipelineOutputStreamConfig, topic: String, nameAndUuidSuffix: String = ""): SinkWrapper[MutationDataChunk] = {
     val producerConfig = new Properties()
     producerConfig.setProperty("bootstrap.servers", outputStreamsConfig.kafkaBrokers)
     // Flink defaults is 1hour but wmf kafka uses the default value of 15min for transaction.max.timeout.ms
@@ -94,9 +106,9 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
     producerConfig.setProperty("compression.type", "gzip")
 
     if (outputStreamConfig.useNewFlinkKafkaApi) {
-      withKafkaSink(outputStreamConfig.transactionalIdPrefix, producerConfig)
+      withKafkaSink(s"$topic:${outputStreamConfig.partition}", producerConfig, topic, nameAndUuidSuffix = nameAndUuidSuffix)
     } else {
-      withDeprecadedFlinkKafkaProducer(outputStreamConfig.transactionalIdPrefix, producerConfig)
+      withDeprecadedFlinkKafkaProducer(s"$topic:${outputStreamConfig.partition}", producerConfig)
     }
   }
 
@@ -122,8 +134,13 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
   }
 
 
-  def withKafkaSink(transactionalPrefixId: String, producerConfig: Properties): SinkWrapper[MutationDataChunk] = {
-    val serializer = new MutationEventDataSerializationSchema(outputStreamsConfig.topic, outputStreamsConfig.partition)
+  def withKafkaSink(
+                     transactionalPrefixId: String,
+                     producerConfig: Properties,
+                     topic: String,
+                     nameAndUuidSuffix: String = ""
+                   ): SinkWrapper[MutationDataChunk] = {
+    val serializer = new MutationEventDataSerializationSchema(topic, outputStreamsConfig.partition)
     val kafkaSink = KafkaSink.builder[MutationDataChunk]()
       .setDeliveryGuarantee(outputStreamsConfig.checkpointingMode match {
         case CheckpointingMode.EXACTLY_ONCE => DeliveryGuarantee.EXACTLY_ONCE
@@ -133,6 +150,6 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
       .setTransactionalIdPrefix(transactionalPrefixId)
       .setRecordSerializer(serializer.asKafkaRecordSerializationSchema())
       .build()
-    SinkWrapper(Right(kafkaSink), "mutation-output")
+    SinkWrapper(Right(kafkaSink), f"mutation-output$nameAndUuidSuffix")
   }
 }

@@ -1,10 +1,5 @@
 package org.wikidata.query.rdf.updater
 
-import java.net.URI
-import java.time.Clock
-
-import scala.collection.JavaConverters.setAsJavaSetConverter
-
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.FailureRateRestartStrategyConfiguration
 import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup
 import org.apache.flink.streaming.api.scala._
@@ -12,6 +7,10 @@ import org.slf4j.{Logger, LoggerFactory}
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.config.{BaseConfig, UpdaterConfig, UpdaterExecutionEnvironmentConfig}
+
+import java.net.URI
+import java.time.Clock
+import scala.collection.JavaConverters.setAsJavaSetConverter
 
 object UpdaterJob {
   val DEFAULT_CLOCK: Clock = Clock.systemUTC()
@@ -21,7 +20,14 @@ object UpdaterJob {
     val config = UpdaterConfig(args)
     val generalConfig = config.generalConfig
 
-    val outputStreamsBuilder: OutputStreamsBuilder = new OutputStreamsBuilder(config.outputStreamConfig, generalConfig.httpClientConfig)
+    val subgraphAssigner = config.subgraphDefinition match {
+      case Some(subgraphDef) => new SubgraphAssigner(subgraphDef)
+      case None => SubgraphAssigner.empty()
+    }
+    val outputStreamsBuilder: OutputStreamsBuilder = new OutputStreamsBuilder(
+      config.outputStreamConfig,
+      generalConfig.httpClientConfig,
+      subgraphAssigner.distinctSubgraphs.map(uri => subgraphAssigner.stream(uri.getSubgraphUri).get))
     val uris: Uris = new WikibaseRepository.Uris(new URI(s"https://${generalConfig.hostname}"),
       generalConfig.entityNamespaces.map(long2Long).asJava,
       WikibaseRepository.Uris.DEFAULT_ENTITY_DATA_PATH, // unused by the pipeline
@@ -33,7 +39,8 @@ object UpdaterJob {
         opts = generalConfig,
         incomingStreams = incomingStreams,
         outputStreams = outputStreamsBuilder.build,
-        wikibaseRepositoryGenerator = rc => WikibaseEntityRevRepository(uris, generalConfig.httpClientConfig, rc.getMetricGroup))
+        wikibaseRepositoryGenerator = rc => WikibaseEntityRevRepository(uris, generalConfig.httpClientConfig, rc.getMetricGroup),
+        subgraphAssigner = subgraphAssigner)
     if (config.printExecutionPlan) {
       LOGGER.info("Execution plan: {}", env.getExecutionPlan)
     } else {

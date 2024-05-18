@@ -1,0 +1,11 @@
+prefixes:
+  wdsubgraph: https://query.unittest.local/subgraph
+subgraphs:
+  - name: full
+    stream: fullstream
+    default: pass
+    stubs_source: false
+  - name: copy
+    stream: copy
+    default: pass
+    subgraph_uri: wdsubgraph:copy

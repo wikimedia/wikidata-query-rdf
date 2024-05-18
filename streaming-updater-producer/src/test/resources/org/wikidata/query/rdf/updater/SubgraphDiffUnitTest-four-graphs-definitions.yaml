@@ -1,0 +1,30 @@
+prefixes:
+  wdt: https://unittest.local/prop/direct/
+  wd: https://unittest.local/entity/
+  wdsubgraph: https://query.unittest.local/subgraph/
+subgraphs:
+  - name: full
+    stream: rdf-streaming-udpater.mutations
+    default: pass
+    stubs_source: false
+  - name: graph1
+    stream: stream-graph1
+    subgraph_uri: wdsubgraph:graph1
+    default: block
+    rules:
+      - pass ?entity wdt:P31 wd:Q10
+    stubs_source: true
+  - name: graph2
+    stream: stream-graph2
+    subgraph_uri: wdsubgraph:graph2
+    default: pass
+    rules:
+      - block ?entity wdt:P31 wd:Q10
+    stubs_source: true
+  - name: graph3
+    stream: stream-graph3
+    subgraph_uri: wdsubgraph:graph3
+    default: block
+    rules:
+      - pass ?entity wdt:P31 wd:Q11
+    stubs_source: true

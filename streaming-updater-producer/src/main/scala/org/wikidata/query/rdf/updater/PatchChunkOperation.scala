@@ -29,6 +29,7 @@ class PatchChunkOperation(domain: String,
   lazy val rdfSerializer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())
   lazy val dataEventGenerator: MutationEventDataGenerator = new MutationEventDataGenerator(rdfSerializer, mimeType, chunkSoftMaxSize)
 
+  // scalastyle:off cyclomatic.complexity
   override def flatMap(t: SuccessfulOp, collector: Collector[MutationDataChunk]): Unit = {
     val dataList: util.List[MutationEventData] = t.operation match {
       case FullImport(entity, eventTime, rev, _, originalEventMetadata) =>
@@ -36,22 +37,26 @@ class PatchChunkOperation(domain: String,
         dataEventGenerator.fullImportEvent(eventMetaSupplier(originalEventMetadata), entity, rev,
           eventTime, epo.data.getAdded,
           epo.data.getLinkedSharedElements)
-      case Diff(entity, eventTime, rev, _, _, originalEventMetadata) =>
+      case Diff(entity, eventTime, rev, _, _, originalEventMetadata) if t.isInstanceOf[EntityPatchOp] =>
         val epo = t.asInstanceOf[EntityPatchOp]
         dataEventGenerator.diffEvent(eventMetaSupplier(originalEventMetadata), entity, rev,
           eventTime, epo.data.getAdded,
           epo.data.getRemoved,
           epo.data.getLinkedSharedElements,
           epo.data.getUnlinkedSharedElements)
-      case Reconcile(entity, eventTime, rev, _, originalEventInfo) =>
+      case Reconcile(entity, eventTime, rev, _, originalEventMetadata) if t.isInstanceOf[ReconcileOp] =>
         val ro = t.asInstanceOf[ReconcileOp]
-        dataEventGenerator.reconcile(eventMetaSupplier(originalEventInfo), entity, rev, eventTime, ro.data.getAdded)
+        dataEventGenerator.reconcile(eventMetaSupplier(originalEventMetadata), entity, rev, eventTime, ro.data.getAdded)
       case DeleteItem(entity, eventTime, rev, _, originalEventMetadata) =>
+        dataEventGenerator.deleteEvent(eventMetaSupplier(originalEventMetadata), entity, rev, eventTime)
+      case Diff(entity, eventTime, rev, _, _, originalEventMetadata) if t.isInstanceOf[DeleteOp] =>
+        dataEventGenerator.deleteEvent(eventMetaSupplier(originalEventMetadata), entity, rev, eventTime)
+      case Reconcile(entity, eventTime, rev, _, originalEventMetadata) if t.isInstanceOf[DeleteOp] =>
         dataEventGenerator.deleteEvent(eventMetaSupplier(originalEventMetadata), entity, rev, eventTime)
     }
     dataList.asScala map {MutationDataChunk(t.operation, _)} foreach collector.collect
   }
-
+  // scalastyle:on cyclomatic.complexity
 
   private def eventMetaSupplier(originalEventMeta: EventInfo): Supplier[EventsMeta] = {
     new Supplier[EventsMeta] {

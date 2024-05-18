@@ -22,6 +22,7 @@ trait FlinkTestCluster extends FlatSpec with BeforeAndAfterEach with BeforeAndAf
     CollectSink.values.clear()
     CollectSink.lateEvents.clear()
     CollectSink.spuriousRevEvents.clear()
+    CollectSink.subgraphCopy.clear()
     flinkCluster.before()
   }
 
@@ -45,15 +46,22 @@ class CollectSink[E](func: E => Unit) extends SinkFunction[E] {
 object CollectSink {
   // must be static
   val values: ListBuffer[MutationDataChunk] = ListBuffer()
+  val subgraphCopy: ListBuffer[MutationDataChunk] = ListBuffer()
   val lateEvents: ListBuffer[InputEvent] = ListBuffer()
   val spuriousRevEvents: ListBuffer[InconsistentMutation] = ListBuffer()
 
-  def asOutputStreams: OutputStreams = {
+  def asOutputStreams(withSubgraphCopy: Boolean = false): OutputStreams = {
+
+    val subgraphMutationSinks: Map[String, SinkWrapper[MutationDataChunk]] = if (withSubgraphCopy) {
+      Map("copy" -> SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.subgraphCopy.append(_))), "mutations-copy"))
+    } else {
+      Map.empty
+    }
     OutputStreams(
-      SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations"),
-      Some(SinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events")),
-      Some(SinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies")),
-      None
+      mutationSink = SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations"),
+      subgraphMutationSinks = subgraphMutationSinks,
+      lateEventsSink = Some(SinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events")),
+      spuriousEventsSink = Some(SinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies"))
     )
   }
 }

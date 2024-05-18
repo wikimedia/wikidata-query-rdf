@@ -3,6 +3,7 @@ package org.wikidata.query.rdf.updater
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.async.AsyncFunction
+import org.openrdf.model.URI
 import org.wikidata.query.rdf.tool.rdf.Patch
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineGeneralConfig
 
@@ -13,35 +14,38 @@ import scala.concurrent.duration.MILLISECONDS
 /**
  * Current state
  * stream1 = kafka(with periodic watermarks)
- *  => filter(domain == "something")
- *  => map(event convertion)
+ * => filter(domain == "something")
+ * => map(event convertion)
  * stream2 = same principle
  *
  * union of all streams
- *  => keyBy (used as a partitioner to reduce cardinality)
- *  => process(partial reordering and decide mutation op) see ReorderAndDecideMutationOperation
- *  |=> side output 1: late events
- *  |=> side output 2: spurious events
- *  => process(fetch data from wikibase and diff) see GenerateEntityDiffPatchOperation
- *  |=> side output: failed ops
- *  => flatMap(split large patches into chunks) see RDFPatchChunkOperation
- *  => measure latency
- *  output of the stream is a MutationDataChunk
+ * => keyBy (used as a partitioner to reduce cardinality)
+ * => process(partial reordering and decide mutation op) see ReorderAndDecideMutationOperation
+ * |=> side output 1: late events
+ * |=> side output 2: spurious events
+ * => process(fetch data from wikibase and diff) see GenerateEntityDiffPatchOperation
+ * |=> side output: failed ops
+ * => flatMap(split large patches into chunks) see RDFPatchChunkOperation
+ * => measure latency
+ * output of the stream is a MutationDataChunk
  */
 object UpdaterPipeline {
   // Enforce output parallelism of 1 ( to ensure proper ordering of the output patches
   private val OUTPUT_PARALLELISM = 1
   val defaultAppName = "WDQS Updater Stream Updater"
 
+  // scalastyle:off parameter.number
   def configure(opts: UpdaterPipelineGeneralConfig,
                 incomingStreams: List[DataStream[InputEvent]],
                 outputStreams: OutputStreams,
                 wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
                 uniqueIdGenerator: () => String = () => UUID.randomUUID().toString,
                 clock: Clock = Clock.systemUTC(),
-                outputStreamName: String = "wdqs_streaming_updater"
-           )
+                outputStreamName: String = "wdqs_streaming_updater",
+                subgraphAssigner: SubgraphAssigner
+               )
                (implicit env: StreamExecutionEnvironment): Unit = {
+
     val incomingEventStream: KeyedStream[InputEvent, String] =
       (incomingStreams match {
         case Nil => throw new NoSuchElementException("at least one stream is needed")
@@ -61,33 +65,58 @@ object UpdaterPipeline {
         stream.getSideOutput(ReorderAndDecideMutationOperation.SPURIOUS_REV_EVENTS))
     }
 
-    val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, outputMutationStream)
-    val patchStream: DataStream[SuccessfulOp] = rerouteFailedOps(resolvedOpStream)
-    val failedOpsToSideOutput: DataStream[FailedOp] = patchStream.getSideOutput(RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
+    val subgraphTags: Map[URI, OutputTag[SuccessfulOp]] = subgraphAssigner.distinctSubgraphs
+      .map(uri => uri.getSubgraphUri -> OutputTag[SuccessfulOp](uri.getSubgraphUri.toString)).toMap
 
-    val tripleStream: DataStream[MutationDataChunk] = measureLatency(
-      rdfPatchChunkOp(patchStream, opts, uniqueIdGenerator, clock, outputStreamName), clock)
+    val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, outputMutationStream, subgraphAssigner)
 
-    attachSinks(outputStreams, lateEventsSideOutput, spuriousEventsSideOutput, failedOpsToSideOutput, tripleStream)
+    val patchStream: DataStream[SuccessfulOp] = rerouteFailedOps(resolvedOpStream, subgraphTags)
+    val failedOpsToSideOutput: DataStream[FailedOp] = patchStream.getSideOutput(RouteResolvedOpsToSideOutput.FAILED_OPS_TAG)
+
+    val tripleStreams = subgraphTags
+      .map {
+        case (uri, tag) =>
+          val streamName = subgraphAssigner.stream(uri).get
+          streamName -> rdfPatchChunkOp(patchStream.getSideOutput(tag), opts, uniqueIdGenerator, clock, streamName)
+      } ++ Map(outputStreamName -> measureLatency(rdfPatchChunkOp(patchStream, opts, uniqueIdGenerator, clock, outputStreamName), clock))
+
+    attachSinks(outputStreams, outputStreamName, lateEventsSideOutput, spuriousEventsSideOutput, failedOpsToSideOutput, tripleStreams)
   }
+  // scalastyle:on parameter.number
 
   private def attachSinks(outputStreams: OutputStreams,
+                          mainStreamName: String,
                           lateEventsSideOutput: DataStream[InputEvent],
                           spuriousEventsSideOutput: DataStream[InconsistentMutation],
                           failedOpsToSideOutput: DataStream[FailedOp],
-                          tripleStream: DataStream[MutationDataChunk]): Unit = {
-    outputStreams.lateEventsSink foreach { _.attachStream(lateEventsSideOutput) }
-    outputStreams.spuriousEventsSink foreach { _.attachStream(spuriousEventsSideOutput) }
-    outputStreams.failedOpsSink foreach { _.attachStream(failedOpsToSideOutput) }
-    outputStreams.mutationSink.attachStream(tripleStream)
-      .setParallelism(OUTPUT_PARALLELISM)
+                          tripleStreams: Map[String, DataStream[MutationDataChunk]]): Unit = {
+    outputStreams.lateEventsSink foreach {
+      _.attachStream(lateEventsSideOutput)
+    }
+    outputStreams.spuriousEventsSink foreach {
+      _.attachStream(spuriousEventsSideOutput)
+    }
+    outputStreams.failedOpsSink foreach {
+      _.attachStream(failedOpsToSideOutput)
+    }
+    tripleStreams.foreach {
+      case (outputStreamName, stream) if outputStreamName == mainStreamName =>
+        outputStreams.mutationSink
+          .attachStream(stream)
+          .setParallelism(OUTPUT_PARALLELISM)
+      case (outputStreamName, stream) =>
+        outputStreams.subgraphMutationSinks(outputStreamName)
+        .attachStream(stream)
+        .setParallelism(OUTPUT_PARALLELISM)
+    }
   }
 
-  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp]): DataStream[SuccessfulOp] = {
+  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp], subgraphTags: Map[URI, OutputTag[SuccessfulOp]]): DataStream[SuccessfulOp] = {
     resolvedOpStream
-      .process(new RouteFailedOpsToSideOutput())
-      .name("RouteFailedOpsToSideOutput")
-      .uid("RouteFailedOpsToSideOutput")
+      .process(new RouteResolvedOpsToSideOutput(subgraphTags = subgraphTags))
+      .name("RouteResolvedOpsToSideOutput")
+      .uid("RouteResolvedOpsToSideOutput")
+      .setParallelism(OUTPUT_PARALLELISM)
   }
 
   private def rdfPatchChunkOp(dataStream: DataStream[SuccessfulOp],
@@ -107,8 +136,8 @@ object UpdaterPipeline {
         uniqueIdGenerator = uniqueIdGenerator,
         stream = outputStreamName
       ))
-      .name("RDFPatchChunkOperation")
-      .uid("RDFPatchChunkOperation")
+      .name(s"RDFPatchChunkOperation-$outputStreamName")
+      .uid(s"RDFPatchChunkOperation-$outputStreamName")
       .setParallelism(OUTPUT_PARALLELISM)
   }
 
@@ -122,13 +151,15 @@ object UpdaterPipeline {
 
   private def resolveMutationOperations(opts: UpdaterPipelineGeneralConfig,
                                         wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
-                                        outputMutationStream: DataStream[MutationOperation]
+                                        outputMutationStream: DataStream[MutationOperation],
+                                        subgraphAssigner: SubgraphAssigner
                                        ): DataStream[ResolvedOp] = {
     val genDiffOperator: AsyncFunction[MutationOperation, ResolvedOp] = GenerateEntityDiffPatchOperation(
       scheme = opts.urisScheme,
       wikibaseRepositoryGenerator = wikibaseRepositoryGenerator,
       poolSize = opts.wikibaseRepoThreadPoolSize,
-      acceptableRepositoryLag = opts.acceptableMediawikiLag
+      acceptableRepositoryLag = opts.acceptableMediawikiLag,
+      subgraphAssigner = subgraphAssigner
     )
 
     // poolSize * 2 for the number of inflight items is a random guess

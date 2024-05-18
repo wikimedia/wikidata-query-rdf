@@ -1,10 +1,10 @@
 package org.wikidata.query.rdf.updater.config
 
 import scala.concurrent.duration.DurationInt
-
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.HttpClientUtils
+import org.wikidata.query.rdf.tool.subgraph.SubgraphDefinitionsParser
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 
 class UpdaterConfigUnitTest extends FlatSpec with Matchers {
@@ -40,6 +40,8 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     config.environmentConfig.checkpointingMode shouldBe CheckpointingMode.EXACTLY_ONCE
     config.environmentConfig.parallelism shouldBe 1
 
+    config.subgraphDefinition shouldBe None
+
     config.inputEventStreamConfig.mediaInfoEntityNamespaces shouldBe empty
     config.inputEventStreamConfig.consumerGroup shouldBe "my_consumer_group"
     config.inputEventStreamConfig.kafkaBrokers shouldBe "broker1,broker2"
@@ -70,6 +72,7 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     config.generalConfig.httpClientConfig.userAgent shouldBe HttpClientUtils.WDQS_DEFAULT_UA
 
     config.outputStreamConfig.ignoreFailuresAfterTransactionTimeout shouldBe false
+    config.outputStreamConfig.subgraphKafkaTopics shouldBe empty
   }
 
   "UpdaterConfig" should "build a config suited for commons with wikidata federation" in {
@@ -123,5 +126,21 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     }
     assert(caught.getMessage == "The expected concurrency limits of 2 cannot be achieved with a parallelism of 4, " +
       "please set --parallelism to at most 2")
+  }
+
+  "UpdaterConfig" should "support setting a subgraph definition and topics for subgraphs" in {
+    val config = UpdaterConfig(baseConfig ++ Array(
+      "--hostname", "my.wikidata.org",
+      "--uris_scheme", "wikidata",
+      "--subgraph_definitions", "wdqs-subgraph-definitions-v1",
+      "--subgraph_kafka_topics.rdf-streaming-updater.mutation-main", "topic-main",
+      "--subgraph_kafka_topics.rdf-streaming-updater.mutation-scholarly", "topic-scholarly"))
+    val expectedDefinitions = SubgraphDefinitionsParser.parseYaml(
+      classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/wdqs-subgraph-definitions-v1.yaml"))
+    config.outputStreamConfig.subgraphKafkaTopics should contain theSameElementsAs Map(
+      "rdf-streaming-updater.mutation-main" -> "topic-main",
+      "rdf-streaming-updater.mutation-scholarly" -> "topic-scholarly"
+    )
+    config.subgraphDefinition shouldEqual Some(expectedDefinitions)
   }
 }

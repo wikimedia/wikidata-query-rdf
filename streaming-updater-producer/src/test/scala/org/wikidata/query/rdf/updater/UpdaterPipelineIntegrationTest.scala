@@ -5,6 +5,7 @@ import org.openrdf.model.Statement
 import org.scalatest._
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
 import org.wikidata.query.rdf.tool.change.events.{EventsMeta, PageDeleteEvent, ReconcileEvent, RevisionCreateEvent}
+import org.wikidata.query.rdf.tool.subgraph.{SubgraphDefinitions, SubgraphDefinitionsParser}
 import org.wikidata.query.rdf.updater.config.{HttpClientConfig, UpdaterPipelineGeneralConfig}
 
 import java.time.Instant
@@ -29,6 +30,10 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
 
   private val resolver: IncomingStreams.EntityResolver = (_, title, _) => title
 
+  private val subgraphDef: SubgraphDefinitions = SubgraphDefinitionsParser.parseYaml(
+    this.getClass.getResourceAsStream(this.getClass.getSimpleName + "-subgraphs.yaml"))
+  private val subgraphAssigner: SubgraphAssigner = new SubgraphAssigner(subgraphDef)
+
   "Updater job" should "work" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
 
@@ -46,8 +51,8 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
 
-    UpdaterPipeline.configure(pipelineOptions, List(revCreateSource), CollectSink.asOutputStreams, _ => repository,
-      OUTPUT_EVENT_UUID_GENERATOR, clock, OUTPUT_EVENT_STREAM_NAME)
+    UpdaterPipeline.configure(pipelineOptions, List(revCreateSource), CollectSink.asOutputStreams(true), _ => repository,
+      OUTPUT_EVENT_UUID_GENERATOR, clock, OUTPUT_EVENT_STREAM_NAME, subgraphAssigner)
 
     env.execute("test")
 
@@ -57,6 +62,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     CollectSink.values should have size expected.size
     compareStatements(expected)
     CollectSink.values map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
+    CollectSink.subgraphCopy map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
   }
 
   "Updater job" should "work with deletes" in {
@@ -86,9 +92,9 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
 
     UpdaterPipeline.configure(pipelineOptions,
       List(revCreateSourceForDeleteTest, pageDeleteSource),
-      CollectSink.asOutputStreams,
+      CollectSink.asOutputStreams(true),
       _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
-      clock, OUTPUT_EVENT_STREAM_NAME)
+      clock, OUTPUT_EVENT_STREAM_NAME, subgraphAssigner)
     env.execute("test")
 
     val expected = expectedOperationsForPageDeleteTest
@@ -96,7 +102,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     CollectSink.values should have size expected.size
     compareStatements(expected)
     CollectSink.values map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
-
+    CollectSink.subgraphCopy map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
   }
 
   "Updater job" should "support reconciliation events" in {
@@ -126,19 +132,21 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
 
     UpdaterPipeline.configure(pipelineOptions,
       List(revCreateEventStream, reconcileEventsStream),
-      CollectSink.asOutputStreams,
+      CollectSink.asOutputStreams(true),
       _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
-      clock, OUTPUT_EVENT_STREAM_NAME)
+      clock, OUTPUT_EVENT_STREAM_NAME, subgraphAssigner)
     env.execute("test")
 
     val expected = expectedReconcile
-    val (actualReconcile, actualData) = CollectSink.values find  {_.operation.isInstanceOf[Reconcile]} match {
-      case Some(MutationDataChunk(operation: Reconcile, data: DiffEventData)) => (operation, data)
-      case _ => fail("Expected a reconcile operation with a DiffEventData data object")
+    Seq(CollectSink.values, CollectSink.subgraphCopy).foreach { output =>
+      val (actualReconcile, actualData) = output find  {_.operation.isInstanceOf[Reconcile]} match {
+        case Some(MutationDataChunk(operation: Reconcile, data: DiffEventData)) => (operation, data)
+        case _ => fail("Expected a reconcile operation with a DiffEventData data object")
+      }
+      actualReconcile shouldBe expected.operation
+      assertSameDiffData(actualData, expected.data.asInstanceOf[DiffEventData])
     }
 
-    actualReconcile shouldBe expected.operation
-    assertSameDiffData(actualData, expected.data.asInstanceOf[DiffEventData])
   }
 
   private def compareStatements(expected: Seq[MutationDataChunk]) = {

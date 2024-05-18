@@ -1,0 +1,26 @@
+prefixes:
+  nsa: https://eample.com/a
+  nsb: httsp://eample.com/b
+  nsc: httsp://eample.com/c#
+  nsd: httsp://eample.com/d#
+  nse: httsp://eample.com/e/
+subgraphs:
+  - name: subgraph1
+    subgraph_uri: nse:subgraph1
+    stream: rdf-streaming-updater.mutations-subgraph1
+    default: block
+    rules:
+      - pass ?entity nsa:PROP_X nsb:PROP_VAL
+      - pass ?entity nsc:TYPE_X nsd:Property
+    stubs_source: true
+  - name: subgraph0
+    subgraph_uri: nse:subgraph0
+    stream: rdf-streaming-updater.mutations-subgraph0
+    default: pass
+    rules:
+      - block ?entity nsa:PROP_X nsb:PROP_VAL
+    stubs_source: true
+  - name: subgraph_
+    stream: rdf-streaming-udpater.mutations
+    default: pass
+    stubs_source: false
