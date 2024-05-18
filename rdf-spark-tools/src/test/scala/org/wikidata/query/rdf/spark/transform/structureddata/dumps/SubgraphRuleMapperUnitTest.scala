@@ -38,19 +38,30 @@ class SubgraphRuleMapperUnitTest extends AnyFlatSpec with SparkSessionProvider w
   private val block_P1_P300_rule = new SubgraphRule(Outcome.block, parseTriplePattern(s"?entity <pred:P1> e:E300",
     valueFactory, prefixes, bindings))
 
-  private val pass_P1_E100_default_block = new SubgraphDefinition("pass_P1_E100_default_block", Option.empty.orNull, "unused",
-    List(pass_P1_E100_rule).asJava, Outcome.block, false)
-  private val pass_P1_E100_E200_default_block = new SubgraphDefinition("pass_P1_E100_E200_default_block", Option.empty.orNull, "unused",
-    List(pass_P1_E100_E200_rule).asJava, Outcome.block, false)
-  private val block_P1_E100_default_pass = new SubgraphDefinition("block_P1_E100_default_pass", Option.empty.orNull, "unused",
-    List(block_P1_E100_rule).asJava, Outcome.pass, false)
-  private val block_P1_E100_then_pass_all_default_block = new SubgraphDefinition("block_P1_E100_then_pass_all_default_block", Option.empty.orNull, "unused",
-    List(block_P1_E100_rule, pass_all_rule).asJava, Outcome.block, false)
-
-  private val pass_all_pass_P1_E100_rule = new SubgraphDefinition("pass_all_pass_P1_E100_rule", Option.empty.orNull, "unused",
-    List(pass_P1_E100_rule).asJava, Outcome.pass, false)
-  private val block_all_block_P1_E100_rule = new SubgraphDefinition("block_all_block_P1_E100_rule", Option.empty.orNull, "unused",
-    List(block_P1_E100_rule).asJava, Outcome.block, false)
+  private val pass_P1_E100_default_block = SubgraphDefinition.builder
+    .name("pass_P1_E100_default_block").stream("unused")
+    .rules(List(pass_P1_E100_rule).asJava).ruleDefault(Outcome.block)
+    .stubsSource(false).build()
+  private val pass_P1_E100_E200_default_block = SubgraphDefinition.builder()
+    .name("pass_P1_E100_E200_default_block").stream("unused")
+    .rules(List(pass_P1_E100_E200_rule).asJava).ruleDefault(Outcome.block)
+    .stubsSource(false).build()
+  private val block_P1_E100_default_pass = SubgraphDefinition.builder()
+    .name("block_P1_E100_default_pass").stream("unused")
+    .rules(List(block_P1_E100_rule).asJava).ruleDefault(Outcome.pass)
+    .stubsSource(false).build()
+  private val block_P1_E100_then_pass_all_default_block = SubgraphDefinition.builder()
+    .name("block_P1_E100_then_pass_all_default_block").stream("unused")
+    .rules(List(block_P1_E100_rule, pass_all_rule).asJava).ruleDefault(Outcome.block)
+    .stubsSource(false).build()
+  private val pass_all_pass_P1_E100_rule = SubgraphDefinition.builder()
+    .name("pass_all_pass_P1_E100_rule").stream("unused")
+    .rules(List(pass_P1_E100_rule).asJava).ruleDefault(Outcome.pass)
+    .stubsSource(false).build()
+  private val block_all_block_P1_E100_rule = SubgraphDefinition.builder()
+    .name("block_all_block_P1_E100_rule").stream("unused")
+    .rules(List(block_P1_E100_rule).asJava).ruleDefault(Outcome.block)
+    .stubsSource(false).build()
 
   private val SCHEMA = StructType(Array(
     StructField("context", StringType),
@@ -145,9 +156,18 @@ class SubgraphRuleMapperUnitTest extends AnyFlatSpec with SparkSessionProvider w
     // B has [E1,E2,E4] (E3 -> [C])
     // C has [E2,E3,E4] (E1 ->[A,B])
     val definitions = new SubgraphDefinitions(List(
-      new SubgraphDefinition("A", valueFactory.createURI("subgraph:A"), "unused", List(pass_P1_E100_rule, pass_P1_E200_rule).asJava, Outcome.block, withStubs),
-      new SubgraphDefinition("B", valueFactory.createURI("subgraph:B"), "unused", List(block_P1_P300_rule).asJava, Outcome.pass, withStubs),
-      new SubgraphDefinition("C", valueFactory.createURI("subgraph:C"), "unused", List(block_P1_E100_rule).asJava, Outcome.pass, withStubs)
+      SubgraphDefinition.builder()
+        .name("A").subgraphUri(valueFactory.createURI("subgraph:A")).stream("unused")
+        .rules(List(pass_P1_E100_rule, pass_P1_E200_rule).asJava).ruleDefault(Outcome.block).
+        stubsSource(withStubs).build(),
+      SubgraphDefinition.builder()
+        .name("B").subgraphUri(valueFactory.createURI("subgraph:B")).stream("unused")
+        .rules(List(block_P1_P300_rule).asJava).ruleDefault(Outcome.pass)
+        .stubsSource(withStubs).build(),
+      SubgraphDefinition.builder()
+        .name("C").subgraphUri(valueFactory.createURI("subgraph:C")).stream("unused")
+        .rules(List(block_P1_E100_rule).asJava).ruleDefault(Outcome.pass)
+        .stubsSource(withStubs).build()
     ).asJava)
     definitions
   }

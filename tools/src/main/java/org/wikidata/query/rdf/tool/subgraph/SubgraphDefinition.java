@@ -18,25 +18,36 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import lombok.Builder;
 import lombok.Value;
+import lombok.extern.jackson.Jacksonized;
 
 /**
  * Class representing a subgraph.
  */
 @Value
+// For some reason, the implicit @AllArgsConstructor does not work with jackson under scala
+// @Jacksonized provides a workaround via @Builder + @JsonDeserialize
+@Builder
+@Jacksonized
 public class SubgraphDefinition implements Serializable {
+
     /** Name of the subgraph. */
+    @JsonProperty
     String name;
 
     /** URI of the subgraph, used to generate stubs. */
-    @Nullable @JsonProperty("subgraph_uri") @JsonDeserialize(using = UriDeserializer.class)
+    @Nullable
+    @JsonProperty("subgraph_uri") @JsonDeserialize(using = UriDeserializer.class)
     URI subgraphUri;
 
     /** EventStream name of the subgraph for realtime updates. */
+    @JsonProperty
     String stream;
 
     /** List of rules. */
     @Nullable
+    @JsonProperty
     List<SubgraphRule> rules;
 
     /** Default outcome to apply when no rules are matching. */
