@@ -22,8 +22,6 @@
       -->
     <properties>
         <hadoop.version>3.3.2</hadoop.version>
-        <!-- Spark 2 2.6.7.1, force this version to make sure we test with the same version that will be used at runtime. -->
-        <jackson.version>2.12.2</jackson.version>
         <scala.compat.version>2.12</scala.compat.version>
         <scala.scalatest-maven-plugin.version>2.2.0</scala.scalatest-maven-plugin.version>
         <scala.scalatest.version>3.2.15</scala.scalatest.version>
@@ -176,6 +174,10 @@
                     <!-- via com.github.java-json-tools:json-schema-validator -->
                     <groupId>javax.activation</groupId>
                     <artifactId>activation</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

@@ -19,11 +19,6 @@
         </license>
     </licenses>
 
-    <properties>
-        <!-- Blazegraph has to stay on older Jackson version, but tools will use newer one -->
-        <jackson.version>2.9.8</jackson.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>ch.qos.logback</groupId>

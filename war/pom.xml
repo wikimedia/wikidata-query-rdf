@@ -19,6 +19,11 @@
         </license>
     </licenses>
 
+    <properties>
+        <!-- matching version used by Blazegraph here -->
+        <jackson.version>2.6.7</jackson.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.blazegraph</groupId>

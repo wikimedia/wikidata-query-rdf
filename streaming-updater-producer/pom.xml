@@ -13,8 +13,6 @@
     <name>Wikidata Query Service Streaming Updater - Producer</name>
 
     <properties>
-        <!-- Blazegraph has to stay on older Jackson version, but streaming consumer will use newer one -->
-        <jackson.version>2.9.8</jackson.version>
         <!-- scala deps for rdf-spark-tools -->
         <scala.compat.version>2.12</scala.compat.version>
         <scala.scopt.version>3.7.1</scala.scopt.version>

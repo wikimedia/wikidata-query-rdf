@@ -9,11 +9,6 @@
     <artifactId>streaming-updater-consumer</artifactId>
     <name>Wikidata Query Service Streaming Updater - Consumer</name>
 
-    <properties>
-        <!-- Blazegraph has to stay on older Jackson version, but streaming consumer will use newer one -->
-        <jackson.version>2.9.8</jackson.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.github.rholder</groupId>

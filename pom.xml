@@ -80,8 +80,8 @@
         <!-- make sure to align kafka-clients.version when upgrading flink -->
         <flink.version>1.16.1</flink.version>
         <hadoop.version>2.10.1</hadoop.version>
-        <!-- matching version used by Blazegraph here -->
-        <jackson.version>2.6.7</jackson.version>
+        <!-- jackson.version for all modules running outside blazegraph, only blazegraph(-service) must use a compatible version  -->
+        <jackson.version>2.17.1</jackson.version>
         <jena.version>3.10.0</jena.version>
         <jersey.version>2.31</jersey.version>
         <!-- matching version used by Blazegraph here -->
