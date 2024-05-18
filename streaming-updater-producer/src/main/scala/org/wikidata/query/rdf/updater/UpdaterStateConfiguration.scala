@@ -4,6 +4,7 @@ import org.apache.flink.api.common.state.{ListStateDescriptor, ValueStateDescrip
 import org.apache.flink.api.scala._
 import org.apache.flink.contrib.streaming.state.EmbeddedRocksDBStateBackend
 import org.apache.flink.runtime.state.StateBackend
+import org.apache.flink.runtime.state.hashmap.HashMapStateBackend
 
 object UpdaterStateConfiguration {
   def newLastRevisionStateDesc(): ValueStateDescriptor[java.lang.Long] = {
@@ -13,6 +14,7 @@ object UpdaterStateConfiguration {
     new ListStateDescriptor[InputEvent]("partial-re-ordering-state", InputEventSerializer.typeInfo())
   }
   def newStateBackend(enableIncrementalCheckpoint: Boolean = true): StateBackend = {
-    new EmbeddedRocksDBStateBackend(enableIncrementalCheckpoint)
+    // FIXME only here so the project can be built on ARM64
+    if (System.getProperty("os.arch").equals("aarch64")) new HashMapStateBackend() else new EmbeddedRocksDBStateBackend(enableIncrementalCheckpoint)
   }
 }

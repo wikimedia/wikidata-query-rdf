@@ -5,6 +5,7 @@ import org.apache.flink.api.common.state.{ListState, ValueState}
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.contrib.streaming.state.EmbeddedRocksDBStateBackend
 import org.apache.flink.state.api.functions.KeyedStateBootstrapFunction
 import org.apache.flink.state.api.{OneInputOperatorTransformation, OperatorTransformation, Savepoint}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
@@ -29,9 +30,12 @@ class StateExtractionJobIntegrationTest extends FlatSpec with FlinkTestCluster w
   }
 
   "StateExtractionJob" should "fail if buffered events are found" in {
+    val stateBackend = UpdaterStateConfiguration.newStateBackend()
+    // ARM64 workaround: cancel test if this is a fallback state backend
+    assume(stateBackend.isInstanceOf[EmbeddedRocksDBStateBackend])
     implicit val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(PARALLELISM)
-    val newSavepoint = Savepoint.create(UpdaterStateConfiguration.newStateBackend(),
+    val newSavepoint = Savepoint.create(stateBackend,
       BaseConfig.MAX_PARALLELISM)
     val bufferedEventOp: OneInputOperatorTransformation[InputEvent] = OperatorTransformation
       .bootstrapWith(env.getJavaEnv.fromCollection(
