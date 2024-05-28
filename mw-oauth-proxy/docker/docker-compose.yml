@@ -1,4 +1,3 @@
-version: '3.4'
 services:
     cassandra:
         image: cassandra:3.11
