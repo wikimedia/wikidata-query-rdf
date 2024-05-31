@@ -5,6 +5,8 @@ import org.apache.spark.sql.functions.{col, concat, lit}
 import org.wikidata.query.rdf.spark.utils.SparkUtils
 import scopt.OptionParser
 
+import java.util.regex.Pattern
+
 /**
  * This job creates a set of gzip encoded simple .ttl files from
  * a table with string columns for "subject", "predicate", "object",
@@ -54,7 +56,7 @@ import scopt.OptionParser
  * --num-partitions 1024
  */
 
-case class NTripleGeneratorParams(inputPartition: String = "", outputPath: String = "", numPartitions: Int = 1024)
+case class NTripleGeneratorParams(inputPartition: String = "", outputPath: String = "", filenameFormat: String = "", numPartitions: Int = 1024)
 
 object NTripleGenerator {
 
@@ -70,7 +72,7 @@ object NTripleGenerator {
   def main(args: Array[String]): Unit = {
     parseParams(args) match {
       case Some(params) =>
-        generateNTriples(params.inputPartition, params.outputPath, params.numPartitions)
+        generateNTriples(params.inputPartition, params.outputPath, params.filenameFormat, params.numPartitions)
       case _ => sys.exit(-1)
     }
   }
@@ -78,6 +80,7 @@ object NTripleGenerator {
   def generateNTriples(
                        inputTablePartitionSpec: String,
                        outputHdfsPath: String,
+                       filenameFormat: String,
                        numPartitions: Int
                       )(implicit spark: SparkSession): Unit = {
     SparkUtils.readTablePartition(inputTablePartitionSpec)(spark)
@@ -94,6 +97,8 @@ object NTripleGenerator {
       .write
       .option("compression", "gzip")
       .text(outputHdfsPath)
+
+    SparkUtils.renameSparkPartitions(outputHdfsPath, filenameFormat, Pattern.compile("\\.gz$"))(spark)
   }
 
   /**
@@ -111,6 +116,11 @@ object NTripleGenerator {
       opt[String]('o', "output-hdfs-path") required() valueName "<output-hdfs-path>" action { (x, p) =>
         p.copy(outputPath = x)
       } text "Output fully qualified HDFS destination path as hdfs://path/to/output."
+
+      opt[String]('f', "filename-format") required() valueName "<filename-format>" action { (x, p) =>
+        p.copy(filenameFormat = x)
+      } text "Format of the filenames generated, e.g; wikidump-%09d.nt.gz " +
+        "(must include a %d placeholder for the partition index)"
 
       opt[Int]('n', "num-partitions") optional() action { (x, p) =>
         p.copy(numPartitions = x)

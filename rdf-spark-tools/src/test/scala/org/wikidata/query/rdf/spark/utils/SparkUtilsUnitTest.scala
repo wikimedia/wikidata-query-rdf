@@ -1,15 +1,28 @@
 package org.wikidata.query.rdf.spark.utils
 
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 import org.scalatest.matchers.should.Matchers
 import org.wikidata.query.rdf.spark.SparkSessionProvider
 
+import java.util.regex.Pattern
+
 class SparkUtilsUnitTest extends SparkSessionProvider with Matchers {
   val dbName = "SparkUtils"
   val tableName = "UnitTest_test"
   val tableNameNoPart = "UnitTest_nopart"
+
+  "when I rename files in a folder the files" should "be renamed" in {
+    val d = newSparkSubDir("test_folder")
+    val fs = FileSystem.get(spark.sparkContext.hadoopConfiguration)
+    fs.create(new Path(d, "random_file_1.gz"))
+    fs.create(new Path(d, "random_file_2.gz"))
+    fs.create(new Path(d, "unrelated"))
+    SparkUtils.renameSparkPartitions(d, "my-format-%02d.gz", Pattern.compile("\\.gz$"))
+    fs.listStatus(new Path(d)) map {_.getPath.getName} should contain only  ("my-format-01.gz", "my-format-02.gz", "unrelated", "_RENAMED")
+  }
 
   "when I want to read a table a table" should "be specifiable" in {
     SparkUtils.readTablePartition(s"$dbName.$tableName").count() shouldBe 2

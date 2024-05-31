@@ -1,5 +1,6 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -11,7 +12,10 @@ class NTripleGeneratorTest extends AnyFlatSpec  with SparkSessionProvider with M
     val destDir = newSparkSubDir("dest")
     val sourceTableName = "rdf"
     NTripleGeneratorTest.createSimpleQuadTable(sourceTableName, sourceTableDir, spark)
-    NTripleGenerator.generateNTriples(sourceTableName, destDir, 2)
+    NTripleGenerator.generateNTriples(sourceTableName, destDir, "my-dump-%02d.nt.gz", 2)
+    val fs = FileSystem.get(spark.sparkContext.hadoopConfiguration)
+    fs.listStatus(new Path(destDir)) map { _.getPath.getName } should contain only(
+      "my-dump-01.nt.gz", "my-dump-02.nt.gz", "_SUCCESS", "_RENAMED")
   }
 
   "a non-conforming source table" should "result in an exception" in {
@@ -20,7 +24,7 @@ class NTripleGeneratorTest extends AnyFlatSpec  with SparkSessionProvider with M
     val sourceTableNameJunk = "rdf_junk"
     NTripleGeneratorTest.createJunkTable(sourceTableNameJunk, sourceTableDirJunk, spark)
     intercept[AnalysisException] {
-      NTripleGenerator.generateNTriples(sourceTableNameJunk, destDirJunk, 2)
+      NTripleGenerator.generateNTriples(sourceTableNameJunk, destDirJunk, "dump-%d.gz", 2)
     }
   }
 

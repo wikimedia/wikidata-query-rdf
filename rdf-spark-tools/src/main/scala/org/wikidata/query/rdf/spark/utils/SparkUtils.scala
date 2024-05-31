@@ -1,14 +1,33 @@
 package org.wikidata.query.rdf.spark.utils
 
-import scala.util.matching.Regex
-
-import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
 import org.apache.spark.sql.SaveMode.Overwrite
 import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+
+import java.util.regex.Pattern
+import scala.util.matching.Regex
 
 object SparkUtils {
   private val partitionRegex: Regex = "^([\\w]+)=([\\w.-/]+)$".r
+
+  def renameSparkPartitions(source: String, format: String, filter: Pattern, flag: Option[String] = Some("_RENAMED"))(implicit spark: SparkSession): Unit = {
+    val fs = FileSystem.get(spark.sparkContext.hadoopConfiguration)
+    if (!Pattern.compile("%\\d*d").matcher(format).find()) {
+      throw new IllegalArgumentException(s"Invalid format $format: it should have a %d place-holder for the partition index.")
+    }
+    fs.listStatus(new Path(source)).filter { file =>
+      file.isFile && filter.matcher(file.getPath.getName).find()
+    }.zipWithIndex.foreach { case (file: FileStatus, idx: Int) =>
+      fs.rename(file.getPath, new Path(file.getPath.getParent, format.format(idx + 1)))
+    }
+    flag foreach { f =>
+      val out = fs.create(new Path(source, f))
+      out.writeUTF("renamed")
+      out.close()
+    }
+  }
 
   def readTablePartition(tableAndPartitionSpecs: String)(implicit spark: SparkSession): DataFrame = {
     applyTablePartitions[DataFrame, DataFrame](tableAndPartitionSpecs,
