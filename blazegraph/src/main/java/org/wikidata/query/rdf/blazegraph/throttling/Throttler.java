@@ -1,6 +1,7 @@
 package org.wikidata.query.rdf.blazegraph.throttling;
 
 import static com.google.common.base.Strings.emptyToNull;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.time.Instant.now;
 
 import java.time.Clock;
@@ -43,12 +44,13 @@ public abstract class Throttler<S> {
      *
      * This can be used to throttle only request coming through a revers proxy,
      * which will set this specific header. Only the presence of the header is
-     * checked, not its value.
+     * checked, not its value. This supports very basic expressions, in the form
+     * of `header1 && !header2` and similar. Only `&&` and `!` are provided.
      *
      * If <code>null</code>, all requests will be throttled.
      */
     @Nullable
-    private final String enableThrottlingIfHeader;
+    private final SimpleBooleanExpression enableThrottlingIfHeader;
 
     /**
      * This parameter in query will cause throttling no matter what.
@@ -79,7 +81,8 @@ public abstract class Throttler<S> {
             String alwaysThrottleParam, @Nonnull Clock clock) {
         this.state = stateStore;
         this.createThrottlingState = createThrottlingState;
-        this.enableThrottlingIfHeader = emptyToNull(enableThrottlingIfHeader);
+        this.enableThrottlingIfHeader = isNullOrEmpty(enableThrottlingIfHeader)
+            ? null : SimpleBooleanExpression.create(enableThrottlingIfHeader);
         this.alwaysThrottleParam = emptyToNull(alwaysThrottleParam);
         this.clock = clock;
     }
@@ -105,8 +108,7 @@ public abstract class Throttler<S> {
      */
     protected boolean shouldBypassThrottling(HttpServletRequest request) {
         if (enableThrottlingIfHeader == null) return false;
-
-        return request.getHeader(enableThrottlingIfHeader) == null;
+        return !this.enableThrottlingIfHeader.evaluate(k -> request.getHeader(k) != null);
     }
 
     /**

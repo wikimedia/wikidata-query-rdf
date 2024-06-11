@@ -42,6 +42,18 @@ public class ThrottlerUnitTest {
     }
 
     @Test
+    public void requestThrottlingExposesAnExpressionSyntax() {
+        ThrottlerImpl throttler = new ThrottlerImpl(cache, "throttleMeHeader && !missingHeader");
+
+        MockHttpServletRequest request = createRequest("UA1", "1.2.3.4");
+        request.addHeader("throttleMeHeader", "");
+        assertThat(throttler.throttledUntil(new Object(), request), equalTo(Instant.EPOCH));
+
+        request = createRequest("UA1", "1.2.3.4");
+        assertThat(throttler.throttledUntil(new Object(), request), equalTo(Instant.MIN));
+    }
+
+    @Test
     public void requestAreAlwaysThrottledWhenThrottleHeaderIsNotConfigured() {
         ThrottlerImpl throttler = new ThrottlerImpl(cache, null, null);
 
@@ -62,6 +74,10 @@ public class ThrottlerUnitTest {
 
         ThrottlerImpl(Cache<Object, Object> stateStore) {
             this(stateStore, "throttleMeHeader", "throttleMeParam");
+        }
+
+        ThrottlerImpl(Cache<Object, Object> stateStore, String enableThrottlingIfHeader) {
+            this(stateStore, enableThrottlingIfHeader, "throttleMeParam");
         }
 
         ThrottlerImpl(Cache<Object, Object> stateStore, String enableThrottlingIfHeader, String alwaysThrottleParam) {
