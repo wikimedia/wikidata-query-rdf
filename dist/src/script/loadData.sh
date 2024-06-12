@@ -8,7 +8,7 @@ END=100000
 LOCATION=`pwd`
 FORMAT=wikidump-%09d.ttl.gz
 
-while getopts h:c:n:s:e:d: option
+while getopts h:c:n:s:e:d:f: option
 do
   case "${option}"
   in
