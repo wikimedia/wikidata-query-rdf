@@ -12,16 +12,21 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.servlet.ServletContextEvent;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.resultio.TupleQueryResultFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -241,7 +246,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
             List<String> lines = Files.readAllLines(Paths.get(ALLOWLIST),
                     StandardCharsets.UTF_8);
             for (String line : lines) {
-                reg.addWhitelistURL(line);
+                registerAllowedFederatedService(line, reg::addWhitelistURL, reg::addAlias);
             }
         } catch (FileNotFoundException e) {
             // ignore file not found
@@ -249,6 +254,26 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         } catch (IOException e) {
             LOG.warn("Failed reading from allowlist file");
         }
+    }
+
+    @VisibleForTesting
+    static void registerAllowedFederatedService(String line, Consumer<String> allowlist, BiConsumer<URI, URI> aliases) {
+        List<String> serviceAndAliases = Arrays.stream(line.split(","))
+                .map(String::trim)
+                .filter(r -> !r.isEmpty())
+                .collect(Collectors.toList());
+
+        IntStream.range(0, serviceAndAliases.size()).forEach(i -> {
+            String service = serviceAndAliases.get(i);
+            if (i == 0) {
+                allowlist.accept(service);
+            } else {
+                allowlist.accept(service);
+                aliases.accept(ValueFactoryImpl.getInstance().createURI(serviceAndAliases.get(0)),
+                        ValueFactoryImpl.getInstance().createURI(service));
+            }
+        });
+
     }
 
     /**
