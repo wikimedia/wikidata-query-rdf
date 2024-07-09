@@ -76,6 +76,11 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
 
     config.outputStreamConfig.ignoreFailuresAfterTransactionTimeout shouldBe false
     config.outputStreamConfig.subgraphKafkaTopics shouldBe empty
+    config.outputStreamConfig.producerProperties shouldBe Map.apply(
+      "batch.size" -> "250000",
+      "compression.type" -> "snappy",
+      "linger.ms" -> "2000"
+    )
   }
 
   "UpdaterConfig" should "build a config suited for commons with wikidata federation" in {
@@ -167,5 +172,20 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       "rdf-streaming-updater.mutation-scholarly" -> "topic-scholarly"
     )
     config.subgraphDefinition shouldEqual Some(expectedDefinitions)
+  }
+
+  "UpdaterConfig" should "support pass kafka producer options" in {
+    val config = UpdaterConfig(baseConfig ++ Array(
+      "--hostname", "my.wikidata.org",
+      "--uris_scheme", "wikidata",
+      "--kafka_producer_config.linger.ms", "4000",
+      "--kafka_producer_config.batch.size", "400000",
+      "--kafka_producer_config.compression.type", "zstd"
+    ))
+    config.outputStreamConfig.producerProperties shouldBe Map(
+      "linger.ms" -> "4000",
+      "batch.size" -> "400000",
+      "compression.type" -> "zstd"
+    )
   }
 }

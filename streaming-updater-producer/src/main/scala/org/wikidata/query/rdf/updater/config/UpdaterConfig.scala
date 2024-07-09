@@ -12,7 +12,7 @@ import org.wikimedia.eventutilities.core.event.WikimediaDefaults
 
 import java.net.URL
 import java.util.Collections
-import scala.collection.JavaConverters.{iterableAsScalaIterableConverter, mapAsScalaMapConverter}
+import scala.collection.JavaConverters.{iterableAsScalaIterableConverter, mapAsJavaMapConverter, mapAsScalaMapConverter}
 import scala.concurrent.duration._
 import scala.language.{implicitConversions, postfixOps}
 
@@ -70,6 +70,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
   )
 
   private val useNewFlinkKafkaApi: Boolean = params.getBoolean("use_new_flink_kafka_api", false)
+  private val producerConfig = params.getConfiguration.get(UpdaterConfig.KAFKA_PRODUCER_CONFIG).asScala.toMap
   val inputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
     inputKafkaTopics = getInputKafkaTopics,
     consumerGroup = getStringParam("consumer_group"),
@@ -124,7 +125,8 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       useNewFlinkKafkaApi = useNewFlinkKafkaApi,
       produceSideOutputs = params.getBoolean("produce_side_outputs", true),
       emitterId = optionalStringArg("emitter_id"),
-      subgraphKafkaTopics
+      subgraphKafkaTopics,
+      producerConfig
     )
 
   implicit def finiteDuration2Int(fd: FiniteDuration): Int = fd.toMillis.intValue
@@ -187,6 +189,14 @@ object UpdaterConfig {
     .mapType()
     .defaultValue(Collections.emptyMap())
 
+  private val KAFKA_PRODUCER_CONFIG = ConfigOptions.key("kafka_producer_config")
+    .mapType()
+    .defaultValue(Map.apply(
+      "batch.size" -> "250000",
+      "compression.type" -> "snappy",
+      "linger.ms" -> "2000"
+    ).asJava)
+
   def apply(args: Array[String]): UpdaterConfig = new UpdaterConfig(args)
 }
 
@@ -232,7 +242,8 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      useNewFlinkKafkaApi: Boolean,
                                                      produceSideOutputs: Boolean,
                                                      emitterId: Option[String],
-                                                     subgraphKafkaTopics: Map[String, String]
+                                                     subgraphKafkaTopics: Map[String, String],
+                                                     producerProperties: Map[String, String]
                                                    )
 
 sealed case class UpdaterExecutionEnvironmentConfig(checkpointDir: String,

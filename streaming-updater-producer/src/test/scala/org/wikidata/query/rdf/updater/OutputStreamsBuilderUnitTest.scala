@@ -25,7 +25,8 @@ class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
       useNewFlinkKafkaApi = true,
       produceSideOutputs = true,
       emitterId = Some("id"),
-      immutable.Map("main" -> "topic-main", "scholarly" -> "topic-scholarly")
+      immutable.Map("main" -> "topic-main", "scholarly" -> "topic-scholarly"),
+      Map.apply("someoption" -> "somevalue")
     )
     val outputStreams: OutputStreams = new OutputStreamsBuilder(outputStreamConfig, HttpClientConfig(None, None, "My agent"), List("main", "scholarly")).build
     InstantiationUtil.serializeObject(outputStreams.failedOpsSink.get.sink).length should not be 0

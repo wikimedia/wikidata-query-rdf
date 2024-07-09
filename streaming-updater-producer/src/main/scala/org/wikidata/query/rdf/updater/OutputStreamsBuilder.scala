@@ -102,8 +102,7 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
     val txTimeoutMs = Time.minutes(15).toMilliseconds
     producerConfig.setProperty("transaction.timeout.ms", txTimeoutMs.toString)
     producerConfig.setProperty("delivery.timeout.ms", txTimeoutMs.toString)
-    producerConfig.setProperty("batch.size", "250000")
-    producerConfig.setProperty("compression.type", "gzip")
+    outputStreamConfig.producerProperties.foreach { case (k, v) => producerConfig.setProperty(k, v) }
 
     if (outputStreamConfig.useNewFlinkKafkaApi) {
       withKafkaSink(s"$topic:${outputStreamConfig.partition}", producerConfig, topic, nameAndUuidSuffix = nameAndUuidSuffix)
