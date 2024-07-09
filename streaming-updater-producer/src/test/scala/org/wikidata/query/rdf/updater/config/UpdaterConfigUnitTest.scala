@@ -1,11 +1,14 @@
 package org.wikidata.query.rdf.updater.config
 
-import scala.concurrent.duration.DurationInt
+import org.apache.commons.io.IOUtils
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.tool.subgraph.SubgraphDefinitionsParser
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
+
+import java.nio.file.Files
+import scala.concurrent.duration.DurationInt
 
 class UpdaterConfigUnitTest extends FlatSpec with Matchers {
   private val baseConfig = Array(
@@ -133,6 +136,28 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       "--hostname", "my.wikidata.org",
       "--uris_scheme", "wikidata",
       "--subgraph_definitions", "wdqs-subgraph-definitions-v1",
+      "--subgraph_kafka_topics.rdf-streaming-updater.mutation-main", "topic-main",
+      "--subgraph_kafka_topics.rdf-streaming-updater.mutation-scholarly", "topic-scholarly"))
+    val expectedDefinitions = SubgraphDefinitionsParser.parseYaml(
+      classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/wdqs-subgraph-definitions-v1.yaml"))
+    config.outputStreamConfig.subgraphKafkaTopics should contain theSameElementsAs Map(
+      "rdf-streaming-updater.mutation-main" -> "topic-main",
+      "rdf-streaming-updater.mutation-scholarly" -> "topic-scholarly"
+    )
+    config.subgraphDefinition shouldEqual Some(expectedDefinitions)
+  }
+
+  "UpdaterConfig" should "support loading a subgraph definition from a file" in {
+    val file = Files.createTempFile(this.getClass.getSimpleName, "subgraph-def.yaml")
+    file.toFile.deleteOnExit()
+    IOUtils.toByteArray(classOf[SubgraphDefinitionsParser].getResource("/wdqs-subgraph-definitions-v1.yaml"))
+    classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/wdqs-subgraph-definitions-v1.yaml")
+    Files.write(file, IOUtils.toByteArray(classOf[SubgraphDefinitionsParser].getResource("/wdqs-subgraph-definitions-v1.yaml")))
+
+    val config = UpdaterConfig(baseConfig ++ Array(
+      "--hostname", "my.wikidata.org",
+      "--uris_scheme", "wikidata",
+      "--subgraph_definitions", file.toUri.toString,
       "--subgraph_kafka_topics.rdf-streaming-updater.mutation-main", "topic-main",
       "--subgraph_kafka_topics.rdf-streaming-updater.mutation-scholarly", "topic-scholarly"))
     val expectedDefinitions = SubgraphDefinitionsParser.parseYaml(

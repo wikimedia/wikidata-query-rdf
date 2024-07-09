@@ -10,6 +10,7 @@ import org.wikidata.query.rdf.tool.subgraph.{SubgraphDefinitions, SubgraphDefini
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikimedia.eventutilities.core.event.WikimediaDefaults
 
+import java.net.URL
 import java.util.Collections
 import scala.collection.JavaConverters.{iterableAsScalaIterableConverter, mapAsScalaMapConverter}
 import scala.concurrent.duration._
@@ -148,7 +149,12 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
   def loadSubgraphDefinition(): Option[SubgraphDefinitions] = {
     optionalStringArg("subgraph_definitions") match {
       case Some(definition) =>
-        Some(SubgraphDefinitionsParser.parseYaml(classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/$definition.yaml")))
+        val inputStream = if (definition.startsWith("file://")) {
+          new URL(definition).openStream()
+        } else {
+          classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/$definition.yaml")
+        }
+        Some(SubgraphDefinitionsParser.parseYaml(inputStream))
       case None => None
     }
   }
