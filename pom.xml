@@ -78,7 +78,7 @@
         <eventutilities.version>1.3.2</eventutilities.version>
 
         <!-- make sure to align kafka-clients.version when upgrading flink -->
-        <flink.version>1.16.1</flink.version>
+        <flink.version>1.17.1</flink.version>
         <hadoop.version>2.10.1</hadoop.version>
         <!-- jackson.version for all modules running outside blazegraph, only blazegraph(-service) must use a compatible version  -->
         <jackson.version>2.17.1</jackson.version>
