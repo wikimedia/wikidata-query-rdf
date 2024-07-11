@@ -71,31 +71,30 @@ public class RdfRepositoryUpdater implements AutoCloseable {
         StringBuilder sb = new StringBuilder();
         int expectedMutations = appendUpdateDataQuery(sb, patch.getRemoved(), DELETE_DATA);
         expectedMutations += appendUpdateDataQuery(sb, patch.getAdded(), INSERT_DATA);
-        if (expectedMutations == 0 && patch.getEntityIdsToDelete().isEmpty() && patch.getReconciliations().isEmpty()) {
-            throw new IllegalArgumentException("Empty patch given");
-        }
 
         int actualMutations = 0;
         if (expectedMutations > 0) {
             actualMutations = client.update(sb.toString());
         }
         sb.setLength(0);
-        int expectedSharedEltMutations = appendUpdateDataQuery(sb, patch.getLinkedSharedElements(), INSERT_DATA);
 
-        // We expect to change the event time
+        int expectedSharedEltMutations = appendUpdateDataQuery(sb, patch.getLinkedSharedElements(), INSERT_DATA);
+        // We expect to change the event time, but it might not get updated if avgEventTime == null
+        // see lastBatchEventTime in org.wikidata.query.rdf.updater.consumer.KafkaStreamConsumer.poll
         expectedSharedEltMutations++;
+        appendEventTime(sb, avgEventTime);
+
         int actualSharedEltMutations = 0;
-        if (avgEventTime != null) {
-            // Only update event time if we have something
-            actualSharedEltMutations = updateEventTime(avgEventTime, sb, actualSharedEltMutations);
+        if (sb.length() > 0) {
+            actualSharedEltMutations = client.update(sb.toString());
         }
 
         int deleteMutations = 0;
-        if (patch.getEntityIdsToDelete().size() > 0) {
+        if (!patch.getEntityIdsToDelete().isEmpty()) {
             deleteMutations = deleteEntities(patch.getEntityIdsToDelete());
         }
         int reconciliationMutation = 0;
-        if (patch.getReconciliations().size() > 0) {
+        if (!patch.getReconciliations().isEmpty()) {
             reconciliationMutation = reconciliationMutation(patch.getReconciliations());
         }
 
@@ -112,21 +111,20 @@ public class RdfRepositoryUpdater implements AutoCloseable {
         return data.size();
     }
 
-    private int updateEventTime(Instant avgEventTime, StringBuilder sb, int actualSharedEltMutations) {
-        // Mimic the old updater by maintaining the avg event time found in this batch
-        UpdateBuilder b = new UpdateBuilder(UPDATE_EVENT_TIME);
+    private void appendEventTime(StringBuilder sb, @Nullable Instant avgEventTime) {
+        if (avgEventTime != null) {
+            // Only update event time if we have something
+            // Mimic the old updater by maintaining the avg event time found in this batch
+            UpdateBuilder b = new UpdateBuilder(UPDATE_EVENT_TIME);
 
-        // The WDQS UI and WMF monitoring is based on this URI
-        // Rather than making it configurable all over the place we just hardcode it
-        // A better approach to dealing with lag reporting is described here: https://phabricator.wikimedia.org/T278246
-        b.bindUri("root", UrisSchemeFactory.WIKIDATA.root());
-        b.bindUri("dateModified", SchemaDotOrg.DATE_MODIFIED);
-        b.bindValue("date", avgEventTime);
-        sb.append(b);
-        if (sb.length() > 0) {
-            actualSharedEltMutations = client.update(sb.toString());
+            // The WDQS UI and WMF monitoring is based on this URI
+            // Rather than making it configurable all over the place we just hardcode it
+            // A better approach to dealing with lag reporting is described here: https://phabricator.wikimedia.org/T278246
+            b.bindUri("root", UrisSchemeFactory.WIKIDATA.root());
+            b.bindUri("dateModified", SchemaDotOrg.DATE_MODIFIED);
+            b.bindValue("date", avgEventTime);
+            sb.append(b);
         }
-        return actualSharedEltMutations;
     }
 
     private int reconciliationMutation(Map<String, Collection<Statement>> reconciliations) {

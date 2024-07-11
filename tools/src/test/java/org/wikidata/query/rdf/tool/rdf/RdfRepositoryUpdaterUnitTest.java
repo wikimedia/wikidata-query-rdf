@@ -107,12 +107,15 @@ public class RdfRepositoryUpdaterUnitTest {
         assertThat(result.getPossibleSharedElementMutations()).isEqualTo(1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testFailsOnEmptyPatch() {
-        ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(),
+    @Test
+    public void testInsertOnlySharedElts() {
+        ConsumerPatch patch = new ConsumerPatch(statements(), statements("uri:s1", "uri:s2"), statements(), statements(),
                 entityIdsToDelete, entitiesToReconcile);
         RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, urisScheme);
         rdfRepositoryUpdater.applyPatch(patch, avgEventTime);
+        final ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
+        verify(client, times(1)).update(queryCaptor.capture());
+        assertThat(queryCaptor.getValue()).contains("uri:s1", "uri:s2");
     }
 
     @Test
