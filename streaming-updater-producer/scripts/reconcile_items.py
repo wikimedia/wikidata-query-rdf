@@ -11,13 +11,13 @@
 # Examples:
 # - Reconcile items from wikidata for wdqs@codfw:
 #   python3 reconcile_items.py --domain_project www.wikidata.org \
-#               --mw_api_endpoint https://api-ro.discovery.wmnet \
+#               --mw_api_endpoint https://mw-api-int-ro.discovery.wmnet:4446 \
 #               --reconcile_source wdqs_sideoutputs_reconcile@codfw \
 #               Q1 Q2 Q3 P3
 #
 # - Reconcile items from commons for wcqs@eqiad
 #   python3 reconcile_items.py --domain_project commons.wikimedia.org \
-#               --mw_api_endpoint https://api-ro.discovery.wmnet \
+#               --mw_api_endpoint https://mw-api-int-ro.discovery.wmnet:4446 \
 #               --reconcile_source wcqs_sideoutputs_reconcile@codfw \
 #               M1 M2 M3
 
@@ -30,7 +30,7 @@ from argparse import ArgumentParser
 from datetime import datetime, timezone
 from typing import Optional, Dict, List, Callable, Tuple
 
-MW_API_ENDPOINT = "https://api-ro.wikimedia.org/"
+MW_API_ENDPOINT = "https://mw-api-int-ro.discovery.wmnet:4446/"
 EVENT_GATE_ENDPOINT = "https://eventgate-main.discovery.wmnet:4492/v1/events"
 MEDIAINFO_ITEM_PREFIX = 'M'
 DEFAULT_NS_MAP = 'Q=,P=Property,L=Lexeme,M=File'
