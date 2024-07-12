@@ -16,19 +16,22 @@ object SubgraphAssignerUnitTest {
 class SubgraphAssignerUnitTest extends FlatSpec with Matchers {
 
   "SubgraphRuleMatcher" should "do its job" in {
+    val entityQ2013 = factory.createURI(definitions.getPrefixes.get("nsb"), "Q2013")
+    val entityQ18507561 = factory.createURI(definitions.getPrefixes.get("nsb"), "Q18507561")
     var result = assigner.assign(List(factory.createStatement(
-      factory.createURI(definitions.getPrefixes.get("nsb"), "Q2013"),
+      entityQ2013,
       factory.createURI(definitions.getPrefixes.get("nsa"), "PROP_X"),
       factory.createURI(definitions.getPrefixes.get("nsb"), "Q115471117")
-    )))
+    )), entityQ2013)
 
     result.map(definition => definition.getName) should contain("subgraph0")
     result.map(definition => definition.getName) should contain("subgraph_")
 
     result = assigner.assign(List(factory.createStatement(
-      factory.createURI(definitions.getPrefixes.get("nsb"), "Q18507561"),
+      entityQ18507561,
       factory.createURI(definitions.getPrefixes.get("nsa"), "PROP_X"),
-      factory.createURI(definitions.getPrefixes.get("nsb"), "PROP_VAL"))))
+      factory.createURI(definitions.getPrefixes.get("nsb"), "PROP_VAL")
+    )), entityQ18507561)
 
     result.map(definition => definition.getName) should contain("subgraph1")
     result.map(definition => definition.getName) should contain("subgraph_")
@@ -36,9 +39,9 @@ class SubgraphAssignerUnitTest extends FlatSpec with Matchers {
     result = assigner.assign(List(factory.createStatement(
       factory.createURI(definitions.getPrefixes.get("nsb"), "QANY"),
       factory.createURI(definitions.getPrefixes.get("nsc"), "TYPE_X"),
-      factory.createURI(definitions.getPrefixes.get("nsd"), "Property"))))
+      factory.createURI(definitions.getPrefixes.get("nsd"), "Property")
+    )), entityQ18507561)
 
-    result.map(definition => definition.getName) should contain("subgraph1")
     result.map(definition => definition.getName) should contain("subgraph_")
   }
 

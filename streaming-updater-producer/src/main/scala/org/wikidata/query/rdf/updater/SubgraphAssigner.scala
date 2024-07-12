@@ -30,12 +30,19 @@ class SubgraphAssigner(subgraphDefinitions: SubgraphDefinitions) extends Seriali
     .find(_.getSubgraphUri == uri)
     .map(_.getStream)
 
-  def assign(entityStatements: Iterable[Statement]): List[SubgraphDefinition] = {
+  /**
+   * Identify all the subgraph that match the given the statements owned by the entity identified by entityUri.
+   *
+   * @param entityStatements the statements representing the data of the entity being matched
+   * @param entityUri        the entity URI owning the statements being matched
+   * @return the list of subgraphs matching this entity
+   */
+  def assign(entityStatements: Iterable[Statement], entityUri: URI): List[SubgraphDefinition] = {
     subgraphDefinitions.getSubgraphs.asScala.filter { definition =>
       val rules: List[SubgraphRule] = if (definition.getRules == null) List.empty else definition.getRules.asScala.toList
       // find first rule that matches any statement
       val outcome: SubgraphRule.Outcome = rules
-        .find(rule => entityStatements.exists(statement => matches(rule, statement)))
+        .find(rule => entityStatements.exists(statement => matches(rule, statement, entityUri)))
         .map(rule => rule.getOutcome)
         .getOrElse(definition.getRuleDefault)
 
@@ -43,11 +50,11 @@ class SubgraphAssigner(subgraphDefinitions: SubgraphDefinitions) extends Seriali
     }.toList
   }
 
-  private def matches(rule: SubgraphRule, statement: Statement): Boolean = {
+  private def matches(rule: SubgraphRule, statement: Statement, entityUri: URI): Boolean = {
     implicit val bindings = rule.getPattern.getBindings
-    val subjectMatches = matches(rule.getPattern.getSubject, statement.getSubject)
-    val predicateMatches = matches(rule.getPattern.getPredicate, statement.getPredicate)
-    val objectMatches = matches(rule.getPattern.getObject, statement.getObject)
+    val subjectMatches = matches(rule.getPattern.getSubject, statement.getSubject, entityUri)
+    val predicateMatches = matches(rule.getPattern.getPredicate, statement.getPredicate, entityUri)
+    val objectMatches = matches(rule.getPattern.getObject, statement.getObject, entityUri)
 
     subjectMatches && predicateMatches && objectMatches
   }
@@ -58,14 +65,15 @@ class SubgraphAssigner(subgraphDefinitions: SubgraphDefinitions) extends Seriali
    * @param ruleValue      [[TriplePattern]] value (subject, predicate, or object)
    * @param statementValue aligned [[Statement]] value (subject, predicate, or object)
    * @param bindings       defaults to [[SubgraphAssigner.bindings]] unless the calling scope declares an implicit override
+   * @param entityUri      the entity URI used to bind TriplePattern.ENTITY_BINDING_NAME
    * @return
    */
-  private def matches(ruleValue: Value, statementValue: Value)(implicit bindings: util.Map[String, util.Collection[Resource]]): Boolean = {
+  private def matches(ruleValue: Value, statementValue: Value, entityUri: URI)(implicit bindings: util.Map[String, util.Collection[Resource]]): Boolean = {
     ruleValue match {
-      case n: BNode if n.getID == TriplePattern.ENTITY_BINDING_NAME => true
-      case n: BNode if n.getID == TriplePattern.WILDCARD_BNODE_LABEL => statementValue.isInstanceOf[Literal]
+      case n: BNode if n.getID == TriplePattern.ENTITY_BINDING_NAME => statementValue.equals(entityUri)
+      case n: BNode if n.getID == TriplePattern.WILDCARD_BNODE_LABEL => true
       case n: BNode if bindings.containsKey(n.getID) => bindings.get(n.getID).contains(statementValue)
-      case _ => ruleValue == statementValue
+      case _ => ruleValue.equals(statementValue)
     }
   }
 }

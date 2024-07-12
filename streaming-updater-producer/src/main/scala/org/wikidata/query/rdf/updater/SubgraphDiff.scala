@@ -25,8 +25,8 @@ class SubgraphDiff(entityDiff: EntityDiff, subgraphAssigner: SubgraphAssigner, s
   def diff(implicit operation: Diff, entityFrom: Iterable[Statement], entityTo: Iterable[Statement]): Iterable[SuccessfulOp] = {
     val entityUri: URI = entityURI(operation.item)
 
-    val fromSubgraphs = subgraphAssigner.assign(entityFrom)
-    val toSubgraphs = subgraphAssigner.assign(entityTo)
+    val fromSubgraphs = subgraphAssigner.assign(entityFrom, entityUri)
+    val toSubgraphs = subgraphAssigner.assign(entityTo, entityUri)
     val unchangedSubgraphs = fromSubgraphs
       .filter(fromSubgraph => toSubgraphs.contains(fromSubgraph))
 
@@ -78,7 +78,8 @@ class SubgraphDiff(entityDiff: EntityDiff, subgraphAssigner: SubgraphAssigner, s
   // scalastyle:on method.length
 
   def fullImport(implicit operation: FullImport, entity: Iterable[Statement]): Iterable[SuccessfulOp] = {
-    val assignedSubgraphs = subgraphAssigner.assign(entity)
+    val entityUri = entityURI(operation.item)
+    val assignedSubgraphs = subgraphAssigner.assign(entity, entityUri)
     val addPatch = entityDiff.diff(emptyList(), entity.asJava)
 
     val ops = List.newBuilder[SuccessfulOp]
@@ -90,7 +91,7 @@ class SubgraphDiff(entityDiff: EntityDiff, subgraphAssigner: SubgraphAssigner, s
 
     if (stubSourceSubgraphs.nonEmpty) {
       val unassignedSubgraphs = subgraphAssigner.distinctUnassignedSubgraphsFor(assignedSubgraphs)
-      val stubPatch = stubPatchFor(entityURI(operation.item), stubSourceSubgraphs.map(_.getSubgraphUri))
+      val stubPatch = stubPatchFor(entityUri, stubSourceSubgraphs.map(_.getSubgraphUri))
 
       ops ++= unassignedSubgraphs
         .map(unassignedSubgraph => EntityPatchOp(operation, stubPatch, Option(unassignedSubgraph.getSubgraphUri)))
@@ -100,7 +101,8 @@ class SubgraphDiff(entityDiff: EntityDiff, subgraphAssigner: SubgraphAssigner, s
   }
 
   def reconcile(implicit operation: Reconcile, entity: Iterable[Statement]): Iterable[SuccessfulOp] = {
-    val assignedSubgraphs = subgraphAssigner.assign(entity)
+    val entityUri = entityURI(operation.item)
+    val assignedSubgraphs = subgraphAssigner.assign(entity, entityUri)
     val addPatch = entityDiff.diff(emptyList(), entity.asJava)
 
     val ops = List.newBuilder[SuccessfulOp]
@@ -113,7 +115,7 @@ class SubgraphDiff(entityDiff: EntityDiff, subgraphAssigner: SubgraphAssigner, s
     val stubSourceSubgraphs = subgraphAssigner.distinctStubSourcesFor(assignedSubgraphs)
 
     if (stubSourceSubgraphs.nonEmpty) {
-      val stubPatch = stubPatchFor(entityURI(operation.item), stubSourceSubgraphs.map(_.getSubgraphUri))
+      val stubPatch = stubPatchFor(entityUri, stubSourceSubgraphs.map(_.getSubgraphUri))
 
       ops ++= unassignedSubgraphs
         .map(unassignedSubgraph => ReconcileOp(operation, stubPatch, Some(unassignedSubgraph.getSubgraphUri)))
