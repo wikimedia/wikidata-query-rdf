@@ -15,6 +15,7 @@ import scala.language.postfixOps
 
 
 class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers {
+  private val subgraphCopyStream = "subgraph-copy-stream"
   private val pipelineOptions: UpdaterPipelineGeneralConfig = UpdaterPipelineGeneralConfig(
     hostname = DOMAIN,
     jobName = "test updater job",
@@ -51,7 +52,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
 
-    UpdaterPipeline.configure(pipelineOptions, List(revCreateSource), CollectSink.asOutputStreams(true), _ => repository,
+    UpdaterPipeline.configure(pipelineOptions, List(revCreateSource), CollectSink.asOutputStreams, _ => repository,
       OUTPUT_EVENT_UUID_GENERATOR, clock, OUTPUT_EVENT_STREAM_NAME, subgraphAssigner)
 
     env.execute("test")
@@ -59,10 +60,11 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     CollectSink.lateEvents should contain only ignoredRevision
     CollectSink.spuriousRevEvents should contain theSameElementsAs ignoredMutations
     val expected = expectedOperations
-    CollectSink.values should have size expected.size
+    CollectSink.outputForStream(OUTPUT_EVENT_STREAM_NAME) should have size expected.size
+    CollectSink.outputForStream(subgraphCopyStream) should have size expected.size
     compareStatements(expected)
-    CollectSink.values map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
-    CollectSink.subgraphCopy map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
+    CollectSink.outputForStream(OUTPUT_EVENT_STREAM_NAME) map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
+    CollectSink.outputForStream(subgraphCopyStream) map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
   }
 
   "Updater job" should "work with deletes" in {
@@ -92,17 +94,18 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
 
     UpdaterPipeline.configure(pipelineOptions,
       List(revCreateSourceForDeleteTest, pageDeleteSource),
-      CollectSink.asOutputStreams(true),
+      CollectSink.asOutputStreams,
       _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
       clock, OUTPUT_EVENT_STREAM_NAME, subgraphAssigner)
     env.execute("test")
 
     val expected = expectedOperationsForPageDeleteTest
 
-    CollectSink.values should have size expected.size
+    CollectSink.outputForStream(OUTPUT_EVENT_STREAM_NAME) should have size expected.size
+    CollectSink.outputForStream(subgraphCopyStream) should have size expected.size
     compareStatements(expected)
-    CollectSink.values map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
-    CollectSink.subgraphCopy map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
+    CollectSink.outputForStream(OUTPUT_EVENT_STREAM_NAME) map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
+    CollectSink.outputForStream(subgraphCopyStream) map {_.operation} should contain theSameElementsInOrderAs expected.map {_.operation}
   }
 
   "Updater job" should "support reconciliation events" in {
@@ -132,13 +135,15 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
 
     UpdaterPipeline.configure(pipelineOptions,
       List(revCreateEventStream, reconcileEventsStream),
-      CollectSink.asOutputStreams(true),
+      CollectSink.asOutputStreams,
       _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
       clock, OUTPUT_EVENT_STREAM_NAME, subgraphAssigner)
     env.execute("test")
 
     val expected = expectedReconcile
-    Seq(CollectSink.values, CollectSink.subgraphCopy).foreach { output =>
+    val mainOutput = CollectSink.outputForStream(OUTPUT_EVENT_STREAM_NAME)
+    val subgraphCopyOutput = CollectSink.outputForStream(subgraphCopyStream)
+    Seq(mainOutput, subgraphCopyOutput).foreach { output =>
       val (actualReconcile, actualData) = output find  {_.operation.isInstanceOf[Reconcile]} match {
         case Some(MutationDataChunk(operation: Reconcile, data: DiffEventData)) => (operation, data)
         case _ => fail("Expected a reconcile operation with a DiffEventData data object")
@@ -150,7 +155,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
   }
 
   private def compareStatements(expected: Seq[MutationDataChunk]) = {
-    CollectSink.values zip expected map {
+    CollectSink.outputForStream(OUTPUT_EVENT_STREAM_NAME) zip expected map {
       case (MutationDataChunk(actualOp, actualData), MutationDataChunk(expectedOp, expectedData)) =>
         // We don't compare directly expectedData vs actualData because the generated RDF data may be different in its serialized form
         // even though the resulting graph is identical. This might be because of the ordering or the mime type.

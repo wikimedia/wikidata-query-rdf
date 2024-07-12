@@ -27,7 +27,7 @@ class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
       immutable.Map("main" -> "topic-main", "scholarly" -> "topic-scholarly"),
       Map.apply("someoption" -> "somevalue")
     )
-    val outputStreams: OutputStreams = new OutputStreamsBuilder(outputStreamConfig, HttpClientConfig(None, None, "My agent"), List("main", "scholarly")).build
+    val outputStreams: OutputStreams = new OutputStreamsBuilder(outputStreamConfig, HttpClientConfig(None, None, "My agent"), "main_stream").build
     InstantiationUtil.serializeObject(outputStreams.failedOpsSink.get.sink).length should not be 0
     InstantiationUtil.serializeObject(outputStreams.lateEventsSink.get.sink).length should not be 0
     InstantiationUtil.serializeObject(outputStreams.spuriousEventsSink.get.sink).length should not be 0

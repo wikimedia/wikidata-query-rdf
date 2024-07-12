@@ -224,25 +224,20 @@ object GenerateEntityDiffPatchOperation {
   }
 }
 
-sealed class RouteResolvedOpsToSideOutput(
-                                           ignoredEventTag: OutputTag[FailedOp] = RouteResolvedOpsToSideOutput.FAILED_OPS_TAG,
-                                           subgraphTags: Map[URI, OutputTag[SuccessfulOp]])
+sealed class RouteFailedOpsToSideOutput(ignoredEventTag: OutputTag[FailedOp] = RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
   extends ProcessFunction[ResolvedOp, SuccessfulOp] {
   override def processElement(op: ResolvedOp,
                               context: ProcessFunction[ResolvedOp, SuccessfulOp]#Context,
                               collector: Collector[SuccessfulOp]
                              ): Unit = {
     op match {
-      case op: FailedOp => context.output(ignoredEventTag, op)
-      case op: SuccessfulOp => op.subgraph match {
-        case Some(subgraph) => context.output(subgraphTags(subgraph), op)
-        case None => collector.collect(op)
-      }
+      case e: FailedOp => context.output(ignoredEventTag, e)
+      case x: SuccessfulOp => collector.collect(x)
     }
   }
 }
 
-object RouteResolvedOpsToSideOutput {
+object RouteFailedOpsToSideOutput {
   val FAILED_OPS_TAG: OutputTag[FailedOp] = new OutputTag[FailedOp]("failed-ops-events")
 }
 

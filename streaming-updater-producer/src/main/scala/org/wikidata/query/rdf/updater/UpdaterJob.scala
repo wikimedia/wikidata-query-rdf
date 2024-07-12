@@ -10,7 +10,7 @@ import org.wikidata.query.rdf.updater.config.{BaseConfig, UpdaterConfig, Updater
 
 import java.net.URI
 import java.time.Clock
-import scala.collection.JavaConverters.setAsJavaSetConverter
+import scala.collection.JavaConverters.{iterableAsScalaIterableConverter, setAsJavaSetConverter}
 
 object UpdaterJob {
   val DEFAULT_CLOCK: Clock = Clock.systemUTC()
@@ -19,6 +19,8 @@ object UpdaterJob {
   def main(args: Array[String]): Unit = {
     val config = UpdaterConfig(args)
     val generalConfig = config.generalConfig
+    // TODO: make this a config option and properly integrate this job with the event stream platform
+    val mainStream = "rdf-streaming-updater.mutation"
 
     val subgraphAssigner = config.subgraphDefinition match {
       case Some(subgraphDef) => new SubgraphAssigner(subgraphDef)
@@ -27,7 +29,7 @@ object UpdaterJob {
     val outputStreamsBuilder: OutputStreamsBuilder = new OutputStreamsBuilder(
       config.outputStreamConfig,
       generalConfig.httpClientConfig,
-      subgraphAssigner.distinctSubgraphs.map(uri => subgraphAssigner.stream(uri.getSubgraphUri).get))
+      mainStream)
     val uris: Uris = new WikibaseRepository.Uris(new URI(s"https://${generalConfig.hostname}"),
       generalConfig.entityNamespaces.map(long2Long).asJava,
       WikibaseRepository.Uris.DEFAULT_ENTITY_DATA_PATH, // unused by the pipeline
@@ -40,7 +42,16 @@ object UpdaterJob {
         incomingStreams = incomingStreams,
         outputStreams = outputStreamsBuilder.build,
         wikibaseRepositoryGenerator = rc => WikibaseEntityRevRepository(uris, generalConfig.httpClientConfig, rc.getMetricGroup),
+        mainStream = mainStream,
         subgraphAssigner = subgraphAssigner)
+    config.subgraphDefinition match {
+      case Some(defs) =>
+        LOGGER.info("Running in split graph mode with sub-graphs: {}", defs.getSubgraphs.asScala.map(_.getName).mkString(","))
+      case None =>
+        LOGGER.info("Running in single graph mode")
+    }
+    if (config.subgraphDefinition.isDefined) {
+    }
     if (config.printExecutionPlan) {
       LOGGER.info("Execution plan: {}", env.getExecutionPlan)
     } else {

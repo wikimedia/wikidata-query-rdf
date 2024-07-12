@@ -6,6 +6,6 @@ subgraphs:
     default: pass
     stubs_source: false
   - name: copy
-    stream: copy
+    stream: subgraph-copy-stream
     default: pass
     subgraph_uri: wdsubgraph:copy

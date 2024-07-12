@@ -20,6 +20,7 @@ import scala.language.postfixOps
 class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster with TestFixtures with Matchers with BeforeAndAfter {
   private var savePointDir: File = _
   private var checkPointDirInStream: File = _
+  private val mainStream = "main_output_stream"
 
 
   before {
@@ -93,8 +94,9 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     UpdaterPipeline.configure(
       options,
       List(source),
-      CollectSink.asOutputStreams(), _ => repository,
+      CollectSink.asOutputStreams, _ => repository,
       clock = clock,
+      mainStream = mainStream,
       subgraphAssigner = SubgraphAssigner.empty())
 
     val graph = streamingEnv.getStreamGraph(true)

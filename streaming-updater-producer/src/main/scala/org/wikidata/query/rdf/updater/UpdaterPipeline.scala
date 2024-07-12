@@ -41,7 +41,7 @@ object UpdaterPipeline {
                 wikibaseRepositoryGenerator: RuntimeContext => WikibaseEntityRevRepositoryTrait,
                 uniqueIdGenerator: () => String = () => UUID.randomUUID().toString,
                 clock: Clock = Clock.systemUTC(),
-                outputStreamName: String = "wdqs_streaming_updater",
+                mainStream: String,
                 subgraphAssigner: SubgraphAssigner
                )
                (implicit env: StreamExecutionEnvironment): Unit = {
@@ -65,31 +65,23 @@ object UpdaterPipeline {
         stream.getSideOutput(ReorderAndDecideMutationOperation.SPURIOUS_REV_EVENTS))
     }
 
-    val subgraphTags: Map[URI, OutputTag[SuccessfulOp]] = subgraphAssigner.distinctSubgraphs
-      .map(uri => uri.getSubgraphUri -> OutputTag[SuccessfulOp](uri.getSubgraphUri.toString)).toMap
+    val subgraphUriToStream: Map[URI, String] = subgraphAssigner.distinctSubgraphs
+      .map(subgraph => subgraph.getSubgraphUri -> subgraph.getStream).toMap
 
     val resolvedOpStream: DataStream[ResolvedOp] = resolveMutationOperations(opts, wikibaseRepositoryGenerator, outputMutationStream, subgraphAssigner)
 
-    val patchStream: DataStream[SuccessfulOp] = rerouteFailedOps(resolvedOpStream, subgraphTags)
-    val failedOpsToSideOutput: DataStream[FailedOp] = patchStream.getSideOutput(RouteResolvedOpsToSideOutput.FAILED_OPS_TAG)
-
-    val tripleStreams = subgraphTags
-      .map {
-        case (uri, tag) =>
-          val streamName = subgraphAssigner.stream(uri).get
-          streamName -> rdfPatchChunkOp(patchStream.getSideOutput(tag), opts, uniqueIdGenerator, clock, streamName)
-      } ++ Map(outputStreamName -> measureLatency(rdfPatchChunkOp(patchStream, opts, uniqueIdGenerator, clock, outputStreamName), clock))
-
-    attachSinks(outputStreams, outputStreamName, lateEventsSideOutput, spuriousEventsSideOutput, failedOpsToSideOutput, tripleStreams)
+    val successfulOpStream: DataStream[SuccessfulOp] = rerouteFailedOps(resolvedOpStream)
+    val failedOpsToSideOutput: DataStream[FailedOp] = successfulOpStream.getSideOutput(RouteFailedOpsToSideOutput.FAILED_OPS_TAG)
+    val patchStream = measureLatency(rdfPatchChunkOp(successfulOpStream, opts, uniqueIdGenerator, clock, mainStream, subgraphUriToStream), clock)
+    attachSinks(outputStreams, lateEventsSideOutput, spuriousEventsSideOutput, failedOpsToSideOutput, patchStream)
   }
   // scalastyle:on parameter.number
 
   private def attachSinks(outputStreams: OutputStreams,
-                          mainStreamName: String,
                           lateEventsSideOutput: DataStream[InputEvent],
                           spuriousEventsSideOutput: DataStream[InconsistentMutation],
                           failedOpsToSideOutput: DataStream[FailedOp],
-                          tripleStreams: Map[String, DataStream[MutationDataChunk]]): Unit = {
+                          patchStream: DataStream[MutationDataChunk]): Unit = {
     outputStreams.lateEventsSink foreach {
       _.attachStream(lateEventsSideOutput)
     }
@@ -99,23 +91,16 @@ object UpdaterPipeline {
     outputStreams.failedOpsSink foreach {
       _.attachStream(failedOpsToSideOutput)
     }
-    tripleStreams.foreach {
-      case (outputStreamName, stream) if outputStreamName == mainStreamName =>
-        outputStreams.mutationSink
-          .attachStream(stream)
-          .setParallelism(OUTPUT_PARALLELISM)
-      case (outputStreamName, stream) =>
-        outputStreams.subgraphMutationSinks(outputStreamName)
-        .attachStream(stream)
-        .setParallelism(OUTPUT_PARALLELISM)
-    }
+    outputStreams.mutationSink
+      .attachStream(patchStream)
+      .setParallelism(OUTPUT_PARALLELISM)
   }
 
-  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp], subgraphTags: Map[URI, OutputTag[SuccessfulOp]]): DataStream[SuccessfulOp] = {
+  private def rerouteFailedOps(resolvedOpStream: DataStream[ResolvedOp]): DataStream[SuccessfulOp] = {
     resolvedOpStream
-      .process(new RouteResolvedOpsToSideOutput(subgraphTags = subgraphTags))
-      .name("RouteResolvedOpsToSideOutput")
-      .uid("RouteResolvedOpsToSideOutput")
+      .process(new RouteFailedOpsToSideOutput())
+      .name("RouteFailedOpsToSideOutput")
+      .uid("RouteFailedOpsToSideOutput")
       .setParallelism(OUTPUT_PARALLELISM)
   }
 
@@ -123,7 +108,8 @@ object UpdaterPipeline {
                               opts: UpdaterPipelineGeneralConfig,
                               uniqueIdGenerator: () => String,
                               clock: Clock,
-                              outputStreamName: String
+                              mainStream: String,
+                              subgraphUriToStreamMap: Map[URI, String]
                              ): DataStream[MutationDataChunk] = {
     dataStream
       // explicitly rescale to avoid re-ordering events (OUTPUT_PARALLELISM must be smaller than the job parallelism),
@@ -134,10 +120,11 @@ object UpdaterPipeline {
         domain = opts.hostname,
         clock = clock,
         uniqueIdGenerator = uniqueIdGenerator,
-        stream = outputStreamName
+        mainStream = mainStream,
+        subgraphStreams =  subgraphUriToStreamMap
       ))
-      .name(s"RDFPatchChunkOperation-$outputStreamName")
-      .uid(s"RDFPatchChunkOperation-$outputStreamName")
+      .name(s"RDFPatchChunkOperation")
+      .uid(s"RDFPatchChunkOperation")
       .setParallelism(OUTPUT_PARALLELISM)
   }
 
