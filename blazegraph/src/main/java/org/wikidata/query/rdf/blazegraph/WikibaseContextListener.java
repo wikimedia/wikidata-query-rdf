@@ -314,6 +314,7 @@ public class WikibaseContextListener extends BigdataRDFServletContextListener {
         addDeclIfNew(defaultDecls, "gas", GASService.Options.NAMESPACE);
         addDeclIfNew(defaultDecls, "ontolex", Ontolex.NAMESPACE);
         addDeclIfNew(defaultDecls, "dct", Dct.NAMESPACE);
+        addDeclIfNew(defaultDecls, "wikibaseqs", Ontology.QueryService.QUERY_SERVICE_NS);
     }
 
     private MetricRegistry createMetricRegistry() {
