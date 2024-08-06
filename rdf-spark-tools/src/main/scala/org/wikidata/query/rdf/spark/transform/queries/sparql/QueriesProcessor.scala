@@ -9,7 +9,7 @@ import org.wikidata.query.rdf.spark.utils.SparkUtils.getSparkSession
 class QueriesProcessor(tableAndPartitionSpec: String, numPartitions: Int)(implicit spark: SparkSession) {
 
   // UDF getting QueryInfo from query string (or null if it fails)
-  val makeQueryInfoUdf = udf((queryString: String) => QueryInfo(queryString))
+  val makeQueryInfoUdf = udf((queryString: String) => QueryInfo(queryString)).asNondeterministic()
   // UDF getting a subset of a map where keys have the requested prefix (useful for nodes-map parsing)
   val filterMapKeysUdf = udf((map: Map[String, Long], prefix: String) => map.filterKeys(k => k.startsWith(prefix)))
 
