@@ -11,6 +11,7 @@ CONTEXT=bigdata
 HEAP_SIZE=${HEAP_SIZE:-"1g"}
 MEMORY=${MEMORY:-"-Xmx${HEAP_SIZE}"}
 LOG_DIR=${LOG_DIR:-"/var/log/query_service"}
+JAVA_MAJOR_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
 if [[ "$JAVA_MAJOR_VERSION" -ge "9" ]] ; then
     GC_LOGS=${GC_LOGS:-"-Xlog:gc:${LOG_DIR}/${QUERY_SERVICE}-streaming-updater_jvm_gc.%p.log \
          -Xlog:gc* \
