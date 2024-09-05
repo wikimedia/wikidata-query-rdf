@@ -5,6 +5,10 @@ if [ -r /etc/wdqs/vars.sh ]; then
   . /etc/wdqs/vars.sh
 fi
 
+if [ -r /etc/default/category-endpoint ]; then
+  . /etc/default/category-endpoint
+fi
+
 SOURCE=${SOURCE:-"https://dumps.wikimedia.org/other/categoriesrdf"}
 DATA_DIR=${DATA_DIR:-"/srv/wdqs"}
 DUMPS_DIR="${DATA_DIR}/dumps"

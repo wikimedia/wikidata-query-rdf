@@ -8,6 +8,10 @@ if [ -r /etc/wdqs/gui_vars.sh ]; then
   . /etc/wdqs/gui_vars.sh
 fi
 
+if [ -r /etc/default/category-endpoint ]; then
+  . /etc/default/category-endpoint
+fi
+
 SOURCE=${SOURCE:-"https://dumps.wikimedia.org/other/categoriesrdf/daily"}
 DATA_DIR=${DATA_DIR:-"/srv/wdqs"}
 DUMPS_DIR="${DATA_DIR}/dumps"
