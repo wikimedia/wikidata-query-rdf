@@ -69,15 +69,16 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     acceptableMediawikiLag = params.getInt("acceptable_mediawiki_lag", 10) seconds
   )
 
-  private val useNewFlinkKafkaApi: Boolean = params.getBoolean("use_new_flink_kafka_api", false)
   private val producerConfig = params.getConfiguration.get(UpdaterConfig.KAFKA_PRODUCER_CONFIG).asScala.toMap
+  private val consumerConfig = params.getConfiguration.get(UpdaterConfig.KAFKA_CONSUMER_CONFIG).asScala.toMap
   val inputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
     inputKafkaTopics = getInputKafkaTopics,
     consumerGroup = getStringParam("consumer_group"),
     maxLateness = params.getInt("max_lateness", 1 minute),
     idleness = params.getInt("input_idleness", 1 minute),
     mediaInfoEntityNamespaces = mediaInfoEntityNamespaces,
-    mediaInfoRevisionSlot = params.get("mediainfo_revision_slot", "mediainfo")
+    mediaInfoRevisionSlot = params.get("mediainfo_revision_slot", "mediainfo"),
+    consumerProperties = consumerConfig
   )
 
   val environmentConfig: UpdaterExecutionEnvironmentConfig = UpdaterExecutionEnvironmentConfig(checkpointDir = checkpointDir,
@@ -146,7 +147,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     }
   }
 
-  def loadSubgraphDefinition(): Option[SubgraphDefinitions] = {
+  private def loadSubgraphDefinition(): Option[SubgraphDefinitions] = {
     optionalStringArg("subgraph_definitions") match {
       case Some(definition) =>
         val inputStream = if (definition.startsWith("file://")) {
@@ -195,6 +196,10 @@ object UpdaterConfig {
       "linger.ms" -> "2000"
     ).asJava)
 
+  private val KAFKA_CONSUMER_CONFIG = ConfigOptions.key("kafka_consumer_config")
+    .mapType()
+    .defaultValue(Collections.emptyMap())
+
   def apply(args: Array[String]): UpdaterConfig = new UpdaterConfig(args)
 }
 
@@ -222,7 +227,8 @@ sealed case class UpdaterPipelineInputEventStreamConfig(kafkaBrokers: String,
                                                         maxLateness: Int,
                                                         idleness: Int,
                                                         mediaInfoEntityNamespaces: Set[Long],
-                                                        mediaInfoRevisionSlot: String
+                                                        mediaInfoRevisionSlot: String,
+                                                        consumerProperties: Map[String, String]
                                                        )
 
 sealed case class UpdaterPipelineOutputStreamConfig(

@@ -58,6 +58,7 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       reconciliationTopicName = None,
       topicPrefixes = List("")
     )
+    config.inputEventStreamConfig.consumerProperties shouldBe empty
 
     config.generalConfig.jobName shouldBe "my job"
     config.generalConfig.hostname shouldBe "my.wikidata.org"
@@ -174,18 +175,24 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     config.subgraphDefinition shouldEqual Some(expectedDefinitions)
   }
 
-  "UpdaterConfig" should "support pass kafka producer options" in {
+  "UpdaterConfig" should "support pass kafka producer/consumer options" in {
     val config = UpdaterConfig(baseConfig ++ Array(
       "--hostname", "my.wikidata.org",
       "--uris_scheme", "wikidata",
       "--kafka_producer_config.linger.ms", "4000",
       "--kafka_producer_config.batch.size", "400000",
-      "--kafka_producer_config.compression.type", "zstd"
+      "--kafka_producer_config.compression.type", "zstd",
+      "--kafka_producer_config.security.protocol", "SSL",
+      "--kafka_consumer_config.security.protocol", "SSL"
     ))
     config.outputStreamConfig.producerProperties shouldBe Map(
       "linger.ms" -> "4000",
       "batch.size" -> "400000",
-      "compression.type" -> "zstd"
+      "compression.type" -> "zstd",
+      "security.protocol" -> "SSL"
+    )
+    config.inputEventStreamConfig.consumerProperties shouldBe Map(
+      "security.protocol" -> "SSL"
     )
   }
 }

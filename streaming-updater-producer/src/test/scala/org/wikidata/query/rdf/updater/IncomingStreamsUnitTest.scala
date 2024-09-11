@@ -23,7 +23,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
   "IncomingStreams" should "create properly named streams" in {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.fromKafka(KafkaConsumerProperties("my-topic", "broker1", "group",
-      DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent])),
+      DeserializationSchemaFactory.getDeserializationSchema(classOf[RevisionCreateEvent]), Map.empty),
       uris, IncomingStreams.REV_CREATE_CONV, 40000, 40000, Clock.systemUTC(), resolver, None)
     stream.name should equal (s"Filtered(KafkaSource:my-topic == $DOMAIN)")
   }
@@ -39,7 +39,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
           suppressedDeleteTopicName = "suppressed-delete-topic",
           reconciliationTopicName = None,
           topicPrefixes = List("")),
-        10, 10, Set(), "mediainfo"),
+        10, 10, Set(), "mediainfo", Map.empty),
       uris, Clock.systemUTC())
     stream.map(_.parallelism).toSet should contain only 1
   }
@@ -55,7 +55,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
           suppressedDeleteTopicName = "suppressed-delete-topic",
           reconciliationTopicName = None,
           topicPrefixes = List("")),
-        10, 10, Set(), "mediainfo"),
+        10, 10, Set(), "mediainfo", Map.empty),
       uris, Clock.systemUTC()
     )
     stream.map(_.name) should contain only(s"Filtered(KafkaSource:rev-create-topic == $DOMAIN)",
@@ -76,7 +76,7 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
           suppressedDeleteTopicName = "suppressed-delete-topic",
           reconciliationTopicName = Some(FilteredReconciliationTopic("rdf-streaming-updater.reconcile", None)),
           topicPrefixes = List("cluster1.", "cluster2.")),
-        10, 10, Set(), "mediainfo"),
+        10, 10, Set(), "mediainfo", Map.empty),
       uris, Clock.systemUTC())
     stream.map(_.name) should contain only(
       s"Filtered(KafkaSource:cluster1.rev-create-topic == $DOMAIN)",

@@ -60,8 +60,9 @@ object IncomingStreams {
     }
 
     def build[E <: EventPlatformEvent](topic: String, clazz: Class[E], conv: Converter[E], filter: Option[FilterFunction[E]] = None): DataStream[InputEvent] = {
-      fromKafka(KafkaConsumerProperties(topic, ievops.kafkaBrokers, ievops.consumerGroup, DeserializationSchemaFactory.getDeserializationSchema(clazz)),
-        uris, conv, ievops.maxLateness, ievops.idleness, clock, resolver, filter)
+      val consumerProps = KafkaConsumerProperties(topic, ievops.kafkaBrokers, ievops.consumerGroup,
+        DeserializationSchemaFactory.getDeserializationSchema(clazz), ievops.consumerProperties)
+      fromKafka(consumerProps, uris, conv, ievops.maxLateness, ievops.idleness, clock, resolver, filter)
     }
 
     val revisionCreateEventFilter = new RevisionCreateEventFilter(ievops.mediaInfoEntityNamespaces, ievops.mediaInfoRevisionSlot)
