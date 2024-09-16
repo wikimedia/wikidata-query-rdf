@@ -37,6 +37,8 @@ public class ProxiedHttpConnectionFactory implements IHttpClientFactory {
 
     /** Configuration of excluded hosts. */
     private static final String HTTP_PROXY_EXCLUDED_HOSTS = "http.proxyExcludedHosts";
+    private static final String HTTP_PROXY_CLIENT_IDLE_TIMEOUT = "http.proxyIdleTimeout";
+    private static final String HTTP_PROXY_CLIENT_IDLE_TIMEOUT_DEFAULT = "300000";
 
     /**
      * Configuration name for User agent.
@@ -66,6 +68,7 @@ public class ProxiedHttpConnectionFactory implements IHttpClientFactory {
         if (userAgent != null) {
             client.setUserAgentField(new HttpField(HttpHeader.USER_AGENT, userAgent));
         }
+        client.setIdleTimeout(Integer.parseInt(System.getProperty(HTTP_PROXY_CLIENT_IDLE_TIMEOUT, HTTP_PROXY_CLIENT_IDLE_TIMEOUT_DEFAULT)));
 
         return client;
     }
