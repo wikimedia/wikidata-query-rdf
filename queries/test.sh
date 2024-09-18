@@ -9,16 +9,22 @@ KEEP=no
 
 function gethelp {
 	echo "Usage: $0 [-s ENDPOINT] [-k] [scripts...]"
+	echo "Examples:"
+	echo -e "\tRun tests on query.wikidata.org: test.sh"
+	echo -e "\tRun tests on query-main.wikidata.org: test.sh -d wikidata_main -s https://query-main.wikidata.org"
+	echo -e "\tRun tests on query-scholarly.wikidata.org: test.sh -d scholarly_articles -s https://query-scholarly.wikidata.org"
 	exit 0
 }
 
-while getopts s:kh option
+SUBDIR=.
+while getopts s:d:kh option
 do
   case "${option}"
   in
     h) gethelp;;
     s) ENDPOINT=${OPTARG};;
     k) KEEP=yes;;
+    d) SUBDIR=${OPTARG};;
   esac
 done
 
@@ -56,7 +62,13 @@ function failed {
 	echo -e "$COL_RED FAILED$COL_RESET"
 }
 
-cd $DIR
+QUERY_DIR=$DIR/$SUBDIR
+if [ ! -d $QUERY_DIR ]; then
+	echo "$QUERY_DIR not found"
+	exit 1
+fi
+
+cd $DIR/$SUBDIR
 
 if [ "x$1" != "x" ]; then
 	scripts="$1"

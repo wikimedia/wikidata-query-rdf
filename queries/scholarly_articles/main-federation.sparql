@@ -1,0 +1,9 @@
+select ?paper ?type ?firstname ?lastname {
+  VALUES (?author) {(wd:Q1042470)}
+  ?paper wdt:P50 ?author ;
+         wdt:P31 ?type
+  SERVICE wdsubgraph:wikidata_main {
+    ?author wdt:P735 ?firstname ;
+            wdt:P734 ?lastname
+  }
+} LIMIT 10

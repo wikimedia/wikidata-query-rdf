@@ -1,0 +1,7 @@
+select ?paper ?type {
+  VALUES (?author) {(wd:Q1042470)}
+  SERVICE wdsubgraph:scholarly_articles {
+    ?paper wdt:P50 ?author ;
+           wdt:P31 ?type
+  }
+} LIMIT 10
