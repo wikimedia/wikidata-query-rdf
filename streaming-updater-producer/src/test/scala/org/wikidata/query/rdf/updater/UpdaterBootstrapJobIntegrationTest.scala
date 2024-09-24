@@ -88,7 +88,8 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
       wikibaseRepoThreadPoolSize = 10,
       httpClientConfig = HttpClientConfig(None, None, "my user-agent"),
       urisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
-      acceptableMediawikiLag = 10 seconds
+      acceptableMediawikiLag = 10 seconds,
+      outputMutationSchema = "v2"
     )
 
     UpdaterPipeline.configure(

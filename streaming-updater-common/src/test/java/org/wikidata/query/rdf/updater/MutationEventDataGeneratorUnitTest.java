@@ -10,7 +10,9 @@ import java.io.StringWriter;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.openrdf.rio.RDFFormat;
@@ -31,6 +33,15 @@ public class MutationEventDataGeneratorUnitTest {
         chunkSer = new RDFChunkSerializer(RDFWriterRegistry.getInstance());
     }
 
+    private void assertSerializable(Collection<MutationEventData> data) {
+        assertThat(
+                data.stream()
+                        .map(SerializationUtils::serialize)
+                        .map(SerializationUtils::deserialize)
+                        .collect(Collectors.toList())
+        ).containsExactlyElementsOf(data);
+    }
+
     @Test
     public void testSimpleImport() {
         MutationEventDataGenerator eventGenerator = buildEventGenerator(Integer.MAX_VALUE);
@@ -40,11 +51,12 @@ public class MutationEventDataGeneratorUnitTest {
         List<Statement> linkedData = singletonList(statement("uri:x", "uri:y", "uri:z"));
         List<MutationEventData> events = eventGenerator.fullImportEvent(() -> meta, "Q123", 123L, eventTime, added, linkedData);
 
-        assertThat(events).containsExactly(new DiffEventData(meta, "Q123", 123L, eventTime, 0, 1, MutationEventData.IMPORT_OPERATION,
+        assertThat(events).containsExactly(new DiffEventDataV2(meta, "Q123", 123L, eventTime, 0, 1, MutationEventDataV2.IMPORT_OPERATION,
                 chunk(added),
                 null,
                 chunk(linkedData),
                 null));
+        assertSerializable(events);
     }
 
     @Test
@@ -56,12 +68,12 @@ public class MutationEventDataGeneratorUnitTest {
                 statement("uri:x", "uri:y", "uri:z"));
 
         List<MutationEventData> events = eventDataGenerator.reconcile(() -> meta, "Q123", 123L, eventTime, stmts);
-        assertThat(events).containsExactly(new DiffEventData(meta, "Q123", 123L, eventTime, 0, 1, MutationEventData.RECONCILE_OPERATION,
+        assertThat(events).containsExactly(new DiffEventDataV2(meta, "Q123", 123L, eventTime, 0, 1, MutationEventDataV2.RECONCILE_OPERATION,
                 chunk(stmts),
                 null,
                 null,
                 null));
-
+        assertSerializable(events);
     }
 
     @Test
@@ -74,11 +86,12 @@ public class MutationEventDataGeneratorUnitTest {
         List<MutationEventData> events = eventGenerator.fullImportEvent(() -> meta, "Q123", 123L, eventTime, added, linkedData);
 
         assertThat(events).containsExactly(
-                new DiffEventData(meta, "Q123", 123L, eventTime, 0, 2, MutationEventData.IMPORT_OPERATION,
+                new DiffEventDataV2(meta, "Q123", 123L, eventTime, 0, 2, MutationEventDataV2.IMPORT_OPERATION,
                         chunk(added), null, null, null),
-                new DiffEventData(meta, "Q123", 123L, eventTime, 1, 2, MutationEventData.IMPORT_OPERATION,
+                new DiffEventDataV2(meta, "Q123", 123L, eventTime, 1, 2, MutationEventDataV2.IMPORT_OPERATION,
                         null, null, chunk(linkedData), null)
         );
+        assertSerializable(events);
     }
 
     @Test
@@ -93,9 +106,10 @@ public class MutationEventDataGeneratorUnitTest {
         List<MutationEventData> events = eventGenerator.diffEvent(() -> meta, "Q123", 123L, eventTime, added, deleted, linkedData, unlinkedData);
 
         assertThat(events).containsExactly(
-                new DiffEventData(meta, "Q123", 123L, eventTime, 0, 1, MutationEventData.DIFF_OPERATION,
+                new DiffEventDataV2(meta, "Q123", 123L, eventTime, 0, 1, MutationEventDataV2.DIFF_OPERATION,
                         chunk(added), chunk(deleted), chunk(linkedData), chunk(unlinkedData))
         );
+        assertSerializable(events);
     }
 
     @Test
@@ -110,15 +124,16 @@ public class MutationEventDataGeneratorUnitTest {
         List<MutationEventData> events = eventGenerator.diffEvent(() -> meta, "Q123", 123L, eventTime, added, deleted, linkedData, unlinkedData);
 
         assertThat(events).containsExactly(
-                new DiffEventData(meta, "Q123", 123L, eventTime, 0, 4, MutationEventData.DIFF_OPERATION,
+                new DiffEventDataV2(meta, "Q123", 123L, eventTime, 0, 4, MutationEventDataV2.DIFF_OPERATION,
                         chunk(added), null, null, null),
-                new DiffEventData(meta, "Q123", 123L, eventTime, 1, 4, MutationEventData.DIFF_OPERATION,
+                new DiffEventDataV2(meta, "Q123", 123L, eventTime, 1, 4, MutationEventDataV2.DIFF_OPERATION,
                         null, chunk(deleted), null, null),
-                new DiffEventData(meta, "Q123", 123L, eventTime, 2, 4, MutationEventData.DIFF_OPERATION,
+                new DiffEventDataV2(meta, "Q123", 123L, eventTime, 2, 4, MutationEventDataV2.DIFF_OPERATION,
                         null, null, chunk(linkedData), null),
-                new DiffEventData(meta, "Q123", 123L, eventTime, 3, 4, MutationEventData.DIFF_OPERATION,
+                new DiffEventDataV2(meta, "Q123", 123L, eventTime, 3, 4, MutationEventDataV2.DIFF_OPERATION,
                         null, null, null, chunk(unlinkedData))
         );
+        assertSerializable(events);
     }
 
     private RDFDataChunk chunk(List<Statement> added) {
@@ -126,7 +141,7 @@ public class MutationEventDataGeneratorUnitTest {
     }
 
     private MutationEventDataGenerator buildEventGenerator(int softMaxSize) {
-        return new MutationEventDataGenerator(chunkSer, RDFFormat.TURTLE.getDefaultMIMEType(), softMaxSize);
+        return new MutationEventDataGenerator(chunkSer, RDFFormat.TURTLE.getDefaultMIMEType(), softMaxSize, MutationEventDataFactory.v2());
     }
 
     private String getTurtleOutput(Collection<Statement> stmts) {

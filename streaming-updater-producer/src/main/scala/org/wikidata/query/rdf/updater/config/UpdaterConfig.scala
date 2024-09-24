@@ -66,7 +66,8 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
         UrisSchemeFactory.forWikidata(optionalUriArg("wikidata_concept_uri").getOrElse(UrisSchemeFactory.wikidataUri(hostName)))
       case scheme: Any => throw new IllegalArgumentException(s"Unknown uris_scheme: $scheme")
     },
-    acceptableMediawikiLag = params.getInt("acceptable_mediawiki_lag", 10) seconds
+    acceptableMediawikiLag = params.getInt("acceptable_mediawiki_lag", 10) seconds,
+    outputMutationSchema = params.get("output_mutation_schema_version", "v1")
   )
 
   private val producerConfig = params.getConfiguration.get(UpdaterConfig.KAFKA_PRODUCER_CONFIG).asScala.toMap
@@ -212,7 +213,8 @@ sealed case class UpdaterPipelineGeneralConfig(hostname: String,
                                                wikibaseRepoThreadPoolSize: Int,
                                                httpClientConfig: HttpClientConfig,
                                                urisScheme: UrisScheme,
-                                               acceptableMediawikiLag: FiniteDuration
+                                               acceptableMediawikiLag: FiniteDuration,
+                                               outputMutationSchema: String
                                               )
 
 sealed case class HttpClientConfig(

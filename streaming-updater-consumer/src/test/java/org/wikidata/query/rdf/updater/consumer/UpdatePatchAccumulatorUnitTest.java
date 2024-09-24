@@ -26,6 +26,7 @@ import org.wikidata.query.rdf.tool.change.events.EventsMeta;
 import org.wikidata.query.rdf.tool.rdf.ConsumerPatch;
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
 import org.wikidata.query.rdf.updater.MutationEventData;
+import org.wikidata.query.rdf.updater.MutationEventDataFactory;
 import org.wikidata.query.rdf.updater.MutationEventDataGenerator;
 import org.wikidata.query.rdf.updater.RDFChunkDeserializer;
 import org.wikidata.query.rdf.updater.RDFChunkSerializer;
@@ -34,7 +35,8 @@ import org.wikidata.query.rdf.updater.RDFChunkSerializer;
 public class UpdatePatchAccumulatorUnitTest {
     private final RDFChunkSerializer serializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance());
     private final RDFChunkDeserializer deserializer = new RDFChunkDeserializer(new RDFParserSuppliers(RDFParserRegistry.getInstance()));
-    private final MutationEventDataGenerator eventGenerator = new MutationEventDataGenerator(serializer, RDFFormat.TURTLE.getDefaultMIMEType(), 10);
+    private final MutationEventDataGenerator eventGenerator = new MutationEventDataGenerator(serializer, RDFFormat.TURTLE.getDefaultMIMEType(),
+            10, MutationEventDataFactory.v2());
 
     @Test
     public void test_accumulate_should_optimize_and_ignore_added_and_then_removed_triples() {
@@ -246,7 +248,7 @@ public class UpdatePatchAccumulatorUnitTest {
     @Test
     public void test_invalid_duplicates_are_counted() {
         MutationEventDataGenerator eventGenerator = new MutationEventDataGenerator(
-                serializer, RDFFormat.TURTLE.getDefaultMIMEType(), 300);
+                serializer, RDFFormat.TURTLE.getDefaultMIMEType(), 300, MutationEventDataFactory.v2());
 
         PatchAccumulator accumulator = new PatchAccumulator(deserializer);
 
@@ -296,7 +298,7 @@ public class UpdatePatchAccumulatorUnitTest {
         PatchAccumulator accumulator = new PatchAccumulator(deserializer);
 
         MutationEventDataGenerator bigChunkEventGenerator = new MutationEventDataGenerator(
-                serializer, RDFFormat.TURTLE.getDefaultMIMEType(), Integer.MAX_VALUE);
+                serializer, RDFFormat.TURTLE.getDefaultMIMEType(), Integer.MAX_VALUE, MutationEventDataFactory.v2());
         accumulateDiff(accumulator, "Q1",
                 asList(stmt("uri:added-1"), stmt("uri:added-1")),
                 asList(stmt("uri:removed-1"), stmt("uri:removed-1")),
@@ -321,7 +323,7 @@ public class UpdatePatchAccumulatorUnitTest {
         PatchAccumulator accumulator = new PatchAccumulator(deserializer);
 
         MutationEventDataGenerator bigChunkEventGenerator = new MutationEventDataGenerator(
-                serializer, RDFFormat.TURTLE.getDefaultMIMEType(), Integer.MAX_VALUE);
+                serializer, RDFFormat.TURTLE.getDefaultMIMEType(), Integer.MAX_VALUE, MutationEventDataFactory.v2());
         accumulateDiff(accumulator, "Q1",
                 asList(stmt("uri:added-1"), stmt("uri:added-1")),
                 asList(stmt("uri:removed-1"), stmt("uri:removed-1")),

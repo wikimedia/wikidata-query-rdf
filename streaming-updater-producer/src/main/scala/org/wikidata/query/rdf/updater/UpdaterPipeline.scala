@@ -121,7 +121,12 @@ object UpdaterPipeline {
         clock = clock,
         uniqueIdGenerator = uniqueIdGenerator,
         mainStream = mainStream,
-        subgraphStreams =  subgraphUriToStreamMap
+        subgraphStreams =  subgraphUriToStreamMap,
+        mutationEventDataFactory = opts.outputMutationSchema match {
+          case "v1" => MutationEventDataFactory.v1()
+          case "v2" => MutationEventDataFactory.v2()
+          case _ @ v => throw new IllegalArgumentException(s"Unsupported schema version $v")
+        }
       ))
       .name(s"RDFPatchChunkOperation")
       .uid(s"RDFPatchChunkOperation")

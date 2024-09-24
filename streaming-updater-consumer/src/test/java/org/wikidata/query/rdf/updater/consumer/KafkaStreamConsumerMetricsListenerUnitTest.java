@@ -23,8 +23,9 @@ import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParserRegistry;
 import org.wikidata.query.rdf.tool.change.events.EventsMeta;
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
-import org.wikidata.query.rdf.updater.DiffEventData;
+import org.wikidata.query.rdf.updater.DiffEventDataV2;
 import org.wikidata.query.rdf.updater.MutationEventData;
+import org.wikidata.query.rdf.updater.MutationEventDataV2;
 import org.wikidata.query.rdf.updater.RDFChunkDeserializer;
 import org.wikidata.query.rdf.updater.RDFDataChunk;
 
@@ -46,12 +47,12 @@ public class KafkaStreamConsumerMetricsListenerUnitTest {
         Duration lagEvt2 = Duration.ofHours(1);
         Instant evTime1 = now.minus(lagEvt1);
         Instant evTime2 = now.minus(lagEvt2);
-        MutationEventData msg1 = new DiffEventData(new EventsMeta(Instant.now(), "unused", "domain", "stream", "req"),
-                "Q0", 1, evTime1, 0, 1, MutationEventData.IMPORT_OPERATION,
+        MutationEventData msg1 = new DiffEventDataV2(new EventsMeta(Instant.now(), "unused", "domain", "stream", "req"),
+                "Q0", 1, evTime1, 0, 1, MutationEventDataV2.IMPORT_OPERATION,
                 new RDFDataChunk("\n<uri:a> <uri:a> <uri:a> .\n", RDFFormat.TURTLE.getDefaultMIMEType()),
                 null, null, null);
-        MutationEventData msg2 = new DiffEventData(new EventsMeta(Instant.now(), "unused", "domain", "stream", "req"),
-                "Q0", 2, evTime2, 0, 1, MutationEventData.IMPORT_OPERATION,
+        MutationEventData msg2 = new DiffEventDataV2(new EventsMeta(Instant.now(), "unused", "domain", "stream", "req"),
+                "Q0", 2, evTime2, 0, 1, MutationEventDataV2.IMPORT_OPERATION,
                 new RDFDataChunk("\n<uri:b> <uri:b> <uri:b> .\n", RDFFormat.TURTLE.getDefaultMIMEType()),
                 null, null, null);
 

@@ -45,8 +45,9 @@ import org.openrdf.rio.RDFWriterRegistry;
 import org.wikidata.query.rdf.tool.change.events.EventsMeta;
 import org.wikidata.query.rdf.tool.rdf.ConsumerPatch;
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
-import org.wikidata.query.rdf.updater.DiffEventData;
+import org.wikidata.query.rdf.updater.DiffEventDataV2;
 import org.wikidata.query.rdf.updater.MutationEventData;
+import org.wikidata.query.rdf.updater.MutationEventDataFactory;
 import org.wikidata.query.rdf.updater.MutationEventDataGenerator;
 import org.wikidata.query.rdf.updater.RDFChunkDeserializer;
 import org.wikidata.query.rdf.updater.RDFChunkSerializer;
@@ -63,7 +64,8 @@ public class KafkaStreamConsumerUnitTest {
     private KafkaConsumer<String, MutationEventData> consumer;
     private final RDFChunkDeserializer chunkDeser = new RDFChunkDeserializer(new RDFParserSuppliers(RDFParserRegistry.getInstance()));
     private final RDFChunkSerializer chunkSer = new RDFChunkSerializer(RDFWriterRegistry.getInstance());
-    private final MutationEventDataGenerator generator = new MutationEventDataGenerator(chunkSer, RDFFormat.TURTLE.getDefaultMIMEType(), 100);
+    private final MutationEventDataGenerator generator = new MutationEventDataGenerator(chunkSer, RDFFormat.TURTLE.getDefaultMIMEType(),
+            100, MutationEventDataFactory.v2());
     private final Set<Statement> storedData = new HashSet<>(statements(uris("Q1-removed-0", "Q1-shared")));
     private final Set<Statement> expectedData = new HashSet<>(statements(uris(
             "Q1-added-0",
@@ -184,7 +186,7 @@ public class KafkaStreamConsumerUnitTest {
         TopicPartition topicPartition = new TopicPartition("test", 0);
         List<ConsumerRecord<String, MutationEventData>> allRecords = IntStream.range(0, bufferedMessages).mapToObj(i -> {
             EventsMeta meta = new EventsMeta(Instant.EPOCH, UUID.randomUUID().toString(), TEST_DOMAIN, TESTED_STREAM, "unused");
-            MutationEventData diff = new DiffEventData(meta, "Q1", 1, Instant.EPOCH, i, bufferedMessages, MutationEventData.DIFF_OPERATION,
+            MutationEventData diff = new DiffEventDataV2(meta, "Q1", 1, Instant.EPOCH, i, bufferedMessages, MutationEventData.DIFF_OPERATION,
                     new RDFDataChunk("<uri:a> <uri:a> <uri:" + i + "> .\n", RDFFormat.TURTLE.getDefaultMIMEType()),
                     null, null, null);
             return new ConsumerRecord<String, MutationEventData>(topicPartition.topic(), topicPartition.partition(), i, null, diff);

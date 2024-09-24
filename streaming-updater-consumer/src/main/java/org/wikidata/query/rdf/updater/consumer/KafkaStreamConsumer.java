@@ -29,7 +29,6 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wikidata.query.rdf.tool.change.JsonDeserializer;
 import org.wikidata.query.rdf.updater.MutationEventData;
 import org.wikidata.query.rdf.updater.RDFChunkDeserializer;
 
@@ -82,7 +81,7 @@ public class KafkaStreamConsumer implements StreamConsumer {
         props.put("max.partition.fetch.bytes", 10*120*1024); // 10 very large messages (120k)
         KafkaConsumer<String, MutationEventData> consumer = new KafkaConsumer<>(props,
                 new StringDeserializer(),
-                new JsonDeserializer<>(singletonMap(topic, MutationEventData.class)));
+                new MutationEventDataJsonKafkaDeserializer());
         TopicPartition topicPartition = new TopicPartition(topic, partition);
         consumer.assign(singleton(new TopicPartition(topic, partition)));
         try {

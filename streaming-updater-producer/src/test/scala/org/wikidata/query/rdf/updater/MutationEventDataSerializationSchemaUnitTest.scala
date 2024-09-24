@@ -24,7 +24,7 @@ class MutationEventDataSerializationSchemaUnitTest extends FlatSpec with Matcher
   }
 
   private def parseRecord(bytes: Array[Byte]) = {
-    MapperUtils.getObjectMapper.readValue(bytes, classOf[MutationEventData])
+    MapperUtils.getObjectMapper.readValue(bytes, classOf[MutationEventDataV2])
   }
 
   "MutationEventDataSerializationSchema" should "fail if provided an unknown stream" in {
@@ -41,7 +41,7 @@ class MutationEventDataSerializationSchemaUnitTest extends FlatSpec with Matcher
           "source-schema"
         )
       ),
-      new DiffEventData(
+      new DiffEventDataV2(
         new EventsMeta(Instant.EPOCH, "my-id", "my-domain", stream, "my-request-id"),
          "Q1", 0, Instant.EPOCH, 0, 1,
         MutationEventData.DIFF_OPERATION,

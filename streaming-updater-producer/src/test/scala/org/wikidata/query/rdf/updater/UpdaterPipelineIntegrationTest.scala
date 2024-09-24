@@ -26,7 +26,8 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     wikibaseRepoThreadPoolSize = 10,
     httpClientConfig = HttpClientConfig(None, None, "my user-agent"),
     urisScheme = UrisSchemeFactory.forWikidataHost(DOMAIN),
-    acceptableMediawikiLag = 10 seconds
+    acceptableMediawikiLag = 10 seconds,
+    outputMutationSchema = "v2"
   )
 
   private val resolver: IncomingStreams.EntityResolver = (_, title, _) => title

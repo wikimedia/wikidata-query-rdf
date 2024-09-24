@@ -15,45 +15,45 @@ import java.util.function.ToIntFunction;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.tool.change.events.EventsMeta;
 
+import lombok.AllArgsConstructor;
+
+@AllArgsConstructor
 public class MutationEventDataGenerator {
     private final RDFChunkSerializer rdfChunkSerializer;
     private final String mimeType;
     private final int softMaxRdfSize;
-
-    public MutationEventDataGenerator(RDFChunkSerializer rdfChunkSerializer, String mimeType, int softMaxRdfSize) {
-        this.rdfChunkSerializer = rdfChunkSerializer;
-        this.mimeType = mimeType;
-        this.softMaxRdfSize = softMaxRdfSize;
-    }
+    private final MutationEventDataFactory mutationEventDataFactory;
 
     public List<MutationEventData> fullImportEvent(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
-                                                   List<Statement> statements, List<Statement> linkedValuesAndRefs) {
+                                                     List<Statement> statements, List<Statement> linkedValuesAndRefs) {
         return createChunks(meta, entity, revision, eventTime, MutationEventData.IMPORT_OPERATION, statements,
                 emptyList(), linkedValuesAndRefs, emptyList());
     }
 
     public List<MutationEventData> reconcile(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
-                                                   List<Statement> statements) {
+                                               List<Statement> statements) {
         return createChunks(meta, entity, revision, eventTime, MutationEventData.RECONCILE_OPERATION, statements,
                 emptyList(), emptyList(), emptyList());
     }
 
     public List<MutationEventData> diffEvent(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
-                                         List<Statement> added, List<Statement> deleted,
-                                         List<Statement> linkedValuesAndRefs, List<Statement> unlinkedValuesAndRefs) {
+                                               List<Statement> added, List<Statement> deleted,
+                                               List<Statement> linkedValuesAndRefs, List<Statement> unlinkedValuesAndRefs) {
         return createChunks(meta, entity, revision, eventTime, MutationEventData.DIFF_OPERATION, added, deleted,
                 linkedValuesAndRefs, unlinkedValuesAndRefs);
     }
 
     public List<MutationEventData> deleteEvent(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime) {
-        MutationEventData deleteEvent = new MutationEventData(meta.get(), entity, revision, eventTime, 0, 1, MutationEventData.DELETE_OPERATION);
+        MutationEventData deleteEvent = mutationEventDataFactory
+                .getMutationBuilder()
+                .buildMutation(meta.get(), entity, revision, eventTime, 0, 1, MutationEventData.DELETE_OPERATION);
         return singletonList(deleteEvent);
     }
 
     private List<MutationEventData> createChunks(Supplier<EventsMeta> meta, String entity, long revision, Instant eventTime,
-                                             String operation, List<Statement> added, List<Statement> deleted,
-                                             List<Statement> linkedValuesAndRefs,
-                                             List<Statement> unlinkedValuesAndRefs) {
+                                                   String operation, List<Statement> added, List<Statement> deleted,
+                                                   List<Statement> linkedValuesAndRefs,
+                                                   List<Statement> unlinkedValuesAndRefs) {
 
 
         EnumMap<RDFKind, List<RDFDataChunk>> chunksPerType = new EnumMap<>(RDFKind.class);
@@ -68,7 +68,7 @@ public class MutationEventDataGenerator {
         int seqMax = collected.size();
         for (int i = 0; i < seqMax; i++) {
             EnumMap<RDFKind, RDFDataChunk> chunks = collected.get(i);
-            events.add(new DiffEventData(meta.get(), entity, revision, eventTime, i, seqMax, operation,
+            events.add(mutationEventDataFactory.getDiffBuilder().buildDiff(meta.get(), entity, revision, eventTime, i, seqMax, operation,
                     chunks.get(RDFKind.Add), chunks.get(RDFKind.Del), chunks.get(RDFKind.LinkedShared), chunks.get(RDFKind.UnlinkedShared)));
         }
         return events;

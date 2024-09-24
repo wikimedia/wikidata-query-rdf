@@ -39,7 +39,7 @@ class MeasureEventProcessingLatencyOperationUnitTest extends FlatSpec with TestF
     val input: FullImport = FullImport("Q1", eventTime, 1, processingTime, newEventInfo(eventTime, "tested.domain", "tested.stream", "tested.request.id"))
 
     eventProcessingMetricsOperation.map(MutationDataChunk(input,
-      new DiffEventData(new EventsMeta(clock.instant(), "", "", "", ""),
+      new DiffEventDataV2(new EventsMeta(clock.instant(), "", "", "", ""),
         "", 0, clock.instant(), 0, 1, MutationEventData.DIFF_OPERATION, new RDFDataChunk("", ""),
         new RDFDataChunk("", ""), new RDFDataChunk("", ""), new RDFDataChunk("", ""))))
 

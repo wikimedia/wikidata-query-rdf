@@ -23,12 +23,13 @@ class PatchChunkOperation(domain: String,
                           clock: Clock,
                           uniqueIdGenerator: () => String,
                           mainStream: String,
-                          subgraphStreams: Map[URI, String]
+                          subgraphStreams: Map[URI, String],
+                          mutationEventDataFactory: MutationEventDataFactory
                          )
   extends FlatMapFunction[SuccessfulOp, MutationDataChunk] {
 
   lazy val rdfSerializer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())
-  lazy val dataEventGenerator: MutationEventDataGenerator = new MutationEventDataGenerator(rdfSerializer, mimeType, chunkSoftMaxSize)
+  lazy val dataEventGenerator: MutationEventDataGenerator = new MutationEventDataGenerator(rdfSerializer, mimeType, chunkSoftMaxSize, mutationEventDataFactory)
 
   // scalastyle:off cyclomatic.complexity
   override def flatMap(t: SuccessfulOp, collector: Collector[MutationDataChunk]): Unit = {

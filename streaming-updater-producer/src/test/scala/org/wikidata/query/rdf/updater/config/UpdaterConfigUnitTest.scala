@@ -70,6 +70,7 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     config.generalConfig.urisScheme.entityData() shouldBe "http://my.wikidata.org/wiki/Special:EntityData/"
     config.generalConfig.urisScheme.entityIdToURI("Q123") shouldBe "http://my.wikidata.org/entity/Q123"
     config.generalConfig.acceptableMediawikiLag shouldBe 10.seconds
+    config.generalConfig.outputMutationSchema shouldBe "v1"
 
     config.generalConfig.httpClientConfig.httpRoutes shouldBe None
     config.generalConfig.httpClientConfig.httpTimeout shouldBe None
@@ -194,5 +195,14 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     config.inputEventStreamConfig.consumerProperties shouldBe Map(
       "security.protocol" -> "SSL"
     )
+  }
+
+  "UpdaterConfig" should "support passing another output schema version" in {
+    val config = UpdaterConfig(baseConfig ++ Array(
+      "--hostname", "my.wikidata.org",
+      "--uris_scheme", "wikidata",
+      "--output_mutation_schema_version", "v2"
+    ))
+    config.generalConfig.outputMutationSchema shouldBe "v2"
   }
 }

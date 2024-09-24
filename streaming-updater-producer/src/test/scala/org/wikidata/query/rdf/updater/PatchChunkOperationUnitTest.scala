@@ -143,7 +143,8 @@ class PatchChunkOperationUnitTest extends FlatSpec with Matchers with TestEventG
       clock = Clock.fixed(NOW, ZoneId.of("UTC")),
       uniqueIdGenerator = () => EVT_ID,
       mainStream = STREAM,
-      subgraphStreams = uriToStreamMap
+      subgraphStreams = uriToStreamMap,
+      mutationEventDataFactory = MutationEventDataFactory.v2()
     )
   }
 

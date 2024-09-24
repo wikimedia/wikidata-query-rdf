@@ -102,7 +102,7 @@ trait TestFixtures extends TestEventGenerator {
   val rdfChunkSer: RDFChunkSerializer = new RDFChunkSerializer(RDFWriterRegistry.getInstance())
   val rdfChunkDeser: RDFChunkDeserializer = new RDFChunkDeserializer(new RDFParserSuppliers(RDFParserRegistry.getInstance()))
   val dataEventGenerator = new MutationEventDataGenerator(rdfChunkSer,
-    RDFFormat.TURTLE.getDefaultMIMEType, Int.MaxValue)
+    RDFFormat.TURTLE.getDefaultMIMEType, Int.MaxValue, MutationEventDataFactory.v2())
 
   private val testData = Map(
     ("Q1", 1L) -> RevisionData("Q1", eventTimes("Q1", 1), mSt1.entityDataNS.toSeq, mSt1.entityNS),
