@@ -39,22 +39,24 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
         mutationSink = mutationSink,
         lateEventsSink =
           Some(prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema,
-            outputStreamsConfig.schemaRepos, httpClientConfig, "late-events-output")),
+            outputStreamsConfig.schemaRepos, httpClientConfig, "late-events-output", outputStreamsConfig)),
         spuriousEventsSink =
           Some(prepareSideOutputStream[InconsistentMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
-            outputStreamsConfig.schemaRepos, httpClientConfig, "spurious-events-output")),
+            outputStreamsConfig.schemaRepos, httpClientConfig, "spurious-events-output", outputStreamsConfig)),
         failedOpsSink =
           Some(prepareSideOutputStream[FailedOp](JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema,
-            outputStreamsConfig.schemaRepos, httpClientConfig, "failed-events-output")))
+            outputStreamsConfig.schemaRepos, httpClientConfig, "failed-events-output", outputStreamsConfig)))
     } else {
       OutputStreams(mutationSink)
     }
   }
 
   private def prepareSideOutputStream[E](stream: String, schema: String, schemaRepos: List[String],
-                                         httpClientConfig: HttpClientConfig, operatorNameAndUuid: String): SinkWrapper[E] = {
+                                         httpClientConfig: HttpClientConfig, operatorNameAndUuid: String,
+                                         outputStreamsConfig: UpdaterPipelineOutputStreamConfig): SinkWrapper[E] = {
     val producerConfig = new Properties()
     producerConfig.setProperty("bootstrap.servers", outputStreamsConfig.sideOutputsKafkaBrokers.getOrElse(outputStreamsConfig.kafkaBrokers))
+    outputStreamsConfig.producerProperties.foreach { case (k, v) => producerConfig.setProperty(k, v) }
     val topic = outputStreamsConfig.outputTopicPrefix.getOrElse("") + stream
     val sideOutputSerializationSchema = new SideOutputSerializationSchema[E](None, topic, stream, schema, outputStreamsConfig.sideOutputsDomain,
       outputStreamsConfig.emitterId, outputStreamsConfig.eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
