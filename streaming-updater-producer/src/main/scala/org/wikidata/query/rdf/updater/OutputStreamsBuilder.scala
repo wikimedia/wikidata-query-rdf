@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.DataStream
-import org.wikidata.query.rdf.updater.config.{HttpClientConfig, UpdaterPipelineOutputStreamConfig}
+import org.wikidata.query.rdf.updater.config.UpdaterPipelineOutputStreamConfig
 
 import java.util.Properties
 
@@ -30,7 +30,7 @@ case class SinkWrapper[E](sink: Either[SinkFunction[E], Sink[E]], nameAndUuid: S
   }
 }
 
-class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig, httpClientConfig: HttpClientConfig, mainStream: String) {
+class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig, eventPlatformFactory: EventPlatformFactory, mainStream: String) {
   def build: OutputStreams = {
     val streamToTopic: Map[String, String] = outputStreamsConfig.subgraphKafkaTopics ++ Map(mainStream -> outputStreamsConfig.topic)
     val mutationSink = mutationOutput(outputStreamsConfig, streamToTopic)
@@ -39,27 +39,27 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
         mutationSink = mutationSink,
         lateEventsSink =
           Some(prepareSideOutputStream[InputEvent](JsonEncoders.lapsedActionStream, JsonEncoders.lapsedActionSchema,
-            outputStreamsConfig.schemaRepos, httpClientConfig, "late-events-output", outputStreamsConfig)),
+            eventPlatformFactory, "late-events-output", outputStreamsConfig)),
         spuriousEventsSink =
           Some(prepareSideOutputStream[InconsistentMutation](JsonEncoders.stateInconsistencyStream, JsonEncoders.stateInconsistencySchema,
-            outputStreamsConfig.schemaRepos, httpClientConfig, "spurious-events-output", outputStreamsConfig)),
+            eventPlatformFactory, "spurious-events-output", outputStreamsConfig)),
         failedOpsSink =
           Some(prepareSideOutputStream[FailedOp](JsonEncoders.fetchFailureStream, JsonEncoders.fetchFailureSchema,
-            outputStreamsConfig.schemaRepos, httpClientConfig, "failed-events-output", outputStreamsConfig)))
+            eventPlatformFactory, "failed-events-output", outputStreamsConfig)))
     } else {
       OutputStreams(mutationSink)
     }
   }
 
-  private def prepareSideOutputStream[E](stream: String, schema: String, schemaRepos: List[String],
-                                         httpClientConfig: HttpClientConfig, operatorNameAndUuid: String,
+  private def prepareSideOutputStream[E](stream: String, schema: String,
+                                         eventPlatformFactory: EventPlatformFactory, operatorNameAndUuid: String,
                                          outputStreamsConfig: UpdaterPipelineOutputStreamConfig): SinkWrapper[E] = {
     val producerConfig = new Properties()
     producerConfig.setProperty("bootstrap.servers", outputStreamsConfig.sideOutputsKafkaBrokers.getOrElse(outputStreamsConfig.kafkaBrokers))
     outputStreamsConfig.producerProperties.foreach { case (k, v) => producerConfig.setProperty(k, v) }
     val topic = outputStreamsConfig.outputTopicPrefix.getOrElse("") + stream
-    val sideOutputSerializationSchema = new SideOutputSerializationSchema[E](None, topic, stream, schema, outputStreamsConfig.sideOutputsDomain,
-      outputStreamsConfig.emitterId, outputStreamsConfig.eventStreamConfigEndpoint, schemaRepos, httpClientConfig)
+    val sideOutputSerializationSchema = new SideOutputSerializationSchema[E](topic, stream, schema, outputStreamsConfig.sideOutputsDomain,
+      outputStreamsConfig.emitterId, eventPlatformFactory)
 
     sideOutputWithKafkaSink(producerConfig, sideOutputSerializationSchema, operatorNameAndUuid)
   }

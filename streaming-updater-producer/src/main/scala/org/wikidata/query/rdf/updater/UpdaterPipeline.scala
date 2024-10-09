@@ -32,7 +32,6 @@ import scala.concurrent.duration.MILLISECONDS
 object UpdaterPipeline {
   // Enforce output parallelism of 1 ( to ensure proper ordering of the output patches
   private val OUTPUT_PARALLELISM = 1
-  val defaultAppName = "WDQS Updater Stream Updater"
 
   // scalastyle:off parameter.number
   def configure(opts: UpdaterPipelineGeneralConfig,

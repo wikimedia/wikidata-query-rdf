@@ -1,0 +1,12 @@
+  {
+    "mediawiki.page_change.v1": {
+      "schema_title": "mediawiki/page/change",
+      "stream": "mediawiki.page_change.v1",
+      "topics": ["eqiad.mediawiki.page_change.v1", "codfw.mediawiki.page_change.v1"]
+    },
+    "rdf-streaming-updater.reconcile": {
+      "schema_title": "rdf_streaming_updater/reconcile",
+      "stream": "rdf-streaming-updater.reconcile",
+      "topics": ["eqiad.rdf-streaming-updater.reconcile", "codfw.mediawiki.page_change.v1"]
+    }
+  }

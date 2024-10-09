@@ -56,6 +56,11 @@
         <!-- Add connector dependencies here. They must be in the default scope (compile). -->
         <dependency>
             <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-files</artifactId>
+            <!-- test -->
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-kafka</artifactId>
         </dependency>
         <dependency>
@@ -131,6 +136,10 @@
         <dependency>
             <groupId>org.wikimedia</groupId>
             <artifactId>eventutilities</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wikimedia</groupId>
+            <artifactId>eventutilities-flink</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>

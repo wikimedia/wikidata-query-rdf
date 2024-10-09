@@ -30,6 +30,19 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
   val entityDataPath: String = params.get("wikibase_entitydata_path", Uris.DEFAULT_ENTITY_DATA_PATH)
   val printExecutionPlan: Boolean = params.getBoolean("print_execution_plan", false)
   val subgraphDefinition: Option[SubgraphDefinitions] = loadSubgraphDefinition()
+  val schemaBaseUris: List[String] = params.get(
+    "schema_base_uris",
+    params.get(
+      "schema_repositories",
+      "https://schema.wikimedia.org/repositories/primary/jsonschema,https://schema.wikimedia.org/repositories/secondary/jsonschema"
+    )
+  ).split(",")
+    .map(_.trim)
+    .toList
+  val streamConfigUri: String = params.get(
+    "stream_config_uri",
+    params.get("event_stream_config_endpoint", WikimediaDefaults.EVENT_STREAM_CONFIG_URI)
+  )
 
   if (entityNamespaces.isEmpty && mediaInfoEntityNamespaces.isEmpty) {
     throw new IllegalArgumentException("entity_namespaces and/or mediainfo_entity_namespaces")
@@ -73,7 +86,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
   private val producerConfig = params.getConfiguration.get(UpdaterConfig.KAFKA_PRODUCER_CONFIG).asScala.toMap
   private val consumerConfig = params.getConfiguration.get(UpdaterConfig.KAFKA_CONSUMER_CONFIG).asScala.toMap
   val inputEventStreamConfig: UpdaterPipelineInputEventStreamConfig = UpdaterPipelineInputEventStreamConfig(kafkaBrokers = inputKafkaBrokers,
-    inputKafkaTopics = getInputKafkaTopics,
+    inputStreams = getInputStreamsConfig,
     consumerGroup = getStringParam("consumer_group"),
     maxLateness = params.getInt("max_lateness", 1 minute),
     idleness = params.getInt("input_idleness", 1 minute),
@@ -112,16 +125,9 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       topic = outputTopic,
       partition = outputPartition,
       checkpointingMode = checkpointingMode,
-      eventStreamConfigEndpoint = params.get("event_stream_config_endpoint", WikimediaDefaults.EVENT_STREAM_CONFIG_URI),
       outputTopicPrefix = optionalStringArg("output_topic_prefix"),
       sideOutputsDomain = params.get("side_outputs_domain", hostName),
       sideOutputsKafkaBrokers = optionalStringArg("side_outputs_kafka_brokers"),
-      schemaRepos = params.get(
-          "schema_repositories",
-          "https://schema.wikimedia.org/repositories/primary/jsonschema,https://schema.wikimedia.org/repositories/secondary/jsonschema"
-        ).split(",")
-        .map(_.trim)
-        .toList,
       ignoreFailuresAfterTransactionTimeout = params.getBoolean("ignore_failures_after_transaction_timeout", false),
       produceSideOutputs = params.getBoolean("produce_side_outputs", true),
       emitterId = optionalStringArg("emitter_id"),
@@ -225,7 +231,7 @@ sealed case class HttpClientConfig(
 
 sealed case class UpdaterPipelineInputEventStreamConfig(kafkaBrokers: String,
                                                         consumerGroup: String,
-                                                        inputKafkaTopics: InputKafkaTopics,
+                                                        inputStreams: Either[InputKafkaTopics, InputStreams],
                                                         maxLateness: Int,
                                                         idleness: Int,
                                                         mediaInfoEntityNamespaces: Set[Long],
@@ -238,11 +244,9 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      topic: String,
                                                      partition: Int,
                                                      checkpointingMode: CheckpointingMode,
-                                                     eventStreamConfigEndpoint: String = WikimediaDefaults.EVENT_STREAM_CONFIG_URI,
                                                      outputTopicPrefix: Option[String] = None,
                                                      sideOutputsDomain: String,
                                                      sideOutputsKafkaBrokers: Option[String],
-                                                     schemaRepos: List[String],
                                                      ignoreFailuresAfterTransactionTimeout: Boolean,
                                                      produceSideOutputs: Boolean,
                                                      emitterId: Option[String],

@@ -1,12 +1,12 @@
 package org.wikidata.query.rdf.updater
 
-import scala.collection.mutable.ListBuffer
-
 import org.apache.flink.api.common.functions.MapFunction
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.test.util.MiniClusterWithClientResource
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterEach, FlatSpec}
+
+import scala.collection.mutable.ListBuffer
 
 trait FlinkTestCluster extends FlatSpec with BeforeAndAfterEach with BeforeAndAfter {
   private val TASK_MANAGER_NO = 1

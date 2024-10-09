@@ -32,13 +32,13 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
       UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1",
-        InputKafkaTopics(
+        Left(InputKafkaTopics(
           revisionCreateTopicName = "rev-create-topic",
           pageDeleteTopicName = "page-delete-topic",
           pageUndeleteTopicName = "page-undelete-topic",
           suppressedDeleteTopicName = "suppressed-delete-topic",
           reconciliationTopicName = None,
-          topicPrefixes = List("")),
+          topicPrefixes = List(""))),
         10, 10, Set(), "mediainfo", Map.empty),
       uris, Clock.systemUTC())
     stream.map(_.parallelism).toSet should contain only 1
@@ -48,13 +48,13 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
       UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1",
-        InputKafkaTopics(
+        Left(InputKafkaTopics(
           revisionCreateTopicName = "rev-create-topic",
           pageDeleteTopicName = "page-delete-topic",
           pageUndeleteTopicName = "page-undelete-topic",
           suppressedDeleteTopicName = "suppressed-delete-topic",
           reconciliationTopicName = None,
-          topicPrefixes = List("")),
+          topicPrefixes = List(""))),
         10, 10, Set(), "mediainfo", Map.empty),
       uris, Clock.systemUTC()
     )
@@ -69,13 +69,13 @@ class IncomingStreamsUnitTest extends FlatSpec with Matchers with TestFixtures {
     implicit val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val stream = IncomingStreams.buildIncomingStreams(
       UpdaterPipelineInputEventStreamConfig("broker1", "consumerGroup1",
-      InputKafkaTopics(
+      Left(InputKafkaTopics(
           revisionCreateTopicName = "rev-create-topic",
           pageDeleteTopicName = "page-delete-topic",
           pageUndeleteTopicName = "page-undelete-topic",
           suppressedDeleteTopicName = "suppressed-delete-topic",
           reconciliationTopicName = Some(FilteredReconciliationTopic("rdf-streaming-updater.reconcile", None)),
-          topicPrefixes = List("cluster1.", "cluster2.")),
+          topicPrefixes = List("cluster1.", "cluster2."))),
         10, 10, Set(), "mediainfo", Map.empty),
       uris, Clock.systemUTC())
     stream.map(_.name) should contain only(

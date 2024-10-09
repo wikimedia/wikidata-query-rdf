@@ -66,13 +66,17 @@ object IncomingStreams {
     }
 
     val revisionCreateEventFilter = new RevisionCreateEventFilter(ievops.mediaInfoEntityNamespaces, ievops.mediaInfoRevisionSlot)
-    ievops.inputKafkaTopics.topicPrefixes.flatMap(prefix => {
+    val inputKafkaTopics = ievops.inputStreams match {
+      case Left(inputKafkaTopics) => inputKafkaTopics
+      case Right(_) => throw new IllegalArgumentException("InputKafkaTopics expected")
+    }
+    inputKafkaTopics.topicPrefixes.flatMap(prefix => {
       List(
-        build(prefix + ievops.inputKafkaTopics.revisionCreateTopicName, classOf[RevisionCreateEvent], REV_CREATE_CONV, Some(revisionCreateEventFilter)),
-        build(prefix + ievops.inputKafkaTopics.pageDeleteTopicName, classOf[PageDeleteEvent], PAGE_DEL_CONV),
-        build(prefix + ievops.inputKafkaTopics.pageUndeleteTopicName, classOf[PageUndeleteEvent], PAGE_UNDEL_CONV),
-        build(prefix + ievops.inputKafkaTopics.suppressedDeleteTopicName, classOf[PageDeleteEvent], PAGE_DEL_CONV)
-      ) ++: ievops.inputKafkaTopics.reconciliationTopicName.map {
+        build(prefix + inputKafkaTopics.revisionCreateTopicName, classOf[RevisionCreateEvent], REV_CREATE_CONV, Some(revisionCreateEventFilter)),
+        build(prefix + inputKafkaTopics.pageDeleteTopicName, classOf[PageDeleteEvent], PAGE_DEL_CONV),
+        build(prefix + inputKafkaTopics.pageUndeleteTopicName, classOf[PageUndeleteEvent], PAGE_UNDEL_CONV),
+        build(prefix + inputKafkaTopics.suppressedDeleteTopicName, classOf[PageDeleteEvent], PAGE_DEL_CONV)
+      ) ++: inputKafkaTopics.reconciliationTopicName.map {
         case FilteredReconciliationTopic(topic, filter) =>
           build(prefix + topic, classOf[ReconcileEvent], RECONCILIATION_CONV, filter.map(new ReconciliationSourceFilter(_)))
       }

@@ -6,6 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.tool.subgraph.SubgraphDefinitionsParser
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
+import org.wikimedia.eventutilities.core.event.WikimediaDefaults
 
 import java.nio.file.Files
 import scala.concurrent.duration.DurationInt
@@ -45,19 +46,25 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
 
     config.subgraphDefinition shouldBe None
 
+    config.schemaBaseUris shouldBe List(
+      "https://schema.wikimedia.org/repositories/primary/jsonschema",
+      "https://schema.wikimedia.org/repositories/secondary/jsonschema"
+    )
+    config.streamConfigUri shouldBe WikimediaDefaults.EVENT_STREAM_CONFIG_URI
+
     config.inputEventStreamConfig.mediaInfoEntityNamespaces shouldBe empty
     config.inputEventStreamConfig.consumerGroup shouldBe "my_consumer_group"
     config.inputEventStreamConfig.kafkaBrokers shouldBe "broker1,broker2"
     config.inputEventStreamConfig.idleness shouldBe 60000
     config.inputEventStreamConfig.maxLateness shouldBe 60000
-    config.inputEventStreamConfig.inputKafkaTopics shouldBe InputKafkaTopics(
+    config.inputEventStreamConfig.inputStreams shouldBe Left(InputKafkaTopics(
       revisionCreateTopicName = "mediawiki.revision-create",
       pageDeleteTopicName = "mediawiki.page-delete",
       pageUndeleteTopicName = "mediawiki.page-undelete",
       suppressedDeleteTopicName = "mediawiki.page-suppress",
       reconciliationTopicName = None,
       topicPrefixes = List("")
-    )
+    ))
     config.inputEventStreamConfig.consumerProperties shouldBe empty
 
     config.generalConfig.jobName shouldBe "my job"
@@ -109,10 +116,13 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       "--reconciliation_topic", "rdf-streaming-updater.reconciliation[source_tag@codfw]"
     ))
 
-    configWithFilteredTopic.inputEventStreamConfig.inputKafkaTopics.reconciliationTopicName shouldBe Some(FilteredReconciliationTopic(
-      topic = "rdf-streaming-updater.reconciliation",
-      source = Some("source_tag@codfw")
-    ))
+    configWithFilteredTopic.inputEventStreamConfig.inputStreams match {
+      case Left(m) => m.reconciliationTopicName shouldBe Some(FilteredReconciliationTopic(
+        topic = "rdf-streaming-updater.reconciliation",
+        source = Some("source_tag@codfw")
+      ))
+      case _ => fail("expected left value")
+    }
 
     val configWithUnfilteredTopic = UpdaterConfig(baseConfig ++ Array(
       "--hostname", "my.wikidata.org",
@@ -120,10 +130,13 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       "--reconciliation_topic", "rdf-streaming-updater.reconciliation"
     ))
 
-    configWithUnfilteredTopic.inputEventStreamConfig.inputKafkaTopics.reconciliationTopicName shouldBe Some(FilteredReconciliationTopic(
-      topic = "rdf-streaming-updater.reconciliation",
-      source = None
-    ))
+    configWithUnfilteredTopic.inputEventStreamConfig.inputStreams match {
+      case Left(m) => m.reconciliationTopicName shouldBe Some(FilteredReconciliationTopic(
+        topic = "rdf-streaming-updater.reconciliation",
+        source = None
+      ))
+      case _ => fail("expected left value")
+    }
   }
 
   "UpdaterConfig" should "fail when given improper parallelism max concurrency settings" in {
@@ -197,6 +210,26 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     )
   }
 
+  "UpdaterConfig" should "allow setting EventPlatform config services" in {
+    var config = UpdaterConfig(baseConfig ++ Array(
+      "--hostname", "my.wikidata.org",
+      "--uris_scheme", "wikidata",
+      "--schema_base_uris", "https://myrepo.unittest.local/one,https://myrepo.unittest.local/one",
+      "--stream_config_uri", "https://mystreamconfig.unittest.local/"
+    ))
+    config.schemaBaseUris shouldBe List("https://myrepo.unittest.local/one", "https://myrepo.unittest.local/one")
+    config.streamConfigUri shouldBe "https://mystreamconfig.unittest.local/"
+
+    config = UpdaterConfig(baseConfig ++ Array(
+      "--hostname", "my.wikidata.org",
+      "--uris_scheme", "wikidata",
+      "--schema_repositories", "https://myrepo.unittest.local/one,https://myrepo.unittest.local/one",
+      "--event_stream_config_endpoint", "https://mystreamconfig.unittest.local/"
+    ))
+    config.schemaBaseUris shouldBe List("https://myrepo.unittest.local/one", "https://myrepo.unittest.local/one")
+    config.streamConfigUri shouldBe "https://mystreamconfig.unittest.local/"
+  }
+
   "UpdaterConfig" should "support passing another output schema version" in {
     val config = UpdaterConfig(baseConfig ++ Array(
       "--hostname", "my.wikidata.org",
@@ -204,5 +237,21 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       "--output_mutation_schema_version", "v2"
     ))
     config.generalConfig.outputMutationSchema shouldBe "v2"
+  }
+
+  "UpdaterConfig" should "support configuring streams with newer event streams api" in {
+    val config = UpdaterConfig(baseConfig ++ Array(
+      "--hostname", "my.wikidata.org",
+      "--uris_scheme", "wikidata",
+      "--use_event_streams_api", "true",
+      "--page_change_stream", "mediawiki.page_change",
+      "--page_change_content_models", "content-model1, content-model2,,",
+      "--reconciliation_stream", "reconcile_stream[source_tag]"
+    ))
+    config.inputEventStreamConfig.inputStreams shouldBe Right(InputStreams(
+      pageChangeStream = "mediawiki.page_change",
+      reconciliationStream = Some(FilteredReconciliationStream("reconcile_stream", Some("source_tag"))),
+      contentModels = Set("content-model1","content-model2")
+    ))
   }
 }
