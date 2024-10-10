@@ -9,6 +9,7 @@ import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikimedia.eventutilities.core.event.WikimediaDefaults
 
 import java.nio.file.Files
+import java.time.Instant
 import scala.concurrent.duration.DurationInt
 
 class UpdaterConfigUnitTest extends FlatSpec with Matchers {
@@ -246,11 +247,13 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       "--use_event_streams_api", "true",
       "--page_change_stream", "mediawiki.page_change",
       "--page_change_content_models", "content-model1, content-model2,,",
-      "--reconciliation_stream", "reconcile_stream[source_tag]"
+      "--reconciliation_stream", "reconcile_stream[source_tag]",
+      "--kafka_topics_start_timestamp", "2024-01-01T01:01:01Z"
     ))
     config.inputEventStreamConfig.inputStreams shouldBe Right(InputStreams(
       pageChangeStream = "mediawiki.page_change",
       reconciliationStream = Some(FilteredReconciliationStream("reconcile_stream", Some("source_tag"))),
+      Some(Instant.parse("2024-01-01T01:01:01Z")),
       contentModels = Set("content-model1","content-model2")
     ))
   }

@@ -4,6 +4,7 @@ import org.apache.flink.api.java.utils.ParameterTool
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
+import java.time.Instant
 
 class BaseConfig(protected implicit val params: ParameterTool) {
   def getStringParam(key: String)(implicit parameterTool: ParameterTool): String = getParam(parameterTool.get, key)
@@ -39,6 +40,7 @@ class BaseConfig(protected implicit val params: ParameterTool) {
     InputStreams(
       pageChangeStream = getStringParam("page_change_stream"),
       reconciliationStream = optionalFilteredReconciliationStream("reconciliation_stream"),
+      kafkaStartTimestamp = optionalStringArg("kafka_topics_start_timestamp").map(Instant.parse),
       contentModels = getStringParam("page_change_content_models").split(",").map(_.trim).filterNot(_.isEmpty).toSet
     )
   }
@@ -86,6 +88,7 @@ class BaseConfig(protected implicit val params: ParameterTool) {
 
 sealed case class InputStreams(pageChangeStream: String,
                                reconciliationStream: Option[FilteredReconciliationStream],
+                               kafkaStartTimestamp: Option[Instant],
                                contentModels: Set[String])
 
 sealed case class InputKafkaTopics(revisionCreateTopicName: String,

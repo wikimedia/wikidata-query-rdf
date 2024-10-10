@@ -110,7 +110,10 @@ class IncomingEventStreams(inputEventConfig: UpdaterPipelineInputEventStreamConf
                                streamName: String
                               ) = {
     eventDataStreamFactory.kafkaSourceBuilder(streamName, inputEventConfig.kafkaBrokers, inputEventConfig.consumerGroup)
-      .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.LATEST)) // latest if no group offsets are available
+      .setStartingOffsets(inputStreams.kafkaStartTimestamp match {
+        case Some(t) => OffsetsInitializer.timestamp(t.toEpochMilli)
+        case None => OffsetsInitializer.committedOffsets(OffsetResetStrategy.LATEST) // latest if no group offsets are available
+      })
       .setProperties(consumerProperties)
       .setClientIdPrefix(inputEventConfig.consumerGroup + ":" + streamName)
       .build()

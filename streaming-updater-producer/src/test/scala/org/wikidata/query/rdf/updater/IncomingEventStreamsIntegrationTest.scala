@@ -60,6 +60,7 @@ class IncomingEventStreamsIntegrationTest extends FlatSpec with FlinkTestCluster
     val inputStreams = InputStreams(
       pageChangeStream = "mediawiki.page_change.v1",
       reconciliationStream = None,
+      kafkaStartTimestamp = None,
       contentModels = Set("wikibase-item", "wikibase-property", "wikibase-lexeme")
     )
     val config = UpdaterPipelineInputEventStreamConfig(
@@ -157,6 +158,7 @@ class IncomingEventStreamsIntegrationTest extends FlatSpec with FlinkTestCluster
     val inputStreams = InputStreams(
       pageChangeStream = "mediawiki.page_change.v1",
       reconciliationStream = None,
+      kafkaStartTimestamp = None,
       contentModels = Set()
     )
     val config = UpdaterPipelineInputEventStreamConfig(
@@ -211,6 +213,7 @@ class IncomingEventStreamsIntegrationTest extends FlatSpec with FlinkTestCluster
     val inputStreams = InputStreams(
       pageChangeStream = "unused",
       reconciliationStream = Some(FilteredReconciliationStream("rdf-streaming-updater.reconcile", Some("wdqs_sideoutputs_reconcile@eqiad"))),
+      kafkaStartTimestamp = None,
       contentModels = Set.empty // unused
     )
     val config = UpdaterPipelineInputEventStreamConfig(
@@ -253,6 +256,7 @@ class IncomingEventStreamsIntegrationTest extends FlatSpec with FlinkTestCluster
     val inputStreams = InputStreams(
       pageChangeStream = "mediawiki.page_change.v1",
       reconciliationStream = Some(FilteredReconciliationStream("rdf-streaming-updater.reconcile", Some("wdqs_sideoutputs_reconcile@eqiad"))),
+      kafkaStartTimestamp = None,
       contentModels = Set("wikibase-item", "wikibase-property")
     )
     val config = UpdaterPipelineInputEventStreamConfig(
