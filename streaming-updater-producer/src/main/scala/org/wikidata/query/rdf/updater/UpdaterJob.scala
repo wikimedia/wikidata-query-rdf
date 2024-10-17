@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.scala._
 import org.slf4j.{Logger, LoggerFactory}
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
-import org.wikidata.query.rdf.updater.config.{BaseConfig, UpdaterConfig, UpdaterExecutionEnvironmentConfig}
+import org.wikidata.query.rdf.updater.config.{BaseConfig, UpdaterConfig, UpdaterExecutionEnvironmentConfig, UpdaterPipelineOutputStreamConfig}
 
 import java.net.URI
 import java.time.Clock
@@ -19,8 +19,7 @@ object UpdaterJob {
   def main(args: Array[String]): Unit = {
     val config = UpdaterConfig(args)
     val generalConfig = config.generalConfig
-    // TODO: make this a config option and properly integrate this job with the event stream platform
-    val mainStream = "rdf-streaming-updater.mutation"
+    val outputParallelism = UpdaterConfig.OUTPUT_PARALLELISM
 
     val eventPlatformFactory = new EventPlatformFactory(config.streamConfigUri, config.schemaBaseUris,
       config.generalConfig.httpClientConfig, DEFAULT_CLOCK)
@@ -29,10 +28,6 @@ object UpdaterJob {
       case Some(subgraphDef) => new SubgraphAssigner(subgraphDef)
       case None => SubgraphAssigner.empty()
     }
-    val outputStreamsBuilder: OutputStreamsBuilder = new OutputStreamsBuilder(
-      config.outputStreamConfig,
-      eventPlatformFactory,
-      mainStream)
     val uris: Uris = new WikibaseRepository.Uris(new URI(s"https://${generalConfig.hostname}"),
       generalConfig.entityNamespaces.map(long2Long).asJava,
       WikibaseRepository.Uris.DEFAULT_ENTITY_DATA_PATH, // unused by the pipeline
@@ -47,12 +42,14 @@ object UpdaterJob {
     }
 
     UpdaterPipeline.configure(
-        opts = generalConfig,
-        incomingStreams = incomingStreams,
-        outputStreams = outputStreamsBuilder.build,
-        wikibaseRepositoryGenerator = rc => WikibaseEntityRevRepository(uris, generalConfig.httpClientConfig, rc.getMetricGroup),
-        mainStream = mainStream,
-        subgraphAssigner = subgraphAssigner)
+      opts = generalConfig,
+      incomingStreams = incomingStreams,
+      outputStreams = buildOutputStreams(config.outputStreamConfig, eventPlatformFactory, outputParallelism),
+      wikibaseRepositoryGenerator = rc => WikibaseEntityRevRepository(uris, generalConfig.httpClientConfig, rc.getMetricGroup),
+      subgraphAssigner = subgraphAssigner,
+      outputParallelism = outputParallelism,
+      mainStream = config.outputStreamConfig.mainStream
+    )
     config.subgraphDefinition match {
       case Some(defs) =>
         LOGGER.info("Running in split graph mode with sub-graphs: {}", defs.getSubgraphs.asScala.map(_.getName).mkString(","))
@@ -65,6 +62,18 @@ object UpdaterJob {
       LOGGER.info("Execution plan: {}", env.getExecutionPlan)
     } else {
       env.execute(generalConfig.jobName)
+    }
+  }
+
+  private def buildOutputStreams(outputStreamConfig: UpdaterPipelineOutputStreamConfig,
+                                 eventPlatformFactory: EventPlatformFactory,
+                                 outputParallelism: Int
+                                ): OutputStreams = {
+
+    if (outputStreamConfig.useEventStreamsApi) {
+      new OutputEventStreamsBuilder(outputStreamConfig, eventPlatformFactory, outputParallelism).build
+    } else {
+      new OutputStreamsBuilder(outputStreamConfig, eventPlatformFactory, outputParallelism).build
     }
   }
 

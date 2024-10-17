@@ -53,8 +53,8 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
     //this needs to be evaluated before the lambda below because of serialization issues
     val repository: MockWikibaseEntityRevRepository = getMockRepository
 
-    UpdaterPipeline.configure(pipelineOptions, List(revCreateSource), CollectSink.asOutputStreams, _ => repository,
-      OUTPUT_EVENT_UUID_GENERATOR, clock, OUTPUT_EVENT_STREAM_NAME, subgraphAssigner)
+    UpdaterPipeline.configure(pipelineOptions, List(revCreateSource), CollectSink.asOutputStreams,
+      _ => repository, OUTPUT_EVENT_UUID_GENERATOR, clock, OUTPUT_EVENT_STREAM_NAME, subgraphAssigner, 1)
 
     env.execute("test")
 
@@ -97,7 +97,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       List(revCreateSourceForDeleteTest, pageDeleteSource),
       CollectSink.asOutputStreams,
       _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
-      clock, OUTPUT_EVENT_STREAM_NAME, subgraphAssigner)
+      clock, OUTPUT_EVENT_STREAM_NAME, subgraphAssigner, 1)
     env.execute("test")
 
     val expected = expectedOperationsForPageDeleteTest
@@ -138,7 +138,7 @@ class UpdaterPipelineIntegrationTest extends FlatSpec with FlinkTestCluster with
       List(revCreateEventStream, reconcileEventsStream),
       CollectSink.asOutputStreams,
       _ => repository, OUTPUT_EVENT_UUID_GENERATOR,
-      clock, OUTPUT_EVENT_STREAM_NAME, subgraphAssigner)
+      clock, OUTPUT_EVENT_STREAM_NAME, subgraphAssigner, 1)
     env.execute("test")
 
     val expected = expectedReconcile

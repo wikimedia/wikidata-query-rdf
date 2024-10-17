@@ -91,6 +91,7 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       "compression.type" -> "snappy",
       "linger.ms" -> "2000"
     )
+    config.outputStreamConfig.useEventStreamsApi shouldBe false
   }
 
   "UpdaterConfig" should "build a config suited for commons with wikidata federation" in {
@@ -245,10 +246,12 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       "--hostname", "my.wikidata.org",
       "--uris_scheme", "wikidata",
       "--use_event_streams_api", "true",
+      "--output_mutation_schema_version", "v2",
       "--page_change_stream", "mediawiki.page_change",
       "--page_change_content_models", "content-model1, content-model2,,",
       "--reconciliation_stream", "reconcile_stream[source_tag]",
-      "--kafka_topics_start_timestamp", "2024-01-01T01:01:01Z"
+      "--kafka_topics_start_timestamp", "2024-01-01T01:01:01Z",
+      "--main_output_stream", "main-output-stream"
     ))
     config.inputEventStreamConfig.inputStreams shouldBe Right(InputStreams(
       pageChangeStream = "mediawiki.page_change",
@@ -256,5 +259,32 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       Some(Instant.parse("2024-01-01T01:01:01Z")),
       contentModels = Set("content-model1","content-model2")
     ))
+
+    config.outputStreamConfig.useEventStreamsApi shouldBe true
+    config.outputStreamConfig.mainStream shouldBe "main-output-stream"
+  }
+
+  "UpdaterConfig" should "fail when using newer event streams api and not running v2 output schema" in {
+    the[IllegalArgumentException] thrownBy UpdaterConfig(baseConfig ++ Array(
+        "--hostname", "my.wikidata.org",
+        "--uris_scheme", "wikidata",
+        "--use_event_streams_api", "true",
+        "--page_change_stream", "mediawiki.page_change",
+        "--page_change_content_models", "content-model1, content-model2,,",
+        "--main_output_stream main-output-stream",
+        "--reconciliation_stream", "reconcile_stream[source_tag]"
+    )) should have message "Cannot use use_event_streams_api = true without setting output_mutation_schema_version = v2"
+  }
+
+  "UpdaterConfig" should "support fail when using newer event streams api and not providing the main output stream" in {
+    the[IllegalArgumentException] thrownBy UpdaterConfig(baseConfig ++ Array(
+      "--hostname", "my.wikidata.org",
+      "--uris_scheme", "wikidata",
+      "--use_event_streams_api", "true",
+      "--page_change_stream", "mediawiki.page_change",
+      "--page_change_content_models", "content-model1, content-model2,,",
+      "--reconciliation_stream", "reconcile_stream[source_tag]",
+      "--output_mutation_schema_version", "v2"
+    )) should have message "missing param main_output_stream"
   }
 }

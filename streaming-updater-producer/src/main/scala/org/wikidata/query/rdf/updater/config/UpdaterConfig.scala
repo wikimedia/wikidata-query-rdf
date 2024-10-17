@@ -119,6 +119,10 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
   } else {
     CheckpointingMode.AT_LEAST_ONCE
   }
+  private val useEventStreamsApi: Boolean = params.getBoolean("use_event_streams_api", false)
+  if (useEventStreamsApi && !generalConfig.outputMutationSchema.equals("v2")) {
+    throw new IllegalArgumentException("Cannot use use_event_streams_api = true without setting output_mutation_schema_version = v2")
+  }
   val outputStreamConfig: UpdaterPipelineOutputStreamConfig =
     UpdaterPipelineOutputStreamConfig(
       kafkaBrokers = outputKafkaBrokers,
@@ -131,8 +135,14 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       ignoreFailuresAfterTransactionTimeout = params.getBoolean("ignore_failures_after_transaction_timeout", false),
       produceSideOutputs = params.getBoolean("produce_side_outputs", true),
       emitterId = optionalStringArg("emitter_id"),
-      subgraphKafkaTopics,
-      producerConfig
+      subgraphKafkaTopics = subgraphKafkaTopics,
+      producerProperties = producerConfig,
+      useEventStreamsApi = useEventStreamsApi,
+      mainStream = if (useEventStreamsApi) {
+        getStringParam("main_output_stream")
+      } else {
+        params.get("main_output_stream", "rdf-streaming-updater.mutation")
+      }
     )
 
   implicit def finiteDuration2Int(fd: FiniteDuration): Int = fd.toMillis.intValue
@@ -191,6 +201,9 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
 }
 
 object UpdaterConfig {
+  // Enforce output parallelism of 1 ( to ensure proper ordering of the output patches )
+  val OUTPUT_PARALLELISM = 1
+
   private val SUBGRAPH_KAFKA_TOPICS = ConfigOptions.key("subgraph_kafka_topics")
     .mapType()
     .defaultValue(Collections.emptyMap())
@@ -251,7 +264,9 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      produceSideOutputs: Boolean,
                                                      emitterId: Option[String],
                                                      subgraphKafkaTopics: Map[String, String],
-                                                     producerProperties: Map[String, String]
+                                                     producerProperties: Map[String, String],
+                                                     mainStream: String,
+                                                     useEventStreamsApi: Boolean = false
                                                    )
 
 sealed case class UpdaterExecutionEnvironmentConfig(checkpointDir: String,

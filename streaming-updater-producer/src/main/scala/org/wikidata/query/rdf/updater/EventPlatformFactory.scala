@@ -2,6 +2,7 @@ package org.wikidata.query.rdf.updater
 
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.updater.config.HttpClientConfig
+import org.wikimedia.eventutilities.core.SerializableClock
 import org.wikimedia.eventutilities.core.event.{EventSchemaLoader, EventStreamConfig, EventStreamFactory, JsonEventGenerator}
 import org.wikimedia.eventutilities.core.http.BasicHttpClient
 import org.wikimedia.eventutilities.core.json.{JsonLoader, JsonSchemaLoader}
@@ -9,7 +10,7 @@ import org.wikimedia.eventutilities.core.util.ResourceLoader
 import org.wikimedia.eventutilities.flink.stream.EventDataStreamFactory
 
 import java.net.{URI, URL}
-import java.time.Clock
+import java.time.{Clock, Instant}
 import java.util
 import java.util.Collections
 import scala.collection.JavaConverters._
@@ -63,7 +64,9 @@ class EventPlatformFactory(streamConfigUri: String,
   @transient
   lazy val jsonEventGenerator: JsonEventGenerator = JsonEventGenerator.builder()
     .schemaLoader(eventSchemaLoader)
-    .ingestionTimeClock(() => clock.instant())
+    .ingestionTimeClock(new SerializableClock {
+      override def get(): Instant = clock.instant()
+    })
     .eventStreamConfig(eventStreamConfig)
     .build()
 

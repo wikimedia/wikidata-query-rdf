@@ -9,8 +9,19 @@ import org.wikimedia.eventutilities.core.event.WikimediaDefaults
 import java.time.Clock
 import scala.collection.immutable
 
-class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
+object OutputStreamsBuilderUnitTestFixtures {
+  val eventPlatformFactory = new EventPlatformFactory(this.getClass.getResource("/OutputStreamsBuilderUnitTest-stream-config.json").toString,
+    List("https://schema.wikimedia.org/repositories/primary/jsonschema",
+      "https://schema.wikimedia.org/repositories/secondary/jsonschema",
+      this.getClass.getResource("/schema_repo").toString
+    ),
+    HttpClientConfig(None, None, "ua"),
+    Clock.systemUTC()
+  )
 
+}
+
+class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
   "Output stream sinks" should "be serializable" in {
     val outputStreamConfig: UpdaterPipelineOutputStreamConfig =  UpdaterPipelineOutputStreamConfig(
       kafkaBrokers = "test-broker",
@@ -24,7 +35,9 @@ class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
       produceSideOutputs = true,
       emitterId = Some("id"),
       immutable.Map("main" -> "topic-main", "scholarly" -> "topic-scholarly"),
-      Map.apply("someoption" -> "somevalue")
+      Map.apply("someoption" -> "somevalue"),
+      mainStream = "rdf-streaming-updater.mutation",
+      useEventStreamsApi = true
     )
     val eventPlatformFactory = new EventPlatformFactory(WikimediaDefaults.EVENT_STREAM_CONFIG_URI,
       List("https://schema.wikimedia.org/repositories/primary/jsonschema",
@@ -32,9 +45,9 @@ class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
       HttpClientConfig(None, None, "ua"),
       Clock.systemUTC()
     )
-    val outputStreams: OutputStreams = new OutputStreamsBuilder(outputStreamConfig, eventPlatformFactory, "main_stream").build
-    InstantiationUtil.serializeObject(outputStreams.failedOpsSink.get.sink).length should not be 0
-    InstantiationUtil.serializeObject(outputStreams.lateEventsSink.get.sink).length should not be 0
-    InstantiationUtil.serializeObject(outputStreams.spuriousEventsSink.get.sink).length should not be 0
+    val outputStreams: OutputStreams = new OutputStreamsBuilder(outputStreamConfig, eventPlatformFactory, 1).build
+    InstantiationUtil.serializeObject(outputStreams.failedOpsSink.get).length should not be 0
+    InstantiationUtil.serializeObject(outputStreams.lateEventsSink.get).length should not be 0
+    InstantiationUtil.serializeObject(outputStreams.spuriousEventsSink.get).length should not be 0
   }
 }

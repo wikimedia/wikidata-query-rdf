@@ -5,34 +5,29 @@ import org.apache.flink.api.connector.sink2.Sink
 import org.apache.flink.connector.base.DeliveryGuarantee
 import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, KafkaSink}
 import org.apache.flink.streaming.api.CheckpointingMode
-import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.DataStream
 import org.wikidata.query.rdf.updater.config.UpdaterPipelineOutputStreamConfig
 
 import java.util.Properties
 
-case class OutputStreams(
-                          mutationSink: SinkWrapper[MutationDataChunk],
-                          lateEventsSink: Option[SinkWrapper[InputEvent]] = None,
-                          spuriousEventsSink: Option[SinkWrapper[InconsistentMutation]] = None,
-                          failedOpsSink: Option[SinkWrapper[FailedOp]] = None
-                        )
-
-case class SinkWrapper[E](sink: Either[SinkFunction[E], Sink[E]], nameAndUuid: String) {
-  def attachStream(stream: DataStream[E]): DataStreamSink[E] = {
+case class DirectSinkWrapper[E](sink: Either[SinkFunction[E], Sink[E]], nameAndUuid: String, outputParallelism: Int) extends SinkWrapper[E] {
+  def attachStream(stream: DataStream[E]): Unit = {
     val op = sink match {
       case Left(s) => stream.addSink(s)
       case Right(s) => stream.sinkTo(s)
     }
     op.uid(nameAndUuid)
       .name(nameAndUuid)
+      .setParallelism(outputParallelism)
   }
 }
 
-class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig, eventPlatformFactory: EventPlatformFactory, mainStream: String) {
+class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig,
+                           eventPlatformFactory: EventPlatformFactory,
+                           outputParallelism: Int) {
   def build: OutputStreams = {
-    val streamToTopic: Map[String, String] = outputStreamsConfig.subgraphKafkaTopics ++ Map(mainStream -> outputStreamsConfig.topic)
+    val streamToTopic: Map[String, String] = outputStreamsConfig.subgraphKafkaTopics ++ Map(outputStreamsConfig.mainStream -> outputStreamsConfig.topic)
     val mutationSink = mutationOutput(outputStreamsConfig, streamToTopic)
     if (outputStreamsConfig.produceSideOutputs) {
       OutputStreams(
@@ -66,11 +61,11 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
 
   private def sideOutputWithKafkaSink[E](producerConfig: Properties,
                                          serializer: KafkaRecordSerializationSchema[E], operatorNameAndUuid: String): SinkWrapper[E] = {
-    SinkWrapper(Right(KafkaSink.builder[E]()
+    DirectSinkWrapper(Right(KafkaSink.builder[E]()
       .setKafkaProducerConfig(producerConfig)
       .setRecordSerializer(serializer)
       .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
-      .build()), f"KafkaSink-$operatorNameAndUuid")
+      .build()), f"KafkaSink-$operatorNameAndUuid", outputParallelism)
 
   }
 
@@ -100,6 +95,7 @@ class OutputStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfi
       .setTransactionalIdPrefix(transactionalPrefixId)
       .setRecordSerializer(serializer)
       .build()
-    SinkWrapper(Right(kafkaSink), f"mutation-output")
+    DirectSinkWrapper(Right(kafkaSink), f"mutation-output", outputParallelism)
   }
 }
+

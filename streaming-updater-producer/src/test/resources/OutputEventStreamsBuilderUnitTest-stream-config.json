@@ -1,0 +1,34 @@
+  {
+    "rdf-streaming-updater.mutation": {
+      "schema_title": "mediawiki/wikibase/entity/rdf_change",
+      "stream": "rdf-streaming-updater.mutation",
+      "topics": [ "dc1.mutation" ]
+    },
+    "rdf-streaming-updater.mutation-subgraph-1": {
+      "schema_title": "mediawiki/wikibase/entity/rdf_change",
+      "stream": "rdf-streaming-updater.mutation",
+      "topics": [ "dc1.mutation-subgraph-1" ]
+    },
+    "rdf-streaming-updater.mutation-subgraph-2": {
+      "schema_title": "mediawiki/wikibase/entity/rdf_change",
+      "stream": "rdf-streaming-updater.mutation",
+      "topics": [ "dc1.mutation-subgraph-2" ]
+    },
+    "rdf-streaming-updater.lapsed-action": {
+      "schema_title": "rdf_streaming_updater/lapsed_action",
+      "stream": "rdf-streaming-updater.lapsed-action"
+    },
+    "rdf-streaming-updater.state-inconsistency": {
+      "schema_title": "rdf_streaming_updater/state_inconsistency",
+      "stream": "rdf-streaming-updater.state-inconsistency"
+    },
+    "rdf-streaming-updater.fetch-failure": {
+      "schema_title": "rdf_streaming_updater/fetch_failure",
+      "stream": "rdf-streaming-updater.fetch-failure"
+    },
+    "mediawiki.page_change.v1": {
+      "schema_title": "mediawiki/page/change",
+      "stream": "mediawiki.page_change.v1",
+      "topics": ["dc1.page_change.v1"]
+    }
+  }

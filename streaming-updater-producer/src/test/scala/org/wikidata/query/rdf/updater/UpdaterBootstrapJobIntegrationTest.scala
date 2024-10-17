@@ -95,10 +95,13 @@ class UpdaterBootstrapJobIntegrationTest extends FlatSpec with FlinkTestCluster 
     UpdaterPipeline.configure(
       options,
       List(source),
-      CollectSink.asOutputStreams, _ => repository,
+      CollectSink.asOutputStreams,
+      _ => repository,
       clock = clock,
       mainStream = mainStream,
-      subgraphAssigner = SubgraphAssigner.empty())
+      subgraphAssigner = SubgraphAssigner.empty(),
+      outputParallelism = 1
+    )
 
     val graph = streamingEnv.getStreamGraph(true)
     graph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savePointDir.toURI.toString, false))

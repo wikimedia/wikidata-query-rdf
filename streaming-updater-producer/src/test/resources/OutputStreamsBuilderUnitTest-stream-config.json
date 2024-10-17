@@ -1,0 +1,6 @@
+  {
+    "rdf-streaming-updater.mutation": {
+      "schema_title": "mediawiki/wikibase/entity/rdf_change",
+      "stream": "rdf-streaming-updater.mutation"
+    }
+  }

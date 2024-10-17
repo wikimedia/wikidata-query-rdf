@@ -50,9 +50,9 @@ object CollectSink {
 
   def asOutputStreams: OutputStreams = {
     OutputStreams(
-      mutationSink = SinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations"),
-      lateEventsSink = Some(SinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events")),
-      spuriousEventsSink = Some(SinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies"))
+      mutationSink = DirectSinkWrapper(Left(new CollectSink[MutationDataChunk](CollectSink.values.append(_))), "mutations", 1),
+      lateEventsSink = Some(DirectSinkWrapper(Left(new CollectSink[InputEvent](CollectSink.lateEvents.append(_))), "late-events", 1)),
+      spuriousEventsSink = Some(DirectSinkWrapper(Left(new CollectSink[InconsistentMutation](CollectSink.spuriousRevEvents.append(_))), "inconsistencies", 1))
     )
   }
 
