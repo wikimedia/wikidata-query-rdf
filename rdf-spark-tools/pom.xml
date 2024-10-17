@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikidata.query.rdf</groupId>
         <artifactId>query-service-parent</artifactId>
-        <version>0.3.149</version>
+        <version>0.3.150-SNAPSHOT</version>
     </parent>
     <artifactId>rdf-spark-tools</artifactId>
     <packaging>jar</packaging>
