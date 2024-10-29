@@ -14,14 +14,19 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 /**
  * Event describing a sparql query.
  *
- * https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/event-schemas/+/master/jsonschema/sparql/query/1.2.0.yaml
+ * https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/event-schemas/+/master/jsonschema/sparql/query/1.3.0.yaml
  */
-@JsonPropertyOrder({"$schema", "meta", "http", "backend_host", "namespace", "query", "format", "params", "query_time", "system_runtime_metrics", "performer"})
+@JsonPropertyOrder({
+    "$schema", "meta", "http", "backend_host", "graph_name",
+    "namespace", "query", "format", "params", "query_time",
+    "system_runtime_metrics", "performer"
+})
 public class QueryEvent implements Event {
-    private static final String SCHEMA = "/sparql/query/1.2.0";
+    private static final String SCHEMA = "/sparql/query/1.3.0";
     private final EventMetadata metadata;
     private final EventHttpMetadata httpMetadata;
     private final String backendHost;
+    private final String graphName;
     private final String namespace;
     private final String query;
     private final String format;
@@ -30,12 +35,22 @@ public class QueryEvent implements Event {
     private final SystemRuntimeMetrics systemRuntimeMetrics;
     private final EventPerformer performer;
 
-    public QueryEvent(EventMetadata metadata, EventHttpMetadata http, String backendHost, String namespace, String query,
-                      @Nullable String format, Map<String, String> params, Duration queryTime, SystemRuntimeMetrics systemRuntimeMetrics,
-                      @Nullable EventPerformer performer) {
+    public QueryEvent(EventMetadata metadata,
+                      EventHttpMetadata http,
+                      String backendHost,
+                      @Nullable String graphName,
+                      String namespace,
+                      String query,
+                      @Nullable String format,
+                      Map<String, String> params,
+                      Duration queryTime,
+                      SystemRuntimeMetrics systemRuntimeMetrics,
+                      @Nullable EventPerformer performer
+    ) {
         this.metadata = metadata;
         this.httpMetadata = http;
         this.backendHost = backendHost;
+        this.graphName = graphName;
         this.namespace = namespace;
         this.query = query;
         this.format = format;
@@ -62,6 +77,12 @@ public class QueryEvent implements Event {
     @JsonProperty("backend_host")
     public String getBackendHost() {
         return backendHost;
+    }
+
+    @JsonProperty("graph_name")
+    @JsonInclude(NON_NULL)
+    public String getGraphName() {
+        return graphName;
     }
 
     public String getNamespace() {

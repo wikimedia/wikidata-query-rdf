@@ -20,6 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
 public class QueryEventGenerator {
@@ -32,17 +33,21 @@ public class QueryEventGenerator {
     private final Supplier<String> uniqueIdGenerator;
     private final Clock clock;
     private final String hostname;
+    private final String graphName;
     private final String stream;
     private final Supplier<Double> systemLoadSupplier;
 
     public QueryEventGenerator(Supplier<String> uniqueIdGenerator,
                                Clock clock,
                                String hostname,
+                               @Nullable
+                               String graphName,
                                String stream,
                                Supplier<Double> systemLoadSupplier) {
         this.uniqueIdGenerator = uniqueIdGenerator;
         this.clock = clock;
         this.hostname = hostname;
+        this.graphName = graphName;
         this.stream = stream;
         this.systemLoadSupplier = systemLoadSupplier;
     }
@@ -84,6 +89,7 @@ public class QueryEventGenerator {
         return new QueryEvent(metadata,
                 httpMetadata,
                 hostname,
+                graphName,
                 namespace,
                 query,
                 format,

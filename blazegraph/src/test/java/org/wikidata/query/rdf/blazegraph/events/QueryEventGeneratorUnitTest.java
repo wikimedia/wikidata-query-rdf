@@ -29,6 +29,7 @@ public class QueryEventGeneratorUnitTest {
         String format = "xml";
         String clientIp = "10.1.2.3";
         String method = "POST";
+        String graphName = "my_graph";
         String defaultNS = "defaultNS";
         String username = "the_user";
         int statusCode = 200;
@@ -57,12 +58,13 @@ public class QueryEventGeneratorUnitTest {
         request.setServerName(hostname);
         request.setRemoteUser(username);
 
-        QueryEventGenerator generator = new QueryEventGenerator(uniqueIdGenerator, clock, hostname, "mystream.name", SYSTEM_LOAD_SUPPLIER);
+        QueryEventGenerator generator = new QueryEventGenerator(uniqueIdGenerator, clock, hostname, graphName, "mystream.name", SYSTEM_LOAD_SUPPLIER);
         assertThat(generator.instant()).isEqualTo(Instant.EPOCH);
         QueryEvent event = generator.generateQueryEvent(request, statusCode, Duration.ofSeconds(1),
                 Instant.EPOCH, defaultNS, queriesRunningBefore, queriesRunningAfter);
         assertThat(event.getBackendHost()).isEqualTo(hostname);
         assertThat(event.getFormat()).isEqualTo(format);
+        assertThat(event.getGraphName()).isEqualTo(graphName);
         assertThat(event.getNamespace()).isEqualTo(namespace);
         assertThat(event.getParams()).containsOnlyKeys("foo", "baz");
         assertThat(event.getParams()).containsValues("bar", "bat,bats\\,\\\\qux");
@@ -92,7 +94,7 @@ public class QueryEventGeneratorUnitTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI("/ctx/namespace/ns/sparql");
         request.setContextPath("/ctx");
-        QueryEventGenerator generator = new QueryEventGenerator(String::new, new ManualClock(), "hostname", "stream", SYSTEM_LOAD_SUPPLIER);
+        QueryEventGenerator generator = new QueryEventGenerator(String::new, new ManualClock(), "hostname", "my_graph", "stream", SYSTEM_LOAD_SUPPLIER);
         assertThat(generator.hasValidPath(request)).isTrue();
 
         request.setRequestURI("/ctx/sparql");

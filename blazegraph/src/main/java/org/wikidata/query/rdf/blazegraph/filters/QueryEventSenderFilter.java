@@ -73,11 +73,13 @@ public class QueryEventSenderFilter extends MonitoredFilter implements QueryEven
         } catch (UnknownHostException e) {
             throw new ServletException(e);
         }
+        String graphName = config.loadStringParam("graph-name");
         String streamName = config.loadStringParam("event-gate-sparql-query-stream", "blazegraph.sparql-query");
 
         this.queryEventGenerator = new QueryEventGenerator(() -> UUID.randomUUID().toString(),
                 Clock.systemUTC(),
                 wdqsHostname,
+                graphName,
                 streamName,
                 operatingSystemMXBean::getSystemLoadAverage);
         this.enableIfHeader = config.loadStringParam("enable-event-sender-if-header");
