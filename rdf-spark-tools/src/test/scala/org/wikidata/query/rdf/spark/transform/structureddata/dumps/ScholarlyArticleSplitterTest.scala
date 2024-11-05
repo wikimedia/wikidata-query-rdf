@@ -1,6 +1,6 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
-import org.apache.spark.sql._
+import org.apache.spark.sql.{Row, _}
 import org.apache.spark.sql.functions.{col, lit}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -8,14 +8,21 @@ import org.wikidata.query.rdf.common.uri.Ontology
 import org.wikidata.query.rdf.spark.SparkSessionProvider
 
 class ScholarlyArticleSplitterTest extends AnyFlatSpec with SparkSessionProvider with Matchers {
-  val importedFiles: Map[String, String] = Map(
+  val importedFilesForV1: Map[String, String] = Map(
     "Q42" -> this.getClass.getResource("Q42.ttl").toURI.toString,
     "Q37599471" -> this.getClass.getResource("Q37599471.ttl").toURI.toString,
     "Q_INTERSECTION" -> this.getClass.getResource("Q_INTERSECTION.ttl").toURI.toString
   )
 
+  val importedFilesForV2: Map[String, String] = Map(
+    "Q42" -> this.getClass.getResource("Q42.ttl").toURI.toString,
+    "Q37599471" -> this.getClass.getResource("Q37599471.ttl").toURI.toString,
+    "Q24628793" -> this.getClass.getResource("Q24628793.ttl").toURI.toString,
+    "Q_INTERSECTION" -> this.getClass.getResource("Q_INTERSECTION.ttl").toURI.toString
+  )
+
   "ScholarlyArticleSplitter" should "be able to properly split a rdf dataset based on subgraph_v1 strategy" in {
-    importedFiles foreach {
+    importedFilesForV1 foreach {
       case (p, file) =>
         val dtPlaceholder = if (p == "Q_INTERSECTION") "19700101" else "20231027"
         TurtleImporter.importDump(Params(
@@ -43,6 +50,40 @@ class ScholarlyArticleSplitterTest extends AnyFlatSpec with SparkSessionProvider
 
     assertStubs("scholarly_articles", Array(Row("<http://www.wikidata.org/entity/Q42>", "<https://query.wikidata.org/subgraph/wikidata_main>")))
     assertStubs("wikidata_main", Array(Row("<http://www.wikidata.org/entity/Q37599471>", "<https://query.wikidata.org/subgraph/scholarly_articles>")))
+  }
+
+  "ScholarlyArticleSplitter" should "be able to properly split a rdf dataset based on subgraph_v2 strategy" in {
+    importedFilesForV2 foreach {
+      case (p, file) =>
+        val dtPlaceholder = if (p == "Q_INTERSECTION") "19700101" else "20231027"
+        TurtleImporter.importDump(Params(
+          inputPath = Seq(file),
+          outputTable = Some(s"rdf/date=$dtPlaceholder/entity=$p"),
+          outputPath = None,
+          numPartitions = 1,
+          skolemizeBlankNodes = true,
+          site = Site.wikidata), None)
+    }
+    ScholarlyArticleSplit.split(ScholarlyArticleSplitParams(
+      inputPartition = s"rdf/date=20231027",
+      outputPartitionParent = s"rdf_split/snapshot=20231027",
+      subgraphDefinitions = ScholarlyArticleSplit.loadSubGraphDefinitions(strategy = ScholarlyArticleSplit.V2_SUBGRAPH_DEFINITIONS),
+      subgraphs = ScholarlyArticleSplit.V2_SUBGRAPHS
+
+    ))
+    assertSplitCorrectness(readSourceEntityTriples("Q37599471", "Q24628793"), "scholarly_articles")
+    assertSplitCorrectness(readSourceEntityTriples("Q42"), "wikidata_main")
+    assertSharedTripleCorrectness(
+      readSourceEntityTriples("Q_INTERSECTION"),
+      "scholarly_articles",
+      "wikidata_main",
+      "Q_INTERSECTION")
+
+    assertStubs("scholarly_articles", Array(Row("<http://www.wikidata.org/entity/Q42>", "<https://query.wikidata.org/subgraph/wikidata_main>")))
+    assertStubs("wikidata_main", Array(
+      Row("<http://www.wikidata.org/entity/Q37599471>", "<https://query.wikidata.org/subgraph/scholarly_articles>"),
+      Row("<http://www.wikidata.org/entity/Q24628793>", "<https://query.wikidata.org/subgraph/scholarly_articles>")
+    ))
   }
 
   private def assertStubs(scope: String, stubs: Array[Row]): Unit = {
@@ -87,9 +128,9 @@ class ScholarlyArticleSplitterTest extends AnyFlatSpec with SparkSessionProvider
       .select("subject", "predicate", "object")
   }
 
-  private def readSourceEntityTriples(entity: String) = {
+  private def readSourceEntityTriples(entities: String*) = {
     spark.read.table("rdf")
-      .filter(s"entity = '$entity'")
+      .filter(col("entity").isin(entities: _*))
       .select("subject", "predicate", "object")
   }
 

@@ -1,0 +1,552 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix data: <https://www.wikidata.org/wiki/Special:EntityData/> .
+@prefix s: <http://www.wikidata.org/entity/statement/> .
+@prefix ref: <http://www.wikidata.org/reference/> .
+@prefix v: <http://www.wikidata.org/value/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix wdtn: <http://www.wikidata.org/prop/direct-normalized/> .
+@prefix p: <http://www.wikidata.org/prop/> .
+@prefix ps: <http://www.wikidata.org/prop/statement/> .
+@prefix psv: <http://www.wikidata.org/prop/statement/value/> .
+@prefix psn: <http://www.wikidata.org/prop/statement/value-normalized/> .
+@prefix pq: <http://www.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://www.wikidata.org/prop/qualifier/value/> .
+@prefix pqn: <http://www.wikidata.org/prop/qualifier/value-normalized/> .
+@prefix pr: <http://www.wikidata.org/prop/reference/> .
+@prefix prv: <http://www.wikidata.org/prop/reference/value/> .
+@prefix prn: <http://www.wikidata.org/prop/reference/value-normalized/> .
+@prefix wdno: <http://www.wikidata.org/prop/novalue/> .
+
+data:Q24628793 a schema:Dataset ;
+	schema:about wd:Q24628793 ;
+	cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+	schema:softwareVersion "1.0.0" ;
+	schema:version "2263598078"^^xsd:integer ;
+	schema:dateModified "2024-10-22T04:28:49Z"^^xsd:dateTime ;
+	wikibase:statements "36"^^xsd:integer ;
+	wikibase:sitelinks "0"^^xsd:integer ;
+	wikibase:identifiers "6"^^xsd:integer .
+
+wd:Q24628793 a wikibase:Item ;
+	wdt:P698 "20236470" ;
+	wdtn:P698 <http://rdf.ncbi.nlm.nih.gov/pubchem/reference/20236470> ;
+	wdt:P932 "2864558" ;
+	wdt:P31 wd:Q7318358 ;
+	wdt:P1476 "The amazing world of bacterial structured RNAs"@en ;
+	wdt:P1433 wd:Q5533480 ;
+	wdt:P478 "11" ;
+	wdt:P433 "3" ;
+	wdt:P577 "2010-03-15T00:00:00Z"^^xsd:dateTime ;
+	wdt:P304 "108" ;
+	wdt:P2860 wd:Q21184040,
+		wd:Q21184134,
+		wd:Q24539754,
+		wd:Q27860848,
+		wd:Q28750040,
+		wd:Q34074230,
+		wd:Q37639713,
+		wd:Q34476878,
+		wd:Q48271573,
+		wd:Q48698785 ;
+	wdt:P3181 "1806654" ;
+	wdtn:P3181 <https://w3id.org/oc/corpus/br/1806654> ;
+	wdt:P356 "10.1186/GB-2010-11-3-108" ;
+	wdtn:P356 <http://dx.doi.org/10.1186/GB-2010-11-3-108> ;
+	wdt:P407 wd:Q1860 ;
+	wdt:P5875 "42254532" ;
+	wdt:P50 wd:Q26702682 ;
+	wdt:P921 wd:Q10872,
+		wd:Q10876,
+		wd:Q4839988,
+		wd:Q222046,
+		wd:Q65989594,
+		wd:Q60390432,
+		wd:Q71150857 ;
+	wdt:P6179 "1024398218" ;
+	wdt:P13046 wd:Q7318358 ;
+	wdt:P6216 wd:Q50423863 ;
+	wdt:P3931 wd:Q463494 ;
+	p:P698 s:Q24628793-DDB32DCB-6B74-412E-89F4-56650FD0479D .
+
+s:Q24628793-DDB32DCB-6B74-412E-89F4-56650FD0479D a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P698 "20236470" ;
+	psn:P698 <http://rdf.ncbi.nlm.nih.gov/pubchem/reference/20236470> ;
+	prov:wasDerivedFrom ref:3cb852a2e6d7bf473b0b60f7b147389236091e87 .
+
+wd:Q24628793 p:P932 s:Q24628793-E4AEF1B8-4D43-45BC-A135-F08FE8D68F34 .
+
+s:Q24628793-E4AEF1B8-4D43-45BC-A135-F08FE8D68F34 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P932 "2864558" ;
+	prov:wasDerivedFrom ref:3cb852a2e6d7bf473b0b60f7b147389236091e87 .
+
+wd:Q24628793 p:P31 s:Q24628793-D58E8C4D-D368-4177-BDA9-10E70ED3E068 .
+
+s:Q24628793-D58E8C4D-D368-4177-BDA9-10E70ED3E068 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P31 wd:Q7318358 ;
+	prov:wasDerivedFrom ref:2e48430c5208737119a27f969d257b90e7aed566 .
+
+wd:Q24628793 p:P1476 s:Q24628793-3D0FD51B-2576-4513-A3C9-FAC6A754EFB9 .
+
+s:Q24628793-3D0FD51B-2576-4513-A3C9-FAC6A754EFB9 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1476 "The amazing world of bacterial structured RNAs"@en .
+
+wd:Q24628793 p:P1433 s:Q24628793-FF942ABF-CEE6-4CB6-9438-C7C0D048E51A .
+
+s:Q24628793-FF942ABF-CEE6-4CB6-9438-C7C0D048E51A a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1433 wd:Q5533480 ;
+	prov:wasDerivedFrom ref:ef9500a5405390382f7dc8216659c125465cc282 .
+
+wd:Q24628793 p:P478 s:Q24628793-401CE92C-3A0B-41C2-AF99-4DEE0290E5FE .
+
+s:Q24628793-401CE92C-3A0B-41C2-AF99-4DEE0290E5FE a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P478 "11" .
+
+wd:Q24628793 p:P433 s:Q24628793-55AF89AE-EB0F-41D5-98CC-EFA401ECC145 .
+
+s:Q24628793-55AF89AE-EB0F-41D5-98CC-EFA401ECC145 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P433 "3" .
+
+wd:Q24628793 p:P577 s:Q24628793-2B721D60-9FBF-4536-877C-4426B29FD14B .
+
+s:Q24628793-2B721D60-9FBF-4536-877C-4426B29FD14B a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P577 "2010-03-15T00:00:00Z"^^xsd:dateTime ;
+	psv:P577 v:3bbe32fd045719ddf1df2d656514af71 ;
+	prov:wasDerivedFrom ref:ef9500a5405390382f7dc8216659c125465cc282 .
+
+wd:Q24628793 p:P304 s:Q24628793-083BF767-0DC0-4D6B-AC9E-2C27FB8ACEEE .
+
+s:Q24628793-083BF767-0DC0-4D6B-AC9E-2C27FB8ACEEE a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P304 "108" .
+
+wd:Q24628793 p:P2860 s:Q24628793-4D078DCE-CDC8-4BFC-9120-477C3136CA1A .
+
+s:Q24628793-4D078DCE-CDC8-4BFC-9120-477C3136CA1A a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q21184040 ;
+	prov:wasDerivedFrom ref:3285fdc0442140fbdd8f46c675cfab4ffbe63d98 .
+
+wd:Q24628793 p:P2860 s:Q24628793-E0817C3F-F244-41DB-9741-8ABE06C598D2 .
+
+s:Q24628793-E0817C3F-F244-41DB-9741-8ABE06C598D2 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q21184134 ;
+	prov:wasDerivedFrom ref:3285fdc0442140fbdd8f46c675cfab4ffbe63d98 .
+
+wd:Q24628793 p:P2860 s:Q24628793-45FB413E-1344-430D-AB88-691B4856B463 .
+
+s:Q24628793-45FB413E-1344-430D-AB88-691B4856B463 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q24539754 ;
+	prov:wasDerivedFrom ref:3285fdc0442140fbdd8f46c675cfab4ffbe63d98 .
+
+wd:Q24628793 p:P2860 s:Q24628793-A8889636-6109-4FEE-BE03-310D6F15E022 .
+
+s:Q24628793-A8889636-6109-4FEE-BE03-310D6F15E022 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q27860848 ;
+	prov:wasDerivedFrom ref:3285fdc0442140fbdd8f46c675cfab4ffbe63d98 .
+
+wd:Q24628793 p:P2860 s:Q24628793-7C0808AB-17C4-42BC-90CD-4E21B34FF6DC .
+
+s:Q24628793-7C0808AB-17C4-42BC-90CD-4E21B34FF6DC a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q28750040 ;
+	prov:wasDerivedFrom ref:3285fdc0442140fbdd8f46c675cfab4ffbe63d98 .
+
+wd:Q24628793 p:P2860 s:Q24628793-D4F9D151-E486-47F2-A6CA-36E0C2AF297E .
+
+s:Q24628793-D4F9D151-E486-47F2-A6CA-36E0C2AF297E a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q34074230 ;
+	prov:wasDerivedFrom ref:42610ef0cb4c982e1977bd01faa514755665e781 .
+
+wd:Q24628793 p:P2860 s:Q24628793-051E2F15-CA87-488D-91A6-3410D3EEED58 .
+
+s:Q24628793-051E2F15-CA87-488D-91A6-3410D3EEED58 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q37639713 ;
+	prov:wasDerivedFrom ref:42610ef0cb4c982e1977bd01faa514755665e781 .
+
+wd:Q24628793 p:P2860 s:Q24628793-61451994-F0AD-47FE-8EC1-7213FB03A7C7 .
+
+s:Q24628793-61451994-F0AD-47FE-8EC1-7213FB03A7C7 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q34476878 ;
+	prov:wasDerivedFrom ref:42610ef0cb4c982e1977bd01faa514755665e781 .
+
+wd:Q24628793 p:P2860 s:Q24628793-1B65B5F3-68F5-4E10-8A5C-0A0B42306AAA .
+
+s:Q24628793-1B65B5F3-68F5-4E10-8A5C-0A0B42306AAA a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q48271573 ;
+	prov:wasDerivedFrom ref:a20b5bb3001cd61b058424350139ff2b17858e5b .
+
+wd:Q24628793 p:P2860 s:Q24628793-ED6E4231-1938-48BC-B48D-B63EAB3EB95A .
+
+s:Q24628793-ED6E4231-1938-48BC-B48D-B63EAB3EB95A a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P2860 wd:Q48698785 ;
+	prov:wasDerivedFrom ref:a20b5bb3001cd61b058424350139ff2b17858e5b .
+
+wd:Q24628793 p:P3181 s:Q24628793-D9120B12-0303-4C93-AE47-E731E211A88F .
+
+s:Q24628793-D9120B12-0303-4C93-AE47-E731E211A88F a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P3181 "1806654" ;
+	psn:P3181 <https://w3id.org/oc/corpus/br/1806654> ;
+	prov:wasDerivedFrom ref:3cb852a2e6d7bf473b0b60f7b147389236091e87 .
+
+wd:Q24628793 p:P356 s:Q24628793-95A32EA1-9991-4E20-A2C7-4F3930D97701 .
+
+s:Q24628793-95A32EA1-9991-4E20-A2C7-4F3930D97701 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P356 "10.1186/GB-2010-11-3-108" ;
+	psn:P356 <http://dx.doi.org/10.1186/GB-2010-11-3-108> ;
+	prov:wasDerivedFrom ref:3cb852a2e6d7bf473b0b60f7b147389236091e87 .
+
+wd:Q24628793 p:P407 s:Q24628793-00AD322F-C0A4-4DC6-AAE8-8CF1798C641B .
+
+s:Q24628793-00AD322F-C0A4-4DC6-AAE8-8CF1798C641B a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P407 wd:Q1860 .
+
+wd:Q24628793 p:P5875 s:Q24628793-84F5FD8E-1C6F-4AE9-98AB-79671A6EB004 .
+
+s:Q24628793-84F5FD8E-1C6F-4AE9-98AB-79671A6EB004 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5875 "42254532" .
+
+wd:Q24628793 p:P50 s:Q24628793-F9287EE0-8D32-4BAC-BE1F-CE351213BDB0 .
+
+s:Q24628793-F9287EE0-8D32-4BAC-BE1F-CE351213BDB0 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P50 wd:Q26702682 ;
+	pq:P1545 "1" ;
+	pq:P1932 "Eric Westhof" .
+
+wd:Q24628793 p:P921 s:Q24628793-EF1A6839-B57D-4CA8-AE7F-1C7E0A9D8558 .
+
+s:Q24628793-EF1A6839-B57D-4CA8-AE7F-1C7E0A9D8558 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P921 wd:Q10872 ;
+	prov:wasDerivedFrom ref:384280bda42c54ebf0bbb5c8827bcc325c66e4dd .
+
+wd:Q24628793 p:P921 s:Q24628793-E7386C0E-8EB7-4418-8079-306534EAF488 .
+
+s:Q24628793-E7386C0E-8EB7-4418-8079-306534EAF488 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P921 wd:Q10876 ;
+	prov:wasDerivedFrom ref:bcb6ac23816734ac8880132dfd5f5941a95f6347 .
+
+wd:Q24628793 p:P921 s:Q24628793-1A6FD0A1-B997-4EED-A96D-14A84294A669 .
+
+s:Q24628793-1A6FD0A1-B997-4EED-A96D-14A84294A669 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P921 wd:Q4839988 ;
+	prov:wasDerivedFrom ref:4096af3639fc146b675d953d89df149bca052999 .
+
+wd:Q24628793 p:P921 s:Q24628793-2870F80B-2C69-4A43-B23E-EACD8EF1F684 .
+
+s:Q24628793-2870F80B-2C69-4A43-B23E-EACD8EF1F684 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P921 wd:Q222046 ;
+	prov:wasDerivedFrom ref:66a8645d8ee9b41fec1073fa972f3eadd864b8ef .
+
+wd:Q24628793 p:P921 s:Q24628793-C7850D0C-4773-4B24-BE92-6D8E659423DC .
+
+s:Q24628793-C7850D0C-4773-4B24-BE92-6D8E659423DC a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P921 wd:Q65989594 ;
+	prov:wasDerivedFrom ref:2e48430c5208737119a27f969d257b90e7aed566 .
+
+wd:Q24628793 p:P921 s:Q24628793-cfe6367e-4a6a-9df7-b0a2-626eb68713b8 .
+
+s:Q24628793-cfe6367e-4a6a-9df7-b0a2-626eb68713b8 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P921 wd:Q60390432 ;
+	prov:wasDerivedFrom ref:ae3ed3a0bf04e038d8ba2a7767685e2d2c23fc51 .
+
+wd:Q24628793 p:P921 s:Q24628793-776fb9cd-4113-ba50-457f-7e6e4018e93b .
+
+s:Q24628793-776fb9cd-4113-ba50-457f-7e6e4018e93b a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P921 wd:Q71150857 ;
+	prov:wasDerivedFrom ref:ae3ed3a0bf04e038d8ba2a7767685e2d2c23fc51 .
+
+wd:Q24628793 p:P6179 s:Q24628793-157A5105-3034-4FC9-A59C-81E9389670C3 .
+
+s:Q24628793-157A5105-3034-4FC9-A59C-81E9389670C3 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6179 "1024398218" .
+
+wd:Q24628793 p:P13046 s:Q24628793-F7C91045-31F3-4A65-9DBA-38DF95D105AA .
+
+s:Q24628793-F7C91045-31F3-4A65-9DBA-38DF95D105AA a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P13046 wd:Q7318358 ;
+	prov:wasDerivedFrom ref:a27afe0e34aa14ea8f857f89abee2ab84d3be635 .
+
+wd:Q24628793 p:P6216 s:Q24628793-25d62163-416c-987c-c653-9fa62968f863 .
+
+s:Q24628793-25d62163-416c-987c-c653-9fa62968f863 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6216 wd:Q50423863 .
+
+wd:Q24628793 p:P3931 s:Q24628793-8aac23dd-4f8a-d274-32c2-f98572ef68f6 .
+
+s:Q24628793-8aac23dd-4f8a-d274-32c2-f98572ef68f6 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P3931 wd:Q463494 ;
+	prov:wasDerivedFrom ref:3f55affb3af4bcce1e65e8f1ed86014e51627eec .
+
+wd:Q24628793 rdfs:label "The amazing world of bacterial structured RNAs"@en ;
+	skos:prefLabel "The amazing world of bacterial structured RNAs"@en ;
+	schema:name "The amazing world of bacterial structured RNAs"@en ;
+	rdfs:label "The amazing world of bacterial structured RNAs"@nl ;
+	skos:prefLabel "The amazing world of bacterial structured RNAs"@nl ;
+	schema:name "The amazing world of bacterial structured RNAs"@nl ;
+	rdfs:label "The amazing world of bacterial structured RNAs"@ast ;
+	skos:prefLabel "The amazing world of bacterial structured RNAs"@ast ;
+	schema:name "The amazing world of bacterial structured RNAs"@ast ;
+	schema:description "scientific article"@en,
+		"wetenschappelijk artikel (gepubliceerd op 2010)"@nl,
+		"vědecký článek publikovaný v roce 2010"@cs,
+		"2010 թվականին հրատարակված գիտական հոդված"@hy,
+		"wissenschaftlicher Artikel (veröffentlicht in  2010)"@de,
+		"مقالة علمية (نشرت عام 2010)"@ar,
+		"vedecký článok"@sk,
+		"2010년 논문"@ko,
+		"мақолаи илмӣ"@tg-cyrl,
+		"artigo científico (publicado na 2010)"@pt,
+		"научни чланак"@sr,
+		"article científic"@ca,
+		"научна статия"@bg,
+		"artículo científico publicado en 2010"@es,
+		"mokslinis straipsnis"@lt,
+		"bài báo khoa học"@vi,
+		"научная статья"@ru,
+		"artículu científicu espublizáu en 2010"@ast,
+		"articolo scientifico"@it,
+		"სამეცნიერო სტატია"@ka,
+		"article scientifique (publié 2010)"@fr,
+		"2010年论文"@zh-my,
+		"artikull shkencor"@sq,
+		"научни чланак"@sr-ec,
+		"videnskabelig artikel (udgivet 2010)"@da,
+		"מאמר מדעי"@he,
+		"мақолаи илмӣ"@tg,
+		"2010 nî lūn-bûn"@nan,
+		"vetenskaplig artikel"@sv,
+		"2010年論文"@zh-hant,
+		"naučni članak"@sr-el,
+		"scienca artikolo"@eo,
+		"2010年論文"@yue,
+		"2010年论文"@zh-hans,
+		"vitskapeleg artikkel"@nn,
+		"artigo científico (publicado na 2010)"@pt-br,
+		"tudományos cikk"@hu,
+		"2010年論文"@zh-hk,
+		"teaduslik artikkel"@et,
+		"2010年論文"@zh-tw,
+		"article scientific"@oc,
+		"επιστημονικό άρθρο"@el,
+		"bilimsel makale"@tr,
+		"2010年论文"@zh-cn,
+		"vitenskapelig artikkel"@nb,
+		"2010年論文"@zh-mo,
+		"artigo científico"@gl,
+		"artykuł naukowy"@pl,
+		"บทความทางวิทยาศาสตร์"@th,
+		"artikulong pang-agham"@tl,
+		"articol științific"@ro,
+		"2010年论文"@zh-sg,
+		"наукова стаття, опублікована у 2010"@uk,
+		"2010年论文"@zh,
+		"2010年の論文"@ja,
+		"2010年论文"@wuu,
+		"tieteellinen artikkeli"@fi,
+		"2010 թուականին հրատարակուած գիտական յօդուած"@hyw,
+		"سائنسی مضمون"@ur,
+		"مقالهٔ علمی"@fa,
+		"২০১০-এ প্রকাশিত বৈজ্ঞানিক নিবন্ধ"@bn .
+
+v:b49bf976de225ba421e2f0af462eac52 a wikibase:TimeValue ;
+	wikibase:timeValue "2021-05-01T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:4364f3aa0e10277ad5ceeea2fe907af0 a wikibase:TimeValue ;
+	wikibase:timeValue "2024-10-20T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:3bbe32fd045719ddf1df2d656514af71 a wikibase:TimeValue ;
+	wikibase:timeValue "2010-03-15T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:40f286782d571499b4bb7284b5412378 a wikibase:TimeValue ;
+	wikibase:timeValue "2017-04-07T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:72236a530800269755c53fb6fd46aeab a wikibase:TimeValue ;
+	wikibase:timeValue "2017-09-27T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:6e4fd8d5b2699e4db2defd6a34986895 a wikibase:TimeValue ;
+	wikibase:timeValue "2018-11-28T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:0a8f688406e3fc53d0119eafcd2c0396 a wikibase:TimeValue ;
+	wikibase:timeValue "2019-09-08T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:ea8b045bc0f31608549cc2df8f31d2ad a wikibase:TimeValue ;
+	wikibase:timeValue "2019-11-02T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:8f7ed12a27fbcdf03ebf19605912688b a wikibase:TimeValue ;
+	wikibase:timeValue "2020-09-02T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+v:a5d2ca84ca83f74040a1aaa458a08dec a wikibase:TimeValue ;
+	wikibase:timeValue "2020-11-25T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+ref:3cb852a2e6d7bf473b0b60f7b147389236091e87 a wikibase:Reference ;
+	pr:P248 wd:Q30068043 ;
+	pr:P3181 "1806654" ;
+	prn:P3181 <https://w3id.org/oc/corpus/br/1806654> .
+
+ref:2e48430c5208737119a27f969d257b90e7aed566 a wikibase:Reference ;
+	pr:P248 wd:Q180686 ;
+	pr:P813 "2021-05-01T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:b49bf976de225ba421e2f0af462eac52 .
+
+ref:ef9500a5405390382f7dc8216659c125465cc282 a wikibase:Reference ;
+	pr:P248 wd:Q229883 ;
+	pr:P813 "2024-10-20T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:4364f3aa0e10277ad5ceeea2fe907af0 .
+
+ref:3285fdc0442140fbdd8f46c675cfab4ffbe63d98 a wikibase:Reference ;
+	pr:P248 wd:Q229883 ;
+	pr:P854 <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pmc&linkname=pmc_refs_pubmed&retmode=json&id=2864558> ;
+	pr:P813 "2017-04-07T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:40f286782d571499b4bb7284b5412378 .
+
+ref:42610ef0cb4c982e1977bd01faa514755665e781 a wikibase:Reference ;
+	pr:P248 wd:Q229883 ;
+	pr:P854 <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pmc&linkname=pmc_refs_pubmed&retmode=json&id=2864558> ;
+	pr:P813 "2017-09-27T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:72236a530800269755c53fb6fd46aeab .
+
+ref:a20b5bb3001cd61b058424350139ff2b17858e5b a wikibase:Reference ;
+	pr:P248 wd:Q229883 ;
+	pr:P854 <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pmc&linkname=pmc_refs_pubmed&retmode=json&id=2864558> ;
+	pr:P813 "2018-11-28T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:6e4fd8d5b2699e4db2defd6a34986895 .
+
+ref:384280bda42c54ebf0bbb5c8827bcc325c66e4dd a wikibase:Reference ;
+	pr:P248 wd:Q180686 ;
+	pr:P813 "2019-09-08T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:0a8f688406e3fc53d0119eafcd2c0396 .
+
+ref:bcb6ac23816734ac8880132dfd5f5941a95f6347 a wikibase:Reference ;
+	pr:P248 wd:Q180686 ;
+	pr:P813 "2019-11-02T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:ea8b045bc0f31608549cc2df8f31d2ad .
+
+ref:4096af3639fc146b675d953d89df149bca052999 a wikibase:Reference ;
+	pr:P248 wd:Q180686 ;
+	pr:P813 "2020-09-02T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:8f7ed12a27fbcdf03ebf19605912688b .
+
+ref:66a8645d8ee9b41fec1073fa972f3eadd864b8ef a wikibase:Reference ;
+	pr:P248 wd:Q180686 ;
+	pr:P813 "2020-11-25T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:a5d2ca84ca83f74040a1aaa458a08dec .
+
+ref:ae3ed3a0bf04e038d8ba2a7767685e2d2c23fc51 a wikibase:Reference ;
+	pr:P698 "20236470" ;
+	prn:P698 <http://rdf.ncbi.nlm.nih.gov/pubchem/reference/20236470> .
+
+ref:a27afe0e34aa14ea8f857f89abee2ab84d3be635 a wikibase:Reference ;
+	pr:P248 wd:Q180686 ;
+	pr:P813 "2024-10-20T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:4364f3aa0e10277ad5ceeea2fe907af0 .
+
+ref:3f55affb3af4bcce1e65e8f1ed86014e51627eec a wikibase:Reference ;
+	pr:P932 "2864558" .

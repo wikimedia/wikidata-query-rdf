@@ -44,6 +44,8 @@ case class ScholarlyArticleSplitParams(
 object ScholarlyArticleSplit {
   val V1_SUBGRAPHS: List[String] = List("scholarly_articles", "wikidata_main")
   val V1_SUBGRAPH_DEFINITIONS: String = "wdqs-subgraph-definitions-v1"
+  val V2_SUBGRAPHS: List[String] = List("scholarly_articles", "wikidata_main")
+  val V2_SUBGRAPH_DEFINITIONS: String = "wdqs-subgraph-definitions-v2"
   val NULL_SUBGRAPH_DEF: SubgraphDefinitions = new SubgraphDefinitions(List.empty.asJava)
 
   implicit val sparkSession: SparkSession = {
@@ -99,7 +101,7 @@ object ScholarlyArticleSplit {
         Console.err.print("--output-table-partition-spec must be provided\n")
         None
       } else if (params.subgraphDefinitions == NULL_SUBGRAPH_DEF) {
-        Some(params.copy(subgraphDefinitions = loadSubGraphDefinitions(V1_SUBGRAPH_DEFINITIONS), subgraphs = V1_SUBGRAPHS))
+        Some(params.copy(subgraphDefinitions = loadSubGraphDefinitions(V2_SUBGRAPH_DEFINITIONS), subgraphs = V2_SUBGRAPHS))
       } else if (params.subgraphs.isEmpty) {
         Console.err.print("--subgraph-names must be provided\n")
         None

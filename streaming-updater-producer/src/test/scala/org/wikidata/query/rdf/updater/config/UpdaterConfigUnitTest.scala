@@ -141,11 +141,11 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     val config = UpdaterConfig(baseConfig ++ Array(
       "--hostname", "my.wikidata.org",
       "--uris_scheme", "wikidata",
-      "--subgraph_definitions", "wdqs-subgraph-definitions-v1",
+      "--subgraph_definitions", "wdqs-subgraph-definitions-v2",
       "--subgraph_kafka_topics.rdf-streaming-updater.mutation-main", "topic-main",
       "--subgraph_kafka_topics.rdf-streaming-updater.mutation-scholarly", "topic-scholarly"))
     val expectedDefinitions = SubgraphDefinitionsParser.parseYaml(
-      classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/wdqs-subgraph-definitions-v1.yaml"))
+      classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/wdqs-subgraph-definitions-v2.yaml"))
     config.outputStreamConfig.subgraphKafkaTopics should contain theSameElementsAs Map(
       "rdf-streaming-updater.mutation-main" -> "topic-main",
       "rdf-streaming-updater.mutation-scholarly" -> "topic-scholarly"
@@ -156,9 +156,9 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
   "UpdaterConfig" should "support loading a subgraph definition from a file" in {
     val file = Files.createTempFile(this.getClass.getSimpleName, "subgraph-def.yaml")
     file.toFile.deleteOnExit()
-    IOUtils.toByteArray(classOf[SubgraphDefinitionsParser].getResource("/wdqs-subgraph-definitions-v1.yaml"))
-    classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/wdqs-subgraph-definitions-v1.yaml")
-    Files.write(file, IOUtils.toByteArray(classOf[SubgraphDefinitionsParser].getResource("/wdqs-subgraph-definitions-v1.yaml")))
+    IOUtils.toByteArray(classOf[SubgraphDefinitionsParser].getResource("/wdqs-subgraph-definitions-v2.yaml"))
+    classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/wdqs-subgraph-definitions-v2.yaml")
+    Files.write(file, IOUtils.toByteArray(classOf[SubgraphDefinitionsParser].getResource("/wdqs-subgraph-definitions-v2.yaml")))
 
     val config = UpdaterConfig(baseConfig ++ Array(
       "--hostname", "my.wikidata.org",
@@ -167,7 +167,7 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       "--subgraph_kafka_topics.rdf-streaming-updater.mutation-main", "topic-main",
       "--subgraph_kafka_topics.rdf-streaming-updater.mutation-scholarly", "topic-scholarly"))
     val expectedDefinitions = SubgraphDefinitionsParser.parseYaml(
-      classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/wdqs-subgraph-definitions-v1.yaml"))
+      classOf[SubgraphDefinitionsParser].getResourceAsStream(s"/wdqs-subgraph-definitions-v2.yaml"))
     config.outputStreamConfig.subgraphKafkaTopics should contain theSameElementsAs Map(
       "rdf-streaming-updater.mutation-main" -> "topic-main",
       "rdf-streaming-updater.mutation-scholarly" -> "topic-scholarly"
