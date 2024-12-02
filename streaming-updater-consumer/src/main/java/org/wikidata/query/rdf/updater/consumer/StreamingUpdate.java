@@ -108,7 +108,12 @@ public final class StreamingUpdate {
         }
     }
 
-    static Predicate<MutationEventData> buildFilter(Pattern pattern) {
-        return (m) -> pattern.matcher(m.getEntity()).find();
+    static Predicate<MutationEventData> buildFilter(Pattern entityIdPattern) {
+        return canaryEventFilter().and(m -> entityIdPattern.matcher(m.getEntity()).find());
     }
+
+    static Predicate<MutationEventData> canaryEventFilter() {
+        return m -> !"canary".equals(m.getMeta().domain());
+    }
+
 }
