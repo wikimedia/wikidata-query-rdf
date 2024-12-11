@@ -44,6 +44,13 @@ case class EventPlatformSinkWrapper[E](sink: Sink[Row],
 class OutputEventStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStreamConfig,
                                 eventPlatformFactory: EventPlatformFactory,
                                 outputParallelism: Int) {
+  private def streamSuffix: String = {
+    outputStreamsConfig.streamVersionSuffix match {
+      case Some(v) => v
+      case None => throw new IllegalArgumentException("Cannot use OutputEventStreamsBuilder without a stream version suffix")
+    }
+  }
+
   def build: OutputStreams = {
     val streamToTopic: Map[String, String] = outputStreamsConfig.subgraphKafkaTopics ++ Map(outputStreamsConfig.mainStream -> outputStreamsConfig.topic)
     val mutationSink = mutationOutput(streamToTopic)
@@ -116,15 +123,22 @@ class OutputEventStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStream
 
 
   private def mutationOutput(streamToTopic: Map[String, String]): SinkWrapper[MutationDataChunk] = {
-    val streams: Map[String, EventStream] = (Set(outputStreamsConfig.mainStream) ++ Set(streamToTopic.keys.toList: _*))
-      .map(s => (s, eventPlatformFactory.eventStreamFactory.createEventStream(s))).toMap
-    val outputSchemaTitle = "mediawiki/wikibase/entity/rdf_change"
-    val schemaVersion = "2.0.0"
 
-    streams.values.filterNot(_.schemaTitle().equals(outputSchemaTitle)).toList match {
+    val versionedStreamMap: Map[String, String] = (Set(outputStreamsConfig.mainStream) ++ Set(streamToTopic.keys.toList: _*))
+      .map { unVersionedStreamName =>
+        unVersionedStreamName -> s"$unVersionedStreamName.$streamSuffix"
+      }.toMap
+    val streams: Map[String, EventStream] = versionedStreamMap.mapValues(eventPlatformFactory.eventStreamFactory.createEventStream)
+
+    streams.values.filter(eventStream => Option(eventStream.schemaTitle()).isEmpty).toList match {
       case Nil =>
       case e: Any => throw new IllegalArgumentException(s"The following streams ${e.map(_.streamName()).mkString(", ")} " +
-        s"are not compatible with $outputSchemaTitle")
+        s"do not exist")
+    }
+    streams.values.filterNot(_.schemaTitle().equals(MutationDataChunkToRow.schemaTitle)).toList match {
+      case Nil =>
+      case e: Any => throw new IllegalArgumentException(s"The following streams ${e.map(_.streamName()).mkString(", ")} " +
+        s"are not compatible with ${MutationDataChunkToRow.schemaTitle}")
     }
 
     streams.filterNot {
@@ -137,8 +151,9 @@ class OutputEventStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStream
         s"${e.map { case (s,t) => s"$s -> $t" }.mkString(", ")} are forbidden")
     }
 
-    val rowTypeInfo = eventPlatformFactory.eventDataStreamFactory.rowTypeInfo(outputStreamsConfig.mainStream, schemaVersion)
-    val serializationSchema = eventPlatformFactory.eventDataStreamFactory.serializer(outputStreamsConfig.mainStream, schemaVersion)
+    val versionedStream = versionedStreamMap(outputStreamsConfig.mainStream)
+    val rowTypeInfo = eventPlatformFactory.eventDataStreamFactory.rowTypeInfo(versionedStream, MutationDataChunkToRow.schemaVersion)
+    val serializationSchema = eventPlatformFactory.eventDataStreamFactory.serializer(versionedStream, MutationDataChunkToRow.schemaVersion)
     val multiStreamKafkaRecordSerializer = MultiStreamKafkaRecordSerializer(streamToTopic, outputStreamsConfig.partition,
       serializationSchema, rowTypeInfo, eventPlatformFactory.clock)
 
@@ -152,24 +167,25 @@ class OutputEventStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStream
       .setKafkaProducerConfig(producerConfig)
       .setTransactionalIdPrefix(s"${outputStreamsConfig.topic}:${outputStreamsConfig.partition}")
       .build()
-    EventPlatformSinkWrapper(sink, "mutation-output", new MutationDataChunkToRow(rowTypeInfo), rowTypeInfo, outputParallelism)
+    EventPlatformSinkWrapper(sink, "mutation-output", new MutationDataChunkToRow(rowTypeInfo, versionedStreamMap), rowTypeInfo, outputParallelism)
   }
 }
 
-class EventMetaToRow(metaRowTypeInfo: EventRowTypeInfo) extends (EventsMeta => Row) with Serializable {
+class EventMetaToRow(metaRowTypeInfo: EventRowTypeInfo, streamVersionMap: Map[String, String]) extends (EventsMeta => Row) with Serializable {
   override def apply(meta: EventsMeta): Row = {
     val metaRow = metaRowTypeInfo.createEmptyRow()
     // do not propagate meta.dt and id, let the event-platform normalization steps handle this
     metaRow.setField("request_id", meta.requestId())
     metaRow.setField("domain", meta.domain())
-    metaRow.setField("stream", meta.stream())
+    // The stream is not versioned at this point, use the map to populate the stream field with the versioned stream
+    metaRow.setField("stream", streamVersionMap(meta.stream()))
     metaRow
   }
 }
 
-class MutationDataChunkToRow(rowTypeInfo: EventRowTypeInfo) extends MapFunction[MutationDataChunk, Row] {
+class MutationDataChunkToRow(rowTypeInfo: EventRowTypeInfo, streamVersionMap: Map[String, String]) extends MapFunction[MutationDataChunk, Row] {
   private val rdfChunkTypeInfo: EventRowTypeInfo = rowTypeInfo.getTypeAt("rdf_added_data").asInstanceOf[EventRowTypeInfo]
-  private val metaToRow = new EventMetaToRow(rowTypeInfo.getTypeAt("meta").asInstanceOf[EventRowTypeInfo])
+  private val metaToRow = new EventMetaToRow(rowTypeInfo.getTypeAt("meta").asInstanceOf[EventRowTypeInfo], streamVersionMap)
 
   override def map(input: MutationDataChunk): Row = {
     val output = rowTypeInfo.createEmptyRow()
@@ -201,6 +217,11 @@ class MutationDataChunkToRow(rowTypeInfo: EventRowTypeInfo) extends MapFunction[
     output
   }
 
+}
+
+object MutationDataChunkToRow {
+  val schemaTitle: String = MutationEventData.SCHEMA_TITLE
+  val schemaVersion: String = MutationEventDataV2.SCHEMA_VERSION
 }
 
 class StaticPartitioner(partition: Int) extends FlinkKafkaPartitioner[Row] {

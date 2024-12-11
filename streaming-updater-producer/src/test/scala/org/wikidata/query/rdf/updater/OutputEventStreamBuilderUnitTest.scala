@@ -63,7 +63,8 @@ private object OutputEventStreamsBuilderTestFixtures extends Matchers {
     subgraphKafkaTopics = Map.empty,
     producerProperties = Map.empty,
     mainStream = "main-stream",
-    useEventStreamsApi = true
+    useEventStreamsApi = true,
+    streamVersionSuffix = Some("v2")
   )
 
   val revCreateEvent: RevCreate = RevCreate(item, eventTime, revision, Some(revision - 1), ingestionTime, eventInfo)
@@ -147,7 +148,8 @@ class OutputEventStreamBuilderUnitTest extends FlatSpec with Matchers {
       subgraphKafkaTopics = Map.empty,
       producerProperties = Map.empty,
       mainStream = "rdf-streaming-updater.mutation",
-      useEventStreamsApi = true
+      useEventStreamsApi = true,
+      streamVersionSuffix = Some("v2")
     )
     val outputStreams = new OutputEventStreamsBuilder(config,
       OutputEventStreamsBuilderTestFixtures.eventPlatformFactory, 1).build
@@ -172,7 +174,8 @@ class OutputEventStreamBuilderUnitTest extends FlatSpec with Matchers {
       emitterId = Some("emitter"),
       subgraphKafkaTopics = Map.empty,
       producerProperties = Map.empty,
-      mainStream = "rdf-streaming-updater.mutation"
+      mainStream = "rdf-streaming-updater.mutation",
+      streamVersionSuffix = Some("v2")
     )
     val outputStreams = new OutputEventStreamsBuilder(config,
       OutputEventStreamsBuilderTestFixtures.eventPlatformFactory, 1).build
@@ -196,19 +199,20 @@ class OutputEventStreamBuilderUnitTest extends FlatSpec with Matchers {
       produceSideOutputs = false,
       emitterId = None,
       subgraphKafkaTopics = Map(
-        "mediawiki.page_change.v1" -> "dc1.mutation-subgraph-1",
+        "unrelated" -> "dc1.mutation-subgraph-1",
         "rdf-streaming-updater.mutation-subgraph-2" -> "dc1.mutation-subgraph-bad-2"
       ),
       producerProperties = Map.empty,
       mainStream = "rdf-streaming-updater.mutation",
-      useEventStreamsApi = true
+      useEventStreamsApi = true,
+      streamVersionSuffix = Some("v2")
     )
     val exc = intercept[IllegalArgumentException] {
       new OutputEventStreamsBuilder(config,
         OutputEventStreamsBuilderTestFixtures.eventPlatformFactory, 1).build
     }
     exc.getMessage shouldBe "The following streams " +
-      "mediawiki.page_change.v1" +
+      "unrelated.v2" +
       " are not compatible with mediawiki/wikibase/entity/rdf_change"
   }
 
@@ -231,7 +235,8 @@ class OutputEventStreamBuilderUnitTest extends FlatSpec with Matchers {
       ),
       producerProperties = Map.empty,
       mainStream = "rdf-streaming-updater.mutation",
-      useEventStreamsApi = true
+      useEventStreamsApi = true,
+      streamVersionSuffix = Some("v2")
     )
     val exc = intercept[IllegalArgumentException] {
       new OutputEventStreamsBuilder(config,
@@ -247,7 +252,7 @@ class MultiStreamKafkaRecordSerializerUnitTest extends FlatSpec with Matchers wi
   private val outputRowTypeInfo = OutputEventStreamsBuilderTestFixtures
     .eventPlatformFactory
     .eventDataStreamFactory
-    .rowTypeInfo("rdf-streaming-updater.mutation", "2.0.0")
+    .rowTypeInfo("rdf-streaming-updater.mutation.v2", "2.0.0")
 
   "MultiStreamKafkaRecordSerializer" should "write to different topic based on meta.stream" in {
     val streamToTopic = Map("stream1" -> "topic1", "stream2" -> "topic2")
@@ -292,7 +297,7 @@ class MutationEventDataToRowUnitTest extends FlatSpec with Matchers {
   private val outputRowTypeInfo = OutputEventStreamsBuilderTestFixtures
     .eventPlatformFactory
     .eventDataStreamFactory
-    .rowTypeInfo("rdf-streaming-updater.mutation", "2.0.0")
+    .rowTypeInfo("rdf-streaming-updater.mutation.v2", "2.0.0")
 
   "MutationEventDataToRow" should "convert a MutationEventData delete event into a row" in {
     val inputEventMeta = new EventsMeta(Instant.now(), "my-orig-id", "my-domain", "my-orig-stream", "my-request-id");
@@ -305,7 +310,7 @@ class MutationEventDataToRowUnitTest extends FlatSpec with Matchers {
     val meta = outputRowTypeInfo.createEmptySubRow("meta")
     meta.setField("domain", "my-domain")
     meta.setField("request_id", "my-request-id")
-    meta.setField("stream", "my-stream")
+    meta.setField("stream", "my-stream.v2")
     output.setField("meta", meta)
     output.setField("entity_id", "Q123")
     output.setField("rev_id", 123L)
@@ -314,7 +319,7 @@ class MutationEventDataToRowUnitTest extends FlatSpec with Matchers {
     output.setField("sequence", 0)
     output.setField("sequence_length", 1)
 
-    val mapper = new MutationDataChunkToRow(outputRowTypeInfo)
+    val mapper = new MutationDataChunkToRow(outputRowTypeInfo, Map("my-stream" -> "my-stream.v2"))
     mapper.map(MutationDataChunk(deleteOp, input)) should equal(output)
   }
 
@@ -334,7 +339,7 @@ class MutationEventDataToRowUnitTest extends FlatSpec with Matchers {
     val meta = outputRowTypeInfo.createEmptySubRow("meta")
     meta.setField("domain", "my-domain")
     meta.setField("request_id", "my-request-id")
-    meta.setField("stream", "my-stream")
+    meta.setField("stream", "my-stream.v2")
     output.setField("meta", meta)
     output.setField("entity_id", "Q123")
     output.setField("rev_id", 123L)
@@ -354,7 +359,7 @@ class MutationEventDataToRowUnitTest extends FlatSpec with Matchers {
     output.setField("rdf_linked_shared_data", dataChunk("linked-shared-data"))
     output.setField("rdf_unlinked_shared_data", dataChunk("unlinked-shared-data"))
 
-    val mapper = new MutationDataChunkToRow(outputRowTypeInfo)
+    val mapper = new MutationDataChunkToRow(outputRowTypeInfo, Map("my-stream" -> "my-stream.v2"))
     mapper.map(MutationDataChunk(operation, input)) should equal(output)
   }
 }

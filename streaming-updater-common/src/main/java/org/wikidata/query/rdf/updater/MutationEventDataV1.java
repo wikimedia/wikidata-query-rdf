@@ -39,6 +39,7 @@ import lombok.experimental.NonFinal;
     "operation",
 })
 public class MutationEventDataV1 implements MutationEventData {
+    // Beware that this is a fake schema that was never published
     public static final String SCHEMA = "/wikibase/rdf/update_stream/1.0.0";
 
     @JsonProperty("$schema")

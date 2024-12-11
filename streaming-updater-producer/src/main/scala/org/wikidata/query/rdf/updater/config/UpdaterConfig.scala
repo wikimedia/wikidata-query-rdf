@@ -138,12 +138,26 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       subgraphKafkaTopics = subgraphKafkaTopics,
       producerProperties = producerConfig,
       useEventStreamsApi = useEventStreamsApi,
-      mainStream = if (useEventStreamsApi) {
-        getStringParam("main_output_stream")
-      } else {
-        params.get("main_output_stream", "rdf-streaming-updater.mutation")
-      }
+      mainStream = mainStream,
+      streamVersionSuffix = streamVersionSuffix
     )
+
+  private def mainStream = {
+    if (useEventStreamsApi) {
+      getStringParam("main_output_stream")
+    } else {
+      params.get("main_output_stream", "rdf-streaming-updater.mutation")
+    }
+  }
+
+  private def streamVersionSuffix = {
+    // no suffix for V1, re-use the schema major version as the stream suffix for v2 and onwards
+    if (generalConfig.outputMutationSchemaVersion.equals("v1")) {
+      None
+    } else {
+      Some(generalConfig.outputMutationSchemaVersion)
+    }
+  }
 
   implicit def finiteDuration2Int(fd: FiniteDuration): Int = fd.toMillis.intValue
 
@@ -266,6 +280,7 @@ sealed case class UpdaterPipelineOutputStreamConfig(
                                                      subgraphKafkaTopics: Map[String, String],
                                                      producerProperties: Map[String, String],
                                                      mainStream: String,
+                                                     streamVersionSuffix: Option[String],
                                                      useEventStreamsApi: Boolean = false
                                                    )
 

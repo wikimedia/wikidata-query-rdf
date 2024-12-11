@@ -39,7 +39,8 @@ import lombok.experimental.NonFinal;
     "operation",
 })
 public class MutationEventDataV2 implements MutationEventData {
-    public static final String SCHEMA = "/mediawiki/wikibase/entity/rdf_change/2.0.0";
+    public static final String SCHEMA_VERSION = "2.0.0";
+    public static final String SCHEMA = "/" + SCHEMA_TITLE + "/" + SCHEMA_VERSION;
 
     @JsonProperty("$schema")
     String schema = SCHEMA;

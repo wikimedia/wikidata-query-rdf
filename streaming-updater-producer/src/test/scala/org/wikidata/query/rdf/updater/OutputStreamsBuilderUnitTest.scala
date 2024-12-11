@@ -37,7 +37,8 @@ class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
       immutable.Map("main" -> "topic-main", "scholarly" -> "topic-scholarly"),
       Map.apply("someoption" -> "somevalue"),
       mainStream = "rdf-streaming-updater.mutation",
-      useEventStreamsApi = true
+      useEventStreamsApi = true,
+      streamVersionSuffix = None
     )
     val eventPlatformFactory = new EventPlatformFactory(WikimediaDefaults.EVENT_STREAM_CONFIG_URI,
       List("https://schema.wikimedia.org/repositories/primary/jsonschema",
