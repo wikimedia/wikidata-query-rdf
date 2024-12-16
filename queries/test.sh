@@ -5,6 +5,7 @@ ESC_SEQ="\x1b["
 COL_RESET=$ESC_SEQ"39m"
 COL_RED=$ESC_SEQ"31m"
 COL_GREEN=$ESC_SEQ"32m"
+COL_LPURP=$ESC_SEQ"1;35m"
 KEEP=no
 
 function gethelp {
@@ -81,3 +82,6 @@ for tstname in $scripts; do
 	runtest $tstname
 done
 
+echo -en "\nTotal triples: \n$COL_LPURP"
+curl -s -XPOST --data-urlencode "query=SELECT (COUNT(*) AS ?C) { ?s ?p ?o . } LIMIT 1" $ENDPOINT/sparql?format=json | jq -r .results.bindings[0].C.value
+echo -en "$COL_RESET"
