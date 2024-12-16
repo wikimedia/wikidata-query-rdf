@@ -4,10 +4,10 @@ DELETE {
 }
 WHERE {
   VALUES ?entity {
-     %entityList%
+     <http://acme.test/entity/entity123>
   }
   ?entity ?entityToStatementPredicate ?entityStatements .
-  FILTER( STRSTARTS(STR(?entityStatements), "%uris.statement%") ) .
+  FILTER( STRSTARTS(STR(?entityStatements), "http://acme.test/entity/statement/") ) .
   ?entityStatements ?statementPredicate ?statementObject .
 };
 
@@ -16,9 +16,9 @@ DELETE {
 }
 WHERE {
   VALUES ?entity {
-     %entityList%
+     <http://acme.test/entity/entity123>
   }
-  ?siteLink %schema:about% ?entity .
+  ?siteLink <http://schema.org/about> ?entity .
   ?siteLink ?sitelinkPredicate ?sitelinkObject .
 };
 
@@ -28,13 +28,13 @@ DELETE {
 }
 WHERE {
   VALUES ?entity {
-     %entityList%
+     <http://acme.test/entity/entity123>
   }
-  VALUES ?formOrSensePredicate {%ontolex:lexicalForm% %ontolex:sensePredicate%}
+  VALUES ?formOrSensePredicate {<http://www.w3.org/ns/lemon/ontolex#lexicalForm> <http://www.w3.org/ns/lemon/ontolex#sense>}
   ?entityList ?formOrSensePredicate ?formOrSense .
   ?formOrSense ?formOrSenseToStatementPredicate ?formOrSenseStatements .
   ?formOrSenseStatements ?statementPredicate ?statementObject .
-  FILTER (STRSTARTS(STR(?formOrSenseStatements), "%uris.statement%"))
+  FILTER (STRSTARTS(STR(?formOrSenseStatements), "http://acme.test/entity/statement/"))
 };
 # Clear all senses or forms
 DELETE {
@@ -42,9 +42,9 @@ DELETE {
 }
 WHERE {
   VALUES ?entity {
-     %entityList%
+     <http://acme.test/entity/entity123>
   }
-  VALUES ?formOrSensePredicate {%ontolex:lexicalForm% %ontolex:sensePredicate%}
+  VALUES ?formOrSensePredicate {<http://www.w3.org/ns/lemon/ontolex#lexicalForm> <http://www.w3.org/ns/lemon/ontolex#sense>}
   ?entityList ?formOrSensePredicate ?formOrSense .
   ?formOrSense ?formOrSensePred ?formOrSenseObject .
 };
@@ -54,7 +54,7 @@ DELETE {
 }
 WHERE {
   VALUES ?entity {
-      %entityList%
+      <http://acme.test/entity/entity123>
   }
   ?entity ?entityPredicate ?entityObject .
 };

@@ -14,6 +14,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import org.openrdf.model.Statement;
+import org.wikidata.query.rdf.common.uri.Ontolex;
 import org.wikidata.query.rdf.common.uri.SchemaDotOrg;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
@@ -140,6 +141,8 @@ public class RdfRepositoryUpdater implements AutoCloseable {
         builder.bindEntityIds("entityList", entityIds, uris);
         builder.bind("uris.statement", uris.statement());
         builder.bindUri("schema:about", SchemaDotOrg.ABOUT);
+        builder.bindUri("ontolex:sensePredicate", Ontolex.SENSE_PREDICATE);
+        builder.bindUri("ontolex:lexicalForm", Ontolex.LEXICAL_FORM);
         return client.update(builder.toString());
     }
 

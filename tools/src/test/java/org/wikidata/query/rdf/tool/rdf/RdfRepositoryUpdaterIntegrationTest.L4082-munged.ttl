@@ -1,0 +1,237 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix data: <https://www.wikidata.org/wiki/Special:EntityData/> .
+@prefix s: <http://www.wikidata.org/entity/statement/> .
+@prefix ref: <http://www.wikidata.org/reference/> .
+@prefix v: <http://www.wikidata.org/value/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix wdtn: <http://www.wikidata.org/prop/direct-normalized/> .
+@prefix p: <http://www.wikidata.org/prop/> .
+@prefix ps: <http://www.wikidata.org/prop/statement/> .
+@prefix psv: <http://www.wikidata.org/prop/statement/value/> .
+@prefix psn: <http://www.wikidata.org/prop/statement/value-normalized/> .
+@prefix pq: <http://www.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://www.wikidata.org/prop/qualifier/value/> .
+@prefix pqn: <http://www.wikidata.org/prop/qualifier/value-normalized/> .
+@prefix pr: <http://www.wikidata.org/prop/reference/> .
+@prefix prv: <http://www.wikidata.org/prop/reference/value/> .
+@prefix prn: <http://www.wikidata.org/prop/reference/value-normalized/> .
+@prefix wdno: <http://www.wikidata.org/prop/novalue/> .
+
+wd:L4082 wdt:P5275 "72632" ;
+	wdt:P11228 "food" ;
+	wdt:P11130 "food" ;
+	wdt:P11423 "food" ;
+	wdt:P11230 "food" ;
+	wdt:P11263 "food" ;
+	wdt:P11422 "food" ;
+	wdt:P12690 "1248229" ;
+	wdt:P12718 "0020549" ;
+	wdt:P12724 "0019521" ;
+	wdt:P12726 "0025945" ;
+	wdt:P12739 "0308040" ;
+	p:P5275 s:L4082-6E75CEBC-8BAC-4956-9B3B-48631AFA1D74 .
+
+s:L4082-6E75CEBC-8BAC-4956-9B3B-48631AFA1D74 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5275 "72632" .
+
+wd:L4082 p:P11228 s:L4082-A31531F9-0421-444A-8FAD-6EEB142439CC .
+
+s:L4082-A31531F9-0421-444A-8FAD-6EEB142439CC a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P11228 "food" ;
+	prov:wasDerivedFrom ref:83dac192b3dcc0a15a41e11e2027b8379dffadf0 .
+
+wd:L4082 p:P11130 s:L4082-699B21C3-218B-4BDD-8E89-EDF15E08C266 .
+
+s:L4082-699B21C3-218B-4BDD-8E89-EDF15E08C266 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P11130 "food" ;
+	prov:wasDerivedFrom ref:6bfcb708f2070c351938cac8d96d47223ed87643 .
+
+wd:L4082 p:P11423 s:L4082-D8484FC4-C181-475B-AA63-6C88FCF6FEBD .
+
+s:L4082-D8484FC4-C181-475B-AA63-6C88FCF6FEBD a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P11423 "food" ;
+	prov:wasDerivedFrom ref:f4d6110ecf8e3d180659f1171bfe903756b81a60 .
+
+wd:L4082 p:P11230 s:L4082-D0D0D437-1F3E-4056-B871-4D811DA3BE5A .
+
+s:L4082-D0D0D437-1F3E-4056-B871-4D811DA3BE5A a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P11230 "food" ;
+	prov:wasDerivedFrom ref:71f357fb6d49a6715b0d109643df331efbbc2536 .
+
+wd:L4082 p:P11263 s:L4082-962B58B2-8DFD-4D8C-A72A-4A3D8CC53424 .
+
+s:L4082-962B58B2-8DFD-4D8C-A72A-4A3D8CC53424 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P11263 "food" ;
+	prov:wasDerivedFrom ref:97777bfad8e7c2aa62f002c4a21bca378ef09f75 .
+
+wd:L4082 p:P11422 s:L4082-9AF97AA2-AECE-4E63-9FFA-5DEA3172003D .
+
+s:L4082-9AF97AA2-AECE-4E63-9FFA-5DEA3172003D a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P11422 "food" ;
+	prov:wasDerivedFrom ref:2825c0fe3126e4c3e5c33189e4f87e8eb3560947 .
+
+wd:L4082 p:P12690 s:L4082-401FCF8A-808B-4B2F-BA84-6B2B2FD44DE7 .
+
+s:L4082-401FCF8A-808B-4B2F-BA84-6B2B2FD44DE7 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P12690 "1248229" .
+
+wd:L4082 p:P12718 s:L4082-2DF55D18-082E-4F73-BDD1-F77B6D1B9930 .
+
+s:L4082-2DF55D18-082E-4F73-BDD1-F77B6D1B9930 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P12718 "0020549" .
+
+wd:L4082 p:P12724 s:L4082-7EBE64F0-6956-41B1-A1A1-EA7C26FA0106 .
+
+s:L4082-7EBE64F0-6956-41B1-A1A1-EA7C26FA0106 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P12724 "0019521" .
+
+wd:L4082 p:P12726 s:L4082-699EE13E-320B-42E2-9DCE-BA25CDA6DD88 .
+
+s:L4082-699EE13E-320B-42E2-9DCE-BA25CDA6DD88 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P12726 "0025945" .
+
+wd:L4082 p:P12739 s:L4082-72E6D84B-7D4F-4807-A58A-EA5C8A7DFB37 .
+
+s:L4082-72E6D84B-7D4F-4807-A58A-EA5C8A7DFB37 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P12739 "0308040" .
+
+wd:L4082 a ontolex:LexicalEntry ;
+	wikibase:lemma "food"@en ;
+	dct:language wd:Q1860 ;
+	wikibase:lexicalCategory wd:Q1084 ;
+	ontolex:lexicalForm wd:L4082-F1 , wd:L4082-F2 , wd:L4082-F3 ;
+	ontolex:sense wd:L4082-S1 , wd:L4082-S2 .
+
+wd:L4082-F1 wdt:P443 <http://commons.wikimedia.org/wiki/Special:FilePath/En-uk-food.ogg> ;
+	p:P443 s:L4082-F1-DE357278-12EC-4D43-B13C-3B1750522397 .
+
+s:L4082-F1-DE357278-12EC-4D43-B13C-3B1750522397 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P443 <http://commons.wikimedia.org/wiki/Special:FilePath/En-uk-food.ogg> ;
+	pq:P5237 wd:Q7979 .
+
+wd:L4082-F1 a ontolex:Form ;
+	ontolex:representation "food"@en .
+
+wd:L4082-F2 a ontolex:Form ;
+	ontolex:representation "food"@en ;
+	wikibase:grammaticalFeature wd:Q110786 .
+
+wd:L4082-F3 a ontolex:Form ;
+	ontolex:representation "foods"@en ;
+	wikibase:grammaticalFeature wd:Q146786 .
+
+wd:L4082-S1 wdt:P5137 wd:Q2095 ;
+	wdt:P5972 wd:L306114-S2 , wd:L45396-S2 , wd:L314569-S1 , wd:L314324-S1 , wd:L580479-S1 , wd:L479288-S2 ;
+	p:P5137 s:L4082-S1-E7FFD9B4-DAC4-405A-864E-57963B5EA5AD .
+
+s:L4082-S1-E7FFD9B4-DAC4-405A-864E-57963B5EA5AD a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5137 wd:Q2095 .
+
+wd:L4082-S1 p:P5972 s:L4082-S1-90d872b0-4b4a-859a-dcb8-1902293ccf11 .
+
+s:L4082-S1-90d872b0-4b4a-859a-dcb8-1902293ccf11 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5972 wd:L306114-S2 .
+
+wd:L4082-S1 p:P5972 s:L4082-S1-0B5E0987-2AD2-4FB7-956B-74516D213BD9 .
+
+s:L4082-S1-0B5E0987-2AD2-4FB7-956B-74516D213BD9 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5972 wd:L45396-S2 .
+
+wd:L4082-S1 p:P5972 s:L4082-S1-4050c0cc-46b8-cf01-fadb-2a19065ed57b .
+
+s:L4082-S1-4050c0cc-46b8-cf01-fadb-2a19065ed57b a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5972 wd:L314569-S1 .
+
+wd:L4082-S1 p:P5972 s:L4082-S1-095d4af3-4725-bd1e-6291-c22d1d830eb5 .
+
+s:L4082-S1-095d4af3-4725-bd1e-6291-c22d1d830eb5 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5972 wd:L314324-S1 .
+
+wd:L4082-S1 p:P5972 s:L4082-S1-f4c2245f-4b45-70b1-cfe8-dff8623bf5f4 .
+
+s:L4082-S1-f4c2245f-4b45-70b1-cfe8-dff8623bf5f4 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5972 wd:L580479-S1 .
+
+wd:L4082-S1 p:P5972 s:L4082-S1-00e22984-4b69-f1bb-6728-2bc9f304e622 .
+
+s:L4082-S1-00e22984-4b69-f1bb-6728-2bc9f304e622 a wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5972 wd:L479288-S2 .
+
+wd:L4082-S1 a ontolex:LexicalSense ;
+	skos:definition "any substance consumed to provide nutritional support for the body; form of energy stored in chemical"@en .
+
+wd:L4082-S2 a ontolex:LexicalSense ;
+	skos:definition "abinci"@ha .
+
+v:49142687a7ef579e8b6d1febb598c595 a wikibase:TimeValue .
+
+ref:83dac192b3dcc0a15a41e11e2027b8379dffadf0 pr:P854 <https://www.dictionary.com/browse/food> ;
+	pr:P1476 "FOOD Definition & Usage Examples | Dictionary.com"@en ;
+	pr:P813 "2024-01-30T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:49142687a7ef579e8b6d1febb598c595 .
+
+ref:6bfcb708f2070c351938cac8d96d47223ed87643 pr:P854 <https://www.merriam-webster.com/dictionary/food> ;
+	pr:P1476 "Food Definition & Meaning - Merriam-Webster"@en ;
+	pr:P813 "2024-01-30T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:49142687a7ef579e8b6d1febb598c595 .
+
+ref:f4d6110ecf8e3d180659f1171bfe903756b81a60 pr:P854 <https://dictionary.cambridge.org/us/dictionary/english/food> ;
+	pr:P1476 "FOOD | definition in the Cambridge English Dictionary"@en-us ;
+	pr:P813 "2024-01-30T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:49142687a7ef579e8b6d1febb598c595 .
+
+ref:71f357fb6d49a6715b0d109643df331efbbc2536 pr:P854 <https://www.collinsdictionary.com/dictionary/english/food> ;
+	pr:P1476 "FOOD definition and meaning | Collins English Dictionary"@en ;
+	pr:P813 "2024-01-30T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:49142687a7ef579e8b6d1febb598c595 .
+
+ref:97777bfad8e7c2aa62f002c4a21bca378ef09f75 pr:P854 <https://www.britannica.com/dictionary/food> ;
+	pr:P1476 "Food Definition & Meaning | Britannica Dictionary"@en ;
+	pr:P813 "2024-01-30T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:49142687a7ef579e8b6d1febb598c595 .
+
+ref:2825c0fe3126e4c3e5c33189e4f87e8eb3560947 pr:P854 <https://dictionary.cambridge.org/dictionary/english/food> ;
+	pr:P1476 "FOOD | English meaning - Cambridge Dictionary"@en ;
+	pr:P813 "2024-01-30T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 v:49142687a7ef579e8b6d1febb598c595 .
+
+wd:L4082 schema:dateModified "2024-05-23T18:16:00Z"^^xsd:dateTime ;
+	schema:version 2162666888 ;
+	wikibase:statements 20 .
+
+v:49142687a7ef579e8b6d1febb598c595 wikibase:timeValue "2024-01-30T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision 11 ;
+	wikibase:timeTimezone 0 ;
+	wikibase:timeCalendarModel wd:Q1985727 .

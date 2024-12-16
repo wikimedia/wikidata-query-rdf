@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import static org.wikidata.query.rdf.test.StatementHelper.statement;
 import static org.wikidata.query.rdf.test.StatementHelper.statements;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -43,6 +45,11 @@ public class RdfRepositoryUpdaterUnitTest {
                     "INSERT DATA {\n  <" + UrisSchemeFactory.getURISystem().root() + "> <http://schema.org/dateModified> " +
                     "\"1970-01-01T00:10:00Z\"^^xsd:dateTime .\n};\n";
     Instant avgEventTime = Instant.EPOCH.plus(10, ChronoUnit.MINUTES);
+    private final String deleteQueryString = IOUtils.toString(this.getClass()
+            .getResourceAsStream("/org/wikidata/query/rdf/tool/rdf/RdfRepositoryUpdater.deleteEntity.expected"));
+
+    public RdfRepositoryUpdaterUnitTest() throws IOException {
+    }
 
     @Test
     public void testInsertOnly() {
@@ -158,40 +165,6 @@ public class RdfRepositoryUpdaterUnitTest {
         assertThat(result.getActualSharedElementsMutations()).isEqualTo(1);
         assertThat(result.getPossibleSharedElementMutations()).isEqualTo(1);
     }
-
-    private final String deleteQueryString = "# clear all statements (except shared) about an entity\n" +
-            "DELETE {\n" +
-            "  ?entityStatements ?statementPredicate ?statementObject .\n" +
-            "}\n" +
-            "WHERE {\n" +
-            "  VALUES ?entity {\n" +
-            "     <http://acme.test/entity/entity123>\n" +
-            "  }\n" +
-            "  ?entity ?entityToStatementPredicate ?entityStatements .\n" +
-            "  FILTER( STRSTARTS(STR(?entityStatements), \"http://acme.test/entity/statement/\") ) .\n" +
-            "  ?entityStatements ?statementPredicate ?statementObject .\n" +
-            "};\n" +
-            "\n" +
-            "DELETE {\n" +
-            "    ?siteLink ?sitelinkPredicate ?sitelinkObject\n" +
-            "}\n" +
-            "WHERE {\n" +
-            "  VALUES ?entity {\n" +
-            "     <http://acme.test/entity/entity123>\n" +
-            "  }\n" +
-            "  ?siteLink <http://schema.org/about> ?entity .\n" +
-            "  ?siteLink ?sitelinkPredicate ?sitelinkObject .\n" +
-            "};\n" +
-            "\n" +
-            "DELETE {\n" +
-            "  ?entity ?entityPredicate ?entityObject .\n" +
-            "}\n" +
-            "WHERE {\n" +
-            "  VALUES ?entity {\n" +
-            "      <http://acme.test/entity/entity123>\n" +
-            "  }\n" +
-            "  ?entity ?entityPredicate ?entityObject .\n" +
-            "};";
 
     @Test
     public void testReconcile() {

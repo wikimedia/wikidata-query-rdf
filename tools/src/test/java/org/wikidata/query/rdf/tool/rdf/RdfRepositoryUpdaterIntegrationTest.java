@@ -106,6 +106,31 @@ public class RdfRepositoryUpdaterIntegrationTest {
     }
 
     @Test
+    public void testDeleteLexemes() {
+        URL l4082Location = getResource(RdfRepositoryUpdaterIntegrationTest.class,
+                RdfRepositoryUpdaterIntegrationTest.class.getSimpleName() + "." + "L4082-munged.ttl");
+
+        Integer l4082mutations = client.loadUrl(l4082Location.toString());
+        assertThat(l4082mutations).isPositive();
+
+        RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, uris);
+        entityIdsToDelete.add("L4082");
+        ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(),
+                entityIdsToDelete, entitiesToReconcile);
+        Instant avgEventTime = Instant.EPOCH.plus(2, ChronoUnit.MINUTES);
+        RDFPatchResult rdfPatchResult = rdfRepositoryUpdater.applyPatch(patch, avgEventTime);
+
+        assertThat(rdfPatchResult.getActualMutations()).isZero();
+        assertThat(rdfPatchResult.getExpectedMutations()).isZero();
+
+        assertThat(client.ask("ask { ?x ?p <http://www.wikidata.org/entity/L4082>}")).isFalse();
+        assertThat(client.ask("ask { <http://www.wikidata.org/entity/statement/L4082-F1-DE357278-12EC-4D43-B13C-3B1750522397> ?x ?y}")).isFalse();
+        assertThat(client.ask("ask { <http://www.wikidata.org/entity/statement/L4082-S1-E7FFD9B4-DAC4-405A-864E-57963B5EA5AD> ?x ?y}")).isFalse();
+        assertThat(client.ask("ask { <http://www.wikidata.org/entity/L4082-F1> ?x ?y}")).isFalse();
+        assertThat(client.ask("ask { <http://www.wikidata.org/entity/L4082-S1> ?x ?y}")).isFalse();
+    }
+
+    @Test
     public void testReconcileEntities() throws RDFHandlerException, IOException, RDFParseException {
         // Import a valid version of the Q42 entity
         URL q42Location = getResource(RdfRepositoryUpdaterIntegrationTest.class,
