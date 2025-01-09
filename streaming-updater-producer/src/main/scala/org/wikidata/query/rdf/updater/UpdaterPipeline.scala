@@ -128,7 +128,7 @@ object UpdaterPipeline {
         uniqueIdGenerator = uniqueIdGenerator,
         mainStream = mainStream,
         subgraphStreams =  subgraphUriToStreamMap,
-        mutationEventDataFactory = opts.outputMutationSchema match {
+        mutationEventDataFactory = opts.outputMutationSchemaVersion match {
           case "v1" => MutationEventDataFactory.v1()
           case "v2" => MutationEventDataFactory.v2()
           case _ @ v => throw new IllegalArgumentException(s"Unsupported schema version $v")

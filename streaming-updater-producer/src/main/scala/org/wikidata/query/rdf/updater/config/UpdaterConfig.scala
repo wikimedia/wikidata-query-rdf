@@ -80,7 +80,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
       case scheme: Any => throw new IllegalArgumentException(s"Unknown uris_scheme: $scheme")
     },
     acceptableMediawikiLag = params.getInt("acceptable_mediawiki_lag", 10) seconds,
-    outputMutationSchema = params.get("output_mutation_schema_version", "v1")
+    outputMutationSchemaVersion = params.get("output_mutation_schema_version", "v1")
   )
 
   private val producerConfig = params.getConfiguration.get(UpdaterConfig.KAFKA_PRODUCER_CONFIG).asScala.toMap
@@ -120,7 +120,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     CheckpointingMode.AT_LEAST_ONCE
   }
   private val useEventStreamsApi: Boolean = params.getBoolean("use_event_streams_api", false)
-  if (useEventStreamsApi && !generalConfig.outputMutationSchema.equals("v2")) {
+  if (useEventStreamsApi && !generalConfig.outputMutationSchemaVersion.equals("v2")) {
     throw new IllegalArgumentException("Cannot use use_event_streams_api = true without setting output_mutation_schema_version = v2")
   }
   val outputStreamConfig: UpdaterPipelineOutputStreamConfig =
@@ -233,7 +233,7 @@ sealed case class UpdaterPipelineGeneralConfig(hostname: String,
                                                httpClientConfig: HttpClientConfig,
                                                urisScheme: UrisScheme,
                                                acceptableMediawikiLag: FiniteDuration,
-                                               outputMutationSchema: String
+                                               outputMutationSchemaVersion: String
                                               )
 
 sealed case class HttpClientConfig(

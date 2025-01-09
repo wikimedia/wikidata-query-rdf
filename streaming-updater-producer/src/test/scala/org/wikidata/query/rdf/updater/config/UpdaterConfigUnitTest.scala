@@ -78,7 +78,7 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
     config.generalConfig.urisScheme.entityData() shouldBe "http://my.wikidata.org/wiki/Special:EntityData/"
     config.generalConfig.urisScheme.entityIdToURI("Q123") shouldBe "http://my.wikidata.org/entity/Q123"
     config.generalConfig.acceptableMediawikiLag shouldBe 10.seconds
-    config.generalConfig.outputMutationSchema shouldBe "v1"
+    config.generalConfig.outputMutationSchemaVersion shouldBe "v1"
 
     config.generalConfig.httpClientConfig.httpRoutes shouldBe None
     config.generalConfig.httpClientConfig.httpTimeout shouldBe None
@@ -238,7 +238,7 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       "--uris_scheme", "wikidata",
       "--output_mutation_schema_version", "v2"
     ))
-    config.generalConfig.outputMutationSchema shouldBe "v2"
+    config.generalConfig.outputMutationSchemaVersion shouldBe "v2"
   }
 
   "UpdaterConfig" should "support configuring streams with newer event streams api" in {
