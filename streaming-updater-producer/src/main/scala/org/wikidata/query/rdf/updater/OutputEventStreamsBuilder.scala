@@ -128,6 +128,33 @@ class OutputEventStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStream
       .map { unVersionedStreamName =>
         unVersionedStreamName -> s"$unVersionedStreamName.$streamSuffix"
       }.toMap
+
+    assertStreamConfigIsSane(streamToTopic, versionedStreamMap)
+
+    val versionedStreamToTopic: Map[String, String] = streamToTopic.map {
+      case (stream, topic) => versionedStreamMap(stream) -> topic
+    }
+
+    val versionedStream = versionedStreamMap(outputStreamsConfig.mainStream)
+    val rowTypeInfo = eventPlatformFactory.eventDataStreamFactory.rowTypeInfo(versionedStream, MutationDataChunkToRow.schemaVersion)
+    val serializationSchema = eventPlatformFactory.eventDataStreamFactory.serializer(versionedStream, MutationDataChunkToRow.schemaVersion)
+    val multiStreamKafkaRecordSerializer = MultiStreamKafkaRecordSerializer(versionedStreamToTopic, outputStreamsConfig.partition,
+      serializationSchema, rowTypeInfo, eventPlatformFactory.clock)
+
+    val producerConfig = new Properties()
+    val txTimeoutMs = Time.minutes(15).toMilliseconds
+    producerConfig.setProperty("transaction.timeout.ms", txTimeoutMs.toString)
+    producerConfig.setProperty("delivery.timeout.ms", txTimeoutMs.toString)
+    outputStreamsConfig.producerProperties.foreach { case (k, v) => producerConfig.setProperty(k, v) }
+    val sink = KafkaSink.builder[Row].setBootstrapServers(outputStreamsConfig.kafkaBrokers)
+      .setRecordSerializer(multiStreamKafkaRecordSerializer)
+      .setKafkaProducerConfig(producerConfig)
+      .setTransactionalIdPrefix(s"${outputStreamsConfig.topic}:${outputStreamsConfig.partition}")
+      .build()
+    EventPlatformSinkWrapper(sink, "mutation-output", new MutationDataChunkToRow(rowTypeInfo, versionedStreamMap), rowTypeInfo, outputParallelism)
+  }
+
+  private def assertStreamConfigIsSane(streamToTopic: Map[String, String], versionedStreamMap: Map[String, String]): Unit = {
     val streams: Map[String, EventStream] = versionedStreamMap.mapValues(eventPlatformFactory.eventStreamFactory.createEventStream)
 
     streams.values.filter(eventStream => Option(eventStream.schemaTitle()).isEmpty).toList match {
@@ -142,32 +169,14 @@ class OutputEventStreamsBuilder(outputStreamsConfig: UpdaterPipelineOutputStream
     }
 
     streams.filterNot {
-      case (stream, eventStream) => eventStream.topics().contains(streamToTopic(stream))
-    }.keys
+        case (stream, eventStream) => eventStream.topics().contains(streamToTopic(stream))
+      }.keys
       .map(s => s -> streamToTopic(s))
       .toList match {
       case Nil =>
       case e: Any => throw new IllegalArgumentException(s"The following stream to topic pairs " +
-        s"${e.map { case (s,t) => s"$s -> $t" }.mkString(", ")} are forbidden")
+        s"${e.map { case (s, t) => s"$s -> $t" }.mkString(", ")} are forbidden")
     }
-
-    val versionedStream = versionedStreamMap(outputStreamsConfig.mainStream)
-    val rowTypeInfo = eventPlatformFactory.eventDataStreamFactory.rowTypeInfo(versionedStream, MutationDataChunkToRow.schemaVersion)
-    val serializationSchema = eventPlatformFactory.eventDataStreamFactory.serializer(versionedStream, MutationDataChunkToRow.schemaVersion)
-    val multiStreamKafkaRecordSerializer = MultiStreamKafkaRecordSerializer(streamToTopic, outputStreamsConfig.partition,
-      serializationSchema, rowTypeInfo, eventPlatformFactory.clock)
-
-    val producerConfig = new Properties()
-    val txTimeoutMs = Time.minutes(15).toMilliseconds
-    producerConfig.setProperty("transaction.timeout.ms", txTimeoutMs.toString)
-    producerConfig.setProperty("delivery.timeout.ms", txTimeoutMs.toString)
-    outputStreamsConfig.producerProperties.foreach { case (k, v) => producerConfig.setProperty(k, v) }
-    val sink = KafkaSink.builder[Row].setBootstrapServers(outputStreamsConfig.kafkaBrokers)
-      .setRecordSerializer(multiStreamKafkaRecordSerializer)
-      .setKafkaProducerConfig(producerConfig)
-      .setTransactionalIdPrefix(s"${outputStreamsConfig.topic}:${outputStreamsConfig.partition}")
-      .build()
-    EventPlatformSinkWrapper(sink, "mutation-output", new MutationDataChunkToRow(rowTypeInfo, versionedStreamMap), rowTypeInfo, outputParallelism)
   }
 }
 
