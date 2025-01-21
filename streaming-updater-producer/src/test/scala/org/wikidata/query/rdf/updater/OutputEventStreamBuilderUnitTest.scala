@@ -299,6 +299,24 @@ class MutationEventDataToRowUnitTest extends FlatSpec with Matchers {
     .eventDataStreamFactory
     .rowTypeInfo("rdf-streaming-updater.mutation.v2", "2.0.0")
 
+  private val jsonRowSerializer = OutputEventStreamsBuilderTestFixtures
+    .eventPlatformFactory
+    .eventDataStreamFactory
+    .serializer("rdf-streaming-updater.mutation.v2", "2.0.0")
+
+  private val jsonRowDeserializer = OutputEventStreamsBuilderTestFixtures
+    .eventPlatformFactory
+    .eventDataStreamFactory
+    .deserializer("rdf-streaming-updater.mutation.v2", "2.0.0")
+
+  private def verifySchema(row: Row): Unit = {
+    val bytes = jsonRowSerializer.serialize(row)
+    val deserialized = jsonRowDeserializer.deserialize(bytes)
+    outputRowTypeInfo.getFieldNames
+      .filterNot(Set("meta", "$schema").contains(_))
+      .foreach(f => deserialized.getField(f) shouldEqual row.getField(f))
+  }
+
   "MutationEventDataToRow" should "convert a MutationEventData delete event into a row" in {
     val inputEventMeta = new EventsMeta(Instant.now(), "my-orig-id", "my-domain", "my-orig-stream", "my-request-id");
     val input = MutationEventDataFactory.v2().getMutationBuilder
@@ -316,11 +334,13 @@ class MutationEventDataToRowUnitTest extends FlatSpec with Matchers {
     output.setField("rev_id", 123L)
     output.setField("operation", "delete")
     output.setField("dt", Instant.EPOCH)
-    output.setField("sequence", 0)
-    output.setField("sequence_length", 1)
+    output.setField("sequence", 0L)
+    output.setField("sequence_length", 1L)
 
     val mapper = new MutationDataChunkToRow(outputRowTypeInfo, Map("my-stream" -> "my-stream.v2"))
-    mapper.map(MutationDataChunk(deleteOp, input)) should equal(output)
+    val actual = mapper.map(MutationDataChunk(deleteOp, input))
+    actual should equal(output)
+    verifySchema(actual)
   }
 
   "MutationEventDataToRow" should "convert a DiffEventData event into a row" in {
@@ -345,8 +365,8 @@ class MutationEventDataToRowUnitTest extends FlatSpec with Matchers {
     output.setField("rev_id", 123L)
     output.setField("operation", "diff")
     output.setField("dt", Instant.EPOCH)
-    output.setField("sequence", 0)
-    output.setField("sequence_length", 1)
+    output.setField("sequence", 0L)
+    output.setField("sequence_length", 1L)
 
     def dataChunk(data: String): Row = {
       val chunkRow = outputRowTypeInfo.createEmptySubRow("rdf_added_data")
@@ -360,7 +380,9 @@ class MutationEventDataToRowUnitTest extends FlatSpec with Matchers {
     output.setField("rdf_unlinked_shared_data", dataChunk("unlinked-shared-data"))
 
     val mapper = new MutationDataChunkToRow(outputRowTypeInfo, Map("my-stream" -> "my-stream.v2"))
-    mapper.map(MutationDataChunk(operation, input)) should equal(output)
+    val actual = mapper.map(MutationDataChunk(operation, input))
+    actual should equal(output)
+    verifySchema(actual)
   }
 }
 

@@ -204,8 +204,8 @@ class MutationDataChunkToRow(rowTypeInfo: EventRowTypeInfo, streamVersionMap: Ma
     output.setField("entity_id", value.getEntity)
     output.setField("rev_id", value.getRevision)
     output.setField("dt", value.getEventTime)
-    output.setField("sequence", value.getSequence)
-    output.setField("sequence_length", value.getSequenceLength)
+    output.setField("sequence", value.getSequence.toLong)
+    output.setField("sequence_length", value.getSequenceLength.toLong)
     output.setField("operation", value.getOperation)
 
     value match {
