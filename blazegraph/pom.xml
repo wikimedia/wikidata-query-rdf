@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikidata.query.rdf</groupId>
         <artifactId>query-service-parent</artifactId>
-        <version>0.3.153</version>
+        <version>0.3.154-SNAPSHOT</version>
     </parent>
     <artifactId>blazegraph</artifactId>
     <packaging>jar</packaging>
