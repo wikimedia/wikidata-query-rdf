@@ -1,14 +1,18 @@
 package org.wikidata.query.rdf.spark.transform.structureddata.dumps
 
-import java.io.ByteArrayInputStream
+import java.io.{ByteArrayInputStream, StringReader}
 import java.nio.charset.StandardCharsets
-
 import org.apache.hadoop.io.compress.{BZip2Codec, GzipCodec}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Encoders, Row, SparkSession}
 import org.apache.spark.sql.SaveMode.Overwrite
 import org.openrdf.model.Statement
+import org.openrdf.rio.helpers.RDFHandlerBase
+import org.wikidata.query.rdf.common.uri.UrisSchemeFactory
 import org.wikidata.query.rdf.spark.utils.SparkUtils
+import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers
+
+import scala.collection.mutable
 
 object Site extends Enumeration {
   type Site = Value
@@ -25,13 +29,11 @@ case class Params(
                    outputFormat: String = "parquet",
                    numPartitions: Int = 512,
                    skolemizeBlankNodes: Boolean = false,
-                   site: Site.Value = Site.wikidata
+                   site: Site.Value = Site.wikidata,
+                   prefixHeaderLines: Int = 1000
                  )
 
 object TurtleImporter {
-  private val WIKIDATA_ENTITY_HEADER = "data:"
-  private val COMMONS_ENTITY_HEADER = "sdcdata:"
-
   def sparkSession: SparkSession = {
     SparkSession
       .builder()
@@ -53,13 +55,18 @@ object TurtleImporter {
       case None =>
         getDirectoryWriter(params.outputPath.get, params.outputFormat, params.numPartitions)
     }
-    val entityHeader: String = params.site match{
-      case Site.commons => COMMONS_ENTITY_HEADER
-      case Site.wikidata => WIKIDATA_ENTITY_HEADER
+    // do a quick first pass to fetch prefixes before setting "textinputformat.record.delimiter"
+    val rdfPrefixes = fetchRdfPrefixes(params)
+
+    val entityDataPrefix: String = params.site match {
+      case Site.commons =>
+        rdfPrefixWithMatchingURI(rdfPrefixes, UrisSchemeFactory.COMMONS.entityDataHttps())
+      case Site.wikidata =>
+        rdfPrefixWithMatchingURI(rdfPrefixes, UrisSchemeFactory.WIKIDATA.entityDataHttps())
     }
     val encoder = rowEncoder()
     // Make spark read text with dedicated separator instead of end-of-line
-    val entitySeparator = "\n" + entityHeader
+    val entitySeparator = f"\n$entityDataPrefix:"
     spark.sparkContext.hadoopConfiguration.set("textinputformat.record.delimiter", entitySeparator)
     val rdd: RDD[Row] = spark.sparkContext.union(params.inputPath map {spark.sparkContext.textFile(_)})
       .flatMap(str => {
@@ -67,14 +74,14 @@ object TurtleImporter {
         if (str.startsWith("@prefix")) {
           // parse the header that might contain some dump metadata
           val is = new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8))
-          val chunkParser = RdfChunkParser.bySite(params.site, params.skolemizeBlankNodes)
+          val chunkParser = RdfChunkParser.bySite(params.site, rdfPrefixes, params.skolemizeBlankNodes)
           val statements = chunkParser.parseHeader(is)
           // Convert statements to rows
           statements.map(encoder)
         } else {
           // Parse entity turtle block (add entity header that have been removed by parsing)
-          val is = new ByteArrayInputStream(s"$entityHeader$str".getBytes(StandardCharsets.UTF_8))
-          val chunkParser = RdfChunkParser.bySite(params.site, params.skolemizeBlankNodes)
+          val is = new ByteArrayInputStream(s"$entityDataPrefix:$str".getBytes(StandardCharsets.UTF_8))
+          val chunkParser = RdfChunkParser.bySite(params.site, rdfPrefixes, params.skolemizeBlankNodes)
           val statements = chunkParser.parseEntityChunk(is)
           // Convert statements to rows
           statements.map(encoder)
@@ -82,6 +89,35 @@ object TurtleImporter {
       })
       .distinct()
     dataWriter(rdd)
+  }
+
+  private def rdfPrefixWithMatchingURI(prefixes: Map[String, String], uri: String): String = {
+    prefixes.filter {
+      case (_, v) => v.equals(uri)
+    }.keys.head
+  }
+
+  def fetchRdfPrefixes(params: Params)(implicit spark: SparkSession): Map[String, String] = {
+    val reconstructedPrefixHeader = params.inputPath.flatMap { file =>
+      val prefixLines = spark.sparkContext.textFile(file).take(params.prefixHeaderLines)
+        .filter(_.startsWith("@prefix "))
+        .toSeq
+      if (prefixLines.isEmpty) {
+        throw new IllegalStateException(s"No prefixes were extracted from the dump file: $file")
+      }
+      if (prefixLines.size >= params.prefixHeaderLines) {
+        throw new IllegalStateException(s"Fetched ${params.prefixHeaderLines} RDF prefixes from the header of $file, " +
+          "it is possible that more are present and you should consider increasing --prefix-header-lines")
+      }
+      prefixLines
+    } mkString("\n")
+    val prefixes = mutable.Map[String, String]()
+    val handler = new RDFHandlerBase {
+      override def handleNamespace(prefix: String, uri: String): Unit = prefixes.put(prefix, uri)
+    }
+    val reader = new StringReader(reconstructedPrefixHeader)
+    RDFParserSuppliers.defaultRdfParser().get(handler).parse(reader, "unused")
+    prefixes.toMap
   }
 
   def rowEncoder(): Statement => Row = {

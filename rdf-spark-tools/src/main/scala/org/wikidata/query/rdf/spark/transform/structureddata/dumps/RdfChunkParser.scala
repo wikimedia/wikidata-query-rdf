@@ -97,83 +97,25 @@ class RdfChunkParser(urisScheme: UrisScheme, munger: Munger, namespaces: Map[Str
   }
 
   private def makePrefixHeader(): String = {
-    namespaces map { case (k, v) => s"@prefix $k: $v ." } mkString "\n"
+    namespaces map { case (k, v) => s"@prefix $k: <$v> ." } mkString "\n"
   }
 }
 
 object RdfChunkParser {
-  // TODO: stop hardcoding prefixes, either generate from the hostname
-  //  or read them from the dump
-  private val prefixes = Map[String, String](
-    "rdf" -> "<http://www.w3.org/1999/02/22-rdf-syntax-ns#>",
-    "xsd" -> "<http://www.w3.org/2001/XMLSchema#>",
-    "ontolex" -> "<http://www.w3.org/ns/lemon/ontolex#>",
-    "dct" -> "<http://purl.org/dc/terms/>",
-    "rdfs" -> "<http://www.w3.org/2000/01/rdf-schema#>",
-    "owl" -> "<http://www.w3.org/2002/07/owl#>",
-    "wikibase" -> "<http://wikiba.se/ontology#>",
-    "skos" -> "<http://www.w3.org/2004/02/skos/core#>",
-    "schema" -> "<http://schema.org/>",
-    "cc" -> "<http://creativecommons.org/ns#>",
-    "geo" -> "<http://www.opengis.net/ont/geosparql#>",
-    "prov" -> "<http://www.w3.org/ns/prov#>",
-    "v" -> "<http://www.wikidata.org/value/>",
-    "wd" -> "<http://www.wikidata.org/entity/>",
-    "data" -> "<https://www.wikidata.org/wiki/Special:EntityData/>",
-    "s" -> "<http://www.wikidata.org/entity/statement/>",
-    "ref" -> "<http://www.wikidata.org/reference/>",
-    "wdt" -> "<http://www.wikidata.org/prop/direct/>",
-    "wdtn" -> "<http://www.wikidata.org/prop/direct-normalized/>",
-    "p" -> "<http://www.wikidata.org/prop/>",
-    "ps" -> "<http://www.wikidata.org/prop/statement/>",
-    "psv" -> "<http://www.wikidata.org/prop/statement/value/>",
-    "psn" -> "<http://www.wikidata.org/prop/statement/value-normalized/>",
-    "pq" -> "<http://www.wikidata.org/prop/qualifier/>",
-    "pqv" -> "<http://www.wikidata.org/prop/qualifier/value/>",
-    "pqn" -> "<http://www.wikidata.org/prop/qualifier/value-normalized/>",
-    "pr" -> "<http://www.wikidata.org/prop/reference/>",
-    "prv" -> "<http://www.wikidata.org/prop/reference/value/>",
-    "prn" -> "<http://www.wikidata.org/prop/reference/value-normalized/>",
-    "wdno" -> "<http://www.wikidata.org/prop/novalue/>"
-  )
-
-  def forWikidata(skolemize: Boolean = false): RdfChunkParser = {
+  def forWikidata(prefixes: Map[String, String], skolemize: Boolean = false): RdfChunkParser = {
     val urisScheme = UrisSchemeFactory.WIKIDATA
     new RdfChunkParser(urisScheme, buildMunger(skolemize, urisScheme), prefixes)
   }
 
-  // TODO: stop hardcoding prefixes, either generate from the hostname
-  //  or read them from the dump
-  private val commons_prefixes = prefixes ++ Map[String, String](
-"sdc" -> "<https://commons.wikimedia.org/entity/>",
-    "sdcdata" -> "<https://commons.wikimedia.org/wiki/Special:EntityData/>",
-    "sdcs" -> "<https://commons.wikimedia.org/entity/statement/>",
-    "sdcref" -> "<https://commons.wikimedia.org/reference/>",
-    "sdcv" -> "<https://commons.wikimedia.org/value/>",
-    "sdct" -> "<https://commons.wikimedia.org/prop/direct/>",
-    "sdctn" -> "<https://commons.wikimedia.org/prop/direct-normalized/>",
-    "sdcp" -> "<https://commons.wikimedia.org/prop/>",
-    "sdcps" -> "<https://commons.wikimedia.org/prop/statement/>",
-    "sdcpsv" -> "<https://commons.wikimedia.org/prop/statement/value/>",
-    "sdcpsn" -> "<https://commons.wikimedia.org/prop/statement/value-normalized/>",
-    "sdcpq" -> "<https://commons.wikimedia.org/prop/qualifier/>",
-    "sdcpqv" -> "<https://commons.wikimedia.org/prop/qualifier/value/>",
-    "sdcpqn" -> "<https://commons.wikimedia.org/prop/qualifier/value-normalized/>",
-    "sdcpr" -> "<https://commons.wikimedia.org/prop/reference/>",
-    "sdcprv" -> "<https://commons.wikimedia.org/prop/reference/value/>",
-    "sdcprn" -> "<https://commons.wikimedia.org/prop/reference/value-normalized/>",
-    "sdcno" -> "<https://commons.wikimedia.org/prop/novalue/>"
-  )
-
-  def forCommons(skolemize: Boolean = false): RdfChunkParser = {
+  def forCommons(prefixes: Map[String, String], skolemize: Boolean = false): RdfChunkParser = {
     val urisScheme = UrisSchemeFactory.fromConceptUris("http://www.wikidata.org/", "https://commons.wikimedia.org")
-    new RdfChunkParser(urisScheme, buildMunger(skolemize, urisScheme), commons_prefixes)
+    new RdfChunkParser(urisScheme, buildMunger(skolemize, urisScheme), prefixes)
   }
 
-  def bySite(site: Site.Value, skolemize: Boolean): RdfChunkParser = {
+  def bySite(site: Site.Value, prefixes: Map[String, String], skolemize: Boolean): RdfChunkParser = {
     site match {
-      case Site.wikidata => forWikidata(skolemize)
-      case Site.commons => forCommons(skolemize)
+      case Site.wikidata => forWikidata(prefixes, skolemize)
+      case Site.commons => forCommons(prefixes, skolemize)
     }
   }
 

@@ -77,6 +77,10 @@ object WikibaseRDFDumpConverter {
       opt[Site.Value]('S', "site") optional() valueName "<site>" action { (x, p) =>
         p.copy(site = x)
       } text s"Site from which this dump is produced (${Site.values.mkString(",")})"
+
+      opt[Int]('L', "prefix-header-lines") optional() valueName "<prefix-header-lines>" action { (x, p) =>
+        p.copy(prefixHeaderLines = x)
+      } text s"Number of lines to pre-fetch to get the list of RDF prefixes from the RDF dump header. Defaults to 1000"
     }
   }
 
