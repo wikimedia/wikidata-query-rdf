@@ -52,7 +52,7 @@ public class DefaultUrisSchemeUnitTest {
         assertThat(uris.entityIdToURI("Q1")).isEqualTo("https://acme2.test/entity/Q1");
         assertThat(uris.entityIdToURI("P1")).isEqualTo("https://acme2.test/entity/P1");
         assertThat(uris.entityData()).isEqualTo("https://acme2.test/wiki/Special:EntityData/");
-        assertThat(uris.entityDataHttps()).isEqualTo("http://acme2.test/wiki/Special:EntityData/");
+        assertThat(uris.entityDataHttps()).isEqualTo("https://acme2.test/wiki/Special:EntityData/");
     }
 
     @Test

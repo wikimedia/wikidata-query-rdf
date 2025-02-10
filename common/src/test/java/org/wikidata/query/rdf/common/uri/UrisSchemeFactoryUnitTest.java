@@ -25,8 +25,7 @@ public class UrisSchemeFactoryUnitTest {
     public void defaultCommonsScheme() {
         UrisScheme scheme = UrisSchemeFactory.COMMONS;
         assertThat(scheme.entityData()).isEqualTo("https://commons.wikimedia.org/wiki/Special:EntityData/");
-        // FIXME: the code just switches between http and https and vice versa...
-        assertThat(scheme.entityDataHttps()).isEqualTo("http://commons.wikimedia.org/wiki/Special:EntityData/");
+        assertThat(scheme.entityDataHttps()).isEqualTo("https://commons.wikimedia.org/wiki/Special:EntityData/");
         assertThat(scheme.entityIdToURI("Q2")).isEqualTo("http://www.wikidata.org/entity/Q2");
         assertThat(scheme.entityIdToURI("P2")).isEqualTo("http://www.wikidata.org/entity/P2");
         assertThat(scheme.entityIdToURI("L2")).isEqualTo("http://www.wikidata.org/entity/L2");
@@ -42,8 +41,7 @@ public class UrisSchemeFactoryUnitTest {
                 UrisSchemeFactory.forCommons(URI.create("https://test-commons.wikimedia.org")),
                 UrisSchemeFactory.forWikidata(URI.create("http://test.wikidata.org")));
         assertThat(scheme.entityData()).isEqualTo("https://test-commons.wikimedia.org/wiki/Special:EntityData/");
-        // FIXME: the code just switches between http and https and vice versa...
-        assertThat(scheme.entityDataHttps()).isEqualTo("http://test-commons.wikimedia.org/wiki/Special:EntityData/");
+        assertThat(scheme.entityDataHttps()).isEqualTo("https://test-commons.wikimedia.org/wiki/Special:EntityData/");
         assertThat(scheme.entityIdToURI("Q2")).isEqualTo("http://test.wikidata.org/entity/Q2");
         assertThat(scheme.entityIdToURI("P2")).isEqualTo("http://test.wikidata.org/entity/P2");
         assertThat(scheme.entityIdToURI("L2")).isEqualTo("http://test.wikidata.org/entity/L2");

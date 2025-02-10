@@ -74,7 +74,7 @@ public class DefaultUrisScheme implements UrisScheme {
     public DefaultUrisScheme(URI conceptUrl, String entityPrefix, String entityDataPrefix, List<String> wikibaseInitials) {
         root = conceptUrl.toString().replaceAll("/+$", "");
         entityData = root + "/wiki/Special:EntityData/";
-        entityDataHttps = otherScheme(conceptUrl) + "/wiki/Special:EntityData/";
+        entityDataHttps = httpsScheme(conceptUrl) + "/wiki/Special:EntityData/";
         entity = root + "/entity/";
         statement = entity + "statement/";
         wellKnownBNodeIRIPrefix = generateWellKnownURI(conceptUrl, "genid/");
@@ -94,16 +94,18 @@ public class DefaultUrisScheme implements UrisScheme {
     }
 
     /**
-     * Return the representation of URI in different scheme.
-     * https <-> http
+     * Return the representation of URI in HTTPS.
+     * http -> https
      * @return URL string in other scheme
      */
-    private String otherScheme(URI uri) {
+    private String httpsScheme(URI uri) {
+        String uriString;
         if (uri.getScheme().equals("http")) {
-            return uri.toString().replace("http:", "https:").replaceAll("/+$", "");
+            uriString = uri.toString().replace("http:", "https:");
         } else {
-            return uri.toString().replace("https:", "http:").replaceAll("/+$", "");
+            uriString = uri.toString();
         }
+        return uriString.replaceAll("/+$", "");
     }
 
     @Override
