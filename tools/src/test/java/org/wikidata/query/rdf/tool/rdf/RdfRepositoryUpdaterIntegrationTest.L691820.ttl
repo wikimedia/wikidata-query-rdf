@@ -1,0 +1,472 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix data: <https://www.wikidata.org/wiki/Special:EntityData/> .
+@prefix wds: <http://www.wikidata.org/entity/statement/> .
+@prefix wdref: <http://www.wikidata.org/reference/> .
+@prefix wdv: <http://www.wikidata.org/value/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix wdtn: <http://www.wikidata.org/prop/direct-normalized/> .
+@prefix p: <http://www.wikidata.org/prop/> .
+@prefix ps: <http://www.wikidata.org/prop/statement/> .
+@prefix psv: <http://www.wikidata.org/prop/statement/value/> .
+@prefix psn: <http://www.wikidata.org/prop/statement/value-normalized/> .
+@prefix pq: <http://www.wikidata.org/prop/qualifier/> .
+@prefix pqv: <http://www.wikidata.org/prop/qualifier/value/> .
+@prefix pqn: <http://www.wikidata.org/prop/qualifier/value-normalized/> .
+@prefix pr: <http://www.wikidata.org/prop/reference/> .
+@prefix prv: <http://www.wikidata.org/prop/reference/value/> .
+@prefix prn: <http://www.wikidata.org/prop/reference/value-normalized/> .
+@prefix wdno: <http://www.wikidata.org/prop/novalue/> .
+
+data:L691820 a schema:Dataset ;
+	schema:about wd:L691820 ;
+	cc:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+	schema:softwareVersion "1.0.0" ;
+	schema:version "2224372531"^^xsd:integer ;
+	schema:dateModified "2024-08-10T12:24:05Z"^^xsd:dateTime ;
+	wikibase:statements "24"^^xsd:integer .
+
+wd:L691820 a wikibase:Lexeme ;
+	wdt:P5185 wd:Q499327,
+		wd:Q1775415 ;
+	wdt:P1343 wd:Q113450202 ;
+	wdt:P7820 "ਮੋਰ",
+		"ਮੋਰੀ" ;
+	wdt:P7575 "ਮੋਰ",
+		"ਮੋਰੀ" ;
+	wdt:P5402 wd:L691821 ;
+	wdt:P5191 wd:L691823 ;
+	wdt:P5831 "ਗਹਾਂ ਇੱਕ ਮੋਰ ਪੈਲ ਪਾਉਂਦਾ ਸੀ"@pa ;
+	p:P5185 wds:L691820-1e9e0043-4121-8a5b-9db5-bab597d7e4e6 .
+
+wds:L691820-1e9e0043-4121-8a5b-9db5-bab597d7e4e6 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5185 wd:Q499327 ;
+	pq:P6072 wd:L691820-S1,
+		wd:L691820-S2 ;
+	prov:wasDerivedFrom wdref:b1c0a8f229f547fc61671feba630d3d550a52e9a,
+		wdref:419c0c1b8d139de5b042744522c610ad4d23a038 .
+
+wd:L691820 p:P5185 wds:L691820-dc99332d-4227-c0d0-f80f-dc63d0e4c4f0 .
+
+wds:L691820-dc99332d-4227-c0d0-f80f-dc63d0e4c4f0 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5185 wd:Q1775415 ;
+	pq:P6072 wd:L691820-S3 ;
+	prov:wasDerivedFrom wdref:1e92655fbd38589aa6dbe14ac1bb9cf1571a388d,
+		wdref:dc855971fd0768572ccfe070f453edb3a341f7af .
+
+wd:L691820 p:P1343 wds:L691820-ca368250-4b1d-6c68-9726-e031ebdcde75 .
+
+wds:L691820-ca368250-4b1d-6c68-9726-e031ebdcde75 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P1343 wd:Q113450202 ;
+	pq:P478 "3" ;
+	pq:P304 "2611" ;
+	prov:wasDerivedFrom wdref:7652f989d1bcc65218428058db15014e34a75e4d .
+
+wd:L691820 p:P7820 wds:L691820-86e304bc-4f3c-9b03-8546-35a31eca8aab .
+
+wds:L691820-86e304bc-4f3c-9b03-8546-35a31eca8aab a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P7820 "ਮੋਰ" ;
+	pq:P6072 wd:L691820-S1,
+		wd:L691820-S2 .
+
+wd:L691820 p:P7820 wds:L691820-d7cfdece-4f00-9e4f-6d56-fd766c5ddc61 .
+
+wds:L691820-d7cfdece-4f00-9e4f-6d56-fd766c5ddc61 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P7820 "ਮੋਰੀ" ;
+	pq:P6072 wd:L691820-S3 .
+
+wd:L691820 p:P7575 wds:L691820-b6440d93-4b3b-4b19-3198-138f8b5d3204 .
+
+wds:L691820-b6440d93-4b3b-4b19-3198-138f8b5d3204 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P7575 "ਮੋਰ" ;
+	pq:P6072 wd:L691820-S1,
+		wd:L691820-S2 .
+
+wd:L691820 p:P7575 wds:L691820-0953c080-4993-da29-b375-f94b89de94c6 .
+
+wds:L691820-0953c080-4993-da29-b375-f94b89de94c6 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P7575 "ਮੋਰੀ" ;
+	pq:P6072 wd:L691820-S3 ;
+	prov:wasDerivedFrom wdref:b1c0a8f229f547fc61671feba630d3d550a52e9a .
+
+wd:L691820 p:P5402 wds:L691820-a58b2f5e-45f0-4ef7-7446-bd6c9cc16da2 .
+
+wds:L691820-a58b2f5e-45f0-4ef7-7446-bd6c9cc16da2 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5402 wd:L691821 ;
+	pq:P5548 wd:L691821-F1 ;
+	pq:P5830 wd:L691820-F12 .
+
+wd:L691820 p:P5191 wds:L691820-32724bdd-4a5e-6e44-4cb4-b315bd31a222 .
+
+wds:L691820-32724bdd-4a5e-6e44-4cb4-b315bd31a222 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5191 wd:L691823 ;
+	pq:P5886 wd:Q56611986 ;
+	prov:wasDerivedFrom wdref:bc098ab8c798d16586a8050b56ab3aadfa6f5f24 .
+
+wd:L691820 p:P5831 wds:L691820-0f76b1dd-e3dc-4542-b6dc-b8d2e4d5ef1a .
+
+wds:L691820-0f76b1dd-e3dc-4542-b6dc-b8d2e4d5ef1a a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5831 "ਗਹਾਂ ਇੱਕ ਮੋਰ ਪੈਲ ਪਾਉਂਦਾ ਸੀ"@pa ;
+	pq:P6072 wd:L691820-S1 ;
+	prov:wasDerivedFrom wdref:55c1c6b4687502c86e84cccc357f10863d78ff13 .
+
+wd:L691820 a ontolex:LexicalEntry ;
+	rdfs:label "ਮੋਰ"@pa ;
+	wikibase:lemma "ਮੋਰ"@pa ;
+	rdfs:label "مور"@pnb ;
+	wikibase:lemma "مور"@pnb ;
+	dct:language wd:Q58635 ;
+	wikibase:lexicalCategory wd:Q1084 ;
+	ontolex:lexicalForm wd:L691820-F1,
+		wd:L691820-F2,
+		wd:L691820-F3,
+		wd:L691820-F4,
+		wd:L691820-F5,
+		wd:L691820-F6,
+		wd:L691820-F7,
+		wd:L691820-F8,
+		wd:L691820-F9,
+		wd:L691820-F10,
+		wd:L691820-F11,
+		wd:L691820-F12 ;
+	ontolex:sense wd:L691820-S1,
+		wd:L691820-S2,
+		wd:L691820-S3 .
+
+wd:L691820-F1 a wikibase:Form ;
+	wdt:P443 <http://commons.wikimedia.org/wiki/Special:FilePath/Pa-%E0%A8%AE%E0%A9%87%E0%A8%B0.ogg> ;
+	p:P443 wds:L691820-F1-52d7dca7-4f85-ba56-10f2-6beec35a235a .
+
+wds:L691820-F1-52d7dca7-4f85-ba56-10f2-6beec35a235a a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P443 <http://commons.wikimedia.org/wiki/Special:FilePath/Pa-%E0%A8%AE%E0%A9%87%E0%A8%B0.ogg> .
+
+wd:L691820-F1 a ontolex:Form ;
+	rdfs:label "ਮੋਰ"@pa ;
+	ontolex:representation "ਮੋਰ"@pa ;
+	rdfs:label "مور"@pnb ;
+	ontolex:representation "مور"@pnb ;
+	wikibase:grammaticalFeature wd:Q110786,
+		wd:Q1751855,
+		wd:Q499327 .
+
+wd:L691820-F2 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "ਮੋਰ"@pa ;
+	ontolex:representation "ਮੋਰ"@pa ;
+	rdfs:label "مور"@pnb ;
+	ontolex:representation "مور"@pnb ;
+	wikibase:grammaticalFeature wd:Q110786,
+		wd:Q1233197,
+		wd:Q499327 .
+
+wd:L691820-F3 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "ਮੋਰ"@pa ;
+	ontolex:representation "ਮੋਰ"@pa ;
+	rdfs:label "مور"@pnb ;
+	ontolex:representation "مور"@pnb ;
+	wikibase:grammaticalFeature wd:Q146786,
+		wd:Q1751855,
+		wd:Q499327 .
+
+wd:L691820-F4 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "ਮੋਰਾਂ"@pa ;
+	ontolex:representation "ਮੋਰਾਂ"@pa ;
+	rdfs:label "موراں"@pnb ;
+	ontolex:representation "موراں"@pnb ;
+	wikibase:grammaticalFeature wd:Q1233197,
+		wd:Q146786,
+		wd:Q499327 .
+
+wd:L691820-F5 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "ਮੋਰਾ"@pa ;
+	ontolex:representation "ਮੋਰਾ"@pa ;
+	rdfs:label "مورا"@pnb ;
+	ontolex:representation "مورا"@pnb ;
+	wikibase:grammaticalFeature wd:Q110786,
+		wd:Q185077,
+		wd:Q499327 .
+
+wd:L691820-F6 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "ਮੋਰੋ"@pa ;
+	ontolex:representation "ਮੋਰੋ"@pa ;
+	rdfs:label "مورو"@pnb ;
+	ontolex:representation "مورو"@pnb ;
+	wikibase:grammaticalFeature wd:Q146786,
+		wd:Q185077,
+		wd:Q499327 .
+
+wd:L691820-F7 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "ਮੋਰੀਓਂ"@pa ;
+	ontolex:representation "ਮੋਰੀਓਂ"@pa ;
+	rdfs:label "موریوں"@pnb ;
+	ontolex:representation "موریوں"@pnb ;
+	wikibase:grammaticalFeature wd:Q110786,
+		wd:Q156986,
+		wd:Q1775415 .
+
+wd:L691820-F8 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "ਮੋਰੀਆਂ"@pa ;
+	ontolex:representation "ਮੋਰੀਆਂ"@pa ;
+	rdfs:label "موریاں"@pnb ;
+	ontolex:representation "موریاں"@pnb ;
+	wikibase:grammaticalFeature wd:Q1233197,
+		wd:Q146786,
+		wd:Q1775415 .
+
+wd:L691820-F9 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "ਮੋਰੀਆਂ"@pa ;
+	ontolex:representation "ਮੋਰੀਆਂ"@pa ;
+	rdfs:label "موریاں"@pnb ;
+	ontolex:representation "موریاں"@pnb ;
+	wikibase:grammaticalFeature wd:Q146786,
+		wd:Q1751855,
+		wd:Q1775415 .
+
+wd:L691820-F10 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "ਮੋਰੀ"@pa ;
+	ontolex:representation "ਮੋਰੀ"@pa ;
+	rdfs:label "موری"@pnb ;
+	ontolex:representation "موری"@pnb ;
+	wikibase:grammaticalFeature wd:Q110786,
+		wd:Q1233197,
+		wd:Q1775415 .
+
+wd:L691820-F11 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "ਮੋਰੀ"@pa ;
+	ontolex:representation "ਮੋਰੀ"@pa ;
+	rdfs:label "موری"@pnb ;
+	ontolex:representation "موری"@pnb ;
+	wikibase:grammaticalFeature wd:Q110786,
+		wd:Q1751855,
+		wd:Q1775415 .
+
+wd:L691820-F12 a wikibase:Form,
+		ontolex:Form ;
+	rdfs:label "ਮੋਰੋਂ"@pa ;
+	ontolex:representation "ਮੋਰੋਂ"@pa ;
+	rdfs:label "موروں"@pnb ;
+	ontolex:representation "موروں"@pnb ;
+	wikibase:grammaticalFeature wd:Q110786,
+		wd:Q156986,
+		wd:Q499327 .
+
+wd:L691820-S1 a wikibase:Sense ;
+	wdt:P5137 wd:Q61865 ;
+	wdt:P18 <http://commons.wikimedia.org/wiki/Special:FilePath/Blue%20Peafowl%20%28Pavo%20cristatus%29.jpg> ;
+	wdt:P10339 _:431b370f329e83d50db749259432bfac ;
+	wdt:P5976 wd:L691822-S1 ;
+	p:P5137 wds:L691820-S1-1b109a1c-449a-b255-ab8c-2aac8d6034d4 .
+
+wds:L691820-S1-1b109a1c-449a-b255-ab8c-2aac8d6034d4 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5137 wd:Q61865 ;
+	prov:wasDerivedFrom wdref:b1c0a8f229f547fc61671feba630d3d550a52e9a .
+
+wd:L691820-S1 p:P18 wds:L691820-S1-76d98013-4353-37fb-fb20-91d1a082fb40 .
+
+wds:L691820-S1-76d98013-4353-37fb-fb20-91d1a082fb40 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P18 <http://commons.wikimedia.org/wiki/Special:FilePath/Blue%20Peafowl%20%28Pavo%20cristatus%29.jpg> .
+
+wd:L691820-S1 p:P10339 wds:L691820-S1-268a0a7b-4d6a-f1dc-7239-c8d37825f46f .
+
+wds:L691820-S1-268a0a7b-4d6a-f1dc-7239-c8d37825f46f a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P10339 _:d93cc4b7f5185cc6e293455043ad1afd ;
+	prov:wasDerivedFrom wdref:b1c0a8f229f547fc61671feba630d3d550a52e9a .
+
+wd:L691820-S1 p:P5976 wds:L691820-S1-94b1b712-45a5-6999-242f-93ac53e00570 .
+
+wds:L691820-S1-94b1b712-45a5-6999-242f-93ac53e00570 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5976 wd:L691822-S1 .
+
+wd:L691820-S1 a ontolex:LexicalSense ;
+	rdfs:label "peacock, the Indian peafowl 'Pavo cristatus'"@en ;
+	skos:definition "peacock, the Indian peafowl 'Pavo cristatus'"@en ;
+	rdfs:label "خوبصورت پراں والا اک پرندہ"@pnb ;
+	skos:definition "خوبصورت پراں والا اک پرندہ"@pnb ;
+	rdfs:label "ਖ਼ੂਬਸੂਰਤ ਪਰਾਂ ਵਾਲਾ ਇੱਕ ਪਰਿੰਦਾ"@pal ;
+	skos:definition "ਖ਼ੂਬਸੂਰਤ ਪਰਾਂ ਵਾਲਾ ਇੱਕ ਪਰਿੰਦਾ"@pal .
+
+wd:L691820-S2 a wikibase:Sense ;
+	wdt:P5137 wd:Q61865 ;
+	wdt:P18 <http://commons.wikimedia.org/wiki/Special:FilePath/A%20Young%20male%20Indian%20Peacock%20unsure%20of%20himself%20%2851351186382%29.jpg> ;
+	wdt:P10339 wd:Q44148 ;
+	wdt:P6593 wd:L691820-S1 ;
+	wdt:P5976 wd:L691822-S1 ;
+	p:P5137 wds:L691820-S2-e2cc5279-4335-cc60-e0cc-f5a69e5ef479 .
+
+wds:L691820-S2-e2cc5279-4335-cc60-e0cc-f5a69e5ef479 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5137 wd:Q61865 ;
+	prov:wasDerivedFrom wdref:b1c0a8f229f547fc61671feba630d3d550a52e9a .
+
+wd:L691820-S2 p:P18 wds:L691820-S2-fdada94a-45b9-52eb-0344-be72ec487975 .
+
+wds:L691820-S2-fdada94a-45b9-52eb-0344-be72ec487975 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P18 <http://commons.wikimedia.org/wiki/Special:FilePath/A%20Young%20male%20Indian%20Peacock%20unsure%20of%20himself%20%2851351186382%29.jpg> .
+
+wd:L691820-S2 p:P10339 wds:L691820-S2-961154e9-446f-d3a6-ed4b-5428c5ece9a1 .
+
+wds:L691820-S2-961154e9-446f-d3a6-ed4b-5428c5ece9a1 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P10339 wd:Q44148 ;
+	prov:wasDerivedFrom wdref:b1c0a8f229f547fc61671feba630d3d550a52e9a .
+
+wd:L691820-S2 p:P6593 wds:L691820-S2-45ab4b14-4ef9-4457-ff12-a5cb160a4aa5 .
+
+wds:L691820-S2-45ab4b14-4ef9-4457-ff12-a5cb160a4aa5 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6593 wd:L691820-S1 .
+
+wd:L691820-S2 p:P5976 wds:L691820-S2-0bd01e95-437f-be88-6ac7-85a366228023 .
+
+wds:L691820-S2-0bd01e95-437f-be88-6ac7-85a366228023 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5976 wd:L691822-S1 .
+
+wd:L691820-S2 a ontolex:LexicalSense ;
+	rdfs:label "male peacock 'Pavo cristatus'"@en ;
+	skos:definition "male peacock 'Pavo cristatus'"@en .
+
+wd:L691820-S3 a wikibase:Sense ;
+	wdt:P5137 wd:Q61865 ;
+	wdt:P18 <http://commons.wikimedia.org/wiki/Special:FilePath/Indian%20Peafowl%2C%20Female.jpg> ;
+	wdt:P10339 wd:Q43445 ;
+	wdt:P6593 wd:L691820-S1 ;
+	p:P5137 wds:L691820-S3-22daed8c-4275-35ce-ba24-8ff93513eef2 .
+
+wds:L691820-S3-22daed8c-4275-35ce-ba24-8ff93513eef2 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P5137 wd:Q61865 ;
+	prov:wasDerivedFrom wdref:dc855971fd0768572ccfe070f453edb3a341f7af .
+
+wd:L691820-S3 p:P18 wds:L691820-S3-1fa66343-4102-b6d4-1993-636226758c1c .
+
+wds:L691820-S3-1fa66343-4102-b6d4-1993-636226758c1c a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P18 <http://commons.wikimedia.org/wiki/Special:FilePath/Indian%20Peafowl%2C%20Female.jpg> .
+
+wd:L691820-S3 p:P10339 wds:L691820-S3-344dcb0e-446b-8b5b-5975-86fa38ae3b25 .
+
+wds:L691820-S3-344dcb0e-446b-8b5b-5975-86fa38ae3b25 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P10339 wd:Q43445 ;
+	prov:wasDerivedFrom wdref:dc855971fd0768572ccfe070f453edb3a341f7af .
+
+wd:L691820-S3 p:P6593 wds:L691820-S3-317517df-46ac-5413-554a-e2aea7bd4491 .
+
+wds:L691820-S3-317517df-46ac-5413-554a-e2aea7bd4491 a wikibase:Statement,
+		wikibase:BestRank ;
+	wikibase:rank wikibase:NormalRank ;
+	ps:P6593 wd:L691820-S1 .
+
+wd:L691820-S3 a ontolex:LexicalSense ;
+	rdfs:label "peahen, female peacock 'Pavo cristatus'"@en ;
+	skos:definition "peahen, female peacock 'Pavo cristatus'"@en .
+
+wdv:12a48fb5fece70ebe91e6e267638881d a wikibase:TimeValue ;
+	wikibase:timeValue "2022-08-19T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+wdv:0444b2bacc36dccb21371267d7b61b75 a wikibase:TimeValue ;
+	wikibase:timeValue "2024-08-10T00:00:00Z"^^xsd:dateTime ;
+	wikibase:timePrecision "11"^^xsd:integer ;
+	wikibase:timeTimezone "0"^^xsd:integer ;
+	wikibase:timeCalendarModel <http://www.wikidata.org/entity/Q1985727> .
+
+wdref:b1c0a8f229f547fc61671feba630d3d550a52e9a a wikibase:Reference ;
+	pr:P248 wd:Q112690336 ;
+	pr:P813 "2022-08-19T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 wdv:12a48fb5fece70ebe91e6e267638881d .
+
+wdref:419c0c1b8d139de5b042744522c610ad4d23a038 a wikibase:Reference ;
+	pr:P248 wd:Q113450202 ;
+	pr:P813 "2022-08-19T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 wdv:12a48fb5fece70ebe91e6e267638881d .
+
+wdref:1e92655fbd38589aa6dbe14ac1bb9cf1571a388d a wikibase:Reference ;
+	pr:P248 wd:Q17078954 ;
+	pr:P7820 "ਮੋਰੀ" ;
+	pr:P813 "2022-08-19T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 wdv:12a48fb5fece70ebe91e6e267638881d .
+
+wdref:dc855971fd0768572ccfe070f453edb3a341f7af a wikibase:Reference ;
+	pr:P248 wd:Q74559383 ;
+	pr:P7575 "ਮੋਰੀ" ;
+	pr:P813 "2022-08-19T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 wdv:12a48fb5fece70ebe91e6e267638881d .
+
+wdref:7652f989d1bcc65218428058db15014e34a75e4d a wikibase:Reference ;
+	pr:P854 <https://dsal.uchicago.edu/cgi-bin/app/salah-ud-din_query.py?qs=%D9%85%D9%88%D8%B1&searchhws=yes&matchtype=exact> ;
+	pr:P813 "2022-08-19T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 wdv:12a48fb5fece70ebe91e6e267638881d .
+
+wdref:bc098ab8c798d16586a8050b56ab3aadfa6f5f24 a wikibase:Reference ;
+	pr:P854 <https://dsal.uchicago.edu/cgi-bin/app/soas_query.py?page=566> ;
+	pr:P1476 "A Comparative Dictionary of Indo-Aryan Languages."@en ;
+	pr:P813 "2022-08-19T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 wdv:12a48fb5fece70ebe91e6e267638881d .
+
+wdref:55c1c6b4687502c86e84cccc357f10863d78ff13 a wikibase:Reference ;
+	pr:P854 <https://pa.wikisource.org/wiki/ਬਾਤਾਂ_ਦੇਸ_ਪੰਜਾਬ_ਦੀਆਂ/ਚੱਪਣੀ_ਤੇ_ਚੂਹਾ> ;
+	pr:P813 "2024-08-10T00:00:00Z"^^xsd:dateTime ;
+	prv:P813 wdv:0444b2bacc36dccb21371267d7b61b75 .

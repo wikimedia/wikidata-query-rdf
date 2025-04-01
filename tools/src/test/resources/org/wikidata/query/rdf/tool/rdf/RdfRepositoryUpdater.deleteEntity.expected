@@ -31,7 +31,7 @@ WHERE {
      <http://acme.test/entity/entity123>
   }
   VALUES ?formOrSensePredicate {<http://www.w3.org/ns/lemon/ontolex#lexicalForm> <http://www.w3.org/ns/lemon/ontolex#sense>}
-  ?entityList ?formOrSensePredicate ?formOrSense .
+  ?entity ?formOrSensePredicate ?formOrSense .
   ?formOrSense ?formOrSenseToStatementPredicate ?formOrSenseStatements .
   ?formOrSenseStatements ?statementPredicate ?statementObject .
   FILTER (STRSTARTS(STR(?formOrSenseStatements), "http://acme.test/entity/statement/"))
@@ -45,7 +45,7 @@ WHERE {
      <http://acme.test/entity/entity123>
   }
   VALUES ?formOrSensePredicate {<http://www.w3.org/ns/lemon/ontolex#lexicalForm> <http://www.w3.org/ns/lemon/ontolex#sense>}
-  ?entityList ?formOrSensePredicate ?formOrSense .
+  ?entity ?formOrSensePredicate ?formOrSense .
   ?formOrSense ?formOrSensePred ?formOrSenseObject .
 };
 

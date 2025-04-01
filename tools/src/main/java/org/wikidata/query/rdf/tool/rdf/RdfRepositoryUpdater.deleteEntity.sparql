@@ -31,7 +31,7 @@ WHERE {
      %entityList%
   }
   VALUES ?formOrSensePredicate {%ontolex:lexicalForm% %ontolex:sensePredicate%}
-  ?entityList ?formOrSensePredicate ?formOrSense .
+  ?entity ?formOrSensePredicate ?formOrSense .
   ?formOrSense ?formOrSenseToStatementPredicate ?formOrSenseStatements .
   ?formOrSenseStatements ?statementPredicate ?statementObject .
   FILTER (STRSTARTS(STR(?formOrSenseStatements), "%uris.statement%"))
@@ -45,7 +45,7 @@ WHERE {
      %entityList%
   }
   VALUES ?formOrSensePredicate {%ontolex:lexicalForm% %ontolex:sensePredicate%}
-  ?entityList ?formOrSensePredicate ?formOrSense .
+  ?entity ?formOrSensePredicate ?formOrSense .
   ?formOrSense ?formOrSensePred ?formOrSenseObject .
 };
 

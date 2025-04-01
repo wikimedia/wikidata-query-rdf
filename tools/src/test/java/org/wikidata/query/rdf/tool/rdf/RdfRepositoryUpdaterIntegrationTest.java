@@ -10,7 +10,9 @@ import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyPort;
 import static org.wikidata.query.rdf.tool.RdfRepositoryForTesting.url;
 import static org.wikidata.query.rdf.tool.Update.getRdfClientTimeout;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
 import java.net.URL;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -27,6 +29,8 @@ import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.helpers.StatementCollector;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
+import org.wikidata.query.rdf.tool.Munge;
+import org.wikidata.query.rdf.tool.StreamUtils;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
 
 public class RdfRepositoryUpdaterIntegrationTest {
@@ -105,11 +109,23 @@ public class RdfRepositoryUpdaterIntegrationTest {
         assertThat(client.ask("ask {<" + uris.root() + "> schema:dateModified  \"1970-01-01T00:02:00Z\"^^xsd:dateTime}")).isTrue();
     }
 
+    private int loadDumpIntoRepo(Reader dumpReader) throws IOException, InterruptedException, RDFParseException, RDFHandlerException {
+        Munger munger = Munger.builder(uris).build();
+        File file = File.createTempFile("munge-test", ".ttl");
+        String fileURL = file.toURI().toURL().toString();
+        Munge munge = new Munge(uris, munger, dumpReader, Integer.MAX_VALUE, file.getAbsolutePath());
+        munge.run();
+        return client.loadUrl(fileURL);
+    }
+
     @Test
-    public void testDeleteLexemes() {
+    public void testDeleteLexemes() throws RDFHandlerException, IOException, InterruptedException, RDFParseException {
         URL l4082Location = getResource(RdfRepositoryUpdaterIntegrationTest.class,
                 RdfRepositoryUpdaterIntegrationTest.class.getSimpleName() + "." + "L4082-munged.ttl");
 
+        loadDumpIntoRepo(StreamUtils.utf8(
+                RdfRepositoryUpdaterIntegrationTest.class.getResourceAsStream(
+                        RdfRepositoryUpdaterIntegrationTest.class.getSimpleName() + "." + "L691820.ttl")));
         Integer l4082mutations = client.loadUrl(l4082Location.toString());
         assertThat(l4082mutations).isPositive();
 
@@ -128,6 +144,11 @@ public class RdfRepositoryUpdaterIntegrationTest {
         assertThat(client.ask("ask { <http://www.wikidata.org/entity/statement/L4082-S1-E7FFD9B4-DAC4-405A-864E-57963B5EA5AD> ?x ?y}")).isFalse();
         assertThat(client.ask("ask { <http://www.wikidata.org/entity/L4082-F1> ?x ?y}")).isFalse();
         assertThat(client.ask("ask { <http://www.wikidata.org/entity/L4082-S1> ?x ?y}")).isFalse();
+
+        assertThat(client.ask("ask { <http://www.wikidata.org/entity/statement/L691820-F1-52d7dca7-4f85-ba56-10f2-6beec35a235a> ?x ?y}")).isTrue();
+        assertThat(client.ask("ask { <http://www.wikidata.org/entity/statement/L691820-S1-1b109a1c-449a-b255-ab8c-2aac8d6034d4> ?x ?y}")).isTrue();
+        assertThat(client.ask("ask { <http://www.wikidata.org/entity/L691820-F1> ?x ?y}")).isTrue();
+        assertThat(client.ask("ask { <http://www.wikidata.org/entity/L691820-S1> ?x ?y}")).isTrue();
     }
 
     @Test
