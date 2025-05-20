@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikimedia</groupId>
         <artifactId>wmf-jvm-parent-pom</artifactId>
-        <version>1.75</version>
+        <version>1.96</version>
     </parent>
 
     <groupId>org.wikidata.query.rdf</groupId>
@@ -110,6 +110,8 @@
         <slf4j.version>2.0.6</slf4j.version>
 
         <spark.version>2.4.4</spark.version>
+
+        <spotless.ratchetFrom>origin/master</spotless.ratchetFrom>
     </properties>
 
     <dependencyManagement>
@@ -1084,6 +1086,20 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <configuration>
+                        <scala>
+                            <scalafmt>
+                                <!-- Override with latest scalafmt version available for scala 2.11 -->
+                                <version>2.7.5</version>
+                                <file>org/wikimedia/build/tools/scalafmt/scalafmt.conf</file>
+                                <scalaMajorVersion>${scala.compat.version}</scalaMajorVersion>
+                            </scalafmt>
+                        </scala>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>de.is24.mavenplugins</groupId>
                     <artifactId>deadcode4j-maven-plugin</artifactId>
                     <configuration>
@@ -1328,6 +1344,10 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
