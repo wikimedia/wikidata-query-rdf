@@ -42,6 +42,7 @@ class QueriesProcessor(tableAndPartitionSpec: String, numPartitions: Int)(implic
           ELSE '5_more_10s'
           END AS query_time_class
         """,
+        "http.request_headers['api-user-agent'] as api_user_agent",
         "http.request_headers['user-agent'] as ua"
         )
       //Accepting 500 as they are likely to be timeout
