@@ -9,7 +9,7 @@
 
     <groupId>org.wikidata.query.rdf</groupId>
     <artifactId>query-service-parent</artifactId>
-    <version>0.3.158-SNAPSHOT</version>
+    <version>0.3.158</version>
     <packaging>pom</packaging>
 
     <name>Wikidata Query Service</name>
@@ -62,7 +62,7 @@
             SCM in CI. Namely CI pushes over https when developers typically use ssh.
         -->
         <developerConnection>${developerConnection}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>query-service-parent-0.3.158</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/wikidata/query/rdf</url>
     </scm>
 
