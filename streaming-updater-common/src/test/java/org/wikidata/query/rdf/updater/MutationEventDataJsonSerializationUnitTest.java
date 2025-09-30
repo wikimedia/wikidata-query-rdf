@@ -24,10 +24,12 @@ import org.junit.runners.Parameterized;
 import org.openrdf.model.Statement;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFWriterRegistry;
+import org.wikidata.query.rdf.tool.HttpClientUtils;
 import org.wikidata.query.rdf.tool.MapperUtils;
 import org.wikidata.query.rdf.tool.change.events.EventsMeta;
 import org.wikimedia.eventutilities.core.event.EventSchemaLoader;
 import org.wikimedia.eventutilities.core.event.EventSchemaValidator;
+import org.wikimedia.eventutilities.core.http.BasicHttpClient;
 import org.wikimedia.eventutilities.core.json.JsonLoadingException;
 import org.wikimedia.eventutilities.core.json.JsonSchemaLoader;
 import org.wikimedia.eventutilities.core.util.ResourceLoader;
@@ -56,10 +58,14 @@ public class MutationEventDataJsonSerializationUnitTest {
     }
 
     public MutationEventDataJsonSerializationUnitTest(String version) throws MalformedURLException {
+        BasicHttpClient.Builder builder = BasicHttpClient.builder();
+        builder.httpClientBuilder().setUserAgent(HttpClientUtils.WDQS_DEFAULT_UA);
+        BasicHttpClient httpClient = builder.build();
         eventSchemaLoader = EventSchemaLoader
                 .builder()
                 .setJsonSchemaLoader(JsonSchemaLoader.build(ResourceLoader
                         .builder()
+                        .withHttpClient(httpClient)
                         .setBaseUrls(Collections.singletonList(new URL("https://schema.wikimedia.org/repositories/primary/jsonschema")))
                         .build()))
                 .build();

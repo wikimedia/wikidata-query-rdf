@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.test.SystemPropertyContext;
+import org.wikidata.query.rdf.tool.HttpClientUtils;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.RetryableException;
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
@@ -159,7 +160,7 @@ public class WikibaseRepositoryWireIntegrationTest {
 
         repository.fetchRdfForEntity("Q1");
 
-        verify(getRequestedFor(anyUrl()).withHeader("User-Agent", containing("Wikidata Query Service Updater")));
+        verify(getRequestedFor(anyUrl()).withHeader("User-Agent", containing(HttpClientUtils.WDQS_DEFAULT_UA)));
     }
 
     @Test

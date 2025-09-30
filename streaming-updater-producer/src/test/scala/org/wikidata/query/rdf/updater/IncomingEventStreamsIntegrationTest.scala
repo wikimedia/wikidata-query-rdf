@@ -4,11 +4,13 @@ import org.apache.flink.api.connector.sink2.{Sink, SinkWriter}
 import org.apache.flink.core.fs.Path
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
+import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta}
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikidata.query.rdf.updater.config.{FilteredReconciliationStream, InputStreams, UpdaterPipelineInputEventStreamConfig}
 import org.wikimedia.eventutilities.core.event.{EventSchemaLoader, EventStreamConfig, EventStreamFactory, StaticEventStreamConfigLoader}
+import org.wikimedia.eventutilities.core.http.BasicHttpClient
 import org.wikimedia.eventutilities.core.json.{JsonLoader, JsonSchemaLoader}
 import org.wikimedia.eventutilities.core.util.ResourceLoader
 import org.wikimedia.eventutilities.flink.stream.EventDataStreamFactory
@@ -26,8 +28,15 @@ class IncomingEventStreamsIntegrationTest extends FlatSpec with FlinkTestCluster
     // useful to put test schemas while changes are being reviewed on the schemas repos
     this.getClass.getResource("/schema_repo/").toString)
 
+  private val httpClient: BasicHttpClient = {
+    val builder = BasicHttpClient.builder()
+    builder.httpClientBuilder().setUserAgent(HttpClientUtils.WDQS_DEFAULT_UA)
+    builder.build()
+  }
+
   private val resourceLoader = ResourceLoader.builder()
     .setBaseUrls(ResourceLoader.asURLs(schemaRepos.asJava))
+    .withHttpClient(httpClient)
     .build()
   private val jsonLoader: JsonLoader = new JsonLoader(resourceLoader)
   private val eventStreamConfigLoader = new StaticEventStreamConfigLoader(

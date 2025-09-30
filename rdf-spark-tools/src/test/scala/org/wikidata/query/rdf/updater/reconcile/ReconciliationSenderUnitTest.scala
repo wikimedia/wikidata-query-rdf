@@ -3,12 +3,10 @@ package org.wikidata.query.rdf.updater.reconcile
 import java.io.IOException
 import java.net.URI
 import java.time.Instant
-
 import java.util.{UUID, function}
 import scala.collection.JavaConverters._
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
-
 import com.fasterxml.jackson.databind.node.ArrayNode
 import org.apache.commons.io.IOUtils
 import org.apache.http.HttpVersion
@@ -20,7 +18,7 @@ import org.scalamock.matchers.ArgCapture.CaptureAll
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.wikidata.query.rdf.tool.{EntityId, MapperUtils}
+import org.wikidata.query.rdf.tool.{EntityId, HttpClientUtils, MapperUtils}
 import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta, ReconcileEvent}
 import org.wikidata.query.rdf.tool.change.events.ReconcileEvent.Action
 import org.wikimedia.eventutilities.core.event.{EventSchemaLoader, EventSchemaValidator}
@@ -35,7 +33,11 @@ class ReconciliationSenderUnitTest extends AnyFlatSpec with Matchers with MockFa
   private val domain: String = "mydomain"
   private val mystream: String = "mystream"
   private val defaultLoader: function.Function[URI, Array[Byte]] = new function.Function[URI, Array[Byte]]() {
-    override def apply(u: URI): Array[Byte] = IOUtils.toByteArray(u)
+    override def apply(u: URI): Array[Byte] = {
+      val connection = u.toURL.openConnection()
+      connection.setRequestProperty("User-Agent", HttpClientUtils.WDQS_DEFAULT_UA)
+      IOUtils.toByteArray(connection.getInputStream)
+    }
   }
   private val resLoader: ResourceLoader = ResourceLoader.builder()
     .setDefaultLoader(defaultLoader)
@@ -65,6 +67,7 @@ class ReconciliationSenderUnitTest extends AnyFlatSpec with Matchers with MockFa
 
   "ReconciliationSender" should "send batch of events compatible with their schema" in {
     val httpClient = mock[HttpClient]
+
     val validResponse = stub[CloseableHttpResponse]
     val captureAllSuccess = CaptureAll[HttpUriRequest]()
 

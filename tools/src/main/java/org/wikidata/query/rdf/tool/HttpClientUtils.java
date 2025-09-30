@@ -91,7 +91,7 @@ public final class HttpClientUtils {
     /**
      * Default HTTP User-Agent used by the system.
      */
-    public static final String WDQS_DEFAULT_UA = "Wikidata Query Service Updater Bot";
+    public static final String WDQS_DEFAULT_UA = "Wikidata-Query-RDF/1.0 (https://github.com/wikimedia/wikidata-query-rdf) Bot/1.0";
 
     /**
      * Max number of connection pooled per route.

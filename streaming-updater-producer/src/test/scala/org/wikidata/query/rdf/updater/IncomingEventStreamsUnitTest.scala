@@ -2,9 +2,11 @@ package org.wikidata.query.rdf.updater
 
 import org.apache.flink.types.Row
 import org.scalatest.{FlatSpec, Matchers}
+import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.tool.change.events.{EventInfo, EventsMeta}
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
 import org.wikimedia.eventutilities.core.event.{EventSchemaLoader, EventStreamConfig, EventStreamFactory, StaticEventStreamConfigLoader}
+import org.wikimedia.eventutilities.core.http.BasicHttpClient
 import org.wikimedia.eventutilities.core.json.{JsonLoader, JsonSchemaLoader}
 import org.wikimedia.eventutilities.core.util.ResourceLoader
 import org.wikimedia.eventutilities.flink.stream.EventDataStreamFactory
@@ -22,8 +24,15 @@ class IncomingEventStreamsUnitTest extends FlatSpec with Matchers {
     // useful to put test schemas while changes are being reviewed on the schemas repos
     this.getClass.getResource("/schema_repo/").toString)
 
+  private val httpClient: BasicHttpClient = {
+    val builder = BasicHttpClient.builder()
+    builder.httpClientBuilder().setUserAgent(HttpClientUtils.WDQS_DEFAULT_UA)
+    builder.build()
+  }
+
   private val resourceLoader = ResourceLoader.builder()
     .setBaseUrls(ResourceLoader.asURLs(schemaRepos.asJava))
+    .withHttpClient(httpClient)
     .build()
   private val jsonLoader: JsonLoader = new JsonLoader(resourceLoader)
   private val eventStreamConfigLoader = new StaticEventStreamConfigLoader(
