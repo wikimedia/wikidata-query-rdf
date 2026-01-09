@@ -1,0 +1,364 @@
+title: mediawiki/revision/create
+description: Represents a MW Revision Create event.
+$id: /mediawiki/revision/create/1.2.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - database
+  - meta
+  - page_id
+  - page_is_redirect
+  - page_namespace
+  - page_title
+  - rev_id
+  - rev_timestamp
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  chronology_id:
+    description: Deprecated - no longer populated
+    type: string
+  comment:
+    description: The comment left by the user that performed this change.
+    type: string
+  database:
+    description: The name of the wiki database this event entity belongs to.
+    type: string
+    minLength: 1
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  page_id:
+    description: The page ID of the page this revision belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 1
+  page_is_redirect:
+    description: >
+      True if this revision is a redirect.  This fact is ultimately represented
+      by revision content containing redirect wikitext.  If this revision is the
+      head revision of the page, then the page will also be a redirect.
+    type: boolean
+  page_namespace:
+    description: The namespace of the page this revision belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  page_title:
+    description: The normalized title of the page this revision belongs to.
+    type: string
+    minLength: 1
+  parsedcomment:
+    description: >
+      The comment left by the user that performed this change parsed into simple
+      HTML. Optional
+    type: string
+  performer:
+    description: Represents the user that performed this change.
+    type: object
+    required:
+      - user_text
+      - user_groups
+      - user_is_bot
+    properties:
+      user_edit_count:
+        description: >
+          The number of edits this user has made at the time of this event. Not
+          present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      user_groups:
+        description: 'A list of the groups this user belongs to.  E.g. bot, sysop etc.'
+        type: array
+        items:
+          type: string
+          minLength: 1
+      user_id:
+        description: >
+          The user id that performed this change.  This is optional, and will
+          not be present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+      user_is_bot:
+        description: >
+          True if this user is considered to be a bot at the time of this event.
+          This is checked via the $user->isBot() method, which considers both
+          user_groups and user permissions.
+        type: boolean
+      user_registration_dt:
+        description: >
+          The datetime of the user account registration. Not present for
+          anonymous users or if missing in the MW database.
+        type: string
+        format: date-time
+        maxLength: 128
+      user_text:
+        description: The text representation of the user that performed this change.
+        type: string
+        minLength: 1
+  rev_content_format:
+    description: The content format of the revision.
+    type: string
+  rev_content_model:
+    description: The content model of the revision.
+    type: string
+  rev_id:
+    description: The (database) revision ID.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  rev_is_revert:
+    description: Flag indicating whether the edit was a revert.
+    type: boolean
+  rev_len:
+    description: The length of the revision text in bytes.
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  rev_minor_edit:
+    description: Flag identifying if the revision is minor.
+    type: boolean
+  rev_parent_id:
+    description: The parent revison ID of the revision that this event represents.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  rev_revert_details:
+    description: Details about the revert.
+    type: object
+    required:
+      - rev_revert_method
+      - rev_is_exact_revert
+      - rev_reverted_revs
+    properties:
+      rev_is_exact_revert:
+        description: >
+          Flag indicating whether the revert was exact, i.e. the contents of the
+          revert revision and restored revision match.
+        type: boolean
+      rev_original_rev_id:
+        description: |
+          The ID of an earlier revision that is being repeated or restored.
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+      rev_revert_method:
+        description: The method that was used to perform the revert.
+        type: string
+        enum:
+          - rollback
+          - undo
+          - manual
+      rev_reverted_revs:
+        description: >
+          IDs of revisions that were reverted by this edit, ordered from oldest
+          to newest.
+        type: array
+        items:
+          type: integer
+          maximum: 9007199254740991
+          minimum: -9007199254740991
+  rev_sha1:
+    description: The sha1 of the revision text.
+    type: string
+  rev_slots:
+    description: |
+      The revision slots attached to this revision.
+    type: object
+    additionalProperties:
+      title: fragment/mediawiki/revision/slot
+      description: Schema fields describing a revision slot
+      $id: /fragment/mediawiki/revision/slot/1.0.0
+      $schema: 'https://json-schema.org/draft-07/schema#'
+      type: object
+      additionalProperties: false
+      required:
+        - rev_slot_content_model
+        - rev_slot_sha1
+        - rev_slot_size
+      properties:
+        rev_slot_content_model:
+          description: 'Model of the content (e.g. wikitext, wikibase-mediainfo...)'
+          type: string
+        rev_slot_origin_rev_id:
+          description: Revision for which this slot was created
+          type: integer
+          maximum: 9007199254740991
+          minimum: 0
+        rev_slot_sha1:
+          description: SHA1 of the slot content
+          type: string
+        rev_slot_size:
+          description: Size in bytes of the slot content
+          type: integer
+          maximum: 9007199254740991
+          minimum: 0
+      examples:
+        - rev_slot_content_model: dolor
+          rev_slot_origin_rev_id: 1351079888211148
+          rev_slot_sha1: dolor
+          rev_slot_size: 1351079888211148
+    required:
+      - main
+    properties:
+      main:
+        title: fragment/mediawiki/revision/slot
+        description: Schema fields describing a revision slot
+        $id: /fragment/mediawiki/revision/slot/1.0.0
+        $schema: 'https://json-schema.org/draft-07/schema#'
+        type: object
+        additionalProperties: false
+        required:
+          - rev_slot_content_model
+          - rev_slot_sha1
+          - rev_slot_size
+        properties:
+          rev_slot_content_model:
+            description: 'Model of the content (e.g. wikitext, wikibase-mediainfo...)'
+            type: string
+          rev_slot_origin_rev_id:
+            description: Revision for which this slot was created
+            type: integer
+            maximum: 9007199254740991
+            minimum: 0
+          rev_slot_sha1:
+            description: SHA1 of the slot content
+            type: string
+          rev_slot_size:
+            description: Size in bytes of the slot content
+            type: integer
+            maximum: 9007199254740991
+            minimum: 0
+        examples:
+          - rev_slot_content_model: dolor
+            rev_slot_origin_rev_id: 1351079888211148
+            rev_slot_sha1: dolor
+            rev_slot_size: 1351079888211148
+  rev_timestamp:
+    description: >
+      The revision's creation time in ISO8601 format.  This field does not end
+      in '_dt' to better match the field name on the Mediawiki revision table.
+    type: string
+    format: date-time
+    maxLength: 128
+examples:
+  - $schema: /mediawiki/revision/create/1.2.0
+    database: examplewiki
+    meta:
+      domain: test.wikipedia.org
+      dt: '2020-06-10T18:57:16Z'
+      stream: mediawiki.revision-create
+      uri: 'https://examplewiki.wikipedia.org/wiki/TestPage10'
+    page_id: 123
+    page_is_redirect: false
+    page_namespace: 0
+    page_title: TestPage10
+    performer:
+      user_edit_count: 1
+      user_groups:
+        - '*'
+        - user
+        - autoconfirmed
+      user_id: 123
+      user_is_bot: false
+      user_registration_dt: '2016-01-29T21:13:24Z'
+      user_text: example_user_text
+    rev_content_changed: true
+    rev_content_format: text/x-wiki
+    rev_content_model: wikitext
+    rev_id: 123
+    rev_is_revert: false
+    rev_len: 3
+    rev_minor_edit: false
+    rev_parent_id: 122
+    rev_sha1: mr0szy90m5qbn6tek7ch3nebaild3tm
+    rev_slots:
+      main:
+        rev_slot_content_model: wikitext
+        rev_slot_origin_rev_id: 123
+        rev_slot_sha1: 2mx9qnkore72az8niqap1s3ycpu1jej
+        rev_slot_size: 20
+    rev_timestamp: '2020-06-10T18:57:16Z'
+  - $schema: /mediawiki/revision/create/1.2.0
+    database: examplewiki
+    meta:
+      domain: test.wikipedia.org
+      dt: '2020-06-10T19:02:04Z'
+      stream: mediawiki.revision-create
+      uri: 'https://examplewiki.wikipedia.org/wiki/TestPage10'
+    page_id: 123
+    page_is_redirect: false
+    page_namespace: 0
+    page_title: TestPage10
+    performer:
+      user_edit_count: 100
+      user_groups:
+        - '*'
+        - user
+        - autoconfirmed
+        - sysop
+      user_id: 20
+      user_is_bot: false
+      user_registration_dt: '2014-02-23T21:13:24Z'
+      user_text: example_user_sysop_text
+    rev_content_changed: true
+    rev_content_format: text/x-wiki
+    rev_content_model: wikitext
+    rev_id: 124
+    rev_is_revert: true
+    rev_len: 20
+    rev_minor_edit: false
+    rev_parent_id: 123
+    rev_revert_details:
+      rev_is_exact_revert: true
+      rev_original_rev_id: 121
+      rev_revert_method: rollback
+      rev_reverted_revs:
+        - 122
+        - 123
+    rev_sha1: 2mx9qnkore72az8niqap1s3ycpu1jej
+    rev_slots:
+      main:
+        rev_slot_content_model: wikitext
+        rev_slot_origin_rev_id: 124
+        rev_slot_sha1: 2mx9qnkore72az8niqap1s3ycpu1jej
+        rev_slot_size: 20
+      mediainfo:
+        rev_slot_content_model: wikibase-mediainfo
+        rev_slot_origin_rev_id: 121
+        rev_slot_sha1: c1a805332a2674c1e2b178dabf1e633122a8d43f
+        rev_slot_size: 1414
+    rev_timestamp: '2020-06-10T18:57:16Z'

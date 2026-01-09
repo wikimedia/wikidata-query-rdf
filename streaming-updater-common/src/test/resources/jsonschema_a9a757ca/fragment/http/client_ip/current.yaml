@@ -1,0 +1,14 @@
+title: fragment/http/client_ip
+description: An http.client_ip property that can be optionatlly added to the http object.
+$id: /fragment/http/client_ip/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+properties:
+  http:
+    type: object
+    properties:
+      client_ip:
+        type: string
+        description: >-
+          The http client's IP address, usually set from the X-Client-IP header,
+          the value of which is extracted from X-Forwarded-For.

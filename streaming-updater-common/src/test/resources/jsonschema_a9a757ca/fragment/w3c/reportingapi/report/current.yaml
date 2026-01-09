@@ -1,0 +1,37 @@
+title: fragment/w3c/reportingapi/report
+description: >
+  Browser-generated problem reports, as described by the W3C Reporting API.
+  https://www.w3.org/TR/reporting/
+  This is a fragment that includes the basic fields part of every report.
+  Each report type should use this fragment when writing their own
+  event schema with the appropriate fields for the 'body' object.
+
+$id: /fragment/w3c/reportingapi/report/1.0.0
+
+$schema: https://json-schema.org/draft-07/schema#
+
+type: object
+allOf:
+  - $ref: /fragment/common/1.0.0#
+  - $ref: /fragment/http/1.2.0#
+  - $ref: /fragment/http/client_ip/1.0.0#
+  - properties:
+      age:
+        type: number
+        description: >
+          The number of milliseconds between the report's timestamp and the
+          time the report was sent.
+      type:
+        type: string
+        description: The flavor of the report, like 'network-error' or 'hpkp'.
+      url:
+        type: string
+        description: The URL that caused the report to be generated.
+      user_agent:
+        type: string
+        description: >
+          The name of the User-Agent used at the time of loading the original URL
+          which caused the report to be generated.
+          This may differ from the User-Agent used in the HTTP request that sent
+          the report due to factors like the original fetch using the
+          "request desktop site" feature.

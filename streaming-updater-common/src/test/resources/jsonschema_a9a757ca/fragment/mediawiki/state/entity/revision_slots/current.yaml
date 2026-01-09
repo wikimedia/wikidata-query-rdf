@@ -1,0 +1,17 @@
+title: fragment/mediawiki/state/entity/revision_slots
+description: >
+  Map type representing MediaWiki's revision content slots.
+  This map is keyed by the slot role name, e.g. 'main'.
+
+$id: /fragment/mediawiki/state/entity/revision_slots/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties:
+  allOf:
+  # Ref entity/content, and add a slot_role name field.
+  - $ref: /fragment/mediawiki/state/entity/content/1.0.0
+  - properties:
+      slot_role:
+        type: string
+        description:
+          Slot role name.

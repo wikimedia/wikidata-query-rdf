@@ -1,0 +1,155 @@
+title: development/cirrussearch/update_pipeline/fetch_error
+description: |
+  Indicates a failure when fetching the CirrusSearch document from mediawiki
+$id: /development/cirrussearch/update_pipeline/fetch_error/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - dt
+  - emitter_id
+  - error_type
+  - message
+  - meta
+  - namespace_id
+  - original_event_stream
+  - original_event_time
+  - original_ingestion_time
+  - page_id
+  - wiki_id
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  dt:
+    description: >
+      ISO-8601 formatted timestamp of when the event occurred/was generated in
+      UTC), AKA 'event time'. This is different than meta.dt, which is used as
+      the time the system received this event.
+    type: string
+    format: date-time
+    maxLength: 128
+  emitter_id:
+    description: identifies the entity where a fatal failure occured
+    type: string
+  error_type:
+    description: |
+      the type of the error, for example the class name of the exception.
+    type: string
+  errored_schema_uri:
+    description: >
+      $schema URI of event that caused the error. This is the value of
+      raw_event's $schema if it is extractable when the error was encountered.
+    type: string
+  errored_stream_name:
+    description: >
+      meta.stream name of the event that caused the error. This is the value of
+      raw_event's meta.stream if it is extractable when the error was
+      encountered.
+    type: string
+  message:
+    description: message describing an error
+    type: string
+  meta:
+    type: object
+    required:
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'Time the event was received by the system, in UTC ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream (dataset) that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  namespace_id:
+    description: The id of the namespace this page belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  original_event_stream:
+    description: Name of the stream (dataset) that the event causing the failure belongs in
+    type: string
+    minLength: 1
+  original_event_time:
+    description: >
+      ISO-8601 formatted timestamp of when the event causing the failure
+      occurred/was generated in UTC), AKA 'event time'.
+    type: string
+    format: date-time
+    maxLength: 128
+  original_ingestion_time:
+    description: >-
+      ISO-8601 formatted timestamp of when the event causing the failure entered
+      the pipeline.
+    type: string
+    format: date-time
+    maxLength: 128
+  page_id:
+    description: The (database) page ID of the page.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  page_title:
+    description: The normalized title of the page.
+    type: string
+    minLength: 1
+  raw_event:
+    description: string encoded original event
+    type: string
+  rev_id:
+    description: The (database) revision ID.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 1
+  stack:
+    description: stack trace of the error (optional)
+    type: string
+  triggered_by:
+    description: >
+      comma-separated list of event descriptions in `<topic>:<uri>` format, that
+      represent a chain of events that caused this event to be emitted.
+    type: string
+  wiki_id:
+    description: >
+      The wiki ID, which is usually the same as the MediaWiki database name.
+      E.g. enwiki, metawiki, etc.
+    type: string
+    minLength: 1
+examples:
+  - $schema: /development/cirrussearch/update_pipeline/fetch_error/1.0.0
+    dt: '2022-11-11T00:00:00Z'
+    emitter_id: eqiad-cirrussearch-consumer-cloudelastic
+    error_type: NOT_FOUND
+    message: Cannot find page Test page
+    meta:
+      domain: test.wikipedia.org
+      dt: '2022-11-11T00:00:10Z'
+      stream: cirrussearch-update-pipeline-fetch-failure
+    namespace_id: 0
+    original_event_stream: mediawiki.page-state
+    original_event_time: '2022-11-11T00:00:00Z'
+    original_ingestion_time: '2022-11-11T00:00:05Z'
+    page_id: 123
+    page_title: Test Page
+    wiki_id: testwiki

@@ -1,0 +1,196 @@
+title: mediawiki/revision/create
+description: Represents a MW Revision Create event.
+$id: /mediawiki/revision/create/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - database
+  - meta
+  - page_id
+  - page_is_redirect
+  - page_namespace
+  - page_title
+  - rev_id
+  - rev_timestamp
+properties:
+  rev_parent_id:
+    description: The parent revison ID of the revision that this event represents.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  database:
+    description: The name of the wiki database this event entity belongs to.
+    type: string
+    minLength: 1
+  performer:
+    description: Represents the user that performed this change.
+    type: object
+    required:
+      - user_text
+      - user_groups
+      - user_is_bot
+    properties:
+      user_id:
+        description: >
+          The user id that performed this change.  This is optional, and will
+          not be present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+      user_text:
+        description: The text representation of the user that performed this change.
+        type: string
+        minLength: 1
+      user_groups:
+        description: 'A list of the groups this user belongs to.  E.g. bot, sysop etc.'
+        type: array
+        items:
+          type: string
+          minLength: 1
+      user_is_bot:
+        description: >
+          True if this user is considered to be a bot at the time of this event.
+          This is checked via the $user->isBot() method, which considers both
+          user_groups and user permissions.
+        type: boolean
+      user_registration_dt:
+        description: >
+          The datetime of the user account registration. Not present for
+          anonymous users or if missing in the MW database.
+        type: string
+        format: date-time
+        maxLength: 128
+      user_edit_count:
+        description: >
+          The number of edits this user has made at the time of this event. Not
+          present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+  page_id:
+    description: The page ID of the page this revision belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 1
+  page_title:
+    description: The normalized title of the page this revision belongs to.
+    type: string
+    minLength: 1
+  page_namespace:
+    description: The namespace of the page this revision belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  page_is_redirect:
+    description: >
+      True if this revision is a redirect.  This fact is ultimately represented
+      by revision content containing redirect wikitext.  If this revision is the
+      head revision of the page, then the page will also be a redirect.
+    type: boolean
+  rev_id:
+    description: The (database) revision ID.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      uri:
+        type: string
+        format: uri-reference
+        maxLength: 8192
+        description: Unique URI identifying the event or entity
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      id:
+        description: Unique ID of this event
+        type: string
+      dt:
+        type: string
+        format: date-time
+        maxLength: 128
+        description: 'UTC event datetime, in ISO-8601 format'
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+  rev_timestamp:
+    description: >
+      The revision's creation time in ISO8601 format.  This field does not end
+      in '_dt' to better match the field name on the Mediawiki revision table.
+    type: string
+    format: date-time
+    maxLength: 128
+  chronology_id:
+    description: Chonology Protector client ID.
+    type: string
+  comment:
+    description: The comment left by the user that performed this change.
+    type: string
+  parsedcomment:
+    description: >
+      The comment left by the user that performed this change parsed into simple
+      HTML. Optional
+    type: string
+  rev_sha1:
+    description: The sha1 of the revision text.
+    type: string
+  rev_len:
+    description: The length of the revision text in bytes.
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  rev_minor_edit:
+    description: Flag identifying if the revision is minor.
+    type: boolean
+  rev_content_model:
+    description: The content model of the revision.
+    type: string
+  rev_content_format:
+    description: The content format of the revision.
+    type: string
+examples:
+  - rev_sha1: mr0szy90m5qbn6tek7ch3nebaild3tm
+    $schema: /mediawiki/revision/create/1.0.0
+    database: examplewiki
+    page_id: 123
+    page_title: TestPage10
+    page_namespace: 0
+    rev_id: 123
+    rev_timestamp: '2020-06-10T18:57:16Z'
+    meta:
+      uri: 'https://examplewiki.wikipedia.org/wiki/TestPage10'
+      dt: '2020-06-10T18:57:16Z'
+      domain: test.wikipedia.org
+      stream: mediawiki.revision-create
+    rev_minor_edit: false
+    rev_len: 3
+    rev_content_model: wikitext
+    rev_content_format: text/x-wiki
+    performer:
+      user_text: example_user_text
+      user_groups:
+        - '*'
+        - user
+        - autoconfirmed
+      user_is_bot: false
+      user_id: 123
+      user_registration_dt: '2016-01-29T21:13:24Z'
+      user_edit_count: 1
+    page_is_redirect: false
+    rev_parent_id: 122
+    rev_content_changed: true

@@ -1,0 +1,30 @@
+title: api-gateway/request
+description: A single request to the API Gateway
+$id: /api-gateway/request/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/common/1.0.0#
+  - $ref: /fragment/http/1.2.0#
+  - $ref: /fragment/http/client_ip/1.0.0#
+  - properties:
+      backend_time_ms:
+        type: integer
+        description: Elapsed milliseconds to process request by the backend service
+      total_time_ms:
+        type: integer
+        description: Total elapsed milliseconds to process request
+      client_id:
+        type: string
+        description: The client_id for OAuth2 authenticated clients
+      route:
+        type: string
+        description: The name of the request route
+examples:
+  - $schema: { $ref: "#/$id" }
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: example_stream
+    backend_time_ms: 2
+    total_time_ms: 3
+    client_id: 'test_client'

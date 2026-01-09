@@ -1,0 +1,49 @@
+title: mediawiki/cirrussearch/page_rerender
+description: >
+  Represents a notification instructing that a page should be re-rendered.
+
+$id: /mediawiki/cirrussearch/page_rerender/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - wiki_id
+  - reason
+  - page_id
+  - page_title
+  - namespace_id
+  - is_redirect
+allOf:
+  - $ref: /fragment/common/2.0.0
+  - $ref: /fragment/cirrussearch/index/1.0.0
+  - $ref: /fragment/mediawiki/state/entity/page/2.0.0
+
+properties:
+  wiki_id:
+    description: >
+      The wiki ID, which is usually the same as the MediaWiki database name.
+      E.g. enwiki, metawiki, etc.
+    type: string
+    minLength: 1
+  reason:
+    type: string
+    description: The known reason that led to this event.
+    minLength: 1
+
+examples:
+   - $schema: { $ref: '#/$id' }
+     meta:
+       stream: "mediawiki.cirrussearch_page_rerender"
+       uid: "00000000-0000-0000-0000-000000000000"
+       request_id: "my_request_id"
+       domain: "myserver.unittest.local"
+       uri: "https:\/\/myserver.unittest.local\/wiki\/MyPage"
+     reason: "my_reason"
+     dt: "1970-01-01T00:00:00Z"
+     wiki_id: "mywiki"
+     cirrussearch_index_name: "mywiki_content"
+     cirrussearch_cluster_group: "my_group"
+     page_id: 123
+     page_title: "MyPage"
+     namespace_id: 0
+     is_redirect: false

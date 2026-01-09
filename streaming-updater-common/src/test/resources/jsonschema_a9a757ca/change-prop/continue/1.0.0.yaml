@@ -1,0 +1,75 @@
+title: change-prop/continue
+description: Represents a continuation request in batch processing
+$id: /change-prop/continue/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - continue
+  - meta
+  - original_event
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  continue:
+    description: continuation token
+    type: object
+  emitter_id:
+    description: identifies the entity that requested a retry
+    type: string
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  original_event:
+    description: original event that began the batch
+    type: object
+  sequence_num:
+    description: Number of this continuation event in the current sequence.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 1
+  triggered_by:
+    description: >
+      comma-separated list of event descriptions in `<topic>:<uri>` format, that
+      represent a chain of events that caused this event to be emitted.
+    type: string
+examples:
+  - $schema: /change-prop/continue/1.0.0
+    continue:
+      example_key: example_value
+    emitter_id: example_emitter_id
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: change-prop.continue.example
+    original_event:
+      example_key: example_value

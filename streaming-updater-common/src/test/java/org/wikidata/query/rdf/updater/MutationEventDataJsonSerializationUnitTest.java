@@ -9,7 +9,9 @@ import static org.wikidata.query.rdf.test.StatementHelper.statement;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 import java.util.Arrays;
@@ -24,12 +26,10 @@ import org.junit.runners.Parameterized;
 import org.openrdf.model.Statement;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFWriterRegistry;
-import org.wikidata.query.rdf.tool.HttpClientUtils;
 import org.wikidata.query.rdf.tool.MapperUtils;
 import org.wikidata.query.rdf.tool.change.events.EventsMeta;
 import org.wikimedia.eventutilities.core.event.EventSchemaLoader;
 import org.wikimedia.eventutilities.core.event.EventSchemaValidator;
-import org.wikimedia.eventutilities.core.http.BasicHttpClient;
 import org.wikimedia.eventutilities.core.json.JsonLoadingException;
 import org.wikimedia.eventutilities.core.json.JsonSchemaLoader;
 import org.wikimedia.eventutilities.core.util.ResourceLoader;
@@ -58,17 +58,14 @@ public class MutationEventDataJsonSerializationUnitTest {
     }
 
     public MutationEventDataJsonSerializationUnitTest(String version) throws MalformedURLException {
-        BasicHttpClient.Builder builder = BasicHttpClient.builder();
-        builder.httpClientBuilder().setUserAgent(HttpClientUtils.WDQS_DEFAULT_UA);
-        BasicHttpClient httpClient = builder.build();
         eventSchemaLoader = EventSchemaLoader
+            .builder()
+            .setJsonSchemaLoader(JsonSchemaLoader.build(ResourceLoader
                 .builder()
-                .setJsonSchemaLoader(JsonSchemaLoader.build(ResourceLoader
-                        .builder()
-                        .withHttpClient(httpClient)
-                        .setBaseUrls(Collections.singletonList(new URL("https://schema.wikimedia.org/repositories/primary/jsonschema")))
-                        .build()))
-                .build();
+                .addLoader("file", this::loadResource)
+                .setBaseUrls(Collections.singletonList(new URL("file:/jsonschema_a9a757ca")))
+                .build()))
+            .build();
         validator = new EventSchemaValidator(eventSchemaLoader);
         chunkSer = new RDFChunkSerializer(RDFWriterRegistry.getInstance());
         final MutationEventDataFactory factory;
@@ -98,6 +95,14 @@ public class MutationEventDataJsonSerializationUnitTest {
                 .getResource("MutationEventDataJsonSerializationUnitTest-testDelete-" + version + ".json");
         testReconcileJsonResource = MutationEventDataJsonSerializationUnitTest.class
                 .getResource("MutationEventDataJsonSerializationUnitTest-testReconcile-" + version + ".json");
+    }
+
+    private byte[] loadResource(URI uri) {
+        try {
+            return Resources.toByteArray(MutationEventDataGeneratorUnitTest.class.getResource(uri.getPath()));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private MutationEventData deser(URL testResource) throws IOException {

@@ -1,0 +1,62 @@
+title: fragment/mediawiki/state/entity/revision_slots
+description: >
+  Map type representing MediaWiki's revision content slots. This map is keyed by
+  the slot role name, e.g. 'main'.
+$id: /fragment/mediawiki/state/entity/revision_slots/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties:
+  title: fragment/mediawiki/state/entity/content
+  description: |
+    Fields for representing MediaWiki page revision content.
+  $id: /fragment/mediawiki/state/entity/content/1.0.0
+  $schema: 'https://json-schema.org/draft-07/schema#'
+  type: object
+  additionalProperties: false
+  properties:
+    content_body:
+      description: >
+        Content body. NOTE: This field is not required, and is often not set in
+        streams as it can make events very large. It is included here for events
+        that do include the content body.
+      type: string
+    content_format:
+      description: >-
+        The 'content type' of the content.  E.g. wikitext/html. This is similiar
+        to a MIME type.
+      type: string
+    content_model:
+      description: 'MediaWiki''s content model of this content. E.g. wikitext, json, etc.'
+      type: string
+    content_sha1:
+      description: sha1 sum of the content body.
+      type: string
+    content_size:
+      description: Byte size of the content body.
+      type: integer
+      maximum: 9007199254740991
+      minimum: 0
+    origin_rev_id:
+      description: Revision in which this slot was originally created
+      type: integer
+      maximum: 9007199254740991
+      minimum: 0
+    slot_role:
+      description: Slot role name.
+      type: string
+  examples:
+    - content_body: dolor
+      content_format: dolor
+      content_model: dolor
+      content_sha1: dolor
+      content_size: 1351079888211148
+      origin_rev_id: 1351079888211148
+examples:
+  - dolorb:
+      content_body: dolor
+      content_format: dolor
+      content_model: dolor
+      content_sha1: dolor
+      content_size: 1351079888211148
+      origin_rev_id: 1351079888211148
+      slot_role: dolor

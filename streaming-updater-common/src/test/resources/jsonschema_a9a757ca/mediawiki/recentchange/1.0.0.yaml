@@ -1,0 +1,161 @@
+title: mediawiki/recentchange
+description: >
+  Represents a MW RecentChange event.
+  https://www.mediawiki.org/wiki/Manual:RCFeed
+$id: /mediawiki/recentchange/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: true
+required:
+  - $schema
+  - meta
+properties:
+  title:
+    description: 'Full page name, from Title::getPrefixedText.'
+    type: string
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  type:
+    description: >
+      Type of recentchange event (rc_type). One of "edit", "new", "log",
+      "categorize", or "external". (See Manual:Recentchanges table#rc_type)
+    type: string
+  bot:
+    description: (rc_bot)
+    type: boolean
+  comment:
+    description: (rc_comment)
+    type: string
+  id:
+    description: ID of the recentchange event (rcid).
+    type:
+      - integer
+      - 'null'
+  length:
+    description: Length of old and new change
+    type: object
+    properties:
+      new:
+        description: (rc_new_len)
+        type:
+          - integer
+          - 'null'
+      old:
+        description: (rc_old_len)
+        type:
+          - integer
+          - 'null'
+  log_action:
+    description: (rc_log_action)
+    type: string
+  log_action_comment:
+    type:
+      - string
+      - 'null'
+  log_id:
+    description: (rc_log_id)
+    type:
+      - integer
+      - 'null'
+  log_params:
+    description: Property only exists if event has rc_params.
+    type:
+      - array
+      - object
+      - string
+    additionalProperties: true
+  log_type:
+    description: (rc_log_type)
+    type:
+      - string
+      - 'null'
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  minor:
+    description: (rc_minor).
+    type: boolean
+  namespace:
+    description: >
+      ID of relevant namespace of affected page (rc_namespace, page_namespace).
+      This is -1 ("Special") for log events.
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  parsedcomment:
+    description: The rc_comment parsed into simple HTML. Optional
+    type: string
+  patrolled:
+    description: >
+      (rc_patrolled). This property only exists if patrolling is supported for
+      this event (based on $wgUseRCPatrol, $wgUseNPPatrol).
+    type: boolean
+  revision:
+    description: Old and new revision IDs
+    type: object
+    properties:
+      new:
+        description: (rc_last_oldid)
+        type:
+          - integer
+          - 'null'
+      old:
+        description: (rc_this_oldid)
+        type:
+          - integer
+          - 'null'
+  server_name:
+    description: $wgServerName
+    type: string
+  server_script_path:
+    description: $wgScriptPath
+    type: string
+  server_url:
+    description: $wgCanonicalServer
+    type: string
+  timestamp:
+    description: Unix timestamp (derived from rc_timestamp).
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  user:
+    description: (rc_user_text)
+    type: string
+  wiki:
+    description: 'wfWikiID ($wgDBprefix, $wgDBname)'
+    type: string
+examples:
+  - $schema: /mediawiki/recentchange/1.0.0
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: mediawiki.recentchange

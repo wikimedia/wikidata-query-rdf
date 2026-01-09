@@ -1,0 +1,55 @@
+title: fragment/mediawiki/common
+description: Common schema fields for all Mediawiki entities
+$id: /fragment/mediawiki/common/3.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+# Use allOf so that common schemas are fully merged by
+# jsonschema-tools along with their required fields.
+allOf:
+    ### global event fields
+  - $ref: /fragment/common/2.0.0#
+### Mediawiki entity fields.
+properties:
+  database:
+    description: The name of the wiki database this event entity belongs to.
+    type: string
+    minLength: 1
+
+  performer:
+    description: Represents the user that performed this change.
+    type: object
+    properties:
+      user_id:
+        description: >
+          The user id that performed this change.  This is optional, and
+          will not be present for anonymous users.
+        type: integer
+      user_text:
+        description: The text representation of the user that performed this change.
+        type: string
+        minLength: 1
+      user_groups:
+        description: A list of the groups this user belongs to.  E.g. bot, sysop etc.
+        type: array
+        items:
+          type: string
+          minLength: 1
+      user_is_bot:
+        description: >
+          True if this user is considered to be a bot at the time of this event.
+          This is checked via the $user->isBot() method, which considers both
+          user_groups and user permissions.
+        type: boolean
+      user_registration_dt:
+        description: >
+          The datetime of the user account registration.
+          Not present for anonymous users or if missing in the MW database.
+        type: string
+        format: date-time
+        maxLength: 128
+      user_edit_count:
+        description: >
+          The number of edits this user has made at the time of this event.
+          Not present for anonymous users.
+        type: integer
+        minimum: 0

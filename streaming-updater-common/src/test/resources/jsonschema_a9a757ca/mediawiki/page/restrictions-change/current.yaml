@@ -1,0 +1,51 @@
+title: mediawiki/page/restrictions-change
+description: Represents a MW Page Restrictions Change event.
+$id: /mediawiki/page/restrictions-change/2.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/mediawiki/page/common/2.0.0#
+  - properties:
+      page_restrictions:
+        description: >
+          The new restrictions applied to the page. If one of the properties is present,
+          that means the specific action has been restricted to a member of a specific
+          user group. An empty string means that a particular action is not restricted.
+        type: object
+        additionalProperties:
+          type: string
+
+      reason:
+        type: string
+        description: Explanation of the reason for protecting the page.
+
+      prior_state:
+        description: >
+          The prior state of the entity before this event. If a top level entity
+          field is not present in this object, then its value has not changed
+          since the prior event.
+        type: object
+        properties:
+          page_restrictions:
+            type: object
+            additionalProperties:
+              type: string
+
+required:
+  - reason
+
+examples:
+  - $schema: { $ref: '#/$id' }
+    meta:
+      stream: medaiwiki.page-restrictions-change
+      dt: '2020-07-01T00:00:00Z'
+    database: examplewiki
+    page_id: 123
+    page_title: example_page_title
+    page_is_redirect: false
+    page_namespace: 0
+    rev_id: 123
+    reason: example_reason
+
+
+

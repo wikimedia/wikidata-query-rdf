@@ -1,0 +1,298 @@
+title: mediawiki/cirrussearch/update_pipeline/update
+description: Internal event for page updates handled by CirrusSearch
+$id: /mediawiki/cirrussearch/update_pipeline/update/1.0.1
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - change_type
+  - namespace_id
+  - page_id
+allOf:
+  - $ref: /fragment/common/2.0.0
+  - $ref: /fragment/cirrussearch/index/1.0.0
+properties:
+  change_type:
+    type: string
+    enum:
+      - PAGE_DELETE
+      - PAGE_RERENDER
+      - PAGE_RERENDER_UPSERT
+      - REDIRECT_UPDATE
+      - REV_BASED_UPDATE
+      - TAGS_UPDATE
+  namespace_id:
+    $ref: /fragment/mediawiki/state/entity/page/2.0.0#/properties/namespace_id
+  page_id:
+    $ref: /fragment/mediawiki/state/entity/page/2.0.0#/properties/page_id
+  page_title:
+    $ref: /fragment/mediawiki/state/entity/page/2.0.0#/properties/page_title
+  wiki_id:
+    $ref: /fragment/mediawiki/state/change/page/1.1.0#/properties/wiki_id
+  rev_id:
+    $ref: /fragment/mediawiki/state/entity/revision/1.0.0#/properties/rev_id
+  domain:
+    description: Domain of the wiki project
+    type: string
+    minLength: 1
+  cirrussearch_cluster_group:
+    description: The elastic search cluster group
+    type: string
+    minLength: 1
+  cirrussearch_index_name:
+    description: The elastic search index name
+    type: string
+    minLength: 1
+  cirrussearch_noop_hints:
+    type: object
+    description: Handlers for the elastic search super-detect-noop plugin.
+    additionalProperties:
+      type: string
+  cirrussearch_noop_fields:
+    description: Overrides of the fields object for the elastic search super-detect-noop plugin.
+    type: object
+    additionalProperties: false
+    properties:
+      redirect:
+        type: object
+        additionalProperties: false
+        properties:
+          add:
+            $ref: ./#/definitions/redirect_array
+          remove:
+            $ref: ./#/definitions/redirect_array
+          max_size:
+            type: integer
+            maximum: 9007199254740991
+            minimum: 1
+  cirrussearch_fetched_at:
+    description: 'UTC event datetime in ISO-8601 format'
+    type: string
+    format: date-time
+    maxLength: 128
+  fields:
+    description: Intermediate document from cirrus search for elastic search, see https://www.mediawiki.org/wiki/Extension:CirrusSearch/Schema
+    type: object
+    properties:
+      auxiliary_text:
+        type: array
+        items:
+          type: string
+      category:
+        type: array
+        items:
+          type: string
+      content_model:
+        type: string
+      coordinates:
+        type: array
+        items:
+          type: object
+          properties:
+            coord:
+              type: object
+              additionalProperties:
+                type: number
+            country:
+              type: string
+            dim:
+              type: integer
+              maximum: 9007199254740991
+              minimum: 0
+            globe:
+              type: string
+            name:
+              type: string
+            primary:
+              type: boolean
+            region:
+              type: string
+            type:
+              type: string
+      create_timestamp:
+        description: 'UTC event datetime in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      defaultsort:
+        type: string
+      descriptions:
+        type: object
+        additionalProperties:
+          type: array
+          items:
+            type: string
+      display_title:
+        type: string
+      external_link:
+        type: array
+        items:
+          type: string
+      extra_source:
+        type: string
+      file_bits:
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      file_height:
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      file_media_type:
+        type: string
+      file_mime:
+        type: string
+      file_resolution:
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      file_size:
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      file_text:
+        type: string
+      file_width:
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      heading:
+        type: array
+        items:
+          type: string
+      incoming_links:
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      label_count:
+        type: integer
+      labels:
+        type: object
+        additionalProperties:
+          type: array
+          items:
+            type: string
+      labels_all:
+        type: array
+        items:
+          type: string
+      language:
+        type: string
+      lemma:
+        type: array
+        items:
+          type: string
+      lemma_spelling_variants:
+        type: array
+        items:
+          type: string
+      lexeme_forms:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+            representation:
+              type: array
+              items:
+                type: string
+            features:
+              type: array
+              items:
+                type: string
+      lexeme_language:
+        type: object
+        properties:
+          entity:
+            type: string
+          code:
+            type: string
+      lexical_category:
+        type: string
+      local_sites_with_dupe:
+        type: array
+        items:
+          type: string
+      namespace:
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      namespace_text:
+        type: string
+      opening_text:
+        type: string
+      outgoing_link:
+        type: array
+        items:
+          type: string
+      page_id:
+        description: The page ID of the page this revision belongs to.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 1
+      popularity_score:
+        type: number
+      redirect:
+        type: array
+        items:
+          $ref: ./#/definitions/redirect
+      snapshot:
+        type: string
+      source_text:
+        type: string
+      sitelink_count:
+        type: integer
+      statement_count:
+        type: integer
+      statement_keywords:
+        type: array
+        items:
+          type: string
+      template:
+        type: array
+        items:
+          type: string
+      text:
+        type: string
+      text_bytes:
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      timestamp:
+        description: 'UTC event datetime in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      title:
+        type: string
+      version:
+        description: The (database) revision ID.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      weighted_tags:
+        type: array
+        items:
+          type: string
+      wiki:
+        type: string
+      wikibase_item:
+        type: string
+definitions:
+  redirect:
+    type: object
+    description: Redirect modeled for CirrusSearch index
+    required:
+      - namespace
+      - title
+    properties:
+      # We use namespace instead of namespace_id as this is the expected format inside the CirrusSearch index
+      namespace:
+        $ref: /fragment/mediawiki/state/entity/page/2.0.0#/properties/namespace_id
+      # We use title instead of page_title as this is the expected format inside the CirrusSearch index
+      title:
+        $ref: /fragment/mediawiki/state/entity/page/2.0.0#/properties/page_title
+  redirect_array:
+    type: array
+    items:
+      $ref: "#/definitions/redirect"

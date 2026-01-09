@@ -1,0 +1,99 @@
+title: development/network/probe
+
+description: >
+  This schema describes the format of the report sent from the browser after calculating various
+  network parameters. The library used to calculate these parameters works similar to Probnik and
+  borrows many terms from it. The library takes a json recipe as input which contains names and
+  http endpoints of various datacenters. The library then makes some requests to each of the
+  datacenter and records various timings involved in making the requests. This data is then combined
+  to compile a report and sent to EventGate. The data can then be used to rank the datacenters based
+  on the performance for a particular user/IP and also update the GeoIP mappings if needed.
+  See https://phabricator.wikimedia.org/T332024
+
+$id: /development/network/probe/1.1.0
+
+$schema: https://json-schema.org/draft-07/schema#
+
+type: object
+additionalProperties: false
+allOf:
+  - $ref: /fragment/common/2.0.0#
+  - $ref: /fragment/http/1.2.0#
+  - $ref: /fragment/http/client_ip/1.0.0#
+properties:
+  recipe_name:
+    type: string
+    description: Name of the recipe
+  recipe_type:
+    type: string
+    description: Type of the recipe. Example http_get
+  ctx:
+    type: object
+    description: Context passed by the recipe. This is same as 'ctx' field in the recipe.
+    additionalProperties:
+      type: string
+  reports:
+    type: array
+    description: The list containing reports of all targets. A report may contain data of multiple pulses.
+    items:
+      type: object
+      description: The report of a particular target/datacenter
+      properties:
+        target_name:
+          type: string
+          description: Name of the target. Example eqiad, eqsin, etc
+        target_url:
+          type: string
+          description: URL of the target. Example https://measure-eqiad.wikimedia.org/measure
+        pulses:
+          type: array
+          description: The list containing details of all pulses. A pulse represents a single request to the target_url.
+          items:
+            type: object
+            description: The detail of a particular pulse
+            properties:
+              redirect_time_ms:
+                type: number
+                description: Redirection time in ms (redirectStart - redirectEnd)
+              dns_time_ms:
+                type: number
+                description: DNS resolution time in ms (domainLookupEnd - domainLookupStart)
+              tcp_time_ms:
+                type: number
+                description: TCP connection time in ms (secureConnectionStart - connectStart)
+              tls_time_ms:
+                type: number
+                description: TLS handshake time in ms (connectEnd - secureConnectionStart)
+              request_time_ms:
+                type: number
+                description: Request time in ms (responseStart - requestStart)
+              response_time_ms:
+                type: number
+                description: Response time in ms (responseEnd - responseStart)
+              ttfb_time_ms:
+                type: number
+                description: Time to first byte in ms (responseStart - startTime)
+              duration_ms:
+                type: number
+                description: Duration of the request in ms (duration)
+              status_code:
+                type: number
+                description: Status of the request (responseStatus)
+              transfer_bytes:
+                type: number
+                description: Transfer data size in bytes (encodedBodySize)
+              actual_bytes:
+                type: number
+                description: Actual data size in bytes (decodedBodySize)
+              pulse_identifier:
+                type: string
+                description: Alphanumeric string used to uniquely identify each pulse
+              pulse_number:
+                type: number
+                description: Pulse number
+              host:
+                type: string
+                description: Hostname that handled the pulse
+
+examples:
+  - { "recipe_name": "Latency Test", "recipe_type": "http_get", "ctx": { "server": "test", "ts": "1682742173938" }, "reports": [ { "target_name": "eqiad", "target_url": "https://measure-eqiad.wikimedia.org/measure", "pulses": [ { "redirect_time_ms": 0, "dns_time_ms": 14, "tcp_time_ms": 326, "tls_time_ms": 362, "request_time_ms": 399, "response_time_ms": 1, "ttfb_ms": 1102, "duration_ms": 1102, "status_code": 200, "transfer_bytes": 0, "actual_bytes": 0, "pulse_identifier": "5ma1j0p36irtiqaa6m3a5am3", "pulse_number": 0, "host": "cp1101" }, { "redirect_time_ms": 0, "dns_time_ms": 0, "tcp_time_ms": 0, "tls_time_ms": 0, "request_time_ms": 339, "response_time_ms": 1, "ttfb_ms": 341, "duration_ms": 341, "status_code": 200, "transfer_bytes": 0, "actual_bytes": 0, "pulse_identifier": "bb4oat8n47h3w9ww013vrefp", "pulse_number": 1, "host": "cp1101" } ] }, { "target_name": "eqsin", "target_url": "https://measure-eqsin.wikimedia.org/measure", "pulses": [ { "redirect_time_ms": 0, "dns_time_ms": 17, "tcp_time_ms": 145, "tls_time_ms": 150, "request_time_ms": 164, "response_time_ms": 1, "ttfb_ms": 476, "duration_ms": 477, "status_code": 200, "transfer_bytes": 0, "actual_bytes": 0, "pulse_identifier": "igaisoi8vtiozrxjodyquwkh", "pulse_number": 0, "host": "cp5025" }, { "redirect_time_ms": 0, "dns_time_ms": 0, "tcp_time_ms": 0, "tls_time_ms": 0, "request_time_ms": 150, "response_time_ms": 1, "ttfb_ms": 152, "duration_ms": 153, "status_code": 200, "transfer_bytes": 0, "actual_bytes": 0, "pulse_identifier": "vkmpozj04xlbhht3xl1m29r0", "pulse_number": 1, "host": "cp5025" } ] } ], "$schema": "/development/network/probe/1.1.0", "dt": "2023-04-29T04:22:57.466Z", "meta": { "stream": "development.network.probe", "domain": "localhost", "id": "3e0bd919-d12f-47e1-916f-3841115beb90", "dt": "2023-04-29T04:22:58.552Z", "request_id": "857a7380-e645-11ed-8647-7df7a5373a09" }, "http": { "request_headers": { "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36" }, "client_ip": "172.19.0.1" } }

@@ -1,0 +1,19 @@
+title: fragment/cirrussearch/index
+description: Common schema fields to locate an elastic search index
+$id: /fragment/cirrussearch/index/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+
+required:
+  - cirrussearch_index_name
+  - cirrussearch_cluster_group
+
+properties:
+  cirrussearch_index_name:
+    description: The elastic search index name
+    type: string
+    minLength: 1
+  cirrussearch_cluster_group:
+    description: The elastic search cluster group
+    type: string
+    minLength: 1

@@ -1,0 +1,51 @@
+title: mediawiki/api/request
+description: A single request to the MediaWiki Action API (api.php)
+$id: /mediawiki/api/request/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/mediawiki/common/2.0.0
+  - properties:
+      # http request/response info
+      http:
+        type: object
+        description: Information about the HTTP request that generated this event.
+        properties:
+          method:
+            type: string
+            description: The HTTP request method (GET, POST, etc.)
+          client_ip:
+            type: string
+            description: The http client's IP address
+          request_headers:
+            type: object
+            description: Request headers sent by the client.
+            additionalProperties:
+              type: string
+
+      # event specific fields
+      backend_time_ms:
+        type: integer
+        description: Elapsed milliseconds to process request as measured by MediaWiki
+
+      api_error_codes:
+        type: array
+        description: >
+          List of error codes for any errors encountered, e.g. 'apierror-missingparam'
+          If this field is missing or empty, no errors were encountered.
+        items:
+          type: string
+
+      params:
+        type: object
+        description: >
+          Request parameters. These might come from http query string,
+          or from the POST body. Sensitive params are redacted.
+        additionalProperties:
+          type: string
+examples:
+  - $schema: { $ref: "#/$id" }
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: example_stream
+    database: examplewiki

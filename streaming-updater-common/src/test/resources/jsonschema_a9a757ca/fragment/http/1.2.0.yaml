@@ -1,0 +1,43 @@
+title: fragment/http
+description: Information about an HTTP request.
+$id: /fragment/http/1.2.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+properties:
+  http:
+    type: object
+    properties:
+      has_cookies:
+        description: True if the http request has any cookies set
+        type: boolean
+      method:
+        description: 'The HTTP request method (GET, POST, etc.)'
+        type: string
+      protocol:
+        description: The protocol used for the request (HTTP or HTTPS)
+        type: string
+      request_headers:
+        description: 'Request headers sent by the client.  E.g. user-agent, etc.'
+        type: object
+        additionalProperties:
+          type: string
+      response_headers:
+        description: Response headers sent back to the client (when known).
+        type: object
+        additionalProperties:
+          type: string
+      status_code:
+        description: The HTTP status code returned for this request (when known)
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+examples:
+  - http:
+      has_cookies: false
+      method: dolor
+      protocol: dolor
+      request_headers:
+        dolorb: dolor
+      response_headers:
+        dolorb: dolor
+      status_code: -6305039478318694

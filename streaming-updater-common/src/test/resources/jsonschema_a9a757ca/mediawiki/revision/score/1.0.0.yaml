@@ -1,0 +1,213 @@
+title: mediawiki/revision/score
+description: Represents a MW Revision Score event (from ORES).
+$id: /mediawiki/revision/score/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - database
+  - meta
+  - page_id
+  - page_is_redirect
+  - page_namespace
+  - page_title
+  - rev_id
+  - rev_timestamp
+properties:
+  $schema:
+    type: string
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema_name/1.0.0
+  meta:
+    type: object
+    required:
+      - id
+      - dt
+      - stream
+    properties:
+      uri:
+        type: string
+        format: uri-reference
+        maxLength: 8192
+        description: Unique URI identifying the event or entity
+      request_id:
+        type: string
+        description: Unique ID of the request that caused the event
+      id:
+        type: string
+        pattern: '^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$'
+        maxLength: 36
+        description: Unique ID of this event
+      dt:
+        type: string
+        format: date-time
+        maxLength: 128
+        description: 'Event datetime, in ISO-8601 format'
+      domain:
+        type: string
+        description: Domain the event or entity pertains to
+        minLength: 1
+      stream:
+        type: string
+        description: Name of the stream/queue/dataset that this event belongs in
+        minLength: 1
+  database:
+    description: The name of the wiki database this event entity belongs to.
+    type: string
+    minLength: 1
+  performer:
+    description: Represents the user that performed this change.
+    type: object
+    required:
+      - user_text
+      - user_groups
+      - user_is_bot
+    properties:
+      user_id:
+        description: >
+          The user id that performed this change.  This is optional, and will
+          not be present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+      user_text:
+        description: The text representation of the user that performed this change.
+        type: string
+        minLength: 1
+      user_groups:
+        description: 'A list of the groups this user belongs to.  E.g. bot, sysop etc.'
+        type: array
+        items:
+          type: string
+          minLength: 1
+      user_is_bot:
+        description: >
+          True if this user is considered to be a bot at the time of this event.
+          This is checked via the $user->isBot() method, which considers both
+          user_groups and user permissions.
+        type: boolean
+      user_registration_dt:
+        description: >
+          The datetime of the user account registration. Not present for
+          anonymous users or if missing in the MW database.
+        type: string
+        format: date-time
+        maxLength: 128
+      user_edit_count:
+        description: >
+          The number of edits this user has made at the time of this event. Not
+          present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+  page_id:
+    description: The page ID of the page this revision belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 1
+  page_title:
+    description: The normalized title of the page this revision belongs to.
+    type: string
+    minLength: 1
+  page_namespace:
+    description: The namespace of the page this revision belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  page_is_redirect:
+    description: >
+      True if this revision is a redirect.  This fact is ultimately represented
+      by revision content containing redirect wikitext.  If this revision is the
+      head revision of the page, then the page will also be a redirect.
+    type: boolean
+  rev_id:
+    description: The (database) revision ID.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  rev_parent_id:
+    description: The parent revison ID of the revision that this event represents.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  rev_timestamp:
+    description: >
+      The revision's creation time in ISO8601 format.  This field does not end
+      in '_dt' to better match the field name on the Mediawiki revision table.
+    type: string
+    format: date-time
+    maxLength: 128
+  scores:
+    description: >
+      List of ORES score objects. Each model here was used to score this
+      revision.  Example: {
+        "model_name": "awesomeness",
+        "model_version": "1.0.1",
+        "prediction": ["yes", "mostly"],
+        "probability": [
+          {"name": "yes",    "value": 0.99},
+          {"name": "mostly", "value": 0.90},
+          {"name": "hardly", "value": 0.01}
+        ]
+      }
+    type: array
+    items:
+      type: object
+      required:
+        - model_name
+        - model_version
+        - prediction
+        - probability
+      properties:
+        model_name:
+          description: The name of the model used for this score.
+          type: string
+        model_version:
+          description: The version of the model used for this score.
+          type: string
+        prediction:
+          description: A list of predictions made by this model.
+          type: array
+          items:
+            type: string
+        probability:
+          description: >
+            A list of probabilities made by this model. Each element is an
+            object with a probability 'name' and a probability 'value'.
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+              value:
+                type: number
+                maximum: 9007199254740991
+                minimum: -9007199254740991
+  errors:
+    description: Errors that occured when models attempted to score this revision.
+    type: array
+    items:
+      type: object
+      required:
+        - model_name
+        - model_version
+        - type
+        - message
+      properties:
+        model_name:
+          description: The name of the model that encountered this error.
+          type: string
+        model_version:
+          description: The version of the model that encountered this error.
+          type: string
+        type:
+          description: The short name of this error
+          type: string
+        message:
+          description: A human-readable explanation of what went wrong
+          type: string

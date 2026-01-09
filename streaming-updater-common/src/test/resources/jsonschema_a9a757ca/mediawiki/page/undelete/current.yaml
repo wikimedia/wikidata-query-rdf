@@ -1,0 +1,56 @@
+title: mediawiki/page/undelete
+description: Represents a MW Page Undelete (restore) event.
+$id: /mediawiki/page/undelete/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/mediawiki/page/common/1.0.0#
+  - properties:
+      chronology_id:
+        description: Deprecated - no longer populated
+        type: string
+
+      comment:
+        description: The comment left by the user that performed this change.
+        type: string
+
+      parsedcomment:
+        description: >
+          The comment left by the user that performed this change
+          parsed into simple HTML. Optional
+        type: string
+
+      prior_state:
+        description: >
+          The prior state of the entity before this event. If a top level entity
+          field is not present in this object, then its value has not changed
+          since the prior event.  If prior_state itself is not present, then
+          this event had no relevant prior state, indicating that it is probably
+          the first time this type has been emitted for this entity.
+          For page undeletes, prior_state will be absent unless the page_id is no
+          longer the same as the page_id it had before it was deleted.
+        type: object
+        properties:
+          page_id:
+            description: The page ID before this restore as it was in the archive table.
+            type: integer
+            minimum: 1
+        required:
+          - page_id
+
+examples:
+  - $schema: { $ref: '#/$id' }
+    meta:
+      stream: medaiwiki.page-undelete
+      dt: '2020-07-01T00:00:00Z'
+    database: examplewiki
+    page_id: 123
+    page_title: example_page_title
+    page_is_redirect: false
+    page_namespace: 0
+    rev_id: 123
+    prior_state:
+      page_id: 123
+
+
+

@@ -1,0 +1,131 @@
+title: mediawiki/api/request
+description: A single request to the MediaWiki Action API (api.php)
+$id: /mediawiki/api/request/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - meta
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  api_error_codes:
+    description: >
+      List of error codes for any errors encountered, e.g.
+      'apierror-missingparam' If this field is missing or empty, no errors were
+      encountered.
+    type: array
+    items:
+      type: string
+  backend_time_ms:
+    description: Elapsed milliseconds to process request as measured by MediaWiki
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  database:
+    description: The name of the wiki database this event entity belongs to.
+    type: string
+    minLength: 1
+  http:
+    description: Information about the HTTP request that generated this event.
+    type: object
+    properties:
+      client_ip:
+        description: The http client's IP address
+        type: string
+      method:
+        description: 'The HTTP request method (GET, POST, etc.)'
+        type: string
+      request_headers:
+        description: Request headers sent by the client.
+        type: object
+        additionalProperties:
+          type: string
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream (dataset) that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  params:
+    description: >
+      Request parameters. These might come from http query string, or from the
+      POST body. Sensitive params are redacted.
+    type: object
+    additionalProperties:
+      type: string
+  performer:
+    description: Represents the user that performed this change.
+    type: object
+    properties:
+      user_edit_count:
+        description: >
+          The number of edits this user has made at the time of this event. Not
+          present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      user_groups:
+        description: 'A list of the groups this user belongs to.  E.g. bot, sysop etc.'
+        type: array
+        items:
+          type: string
+          minLength: 1
+      user_id:
+        description: >
+          The user id that performed this change.  This is optional, and will
+          not be present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+      user_is_bot:
+        description: >
+          True if this user is considered to be a bot at the time of this event.
+          This is checked via the $user->isBot() method, which considers both
+          user_groups and user permissions.
+        type: boolean
+      user_registration_dt:
+        description: >
+          The datetime of the user account registration. Not present for
+          anonymous users or if missing in the MW database.
+        type: string
+        format: date-time
+        maxLength: 128
+      user_text:
+        description: The text representation of the user that performed this change.
+        type: string
+        minLength: 1
+examples:
+  - $schema: /mediawiki/api/request/1.0.0
+    database: examplewiki
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: example_stream

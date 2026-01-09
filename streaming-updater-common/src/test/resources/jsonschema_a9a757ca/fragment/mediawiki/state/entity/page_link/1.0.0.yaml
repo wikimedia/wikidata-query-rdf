@@ -1,0 +1,36 @@
+title: fragment/mediawiki/state/entity/page_link
+description: Fields for a link to a mediawiki page.
+$id: /fragment/mediawiki/state/entity/page_link/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+properties:
+  interwiki_prefix:
+    description: >
+      The interwiki prefix (iw_prefix) of this link. The presence of this prefix
+      implies a target outside the local wiki. See
+      https://meta.wikimedia.org/wiki/Help:Interwiki_linking
+    type: string
+  is_redirect:
+    description: True if the page is a redirect page at the time of this event.
+    type: boolean
+  namespace_id:
+    description: The id of the namespace this page belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  page_id:
+    description: The (database) page ID of the page.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  page_title:
+    description: The normalized title of the page.
+    type: string
+    minLength: 1
+examples:
+  - interwiki_prefix: dolor
+    is_redirect: false
+    namespace_id: 1351079888211148
+    page_id: 1351079888211148
+    page_title: dolor

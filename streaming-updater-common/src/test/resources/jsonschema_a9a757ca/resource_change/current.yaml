@@ -1,0 +1,43 @@
+title: resource_change
+description: Represents a change in a resource tied to the specified URI
+$id: /resource_change/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/common/1.0.0#
+  - properties:
+      tags:
+        type: array
+        items:
+          type: string
+        uniqueItems: true
+        description: the list of tags associated with the change event for the resource
+      triggered_by:
+        type: string
+        description: >
+          comma-separated list of event descriptions in `<topic>:<uri>` format,
+          that represent a chain of events that caused this event to be emitted.
+
+      # Deduplication information
+      root_event:
+        type: object
+        description: Unique identifier of the root event that triggered this event creation
+        properties:
+          dt:
+            description: the timestamp of the root event, in ISO-8601 format
+            type: string
+            format: date-time
+            maxLength: 128
+          signature:
+            type: string
+            description: the unique signature of root event
+        required:
+          - dt
+          - signature
+examples:
+  - $schema: { $ref: "#/$id" }
+    meta:
+      stream: resource_change_example
+      dt: '2020-07-01T00:00:00Z'
+      uri: '/example/resource/uri'
+

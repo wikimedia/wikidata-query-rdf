@@ -1,0 +1,101 @@
+title: error
+description: Represents an error event
+$id: /error/2.1.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - dt
+  - emitter_id
+  - message
+  - meta
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  dt:
+    description: >
+      ISO-8601 formatted timestamp of when the event occurred/was generated in
+      UTC), AKA 'event time'. This is different than meta.dt, which is used as
+      the time the system received this event.
+    type: string
+    format: date-time
+    maxLength: 128
+  emitter_id:
+    description: identifies the entity where a fatal failure occured
+    type: string
+  error_type:
+    description: |
+      the type of the error, for example the class name of the exception.
+    type: string
+  errored_schema_uri:
+    description: >
+      $schema URI of event that caused the error. This is the value of
+      raw_event's $schema if it is extractable when the error was encountered.
+    type: string
+  errored_stream_name:
+    description: >
+      meta.stream name of the event that caused the error. This is the value of
+      raw_event's meta.stream if it is extractable when the error was
+      encountered.
+    type: string
+  message:
+    description: message describing an error
+    type: string
+  meta:
+    type: object
+    required:
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'Time the event was received by the system, in UTC ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream (dataset) that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  raw_event:
+    description: string encoded original event
+    type: string
+  stack:
+    description: stack trace of the error (optional)
+    type: string
+  triggered_by:
+    description: >
+      comma-separated list of event descriptions in `<topic>:<uri>` format, that
+      represent a chain of events that caused this event to be emitted.
+    type: string
+examples:
+  - $schema: /error/2.1.0
+    dt: '2020-07-01T00:00:00Z'
+    emitter_id: example_emitter_id
+    errored_schema_uri: /original/schema/1.0.0
+    errored_stream_name: original.stream.name
+    message: example error message
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: error.example
+    raw_event: >-
+      {"$schema": "/original/schema/1.0.0", "meta": {"stream":
+      "original.stream.name", "dt": "2020-07-01T00:00:00Z"}, "myproperty":
+      "invalid_value"}

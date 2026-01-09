@@ -1,0 +1,44 @@
+title: fragment/common
+description: Common schema fields for event schemas
+$id: /fragment/common/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+properties:
+  $schema:
+    type: string
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      uri:
+        type: string
+        format: uri-reference
+        maxLength: 8192
+        description: Unique URI identifying the event or entity
+      request_id:
+        type: string
+        description: Unique ID of the request that caused the event
+      id:
+        type: string
+        description: Unique ID of this event
+      dt:
+        type: string
+        format: date-time
+        maxLength: 128
+        description: 'UTC event datetime, in ISO-8601 format'
+      domain:
+        type: string
+        description: Domain the event or entity pertains to
+        minLength: 1
+      stream:
+        type: string
+        description: Name of the stream/queue/dataset that this event belongs in
+        minLength: 1
+required:
+  - $schema
+  - meta

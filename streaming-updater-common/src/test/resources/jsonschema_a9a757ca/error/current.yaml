@@ -1,0 +1,53 @@
+title: error
+description: Represents an error event
+$id: /error/2.1.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/common/2.0.0#
+  - properties:
+      emitter_id:
+        type: string
+        description: identifies the entity where a fatal failure occured
+      raw_event:
+        type: string
+        description: string encoded original event
+      errored_schema_uri:
+        type: string
+        description: >
+          $schema URI of event that caused the error. This is the value of raw_event's
+          $schema if it is extractable when the error was encountered.
+      errored_stream_name:
+        type: string
+        description: >
+          meta.stream name of the event that caused the error. This is the value of raw_event's
+          meta.stream if it is extractable when the error was encountered.
+      message:
+        type: string
+        description: message describing an error
+      stack:
+        type: string
+        description: stack trace of the error (optional)
+      triggered_by:
+        type: string
+        description: >
+          comma-separated list of event descriptions in `<topic>:<uri>` format,
+          that represent a chain of events that caused this event to be emitted.
+      error_type:
+        type: string
+        description: >
+          the type of the error, for example the class name of the exception.
+required:
+  - emitter_id
+  - message
+examples:
+  - $schema: { $ref: '#/$id' }
+    dt: '2020-07-01T00:00:00Z'
+    meta:
+      stream: error.example
+      dt: '2020-07-01T00:00:00Z'
+    emitter_id: example_emitter_id
+    raw_event: '{"$schema": "/original/schema/1.0.0", "meta": {"stream": "original.stream.name", "dt": "2020-07-01T00:00:00Z"}, "myproperty": "invalid_value"}'
+    errored_schema_uri: /original/schema/1.0.0
+    errored_stream_name: original.stream.name
+    message: example error message

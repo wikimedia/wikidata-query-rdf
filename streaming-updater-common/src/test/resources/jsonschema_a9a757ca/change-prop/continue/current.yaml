@@ -1,0 +1,41 @@
+title: change-prop/continue
+description: Represents a continuation request in batch processing
+$id: /change-prop/continue/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/common/1.0.0#
+  - properties:
+      emitter_id:
+        type: string
+        description: identifies the entity that requested a retry
+      original_event:
+        type: object
+        description: original event that began the batch
+      continue:
+        type: object
+        description: continuation token
+      triggered_by:
+        type: string
+        description: >
+          comma-separated list of event descriptions in `<topic>:<uri>` format,
+          that represent a chain of events that caused this event to be emitted.
+      sequence_num:
+        type: integer
+        minimum: 1
+        description: Number of this continuation event in the current sequence.
+
+required:
+  - original_event
+  - continue
+examples:
+  - $schema: { $ref: '#/$id' }
+    meta:
+      stream: change-prop.continue.example
+      dt: '2020-07-01T00:00:00Z'
+    emitter_id: example_emitter_id
+    original_event:
+      example_key: example_value
+    continue:
+      example_key: example_value
+

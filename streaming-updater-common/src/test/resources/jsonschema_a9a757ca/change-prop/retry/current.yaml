@@ -1,0 +1,39 @@
+title: change-prop/retry
+description: Represents a failure in event processing and a request to retry it
+$id: /change-prop/retry/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/common/1.0.0#
+  - properties:
+      emitter_id:
+        type: string
+        description: identifies the entity that requested a retry
+      retries_left:
+        type: integer
+        description: number of retry attempts left for this event
+      original_event:
+        type: object
+        description: original event that caused a failure
+      reason:
+        type: string
+        description: message describing the reason of the retry
+      triggered_by:
+        type: string
+        description: >
+          comma-separated list of event descriptions in `<topic>:<uri>` format,
+          that represent a chain of events that caused this event to be emitted.
+
+required:
+  - emitter_id
+  - retries_left
+  - original_event
+examples:
+  - $schema: { $ref: '#/$id' }
+    meta:
+      stream: change-prop.retry.example
+      dt: '2020-07-01T00:00:00Z'
+    emitter_id: example_emitter_id
+    retries_left: 1
+    original_event:
+      example_key: example_value

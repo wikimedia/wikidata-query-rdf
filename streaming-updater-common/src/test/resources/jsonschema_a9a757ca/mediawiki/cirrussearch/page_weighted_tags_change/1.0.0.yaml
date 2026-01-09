@@ -1,0 +1,195 @@
+title: mediawiki/cirrussearch/page_weighted_tags_change
+description: >
+  Changes (setting and/or clearing) of weighted (scored) tags of a page, see
+  https://wikitech.wikimedia.org/wiki/Search/WeightedTags
+$id: /mediawiki/cirrussearch/page_weighted_tags_change/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - dt
+  - meta
+  - page
+  - weighted_tags
+  - wiki_id
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  dt:
+    description: >
+      ISO-8601 formatted timestamp of when the event occurred/was generated in
+      UTC), AKA 'event time'. This is different than meta.dt, which is used as
+      the time the system received this event.
+    type: string
+    format: date-time
+    maxLength: 128
+  meta:
+    type: object
+    required:
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'Time the event was received by the system, in UTC ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream (dataset) that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  page:
+    title: fragment/mediawiki/state/entity/page
+    description: Fields for MediaWiki page entity.
+    $id: /fragment/mediawiki/state/entity/page/2.0.0
+    $schema: 'https://json-schema.org/draft-07/schema#'
+    type: object
+    additionalProperties: false
+    required:
+      - page_id
+      - page_title
+      - namespace_id
+    properties:
+      is_redirect:
+        description: True if the page is a redirect page at the time of this event.
+        type: boolean
+      namespace_id:
+        description: The id of the namespace this page belongs to.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      page_id:
+        description: The (database) page ID of the page.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      page_title:
+        description: The normalized title of the page.
+        type: string
+        minLength: 1
+    examples:
+      - is_redirect: false
+        namespace_id: 1351079888211148
+        page_id: 1351079888211148
+        page_title: dolor
+  rev_based:
+    description: >
+      A hint for an event processor that this event has been triggered by new a
+      revision. Only if set to false, the processor may skip merging it with the
+      original page change (and other related events).
+    type: boolean
+  weighted_tags:
+    description: Tags to be set for and/or cleared from the specified page
+    type: object
+    additionalProperties: false
+    properties:
+      clear:
+        description: >
+          A list of tag prefixes (without slash(es)) that will be cleared, see
+          https://wikitech.wikimedia.org/wiki/Search/WeightedTags#Shape_of_the_data_in_elasticsearch
+        type: array
+        items:
+          type: string
+          maxLength: 100
+          minLength: 1
+          pattern: '^[^/]+$'
+        minLength: 1
+      set:
+        description: >
+          A multimap of prefix (without slash(es)) to list of optionally
+          weighted (scored) tags, see
+          https://wikitech.wikimedia.org/wiki/Search/WeightedTags#Shape_of_the_data_in_elasticsearch
+        type: object
+        additionalProperties:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - tag
+            properties:
+              score:
+                type: number
+                maximum: 1
+                minimum: 0
+              tag:
+                type: string
+                minLength: 1
+          minLength: 1
+        minProperties: 1
+    minProperties: 1
+  wiki_id:
+    description: >
+      The wiki ID, which is usually the same as the MediaWiki database name.
+      E.g. enwiki, metawiki, etc.
+    type: string
+    minLength: 1
+examples:
+  - $schema: /mediawiki/cirrussearch/page_weighted_tags_change/1.0.0
+    dt: '2024-07-22T00:00:00.0Z'
+    meta:
+      domain: examplewiki
+      dt: '2024-07-22T00:00:00.0Z'
+      stream: cirrussearch.page_weighted_tags_change
+    page:
+      namespace_id: 0
+      page_id: 42
+      page_title: Set-only example
+    weighted_tags:
+      set:
+        tag.group.A:
+          - score: 0.5
+            tag: A.1
+          - tag: A.2
+        tag.group.B:
+          - tag: B.1
+    wiki_id: example
+  - $schema: /mediawiki/cirrussearch/page_weighted_tags_change/1.0.0
+    dt: '2024-07-22T00:00:00.0Z'
+    meta:
+      domain: examplewiki
+      dt: '2024-07-22T00:00:00.0Z'
+      stream: cirrussearch.page_weighted_tags_change
+    page:
+      namespace_id: 0
+      page_id: 42
+      page_title: Clear-only example
+    weighted_tags:
+      clear:
+        - tag.group.B
+    wiki_id: example
+  - $schema: /mediawiki/cirrussearch/page_weighted_tags_change/1.0.0
+    dt: '2024-07-22T00:00:00.0Z'
+    meta:
+      domain: examplewiki
+      dt: '2024-07-22T00:00:00.0Z'
+      stream: cirrussearch.page_weighted_tags_change
+    page:
+      namespace_id: 0
+      page_id: 42
+      page_title: Set and Clear example
+    weighted_tags:
+      clear:
+        - tag.group.C
+      set:
+        tag.group.A:
+          - tag: A.1
+    wiki_id: example

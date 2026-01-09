@@ -1,0 +1,91 @@
+title: mediawiki/page/prediction_classification_change
+description: >
+  Represents a classification model output (topic, revert, quality, etc.).
+  - topic model: https://meta.wikimedia.org/wiki/Machine_learning_models/Production/Language_agnostic_link-based_article_topic_model_card
+  - quality model: https://meta.wikimedia.org/wiki/Machine_learning_models/Proposed/Language-agnostic_Wikipedia_article_quality_model_card
+
+$id: /mediawiki/page/prediction_classification_change/1.2.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+allOf:
+  - $ref: /fragment/common/2.0.0#
+  - $ref: /fragment/mediawiki/state/change/page/1.3.0
+
+properties:
+  predicted_classification:
+    type: object
+    properties:
+      model_name:
+        description: The name of the classsification model used.
+        type: string
+      model_version:
+        description: The version of the classsification model used.
+        type: string
+      predictions:
+        description: A list of predictions made by this model.
+        type: array
+        items:
+          type: string
+      probabilities:
+        description: >
+          A list of probabilities made by this model.
+          Each element is a key/value with class name and associated [0-1] probability.
+        type: object
+        additionalProperties:
+          type: number
+    required:
+      - model_name
+      - model_version
+      - predictions
+      - probabilities
+
+examples:
+  - $schema: { $ref: '#/$id' }
+    dt: '2021-01-01T00:00:00.0Z'
+    meta:
+      domain: examplewiki
+      dt: '2021-01-01T00:00:00.0Z'
+      stream: mediawiki.page_change
+    changelog_kind: update
+    page_change_kind: edit
+    wiki_id: example
+    comment: changed a thing
+    page:
+      namespace_id: 1
+      page_id: 1
+      page_title: example
+      revision_count: 1
+      is_redirect: true
+      redirect_page_link:
+        page_id: 2
+        is_redirect: false
+        page_title: Redirect_Target
+        namespace_id: 1
+    performer:
+      user_id: 123
+      user_text: yoohoo
+    revision:
+      rev_dt: '2021-01-01T00:00:00.0Z'
+      rev_id: 2
+      rev_parent_id: 1
+      rev_sha1: 16619839a55cfb5c61bcf520bf9734e0c67f98cc
+      rev_size: 100
+      comment: changed a thing
+      editor:
+        user_id: 123
+        user_text: example
+      is_minor_edit: false
+      is_comment_visible: true
+      is_content_visible: true
+      is_editor_visible: true
+    predicted_classification:
+      model_name: example_model
+      model_version: 1.0.1
+      predictions:
+      - yes
+      - mostly
+      probabilities:
+        yes: 0.99
+        mostly: 0.9
+        hardly: 0.01

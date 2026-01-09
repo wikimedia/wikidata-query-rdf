@@ -1,0 +1,36 @@
+title: mediawiki/page/properties-change
+description: Represents a MW Page Properties Change event.
+$id: /mediawiki/page/properties-change/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/mediawiki/page/common/1.0.0#
+  - properties:
+      removed_properties:
+        description: >
+          The old page properties. This map would only contain the previous
+          values of the properties that were either removed or changed by
+          this event. Properties that were intact would not be present here.
+          If the property was changed, its new value would be present in the
+          'added_properties' object.
+        type: object
+
+      added_properties:
+        description: >
+          The new page properties. This map would only contain properties that
+          were either added or changed, properties that were intact would not
+          be present here. If the property was changed, its previous value would
+          be present in the 'removed_properties' object.
+        type: object
+
+examples:
+  - $schema: { $ref: '#/$id' }
+    meta:
+      stream: medaiwiki.page-properties-change
+      dt: '2020-07-01T00:00:00Z'
+    database: examplewiki
+    page_id: 123
+    page_title: example_page_title
+    page_is_redirect: false
+    page_namespace: 0
+    rev_id: 123

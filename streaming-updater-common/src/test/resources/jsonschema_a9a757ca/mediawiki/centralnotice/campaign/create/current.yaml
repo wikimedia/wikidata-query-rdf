@@ -1,0 +1,54 @@
+title: mediawiki/centralnotice/campaign/create
+description: Represents the creation of a MW CentralNotice banner campaign
+$id: /mediawiki/centralnotice/campaign/create/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/mediawiki/common/1.0.0#
+  - properties:
+      campaign_name:
+        description: The name of the campaign that was created.
+        type: string
+      start_dt:
+        description: The campaign's start time, in ISO8601 format.
+        type: string
+        format: date-time
+        maxLength: 128
+      end_dt:
+        description: The campaign's end time, in ISO8601 format.
+        type: string
+        format: date-time
+        maxLength: 128
+      enabled:
+        description: The campaign's enabled status.
+        type: boolean
+      archived:
+        description: The campaign's archived status.
+        type: boolean
+      banners:
+        description: Banners assigned to this campaign.
+        type: array
+        items:
+          type: string
+      summary:
+        description: The summary provided for campaign creation.
+        type: string
+    required:
+      - campaign_name
+      - start_dt
+      - end_dt
+      - enabled
+      - archived
+      - banners
+examples:
+  - $schema: { $ref: "#/$id" }
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: example_stream
+    database: examplewiki
+    campaign_name: example
+    start_dt: '2020-07-01T00:00:00Z'
+    end_dt: '2020-07-02T00:00:00Z'
+    enabled: false
+    archived: true
+    banners: [example]

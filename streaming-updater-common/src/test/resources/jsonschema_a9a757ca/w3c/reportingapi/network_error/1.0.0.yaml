@@ -1,0 +1,225 @@
+title: w3c/reportingapi/network_error
+description: >
+  Browser-generated problem reports, as described by the W3C Reporting API.
+  https://www.w3.org/TR/reporting/ This schema only accomodates the Network
+  Error Logging API, and not the other report types available in the Reporting
+  API. See https://w3c.github.io/network-error-logging/
+$id: /w3c/reportingapi/network_error/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - meta
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  type:
+    description: 'The flavor of the report, like ''network-error'' or ''hpkp''.'
+    type: string
+  age:
+    description: >
+      The number of milliseconds between the report's timestamp and the time the
+      report was sent.
+    type: number
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  body:
+    description: 'The body of the report, with details on what failed and how.'
+    type: object
+    additionalProperties:
+      type: string
+    properties:
+      type:
+        description: >
+          A string describing the kind of failure that occurred, like
+          "dns.unreachable", "tcp.refused", "http.response.redirect_loop", etc.
+          See
+          https://w3c.github.io/network-error-logging/#predefined-network-error-types
+        type: string
+      elapsed_time:
+        description: >
+          In a network-error report, this is the number of milliseconds between
+          the start of the failed request and when it was completed or aborted
+          by the user agent.
+        type: number
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+      method:
+        description: >
+          The HTTP method name used when attempting to fetch the failed request
+          (e.g. "GET", "POST", etc)
+        type: string
+      phase:
+        description: |
+          The phase at which the request failed.
+        type: string
+        enum:
+          - dns
+          - connection
+          - application
+      protocol:
+        description: >
+          If available, this is the network protocol used to fetch the request
+          that failed, as identified by the ALPN Protocol ID, or "".
+        type: string
+      referrer:
+        description: |
+          The HTTP Referer header that was sent with the request that failed.
+        type: string
+      sampling_fraction:
+        description: >
+          The sampling_fraction originally requested by the origin server in its
+          NEL response header.
+        type: number
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+      server_ip:
+        description: >
+          Either the IP address of the server to which the user agent sent the
+          failed request, or "".
+        type: string
+      status_code:
+        description: >
+          Either the HTTP response code of the failed request, or 0 if not
+          applicable.
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+  http:
+    type: object
+    properties:
+      client_ip:
+        description: >-
+          The http client's IP address, usually set from the X-Client-IP header,
+          the value of which is extracted from X-Forwarded-For.
+        type: string
+      has_cookies:
+        description: True if the http request has any cookies set
+        type: boolean
+      method:
+        description: 'The HTTP request method (GET, POST, etc.)'
+        type: string
+      protocol:
+        description: The protocol used for the request (HTTP or HTTPS)
+        type: string
+      request_headers:
+        description: 'Request headers sent by the client.  E.g. user-agent, etc.'
+        type: object
+        additionalProperties:
+          type: string
+      response_headers:
+        description: Response headers sent back to the client (when known).
+        type: object
+        additionalProperties:
+          type: string
+      status_code:
+        description: The HTTP status code returned for this request (when known)
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  url:
+    description: The URL that caused the report to be generated.
+    type: string
+  user_agent:
+    description: >
+      The name of the User-Agent used at the time of loading the original URL
+      which caused the report to be generated. This may differ from the
+      User-Agent used in the HTTP request that sent the report due to factors
+      like the original fetch using the "request desktop site" feature.
+    type: string
+examples:
+  - $schema: /w3c/reportingapi/network_error/1.0.0
+    type: network-error
+    age: 0
+    body:
+      type: http.protocol.error
+      elapsed_time: 823
+      method: GET
+      protocol: h2
+      referrer: 'http://example.com/'
+      sampling_fraction: 0.5
+      server_ip: 123.122.121.120
+      status_code: 200
+    meta: &ref_0
+      dt: '2020-09-01T00:00:00Z'
+      stream: w3c.reportingapi.network_error
+    url: 'https://www.example.com/'
+  - $schema: /w3c/reportingapi/network_error/1.0.0
+    type: network-error
+    age: 0
+    body:
+      type: dns.name_not_resolved
+      elapsed_time: 143
+      method: GET
+      protocol: ''
+      referrer: 'https://www.example.com/'
+      sampling_fraction: 1
+      server_ip: ''
+      status_code: 0
+    meta: *ref_0
+    url: 'https://widget.com/thing.js'
+  - $schema: /w3c/reportingapi/network_error/1.0.0
+    type: network-error
+    age: 0
+    body:
+      type: dns.name_not_resolved
+      elapsed_time: 48
+      method: GET
+      protocol: http/1.1
+      sampling_fraction: 1
+      server_ip: ''
+      status_code: 0
+    meta: *ref_0
+    url: 'https://new-subdomain.example.com/'
+  - $schema: /w3c/reportingapi/network_error/1.0.0
+    type: network-error
+    age: 30654
+    body:
+      type: tcp.refused
+      elapsed_time: 108
+      method: GET
+      phase: connection
+      protocol: http/1.1
+      referrer: ''
+      sampling_fraction: 1
+      server_ip: ''
+      status_code: 0
+    meta: *ref_0
+    url: 'https://mcnulty.nucleosynth.space:8443/'
+    user_agent: >-
+      Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)
+      Chrome/84.0.4147.135 Safari/537.36

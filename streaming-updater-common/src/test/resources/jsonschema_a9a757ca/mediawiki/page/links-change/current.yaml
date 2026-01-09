@@ -1,0 +1,58 @@
+title: mediawiki/page/links-change
+description: Represents a MW Page Links Change event.
+$id: /mediawiki/page/links-change/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/mediawiki/page/common/1.0.0#
+  - properties:
+      removed_links:
+        description: >
+          The old page links. This map would only contain the previous
+          values of the links that were either removed or changed by this
+          event. Links that were intact would not be present here. If the
+          link was changed, its new value would be present in the
+          'added_links' object.
+        type: array
+        items:
+          type: object
+          properties:
+            link:
+              description: Link being removed
+              type: string
+            external:
+              description: Whether link is external
+              type: boolean
+      added_links:
+        description: >
+          The new page links. This map would only contain links that were
+          either added or changed, links that were intact would not be
+          present here. If the link was changed, its previous value would be
+          present in the 'removed_links' object.
+        type: array
+        items:
+          type: object
+          properties:
+            link:
+              description: Link being added
+              type: string
+            external:
+              description: Whether link is external
+              type: boolean
+
+examples:
+  - $schema: { $ref: '#/$id' }
+    meta:
+      stream: medaiwiki.page-links-change
+      dt: '2020-07-01T00:00:00Z'
+    database: examplewiki
+    page_id: 123
+    page_title: example_page_title
+    page_is_redirect: false
+    page_namespace: 0
+    rev_id: 123
+    added_links:
+      - link: example_link
+        external: false
+
+

@@ -1,0 +1,53 @@
+title: test/event
+description: Schema used for simple tests
+$id: /test/event/0.0.2
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+properties:
+  # global event fields
+  $schema:
+    type: string
+    description: >
+      The URI identifying the jsonschema for this event. This may be just
+      a short uri containing only the name and revision at the end of the
+      URI path.  e.g. /schema_name/12345 is acceptable. This often will
+      (and should) match the schema's $id field.
+  meta:
+    type: object
+    properties:
+      uri:
+        type: string
+        format: uri-reference
+        maxLength: 8192
+        description: the unique URI identifying the event / resource
+      request_id:
+        type: string
+        description: The unique ID of the request that caused the event.
+      id:
+        type: string
+        pattern: '^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$'
+        maxLength: 36
+        description: the unique ID of this event; should match the dt field
+      dt:
+        type: string
+        format: date-time
+        maxLength: 128
+        description: the time stamp of the event, in ISO8601 format
+      domain:
+        type: string
+        description: the domain the event pertains to
+        minLength: 1
+      stream:
+        type: string
+        description: The name of the stream/queue that this event belongs in.
+        minLength: 1
+    required:
+      - id
+      - dt
+      - domain
+  # event-specific fields
+  test:
+    type: string
+    default: default test value
+examples:
+  - {"$schema": "/test/event/0.0.2", "meta": {"stream": "test.event", "id": "12345678-1234-5678-1234-567812345678", "dt": "2019-01-01T00:00:00Z", "domain": "wikimedia.org"}, "test": "specific test value"}

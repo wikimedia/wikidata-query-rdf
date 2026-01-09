@@ -1,0 +1,302 @@
+title: mediawiki/wikibase/entity/rdf_change
+description: |
+  Schema representing a change in the RDF structure of a Wikibase entity.
+  The RDF representation conforms to the
+  https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format
+  with the variations required by WDQS:
+    * rdf:type statements are omitted for performance reasons
+    * data (wdata:) nodes are not emitted
+    * only rdfs:label is present (duplicated schema:name & skos:prefLabel are
+      omitted)
+    * SomeValue are not encoded as blank node but skolems
+      (https://www.mediawiki.org/wiki/Wikidata_Query_Service/Blank_Node_Skolemization)
+
+  The event may happen for different reasons but in most cases it is because of
+  change happening to the wikibase entity. For these cases the operation
+  field is set to:
+    * import: when an entity is created or restored
+    * diff: when an entity is edited (new revision)
+    * delete: when an entity is deleted
+
+  In some rarer cases the event may happen for operational purposes when some
+  inconsistencies have been discovered. For these cases the operation field
+  may be set to:
+    * reconcile: to tell the consumer that prior data it received concerning
+      this entity might no longer be trusted and that it should consider using
+      the data provided by this event.
+    * delete: may also happen for similar purposes when the system discovers
+      that possibly prior events may have wrongly instructed consumers to keep
+      the data related to this entity while in fact it no longer exists.
+
+  The purpose of this schema is to be self-sufficient to keep an RDF
+  representation of a Wikibase instance up-to-date (i.e. a triple store) and
+  thus contains all the necessary data to do so without having to call any
+  Wikibase API.
+
+  The RDF data itself is encoded in 4 fields:
+    * rdf_added_data: the triples that must be added
+    * rdf_deleted_data: the triples that must be deleted
+    * rdf_linked_shared_data: the triples that might be shared by other
+      entities and could be added. The stream is not aware if this data has
+      already been transferred and thus adding this data again might not be
+      necessary.
+    * rdf_unlinked_shared_data: triples that might be used by other entities
+      but are no longer linked from this entity.  It is up to the client to
+      determine if these triples are worth keeping or not. Keeping them might
+      lead to "orphaned" triples in the graph. A client may decide that
+      orphans in the graph are an acceptable trade-off or may decide to treat
+      them by deleting them on the fly if they are no longer used.
+      This generally includes:
+        * complex values
+        * references
+        * site links
+
+  The RDF data is encoded using the format defined in the mime_type field. As
+  of now only "text/turtle" is expected to be produced. It may be possible
+  that other formats will be used if they're proven more space efficient.
+
+  These data fields are populated differently depending on the type operation
+  performed:
+    * import: rdf_added_data and rdf_linked_shared_data are populated
+    * diff: all these four fields are populated
+    * delete: none of them, the client must be able to retrieve all the
+      related triples owned by the given entity.
+    * reconcile: only rdf_added_data is used
+
+  The event may be stored in messaging system that may not be designed to
+  store large payloads (i.e. kafka). Since the data of a wikibase entity may
+  possibly be large comparatively to what is acceptable by such messaging
+  system the event may be split into multiple consecutive chunks.
+  Event that are split are identified using the two fields:
+    * sequence: the index of the chunk, starting from 0
+    * sequence_length: the number of chunks the event was split into
+  The client must reconstruct the message before processing it. Chunks
+  related to the same event will have the same data in all its fields except
+  for:
+    * the fields containing the rdf content
+    * the meta.dt field
+    * the meta.id field
+  To reconstruct the event the client must parse the content of all the
+  individual rdf content fields into a list of rdf statements and append to
+  these lists the statement it parses for all the chunks.
+  When consuming from a stream chunks are expected to appear consecutively,
+  the meta.request_id can be used to verify that the chunks are consistent.
+  When consuming from a stream the client must be able to buffer all the chunks
+  for a given event but is not required to buffer multiple events. In other
+  words a stream consumer can simply buffer event testing the simple condition:
+    * sequence + 1 == sequence_length.
+  When using this data from a batch storage client is expected to reconstruct
+  the event grouping on meta.request_id for messages having sequence_length > 1.
+
+  Messages ordering in the stream:
+    * two consecutive edits happening on the same entity are guaranteed to
+      appear one after another in the right order
+    * two consecutive edits happening on two different entities are not
+      guaranteed to appear in the same order they happened in the wikibase
+      instance
+  This is generally not a problem but may pose interesting challenges for
+  sitelinks which are currently modeled as a separate "well identified" subject.
+  In other words this means that two entities might possibly link to the same
+  sitelink while the stream is consumed.
+  This is one of the reason the site links portion of the graph is considered
+  "shared linked data". The other reason is historical, see T44325.
+$id: /mediawiki/wikibase/entity/rdf_change/2.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - dt
+  - entity_id
+  - meta
+  - operation
+  - rev_id
+  - sequence
+  - sequence_length
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  dt:
+    description: >
+      ISO-8601 formatted timestamp of when the event occurred/was generated in
+      UTC), AKA 'event time'. This is different than meta.dt, which is used as
+      the time the system received this event.
+    type: string
+    format: date-time
+    maxLength: 128
+  entity_id:
+    description: Wikibase entity ID being modified
+    type: string
+  meta:
+    type: object
+    required:
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'Time the event was received by the system, in UTC ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream (dataset) that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  operation:
+    description: |
+      Type of update received:
+        * diff: only the required set of triples to add or remove is present in
+          the message
+        * import: all the entity triples are present
+        * delete: the entity has been deleted from the wikibase instance, no
+          RDF data is passed, the consumer must know how to delete the triples
+          related to this entity
+        * reconcile: indication that prior inconsistencies might have been
+          detected and that the data consumed so far for this entity cannot be
+          trusted, all the entity data is provided and a full reconciliation
+          must happen.
+    type: string
+    enum:
+      - diff
+      - import
+      - delete
+      - reconcile
+  rdf_added_data:
+    type: object
+    additionalProperties: false
+    required:
+      - mime_type
+      - data
+    properties:
+      data:
+        description: the RDF data encoded using mime_type
+        type: string
+      mime_type:
+        description: Mime type of the RDF data stored in the data field
+        type: string
+  rdf_deleted_data:
+    type: object
+    additionalProperties: false
+    required:
+      - mime_type
+      - data
+    properties:
+      data:
+        description: the RDF data encoded using mime_type
+        type: string
+      mime_type:
+        description: Mime type of the RDF data stored in the data field
+        type: string
+  rdf_linked_shared_data:
+    type: object
+    additionalProperties: false
+    required:
+      - mime_type
+      - data
+    properties:
+      data:
+        description: the RDF data encoded using mime_type
+        type: string
+      mime_type:
+        description: Mime type of the RDF data stored in the data field
+        type: string
+  rdf_unlinked_shared_data:
+    type: object
+    additionalProperties: false
+    required:
+      - mime_type
+      - data
+    properties:
+      data:
+        description: the RDF data encoded using mime_type
+        type: string
+      mime_type:
+        description: Mime type of the RDF data stored in the data field
+        type: string
+  rev_id:
+    description: The (database) revision ID related to this change.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  sequence:
+    description: >
+      The sequence number of this message used to reconstruct the event when it
+      was considered too large to be encoded as a single message. The number of
+      messages is encoded in sequence_length.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  sequence_length:
+    description: |
+      The number of messages that have to be read to reconstruct this message.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 1
+examples:
+  - $schema: /mediawiki/wikibase/entity/rdf_change/2.0.0
+    dt: '2020-06-10T18:56:15Z'
+    entity_id: Q1
+    meta:
+      domain: www.wikidata.org
+      dt: '2020-06-10T18:57:16Z'
+      request_id: 79c4ddcf-3db2-437d-9c42-2d144cefb8d1
+      stream: some-rdf-stream
+    operation: diff
+    rdf_added_data:
+      data: 'data:s data:p data:o'
+      mime_type: text/turtle
+    rdf_deleted_data:
+      data: 'data:rs data:rp data:ro'
+      mime_type: text/turtle
+    rdf_linked_shared_data:
+      data: 'data:ls data:lp data:lo'
+      mime_type: text/turtle
+    rdf_unlinked_shared_data:
+      data: 'data:ls data:lp data:lo'
+      mime_type: text/turtle
+    rev_id: 327
+    sequence: 0
+    sequence_length: 1
+  - $schema: /mediawiki/wikibase/entity/rdf_change/2.0.0
+    dt: '2020-06-10T19:56:15Z'
+    entity_id: Q1
+    meta:
+      domain: www.wikidata.org
+      dt: '2020-06-10T19:57:16Z'
+      request_id: 79c4ddcf-3db2-437d-9c42-2d144cefb8d2
+      stream: some-rdf-stream
+    operation: delete
+    rev_id: 327
+    sequence: 0
+    sequence_length: 1
+$defs:
+  rdf_data:
+    type: object
+    additionalProperties: false
+    required:
+      - mime_type
+      - data
+    properties:
+      data:
+        description: the RDF data encoded using mime_type
+        type: string
+      mime_type:
+        description: Mime type of the RDF data stored in the data field
+        type: string

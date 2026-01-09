@@ -1,0 +1,98 @@
+title: mediawiki/job
+description: Represents a job in Mediawiki JobQueue.
+$id: /mediawiki/job/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - database
+  - meta
+  - type
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  type:
+    description: type of the job
+    type: string
+  database:
+    description: The name of the wiki database this event belongs to.
+    type: string
+    minLength: 1
+  delay_until:
+    description: don't execute the job until a particular time
+    type: string
+    format: date-time
+    maxLength: 128
+  mediawiki_signature:
+    description: The cryptograthic signature of the event baed on MW SecretKey
+    type: string
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  page_namespace:
+    description: the namespace of the page that the job was triggered for
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  page_title:
+    description: the title of the page that the job was triggered for
+    type: string
+    minLength: 1
+  params:
+    description: various parameters speific to a particular job
+    type: object
+  root_event:
+    description: Unique identifier of the root event that triggered this event creation
+    type: object
+    required:
+      - dt
+      - signature
+    properties:
+      dt:
+        description: 'the timestamp of the root event, in ISO8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      signature:
+        description: the unique signature of root event
+        type: string
+  sha1:
+    description: unique ID of the job derived from the deduplication info
+    type: string
+examples:
+  - $schema: /mediawiki/job/1.0.0
+    type: example_job
+    database: examplewiki
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: mediawiki.job.example

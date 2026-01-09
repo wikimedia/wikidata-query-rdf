@@ -1,0 +1,114 @@
+title: mediawiki/cirrussearch/page_rerender
+description: |
+  Represents a notification instructing that a page should be re-rendered.
+$id: /mediawiki/cirrussearch/page_rerender/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - cirrussearch_cluster_group
+  - cirrussearch_index_name
+  - dt
+  - is_redirect
+  - meta
+  - namespace_id
+  - page_id
+  - page_title
+  - reason
+  - wiki_id
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  cirrussearch_cluster_group:
+    description: The elastic search cluster group
+    type: string
+    minLength: 1
+  cirrussearch_index_name:
+    description: The elastic search index name
+    type: string
+    minLength: 1
+  dt:
+    description: >
+      ISO-8601 formatted timestamp of when the event occurred/was generated in
+      UTC), AKA 'event time'. This is different than meta.dt, which is used as
+      the time the system received this event.
+    type: string
+    format: date-time
+    maxLength: 128
+  is_redirect:
+    description: True if the page is a redirect page at the time of this event.
+    type: boolean
+  meta:
+    type: object
+    required:
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'Time the event was received by the system, in UTC ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream (dataset) that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  namespace_id:
+    description: The id of the namespace this page belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  page_id:
+    description: The (database) page ID of the page.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  page_title:
+    description: The normalized title of the page.
+    type: string
+    minLength: 1
+  reason:
+    description: The known reason that led to this event.
+    type: string
+    minLength: 1
+  wiki_id:
+    description: >
+      The wiki ID, which is usually the same as the MediaWiki database name.
+      E.g. enwiki, metawiki, etc.
+    type: string
+    minLength: 1
+examples:
+  - $schema: /mediawiki/cirrussearch/page_rerender/1.0.0
+    cirrussearch_cluster_group: my_group
+    cirrussearch_index_name: mywiki_content
+    dt: '1970-01-01T00:00:00Z'
+    is_redirect: false
+    meta:
+      domain: myserver.unittest.local
+      request_id: my_request_id
+      stream: mediawiki.cirrussearch_page_rerender
+      uid: 00000000-0000-0000-0000-000000000000
+      uri: 'https://myserver.unittest.local/wiki/MyPage'
+    namespace_id: 0
+    page_id: 123
+    page_title: MyPage
+    reason: my_reason
+    wiki_id: mywiki

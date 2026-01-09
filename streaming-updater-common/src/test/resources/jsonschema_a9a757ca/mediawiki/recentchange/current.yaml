@@ -1,0 +1,136 @@
+title: mediawiki/recentchange
+description: >
+  Represents a MW RecentChange event.
+  https://www.mediawiki.org/wiki/Manual:RCFeed
+$id: /mediawiki/recentchange/1.0.1
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/common/1.0.0#
+  - properties:
+      ### Fields common to all recentchange events
+      id:
+        description: ID of the recentchange event (rcid).
+        type: [integer, "null"]
+
+      type:
+        description: >
+          Type of recentchange event (rc_type). One of "edit", "new", "log",
+          "categorize", or "external"; or a number. (See Manual:Recentchanges table#rc_type)
+        type: string
+
+      title:
+        description: Full page name, from Title::getPrefixedText.
+        type: string
+
+      namespace:
+        description: >
+          ID of relevant namespace of affected page (rc_namespace, page_namespace).
+          This is -1 ("Special") for log events.
+        type: integer
+
+      comment:
+        description: (rc_comment)
+        type: string
+
+      parsedcomment:
+        description: The rc_comment parsed into simple HTML. Optional
+        type: string
+
+      timestamp:
+        description: Unix timestamp (derived from rc_timestamp).
+        type: integer
+
+      user:
+        description: (rc_user_text)
+        type: string
+
+      bot:
+        description: (rc_bot)
+        type: boolean
+
+      server_url:
+        description: $wgCanonicalServer
+        type: string
+
+      server_name:
+        description: $wgServerName
+        type: string
+
+      server_script_path:
+        description: $wgScriptPath
+        type: string
+
+      wiki:
+        description: wfWikiID ($wgDBprefix, $wgDBname)
+        type: string
+
+
+      ### Edit event related fields
+      minor:
+        description: (rc_minor).
+        type: boolean
+
+      patrolled:
+        description: >
+          (rc_patrolled). This property only exists if patrolling is supported
+          for this event (based on $wgUseRCPatrol, $wgUseNPPatrol).
+        type: boolean
+
+      length:
+        description: Length of old and new change
+        type: object
+        properties:
+          old:
+            description: (rc_old_len)
+            type: [integer, "null"]
+          new:
+            description: (rc_new_len)
+            type: [integer, "null"]
+
+      revision:
+        description: Old and new revision IDs
+        type: object
+        properties:
+          new:
+            description: (rc_last_oldid)
+            type: [integer, "null"]
+          old:
+            description: (rc_this_oldid)
+            type: [integer, "null"]
+
+
+      ### Log event related fields
+      log_id:
+        description: (rc_log_id)
+        type: [integer, "null"]
+
+      log_type:
+        description: (rc_log_type)
+        type: [string, "null"]
+
+      log_action:
+        description: (rc_log_action)
+        type: string
+
+      log_params:
+        description: Property only exists if event has rc_params.
+        type: [array, object, string]
+        additionalProperties: true
+
+      log_action_comment:
+        type: [string, "null"]
+
+# Since recentchanges has existed before we began enforcing real JSON schemas,
+# we do not require any fields (other than meta), and do not invalidate if additional
+# properties are added.  This means that almost any schema (with a meta object) will
+# validate, but it allows us to be flexible and backwards compatible with unknown edge cases
+# where a recentchange event might look different than officially documented
+# at https://www.mediawiki.org/wiki/Manual:RCFeed.
+additionalProperties: true
+
+examples:
+  - $schema: { $ref: '#/$id' }
+    meta:
+      stream: mediawiki.recentchange
+      dt: '2020-07-01T00:00:00Z'

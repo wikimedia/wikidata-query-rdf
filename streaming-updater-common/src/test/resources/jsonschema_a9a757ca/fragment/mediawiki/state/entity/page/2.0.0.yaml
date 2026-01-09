@@ -1,0 +1,29 @@
+title: fragment/mediawiki/state/entity/page
+description: Fields for MediaWiki page entity.
+$id: /fragment/mediawiki/state/entity/page/2.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+properties:
+  is_redirect:
+    description: True if the page is a redirect page at the time of this event.
+    type: boolean
+  namespace_id:
+    description: The id of the namespace this page belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  page_id:
+    description: The (database) page ID of the page.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  page_title:
+    description: The normalized title of the page.
+    type: string
+    minLength: 1
+examples:
+  - is_redirect: false
+    namespace_id: 1351079888211148
+    page_id: 1351079888211148
+    page_title: dolor

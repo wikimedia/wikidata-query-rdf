@@ -1,0 +1,42 @@
+title: mediawiki/revision/recommendation-create
+description: Represents a recommendation (suggested edit) for a given revision.
+$id: /mediawiki/revision/recommendation-create/1.0.1
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  ### revision entity fields - all revision related events should have these.
+  - $ref: /fragment/mediawiki/revision/common/1.0.0#
+  ### recommendation/add specific fields.
+  - properties:
+      recommendation_type:
+        description: A keyword identifying the recommendation type.
+        type: string
+        pattern: ^[\d\w-]+$
+        maxLength: 64
+
+examples:
+  - $schema: { $ref: '#/$id' }
+    meta:
+      uri: https://examplewiki.wikipedia.org/wiki/TestPage10
+      dt: '2020-06-10T18:57:16Z'
+      domain: test.wikipedia.org
+      stream: mediawiki.revision-recommendation-create
+    database: examplewiki
+    page_id: 123
+    page_title: TestPage10
+    page_namespace: 0
+    rev_id: 123
+    rev_timestamp: '2020-06-10T18:57:16Z'
+    performer:
+      user_text: example_user_text
+      user_groups:
+      - "*"
+      - user
+      - autoconfirmed
+      user_is_bot: false
+      user_id: 123
+      user_registration_dt: '2016-01-29T21:13:24Z'
+      user_edit_count: 1
+    page_is_redirect: false
+    rev_parent_id: 122
+    recommendation_type: link

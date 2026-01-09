@@ -1,0 +1,248 @@
+title: mediawiki/revision/score
+description: Represents a MW Revision Score event (from ORES).
+$id: /mediawiki/revision/score/2.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - database
+  - meta
+  - page_id
+  - page_is_redirect
+  - page_namespace
+  - page_title
+  - rev_id
+  - rev_timestamp
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  database:
+    description: The name of the wiki database this event entity belongs to.
+    type: string
+    minLength: 1
+  errors:
+    description: >-
+      Errors that occured when models attempted to score this revision. Each
+      error uses the model name as a map key.
+    type: object
+    additionalProperties:
+      type: object
+      required:
+        - model_name
+        - model_version
+        - type
+        - message
+      properties:
+        type:
+          description: The short name of this error
+          type: string
+        message:
+          description: A human-readable explanation of what went wrong
+          type: string
+        model_name:
+          description: The name of the model that encountered this error.
+          type: string
+        model_version:
+          description: The version of the model that encountered this error.
+          type: string
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  page_id:
+    description: The page ID of the page this revision belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 1
+  page_is_redirect:
+    description: >
+      True if this revision is a redirect.  This fact is ultimately represented
+      by revision content containing redirect wikitext.  If this revision is the
+      head revision of the page, then the page will also be a redirect.
+    type: boolean
+  page_namespace:
+    description: The namespace of the page this revision belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  page_title:
+    description: The normalized title of the page this revision belongs to.
+    type: string
+    minLength: 1
+  performer:
+    description: Represents the user that performed this change.
+    type: object
+    required:
+      - user_text
+      - user_groups
+      - user_is_bot
+    properties:
+      user_edit_count:
+        description: >
+          The number of edits this user has made at the time of this event. Not
+          present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      user_groups:
+        description: 'A list of the groups this user belongs to.  E.g. bot, sysop etc.'
+        type: array
+        items:
+          type: string
+          minLength: 1
+      user_id:
+        description: >
+          The user id that performed this change.  This is optional, and will
+          not be present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+      user_is_bot:
+        description: >
+          True if this user is considered to be a bot at the time of this event.
+          This is checked via the $user->isBot() method, which considers both
+          user_groups and user permissions.
+        type: boolean
+      user_registration_dt:
+        description: >
+          The datetime of the user account registration. Not present for
+          anonymous users or if missing in the MW database.
+        type: string
+        format: date-time
+        maxLength: 128
+      user_text:
+        description: The text representation of the user that performed this change.
+        type: string
+        minLength: 1
+  rev_id:
+    description: The (database) revision ID.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  rev_parent_id:
+    description: The parent revison ID of the revision that this event represents.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  rev_timestamp:
+    description: >
+      The revision's creation time in ISO8601 format.  This field does not end
+      in '_dt' to better match the field name on the Mediawiki revision table.
+    type: string
+    format: date-time
+    maxLength: 128
+  scores:
+    description: >
+      List of ORES score objects. Each model uses the model name as a map key
+      and was used to score this revision.  Example: {
+        "awesomeness": {
+          "model_name": "awesomeness",
+          "model_version": "1.0.1",
+          "prediction": ["yes", "mostly"],
+          "probability": {
+            "yes": 0.99,
+            "mostly": 0.90,
+            "hardly": 0.01
+          }
+        }
+      }
+    type: object
+    additionalProperties:
+      type: object
+      required:
+        - model_name
+        - model_version
+        - prediction
+        - probability
+      properties:
+        model_name:
+          description: The name of the model used for this score.
+          type: string
+        model_version:
+          description: The version of the model used for this score.
+          type: string
+        prediction:
+          description: A list of predictions made by this model.
+          type: array
+          items:
+            type: string
+        probability:
+          description: >
+            A list of probabilities made by this model. Each element is a
+            key/value with a probability name and a probability value.
+          type: object
+          additionalProperties:
+            type: number
+            maximum: 9007199254740991
+            minimum: -9007199254740991
+examples:
+  - $schema: /mediawiki/revision/score/2.0.0
+    database: examplewiki
+    meta:
+      domain: test.wikipedia.org
+      dt: '2020-06-10T18:57:16Z'
+      stream: mediawiki.revision-score
+      uri: 'https://examplewiki.wikipedia.org/wiki/TestPage10'
+    page_id: 123
+    page_is_redirect: false
+    page_namespace: 0
+    page_title: TestPage10
+    performer:
+      user_edit_count: 1
+      user_groups:
+        - '*'
+        - user
+        - autoconfirmed
+      user_id: 123
+      user_is_bot: false
+      user_registration_dt: '2016-01-29T21:13:24Z'
+      user_text: example_user_text
+    rev_content_changed: true
+    rev_content_format: text/x-wiki
+    rev_content_model: wikitext
+    rev_id: 123
+    rev_len: 3
+    rev_minor_edit: false
+    rev_parent_id: 122
+    rev_sha1: mr0szy90m5qbn6tek7ch3nebaild3tm
+    rev_timestamp: '2020-06-10T18:57:16Z'
+    scores:
+      example_model:
+        model_name: example_model
+        model_version: 1.0.1
+        prediction:
+          - 'yes'
+          - mostly
+        probability:
+          hardly: 0.01
+          mostly: 0.9
+          'yes': 0.99

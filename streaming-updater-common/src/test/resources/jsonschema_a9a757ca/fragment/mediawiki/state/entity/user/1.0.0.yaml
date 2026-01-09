@@ -1,0 +1,70 @@
+title: fragment/mediawiki/state/entity/user
+description: >
+  Fields for MediaWiki actor or user. Note that an 'user' might be a real user
+  account in MediaWiki. For anonymous users, the user_id will not be set.
+$id: /fragment/mediawiki/state/entity/user/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+properties:
+  edit_count:
+    description: >
+      The number of edits this user has made at the time of this event. Not
+      present for anonymous users.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  groups:
+    description: >
+      A list of the groups this user belongs to.  E.g. bot, sysop etc. Not
+      present for anonymous users.
+    type: array
+    items:
+      type: string
+      minLength: 1
+  is_bot:
+    description: >
+      True if this user is considered to be a bot at the time of this event.
+      This is checked via the $user->isBot() method, which considers both
+      user_groups and user permissions.
+    type: boolean
+  is_system:
+    description: >
+      True if the user is a MediaWiki 'system' user. These are users that cannot
+      'authenticate'.  These are usually listed in ReservedUsernames.
+    type: boolean
+  is_temp:
+    description: >
+      True if the user is an autocreated temporary MediaWiki user. This is used
+      for IP masking.
+    type: boolean
+  registration_dt:
+    description: >
+      The datetime of the user account registration. Not present for anonymous
+      users or if missing in the MW database.
+    type: string
+    format: date-time
+    maxLength: 128
+  user_id:
+    description: >
+      The user ID that performed this change.  This is optional, and will not be
+      present for anonymous users.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  user_text:
+    description: >
+      The user name or text representation of the user that performed this
+      change.
+    type: string
+    minLength: 1
+examples:
+  - edit_count: 1351079888211148
+    groups:
+      - dolor
+    is_bot: false
+    is_system: false
+    is_temp: false
+    registration_dt: '2021-01-01T00:00:00.0Z'
+    user_id: 1351079888211148
+    user_text: dolor

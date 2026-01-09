@@ -1,0 +1,124 @@
+title: fragment/w3c/reportingapi/report
+description: >
+  Browser-generated problem reports, as described by the W3C Reporting API.
+  https://www.w3.org/TR/reporting/ This is a fragment that includes the basic
+  fields part of every report. Each report type should use this fragment when
+  writing their own event schema with the appropriate fields for the 'body'
+  object.
+$id: /fragment/w3c/reportingapi/report/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - meta
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  type:
+    description: 'The flavor of the report, like ''network-error'' or ''hpkp''.'
+    type: string
+  age:
+    description: >
+      The number of milliseconds between the report's timestamp and the time the
+      report was sent.
+    type: number
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  http:
+    type: object
+    properties:
+      client_ip:
+        description: >-
+          The http client's IP address, usually set from the X-Client-IP header,
+          the value of which is extracted from X-Forwarded-For.
+        type: string
+      has_cookies:
+        description: True if the http request has any cookies set
+        type: boolean
+      method:
+        description: 'The HTTP request method (GET, POST, etc.)'
+        type: string
+      protocol:
+        description: The protocol used for the request (HTTP or HTTPS)
+        type: string
+      request_headers:
+        description: 'Request headers sent by the client.  E.g. user-agent, etc.'
+        type: object
+        additionalProperties:
+          type: string
+      response_headers:
+        description: Response headers sent back to the client (when known).
+        type: object
+        additionalProperties:
+          type: string
+      status_code:
+        description: The HTTP status code returned for this request (when known)
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  url:
+    description: The URL that caused the report to be generated.
+    type: string
+  user_agent:
+    description: >
+      The name of the User-Agent used at the time of loading the original URL
+      which caused the report to be generated. This may differ from the
+      User-Agent used in the HTTP request that sent the report due to factors
+      like the original fetch using the "request desktop site" feature.
+    type: string
+examples:
+  - $schema: /fragment/w3c/reportingapi/report/1.0.0
+    type: dolor
+    age: -6305039478318694
+    http:
+      client_ip: dolor
+      has_cookies: false
+      method: dolor
+      protocol: dolor
+      request_headers:
+        dolorb: dolor
+      response_headers:
+        dolorb: dolor
+      status_code: -6305039478318694
+    meta:
+      domain: dolor
+      dt: '2021-01-01T00:00:00.0Z'
+      id: dolor
+      request_id: dolor
+      stream: dolor
+      uri: 'http://example.org'
+    url: dolor
+    user_agent: dolor

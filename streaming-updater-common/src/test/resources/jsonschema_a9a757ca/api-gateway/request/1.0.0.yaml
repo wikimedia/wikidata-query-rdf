@@ -1,0 +1,100 @@
+title: api-gateway/request
+description: A single request to the API Gateway
+$id: /api-gateway/request/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - meta
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  backend_time_ms:
+    description: Elapsed milliseconds to process request by the backend service
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  client_id:
+    description: The client_id for OAuth2 authenticated clients
+    type: string
+  http:
+    type: object
+    properties:
+      client_ip:
+        description: >-
+          The http client's IP address, usually set from the X-Client-IP header,
+          the value of which is extracted from X-Forwarded-For.
+        type: string
+      has_cookies:
+        description: True if the http request has any cookies set
+        type: boolean
+      method:
+        description: 'The HTTP request method (GET, POST, etc.)'
+        type: string
+      protocol:
+        description: The protocol used for the request (HTTP or HTTPS)
+        type: string
+      request_headers:
+        description: 'Request headers sent by the client.  E.g. user-agent, etc.'
+        type: object
+        additionalProperties:
+          type: string
+      response_headers:
+        description: Response headers sent back to the client (when known).
+        type: object
+        additionalProperties:
+          type: string
+      status_code:
+        description: The HTTP status code returned for this request (when known)
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  route:
+    description: The name of the request route
+    type: string
+  total_time_ms:
+    description: Total elapsed milliseconds to process request
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+examples:
+  - $schema: /api-gateway/request/1.0.0
+    backend_time_ms: 2
+    client_id: test_client
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: example_stream
+    total_time_ms: 3

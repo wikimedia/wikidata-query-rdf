@@ -1,0 +1,17 @@
+title: fragment/mediawiki/state/entity/page_link
+description: Fields for a link to a mediawiki page.
+
+$id: /fragment/mediawiki/state/entity/page_link/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+
+allOf:
+- $ref: /fragment/mediawiki/state/entity/page/2.0.0
+properties:
+  interwiki_prefix:
+    type: string
+    description: >
+      The interwiki prefix (iw_prefix) of this link.
+      The presence of this prefix implies a target outside the local wiki.
+      See https://meta.wikimedia.org/wiki/Help:Interwiki_linking

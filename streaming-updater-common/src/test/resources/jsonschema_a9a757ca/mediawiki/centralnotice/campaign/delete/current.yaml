@@ -1,0 +1,62 @@
+title: mediawiki/centralnotice/campaign/delete
+description: Represents the deletion of a MW CentralNotice banner campaign
+$id: /mediawiki/centralnotice/campaign/delete/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/mediawiki/common/1.0.0#
+  - properties:
+      campaign_name:
+        description: The name of the campaign that was deleted.
+        type: string
+
+      prior_state:
+        description: The prior state of the campaign before this event.
+        type: object
+        properties:
+          start_dt:
+            description: The campaign's previous start time, in ISO8601 format.
+            type: string
+            format: date-time
+            maxLength: 128
+          end_dt:
+            description: The campaign's previous end time, in ISO8601 format.
+            type: string
+            format: date-time
+            maxLength: 128
+          enabled:
+            description: The campaign's previous enabled status.
+            type: boolean
+          archived:
+            description: The campaign's previous archived status.
+            type: boolean
+          banners:
+            description: Banners previously assigned to this campaign.
+            type: array
+            items:
+              type: string
+        required:
+          - start_dt
+          - end_dt
+          - enabled
+          - archived
+          - banners
+      summary:
+        description: The summary provided for campaign deletion.
+        type: string
+    required:
+      - campaign_name
+      - prior_state
+examples:
+  - $schema: { $ref: "#/$id" }
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: example_stream
+    database: examplewiki
+    campaign_name: example
+    prior_state:
+      start_dt: '2020-07-01T00:00:00Z'
+      end_dt: '2020-07-02T00:00:00Z'
+      enabled: false
+      archived: true
+      banners: [example]

@@ -1,0 +1,92 @@
+title: mediawiki/page/move
+description: Represents a MW Page Move event.
+$id: /mediawiki/page/move/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/mediawiki/page/common/1.0.0#
+  - properties:
+      comment:
+        description: The comment left by the user that performed this change.
+        type: string
+        minLength: 1
+
+      parsedcomment:
+        description: >
+          The comment left by the user that performed this change
+          parsed into simple HTML. Optional
+        type: string
+
+      prior_state:
+        description: >
+          The prior state of the entity before this event. If a top level entity
+          field is not present in this object, then its value has not changed
+          since the prior event.
+        type: object
+        properties:
+          page_title:
+            description: The normalized title of this page before this event.
+            type: string
+            minLength: 1
+          page_namespace:
+            description: The namespace ID this page belonged to before this event.
+            type: integer
+          rev_id:
+            description: The head revision of this page before this event.
+            type: integer
+            minimum: 0
+        required:
+          - page_title
+          - page_namespace
+          - rev_id
+
+      new_redirect_page:
+        description: >
+          Information about the new redirect page auto-created
+          at the old title as a result of this page move.
+          This field is optional and will be absent if no redirect
+          page was created.
+        type: object
+        properties:
+          page_id:
+            description: The page ID of the newly created redirect page.
+            type: integer
+            minimum: 1
+          page_title:
+            description: This will be the same as prior_state.page_title.
+            type: string
+            minLength: 1
+          page_namespace:
+            description: This will be the same as prior_state.page_namespace.
+            type: integer
+          rev_id:
+            description: The revision created for the newly created redirect page.
+            type: integer
+            minimum: 0
+        required:
+          - page_id
+          - page_title
+          - page_namespace
+          - rev_id
+
+required:
+  - prior_state
+
+examples:
+  - $schema: { $ref: '#/$id' }
+    meta:
+      stream: medaiwiki.page-move
+      dt: '2020-07-01T00:00:00Z'
+    database: examplewiki
+    page_id: 123
+    page_title: example_page_title
+    page_is_redirect: false
+    page_namespace: 0
+    rev_id: 123
+    prior_state:
+      page_title: example_old_page_title
+      page_namespace: 0
+      rev_id: 122
+
+
+

@@ -1,0 +1,32 @@
+title: fragment/mediawiki/revision/slot
+description: Schema fields describing a revision slot
+$id: /fragment/mediawiki/revision/slot/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - rev_slot_content_model
+  - rev_slot_sha1
+  - rev_slot_size
+properties:
+  rev_slot_content_model:
+    description: 'Model of the content (e.g. wikitext, wikibase-mediainfo...)'
+    type: string
+  rev_slot_origin_rev_id:
+    description: Revision for which this slot was created
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  rev_slot_sha1:
+    description: SHA1 of the slot content
+    type: string
+  rev_slot_size:
+    description: Size in bytes of the slot content
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+examples:
+  - rev_slot_content_model: dolor
+    rev_slot_origin_rev_id: 1351079888211148
+    rev_slot_sha1: dolor
+    rev_slot_size: 1351079888211148

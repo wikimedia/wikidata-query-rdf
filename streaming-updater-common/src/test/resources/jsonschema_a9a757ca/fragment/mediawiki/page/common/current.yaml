@@ -1,0 +1,41 @@
+title: fragment/mediawiki/page/common
+description: Common schema fields for all Mediawiki page entities
+$id: /fragment/mediawiki/page/common/2.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+
+allOf:
+    ### Mediawiki entity fields.
+  - $ref: /fragment/mediawiki/common/2.0.0#
+### page e[ntity fields
+properties:
+
+  page_id:
+    description: The (database) page ID.
+    type: integer
+    # Some events are emitted async from the JobQueue and if the page was
+    # deleted before the hook was executed, the returned page_id is 0
+    minimum: 0
+
+  page_title:
+    description: The normalized title of the page.
+    type: string
+    minLength: 1
+
+  page_namespace:
+    description: The namespace ID this page belongs to.
+    type: integer
+
+  page_is_redirect:
+    description: >
+      True if this page is currently a redirect page.  This
+      fact is ultimately represented by revision content containing
+      redirect wikitext.  If rev_id's content has redirect wikitext,
+      then this page is a redirect.  Note that this state is also
+      stored on the Mediawiki page table.
+    type: boolean
+
+  rev_id:
+    description: The head revision of the page at the time of this event.
+    type: integer
+    minimum: 0

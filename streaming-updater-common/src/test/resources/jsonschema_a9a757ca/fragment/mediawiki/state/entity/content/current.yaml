@@ -1,0 +1,44 @@
+title: fragment/mediawiki/state/entity/content
+description: >
+  Fields for representing MediaWiki page revision content.
+
+$id: /fragment/mediawiki/state/entity/content/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+
+properties:
+
+  content_model:
+    type: string
+    description: MediaWiki's content model of this content.
+      E.g. wikitext, json, etc.
+
+  content_format:
+    type: string
+    description:
+      The 'content type' of the content.  E.g. wikitext/html.
+      This is similiar to a MIME type.
+
+  content_size:
+    type: integer
+    description: Byte size of the content body.
+    minimum: 0
+
+  content_sha1:
+    description: sha1 sum of the content body.
+    type: string
+
+  origin_rev_id:
+    type: integer
+    description: Revision in which this slot was originally created
+    minimum: 0
+
+  content_body:
+    type: string
+    description: >
+      Content body.
+      NOTE: This field is not required,
+      and is often not set in streams as it can make events very large.
+      It is included here for events that do include the content body.
+

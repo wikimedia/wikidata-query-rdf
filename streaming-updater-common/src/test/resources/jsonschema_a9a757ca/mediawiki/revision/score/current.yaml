@@ -1,0 +1,115 @@
+title: mediawiki/revision/score
+description: Represents a MW Revision Score event (from ORES).
+$id: /mediawiki/revision/score/3.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+additionalProperties: false
+allOf:
+  ### revision entity fields - all revision related events should have these.
+  - $ref: /fragment/mediawiki/revision/common/3.0.0#
+### revision/score specific fields
+properties:
+  scores:
+    description: >
+      List of ORES score objects. Each model uses the model name as a map key and was used to score this revision.  Example:
+      {
+        "awesomeness": {
+          "model_name": "awesomeness",
+          "model_version": "1.0.1",
+          "prediction": ["yes", "mostly"],
+          "probability": {
+            "yes": 0.99,
+            "mostly": 0.90,
+            "hardly": 0.01
+          }
+        }
+      }
+    type: object
+    additionalProperties:
+      type: object
+      properties:
+        model_name:
+          description: The name of the model used for this score.
+          type: string
+        model_version:
+          description: The version of the model used for this score.
+          type: string
+        prediction:
+          description: A list of predictions made by this model.
+          type: array
+          items:
+            type: string
+        probability:
+          description: >
+            A list of probabilities made by this model.
+            Each element is a key/value with a probability name and a probability value.
+          type: object
+          additionalProperties:
+            type: number
+      required:
+        - model_name
+        - model_version
+        - prediction
+        - probability
+
+  errors:
+    description: Errors that occured when models attempted to score this revision. Each error uses the model name as a map key.
+    type: object
+    additionalProperties:
+      type: object
+      properties:
+        model_name:
+          description: The name of the model that encountered this error.
+          type: string
+        model_version:
+          description: The version of the model that encountered this error.
+          type: string
+        type:
+          description: The short name of this error
+          type: string
+        message:
+          description: A human-readable explanation of what went wrong
+          type: string
+      required:
+        - model_name
+        - model_version
+        - type
+        - message
+
+examples:
+  - $schema: { $ref: '#/$id' }
+    dt: '2020-06-10T18:53:00Z'
+    meta:
+      uri: https://examplewiki.wikipedia.org/wiki/TestPage10
+      dt: '2020-06-10T18:57:16Z'
+      domain: test.wikipedia.org
+      stream: mediawiki.revision-score
+    database: examplewiki
+    page_id: 123
+    page_title: TestPage10
+    page_namespace: 0
+    page_is_redirect: false
+    rev_id: 123
+    rev_timestamp: '2020-06-10T18:53:00Z'
+    performer:
+      user_text: example_user_text
+      user_groups:
+      - "*"
+      - user
+      - autoconfirmed
+      user_is_bot: false
+      user_id: 123
+      user_registration_dt: '2016-01-29T21:13:24Z'
+      user_edit_count: 1
+    rev_parent_id: 122
+    scores:
+      example_model:
+        model_name: example_model
+        model_version: 1.0.1
+        prediction:
+        - yes
+        - mostly
+        probability:
+          yes: 0.99
+          mostly: 0.9
+          hardly: 0.01

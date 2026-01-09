@@ -1,0 +1,50 @@
+title: fragment/mediawiki/revision/common
+description: Common schema fields for all Mediawiki revision entities
+$id: /fragment/mediawiki/revision/common/3.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  ### mediawiki entity fields - all mediawiki related events should have these.
+  - $ref: /fragment/mediawiki/common/3.0.0#
+### revision entity fields - all revision related events should have these.
+properties:
+  page_id:
+    description: The page ID of the page this revision belongs to.
+    type: integer
+    minimum: 1
+
+  page_title:
+    description: The normalized title of the page this revision belongs to.
+    type: string
+    minLength: 1
+
+  page_namespace:
+    description: The namespace of the page this revision belongs to.
+    type: integer
+
+  page_is_redirect:
+    description: >
+      True if this revision is a redirect.  This
+      fact is ultimately represented by revision content containing
+      redirect wikitext.  If this revision is the head revision
+      of the page, then the page will also be a redirect.
+    type: boolean
+
+  rev_id:
+    description: The (database) revision ID.
+    type: integer
+    minimum: 0
+
+  rev_parent_id:
+    description: The parent revison ID of the revision that this event represents.
+    type: integer
+    minimum: 0
+
+  rev_timestamp:
+    description: >
+      The revision's creation time in ISO8601 format.  This field
+      does not end in '_dt' to better match the field name on the
+      Mediawiki revision table.
+    type: string
+    format: date-time
+    maxLength: 128

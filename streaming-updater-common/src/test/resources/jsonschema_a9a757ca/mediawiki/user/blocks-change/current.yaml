@@ -1,0 +1,146 @@
+title: mediawiki/user/blocks-change
+description: Represents a MW User Blocks Change event
+$id: /mediawiki/user/blocks-change/1.1.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/mediawiki/common/1.0.0#
+  - properties:
+      comment:
+        description: The comment left by the user that performed this change.
+        type: string
+
+      ### user entity fields - all user related events should have these.
+      user_id:
+        description: >
+          The user id for the target user.  This is optional, and
+          will not be present for anonymous users.
+        type: integer
+
+      user_text:
+        description: The text representation of the target user.
+        type: string
+        minLength: 1
+
+      user_groups:
+        description: >
+          A list of the groups the target user belongs to.
+          E.g. bot, sysop etc.
+        type: array
+        items:
+          type: string
+          minLength: 1
+
+
+      ### user/blocks_change specific fields
+      blocks: &block_schema
+        description: >
+          The current state of blocks for the target user of this user change event.
+        type: object
+        properties:
+          name:
+            description: Whether the name or IP should be suppressed (hidden).
+            type: boolean
+          email:
+            description: Whether sending email is blocked.
+            type: boolean
+          user_talk:
+            description: Whether the user is blocked from editing their own talk page.
+            type: boolean
+          account_create:
+            description: Whether the user/IP is blocked from creating accounts.
+            type: boolean
+          expiry_dt:
+            description: >
+              The timestamp the block expires in ISO8601 format.
+              If missing, the blocks do not expire.
+            type: string
+            format: date-time
+            maxLength: 128
+          sitewide:
+            description: Whether the block is sitewide or partial.
+            type: boolean
+          restrictions:
+            description: Array of individual restrictions in the block.
+            type: array
+            items:
+              type: object
+              properties:
+                type:
+                  description: Type of the restriction
+                  type: string
+                  enum:
+                    - page
+                    - ns
+                value:
+                  type: integer
+                  description: >
+                    Namespace ID for namespace restrictions, page ID for page restrictions.
+              required:
+                - type
+                - value
+        required:
+          - name
+          - email
+          - user_talk
+          - account_create
+
+      prior_state:
+        description: >
+          The prior state of the entity before this event. If a top level entity
+          field is not present in this object, then its value has not changed
+          since the prior event.  For user blocks changes, if prior_state is not
+          present, then the User or IP did not have any existing blocks in place
+          at the time this event was emitted.  This does not mean this User
+          or IP never had any blocks.  It is possible that the User's block
+          had automatically expired and were no longer in place when this event
+          was emitted.
+        type: object
+        properties:
+          blocks: *block_schema
+
+required:
+  - user_text
+  - blocks
+
+examples:
+  - $schema: { $ref: '#/$id' }
+    meta:
+      uri: https://en.wikipedia.org/wiki/User:ExampleUser
+      request_id: 12345678-1234-5678-1234-567812345678
+      dt: '2020-01-01T00:00:01Z'
+      domain: en.wikipedia.org
+      stream: mediawiki.user-blocks-change
+    database: examplewiki
+    performer:
+      user_text: PermormerUser
+      user_groups:
+        - user
+        - bot
+      user_is_bot: true
+      user_id: 1234567
+      user_registration_dt: '2019-01-01T00:00:01Z'
+      user_edit_count: 0
+    comment: 'blocking comment'
+    user_text: 1.2.3.4
+    user_groups:
+      - "*"
+    blocks:
+      name: false
+      email: false
+      user_talk: false
+      account_create: true
+      expiry_dt: '2040-01-01T00:00:01Z'
+      restrictions:
+        - type: page
+          value: 1
+    prior_state:
+      blocks:
+        name: false
+        email: false
+        user_talk: false
+        account_create: true
+        expiry_dt: '2040-01-01T00:00:01Z'
+        restrictions:
+          - type: page
+            value: 2

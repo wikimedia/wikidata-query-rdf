@@ -1,0 +1,73 @@
+title: fragment/mediawiki/state/entity/revision
+description: Fields for MediaWiki revision entity.
+
+$id: /fragment/mediawiki/state/entity/revision/1.1.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+
+properties:
+
+  rev_id:
+    type: integer
+    description: The (database) revision ID.
+    minimum: 1
+
+  rev_dt:
+    type: string
+    description: >
+      Time this revision was created.
+      This is rev_timestamp in the MediaWiki database.
+    format: date-time
+    maxLength: 128
+
+  rev_parent_id:
+    type: integer
+    description: This revision's parent rev_id.
+    minimum: 0
+
+  rev_sha1:
+    type: string
+    description: >
+      sha1 sum considering all the content slots for this revision.
+
+  rev_size:
+    type: integer
+    description: >
+      Byte size 'sum' of all the content slots for this revision.
+      This 'size' is approximate, but may not be exact, depending
+      on the kind of data that is stored in the content slots.
+    minimum: 0
+
+  comment:
+    type: string
+    description: The comment left by the editor when this revision was made.
+
+  is_minor_edit:
+    type: boolean
+    description: True if the editor marked this revision as a minor edit.
+
+  editor:
+    description: Represents the MediaWiki user that made this edit.
+    $ref: /fragment/mediawiki/state/entity/user/1.1.0
+
+  is_comment_visible:
+    type: boolean
+    description: >
+      Whether the comment of the revision is visible.
+      See RevisionRecord->DELETED_COMMENT.
+
+  is_content_visible:
+    type: boolean
+    description: >
+      Whether the revision's content body is visible.
+      If this is false, then content should be redacted.
+      See RevisionRecord->DELETED_TEXT
+
+  is_editor_visible:
+    type: boolean
+    description: >
+      Whether the revision's editor information is visible.
+      Affects editor field.
+      See RevisionRecord->DELETED_USER
+

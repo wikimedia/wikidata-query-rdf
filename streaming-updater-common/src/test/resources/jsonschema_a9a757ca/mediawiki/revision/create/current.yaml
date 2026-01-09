@@ -1,0 +1,249 @@
+title: mediawiki/revision/create
+description: Represents a MW Revision Create event.
+$id: /mediawiki/revision/create/2.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+required:
+  - database
+  - page_id
+  - page_is_redirect
+  - page_namespace
+  - page_title
+  - rev_id
+  - rev_timestamp
+allOf:
+  ### revision entity fields - all revision related events should have these.
+  - $ref: /fragment/mediawiki/revision/common/3.0.0#
+  ### revision/create specific fields
+properties:
+  chronology_id:
+    description: Deprecated - no longer populated
+    type: string
+
+  comment:
+    description: The comment left by the user that performed this change.
+    type: string
+
+  ### Since mediawiki.revision-create v2
+  parsedcomment:
+    description: >
+      The comment left by the user that performed this change
+      parsed into simple HTML. Optional
+    type: string
+
+  rev_content_changed:
+    description: True if the content has changed (rev_sha1 is different than the previous revision one)
+    type: boolean
+
+  rev_sha1:
+    description: The sha1 of the revision text.
+    type: string
+
+  rev_len:
+    description: The length of the revision text in bytes.
+    type: integer
+
+  rev_minor_edit:
+    description: Flag identifying if the revision is minor.
+    type: boolean
+
+  rev_content_model:
+    description: The content model of the revision.
+    type: string
+
+  rev_content_format:
+    description: The content format of the revision.
+    type: string
+
+  page_is_redirect:
+    description: >
+      True if this revision is a redirect.  This
+      fact is ultimately represented by revision content containing
+      redirect wikitext.  If this revision is the head revision
+      of the page, then the page will also be a redirect.
+    type: boolean
+
+  ### revert-related fields
+  rev_is_revert:
+    description: Flag indicating whether the edit was a revert.
+    type: boolean
+
+  rev_revert_details:
+    description: Details about the revert.
+    type: object
+    properties:
+      rev_revert_method:
+        description: The method that was used to perform the revert.
+        type: string
+        enum:
+          - rollback
+          - undo
+          - manual
+
+      rev_is_exact_revert:
+        description: >
+          Flag indicating whether the revert was exact, i.e. the contents of
+          the revert revision and restored revision match.
+        type: boolean
+
+      rev_reverted_revs:
+        description: >
+          IDs of revisions that were reverted by this edit, ordered from
+          oldest to newest.
+        type: array
+        items:
+          type: integer
+
+      rev_original_rev_id:
+        description: >
+          The ID of an earlier revision that is being repeated or restored.
+        type: integer
+
+    required:
+      - rev_revert_method
+      - rev_is_exact_revert
+      - rev_reverted_revs
+
+  rev_slots:
+    description: >
+      The revision slots attached to this revision.
+    type: object
+    ### the mix of properties and additionalProperties allows to guarantee that the "main" slot is always present
+    ### while still allowing side-slots (like "mediainfo" on commons) to appear
+    properties:
+      main:
+        $ref: /fragment/mediawiki/revision/slot/1.0.0#
+    additionalProperties:
+      $ref: /fragment/mediawiki/revision/slot/1.0.0#
+    required:
+      - main
+
+examples:
+  - $schema: { $ref: '#/$id' }
+    meta:
+      uri: https://examplewiki.wikipedia.org/wiki/TestPage10
+      dt: '2020-06-10T18:57:16Z'
+      domain: test.wikipedia.org
+      stream: mediawiki.revision-create
+    dt: '2020-06-10T18:56:00Z'
+    database: examplewiki
+    page_id: 123
+    page_title: TestPage10
+    page_namespace: 0
+    rev_id: 123
+    rev_timestamp: '2020-06-10T18:56:00Z'
+    rev_sha1: mr0szy90m5qbn6tek7ch3nebaild3tm
+    rev_minor_edit: false
+    rev_len: 3
+    rev_content_model: wikitext
+    rev_content_format: text/x-wiki
+    performer:
+      user_text: example_user_text
+      user_groups:
+      - "*"
+      - user
+      - autoconfirmed
+      user_is_bot: false
+      user_id: 123
+      user_registration_dt: '2016-01-29T21:13:24Z'
+      user_edit_count: 1
+    page_is_redirect: false
+    rev_parent_id: 122
+    rev_content_changed: true
+    rev_is_revert: false
+    rev_slots:
+      main:
+        rev_slot_content_model: wikitext
+        rev_slot_origin_rev_id: 123
+        rev_slot_sha1: 2mx9qnkore72az8niqap1s3ycpu1jej
+        rev_slot_size: 20
+  - $schema: { $ref: '#/$id' }
+    meta:
+      uri: https://examplewiki.wikipedia.org/wiki/TestPage10
+      dt: '2020-06-10T19:02:04Z'
+      domain: test.wikipedia.org
+      stream: mediawiki.revision-create
+    dt: '2020-06-10T18:56:00Z'
+    database: examplewiki
+    page_id: 123
+    page_title: TestPage10
+    page_namespace: 0
+    rev_id: 124
+    rev_timestamp: '2020-06-10T18:56:00Z'
+    rev_sha1: 2mx9qnkore72az8niqap1s3ycpu1jej
+    rev_minor_edit: false
+    rev_len: 20
+    rev_content_model: wikitext
+    rev_content_format: text/x-wiki
+    performer:
+      user_text: example_user_sysop_text
+      user_groups:
+        - "*"
+        - user
+        - autoconfirmed
+        - sysop
+      user_is_bot: false
+      user_id: 20
+      user_registration_dt: '2014-02-23T21:13:24Z'
+      user_edit_count: 100
+    page_is_redirect: false
+    rev_parent_id: 123
+    rev_content_changed: true
+    rev_is_revert: true
+    rev_revert_details:
+      rev_revert_method: rollback
+      rev_is_exact_revert: true
+      rev_reverted_revs:
+        - 122
+        - 123
+      rev_original_rev_id: 121
+    rev_slots:
+      main:
+        rev_slot_content_model: wikitext
+        rev_slot_origin_rev_id: 124
+        rev_slot_sha1: 2mx9qnkore72az8niqap1s3ycpu1jej
+        rev_slot_size: 20
+      mediainfo:
+        rev_slot_content_model: wikibase-mediainfo
+        rev_slot_origin_rev_id: 121
+        rev_slot_sha1: c1a805332a2674c1e2b178dabf1e633122a8d43f
+        rev_slot_size: 1414
+  - $schema: { $ref: '#/$id' }
+    meta:
+      uri: "http://localhost:8080/wiki/Test"
+      request_id: "a331985f82ec4249c480d23a"
+      id: "bd37948a-1d0e-431c-afa2-ec7b97436ba6"
+      dt": "2023-06-15T15:51:32Z"
+      domain: "localhost"
+      stream: "mediawiki.revision-create"
+    dt: "2017-10-17T11:48:35Z"
+    database: "my_wiki"
+    page_id: 23
+    page_title: "Test"
+    page_namespace: 0
+    rev_id: 42
+    rev_timestamp: "2017-10-17T11:48:35Z"
+    rev_sha1: "rdqbbzs3pkhihgbs8qf2q9jsvheag5z"
+    rev_minor_edit: false
+    rev_len: 46
+    rev_content_model: "wikitext"
+    rev_content_format: "text/x-wiki"
+    performer:
+      user_text": "111.0.1.2"
+      user_groups":
+        - "*"
+      user_is_bot: false
+    page_is_redirect: false
+    comment: "testing"
+    rev_parent_id: 1
+    rev_slots:
+      main:
+        rev_slot_content_model: "wikitext"
+        rev_slot_sha1: "a3kvjf7vqh9qchzi5sl1q87q9hx48pk"
+        rev_slot_size: 12
+      sidetext:
+        rev_slot_content_model: "text"
+        rev_slot_sha1: "hj5t2yi95v1hhdjtzfn6itv3efu4ltg"
+        rev_slot_size: 14
+        rev_slot_origin_rev_id: 42
+    rev_content_changed: true

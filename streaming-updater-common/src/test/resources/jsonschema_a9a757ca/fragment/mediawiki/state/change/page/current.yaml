@@ -1,0 +1,154 @@
+title: fragment/mediawiki/state/change/page
+
+description: >
+  Fragment that represents a MediaWiki page state change in a changelog.
+  This schema can be used in multiple 'enriched' versions of page state changes.
+  E.g., there could be a 'page_change_with_rendered_content'
+  schema that adds fields necessary for representing a change to rendered page content.
+  Because we want this to be reusable, this schema does not attempt to represent
+  revision content (or MCR content 'slots').  If content info is needed, you should
+  add those fields to concrete schema yourself.
+  See the non-fragment mediawiki/page/change schema for working example.
+
+$id: /fragment/mediawiki/state/change/page/1.3.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+
+required:
+  - changelog_kind
+  - page_change_kind
+  - wiki_id
+  - page
+  - revision
+
+properties:
+
+  # NOTE: As we make more state change streams, we should
+  # probably factor this field out into its own fragment.
+  # See also: https://phabricator.wikimedia.org/T310082
+  changelog_kind:
+    type: string
+    description: >
+      The kind of this event in a changelog. This is used
+      to map the event to an action in a data store.
+    enum:
+      - insert
+      - update
+      - delete
+
+  page_change_kind:
+    type: string
+    description: >
+      The origin kind of the change to this page as viewed by MediaWiki.
+    enum:
+      - create
+      - undelete
+      - edit
+      - move
+      - delete
+      - visibility_change
+
+  # NOTE: This is called 'database' in older MediaWiki event models.
+  wiki_id:
+    description: >
+      The wiki ID, which is usually the same as the MediaWiki database name.
+      E.g. enwiki, metawiki, etc.
+    type: string
+    minLength: 1
+
+  performer:
+    description: >
+      Represents the MediaWiki actor that made this change.
+      If this change is an edit, this will be the same as
+      revision.editor.
+    $ref: /fragment/mediawiki/state/entity/user/1.1.0
+
+  comment:
+    description: >
+      The comment left by the user that performed this change.
+      Same as revision.comment on edits.
+    type: string
+
+  page:
+    allOf:
+      - $ref: /fragment/mediawiki/state/entity/page/2.0.0
+    properties:
+      revision_count:
+        $ref: './#/definitions/revision_count'
+      redirect_page_link:
+        $ref: /fragment/mediawiki/state/entity/page_link/1.0.0
+        description: >
+          If this page is currently a redirect, then this field
+          contains information about the target page the redirect links to.
+    # Page entity page_id and page_title are required for the current page state.
+    required:
+      - page_id
+      - page_title
+
+  revision:
+    # The entity/revision schema
+    $ref: /fragment/mediawiki/state/entity/revision/1.1.0
+    # Revision entity rev_id and rev_dt are required for the current revision state.
+    required:
+      - rev_id
+      - rev_dt
+
+  created_redirect_page:
+    allOf:
+      - $ref: /fragment/mediawiki/state/entity/page/2.0.0
+    properties:
+      # In hindight, including revision_count on created_redirect_page
+      # (via entity/page/1.0.0) was a mistake.  Removing it would be
+      # backwards incompatible though, so we manually declare it here.
+      revision_count:
+        $ref: './#/definitions/revision_count'
+        description: >
+          NOTE: revision_count is never set for created_redirect_page.
+          It is present here for backwards compatibility only.
+    description: >
+      Page entity that was created at the old title during a page move.
+      This is only set for page move events.
+      Note that the created_redirect_page will also have its
+      own associated page create event.
+    required:
+      - page_id
+      - page_title
+
+  prior_state:
+    type: object
+    description: >
+      Prior state of this page before this event.
+      Fields are only present if their values have changed.
+    properties:
+      page:
+        allOf:
+          - $ref: /fragment/mediawiki/state/entity/page/2.0.0
+        properties:
+          revision_count:
+            $ref: './#/definitions/revision_count'
+            description: >
+              NOTE: prior_state.page.revision_count is unlikely to be set, as
+              getting the # of revisions previous to this change is difficult.
+              This field is present here for backwards compatibiliy.
+      revision:
+        # NOTE: we do not ref the local file's properties.revision in order
+        # to avoid adding required fields here.  You need to update
+        # this version if upgrading the entity/revision schema version.
+        $ref: /fragment/mediawiki/state/entity/revision/1.1.0
+
+
+# Definitions are not part of the final schema, but are placed here
+# for local DRY for field $refs.
+# https://cswr.github.io/JsonSchema/spec/definitions_references/
+definitions:
+
+  revision_count:
+    description: >
+      The number of revisions of this page at the time of this event.
+      During a delete, this number of revisions will be archived.
+      This field is likely only set for page delete events, as getting
+      this information on all events is expensive.
+    type: integer
+    minimum: 0
+

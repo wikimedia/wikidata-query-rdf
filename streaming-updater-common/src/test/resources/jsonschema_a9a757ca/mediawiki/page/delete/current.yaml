@@ -1,0 +1,40 @@
+title: mediawiki/page/delete
+description: Represents a MW Page Delete event.
+$id: /mediawiki/page/delete/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/mediawiki/page/common/1.0.0#
+  - properties:
+      chronology_id:
+        description: Deprecated - no longer populated
+        type: string
+
+      comment:
+        description: The comment left by the user that performed this change.
+        type: string
+
+      parsedcomment:
+        description: >
+          The comment left by the user that performed this change
+          parsed into simple HTML. Optional
+        type: string
+
+      rev_count:
+        description: >
+          The number of revisions of this page at the time of this event.
+          During a delete, this number of revisions will be archived.
+        type: integer
+examples:
+  - $schema: { $ref: '#/$id' }
+    meta:
+      stream: medaiwiki.page-delete
+      dt: '2020-07-01T00:00:00Z'
+    database: examplewiki
+    page_id: 123
+    page_title: example_page_title
+    page_is_redirect: false
+    page_namespace: 0
+    rev_id: 123
+
+

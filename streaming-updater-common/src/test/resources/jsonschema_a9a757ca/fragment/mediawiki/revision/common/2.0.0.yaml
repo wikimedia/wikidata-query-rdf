@@ -1,0 +1,152 @@
+title: fragment/mediawiki/revision/common
+description: Common schema fields for all Mediawiki revision entities
+$id: /fragment/mediawiki/revision/common/2.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - meta
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  database:
+    description: The name of the wiki database this event entity belongs to.
+    type: string
+    minLength: 1
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream (dataset) that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  page_id:
+    description: The page ID of the page this revision belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 1
+  page_is_redirect:
+    description: >
+      True if this revision is a redirect.  This fact is ultimately represented
+      by revision content containing redirect wikitext.  If this revision is the
+      head revision of the page, then the page will also be a redirect.
+    type: boolean
+  page_namespace:
+    description: The namespace of the page this revision belongs to.
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  page_title:
+    description: The normalized title of the page this revision belongs to.
+    type: string
+    minLength: 1
+  performer:
+    description: Represents the user that performed this change.
+    type: object
+    properties:
+      user_edit_count:
+        description: >
+          The number of edits this user has made at the time of this event. Not
+          present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      user_groups:
+        description: 'A list of the groups this user belongs to.  E.g. bot, sysop etc.'
+        type: array
+        items:
+          type: string
+          minLength: 1
+      user_id:
+        description: >
+          The user id that performed this change.  This is optional, and will
+          not be present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+      user_is_bot:
+        description: >
+          True if this user is considered to be a bot at the time of this event.
+          This is checked via the $user->isBot() method, which considers both
+          user_groups and user permissions.
+        type: boolean
+      user_registration_dt:
+        description: >
+          The datetime of the user account registration. Not present for
+          anonymous users or if missing in the MW database.
+        type: string
+        format: date-time
+        maxLength: 128
+      user_text:
+        description: The text representation of the user that performed this change.
+        type: string
+        minLength: 1
+  rev_id:
+    description: The (database) revision ID.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  rev_parent_id:
+    description: The parent revison ID of the revision that this event represents.
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  rev_timestamp:
+    description: >
+      The revision's creation time in ISO8601 format.  This field does not end
+      in '_dt' to better match the field name on the Mediawiki revision table.
+    type: string
+    format: date-time
+    maxLength: 128
+examples:
+  - $schema: /fragment/mediawiki/revision/common/2.0.0
+    database: dolor
+    meta:
+      domain: dolor
+      dt: '2021-01-01T00:00:00.0Z'
+      id: dolor
+      request_id: dolor
+      stream: dolor
+      uri: 'http://example.org'
+    page_id: 1351079888211149
+    page_is_redirect: false
+    page_namespace: -6305039478318694
+    page_title: dolor
+    performer:
+      user_edit_count: 1351079888211148
+      user_groups:
+        - dolor
+      user_id: -6305039478318694
+      user_is_bot: false
+      user_registration_dt: '2021-01-01T00:00:00.0Z'
+      user_text: dolor
+    rev_id: 1351079888211148
+    rev_parent_id: 1351079888211148
+    rev_timestamp: '2021-01-01T00:00:00.0Z'

@@ -1,0 +1,75 @@
+title: change-prop/retry
+description: Represents a failure in event processing and a request to retry it
+$id: /change-prop/retry/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - emitter_id
+  - meta
+  - original_event
+  - retries_left
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  emitter_id:
+    description: identifies the entity that requested a retry
+    type: string
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  original_event:
+    description: original event that caused a failure
+    type: object
+  reason:
+    description: message describing the reason of the retry
+    type: string
+  retries_left:
+    description: number of retry attempts left for this event
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  triggered_by:
+    description: >
+      comma-separated list of event descriptions in `<topic>:<uri>` format, that
+      represent a chain of events that caused this event to be emitted.
+    type: string
+examples:
+  - $schema: /change-prop/retry/1.0.0
+    emitter_id: example_emitter_id
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: change-prop.retry.example
+    original_event:
+      example_key: example_value
+    retries_left: 1

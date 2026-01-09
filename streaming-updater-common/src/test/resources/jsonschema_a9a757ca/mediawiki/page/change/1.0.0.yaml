@@ -1,0 +1,772 @@
+title: mediawiki/page/change
+description: >
+  Represents a MediaWiki page state change in a changelog. This event models all
+  state changes to MediaWiki pages. It supersedes the other page and revision
+  based event models. See: https://phabricator.wikimedia.org/T308017
+$id: /mediawiki/page/change/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - changelog_kind
+  - dt
+  - meta
+  - page
+  - page_change_kind
+  - performer
+  - revision
+  - wiki_id
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  changelog_kind:
+    description: >
+      The kind of this event in a changelog. This is used to map the event to an
+      action in a data store.
+    type: string
+    enum:
+      - insert
+      - update
+      - delete
+  comment:
+    description: >
+      The comment left by the user that performed this change. Same as
+      revision.comment on edits.
+    type: string
+  created_redirect_page:
+    title: fragment/mediawiki/state/entity/page
+    description: >
+      Page entity that was created at the old title during a page move. This is
+      only set for page move events. Note that the created_redirect_page will
+      also have its own associated page create event.
+    $id: /fragment/mediawiki/state/entity/page/1.0.0
+    $schema: 'https://json-schema.org/draft-07/schema#'
+    type: object
+    additionalProperties: false
+    required:
+      - page_id
+      - page_title
+    properties:
+      is_redirect:
+        description: True if the page is a redirect page at the time of this event.
+        type: boolean
+      namespace_id:
+        description: The id of the namespace this page belongs to.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      page_id:
+        description: The (database) page ID of the page.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      page_title:
+        description: The normalized title of the page.
+        type: string
+        minLength: 1
+      revision_count:
+        description: >
+          The number of revisions of this page at the time of this event. During
+          a delete, this number of revisions will be archived. This field is
+          likely only set for page delete events, as getting this information on
+          all events is expensive.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+    examples:
+      - is_redirect: false
+        namespace_id: 1351079888211148
+        page_id: 1351079888211148
+        page_title: dolor
+        revision_count: 1351079888211148
+  dt:
+    description: >
+      ISO-8601 formatted timestamp of when the event occurred/was generated in
+      UTC), AKA 'event time'. This is different than meta.dt, which is used as
+      the time the system received this event.
+    type: string
+    format: date-time
+    maxLength: 128
+  meta:
+    type: object
+    required:
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'Time the event was received by the system, in UTC ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream (dataset) that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  page:
+    title: fragment/mediawiki/state/entity/page
+    description: Fields for MediaWiki page entity.
+    $id: /fragment/mediawiki/state/entity/page/1.0.0
+    $schema: 'https://json-schema.org/draft-07/schema#'
+    type: object
+    additionalProperties: false
+    required:
+      - page_id
+      - page_title
+    properties:
+      is_redirect:
+        description: True if the page is a redirect page at the time of this event.
+        type: boolean
+      namespace_id:
+        description: The id of the namespace this page belongs to.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      page_id:
+        description: The (database) page ID of the page.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      page_title:
+        description: The normalized title of the page.
+        type: string
+        minLength: 1
+      revision_count:
+        description: >
+          The number of revisions of this page at the time of this event. During
+          a delete, this number of revisions will be archived. This field is
+          likely only set for page delete events, as getting this information on
+          all events is expensive.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+    examples:
+      - is_redirect: false
+        namespace_id: 1351079888211148
+        page_id: 1351079888211148
+        page_title: dolor
+        revision_count: 1351079888211148
+  page_change_kind:
+    description: |
+      The origin kind of the change to this page as viewed by MediaWiki.
+    type: string
+    enum:
+      - create
+      - undelete
+      - edit
+      - move
+      - delete
+      - visibility_change
+  performer:
+    title: fragment/mediawiki/state/entity/user
+    description: >
+      Represents the MediaWiki actor that made this change. If this change is an
+      edit, this will be the same as revision.editor.
+    $id: /fragment/mediawiki/state/entity/user/1.0.0
+    $schema: 'https://json-schema.org/draft-07/schema#'
+    type: object
+    additionalProperties: false
+    properties:
+      edit_count:
+        description: >
+          The number of edits this user has made at the time of this event. Not
+          present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      groups:
+        description: >
+          A list of the groups this user belongs to.  E.g. bot, sysop etc. Not
+          present for anonymous users.
+        type: array
+        items:
+          type: string
+          minLength: 1
+      is_bot:
+        description: >
+          True if this user is considered to be a bot at the time of this event.
+          This is checked via the $user->isBot() method, which considers both
+          user_groups and user permissions.
+        type: boolean
+      is_system:
+        description: >
+          True if the user is a MediaWiki 'system' user. These are users that
+          cannot 'authenticate'.  These are usually listed in ReservedUsernames.
+        type: boolean
+      is_temp:
+        description: >
+          True if the user is an autocreated temporary MediaWiki user. This is
+          used for IP masking.
+        type: boolean
+      registration_dt:
+        description: >
+          The datetime of the user account registration. Not present for
+          anonymous users or if missing in the MW database.
+        type: string
+        format: date-time
+        maxLength: 128
+      user_id:
+        description: >
+          The user ID that performed this change.  This is optional, and will
+          not be present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      user_text:
+        description: >
+          The user name or text representation of the user that performed this
+          change.
+        type: string
+        minLength: 1
+    examples:
+      - edit_count: 1351079888211148
+        groups:
+          - dolor
+        is_bot: false
+        is_system: false
+        is_temp: false
+        registration_dt: '2021-01-01T00:00:00.0Z'
+        user_id: 1351079888211148
+        user_text: dolor
+  prior_state:
+    description: >
+      Prior state of this page before this event. Fields are only present if
+      their values have changed.
+    type: object
+    properties:
+      page:
+        title: fragment/mediawiki/state/entity/page
+        description: Fields for MediaWiki page entity.
+        $id: /fragment/mediawiki/state/entity/page/1.0.0
+        $schema: 'https://json-schema.org/draft-07/schema#'
+        type: object
+        additionalProperties: false
+        properties:
+          is_redirect:
+            description: True if the page is a redirect page at the time of this event.
+            type: boolean
+          namespace_id:
+            description: The id of the namespace this page belongs to.
+            type: integer
+            maximum: 9007199254740991
+            minimum: 0
+          page_id:
+            description: The (database) page ID of the page.
+            type: integer
+            maximum: 9007199254740991
+            minimum: 0
+          page_title:
+            description: The normalized title of the page.
+            type: string
+            minLength: 1
+          revision_count:
+            description: >
+              The number of revisions of this page at the time of this event.
+              During a delete, this number of revisions will be archived. This
+              field is likely only set for page delete events, as getting this
+              information on all events is expensive.
+            type: integer
+            maximum: 9007199254740991
+            minimum: 0
+        examples:
+          - is_redirect: false
+            namespace_id: 1351079888211148
+            page_id: 1351079888211148
+            page_title: dolor
+            revision_count: 1351079888211148
+      revision:
+        title: fragment/mediawiki/state/entity/revision
+        description: Fields for MediaWiki revision entity.
+        $id: /fragment/mediawiki/state/entity/revision/1.0.0
+        $schema: 'https://json-schema.org/draft-07/schema#'
+        type: object
+        additionalProperties: false
+        properties:
+          comment:
+            description: The comment left by the editor when this revision was made.
+            type: string
+          content_slots:
+            title: fragment/mediawiki/state/entity/revision_slots
+            description: >
+              Map type representing MediaWiki's revision content slots. This map
+              is keyed by the slot role name, e.g. 'main'.
+            $id: /fragment/mediawiki/state/entity/revision_slots/1.0.0
+            $schema: 'https://json-schema.org/draft-07/schema#'
+            type: object
+            additionalProperties:
+              title: fragment/mediawiki/state/entity/content
+              description: |
+                Fields for representing MediaWiki page revision content.
+              $id: /fragment/mediawiki/state/entity/content/1.0.0
+              $schema: 'https://json-schema.org/draft-07/schema#'
+              type: object
+              additionalProperties: false
+              properties:
+                content_body:
+                  description: >
+                    Content body. NOTE: This field is not required, and is often
+                    not set in streams as it can make events very large. It is
+                    included here for events that do include the content body.
+                  type: string
+                content_format:
+                  description: >-
+                    The 'content type' of the content.  E.g. wikitext/html. This
+                    is similiar to a MIME type.
+                  type: string
+                content_model:
+                  description: >-
+                    MediaWiki's content model of this content. E.g. wikitext,
+                    json, etc.
+                  type: string
+                content_sha1:
+                  description: sha1 sum of the content body.
+                  type: string
+                content_size:
+                  description: Byte size of the content body.
+                  type: integer
+                  maximum: 9007199254740991
+                  minimum: 0
+                origin_rev_id:
+                  description: Revision in which this slot was originally created
+                  type: integer
+                  maximum: 9007199254740991
+                  minimum: 0
+                slot_role:
+                  description: Slot role name.
+                  type: string
+              examples:
+                - content_body: dolor
+                  content_format: dolor
+                  content_model: dolor
+                  content_sha1: dolor
+                  content_size: 1351079888211148
+                  origin_rev_id: 1351079888211148
+            examples:
+              - dolorb:
+                  content_body: dolor
+                  content_format: dolor
+                  content_model: dolor
+                  content_sha1: dolor
+                  content_size: 1351079888211148
+                  origin_rev_id: 1351079888211148
+                  slot_role: dolor
+          editor:
+            title: fragment/mediawiki/state/entity/user
+            description: Represents the MediaWiki user that made this edit.
+            $id: /fragment/mediawiki/state/entity/user/1.0.0
+            $schema: 'https://json-schema.org/draft-07/schema#'
+            type: object
+            additionalProperties: false
+            properties:
+              edit_count:
+                description: >
+                  The number of edits this user has made at the time of this
+                  event. Not present for anonymous users.
+                type: integer
+                maximum: 9007199254740991
+                minimum: 0
+              groups:
+                description: >
+                  A list of the groups this user belongs to.  E.g. bot, sysop
+                  etc. Not present for anonymous users.
+                type: array
+                items:
+                  type: string
+                  minLength: 1
+              is_bot:
+                description: >
+                  True if this user is considered to be a bot at the time of
+                  this event. This is checked via the $user->isBot() method,
+                  which considers both user_groups and user permissions.
+                type: boolean
+              is_system:
+                description: >
+                  True if the user is a MediaWiki 'system' user. These are users
+                  that cannot 'authenticate'.  These are usually listed in
+                  ReservedUsernames.
+                type: boolean
+              is_temp:
+                description: >
+                  True if the user is an autocreated temporary MediaWiki user.
+                  This is used for IP masking.
+                type: boolean
+              registration_dt:
+                description: >
+                  The datetime of the user account registration. Not present for
+                  anonymous users or if missing in the MW database.
+                type: string
+                format: date-time
+                maxLength: 128
+              user_id:
+                description: >
+                  The user ID that performed this change.  This is optional, and
+                  will not be present for anonymous users.
+                type: integer
+                maximum: 9007199254740991
+                minimum: 0
+              user_text:
+                description: >
+                  The user name or text representation of the user that
+                  performed this change.
+                type: string
+                minLength: 1
+            examples:
+              - edit_count: 1351079888211148
+                groups:
+                  - dolor
+                is_bot: false
+                is_system: false
+                is_temp: false
+                registration_dt: '2021-01-01T00:00:00.0Z'
+                user_id: 1351079888211148
+                user_text: dolor
+          is_comment_visible:
+            description: >
+              Whether the comment of the revision is visible. See
+              RevisionRecord->DELETED_COMMENT.
+            type: boolean
+          is_content_visible:
+            description: >
+              Whether the revision's content body is visible. If this is false,
+              then content should be redacted. See RevisionRecord->DELETED_TEXT
+            type: boolean
+          is_editor_visible:
+            description: >
+              Whether the revision's editor information is visible. Affects
+              editor field. See RevisionRecord->DELETED_USER
+            type: boolean
+          is_minor_edit:
+            description: True if the editor marked this revision as a minor edit.
+            type: boolean
+          rev_dt:
+            description: >
+              Time this revision was created. This is rev_timestamp in the
+              MediaWiki database.
+            type: string
+            format: date-time
+            maxLength: 128
+          rev_id:
+            description: The (database) revision ID.
+            type: integer
+            maximum: 9007199254740991
+            minimum: 1
+          rev_parent_id:
+            description: This revision's parent rev_id.
+            type: integer
+            maximum: 9007199254740991
+            minimum: 0
+          rev_sha1:
+            description: |
+              sha1 sum considering all the content slots for this revision.
+            type: string
+          rev_size:
+            description: >
+              Byte size 'sum' of all the content slots for this revision. This
+              'size' is approximate, but may not be exact, depending on the kind
+              of data that is stored in the content slots.
+            type: integer
+            maximum: 9007199254740991
+            minimum: 0
+        examples:
+          - comment: dolor
+            editor:
+              edit_count: 1351079888211148
+              groups:
+                - dolor
+              is_bot: false
+              is_system: false
+              is_temp: false
+              registration_dt: '2021-01-01T00:00:00.0Z'
+              user_id: 1351079888211148
+              user_text: dolor
+            is_comment_visible: false
+            is_content_visible: false
+            is_editor_visible: false
+            is_minor_edit: false
+            rev_dt: '2021-01-01T00:00:00.0Z'
+            rev_id: 1351079888211149
+            rev_parent_id: 1351079888211148
+            rev_sha1: dolor
+            rev_size: 1351079888211148
+  revision:
+    title: fragment/mediawiki/state/entity/revision
+    description: Fields for MediaWiki revision entity.
+    $id: /fragment/mediawiki/state/entity/revision/1.0.0
+    $schema: 'https://json-schema.org/draft-07/schema#'
+    type: object
+    additionalProperties: false
+    required:
+      - rev_id
+      - rev_dt
+    properties:
+      comment:
+        description: The comment left by the editor when this revision was made.
+        type: string
+      content_slots:
+        title: fragment/mediawiki/state/entity/revision_slots
+        description: >
+          Map type representing MediaWiki's revision content slots. This map is
+          keyed by the slot role name, e.g. 'main'.
+        $id: /fragment/mediawiki/state/entity/revision_slots/1.0.0
+        $schema: 'https://json-schema.org/draft-07/schema#'
+        type: object
+        additionalProperties:
+          title: fragment/mediawiki/state/entity/content
+          description: |
+            Fields for representing MediaWiki page revision content.
+          $id: /fragment/mediawiki/state/entity/content/1.0.0
+          $schema: 'https://json-schema.org/draft-07/schema#'
+          type: object
+          additionalProperties: false
+          properties:
+            content_body:
+              description: >
+                Content body. NOTE: This field is not required, and is often not
+                set in streams as it can make events very large. It is included
+                here for events that do include the content body.
+              type: string
+            content_format:
+              description: >-
+                The 'content type' of the content.  E.g. wikitext/html. This is
+                similiar to a MIME type.
+              type: string
+            content_model:
+              description: >-
+                MediaWiki's content model of this content. E.g. wikitext, json,
+                etc.
+              type: string
+            content_sha1:
+              description: sha1 sum of the content body.
+              type: string
+            content_size:
+              description: Byte size of the content body.
+              type: integer
+              maximum: 9007199254740991
+              minimum: 0
+            origin_rev_id:
+              description: Revision in which this slot was originally created
+              type: integer
+              maximum: 9007199254740991
+              minimum: 0
+            slot_role:
+              description: Slot role name.
+              type: string
+          examples:
+            - content_body: dolor
+              content_format: dolor
+              content_model: dolor
+              content_sha1: dolor
+              content_size: 1351079888211148
+              origin_rev_id: 1351079888211148
+        examples:
+          - dolorb:
+              content_body: dolor
+              content_format: dolor
+              content_model: dolor
+              content_sha1: dolor
+              content_size: 1351079888211148
+              origin_rev_id: 1351079888211148
+              slot_role: dolor
+      editor:
+        title: fragment/mediawiki/state/entity/user
+        description: Represents the MediaWiki user that made this edit.
+        $id: /fragment/mediawiki/state/entity/user/1.0.0
+        $schema: 'https://json-schema.org/draft-07/schema#'
+        type: object
+        additionalProperties: false
+        properties:
+          edit_count:
+            description: >
+              The number of edits this user has made at the time of this event.
+              Not present for anonymous users.
+            type: integer
+            maximum: 9007199254740991
+            minimum: 0
+          groups:
+            description: >
+              A list of the groups this user belongs to.  E.g. bot, sysop etc.
+              Not present for anonymous users.
+            type: array
+            items:
+              type: string
+              minLength: 1
+          is_bot:
+            description: >
+              True if this user is considered to be a bot at the time of this
+              event. This is checked via the $user->isBot() method, which
+              considers both user_groups and user permissions.
+            type: boolean
+          is_system:
+            description: >
+              True if the user is a MediaWiki 'system' user. These are users
+              that cannot 'authenticate'.  These are usually listed in
+              ReservedUsernames.
+            type: boolean
+          is_temp:
+            description: >
+              True if the user is an autocreated temporary MediaWiki user. This
+              is used for IP masking.
+            type: boolean
+          registration_dt:
+            description: >
+              The datetime of the user account registration. Not present for
+              anonymous users or if missing in the MW database.
+            type: string
+            format: date-time
+            maxLength: 128
+          user_id:
+            description: >
+              The user ID that performed this change.  This is optional, and
+              will not be present for anonymous users.
+            type: integer
+            maximum: 9007199254740991
+            minimum: 0
+          user_text:
+            description: >
+              The user name or text representation of the user that performed
+              this change.
+            type: string
+            minLength: 1
+        examples:
+          - edit_count: 1351079888211148
+            groups:
+              - dolor
+            is_bot: false
+            is_system: false
+            is_temp: false
+            registration_dt: '2021-01-01T00:00:00.0Z'
+            user_id: 1351079888211148
+            user_text: dolor
+      is_comment_visible:
+        description: >
+          Whether the comment of the revision is visible. See
+          RevisionRecord->DELETED_COMMENT.
+        type: boolean
+      is_content_visible:
+        description: >
+          Whether the revision's content body is visible. If this is false, then
+          content should be redacted. See RevisionRecord->DELETED_TEXT
+        type: boolean
+      is_editor_visible:
+        description: >
+          Whether the revision's editor information is visible. Affects editor
+          field. See RevisionRecord->DELETED_USER
+        type: boolean
+      is_minor_edit:
+        description: True if the editor marked this revision as a minor edit.
+        type: boolean
+      rev_dt:
+        description: >
+          Time this revision was created. This is rev_timestamp in the MediaWiki
+          database.
+        type: string
+        format: date-time
+        maxLength: 128
+      rev_id:
+        description: The (database) revision ID.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 1
+      rev_parent_id:
+        description: This revision's parent rev_id.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+      rev_sha1:
+        description: |
+          sha1 sum considering all the content slots for this revision.
+        type: string
+      rev_size:
+        description: >
+          Byte size 'sum' of all the content slots for this revision. This
+          'size' is approximate, but may not be exact, depending on the kind of
+          data that is stored in the content slots.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+    examples:
+      - comment: dolor
+        editor:
+          edit_count: 1351079888211148
+          groups:
+            - dolor
+          is_bot: false
+          is_system: false
+          is_temp: false
+          registration_dt: '2021-01-01T00:00:00.0Z'
+          user_id: 1351079888211148
+          user_text: dolor
+        is_comment_visible: false
+        is_content_visible: false
+        is_editor_visible: false
+        is_minor_edit: false
+        rev_dt: '2021-01-01T00:00:00.0Z'
+        rev_id: 1351079888211149
+        rev_parent_id: 1351079888211148
+        rev_sha1: dolor
+        rev_size: 1351079888211148
+  wiki_id:
+    description: >
+      The wiki ID, which is usually the same as the MediaWiki database name.
+      E.g. enwiki, metawiki, etc.
+    type: string
+    minLength: 1
+examples:
+  - $schema: /mediawiki/page/change/1.0.0
+    changelog_kind: update
+    comment: changed a thing
+    dt: '2021-01-01T00:00:00.0Z'
+    meta:
+      domain: examplewiki
+      dt: '2021-01-01T00:00:00.0Z'
+      stream: mediawiki.page_change
+    page:
+      is_redirect: false
+      namespace_id: 1
+      page_id: 1
+      page_title: example
+      revision_count: 1
+    page_change_kind: edit
+    performer:
+      user_id: 123
+      user_text: yoohoo
+    revision:
+      comment: changed a thing
+      content_slots:
+        main:
+          content_format: text/x-wiki
+          content_model: wikitext
+          content_sha1: 16619839a55cfb5c61bcf520bf9734e0c67f98cc
+          content_size: 100
+          origin_rev_id: 2
+          slot_role: main
+      editor:
+        user_id: 123
+        user_text: example
+      is_comment_visible: true
+      is_content_visible: true
+      is_editor_visible: true
+      is_minor_edit: false
+      rev_dt: '2021-01-01T00:00:00.0Z'
+      rev_id: 2
+      rev_parent_id: 1
+      rev_sha1: 16619839a55cfb5c61bcf520bf9734e0c67f98cc
+      rev_size: 100
+    wiki_id: example

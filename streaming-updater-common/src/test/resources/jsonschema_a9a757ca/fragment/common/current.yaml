@@ -1,0 +1,58 @@
+title: fragment/common
+description: Common schema fields for event schemas
+$id: /fragment/common/2.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+additionalProperties: false
+properties:
+
+  $schema:
+    type: string
+    description: >
+      A URI identifying the JSONSchema for this event. This should
+      match an schema's $id in a schema repository.
+      E.g. /schema/title/1.0.0
+
+  ### Meta data object.  All events schemas should have this.
+  meta:
+    type: object
+    properties:
+      uri:
+        type: string
+        format: uri-reference
+        maxLength: 8192
+        description: Unique URI identifying the event or entity
+      request_id:
+        type: string
+        description: Unique ID of the request that caused the event
+      id:
+        type: string
+        description: Unique ID of this event
+      dt:
+        type: string
+        format: date-time
+        maxLength: 128
+        description: Time the event was received by the system, in UTC ISO-8601 format
+      domain:
+        type: string
+        description: Domain the event or entity pertains to
+        minLength: 1
+      stream:
+        type: string
+        description: Name of the stream (dataset) that this event belongs in
+        minLength: 1
+    required:
+      - stream
+  dt:
+    type: string
+    format: date-time
+    maxLength: 128
+    description: >
+      ISO-8601 formatted timestamp of when the event occurred/was generated
+      in UTC), AKA 'event time'. This is different than meta.dt, which
+      is used as the time the system received this event.
+
+required:
+  - $schema
+  - meta
+  - dt

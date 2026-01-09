@@ -1,0 +1,34 @@
+title: test/event
+description: Schema used for simple tests
+$id: /test/event/2.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/common/2.0.0#
+  - properties:
+      test:
+        type: string
+        default: default value
+
+      test_map:
+        description: >
+          We want to support 'map' types using additionalProperties to specify
+          the value types.  (Keys are always strings.)
+        type: object
+        additionalProperties:
+          type: string
+
+      test_int:
+        type: integer
+
+examples: 
+  - $schema: { $ref: "#/$id" }
+    dt: '2019-01-01T00:00:00Z'
+    meta:
+      stream: test.event.example
+      dt: '2019-01-01T00:00:00Z'
+    test: specific test value
+    test_map:
+      key1: val1
+      key2: val2
+    test_int: 123

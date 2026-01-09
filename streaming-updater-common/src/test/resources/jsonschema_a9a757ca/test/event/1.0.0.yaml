@@ -1,0 +1,63 @@
+title: test/event
+description: Schema used for simple tests
+$id: /test/event/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - meta
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  test:
+    type: string
+    default: default value
+  test_map:
+    description: >
+      We want to support 'map' types using additionalProperties to specify the
+      value types.  (Keys are always strings.)
+    type: object
+    additionalProperties:
+      type: string
+examples:
+  - $schema: /test/event/1.0.0
+    meta:
+      dt: '2019-01-01T00:00:00Z'
+      stream: test.event.example
+    test: specific test value
+    test_map:
+      key1: val1
+      key2: val2

@@ -1,0 +1,31 @@
+title: "maps/tile_change"
+description: "Indicates a state change of an OpenStreetMap tile"
+$id: "/maps/tile_change/1.0.0"
+$schema: "https://json-schema.org/draft-07/schema#"
+type: object
+additionalProperties: false
+
+allOf:
+  - $ref: "/fragment/common/1.1.0"
+
+properties:
+  tile:
+    type: "string"
+    description: "Map tile in z/x/y format"
+    pattern: '^\d{1,2}\/\d{1,7}\/\d{1,7}$'
+    maxLength: 18
+  state:
+    type: "string"
+    description: "The state of the map tile"
+    enum: ["expired", "pregenerated"]
+required:
+  - tile
+  - state
+
+examples:
+  - $schema: { $ref: "#/$id" }
+    meta:
+      dt: "2020-04-02T19:11:20.942Z"
+      stream: "maps.tile_change"
+    tile: "0/0/0"
+    state: "expired"

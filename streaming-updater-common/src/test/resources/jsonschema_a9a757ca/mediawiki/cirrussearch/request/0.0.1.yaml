@@ -1,0 +1,262 @@
+title: mediawiki/cirrussearch/request
+description: >
+  A set of requests made by CirrusSearch to ElasticSearch for a single PHP
+  execution context.
+$id: /mediawiki/cirrussearch/request/0.0.1
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - meta
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  all_elasticsearch_requests_cached:
+    description: True if all Elasticsearch requests were given responses from cache
+    type: boolean
+  backend_user_tests:
+    description: List of backend tests the requests are participating in
+    type: array
+    items:
+      type: string
+      minLength: 1
+  database:
+    description: The name of the wiki database that this mediawiki instance uses.
+    type: string
+  elasticsearch_requests:
+    description: >
+      A list of requests made between Mediawiki CirrusSearch extension and
+      elasticsearch in a single execution context
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        cached:
+          description: True if this request's response was from cache
+          type: boolean
+        hits:
+          description: >-
+            Final set of result pages returned for this single Elasticsearch
+            request
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              index:
+                description: Elasticsearch index this result came from
+                type: string
+              page_id:
+                description: >-
+                  MediaWiki page id of the result. May be -1 for interwiki
+                  results
+                type: integer
+                maximum: 9007199254740991
+                minimum: -9007199254740991
+              page_title:
+                description: MediaWiki page title of the result
+                type: string
+              profile_name:
+                description: The profile name for comp_suggest queries
+                type: string
+              score:
+                description: Score from Elasticsearch for this result
+                type: number
+                default: -1
+                maximum: 9007199254740991
+                minimum: -9007199254740991
+        hits_offset:
+          description: The offset of the query
+          type: integer
+          maximum: 9007199254740991
+          minimum: -9007199254740991
+        hits_returned:
+          description: The number of results returned to the application
+          type: integer
+          maximum: 9007199254740991
+          minimum: -9007199254740991
+        hits_total:
+          description: The approximate total number of documents matching the query
+          type: integer
+          maximum: 9007199254740991
+          minimum: -9007199254740991
+        indices:
+          description: The list of indices the request was performed against
+          type: array
+          items:
+            type: string
+        langdetect:
+          description: >
+            - null if no lang detection attepmted, - "false" is failure to
+            detect - any other string is the language detected
+          type: string
+        limit:
+          description: The maximum number of results requested by the application
+          type: integer
+          maximum: 9007199254740991
+          minimum: -9007199254740991
+        max_score:
+          description: >
+            Max score returned by Elasticsearch. This is the best score in the
+            results before we apply rescore queries. Unfortunately we do not
+            know if it's part of the final result but it can give a rough idea
+            of the score range before we apply the rescore queries.
+          type: number
+          maximum: 9007199254740991
+          minimum: -9007199254740991
+        namespaces:
+          description: Each element is a mediawiki namespace id that was searched
+          type: array
+          items:
+            type: integer
+            maximum: 9007199254740991
+            minimum: -9007199254740991
+        query:
+          description: The actual search request
+          type: string
+        query_type:
+          description: 'The general type of query performed, such as full_text, prefix, etc.'
+          type: string
+        request_time_ms:
+          description: >
+            The number of milliseconds between passing the query to the
+            Elasticsearch client library and getting the response back in the
+            application
+          type: integer
+          maximum: 9007199254740991
+          minimum: -9007199254740991
+        search_time_ms:
+          description: >-
+            The number of milliseconds the query took, according to
+            ElasticSearch
+          type: integer
+          maximum: 9007199254740991
+          minimum: 0
+        suggestion:
+          description: The suggestion generated by Elasticsearch
+          type: string
+        suggestion_requested:
+          description: If a suggestion was requested from Elasticsearch
+          type: boolean
+          default: false
+        syntax:
+          description: Tags returned by the query parser describing properties of the query
+          type: array
+          items:
+            type: string
+  hits:
+    description: Final set of result pages returned for the CirrusSearch request
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        index:
+          description: ElasticSearch index this result came from
+          type: string
+        page_id:
+          description: MediaWiki page id of the result. May be -1 for interwiki results
+          type: integer
+          maximum: 9007199254740991
+          minimum: -9007199254740991
+        page_title:
+          description: MediaWiki page title of the result
+          type: string
+        profile_name:
+          description: The profile name for comp_suggest queries
+          type: string
+        score:
+          description: Score from ElasticSearch for this result
+          type: number
+          maximum: 9007199254740991
+          minimum: -9007199254740991
+  http:
+    description: Information about the HTTP request that generated this event.
+    type: object
+    properties:
+      client_ip:
+        description: The http client's IP address
+        type: string
+      has_cookies:
+        description: True if the http request has any cookies set
+        type: boolean
+      method:
+        description: 'The HTTP request method (GET, POST, etc.)'
+        type: string
+      request_headers:
+        description: Request headers sent by the client.
+        type: object
+        additionalProperties:
+          type: string
+  identity:
+    description: >
+      A hash identifying the requestor. Includes the IP address and User Agent
+      when available
+    type: string
+  mediawiki_host:
+    description: Hostname of Mediawiki server handling these CirrusSearch requests
+    type: string
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  params:
+    description: |
+      Request parameters. Usually from the HTTP query string.
+    type: object
+    additionalProperties:
+      type: string
+  request_time_ms:
+    description: Total time of the CirrusSearch request in milliseconds
+    type: integer
+    maximum: 9007199254740991
+    minimum: 0
+  search_id:
+    description: >
+      UUIDv4 in base36 id of this search request. This token will be placed on
+      the URI of the generated search results page for the user, so downstream
+      analysis can join between this search request set and clicked on results
+      via webrequest referrer field.  E.g. a result page URI might be
+      /wiki/Special:Search?searchToken=asdhlajsflkafd Requests that come from
+      the Mediawiki API will have this sent via the X-Search-ID response header.
+    type: string
+  source:
+    description: 'Where the request is coming from. Typically web, api or cli'
+    type: string
+examples:
+  - $schema: /mediawiki/cirrussearch/request/0.0.1
+    database: examplewiki
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: example_stream

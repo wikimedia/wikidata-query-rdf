@@ -1,0 +1,78 @@
+title: maps/tiles_change
+description: Indicates a batch of state changes of OpenStreetMap tiles
+$id: /maps/tiles_change/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - meta
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  changes:
+    type: array
+    items:
+      type: object
+      required:
+        - tile
+        - state
+      properties:
+        state:
+          description: The state of the map tile
+          type: string
+          enum:
+            - expired
+            - pregenerated
+        tile:
+          description: Map tile in z/x/y format
+          type: string
+          maxLength: 18
+          pattern: '^\d{1,2}\/\d{1,7}\/\d{1,7}$'
+    maxLength: 1000
+    minLength: 1
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream (dataset) that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+examples:
+  - $schema: /maps/tiles_change/1.0.0
+    changes:
+      - state: expired
+        tile: 15/0/0
+      - state: expired
+        tile: 15/1/2
+      - state: expired
+        tile: 15/0/3
+    meta:
+      dt: '2020-04-02T19:11:20.942Z'
+      stream: maps.tiles_change

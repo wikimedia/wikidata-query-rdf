@@ -1,0 +1,115 @@
+title: mediawiki/client/error
+description: An error generated in a client runtime.
+$id: /mediawiki/client/error/2.0.0
+$schema: 'http://json-schema.org/draft-07/schema#'
+type: object
+additionalProperties: false
+required:
+  - $schema
+  - message
+  - meta
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  error_class:
+    description: Name of constructor e.g. Error or ReferenceError.
+    type: string
+  error_context:
+    description: |
+      Arbitrary extra data. Typically includes:
+      - version: MediaWiki branch name
+      - wiki: wiki ID
+      - skin: skin name
+      - user_language: user language
+      - action: action (e.g. view, edit)
+      - namespace: namespace where the error occured
+      - page_title: title of page where the error occured
+      - user_groups: comma-separated list of user groups
+      - debug: truthy when ResourceLoader debug mode was enabled
+    type: object
+    additionalProperties:
+      type: string
+    maxProperties: 32
+  file_url:
+    description: URL of the file where the error occurred.
+    type: string
+  http:
+    type: object
+    properties:
+      has_cookies:
+        description: True if the http request has any cookies set
+        type: boolean
+      method:
+        description: 'The HTTP request method (GET, POST, etc.)'
+        type: string
+      protocol:
+        description: The protocol used for the request (HTTP or HTTPS)
+        type: string
+      request_headers:
+        description: 'Request headers sent by the client.  E.g. user-agent, etc.'
+        type: object
+        additionalProperties:
+          type: string
+      response_headers:
+        description: Response headers sent back to the client (when known).
+        type: object
+        additionalProperties:
+          type: string
+      status_code:
+        description: The HTTP status code returned for this request (when known)
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+  message:
+    description: Message explaining what happened.
+    type: string
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream (dataset) that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  stack_trace:
+    description: Stack trace string.
+    type: string
+  url:
+    description: URL of page on which the error occurred.
+    type: string
+examples:
+  - $schema: /mediawiki/client/error/2.0.0
+    error_class: Error
+    error_context:
+      page_title: Main_Page
+    file_url: index.js
+    message: example error message
+    meta:
+      dt: '2019-01-01T00:00:00Z'
+      stream: mediawiki.client.error
+    url: 'http://en.wikipedia.org'

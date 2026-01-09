@@ -1,0 +1,216 @@
+title: mediawiki/user/blocks-change
+description: Represents a MW User Blocks Change event
+$id: /mediawiki/user/blocks-change/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - blocks
+  - database
+  - meta
+  - user_text
+properties:
+  $schema:
+    type: string
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      uri:
+        type: string
+        format: uri-reference
+        maxLength: 8192
+        description: Unique URI identifying the event or entity
+      request_id:
+        type: string
+        description: Unique ID of the request that caused the event
+      id:
+        type: string
+        description: Unique ID of this event
+      dt:
+        type: string
+        format: date-time
+        maxLength: 128
+        description: 'UTC event datetime, in ISO-8601 format'
+      domain:
+        type: string
+        description: Domain the event or entity pertains to
+        minLength: 1
+      stream:
+        type: string
+        description: Name of the stream/queue/dataset that this event belongs in
+        minLength: 1
+  database:
+    description: The name of the wiki database this event entity belongs to.
+    type: string
+    minLength: 1
+  performer:
+    description: Represents the user that performed this change.
+    type: object
+    required:
+      - user_text
+      - user_groups
+      - user_is_bot
+    properties:
+      user_id:
+        description: >
+          The user id that performed this change.  This is optional, and will
+          not be present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: -9007199254740991
+      user_text:
+        description: The text representation of the user that performed this change.
+        type: string
+        minLength: 1
+      user_groups:
+        description: 'A list of the groups this user belongs to.  E.g. bot, sysop etc.'
+        type: array
+        items:
+          type: string
+          minLength: 1
+      user_is_bot:
+        description: >
+          True if this user is considered to be a bot at the time of this event.
+          This is checked via the $user->isBot() method, which considers both
+          user_groups and user permissions.
+        type: boolean
+      user_registration_dt:
+        description: >
+          The datetime of the user account registration. Not present for
+          anonymous users or if missing in the MW database.
+        type: string
+        format: date-time
+        maxLength: 128
+      user_edit_count:
+        description: >
+          The number of edits this user has made at the time of this event. Not
+          present for anonymous users.
+        type: integer
+        maximum: 9007199254740991
+        minimum: 0
+  comment:
+    description: The comment left by the user that performed this change.
+    type: string
+  user_id:
+    description: >
+      The user id for the target user.  This is optional, and will not be
+      present for anonymous users.
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+    type: integer
+  user_text:
+    description: The text representation of the target user.
+    type: string
+    minLength: 1
+  user_groups:
+    description: |
+      A list of the groups the target user belongs to. E.g. bot, sysop etc.
+    type: array
+    items:
+      type: string
+      minLength: 1
+  blocks:
+    description: |
+      The current state of blocks for the target user of this user change event.
+    type: object
+    required:
+      - name
+      - email
+      - user_talk
+      - account_create
+    properties:
+      name:
+        description: Whether the name or IP should be suppressed (hidden).
+        type: boolean
+      email:
+        description: Whether sending email is blocked.
+        type: boolean
+      user_talk:
+        description: Whether the user is blocked from editing their own talk page.
+        type: boolean
+      account_create:
+        description: Whether the user/IP is blocked from creating accounts.
+        type: boolean
+      expiry_dt:
+        description: >
+          The timestamp the block expires in ISO8601 format. If missing, the
+          blocks do not expire.
+        type: string
+        format: date-time
+        maxLength: 128
+  prior_state:
+    description: >
+      The prior state of the entity before this event. If a top level entity
+      field is not present in this object, then its value has not changed since
+      the prior event.  For user blocks changes, if prior_state is not present,
+      then the User or IP did not have any existing blocks in place at the time
+      this event was emitted.  This does not mean this User or IP never had any
+      blocks.  It is possible that the User's block had automatically expired
+      and were no longer in place when this event was emitted.
+    type: object
+    properties:
+      blocks:
+        description: >
+          The prior state of blocks for the target user of this user change
+          event.
+        type: object
+        required:
+          - name
+          - email
+          - user_talk
+          - account_create
+        properties:
+          name:
+            type: boolean
+          email:
+            type: boolean
+          user_talk:
+            type: boolean
+          account_create:
+            type: boolean
+          expiry_dt:
+            type: string
+            format: date-time
+            maxLength: 128
+examples:
+  - $schema: /mediawiki/user/blocks-change/1.0.0
+    meta:
+      uri: 'https://en.wikipedia.org/wiki/User:ExampleUser'
+      request_id: 12345678-1234-5678-1234-567812345678
+      dt: '2020-01-01T00:00:01Z'
+      domain: en.wikipedia.org
+      stream: mediawiki.user-blocks-change
+    database: examplewiki
+    performer:
+      user_text: PermormerUser
+      user_groups:
+        - user
+        - bot
+      user_is_bot: true
+      user_id: 1234567
+      user_registration_dt: '2019-01-01T00:00:01Z'
+      user_edit_count: 0
+    comment: blocking comment
+    user_text: 1.2.3.4
+    user_groups:
+      - '*'
+    blocks:
+      name: false
+      email: false
+      user_talk: false
+      account_create: true
+      expiry_dt: '2040-01-01T00:00:01Z'
+    prior_state:
+      blocks:
+        name: false
+        email: false
+        user_talk: false
+        account_create: true
+        expiry_dt: '2040-01-01T00:00:01Z'
+

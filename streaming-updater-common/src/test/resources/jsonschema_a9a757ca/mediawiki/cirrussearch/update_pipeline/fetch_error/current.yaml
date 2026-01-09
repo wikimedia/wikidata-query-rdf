@@ -1,0 +1,67 @@
+title: mediawiki/cirrussearch/update_pipeline/fetch_error
+description: >
+  Indicates a failure when fetching the CirrusSearch document from mediawiki
+$id: /mediawiki/cirrussearch/update_pipeline/fetch_error/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+
+required:
+  - wiki_id
+  - namespace_id
+  - page_id
+  - error_type
+  - original_event_stream
+  - original_event_time
+  - original_ingestion_time
+
+allOf:
+  - $ref: /error/2.1.0#
+
+properties:
+  wiki_id:
+    $ref: /fragment/mediawiki/state/change/page/1.1.0#/properties/wiki_id
+  namespace_id:
+    $ref: /fragment/mediawiki/state/entity/page/2.0.0#/properties/namespace_id
+  page_id:
+    $ref: /fragment/mediawiki/state/entity/page/2.0.0#/properties/page_id
+  page_title:
+    $ref: /fragment/mediawiki/state/entity/page/2.0.0#/properties/page_title
+  rev_id:
+    $ref: /fragment/mediawiki/state/entity/revision/1.0.0#/properties/rev_id
+
+  original_event_stream:
+    type: string
+    description: Name of the stream (dataset) that the event causing the failure belongs in
+    minLength: 1
+
+  original_ingestion_time:
+    type: string
+    format: date-time
+    maxLength: 128
+    description: ISO-8601 formatted timestamp of when the event causing the failure entered the pipeline.
+
+  original_event_time:
+    type: string
+    format: date-time
+    maxLength: 128
+    description: >
+      ISO-8601 formatted timestamp of when the event causing the failure occurred/was generated
+      in UTC), AKA 'event time'.
+
+examples:
+  - $schema: { $ref: "#/$id" }
+    meta:
+      stream: cirrussearch-update-pipeline-fetch-failure
+      dt: '2022-11-11T00:00:10Z'
+      domain: test.wikipedia.org
+    dt: '2022-11-11T00:00:00Z'
+    emitter_id: eqiad-cirrussearch-consumer-cloudelastic
+    message: Cannot find page Test page
+    wiki_id: testwiki
+    page_id: 123
+    page_title: Test Page
+    namespace_id: 0
+    error_type: NOT_FOUND
+    original_event_stream: mediawiki.page-state
+    original_event_time: '2022-11-11T00:00:00Z'
+    original_ingestion_time: '2022-11-11T00:00:05Z'

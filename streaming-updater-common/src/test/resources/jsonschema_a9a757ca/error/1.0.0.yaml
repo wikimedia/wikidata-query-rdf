@@ -1,0 +1,88 @@
+title: error
+description: Represents an error event
+$id: /error/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - emitter_id
+  - message
+  - meta
+  - raw_event
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  emitter_id:
+    description: identifies the entity where a fatal failure occured
+    type: string
+  errored_schema_uri:
+    description: >
+      $schema URI of event that caused the error. This is the value of
+      raw_event's $schema if it is extractable when the error was encountered.
+    type: string
+  errored_stream_name:
+    description: >
+      meta.stream name of the event that caused the error. This is the value of
+      raw_event's meta.stream if it is extractable when the error was
+      encountered.
+    type: string
+  message:
+    description: message describing an error
+    type: string
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      dt:
+        description: 'UTC event datetime, in ISO-8601 format'
+        type: string
+        format: date-time
+        maxLength: 128
+      id:
+        description: Unique ID of this event
+        type: string
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+      uri:
+        description: Unique URI identifying the event or entity
+        type: string
+        format: uri-reference
+        maxLength: 8192
+  raw_event:
+    description: string encoded original event
+    type: string
+  stack:
+    description: stack trace of the error (optional)
+    type: string
+  triggered_by:
+    description: >
+      comma-separated list of event descriptions in `<topic>:<uri>` format, that
+      represent a chain of events that caused this event to be emitted.
+    type: string
+examples:
+  - $schema: /error/1.0.0
+    emitter_id: example_emitter_id
+    errored_schema_uri: /original/schema/1.0.0
+    errored_stream_name: original.stream.name
+    message: example error message
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: error.example
+    raw_event: >-
+      {"$schema": "/original/schema/1.0.0", "meta": {"stream":
+      "original.stream.name", "dt": "2020-07-01T00:00:00Z"}, "myproperty":
+      "invalid_value"}

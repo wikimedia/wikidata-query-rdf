@@ -1,0 +1,123 @@
+# This schema is no longer under development, please see /mediawiki/cirrussearch/page_weighted_tags_change
+title: development/cirrussearch/page_weighted_tags_change
+description: >
+  Changes (setting and/or clearing) of weighted (scored) tags of a page,
+  see https://wikitech.wikimedia.org/wiki/Search/WeightedTags
+$id: /development/cirrussearch/page_weighted_tags_change/1.0.0
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - page
+  - wiki_id
+  - weighted_tags
+allOf:
+  - $ref: /fragment/common/2.0.0
+properties:
+  page:
+    allOf:
+      - $ref: /fragment/mediawiki/state/entity/page/2.0.0
+    required:
+      - page_id
+      - page_title
+      - namespace_id
+  wiki_id:
+    description: >
+      The wiki ID, which is usually the same as the MediaWiki database name.
+      E.g. enwiki, metawiki, etc.
+    type: string
+    minLength: 1
+  rev_based:
+    description: >
+      A hint for an event processor that this event has been triggered by new a revision.
+      Only if set to false, the processor may skip merging it with the original page change (and other related events).
+    type: boolean
+  weighted_tags:
+    description: Tags to be set for and/or cleared from the specified page
+    type: object
+    additionalProperties: false
+    minProperties: 1
+    properties:
+      set:
+        description: >
+          A multimap of prefix (without slash(es)) to list of optionally weighted (scored) tags,
+          see https://wikitech.wikimedia.org/wiki/Search/WeightedTags#Shape_of_the_data_in_elasticsearch
+        type: object
+        minProperties: 1
+        additionalProperties:
+          type: array
+          minLength: 1
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              tag:
+                type: string
+                minLength: 1
+              score:
+                type: number
+                minimum: 0
+                maximum: 1
+            required:
+              - tag
+      clear:
+        description: >
+          A list of tag prefixes (without slash(es)) that will be cleared,
+          see https://wikitech.wikimedia.org/wiki/Search/WeightedTags#Shape_of_the_data_in_elasticsearch
+        type: array
+        items:
+          type: string
+          pattern: "^[^/]+$"
+          minLength: 1
+          maxLength: 100
+        minLength: 1
+examples:
+  - $schema: /development/cirrussearch/page_weighted_tags_change/1.0.0
+    dt: '2024-07-22T00:00:00.0Z'
+    meta:
+      domain: examplewiki
+      dt: '2024-07-22T00:00:00.0Z'
+      stream: cirrussearch.page_weighted_tags_change
+    page:
+      page_id: 42
+      page_title: Set-only example
+      namespace_id: 0
+    wiki_id: example
+    weighted_tags:
+      set:
+        tag.group.A:
+          - tag: A.1
+            score: 0.5
+          - tag: A.2
+        tag.group.B:
+          - tag: B.1
+  - $schema: /development/cirrussearch/page_weighted_tags_change/1.0.0
+    dt: '2024-07-22T00:00:00.0Z'
+    meta:
+      domain: examplewiki
+      dt: '2024-07-22T00:00:00.0Z'
+      stream: cirrussearch.page_weighted_tags_change
+    page:
+      page_id: 42
+      page_title: Clear-only example
+      namespace_id: 0
+    wiki_id: example
+    weighted_tags:
+      clear:
+        - tag.group.B
+  - $schema: /development/cirrussearch/page_weighted_tags_change/1.0.0
+    dt: '2024-07-22T00:00:00.0Z'
+    meta:
+      domain: examplewiki
+      dt: '2024-07-22T00:00:00.0Z'
+      stream: cirrussearch.page_weighted_tags_change
+    page:
+      page_id: 42
+      page_title: Set and Clear example
+      namespace_id: 0
+    wiki_id: example
+    weighted_tags:
+      set:
+        tag.group.A:
+          - tag: A.1
+      clear:
+          - tag.group.C

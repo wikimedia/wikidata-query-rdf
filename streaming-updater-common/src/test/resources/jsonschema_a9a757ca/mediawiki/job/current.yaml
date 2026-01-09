@@ -1,0 +1,72 @@
+title: mediawiki/job
+description: Represents a job in Mediawiki JobQueue.
+$id: /mediawiki/job/1.0.0
+$schema: https://json-schema.org/draft-07/schema#
+type: object
+allOf:
+  - $ref: /fragment/common/1.0.0#
+  - properties:
+      database:
+        description: The name of the wiki database this event belongs to.
+        type: string
+        minLength: 1
+
+      type:
+        description: type of the job
+        type: string
+
+      page_namespace:
+        description: the namespace of the page that the job was triggered for
+        type: integer
+
+      page_title:
+        description: the title of the page that the job was triggered for
+        type: string
+        minLength: 1
+
+      delay_until:
+        description: don't execute the job until a particular time
+        type: string
+        format: date-time
+        maxLength: 128
+
+      sha1:
+        description: unique ID of the job derived from the deduplication info
+        type: string
+
+      # Deduplication information
+      root_event:
+        type: object
+        description: Unique identifier of the root event that triggered this event creation
+        properties:
+          dt:
+            description: the timestamp of the root event, in ISO8601 format
+            type: string
+            format: date-time
+            maxLength: 128
+          signature:
+            type: string
+            description: the unique signature of root event
+        required:
+          - dt
+          - signature
+
+      mediawiki_signature:
+        description: The cryptograthic signature of the event baed on MW SecretKey
+        type: string
+
+      params:
+        description: various parameters speific to a particular job
+        type: object
+
+required:
+  - database
+  - type
+  # TODO: add mediawiki_signature to required once producing it is deployed
+examples:
+  - $schema: { $ref: "#/$id" }
+    meta:
+      stream: mediawiki.job.example
+      dt: '2020-07-01T00:00:00Z'
+    database: examplewiki
+    type: example_job

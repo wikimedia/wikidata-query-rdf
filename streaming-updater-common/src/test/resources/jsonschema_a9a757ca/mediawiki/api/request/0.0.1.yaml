@@ -1,0 +1,89 @@
+title: mediawiki/api/request
+description: A single request to the MediaWiki Action API (api.php)
+$id: /mediawiki/api/request/0.0.1
+$schema: 'https://json-schema.org/draft-07/schema#'
+type: object
+required:
+  - $schema
+  - meta
+properties:
+  $schema:
+    description: >
+      A URI identifying the JSONSchema for this event. This should match an
+      schema's $id in a schema repository. E.g. /schema/title/1.0.0
+    type: string
+  meta:
+    type: object
+    required:
+      - dt
+      - stream
+    properties:
+      uri:
+        type: string
+        format: uri-reference
+        maxLength: 8192
+        description: Unique URI identifying the event or entity
+      request_id:
+        description: Unique ID of the request that caused the event
+        type: string
+      id:
+        description: Unique ID of this event
+        type: string
+      dt:
+        type: string
+        format: date-time
+        maxLength: 128
+        description: 'UTC event datetime, in ISO-8601 format'
+      domain:
+        description: Domain the event or entity pertains to
+        type: string
+        minLength: 1
+      stream:
+        description: Name of the stream/queue/dataset that this event belongs in
+        type: string
+        minLength: 1
+  http:
+    description: Information about the HTTP request that generated this event.
+    type: object
+    properties:
+      method:
+        description: 'The HTTP request method (GET, POST, etc.)'
+        type: string
+      client_ip:
+        description: The http client's IP address
+        type: string
+      request_headers:
+        description: Request headers sent by the client.
+        type: object
+        additionalProperties:
+          type: string
+  database:
+    description: The name of the wiki database this event belongs to.
+    type: string
+    minLength: 1
+  backend_time_ms:
+    description: Elapsed milliseconds to process request as measured by MediaWiki
+    type: integer
+    maximum: 9007199254740991
+    minimum: -9007199254740991
+  api_error_codes:
+    description: >
+      List of error codes for any errors encountered, e.g.
+      'apierror-missingparam' If this field is missing or empty, no errors were
+      encountered.
+    type: array
+    items:
+      type: string
+  params:
+    description: >
+      Request parameters. These might come from http query string, or from the
+      POST body. Sensitive params are redacted.
+    type: object
+    additionalProperties:
+      type: string
+examples:
+  - $schema: /mediawiki/api/request/0.0.1
+    meta:
+      dt: '2020-07-01T00:00:00Z'
+      stream: example_stream
+    database: examplewiki
