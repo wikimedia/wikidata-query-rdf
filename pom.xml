@@ -72,13 +72,15 @@
     </issueManagement>
 
     <properties>
+        <apache-commons-io.version>2.7</apache-commons-io.version>
         <blazegraph.version>2.1.6-wmf.1</blazegraph.version>
 
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikidata/query/rdf</developerConnection>
-        <eventutilities.version>1.3.7</eventutilities.version>
+        <eventutilities.version>1.4.6</eventutilities.version>
 
         <!-- make sure to align kafka-clients.version when upgrading flink -->
-        <flink.version>1.17.1</flink.version>
+        <flink-connector-kafka.version>3.3.0-1.20</flink-connector-kafka.version>
+        <flink.version>1.20.2</flink.version>
         <hadoop.version>2.10.1</hadoop.version>
         <!-- jackson.version for all modules running outside blazegraph, only blazegraph(-service) must use a compatible version  -->
         <jackson.version>2.17.1</jackson.version>
@@ -86,7 +88,7 @@
         <jersey.version>2.31</jersey.version>
         <!-- matching version used by Blazegraph here -->
         <jetty.version>9.4.12.v20180830</jetty.version>
-        <kafka-clients.version>3.2.3</kafka-clients.version>
+        <kafka-clients.version>3.4.0</kafka-clients.version>
         <!-- version with dependency on SLF4J, compiled with Java 8 -->
         <logback.version>1.3.5</logback.version>
         <metrics.version>4.0.2</metrics.version>
@@ -332,7 +334,7 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.4</version>
+                <version>${apache-commons-io.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-validator</groupId>
@@ -422,8 +424,13 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-connector-kafka</artifactId>
+                <artifactId>flink-connector-base</artifactId>
                 <version>${flink.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-connector-kafka</artifactId>
+                <version>${flink-connector-kafka.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>

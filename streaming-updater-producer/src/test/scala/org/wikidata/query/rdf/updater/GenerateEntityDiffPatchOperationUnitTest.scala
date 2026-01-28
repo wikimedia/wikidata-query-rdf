@@ -58,7 +58,7 @@ class GenerateEntityDiffPatchOperationUnitTest extends FlatSpec with Matchers wi
     val typeInfo = TypeInformation.of(classOf[MutationOperation]: Class[MutationOperation])
     val operatorFactory = new AsyncWaitOperatorFactory[MutationOperation, ResolvedOp](operator, 5L, 10, OutputMode.ORDERED)
     val env = MockEnvironment.builder().build()
-    genDiff.setRuntimeContext(new MockStreamingRuntimeContext(false, 1, 1))
+    genDiff.setRuntimeContext(new MockStreamingRuntimeContext(false, 1, 0))
     env.getExecutionConfig.registerTypeWithKryoSerializer(classOf[Patch], classOf[RDFPatchSerializer])
     // AsyncAwaitOperator will always throw Exception wrapping our own
     expectExternalFailure map { _ => classOf[Exception] } foreach env.setExpectedExternalFailureCause

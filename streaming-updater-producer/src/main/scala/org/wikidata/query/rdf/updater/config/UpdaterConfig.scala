@@ -8,7 +8,7 @@ import org.wikidata.query.rdf.common.uri.{FederatedUrisScheme, UrisScheme, UrisS
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.tool.subgraph.{SubgraphDefinitions, SubgraphDefinitionsParser}
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository.Uris
-import org.wikimedia.eventutilities.core.event.WikimediaDefaults
+import org.wikimedia.eventutilities.core.event.EventUtilitiesConfig
 
 import java.net.URL
 import java.util.Collections
@@ -41,7 +41,7 @@ class UpdaterConfig(args: Array[String]) extends BaseConfig()(BaseConfig.params(
     .toList
   val streamConfigUri: String = params.get(
     "stream_config_uri",
-    params.get("event_stream_config_endpoint", WikimediaDefaults.EVENT_STREAM_CONFIG_URI)
+    params.get("event_stream_config_endpoint", EventUtilitiesConfig.DEFAULT.getEventStreamConfigUri())
   )
 
   if (entityNamespaces.isEmpty && mediaInfoEntityNamespaces.isEmpty) {

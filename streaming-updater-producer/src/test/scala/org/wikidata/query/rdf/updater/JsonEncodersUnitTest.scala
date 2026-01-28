@@ -41,7 +41,7 @@ class JsonEncodersUnitTest extends FlatSpec with Matchers with TestEventGenerato
   private val clock: () => Instant = () => processingTime
   private val jsonEventGeneratorSupplier: () => JsonEventGenerator = () => eventPlatformFactory.jsonEventGenerator
   private val sideOutputDomain = "sideOutputDomain"
-  private val eventStreamConfigEndpoint = WikimediaDefaults.EVENT_STREAM_CONFIG_URI
+  private val eventStreamConfigEndpoint = EventUtilitiesConfig.DEFAULT.getEventStreamConfigUri()
   private val httpClientConfig = HttpClientConfig(httpRoutes = None, httpTimeout = None, HttpClientUtils.WDQS_DEFAULT_UA)
   private val jsonEncoder = new JsonEncoders(sideOutputDomain, Some(emitterId), () => uniqueId)
 

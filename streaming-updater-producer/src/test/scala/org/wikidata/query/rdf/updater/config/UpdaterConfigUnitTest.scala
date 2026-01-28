@@ -6,7 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.tool.HttpClientUtils
 import org.wikidata.query.rdf.tool.subgraph.SubgraphDefinitionsParser
 import org.wikidata.query.rdf.tool.wikibase.WikibaseRepository
-import org.wikimedia.eventutilities.core.event.WikimediaDefaults
+import org.wikimedia.eventutilities.core.event.EventUtilitiesConfig
 
 import java.nio.file.Files
 import java.time.Instant
@@ -51,7 +51,7 @@ class UpdaterConfigUnitTest extends FlatSpec with Matchers {
       "https://schema.wikimedia.org/repositories/primary/jsonschema",
       "https://schema.wikimedia.org/repositories/secondary/jsonschema"
     )
-    config.streamConfigUri shouldBe WikimediaDefaults.EVENT_STREAM_CONFIG_URI
+    config.streamConfigUri shouldBe EventUtilitiesConfig.DEFAULT.getEventStreamConfigUri()
 
     config.inputEventStreamConfig.mediaInfoEntityNamespaces shouldBe empty
     config.inputEventStreamConfig.consumerGroup shouldBe "my_consumer_group"

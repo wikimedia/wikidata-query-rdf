@@ -4,7 +4,7 @@ import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.util.InstantiationUtil
 import org.scalatest.{FlatSpec, Matchers}
 import org.wikidata.query.rdf.updater.config.{HttpClientConfig, UpdaterPipelineOutputStreamConfig}
-import org.wikimedia.eventutilities.core.event.WikimediaDefaults
+import org.wikimedia.eventutilities.core.event.EventUtilitiesConfig
 
 import java.time.Clock
 import scala.collection.immutable
@@ -40,7 +40,7 @@ class OutputStreamsBuilderUnitTest extends FlatSpec with Matchers {
       useEventStreamsApi = true,
       streamVersionSuffix = None
     )
-    val eventPlatformFactory = new EventPlatformFactory(WikimediaDefaults.EVENT_STREAM_CONFIG_URI,
+    val eventPlatformFactory = new EventPlatformFactory(EventUtilitiesConfig.DEFAULT.getEventStreamConfigUri(),
       List("https://schema.wikimedia.org/repositories/primary/jsonschema",
         "https://schema.wikimedia.org/repositories/secondary/jsonschema"),
       HttpClientConfig(None, None, "ua"),

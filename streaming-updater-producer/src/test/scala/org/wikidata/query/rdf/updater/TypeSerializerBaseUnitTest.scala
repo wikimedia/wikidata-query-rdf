@@ -116,7 +116,8 @@ class TypeSerializerBaseUnitTest extends FlatSpec with Matchers {
   }
 
   "VersionedCustomSerializerSnapshot" should "be serializable and provide proper compatibility checks" in {
-    val versionedCustomSerializerSnapshot = new VersionedCustomSerializerSnapshot(1, v => new MyTypeSerializer(v))
+    val serializerFactory = (v: Int) => new MyTypeSerializer(v)
+    val versionedCustomSerializerSnapshot = new VersionedCustomSerializerSnapshot(1, serializerFactory)
     versionedCustomSerializerSnapshot.getCurrentVersion shouldBe 1
     InstantiationUtil.isSerializable(versionedCustomSerializerSnapshot)
 
@@ -129,10 +130,11 @@ class TypeSerializerBaseUnitTest extends FlatSpec with Matchers {
 
     versionedCustomSerializerSnapshot.restoreSerializer() shouldEqual new MyTypeSerializer(1)
 
-    versionedCustomSerializerSnapshot.resolveSchemaCompatibility(new MyTypeSerializer(1)).isCompatibleAsIs shouldBe true
-    versionedCustomSerializerSnapshot.resolveSchemaCompatibility(new MyTypeSerializer(2)).isCompatibleAfterMigration shouldBe true
-    versionedCustomSerializerSnapshot.resolveSchemaCompatibility(new MyTypeSerializer(0)).isIncompatible shouldBe true
-    val unrelated = TypeInformation.of(classOf[String]).createSerializer(new ExecutionConfig())
+    versionedCustomSerializerSnapshot.resolveSchemaCompatibility(new VersionedCustomSerializerSnapshot(1, serializerFactory)).isCompatibleAsIs shouldBe true
+    versionedCustomSerializerSnapshot.resolveSchemaCompatibility(new VersionedCustomSerializerSnapshot(
+      0, serializerFactory)).isCompatibleAfterMigration shouldBe true
+    versionedCustomSerializerSnapshot.resolveSchemaCompatibility(new VersionedCustomSerializerSnapshot(2, serializerFactory)).isIncompatible shouldBe true
+    val unrelated = TypeInformation.of(classOf[String]).createSerializer(new ExecutionConfig()).snapshotConfiguration()
     versionedCustomSerializerSnapshot.resolveSchemaCompatibility(unrelated).isIncompatible shouldBe true
   }
 }

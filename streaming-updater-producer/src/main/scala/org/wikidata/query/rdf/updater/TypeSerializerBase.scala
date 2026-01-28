@@ -171,12 +171,12 @@ class VersionedCustomSerializerSnapshot[E](currentVersion: Int, serializerSuppli
     serializerSupplier.apply(version)
   }
 
-  override def resolveSchemaCompatibility(newSerializer: TypeSerializer[E]): TypeSerializerSchemaCompatibility[E] = {
-    newSerializer match {
-      case ser: TypeSerializerBase[E] => ser.readVersion match {
-        case newV: Int if newV == version => TypeSerializerSchemaCompatibility.compatibleAsIs()
-        case newV: Int if newV > version => TypeSerializerSchemaCompatibility.compatibleAfterMigration()
-        case newV: Int if newV < version => TypeSerializerSchemaCompatibility.incompatible()
+  override def resolveSchemaCompatibility(oldSerializerSnapshot: TypeSerializerSnapshot[E]): TypeSerializerSchemaCompatibility[E] = {
+    oldSerializerSnapshot match {
+      case ser: VersionedCustomSerializerSnapshot[E] => ser.getCurrentVersion match {
+        case oldV: Int if oldV == version => TypeSerializerSchemaCompatibility.compatibleAsIs()
+        case oldV: Int if oldV < version => TypeSerializerSchemaCompatibility.compatibleAfterMigration()
+        case oldV: Int if oldV > version => TypeSerializerSchemaCompatibility.incompatible()
       }
       case _ => TypeSerializerSchemaCompatibility.incompatible()
     }
