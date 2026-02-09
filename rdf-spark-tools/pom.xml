@@ -22,10 +22,8 @@
       -->
     <properties>
         <hadoop.version>3.3.2</hadoop.version>
-        <scala.compat.version>2.12</scala.compat.version>
         <scala.scalatest-maven-plugin.version>2.2.0</scala.scalatest-maven-plugin.version>
         <scala.scalatest.version>3.2.15</scala.scalatest.version>
-        <scala.version>2.12.17</scala.version>
         <spark.version>3.3.1</spark.version>
     </properties>
     <!-- use dependencyManagement here to enforce versions of transitive dependencies -->
@@ -304,6 +302,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <argLine>${extra.jvm.args}</argLine>
                     <useFile>false</useFile>
                     <disableXmlReport>true</disableXmlReport>
                     <includes>
@@ -403,6 +402,7 @@
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest-maven-plugin</artifactId>
                 <configuration>
+                    <argLine>${extra.jvm.args}</argLine>
                     <systemProperties>
                         <spark.sql.shuffle.partitions>2</spark.sql.shuffle.partitions>
                     </systemProperties>

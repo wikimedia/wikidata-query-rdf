@@ -12,14 +12,6 @@
 
     <name>Wikidata Query Service Streaming Updater - Producer</name>
 
-    <properties>
-        <!-- scala deps for rdf-spark-tools -->
-        <scala.compat.version>2.12</scala.compat.version>
-        <scala.scopt.version>3.7.1</scala.scopt.version>
-        <!-- https://docs.scala-lang.org/overviews/jdk-compatibility/overview.html -->
-        <scala.version>2.12.13</scala.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.esotericsoftware.kryo</groupId>
@@ -250,6 +242,13 @@
                         <arg>${project.build.directory}/.scala_dependencies</arg>
                         <arg>-target:jvm-${maven.compiler.target}</arg>
                     </args>
+                    <compilerPlugins>
+                        <compilerPlugin>
+                            <groupId>org.scalameta</groupId>
+                            <artifactId>semanticdb-scalac_${scala.version}</artifactId>
+                            <version>${semanticdb.version}</version>
+                        </compilerPlugin>
+                    </compilerPlugins>
                 </configuration>
             </plugin>
             <!-- We use the maven-shade plugin to create a fat jar that contains all necessary dependencies. -->
@@ -320,6 +319,9 @@
             <plugin>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest-maven-plugin</artifactId>
+                <configuration>
+                    <argLine>${extra.jvm.args}</argLine>
+                </configuration>
             </plugin>
         </plugins>
     </build>

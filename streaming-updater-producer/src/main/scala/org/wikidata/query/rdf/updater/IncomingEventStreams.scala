@@ -38,7 +38,7 @@ class IncomingEventStreams(inputEventConfig: UpdaterPipelineInputEventStreamConf
   def buildIncomingStreams()(implicit env: StreamExecutionEnvironment): List[DataStream[InputEvent]] = {
 
     val consumerProperties = new Properties()
-    consumerProperties.putAll(inputEventConfig.consumerProperties.asJava)
+    inputEventConfig.consumerProperties.asJava.forEach((k, v) => consumerProperties.put(k, v))
 
     val pageChangeSource: KafkaSource[Row] = buildKafkaSource(consumerProperties, inputStreams.pageChangeStream)
     val pageChangeStream = buildPageChangeSourceStream(pageChangeSource)
