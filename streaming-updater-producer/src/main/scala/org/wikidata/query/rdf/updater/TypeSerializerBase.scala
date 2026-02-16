@@ -156,27 +156,25 @@ class SerializerHelper (val readVersion: Int) extends Serializable {
 
 }
 
-class VersionedCustomSerializerSnapshot[E](currentVersion: Int, serializerSupplier: Int => TypeSerializerBase[E]) extends TypeSerializerSnapshot[E] {
-  private var version = -1
-
+class VersionedCustomSerializerSnapshot[E](var currentVersion: Int, serializerSupplier: Int => TypeSerializerBase[E]) extends TypeSerializerSnapshot[E] {
   override def getCurrentVersion: Int = currentVersion
 
   override def writeSnapshot(out: DataOutputView): Unit = {}
 
   override def readSnapshot(readVersion: Int, in: DataInputView, userCodeClassLoader: ClassLoader): Unit = {
-    version = readVersion
+    currentVersion = readVersion
   }
 
   override def restoreSerializer(): TypeSerializer[E] = {
-    serializerSupplier.apply(version)
+    serializerSupplier.apply(currentVersion)
   }
 
   override def resolveSchemaCompatibility(oldSerializerSnapshot: TypeSerializerSnapshot[E]): TypeSerializerSchemaCompatibility[E] = {
     oldSerializerSnapshot match {
-      case ser: VersionedCustomSerializerSnapshot[E] => ser.getCurrentVersion match {
-        case oldV: Int if oldV == version => TypeSerializerSchemaCompatibility.compatibleAsIs()
-        case oldV: Int if oldV < version => TypeSerializerSchemaCompatibility.compatibleAfterMigration()
-        case oldV: Int if oldV > version => TypeSerializerSchemaCompatibility.incompatible()
+      case ser: VersionedCustomSerializerSnapshot[E] => ser.currentVersion match {
+        case oldV: Int if oldV == currentVersion => TypeSerializerSchemaCompatibility.compatibleAsIs()
+        case oldV: Int if oldV < currentVersion => TypeSerializerSchemaCompatibility.compatibleAfterMigration()
+        case oldV: Int if oldV > currentVersion => TypeSerializerSchemaCompatibility.incompatible()
       }
       case _ => TypeSerializerSchemaCompatibility.incompatible()
     }
