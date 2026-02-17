@@ -9,7 +9,7 @@
 
     <groupId>org.wikidata.query.rdf</groupId>
     <artifactId>query-service-parent</artifactId>
-    <version>0.3.162-SNAPSHOT</version>
+    <version>0.3.162</version>
     <packaging>pom</packaging>
 
     <name>Wikidata Query Service</name>
@@ -62,7 +62,7 @@
             SCM in CI. Namely CI pushes over https when developers typically use ssh.
         -->
         <developerConnection>${developerConnection}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>query-service-parent-0.3.162</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/wikidata/query/rdf</url>
     </scm>
 
@@ -77,7 +77,7 @@
 
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikidata/query/rdf</developerConnection>
         <eventutilities.version>1.4.6</eventutilities.version>
-        <extra.jvm.args />
+        <extra.jvm.args/>
 
         <!-- make sure to align kafka-clients.version when upgrading flink -->
         <flink-connector-kafka.version>3.3.0-1.20</flink-connector-kafka.version>
