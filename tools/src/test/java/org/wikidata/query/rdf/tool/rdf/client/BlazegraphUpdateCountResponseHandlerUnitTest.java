@@ -18,11 +18,11 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.google.common.io.ByteSource;
 
 @RunWith(MockitoJUnitRunner.class)
-public class UpdateCountResponseHandlerUnitTest {
+public class BlazegraphUpdateCountResponseHandlerUnitTest {
 
     @Mock private ContentResponse response;
 
-    private final UpdateCountResponseHandler responseHandler = new UpdateCountResponseHandler();
+    private final BlazegraphUpdateCountResponseHandler responseHandler = new BlazegraphUpdateCountResponseHandler();
 
     @Test
     public void canParseUpdateCounts() throws IOException {

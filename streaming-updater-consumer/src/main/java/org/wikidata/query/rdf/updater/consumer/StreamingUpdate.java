@@ -8,6 +8,7 @@ import static org.wikidata.query.rdf.tool.HttpClientUtils.getHttpProxyPort;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -25,6 +26,7 @@ import org.wikidata.query.rdf.tool.options.OptionsUtils;
 import org.wikidata.query.rdf.tool.rdf.RDFParserSuppliers;
 import org.wikidata.query.rdf.tool.rdf.RdfRepositoryUpdater;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
+import org.wikidata.query.rdf.tool.rdf.client.ResponseHandlerType;
 import org.wikidata.query.rdf.updater.MutationEventData;
 import org.wikidata.query.rdf.updater.RDFChunkDeserializer;
 import org.wikidata.query.rdf.updater.consumer.options.StreamingUpdateOptions;
@@ -84,10 +86,14 @@ public final class StreamingUpdate {
         HttpClient httpClient = buildHttpClient(getHttpProxyHost(), getHttpProxyPort());
         Retryer<ContentResponse> retryer = buildHttpClientRetryer();
         Duration rdfClientTimeout = RdfRepositoryUpdater.getRdfClientTimeout();
+        ResponseHandlerType handlerType = ResponseHandlerType.valueOf(options.updateResponseHandler().toUpperCase(
+            Locale.ROOT));
         RdfClient rdfClient = new RdfClient(httpClient, StreamingUpdateOptions.sparqlUri(options), retryer,
-                rdfClientTimeout, RdfClient.DEFAULT_MAX_RESPONSE_SIZE);
+                rdfClientTimeout, RdfClient.DEFAULT_MAX_RESPONSE_SIZE, handlerType);
         UrisScheme uris = UrisSchemeFactory.getURISystem();
-        return new StreamingUpdaterConsumer(consumer, new RdfRepositoryUpdater(rdfClient, uris), metrics, options.inconsistenciesWarningThreshold());
+
+        return new StreamingUpdaterConsumer(consumer,
+            new RdfRepositoryUpdater(rdfClient, uris, handlerType), metrics, options.inconsistenciesWarningThreshold());
     }
 
     private static final String RESET_OFFSETS_TO_EARLIEST = "earliest";

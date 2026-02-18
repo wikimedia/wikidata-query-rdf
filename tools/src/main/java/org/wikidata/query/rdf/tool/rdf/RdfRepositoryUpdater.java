@@ -20,6 +20,7 @@ import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
+import org.wikidata.query.rdf.tool.rdf.client.ResponseHandlerType;
 
 import lombok.SneakyThrows;
 import lombok.Value;
@@ -52,16 +53,21 @@ public class RdfRepositoryUpdater implements AutoCloseable {
     private static final UpdateDataTemplate DELETE_DATA = new UpdateDataTemplate(loadBody("deleteData"), "deleteStatements");
     private static final String DELETE_ENTITY = loadBody("deleteEntity");
     private static final String UPDATE_EVENT_TIME = loadBody("avgEventTime");
+
     private final RdfRepository rdfRepository;
 
     public RdfRepositoryUpdater(RdfClient client, UrisScheme uris) {
-        this(client, uris, MAX_FORM_CONTENT_SIZE);
+        this(client, uris, MAX_FORM_CONTENT_SIZE, ResponseHandlerType.BLAZEGRAPH);
     }
 
-    public RdfRepositoryUpdater(RdfClient client, UrisScheme uris, long maxPostSize) {
+    public RdfRepositoryUpdater(RdfClient client, UrisScheme uris, ResponseHandlerType handlerType) {
+        this(client, uris, MAX_FORM_CONTENT_SIZE, handlerType);
+    }
+
+    public RdfRepositoryUpdater(RdfClient client, UrisScheme uris, long maxPostSize, ResponseHandlerType handlerType) {
         this.client = client;
         this.uris = uris;
-        this.rdfRepository = new RdfRepository(uris, client, maxPostSize);
+        this.rdfRepository = new RdfRepository(uris, client, maxPostSize, handlerType);
     }
 
     private static String loadBody(String name) {

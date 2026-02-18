@@ -53,7 +53,7 @@ public class RdfClient {
     public static final int DEFAULT_MAX_RESPONSE_SIZE = 2 * 1024 * 1024;
 
     /** Count and log the number of updates. */
-    private static final ResponseHandler<Integer> UPDATE_COUNT_RESPONSE = new UpdateCountResponseHandler();
+    private final ResponseHandler<Integer> updateCountResponse;
     /** Parse the response from a regular query into a TupleQueryResult. */
     private static final ResponseHandler<TupleQueryResult> TUPLE_QUERY_RESPONSE = new TupleQueryResponseHandler(BINARY);
     /** Parse the json response from a select, describe or construct query into a TupleQueryResult. */
@@ -73,13 +73,26 @@ public class RdfClient {
 
     private final int maxResponseSize;
 
-    public RdfClient(HttpClient httpClient, URI uri, Retryer<ContentResponse> retryer, Duration timeout, int maxResponseSize) {
+    public RdfClient(HttpClient httpClient,
+                     URI uri, Retryer<ContentResponse> retryer,
+                     Duration timeout,
+                     int maxResponseSize,
+                     ResponseHandlerType handlerType) {
         this.httpClient = httpClient;
         this.uri = uri;
         this.timeout = timeout;
         this.retryer = retryer;
         this.maxResponseSize = maxResponseSize;
+
+        this.updateCountResponse = handlerType == ResponseHandlerType.BLAZEGRAPH
+            ? new BlazegraphUpdateCountResponseHandler()
+            : new DummyUpdateCountResponseHandler();
     }
+
+    public RdfClient(HttpClient httpClient, URI uri, Retryer<ContentResponse> retryer, Duration timeout, int maxResponseSize) {
+        this(httpClient, uri, retryer, timeout, maxResponseSize, ResponseHandlerType.BLAZEGRAPH);
+    }
+
 
     /**
      * Execute some SPARQL which returns a results table.
@@ -110,7 +123,7 @@ public class RdfClient {
      * Executes an update and returns the number of changes.
      */
     public Integer update(String sparql) {
-        return execute("update", UPDATE_COUNT_RESPONSE, sparql);
+        return execute("update", updateCountResponse, sparql);
     }
 
     /**
@@ -133,7 +146,7 @@ public class RdfClient {
      */
     @VisibleForTesting
     public Integer loadUrl(String sparql) {
-        return execute("uri", UPDATE_COUNT_RESPONSE, sparql);
+        return execute("uri", updateCountResponse, sparql);
     }
 
     /**

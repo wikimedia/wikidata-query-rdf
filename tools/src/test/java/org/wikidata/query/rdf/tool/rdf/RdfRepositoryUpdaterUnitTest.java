@@ -29,7 +29,7 @@ import org.openrdf.model.Statement;
 import org.wikidata.query.rdf.common.uri.UrisScheme;
 import org.wikidata.query.rdf.common.uri.UrisSchemeFactory;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
-import org.wikidata.query.rdf.tool.rdf.client.UpdateMetricsResponseHandler;
+import org.wikidata.query.rdf.tool.rdf.client.BlazegraphUpdateMetricsResponseHandler;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RdfRepositoryUpdaterUnitTest {
@@ -176,7 +176,7 @@ public class RdfRepositoryUpdaterUnitTest {
         ConsumerPatch patch = new ConsumerPatch(statements(), statements(), statements(), statements(), entityIdsToDelete, entitiesToReconcile);
 
         RdfRepositoryUpdater rdfRepositoryUpdater = new RdfRepositoryUpdater(client, urisScheme);
-        UpdateMetricsResponseHandler handler = new UpdateMetricsResponseHandler(false, false, true);
+        BlazegraphUpdateMetricsResponseHandler handler = new BlazegraphUpdateMetricsResponseHandler(false, false, true);
         CollectedUpdateMetrics metrics = new CollectedUpdateMetrics();
         metrics.setMutationCount(10);
         when(client.update(anyString(), any())).thenReturn(metrics);

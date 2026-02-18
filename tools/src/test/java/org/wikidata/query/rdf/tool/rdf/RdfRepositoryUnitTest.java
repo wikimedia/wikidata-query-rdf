@@ -2,19 +2,21 @@ package org.wikidata.query.rdf.tool.rdf;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.any;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.LiteralImpl;
 import org.wikidata.query.rdf.common.uri.Ontology;
@@ -26,9 +28,12 @@ import org.wikidata.query.rdf.test.Randomizer;
 import org.wikidata.query.rdf.test.StatementHelper;
 import org.wikidata.query.rdf.test.StatementHelper.StatementBuilder;
 import org.wikidata.query.rdf.tool.change.Change;
+import org.wikidata.query.rdf.tool.rdf.client.BlazegraphUpdateMetricsResponseHandler;
+import org.wikidata.query.rdf.tool.rdf.client.DummyUpdateMetricsResponseHandler;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
+import org.wikidata.query.rdf.tool.rdf.client.ResponseHandler;
 import org.wikidata.query.rdf.tool.rdf.client.UpdateMetrics;
-import org.wikidata.query.rdf.tool.rdf.client.UpdateMetricsResponseHandler;
+import org.wikidata.query.rdf.tool.rdf.client.ResponseHandlerType;
 
 import com.google.common.collect.ImmutableList;
 
@@ -41,18 +46,18 @@ public class RdfRepositoryUnitTest {
     public final Randomizer randomizer = new Randomizer();
 
     private final UrisScheme uris = UrisSchemeFactory.getURISystem();
+    private static final long MAX_POST_SIZE = 1572864L;
 
     @Test
     public void batchUpdate() {
         RdfClient mockClient = mock(RdfClient.class);
         // 1.5M size means ~4k statements or 250K statement size max
-        long maxPostSize = 1572864L;
         CollectedUpdateMetrics collectedUpdateMetrics = new CollectedUpdateMetrics();
         collectedUpdateMetrics.setMutationCount(1);
         collectedUpdateMetrics.merge(MultiSyncStep.INSERT_NEW_DATA, UpdateMetrics.builder().build());
-        when(mockClient.update(any(String.class), any(UpdateMetricsResponseHandler.class))).thenReturn(collectedUpdateMetrics);
+        when(mockClient.update(any(String.class), any(ResponseHandler.class))).thenReturn(collectedUpdateMetrics);
 
-        RdfRepository repo = new RdfRepository(uris, mockClient, maxPostSize);
+        RdfRepository repo = new RdfRepository(uris, mockClient, MAX_POST_SIZE);
 
         // 6000 statements - should go over the limit
         Change change1 = new Change("Q1", 1, Instant.EPOCH, 1);
@@ -80,6 +85,34 @@ public class RdfRepositoryUnitTest {
         assertThat(count).isEqualTo(3);
         // We should get 3 calls to update
         verify(mockClient, times(3)).update(any(), any());
+    }
+
+    private void verifyHandlerType(ResponseHandlerType handlerType, Class<? extends ResponseHandler<?>> expectedType) {
+        RdfClient mockClient = mock(RdfClient.class);
+        CollectedUpdateMetrics collectedUpdateMetrics = new CollectedUpdateMetrics();
+        collectedUpdateMetrics.setMutationCount(1);
+        when(mockClient.update(any(String.class), any(ResponseHandler.class))).thenReturn(collectedUpdateMetrics);
+
+        RdfRepository repo = new RdfRepository(uris, mockClient, MAX_POST_SIZE, handlerType);
+        Change change = new Change("Q1", 1, Instant.EPOCH, 1);
+        change.setStatements(Collections.emptyList());
+
+        repo.syncFromChanges(Collections.singletonList(change), false);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<ResponseHandler> captor = ArgumentCaptor.forClass(ResponseHandler.class);
+        verify(mockClient).update(any(), captor.capture());
+        assertThat(captor.getValue()).isInstanceOf(expectedType);
+    }
+
+    @Test
+    public void testBlazegraphUpdateMetricsReporting() {
+        verifyHandlerType(ResponseHandlerType.BLAZEGRAPH, BlazegraphUpdateMetricsResponseHandler.class);
+    }
+
+    @Test
+    public void testDummyUpdateMetricsReportingDisabled() {
+        verifyHandlerType(ResponseHandlerType.DUMMY, DummyUpdateMetricsResponseHandler.class);
     }
 
     @Test

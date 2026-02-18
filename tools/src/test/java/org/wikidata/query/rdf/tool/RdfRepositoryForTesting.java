@@ -40,8 +40,7 @@ public class RdfRepositoryForTesting extends RdfRepository implements TestRule {
                         getRdfClientTimeout(),
                         RdfClient.DEFAULT_MAX_RESPONSE_SIZE
                 ),
-                20_000_000
-        );
+                20_000_000);
     }
 
     /**

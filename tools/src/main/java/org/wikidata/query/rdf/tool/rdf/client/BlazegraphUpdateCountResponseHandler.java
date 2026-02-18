@@ -11,11 +11,11 @@ import org.slf4j.LoggerFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
- * Attempts to log update response information but very likely only works
- * for Blazegraph.
+ * Attempts to log update response information.
+ *
  */
-class UpdateCountResponseHandler implements ResponseHandler<Integer> {
-    private static final Logger LOG = LoggerFactory.getLogger(UpdateCountResponseHandler.class);
+class BlazegraphUpdateCountResponseHandler implements ResponseHandler<Integer> {
+    private static final Logger LOG = LoggerFactory.getLogger(BlazegraphUpdateCountResponseHandler.class);
 
     /**
      * The pattern for the response for an update.

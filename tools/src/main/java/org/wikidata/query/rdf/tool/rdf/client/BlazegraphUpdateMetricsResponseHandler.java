@@ -17,18 +17,17 @@ import org.wikidata.query.rdf.tool.rdf.CollectedUpdateMetrics;
 import org.wikidata.query.rdf.tool.rdf.MultiSyncStep;
 
 /**
- * Attempts to log update response information and return them but very likely only works
- * for Blazegraph.
+ * Attempts to log update response information and return them.
  */
-public class UpdateMetricsResponseHandler implements ResponseHandler<CollectedUpdateMetrics> {
-    private static final Logger LOG = LoggerFactory.getLogger(UpdateMetricsResponseHandler.class);
+public class BlazegraphUpdateMetricsResponseHandler implements ResponseHandler<CollectedUpdateMetrics> {
+    private static final Logger LOG = LoggerFactory.getLogger(BlazegraphUpdateMetricsResponseHandler.class);
 
     private static final String COMMIT_TOTAL_ELAPSED = "COMMIT: totalElapsed";
     private static final String MUTATION_COUNT = "mutationCount";
 
     private final List<MultiSyncStep> requiredSteps;
 
-    public UpdateMetricsResponseHandler(boolean cleanUpRefs, boolean cleanUpValues, boolean withTimestamp) {
+    public BlazegraphUpdateMetricsResponseHandler(boolean cleanUpRefs, boolean cleanUpValues, boolean withTimestamp) {
         requiredSteps = getRequiredSteps(cleanUpRefs, cleanUpValues, withTimestamp);
     }
 

@@ -28,11 +28,11 @@ import org.wikidata.query.rdf.tool.rdf.CollectedUpdateMetrics;
 import org.wikidata.query.rdf.tool.rdf.MultiSyncStep;
 
 @RunWith(MockitoJUnitRunner.class)
-public class UpdateMetricsResponseHandlerUnitTest {
+public class BlazegraphUpdateMetricsResponseHandlerUnitTest {
     @Mock
     private ContentResponse response;
 
-    private final UpdateMetricsResponseHandler responseHandler = new UpdateMetricsResponseHandler(true, true, true);
+    private final BlazegraphUpdateMetricsResponseHandler responseHandler = new BlazegraphUpdateMetricsResponseHandler(true, true, true);
 
     private final Map<MultiSyncStep, List<Integer>> expectedMetrics = new HashMap<>();
 

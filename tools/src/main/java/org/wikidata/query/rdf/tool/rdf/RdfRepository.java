@@ -36,7 +36,10 @@ import org.wikidata.query.rdf.tool.Utils;
 import org.wikidata.query.rdf.tool.change.Change;
 import org.wikidata.query.rdf.tool.exception.FatalException;
 import org.wikidata.query.rdf.tool.rdf.client.RdfClient;
-import org.wikidata.query.rdf.tool.rdf.client.UpdateMetricsResponseHandler;
+import org.wikidata.query.rdf.tool.rdf.client.ResponseHandler;
+import org.wikidata.query.rdf.tool.rdf.client.BlazegraphUpdateMetricsResponseHandler;
+import org.wikidata.query.rdf.tool.rdf.client.DummyUpdateMetricsResponseHandler;
+import org.wikidata.query.rdf.tool.rdf.client.ResponseHandlerType;
 
 import com.google.common.collect.ImmutableSetMultimap;
 
@@ -46,6 +49,7 @@ import lombok.Value;
 /**
  * Wrapper for communicating with the RDF repository.
  */
+@SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public class RdfRepository {
     private static final Logger LOG = LoggerFactory.getLogger(RdfRepository.class);
     /**
@@ -91,19 +95,26 @@ public class RdfRepository {
      */
     private final String getLexemes;
 
+    /**
+     * Response handler for update operations metrics collection.
+     */
+    private final ResponseHandlerType handlerType;
+
     protected final RdfClient rdfClient;
     private final MultiSyncUpdateQueryFactory multiSyncUpdateQueryFactory;
 
     /**
-     * @param maxPostSize Max POST form content size.
-     *                    Should be in sync with Jetty org.eclipse.jetty.server.Request.maxFormContentSize setting.
-     *                    Production default is 200M, see runBlazegraph.sh file.
-     *                    If that setting is changed, this one should change too, otherwise we get POST errors on big updates.
-     *                    See: https://phabricator.wikimedia.org/T210235
+     * @param maxPostSize            Max POST form content size.
+     *                               Should be in sync with Jetty org.eclipse.jetty.server.Request.maxFormContentSize setting.
+     *                               Production default is 200M, see runBlazegraph.sh file.
+     *                               If that setting is changed, this one should change too, otherwise we get POST errors on big updates.
+     *                               See: https://phabricator.wikimedia.org/T210235
+     * @param handlerType            Type of response handler for update operations metrics collection.
      */
-    public RdfRepository(UrisScheme uris, RdfClient rdfClient, long maxPostSize) {
+    public RdfRepository(UrisScheme uris, RdfClient rdfClient, long maxPostSize, ResponseHandlerType handlerType) {
         this.uris = uris;
         this.rdfClient = rdfClient;
+        this.handlerType = handlerType;
 
         updateLeftOffTimeBody = loadBody("updateLeftOffTime");
         getValues = loadBody("GetValues");
@@ -114,6 +125,10 @@ public class RdfRepository {
         maxStatementsPerBatch = maxPostSize / 400;
         maxPostDataSize = (maxPostSize - 1024 * 1024) / 2;
         multiSyncUpdateQueryFactory = new MultiSyncUpdateQueryFactory(uris);
+    }
+
+    public RdfRepository(UrisScheme uris, RdfClient rdfClient, long maxPostSize) {
+        this(uris, rdfClient, maxPostSize, ResponseHandlerType.BLAZEGRAPH);
     }
 
     /**
@@ -286,8 +301,13 @@ public class RdfRepository {
 
         LOG.debug("Sending query {} bytes", query.length());
         long start = System.nanoTime();
-        CollectedUpdateMetrics collectedUpdateMetrics = rdfClient.update(query,
-                new UpdateMetricsResponseHandler(!refSet.isEmpty(), !valueSet.isEmpty(), withTimestamp));
+
+        ResponseHandler<CollectedUpdateMetrics> handler = handlerType == ResponseHandlerType.BLAZEGRAPH
+            ? new BlazegraphUpdateMetricsResponseHandler(!refSet.isEmpty(), !valueSet.isEmpty(), withTimestamp)
+            : new DummyUpdateMetricsResponseHandler();
+
+        CollectedUpdateMetrics collectedUpdateMetrics = rdfClient.update(query, handler);
+
         LOG.debug("Update query took {} nanos and modified {} statements",
                 System.nanoTime() - start, collectedUpdateMetrics.getMutationCount());
 

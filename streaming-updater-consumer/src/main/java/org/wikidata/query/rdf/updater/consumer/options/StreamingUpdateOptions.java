@@ -43,6 +43,11 @@ public interface StreamingUpdateOptions extends OptionsUtils.BasicOptions {
     @Option(defaultValue = "0.01", description = "Threshold for inconsistencies for a batch to be logged as a warning")
     float inconsistenciesWarningThreshold();
 
+    @Option(longName = "updateResponseHandler",
+        description = "Response handler for update operations counts and metrics collection (blazegraph, dummy)",
+        defaultValue = "blazegraph")
+    String updateResponseHandler();
+
     static Pattern entityFilterPattern(StreamingUpdateOptions options) {
         try {
             return Pattern.compile(options.entityFilter());
