@@ -40,10 +40,14 @@ public class RdfRepositoryUpdaterUnitTest {
     List<String> entityIdsToDelete = new ArrayList<>();
     Map<String, Collection<Statement>> entitiesToReconcile = new HashMap<>();
 
-    private final String avgEventTimeUpdate = "\nDELETE {\n  <" + UrisSchemeFactory.getURISystem().root() + "> <http://schema.org/dateModified> ?o .\n}\n" +
-                    "WHERE {\n  <" + UrisSchemeFactory.getURISystem().root() + "> <http://schema.org/dateModified> ?o .\n};\n" +
-                    "INSERT DATA {\n  <" + UrisSchemeFactory.getURISystem().root() + "> <http://schema.org/dateModified> " +
-                    "\"1970-01-01T00:10:00Z\"^^xsd:dateTime .\n};\n";
+    private final String avgEventTimeUpdate = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nDELETE {\n  <" +
+        UrisSchemeFactory.getURISystem().root() + "> <http://schema.org/dateModified> ?o .\n}\n" +
+        "WHERE {\n  <" + UrisSchemeFactory.getURISystem().root() +
+        "> <http://schema.org/dateModified> ?o .\n};\n" +
+        "INSERT DATA {\n  <" + UrisSchemeFactory.getURISystem().root() +
+        "> <http://schema.org/dateModified> " +
+        "\"1970-01-01T00:10:00Z\"^^xsd:dateTime .\n};\n";
+
     Instant avgEventTime = Instant.EPOCH.plus(10, ChronoUnit.MINUTES);
     private final String deleteQueryString = IOUtils.toString(this.getClass()
             .getResourceAsStream("/org/wikidata/query/rdf/tool/rdf/RdfRepositoryUpdater.deleteEntity.expected"));
@@ -62,9 +66,9 @@ public class RdfRepositoryUpdaterUnitTest {
         verify(client, times(2)).update(captor.capture());
 
         assertThat(captor.getAllValues()).containsExactly(
-                "INSERT DATA {\n<uri:a> <uri:a> <uri:a> .\n<uri:b> <uri:b> <uri:b> .\n};\n",
+                "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nINSERT DATA {\n<uri:a> <uri:a> <uri:a> .\n<uri:b> <uri:b> <uri:b> .\n};\n",
                 avgEventTimeUpdate);
-        verify(client).update("INSERT DATA {\n<uri:a> <uri:a> <uri:a> .\n<uri:b> <uri:b> <uri:b> .\n};\n");
+        verify(client).update("PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nINSERT DATA {\n<uri:a> <uri:a> <uri:a> .\n<uri:b> <uri:b> <uri:b> .\n};\n");
         assertThat(result.getActualMutations()).isEqualTo(2);
         assertThat(result.getExpectedMutations()).isEqualTo(2);
         assertThat(result.getActualSharedElementsMutations()).isEqualTo(1);
@@ -81,7 +85,7 @@ public class RdfRepositoryUpdaterUnitTest {
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         verify(client, times(2)).update(captor.capture());
         assertThat(captor.getAllValues()).containsExactly(
-                "DELETE DATA {\n<uri:a> <uri:a> <uri:a> .\n<uri:b> <uri:b> <uri:b> .\n};\n",
+                "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nDELETE DATA {\n<uri:a> <uri:a> <uri:a> .\n<uri:b> <uri:b> <uri:b> .\n};\n",
                 avgEventTimeUpdate);
         assertThat(result.getActualMutations()).isEqualTo(2);
         assertThat(result.getExpectedMutations()).isEqualTo(2);
@@ -99,10 +103,12 @@ public class RdfRepositoryUpdaterUnitTest {
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         verify(client, times(2)).update(captor.capture());
         assertThat(captor.getAllValues()).containsExactly(
-                "DELETE DATA {\n" +
+                "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\n" +
+                        "DELETE DATA {\n" +
                         "<uri:c> <uri:c> <uri:c> .\n" +
                         "<uri:d> <uri:d> <uri:d> .\n" +
                         "};\n" +
+                        "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\n" +
                         "INSERT DATA {\n" +
                         "<uri:a> <uri:a> <uri:a> .\n" +
                         "<uri:b> <uri:b> <uri:b> .\n" +
@@ -136,8 +142,8 @@ public class RdfRepositoryUpdaterUnitTest {
         verify(client, times(2)).update(captor.capture());
 
         assertThat(captor.getAllValues()).containsExactly(
-                "INSERT DATA {\n<uri:a> <uri:a> <uri:a> .\n<uri:b> <uri:b> <uri:b> .\n};\n",
-                "INSERT DATA {\n<uri:s1> <uri:s1> <uri:s1> .\n<uri:s2> <uri:s2> <uri:s2> .\n};\n" +
+                "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nINSERT DATA {\n<uri:a> <uri:a> <uri:a> .\n<uri:b> <uri:b> <uri:b> .\n};\n",
+                "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nINSERT DATA {\n<uri:s1> <uri:s1> <uri:s1> .\n<uri:s2> <uri:s2> <uri:s2> .\n};\n" +
                         avgEventTimeUpdate
         );
         assertThat(result.getActualMutations()).isEqualTo(2);
