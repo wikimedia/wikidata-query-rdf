@@ -110,6 +110,12 @@ public class ThrottlingFilter extends MonitoredFilter implements Filter, Throttl
 
     private static final Logger LOG = LoggerFactory.getLogger(ThrottlingFilter.class);
 
+    /** Localhost IPv4 address, excluded from throttling. */
+    private static final String LOCALHOST_IPV4 = "127.0.0.1";
+
+    /** Localhost IPv6 address, excluded from throttling. */
+    private static final String LOCALHOST_IPV6 = "0:0:0:0:0:0:0:1";
+
     /** Is throttling enabled. */
     private boolean enabled;
 
@@ -284,10 +290,21 @@ public class ThrottlingFilter extends MonitoredFilter implements Filter, Throttl
      * @throws IOException {@inheritDoc}
      * @throws ServletException {@inheritDoc}
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+        // Bug: T425770
+        // A workaround to avoid starving streaming-updater-consumer and
+        // causing lag.
+        String remoteAddr = httpRequest.getRemoteAddr();
+        if (LOCALHOST_IPV4.equals(remoteAddr) || LOCALHOST_IPV6.equals(remoteAddr)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         Object bucket = regexBucketing.bucket(httpRequest);
         if (bucket == null) {
             bucket = agentBucketing.bucket(httpRequest);
