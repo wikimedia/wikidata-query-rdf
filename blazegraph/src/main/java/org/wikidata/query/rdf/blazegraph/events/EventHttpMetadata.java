@@ -5,20 +5,22 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-@JsonPropertyOrder({"method", "client_ip", "request_headers", "has_cookies", "status_code"})
+@JsonPropertyOrder({"method", "client_ip", "request_headers", "has_cookies", "status_code", "response_size"})
 public class EventHttpMetadata {
     private final String method;
     private final String clientIp;
     private final Map<String, String> requestHeaders;
     private final boolean cookies;
     private final int statusCode;
+    private final long responseSize;
 
-    public EventHttpMetadata(String method, String clientIp, Map<String, String> requestHeaders, boolean cookies, int statusCode) {
+    public EventHttpMetadata(String method, String clientIp, Map<String, String> requestHeaders, boolean cookies, int statusCode, long responseSize) {
         this.method = method;
         this.clientIp = clientIp;
         this.requestHeaders = requestHeaders;
         this.cookies = cookies;
         this.statusCode = statusCode;
+        this.responseSize = responseSize;
     }
 
     public String getMethod() {
@@ -43,5 +45,10 @@ public class EventHttpMetadata {
     @JsonProperty("status_code")
     public int getStatusCode() {
         return statusCode;
+    }
+
+    @JsonProperty("response_size")
+    public long getResponseSize() {
+        return responseSize;
     }
 }

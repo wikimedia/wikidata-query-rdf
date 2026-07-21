@@ -117,12 +117,13 @@ public class QueryEventSenderFilter extends MonitoredFilter implements QueryEven
             return;
         }
 
+        CountingServletResponseWrapper countingResponse = new CountingServletResponseWrapper(httpResponse);
         Instant start = queryEventGenerator.instant();
         boolean succeed = false;
         int countBefore = queryCounter.getAndIncrement();
         startedQueries.incrementAndGet();
         try {
-            filterChain.doFilter(servletRequest, servletResponse);
+            filterChain.doFilter(servletRequest, countingResponse);
             succeed = true;
         } finally {
             int countAfter = queryCounter.decrementAndGet();
@@ -134,8 +135,8 @@ public class QueryEventSenderFilter extends MonitoredFilter implements QueryEven
                 responseStatus = 500;
             }
             String defaultNamespace = (String) servletRequest.getServletContext().getAttribute(WikibaseContextListener.BLAZEGRAPH_DEFAULT_NAMESPACE);
-            QueryEvent event = queryEventGenerator.generateQueryEvent(httpRequest, responseStatus, Duration.between(start, end),
-                    start, defaultNamespace, countBefore, countAfter);
+            QueryEvent event = queryEventGenerator.generateQueryEvent(httpRequest, responseStatus, countingResponse.getBytesWritten(),
+                    Duration.between(start, end), start, defaultNamespace, countBefore, countAfter);
             if (!sender.push(event)) {
                 log.warn("Cannot sent event for {} (queue full?)", event.getMetadata().getStream());
             }

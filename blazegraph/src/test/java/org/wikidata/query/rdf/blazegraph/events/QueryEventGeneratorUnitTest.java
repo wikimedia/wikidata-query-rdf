@@ -33,6 +33,7 @@ public class QueryEventGeneratorUnitTest {
         String defaultNS = "defaultNS";
         String username = "the_user";
         int statusCode = 200;
+        long responseSize = 4096;
         int queriesRunningBefore = 3;
         int queriesRunningAfter = 1;
         SystemRuntimeMetrics systemRuntimeMetrics = new SystemRuntimeMetrics(queriesRunningBefore, queriesRunningAfter, SYSTEM_LOAD_SUPPLIER.get());
@@ -60,7 +61,7 @@ public class QueryEventGeneratorUnitTest {
 
         QueryEventGenerator generator = new QueryEventGenerator(uniqueIdGenerator, clock, hostname, graphName, "mystream.name", SYSTEM_LOAD_SUPPLIER);
         assertThat(generator.instant()).isEqualTo(Instant.EPOCH);
-        QueryEvent event = generator.generateQueryEvent(request, statusCode, Duration.ofSeconds(1),
+        QueryEvent event = generator.generateQueryEvent(request, statusCode, responseSize, Duration.ofSeconds(1),
                 Instant.EPOCH, defaultNS, queriesRunningBefore, queriesRunningAfter);
         assertThat(event.getBackendHost()).isEqualTo(hostname);
         assertThat(event.getFormat()).isEqualTo(format);
@@ -81,10 +82,11 @@ public class QueryEventGeneratorUnitTest {
         assertThat(event.getHttpMetadata().getRequestHeaders()).containsValues("application/json", requestId, "one,two\\,t\\\\hree");
         assertThat(event.getHttpMetadata().hasCookies()).isTrue();
         assertThat(event.getHttpMetadata().getStatusCode()).isEqualTo(statusCode);
+        assertThat(event.getHttpMetadata().getResponseSize()).isEqualTo(responseSize);
         assertThat(event.getSystemRuntimeMetrics()).isEqualTo(systemRuntimeMetrics);
         assertThat(event.getPerformer().getUserText()).isEqualTo(username);
         request.setRequestURI(contextPath + "/sparql");
-        QueryEvent eventDefaultNS = generator.generateQueryEvent(request, statusCode, Duration.ofSeconds(1),
+        QueryEvent eventDefaultNS = generator.generateQueryEvent(request, statusCode, responseSize, Duration.ofSeconds(1),
                 Instant.EPOCH, defaultNS, queriesRunningBefore, queriesRunningAfter);
         assertThat(eventDefaultNS.getNamespace()).isEqualTo(defaultNS);
     }

@@ -66,12 +66,12 @@ public class QueryEventGenerator {
         return "/sparql".equals(path) || QueryEventGenerator.NS_EXTRACTER.matcher(path).matches();
     }
 
-    public QueryEvent generateQueryEvent(HttpServletRequest request, int responseStatus, Duration duration,
+    public QueryEvent generateQueryEvent(HttpServletRequest request, int responseStatus, long responseSize, Duration duration,
                                          Instant queryStartTime, String defaultNamespace, int queriesRunningBefore, int queriesRunningAfter) {
         Objects.requireNonNull(defaultNamespace, "defaultNamespace");
         Objects.requireNonNull(duration, "duration");
         EventMetadata metadata = generateEventMetadata(request, queryStartTime);
-        EventHttpMetadata httpMetadata = generateHttpMetadata(request, responseStatus);
+        EventHttpMetadata httpMetadata = generateHttpMetadata(request, responseStatus, responseSize);
         String format = request.getParameter("format");
         String query = request.getParameter("query");
         if (query == null) {
@@ -108,13 +108,13 @@ public class QueryEventGenerator {
         return new EventMetadata(reqId, id, queryStartTime, request.getServerName(), stream);
     }
 
-    private EventHttpMetadata generateHttpMetadata(HttpServletRequest httpServletRequest, int responseStatusCode) {
+    private EventHttpMetadata generateHttpMetadata(HttpServletRequest httpServletRequest, int responseStatusCode, long responseSize) {
         Map<String, String> headers = list(httpServletRequest.getHeaderNames()).stream()
                 .collect(toMap(s -> s.toLowerCase(Locale.ROOT),
                         name -> joinWithComma(list(httpServletRequest.getHeaders(name)))));
         // We run after the ClientIpFilter
         return new EventHttpMetadata(httpServletRequest.getMethod(), httpServletRequest.getRemoteAddr(),
-                Collections.unmodifiableMap(headers), httpServletRequest.getCookies() != null, responseStatusCode);
+                Collections.unmodifiableMap(headers), httpServletRequest.getCookies() != null, responseStatusCode, responseSize);
     }
 
     private Map<String, String> extractRequestParams(HttpServletRequest httpServletRequest) {

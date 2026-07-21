@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "system_runtime_metrics", "performer"
 })
 public class QueryEvent implements Event {
-    private static final String SCHEMA = "/sparql/query/1.3.0";
+    private static final String SCHEMA = "/sparql/query/1.4.0";
     private final EventMetadata metadata;
     private final EventHttpMetadata httpMetadata;
     private final String backendHost;

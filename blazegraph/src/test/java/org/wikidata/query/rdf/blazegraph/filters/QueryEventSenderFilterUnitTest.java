@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -29,10 +31,12 @@ import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.junit.Test;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.wikidata.query.rdf.blazegraph.WikibaseContextListener;
 import org.wikidata.query.rdf.blazegraph.events.Event;
 import org.wikidata.query.rdf.blazegraph.events.EventSender;
@@ -66,14 +70,14 @@ public class QueryEventSenderFilterUnitTest {
         when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         HttpServletResponse response = mock(HttpServletResponse.class);
 
-        when(eventGenerator.generateQueryEvent(eq(request), eq(200), eq(Duration.ofSeconds(1)), eq(Instant.EPOCH), eq(defaultNS), eq(0), eq(0)))
+        when(eventGenerator.generateQueryEvent(eq(request), eq(200), eq(0L), eq(Duration.ofSeconds(1)), eq(Instant.EPOCH), eq(defaultNS), eq(0), eq(0)))
                 .thenReturn(generatedEvent);
         FilterChain filterChain = mock(FilterChain.class);
         when(response.getStatus()).thenReturn(200);
         QueryEventSenderFilter filter = new QueryEventSenderFilter(receivedEvents::add, eventGenerator, enableIfHeaderFlag, disableIfHeaderFlag);
         filter.doFilter(request, response, filterChain);
         assertThat(receivedEvents).containsExactly(generatedEvent);
-        verify(filterChain, times(1)).doFilter(eq(request), eq(response));
+        verify(filterChain, times(1)).doFilter(eq(request), any(CountingServletResponseWrapper.class));
         assertThat(filter.getStartedQueries()).isEqualTo(1L);
     }
 
@@ -95,16 +99,49 @@ public class QueryEventSenderFilterUnitTest {
         when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         HttpServletResponse response = mock(HttpServletResponse.class);
 
-        when(eventGenerator.generateQueryEvent(eq(request), eq(500), eq(Duration.ofSeconds(1)), eq(Instant.EPOCH), eq(defaultNS), eq(0), eq(0)))
+        when(eventGenerator.generateQueryEvent(eq(request), eq(500), eq(0L), eq(Duration.ofSeconds(1)), eq(Instant.EPOCH), eq(defaultNS), eq(0), eq(0)))
                 .thenReturn(generatedEvent);
         when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
         FilterChain filterChain = mock(FilterChain.class);
-        doThrow(new ServletException("failure")).when(filterChain).doFilter(eq(request), eq(response));
+        doThrow(new ServletException("failure")).when(filterChain).doFilter(eq(request), any(CountingServletResponseWrapper.class));
         QueryEventSenderFilter filter = new QueryEventSenderFilter(receivedEvents::add, eventGenerator, null, null);
         Throwable servletException = catchThrowable(() -> filter.doFilter(request, response, filterChain));
         assertThat(servletException).isInstanceOf(ServletException.class);
         assertThat(receivedEvents).containsExactly(generatedEvent);
-        verify(filterChain, times(1)).doFilter(eq(request), eq(response));
+        verify(filterChain, times(1)).doFilter(eq(request), any(CountingServletResponseWrapper.class));
+    }
+
+    @Test
+    public void testResponseSizeIsRecorded() throws IOException, ServletException {
+        List<Event> receivedEvents = new ArrayList<>();
+        QueryEventGenerator eventGenerator = mock(QueryEventGenerator.class);
+        QueryEvent generatedEvent = mock(QueryEvent.class);
+        String defaultNS = "defaultNS";
+        byte[] payload = new byte[42];
+
+        when(eventGenerator.instant())
+                .thenReturn(Instant.EPOCH)
+                .thenReturn(Instant.EPOCH.plus(1, SECONDS));
+        ServletContext context = mock(ServletContext.class);
+        when(context.getAttribute(eq(WikibaseContextListener.BLAZEGRAPH_DEFAULT_NAMESPACE))).thenReturn(defaultNS);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(eq(QueryEventGenerator.QUERY_PARAM))).thenReturn(SPARQL_QUERY);
+        when(request.getServletContext()).thenReturn(context);
+        when(eventGenerator.hasValidPath(eq(request))).thenReturn(true);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        when(eventGenerator.generateQueryEvent(eq(request), eq(200), eq((long) payload.length), eq(Duration.ofSeconds(1)),
+                eq(Instant.EPOCH), eq(defaultNS), eq(0), eq(0)))
+                .thenReturn(generatedEvent);
+        FilterChain filterChain = mock(FilterChain.class);
+        doAnswer(invocation -> {
+            ServletResponse resp = (ServletResponse) invocation.getArguments()[1];
+            resp.getOutputStream().write(payload);
+            return null;
+        }).when(filterChain).doFilter(eq(request), any(CountingServletResponseWrapper.class));
+        QueryEventSenderFilter filter = new QueryEventSenderFilter(receivedEvents::add, eventGenerator, null, null);
+        filter.doFilter(request, response, filterChain);
+        assertThat(receivedEvents).containsExactly(generatedEvent);
     }
 
     @Test
@@ -124,7 +161,7 @@ public class QueryEventSenderFilterUnitTest {
         filter.doFilter(request, response, filterChain);
         verify(filterChain, times(1)).doFilter(eq(request), eq(response));
         verify(eventGenerator, never()).instant();
-        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), any(), any(), anyString(), anyInt(), anyInt());
+        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), anyLong(), any(), any(), anyString(), anyInt(), anyInt());
     }
 
     @Test
@@ -141,7 +178,7 @@ public class QueryEventSenderFilterUnitTest {
         filter.doFilter(request, response, filterChain);
         verify(filterChain, times(1)).doFilter(eq(request), eq(response));
         verify(eventGenerator, never()).instant();
-        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), any(), any(), anyString(), eq(0), eq(0));
+        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), anyLong(), any(), any(), anyString(), eq(0), eq(0));
     }
 
     @Test
@@ -160,7 +197,7 @@ public class QueryEventSenderFilterUnitTest {
         filter.doFilter(request, response, filterChain);
         verify(filterChain, times(1)).doFilter(eq(request), eq(response));
         verify(eventGenerator, never()).instant();
-        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), any(), any(), anyString(), eq(0), eq(0));
+        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), anyLong(), any(), any(), anyString(), eq(0), eq(0));
     }
 
     @Test
@@ -179,7 +216,7 @@ public class QueryEventSenderFilterUnitTest {
         filter.doFilter(request, response, filterChain);
         verify(filterChain, times(1)).doFilter(eq(request), eq(response));
         verify(eventGenerator, never()).instant();
-        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), any(), any(), anyString(), eq(0), eq(0));
+        verify(eventGenerator, never()).generateQueryEvent(any(), anyInt(), anyLong(), any(), any(), anyString(), eq(0), eq(0));
     }
 
     @Test

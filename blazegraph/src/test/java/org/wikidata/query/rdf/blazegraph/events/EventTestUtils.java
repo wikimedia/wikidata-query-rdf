@@ -18,7 +18,7 @@ public final class EventTestUtils {
 
     public static String queryEventJsonString(String id) {
         return "{" +
-                "\"$schema\":\"/sparql/query/1.3.0\"," +
+                "\"$schema\":\"/sparql/query/1.4.0\"," +
                 "\"meta\":{" +
                 "\"id\":\"" + id + "\"," +
                 "\"dt\":\"1970-01-01T00:00:00Z\"," +
@@ -31,7 +31,8 @@ public final class EventTestUtils {
                 "\"client_ip\":\"10.1.2.3\"," +
                 "\"request_headers\":{\"header-name\":\"header-value\"}," +
                 "\"has_cookies\":true," +
-                "\"status_code\":200" +
+                "\"status_code\":200," +
+                "\"response_size\":2048" +
                 "}," +
                 "\"backend_host\":\"backend_host\"," +
                 "\"graph_name\":\"my_graph\"," +
@@ -60,6 +61,6 @@ public final class EventTestUtils {
     private static EventHttpMetadata newEventHttpMetadata() {
         Map<String, String> headers = new HashMap<>();
         headers.put("header-name", "header-value");
-        return new EventHttpMetadata("GET", "10.1.2.3", headers, true, 200);
+        return new EventHttpMetadata("GET", "10.1.2.3", headers, true, 200, 2048);
     }
 }
